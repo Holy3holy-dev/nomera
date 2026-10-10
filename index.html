@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Симулятор Номеров</title>
+    <link rel="manifest" href="manifest.json">
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background-color: #1a1a1a; color: #ddd; text-align: center; margin: 0; padding: 10px; user-select: none; }
+        
+        /* Модальные окна */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); flex-direction: column; justify-content: center; align-items: center; z-index: 1000; }
+        .modal-overlay.show { display: flex; }
+        .modal-box { background: #2a2a2a; padding: 20px; border-radius: 12px; width: 85%; max-width: 400px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+        .modal-box input[type="text"], .modal-box select { padding: 12px; font-size: 16px; border-radius: 6px; border: none; margin-bottom: 20px; width: 90%; background: #444; color: white; outline: none; }
+        .modal-box input[type="range"] { width: 100%; margin: 15px 0; }
+        .modal-box input[type="file"] { margin-bottom: 20px; color: white; width: 90%; }
+        
+        .modal-scrollable { max-height: 50vh; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px; text-align: left; padding-right: 5px; }
+        
+        /* Шапка и профиль */
+        .header { display: flex; justify-content: space-between; font-size: 16px; margin-bottom: 20px; background: #252525; padding: 15px; border-radius: 8px; align-items: center; }
+        .profile-section { display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 5px; border-radius: 8px; transition: 0.2s; }
+        .profile-section:active { background: #444; }
+        .header-name { color: #66bb6a; font-weight: bold; }
+        .avatar { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; background-color: #444; border: 2px solid #66bb6a; }
+        .menu-btn { font-size: 24px; cursor: pointer; padding: 0 10px; color: #888; }
+        
+        /* Номер */
+        .plate-container { position: relative; background: white; color: black; border: 3px solid #222; border-radius: 6px; padding: 10px 15px; display: flex; justify-content: center; align-items: center; font-size: 32px; font-weight: bold; margin: 35px auto 15px auto; width: fit-content; font-family: 'Arial Black', sans-serif; box-shadow: 0 6px 15px rgba(0,0,0,0.7); }
+        .plate-main { display: flex; align-items: center; padding-right: 15px; border-right: 2px solid black; }
+        .plate-region { display: flex; flex-direction: column; align-items: center; padding-left: 15px; font-size: 24px; cursor: pointer; transition: 0.2s; }
+        .plate-region:active { opacity: 0.5; }
+        .plate-region-text { font-size: 12px; display: flex; align-items: center; margin-top: 2px; }
+        .flag { width: 18px; height: 12px; background: linear-gradient(to bottom, white 33%, blue 33%, blue 66%, red 66%); margin-left: 5px; border: 1px solid #999; }
+        
+        /* Редкость и Цена */
+        .rarity-label { position: absolute; top: -14px; left: -10px; font-size: 12px; padding: 2px 8px; border-radius: 4px; font-weight: bold; text-transform: uppercase; z-index: 10; }
+        .current-price { font-size: 18px; font-weight: bold; color: #aaa; margin-bottom: 20px; min-height: 24px; }
+        
+        .mini-plate { position: relative; background: white; color: black; border: 2px solid black; border-radius: 4px; padding: 5px 10px; font-family: 'Arial Black', sans-serif; font-size: 18px; font-weight: bold; display: inline-block; margin: 10px 0; }
+        .mini-plate .rarity-label { font-size: 9px; top: -10px; left: -5px; padding: 1px 5px; }
+
+        /* Кнопки */
+        .btn-container { margin: 20px 0; display: flex; flex-direction: column; gap: 15px; }
+        .btn { background: #444; color: #eee; border: none; padding: 14px 20px; font-size: 15px; border-radius: 6px; cursor: pointer; width: 100%; box-shadow: 0 3px 0 #222; transition: 0.1s; text-transform: uppercase; letter-spacing: 0.5px; }
+        .btn:active:not(:disabled) { transform: translateY(3px); box-shadow: none; }
+        .btn-letters { background: #3a4a5a; box-shadow: 0 3px 0 #1a2a3a; }
+        .btn-save { background: #5a4a3a; box-shadow: 0 3px 0 #3a2a1a; margin-top: 10px; }
+        .btn-green { background: #3a5a3a; box-shadow: 0 3px 0 #1a3a1a; margin-top: 10px; }
+        .btn-blue { background: #1e90ff; box-shadow: 0 3px 0 #005bb5; }
+        .btn-close { background: #6a3a3a; box-shadow: 0 3px 0 #3a1a1a; margin-top: 10px; }
+        .btn:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; transform: none; }
+        
+        /* Табы и списки */
+        .inventory, .garage, .cases-container { background: #222; padding: 15px; border-radius: 8px; margin-top: 20px; text-align: left; }
+        .item { background: #333; padding: 12px; margin: 10px 0; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; font-size: 14px; flex-wrap: wrap; gap: 10px; position: relative; }
+        .item button { background: #6a3a3a; color: white; border: none; padding: 8px 10px; border-radius: 4px; font-size: 12px; cursor: pointer; flex-grow: 1; }
+        .item button.buy { background: #3a5a3a; }
+        .item button.blue { background: #3a4a5a; }
+        
+        .nav-tabs { display: flex; justify-content: space-around; background: #252525; border-radius: 8px; padding: 5px; flex-wrap: wrap; gap: 5px; }
+        .nav-tab { padding: 12px; cursor: pointer; font-size: 14px; border-radius: 6px; flex-grow: 1; transition: 0.3s; color: #999; }
+        .nav-tab.active { background: #444; color: white; }
+        .hidden { display: none !important; }
+
+        /* Картинки авто */
+        .car-image { width: 100%; height: 140px; object-fit: cover; border-radius: 6px; margin-bottom: 8px; background: #111; }
+        
+        /* Кейсы */
+        .case-box { background: #333; border: 2px solid #555; border-radius: 8px; padding: 15px; text-align: center; margin-bottom: 15px; cursor: pointer; transition: 0.2s; }
+        .case-box:active { transform: scale(0.98); }
+        .case-icon { font-size: 25px; margin-bottom: 5px; } /* Иконки стали в 2 раза меньше */
+        
+        /* Рулетка */
+        .roulette-plate { font-size: 32px; background: white; color: black; padding: 15px; border-radius: 10px; border: 4px solid black; font-family: 'Arial Black', sans-serif; display: inline-block; margin: 20px 0; }
+    </style>
+</head>
+<body>
+
+    <!-- Окно регистрации / смены профиля -->
+    <div id="auth-modal" class="modal-overlay">
+        <div class="modal-box">
+            <h3 style="margin-top:0; color: #66bb6a;" id="auth-title">Добро пожаловать</h3>
+            <p style="font-size: 14px; margin-top: 0; color: #aaa;">Никнейм:</p>
+            <input type="text" id="nickname-input" placeholder="Никнейм" maxlength="15">
+            <p style="font-size: 14px; margin-top: 0; color: #aaa;">Аватар (необязательно):</p>
+            <input type="file" id="avatar-input" accept="image/*">
+            <button class="btn btn-green" onclick="saveProfile()" id="auth-btn">Сохранить</button>
+            <button class="btn btn-close hidden" id="auth-close-btn" onclick="closeProfileModal()">Отмена</button>
+        </div>
+    </div>
+
+    <!-- Настройки -->
+    <div id="settings-modal" class="modal-overlay">
+        <div class="modal-box">
+            <h3 style="margin-top:0;" id="t-settings">Настройки</h3>
+            <label id="t-volume">Громкость звука:</label>
+            <input type="range" id="volume-slider" min="0" max="1" step="0.1" value="0.5" onchange="updateVolume()">
+            
+            <label id="t-language" style="display:block; margin-top:15px; margin-bottom: 5px;">Язык:</label>
+            <select id="lang-select" onchange="changeLanguage()">
+                <option value="ru">Русский</option>
+                <option value="en">English</option>
+                <option value="es">Español</option>
+                <option value="zh">中文</option>
+            </select>
+            
+            <button class="btn btn-close" onclick="closeSettings()" id="t-close">Закрыть</button>
+        </div>
+    </div>
+
+    <!-- Выбор номера для установки в гараже -->
+    <div id="attach-modal" class="modal-overlay">
+        <div class="modal-box">
+            <h3 style="margin-top:0; color: #fff;">Выберите номер</h3>
+            <div id="attach-list" class="modal-scrollable"></div>
+            <button class="btn btn-close" onclick="closeAttachModal()">Отмена</button>
+        </div>
+    </div>
+
+    <!-- Предпросмотр Кейса -->
+    <div id="case-preview-modal" class="modal-overlay">
+        <div class="modal-box">
+            <h3 style="margin-top:0; color: #fff;" id="case-preview-title">Кейс</h3>
+            <p style="color:#aaa; font-size:12px;">Содержимое генерируется случайно:</p>
+            <div id="case-preview-list" class="modal-scrollable"></div>
+            <button class="btn btn-green" id="btn-buy-case" onclick="buyCase()">Открыть за X</button>
+            <button class="btn btn-close" onclick="closeCasePreview()">Закрыть</button>
+        </div>
+    </div>
+
+    <!-- Открытие Кейса (Рулетка) -->
+    <div id="roulette-modal" class="modal-overlay">
+        <div class="modal-box" style="text-align: center;">
+            <h3 style="margin-top:0; color: #fff;">Открытие кейса...</h3>
+            <div class="roulette-plate" id="roulette-display">А 000 АА</div>
+            
+            <div id="roulette-result" class="hidden">
+                <div id="roulette-rarity" class="rarity-label" style="position:relative; display:inline-block; top:0; left:0; margin-bottom:10px;">Редкость</div>
+                <div style="font-size: 20px; font-weight:bold; margin-bottom: 20px; color:#ffd700;" id="roulette-price">10 000 ₽</div>
+                
+                <div style="display:flex; gap:10px;">
+                    <button class="btn btn-blue" onclick="rouletteSell()">Продать</button>
+                    <button class="btn btn-green" onclick="rouletteSave()">В инвентарь</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Шапка -->
+    <div class="header">
+        <div class="profile-section" onclick="openProfileModal()" title="Редактировать профиль">
+            <img id="header-avatar" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=" class="avatar">
+            <span class="header-name" id="player-name">Игрок</span>
+        </div>
+        <span>💰 <span id="balance">100000</span> ₽</span>
+        <div class="menu-btn" onclick="openSettings()">⋮</div>
+    </div>
+
+    <div class="nav-tabs">
+        <div class="nav-tab active" onclick="switchTab('generator', this)">Номера</div>
+        <div class="nav-tab" onclick="switchTab('inventory', this)">Инвентарь</div>
+        <div class="nav-tab" onclick="switchTab('garage', this)">Гараж</div>
+        <div class="nav-tab" onclick="switchTab('cases', this)">Кейсы</div>
+    </div>
+
+    <!-- Генератор -->
+    <div id="generator" class="tab-content">
+        <div class="plate-container">
+            <div id="gen-rarity" class="rarity-label hidden">Обычный</div>
+            <div class="plate-main">
+                <span id="letter1">-</span>
+                <span id="numbers" style="font-size: 44px; margin: 0 6px;">---</span>
+                <span id="letter2">-</span>
+                <span id="letter3">-</span>
+            </div>
+            <div class="plate-region" onclick="changeRegion()" title="Изменить регион">
+                <span id="region">777</span>
+                <div class="plate-region-text">RUS <div class="flag"></div></div>
+            </div>
+        </div>
+        
+        <div class="current-price" id="current-price-display">Оценка номера: --- ₽</div>
+
+        <div class="btn-container">
+            <button class="btn" id="btn-spin-num" onclick="spinNumbers()">Крутить цифры (400 ₽)</button>
+            <button class="btn btn-letters" id="btn-spin-let" onclick="spinLetters()">Крутить буквы (400 ₽)</button>
+            <button class="btn btn-save" id="btn-save" onclick="savePlate()" disabled>Сохранить в инвентарь</button>
+        </div>
+    </div>
+
+    <!-- Инвентарь -->
+    <div id="inventory" class="tab-content hidden">
+        <div class="inventory">
+            <div id="inventory-list"></div>
+        </div>
+    </div>
+
+    <!-- Гараж -->
+    <div id="garage" class="tab-content hidden">
+        <div class="garage">
+            <h3>Автосалон</h3>
+            <div id="garage-list"></div>
+            <h3>Мой гараж:</h3>
+            <div id="my-cars"></div>
+        </div>
+    </div>
+
+    <!-- Кейсы -->
+    <div id="cases" class="tab-content hidden">
+        <div class="cases-container">
+            <div class="case-box" onclick="openCasePreview('normal')">
+                <div class="case-icon">📦</div>
+                <h2>Обычный Box</h2>
+                <p>Цена: 5 000 ₽</p>
+                <small style="color:#aaa;">Шанс: Обычный 50%, Редкий 10%...</small>
+            </div>
+            
+            <div class="case-box" style="border-color: #8a2be2;" onclick="openCasePreview('super')">
+                <div class="case-icon">🎁</div>
+                <h2 style="color: #8a2be2;">Супер Box</h2>
+                <p>Цена: 50 000 ₽</p>
+                <small style="color:#aaa;">Шанс: Редкий 50%, Супер редкий 10%...</small>
+            </div>
+            
+            <div class="case-box" style="border-color: #ffd700;" onclick="openCasePreview('mega')">
+                <div class="case-icon">💎</div>
+                <h2 style="color: #ffd700;">Mega Box</h2>
+                <p>Цена: 100 000 ₽</p>
+                <small style="color:#aaa;">Шанс: Эпический 50%, Легендарный 3%...</small>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- ДАННЫЕ ---
+        const dict = {
+            ru: { price_eval: "Оценка номера:", empty_inv: "Пусто..." },
+            en: { price_eval: "Value:", empty_inv: "Empty..." },
+            es: { price_eval: "Valor:", empty_inv: "Vacío..." },
+            zh: { price_eval: "价值:", empty_inv: "空的..." }
+        };
+        let currentLang = 'ru';
+
+        // Автосалон (Новые цены, красивые названия и картинки)
+        const carsData = [
+            { name: "Лада Гранта", price: 250000, img: "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/Lada_Granta_front_20121027.jpg/320px-Lada_Granta_front_20121027.jpg" },
+            { name: "Lada Kalina 1 Sport", price: 400000, img: "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7b/Lada_Kalina_Sport_1.6_front.JPG/320px-Lada_Kalina_Sport_1.6_front.JPG" },
+            { name: "Lada Kalina 2 Sport", price: 650000, img: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ad/Lada_Kalina_Sport_White.jpg/320px-Lada_Kalina_Sport_White.jpg" },
+            { name: "Lada Granta Sport 1", price: 700000, img: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Lada_Granta_Sport.jpg/320px-Lada_Granta_Sport.jpg" },
+            { name: "Volkswagen Polo", price: 800000, img: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/52/2015_Volkswagen_Polo_SE_1.0_Front.jpg/320px-2015_Volkswagen_Polo_SE_1.0_Front.jpg" },
+            { name: "Volkswagen Golf", price: 900000, img: "https://upload.wikimedia.org/wikipedia/commons/thumb/c/cd/2015_Volkswagen_Golf_SE_TDi_BlueMotion_1.6_Front.jpg/320px-2015_Volkswagen_Golf_SE_TDi_BlueMotion_1.6_Front.jpg" },
+            { name: "BMW M5 E60", price: 1500000, img: "https://upload.wikimedia.org/wikipedia/commons/thumb/0/05/BMW_M5_E60.jpg/320px-BMW_M5_E60.jpg" }
+        ];
+
+        let balance = 100000;
+        let nickname = '';
+        let avatarData = ''; 
+        let inventory = []; 
+        let myCars = [];    
+        
+        let globalVolume = 0.5;
+        let audioCtx = null;
+        
+        // Генератор
+        let isSpinning = false;
+        const spinCost = 400;
+        const lettersArr = ['А', 'В', 'Е', 'К', 'М', 'Н', 'О', 'Р', 'С', 'Т', 'У', 'Х'];
+        const eliteLetters = ['ААА', 'АМР', 'ВВВ', 'ВОР', 'ТТТ', 'ХХХ', 'ККК', 'ЕКХ', 'АЕО'];
+        let currentL1 = '-', currentL2 = '-', currentL3 = '-';
+        let currentNum = '---';
+        let currentReg = '777';
+
+        // АНТИ-ФАРМ ЛОГИКА
+        let hasSpunLetSinceSave = false;
+        let hasSpunNumSinceSave = false;
+        let mustSpinBothForNextSave = false;
+        let boardHasLetters = false;
+        let boardHasNumbers = false;
+
+        // PITY TIMER (50 - 300)
+        let pityCounter = 0;
+        let currentPityTarget = 150; 
+        
+        // Кейсы
+        let currentCaseData = null;
+        let activeCaseType = '';
+        let wonPlateObj = null;
+
+        // --- ИНИЦИАЛИЗАЦИЯ ---
+        window.onload = function() {
+            currentPityTarget = Math.floor(Math.random() * (300 - 50 + 1)) + 50; 
+            loadProgress();
+            
+            if (nickname === '') {
+                document.getElementById('auth-modal').classList.add('show');
+                document.getElementById('auth-close-btn').classList.add('hidden');
+            } else {
+                updateProfileUI();
+            }
+
+            checkCanSaveButton();
+            updateBalance();
+            renderInventory();
+            renderCars();
+        };
+
+        // --- ПРОФИЛЬ ---
+        function openProfileModal() {
+            document.getElementById('auth-title').innerText = "Редактирование профиля";
+            document.getElementById('nickname-input').value = nickname;
+            document.getElementById('auth-close-btn').classList.remove('hidden');
+            document.getElementById('auth-modal').classList.add('show');
+        }
+
+        function closeProfileModal() {
+            if (nickname !== '') document.getElementById('auth-modal').classList.remove('show');
+        }
+
+        function saveProfile() {
+            const inputName = document.getElementById('nickname-input').value.trim();
+            if (inputName.length < 2) return alert("Никнейм минимум 2 символа");
+            nickname = inputName;
+            
+            const fileInput = document.getElementById('avatar-input');
+            if (fileInput.files && fileInput.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    avatarData = e.target.result;
+                    finishSavingProfile();
+                };
+                reader.readAsDataURL(fileInput.files[0]);
+            } else {
+                finishSavingProfile();
+            }
+        }
+
+        function finishSavingProfile() {
+            updateProfileUI();
+            document.getElementById('auth-modal').classList.remove('show');
+            saveProgress();
+        }
+
+        function updateProfileUI() {
+            document.getElementById('player-name').innerText = nickname;
+            if (avatarData) document.getElementById('header-avatar').src = avatarData;
+        }
+
+        // --- СОХРАНЕНИЕ ---
+        function saveProgress() {
+            localStorage.setItem('simGibdd_v8', JSON.stringify({
+                balance, nickname, avatarData, inventory, myCars, pityCounter, currentPityTarget, 
+                globalVolume, currentReg, currentLang,
+                hasSpunLetSinceSave, hasSpunNumSinceSave, mustSpinBothForNextSave, boardHasLetters, boardHasNumbers,
+                currentL1, currentL2, currentL3, currentNum
+            }));
+        }
+
+        function loadProgress() {
+            let savedStr = localStorage.getItem('simGibdd_v8') || localStorage.getItem('simGibdd_v7');
+            if (savedStr) {
+                const saved = JSON.parse(savedStr);
+                balance = saved.balance ?? 100000;
+                nickname = saved.nickname || '';
+                avatarData = saved.avatarData || '';
+                inventory = saved.inventory || [];
+                pityCounter = saved.pityCounter || 0;
+                currentPityTarget = saved.currentPityTarget || (Math.floor(Math.random() * (300 - 50 + 1)) + 50);
+                globalVolume = saved.globalVolume ?? 0.5;
+                currentReg = saved.currentReg || '777';
+                currentLang = saved.currentLang || 'ru';
+                
+                hasSpunLetSinceSave = saved.hasSpunLetSinceSave || false;
+                hasSpunNumSinceSave = saved.hasSpunNumSinceSave || false;
+                mustSpinBothForNextSave = saved.mustSpinBothForNextSave || false;
+                boardHasLetters = saved.boardHasLetters || false;
+                boardHasNumbers = saved.boardHasNumbers || false;
+                
+                if(saved.currentL1) {
+                    currentL1 = saved.currentL1; currentL2 = saved.currentL2; currentL3 = saved.currentL3; currentNum = saved.currentNum;
+                    document.getElementById('letter1').innerText = currentL1;
+                    document.getElementById('letter2').innerText = currentL2;
+                    document.getElementById('letter3').innerText = currentL3;
+                    document.getElementById('numbers').innerText = currentNum;
+                }
+                
+                document.getElementById('volume-slider').value = globalVolume;
+                document.getElementById('lang-select').value = currentLang;
+                document.getElementById('region').innerText = currentReg;
+                
+                if (saved.myCars) myCars = saved.myCars;
+            }
+        }
+
+        // --- ЗВУК ---
+        function initAudio() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        }
+
+        function playTick() {
+            if (!audioCtx || globalVolume <= 0) return;
+            let osc = audioCtx.createOscillator();
+            let gain = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(300, audioCtx.currentTime + 0.05);
+            gain.gain.setValueAtTime(globalVolume * 0.5, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.05);
+        }
+
+        function openSettings() { document.getElementById('settings-modal').classList.add('show'); }
+        function closeSettings() { document.getElementById('settings-modal').classList.remove('show'); saveProgress(); }
+        function updateVolume() { globalVolume = parseFloat(document.getElementById('volume-slider').value); }
+        function changeLanguage() { currentLang = document.getElementById('lang-select').value; applyLanguage(); saveProgress(); }
+        
+        function applyLanguage() {
+            renderInventory();
+            renderCars();
+        }
+
+        function updateBalance() { document.getElementById('balance').innerText = balance.toLocaleString('ru-RU'); }
+        function randomItem(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+        // --- ЦЕНООБРАЗОВАНИЕ И РЕДКОСТЬ ---
+        function getCalculatedPrice(l1, l2, l3, numStr) {
+            let price = 2000;
+            let lString = l1 + l2 + l3;
+            let nString = numStr;
+            
+            let isSameLetters = (l1 === l2 && l2 === l3);
+            let isMirrorLetters = (l1 === l3 && l1 !== l2);
+            let isSameNumbers = (nString[0] === nString[1] && nString[1] === nString[2]);
+            let isMirrorNumbers = (nString[0] === nString[2] && nString[0] !== nString[1]);
+            
+            let isEliteLetters = eliteLetters.includes(lString);
+            
+            let is00X = (nString[0] === '0' && nString[1] === '0' && nString[2] !== '0');
+            let isX00 = (nString[1] === '0' && nString[2] === '0' && nString[0] !== '0');
+            let is0XX = (nString[0] === '0' && nString[1] !== '0' && nString[1] === nString[2]);
+
+            if (isEliteLetters && nString === '011') return 10000000;
+            if (isEliteLetters) price += 2000000;
+
+            if (isSameLetters && !isEliteLetters && isSameNumbers) return Math.floor(Math.random() * (1500000 - 700000 + 1)) + 700000;
+            
+            if (isSameLetters && !isEliteLetters) price += 30000;
+            else if (isMirrorLetters && !isEliteLetters) price += 10000;
+
+            if (is00X) price += Math.floor(Math.random() * (900000 - 100000 + 1)) + 100000;
+            else if (isX00) price += 150000;
+            else if (is0XX && nString !== '011') price += 80000;
+            else if (isSameNumbers) price += 35000;
+            else if (isMirrorNumbers) price += 20000;
+
+            return price;
+        }
+
+        function calculatePrice() { return getCalculatedPrice(currentL1, currentL2, currentL3, currentNum); }
+
+        function getRarity(price) {
+            if (price < 10000) return { text: "Обычный", bg: "transparent", color: "#888", border: "none", glow: "none" };
+            if (price < 30000) return { text: "Необычный", bg: "#1e90ff", color: "white", border: "1px solid black", glow: "none" }; 
+            if (price < 50000) return { text: "Редкий", bg: "#32cd32", color: "white", border: "1px solid black", glow: "none" }; 
+            if (price < 150000) return { text: "Супер редкий", bg: "#ff0000", color: "white", border: "1px solid black", glow: "none" }; 
+            if (price < 500000) return { text: "Эпический", bg: "#8a2be2", color: "white", border: "1px solid black", glow: "none" }; 
+            if (price < 1000000) return { text: "Легендарный", bg: "#ffd700", color: "black", border: "1px solid black", glow: "none" }; 
+            if (price < 2500000) return { text: "Крутой", bg: "#e0115f", color: "white", border: "1px solid black", glow: "0 0 10px #e0115f" }; 
+            return { text: "БЛАТНОЙ", bg: "#e0115f", color: "white", border: "1px solid black", glow: "0 0 10px #e0115f" }; 
+        }
+
+        // --- АНТИ-ФАРМ И СОХРАНЕНИЕ КНОПКИ ---
+        function checkCanSaveButton() {
+            let canSaveNow = false;
+            if (boardHasLetters && boardHasNumbers && !isSpinning) {
+                if (mustSpinBothForNextSave) {
+                    canSaveNow = (hasSpunLetSinceSave && hasSpunNumSinceSave);
+                } else {
+                    canSaveNow = (hasSpunLetSinceSave || hasSpunNumSinceSave);
+                }
+            }
+            
+            document.getElementById('btn-save').disabled = !canSaveNow;
+            
+            let t = dict[currentLang] || dict['ru'];
+            if (boardHasLetters && boardHasNumbers) {
+                let price = calculatePrice();
+                let rarity = getRarity(price);
+                
+                document.getElementById('current-price-display').innerText = `${t.price_eval} ${price.toLocaleString('ru-RU')} ₽`;
+                let rLabel = document.getElementById('gen-rarity');
+                rLabel.innerText = rarity.text;
+                rLabel.style.background = rarity.bg;
+                rLabel.style.color = rarity.color;
+                rLabel.style.border = rarity.border;
+                rLabel.style.boxShadow = rarity.glow;
+                rLabel.classList.remove('hidden');
+            } else {
+                document.getElementById('current-price-display').innerText = `${t.price_eval} --- ₽`;
+                document.getElementById('gen-rarity').classList.add('hidden');
+            }
+        }
+
+        // --- ГЕНЕРАТОР ---
+        function spinNumbers() {
+            if (isSpinning) return;
+            if (balance < spinCost) return alert("Недостаточно средств!");
+            balance -= spinCost; 
+            updateBalance();
+            isSpinning = true;
+            hasSpunNumSinceSave = false; 
+            document.getElementById('gen-rarity').classList.add('hidden'); 
+            checkCanSaveButton();
+            initAudio();
+
+            let finalNum = Math.floor(Math.random() * 999).toString().padStart(3, '0');
+            let ticks = 0;
+            let interval = setInterval(() => {
+                playTick();
+                if (ticks < 15) {
+                    currentNum = Math.floor(Math.random() * 999).toString().padStart(3, '0');
+                } else {
+                    currentNum = finalNum;
+                    clearInterval(interval);
+                    isSpinning = false;
+                    boardHasNumbers = true;
+                    hasSpunNumSinceSave = true; 
+                    checkCanSaveButton();
+                    saveProgress();
+                }
+                document.getElementById('numbers').innerText = currentNum;
+                ticks++;
+            }, 100);
+        }
+
+        function spinLetters() {
+            if (isSpinning) return;
+            if (balance < spinCost) return alert("Недостаточно средств!");
+            balance -= spinCost; 
+            updateBalance();
+            isSpinning = true;
+            hasSpunLetSinceSave = false;
+            document.getElementById('gen-rarity').classList.add('hidden');
+            checkCanSaveButton();
+            initAudio();
+            pityCounter++;
+
+            let finalL1, finalL2, finalL3;
+            if (pityCounter >= currentPityTarget) {
+                let elite = randomItem(eliteLetters);
+                finalL1 = elite[0]; finalL2 = elite[1]; finalL3 = elite[2];
+                pityCounter = 0;
+                currentPityTarget = Math.floor(Math.random() * (300 - 50 + 1)) + 50; 
+            } else {
+                finalL1 = randomItem(lettersArr); finalL2 = randomItem(lettersArr); finalL3 = randomItem(lettersArr);
+            }
+
+            let ticks = 0;
+            let interval = setInterval(() => {
+                playTick();
+                if (ticks < 10) {
+                    currentL1 = randomItem(lettersArr); currentL2 = randomItem(lettersArr); currentL3 = randomItem(lettersArr);
+                } else if (ticks < 15) {
+                    currentL1 = finalL1; currentL2 = randomItem(lettersArr); currentL3 = randomItem(lettersArr);
+                } else if (ticks < 20) {
+                    currentL2 = finalL2; currentL3 = randomItem(lettersArr);
+                } else {
+                    currentL3 = finalL3;
+                    clearInterval(interval);
+                    isSpinning = false;
+                    boardHasLetters = true;
+                    hasSpunLetSinceSave = true; 
+                    checkCanSaveButton();
+                    saveProgress();
+                }
+                document.getElementById('letter1').innerText = currentL1;
+                document.getElementById('letter2').innerText = currentL2;
+                document.getElementById('letter3').innerText = currentL3;
+                ticks++;
+            }, 100);
+        }
+
+        function changeRegion() {
+            if (isSpinning) return;
+            let newReg = prompt("Введите регион (1-3 цифры):", currentReg);
+            if (newReg && newReg.length > 0 && newReg.length <= 3 && !isNaN(newReg)) {
+                currentReg = newReg;
+                document.getElementById('region').innerText = currentReg;
+                saveProgress();
+            }
+        }
+
+        function savePlate() {
+            if (document.getElementById('btn-save').disabled) return;
+            
+            let price = calculatePrice();
+            let rarity = getRarity(price);
+            let plateStr = `${currentL1} ${currentNum} ${currentL2}${currentL3} | ${currentReg} RUS`;
+            inventory.unshift({ text: plateStr, price: price, rarity: rarity });
+            
+            if (price >= 10000) { 
+                mustSpinBothForNextSave = true;
+            } else {
+                mustSpinBothForNextSave = false;
+            }
+            
+            hasSpunLetSinceSave = false;
+            hasSpunNumSinceSave = false;
+            
+            checkCanSaveButton();
+            renderInventory();
+            saveProgress();
+        }
+
+        // --- КЕЙСЫ (БЕЗ ЛАГОВ) ---
+        function forcePlate(targetRarity) {
+            let l1, l2, l3, num;
+            let reg = Math.floor(Math.random() * 99) + 1;
+            let price = 0;
+            let attempts = 0;
+            
+            while (attempts < 1000) {
+                attempts++;
+                if (targetRarity === 'Обычный') {
+                    l1=randomItem(lettersArr); l2=randomItem(lettersArr); l3=randomItem(lettersArr);
+                    num = Math.floor(Math.random() * 899 + 100).toString(); 
+                    if(eliteLetters.includes(l1+l2+l3)) continue;
+                } else if (targetRarity === 'Редкий' || targetRarity === 'Необычный') {
+                    let c = randomItem(lettersArr); l1=c; l2=c; l3=c; 
+                    num = Math.floor(Math.random() * 899 + 100).toString();
+                    if(eliteLetters.includes(l1+l2+l3)) continue;
+                } else if (targetRarity === 'Супер редкий') {
+                    let c = randomItem(lettersArr); l1=c; l2=c; l3=c;
+                    num = '022'; 
+                    if(eliteLetters.includes(l1+l2+l3)) continue;
+                } else if (targetRarity === 'Эпический') {
+                    l1=randomItem(lettersArr); l2=randomItem(lettersArr); l3=randomItem(lettersArr);
+                    num = '100'; 
+                    if(eliteLetters.includes(l1+l2+l3)) continue;
+                } else if (targetRarity === 'Легендарный') {
+                    let c = randomItem(lettersArr); l1=c; l2=c; l3=c; 
+                    num = '005';  
+                } else if (targetRarity === 'Крутой') {
+                    let elite = randomItem(eliteLetters);
+                    l1=elite[0]; l2=elite[1]; l3=elite[2]; 
+                    num = '123';
+                } else if (targetRarity === 'БЛАТНОЙ') {
+                    let elite = randomItem(eliteLetters);
+                    l1=elite[0]; l2=elite[1]; l3=elite[2];
+                    num = '777'; 
+                }
+
+                price = getCalculatedPrice(l1, l2, l3, num);
+                let actualRarity = getRarity(price).text;
+                
+                if (targetRarity === 'Редкий' && (actualRarity === 'Редкий' || actualRarity === 'Необычный')) break;
+                if (actualRarity === targetRarity) break;
+            }
+            
+            return {
+                text: `${l1} ${num} ${l2}${l3} | ${reg} RUS`,
+                price: price,
+                rarity: getRarity(price)
+            };
+        }
+
+        const caseConfigs = {
+            'normal': { price: 5000, contents: [ {r:'Обычный', count:10}, {r:'Редкий', count:5}, {r:'Супер редкий', count:3} ], probs: [{r:'Обычный', p:0.78}, {r:'Редкий', p:0.20}, {r:'Супер редкий', p:0.02}] },
+            'super': { price: 50000, contents: [ {r:'Редкий', count:15}, {r:'Супер редкий', count:5}, {r:'Эпический', count:3} ], probs: [{r:'Редкий', p:0.78}, {r:'Супер редкий', p:0.20}, {r:'Эпический', p:0.02}] },
+            'mega': { price: 100000, contents: [ {r:'Эпический', count:15}, {r:'Легендарный', count:4}, {r:'БЛАТНОЙ', count:2} ], probs: [{r:'Эпический', p:0.86}, {r:'Легендарный', p:0.13}, {r:'БЛАТНОЙ', p:0.01}] }
+        };
+
+        function openCasePreview(type) {
+            if (isSpinning) return;
+            activeCaseType = type;
+            let config = caseConfigs[type];
+            let list = document.getElementById('case-preview-list');
+            list.innerHTML = '';
+            
+            currentCaseData = [];
+            config.contents.forEach(ct => {
+                for(let i=0; i<ct.count; i++) {
+                    currentCaseData.push(forcePlate(ct.r));
+                }
+            });
+
+            currentCaseData.forEach(item => {
+                let rHtml = item.rarity.text !== "Обычный" ? `<span style="font-size: 10px; padding: 2px 4px; border-radius:3px; background:${item.rarity.bg}; color:${item.rarity.color}; border:${item.rarity.border}; margin-right: 5px;">${item.rarity.text}</span>` : '';
+                list.innerHTML += `
+                    <div style="background: #333; padding: 10px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            ${rHtml}<b style="color: white">${item.text}</b>
+                        </div>
+                        <small>${item.price.toLocaleString('ru-RU')} ₽</small>
+                    </div>`;
+            });
+
+            document.getElementById('btn-buy-case').innerText = `Открыть за ${config.price.toLocaleString('ru-RU')} ₽`;
+            document.getElementById('case-preview-modal').classList.add('show');
+        }
+
+        function closeCasePreview() {
+            document.getElementById('case-preview-modal').classList.remove('show');
+        }
+
+        // Чисто визуальная генерация для рулетки (чтобы не лагало)
+        function generateVisualRandomPlate() {
+            let l1 = randomItem(lettersArr), l2 = randomItem(lettersArr), l3 = randomItem(lettersArr);
+            let num = Math.floor(Math.random() * 899 + 100).toString();
+            return `${l1} ${num} ${l2}${l3}`;
+        }
+
+        function buyCase() {
+            if (isSpinning) return; 
+            
+            let config = caseConfigs[activeCaseType];
+            if (balance < config.price) return alert("Недостаточно средств!");
+            
+            isSpinning = true;
+            balance -= config.price;
+            updateBalance();
+            saveProgress();
+            
+            closeCasePreview();
+            
+            let rand = Math.random();
+            let cumulative = 0;
+            let targetRarity = config.probs[0].r;
+            for(let prob of config.probs) {
+                cumulative += prob.p;
+                if(rand <= cumulative) {
+                    targetRarity = prob.r;
+                    break;
+                }
+            }
+
+            let possibleWinners = currentCaseData.filter(x => x.rarity.text === targetRarity || (targetRarity==='Редкий' && x.rarity.text==='Необычный'));
+            if(possibleWinners.length > 0) {
+                wonPlateObj = randomItem(possibleWinners);
+            } else {
+                wonPlateObj = forcePlate(targetRarity);
+            }
+
+            document.getElementById('roulette-result').classList.add('hidden');
+            document.getElementById('roulette-modal').classList.add('show');
+            initAudio();
+
+            let ticks = 0;
+            let interval = setInterval(() => {
+                playTick();
+                if (ticks < 70) {
+                    // Используем визуальную быструю функцию, чтобы браузер не вис на 7 секунд
+                    document.getElementById('roulette-display').innerText = generateVisualRandomPlate();
+                } else {
+                    clearInterval(interval);
+                    isSpinning = false; // Снимаем блокировку
+                    
+                    document.getElementById('roulette-display').innerText = wonPlateObj.text;
+                    
+                    let rLabel = document.getElementById('roulette-rarity');
+                    rLabel.innerText = wonPlateObj.rarity.text;
+                    rLabel.style.background = wonPlateObj.rarity.bg;
+                    rLabel.style.color = wonPlateObj.rarity.color;
+                    rLabel.style.border = wonPlateObj.rarity.border;
+                    rLabel.style.boxShadow = wonPlateObj.rarity.glow;
+                    if(wonPlateObj.rarity.text === "Обычный") {
+                        rLabel.style.background = "#444"; rLabel.style.color = "white"; 
+                    }
+                    
+                    document.getElementById('roulette-price').innerText = `${wonPlateObj.price.toLocaleString('ru-RU')} ₽`;
+                    document.getElementById('roulette-result').classList.remove('hidden');
+                }
+                ticks++;
+            }, 100);
+        }
+
+        function rouletteSell() {
+            balance += wonPlateObj.price;
+            updateBalance();
+            saveProgress();
+            document.getElementById('roulette-modal').classList.remove('show');
+        }
+
+        function rouletteSave() {
+            inventory.unshift(wonPlateObj);
+            renderInventory();
+            saveProgress();
+            document.getElementById('roulette-modal').classList.remove('show');
+        }
+
+        // --- ИНВЕНТАРЬ ---
+        function renderInventory() {
+            let list = document.getElementById('inventory-list');
+            if (inventory.length === 0) {
+                list.innerHTML = (dict[currentLang] || dict['ru']).empty_inv;
+                return;
+            }
+            list.innerHTML = '';
+            inventory.forEach((item, index) => {
+                let r = item.rarity ? item.rarity : getRarity(item.price);
+                let rarityHTML = r.text !== "Обычный" 
+                    ? `<div class="rarity-label" style="background:${r.bg}; color:${r.color}; font-size: 9px; top: -10px; left: -5px; border:${r.border}; box-shadow:${r.glow}">${r.text}</div>` 
+                    : '';
+                
+                list.innerHTML += `
+                    <div class="item">
+                        <div style="position: relative; flex-grow: 1; padding-top: 8px;">
+                            ${rarityHTML}
+                            <b style="letter-spacing: 1px; color: white; font-size: 16px;">${item.text}</b><br>
+                            <small style="color: #888;">${item.price.toLocaleString('ru-RU')} ₽</small>
+                        </div>
+                        <button onclick="sellPlate(${index}, ${item.price})">Продать<br>+${(item.price >= 1000000 ? (item.price/1000000).toFixed(1) + 'М' : item.price.toLocaleString('ru-RU'))}</button>
+                    </div>`;
+            });
+        }
+
+        function sellPlate(index, price) {
+            inventory.splice(index, 1);
+            balance += price;
+            updateBalance();
+            renderInventory();
+            saveProgress();
+        }
+
+        // --- ГАРАЖ ---
+        function renderCars() {
+            let list = document.getElementById('garage-list');
+            let myCarsDiv = document.getElementById('my-cars');
+            list.innerHTML = '';
+            
+            carsData.forEach(car => {
+                list.innerHTML += `
+                    <div class="item" style="flex-direction: column; align-items: stretch; gap: 5px;">
+                        <img src="${car.img}" class="car-image">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div><b>${car.name}</b><br><small>${car.price.toLocaleString('ru-RU')} ₽</small></div>
+                            <button class="buy" style="max-width: 100px;" onclick="buyCar('${car.name}', ${car.price})">Купить</button>
+                        </div>
+                    </div>`;
+            });
+
+            if (myCars.length === 0) {
+                myCarsDiv.innerHTML = (dict[currentLang] || dict['ru']).empty_inv;
+                return;
+            }
+            myCarsDiv.innerHTML = '';
+            
+            myCars.forEach((car, index) => {
+                let carSellPrice = car.basePrice * 0.9;
+                let cData = carsData.find(x => x.name === car.name);
+                let imgHtml = cData ? `<img src="${cData.img}" class="car-image">` : '';
+                
+                let html = `<div class="item" style="flex-direction: column; align-items: stretch;">`;
+                html += `${imgHtml}<div style="text-align: center; font-size: 18px; margin-bottom: 5px;"><b>${car.name}</b></div>`;
+                
+                if (car.plate) {
+                    let detachCost = car.plate.price * 0.1;
+                    let totalSellPrice = carSellPrice + (car.plate.price * 0.95);
+                    let r = car.plate.rarity ? car.plate.rarity : getRarity(car.plate.price);
+                    let rHtml = r.text !== "Обычный" ? `<div class="rarity-label" style="background:${r.bg}; color:${r.color}; border:${r.border}; box-shadow:${r.glow};">${r.text}</div>` : '';
+                    
+                    html += `
+                        <div style="text-align: center; margin-bottom: 10px;">
+                            <div class="mini-plate">${rHtml}${car.plate.text}</div>
+                        </div>
+                        <div style="display: flex; gap: 5px; width: 100%;">
+                            <button class="blue" onclick="detachPlate(${index})">Снять<br>-${detachCost.toLocaleString('ru-RU')} ₽</button>
+                            <button onclick="sellCar(${index}, true)">Продать всё<br>+${(totalSellPrice >= 1000000 ? (totalSellPrice/1000000).toFixed(1) + 'М' : totalSellPrice.toLocaleString('ru-RU'))}</button>
+                        </div>
+                    `;
+                } else {
+                    html += `
+                        <div style="display: flex; gap: 5px; width: 100%;">
+                            <button class="buy" onclick="openAttachModal(${index})">Повесить номер</button>
+                            <button onclick="sellCar(${index}, false)">Продать авто<br>+${carSellPrice.toLocaleString('ru-RU')} ₽</button>
+                        </div>
+                    `;
+                }
+                html += `</div>`;
+                myCarsDiv.innerHTML += html;
+            });
+        }
+
+        function buyCar(name, price) {
+            if (balance < price) return alert("Недостаточно средств!");
+            balance -= price;
+            myCars.push({ name: name, basePrice: price, plate: null });
+            updateBalance();
+            renderCars();
+            saveProgress();
+        }
+
+        function sellCar(index, hasPlate) {
+            let car = myCars[index];
+            let profit = car.basePrice * 0.9; 
+            if (hasPlate && car.plate) profit += car.plate.price * 0.95; 
+            balance += profit;
+            myCars.splice(index, 1);
+            updateBalance();
+            renderCars();
+            saveProgress();
+        }
+
+        function detachPlate(index) {
+            let car = myCars[index];
+            let cost = car.plate.price * 0.1; 
+            if (balance < cost) return alert(`Не хватает денег на снятие! Нужно ${cost.toLocaleString('ru-RU')} ₽`);
+            balance -= cost;
+            inventory.unshift(car.plate); 
+            car.plate = null; 
+            updateBalance();
+            renderCars();
+            renderInventory();
+            saveProgress();
+        }
+
+        function openAttachModal(carIndex) {
+            currentCarIndexForAttach = carIndex;
+            let list = document.getElementById('attach-list');
+            list.innerHTML = '';
+            
+            if (inventory.length === 0) {
+                list.innerHTML = '<div style="color: #888; text-align: center;">У вас нет номеров в инвентаре</div>';
+            } else {
+                inventory.forEach((item, invIndex) => {
+                    let r = item.rarity ? item.rarity : getRarity(item.price);
+                    let rHtml = r.text !== "Обычный" 
+                        ? `<span style="font-size: 9px; padding: 2px 4px; border-radius:3px; background:${r.bg}; color:${r.color}; border:${r.border}; margin-right: 5px;">${r.text}</span>` 
+                        : '';
+                        
+                    list.innerHTML += `
+                        <div style="background: #333; padding: 10px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                ${rHtml}<b style="color: white">${item.text}</b><br>
+                                <small>${item.price.toLocaleString('ru-RU')} ₽</small>
+                            </div>
+                            <button class="btn btn-green" style="width: auto; padding: 8px 12px; margin: 0;" onclick="attachPlate(${invIndex})">Выбрать</button>
+                        </div>
+                    `;
+                });
+            }
+            document.getElementById('attach-modal').classList.add('show');
+        }
+
+        function closeAttachModal() {
+            document.getElementById('attach-modal').classList.remove('show');
+            currentCarIndexForAttach = -1;
+        }
+
+        function attachPlate(invIndex) {
+            if (currentCarIndexForAttach === -1) return;
+            let car = myCars[currentCarIndexForAttach];
+            let plate = inventory[invIndex];
+            inventory.splice(invIndex, 1);
+            car.plate = plate;
+            closeAttachModal();
+            renderCars();
+            renderInventory();
+            saveProgress();
+        }
+
+        function switchTab(tabId, element) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('active'));
+            document.getElementById(tabId).classList.remove('hidden');
+            element.classList.add('active');
+        }
+    </script>
+</body>
+</html>
