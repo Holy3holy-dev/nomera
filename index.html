@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Симулятор Номеров</title>
+    <link rel="manifest" href="manifest.json">
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background-color: #1a1a1a; color: #ddd; text-align: center; margin: 0; padding: 10px; user-select: none; }
+        
+        /* Модальные окна */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); flex-direction: column; justify-content: center; align-items: center; z-index: 1000; }
+        .modal-overlay.show { display: flex; }
+        .modal-box { background: #2a2a2a; padding: 20px; border-radius: 12px; width: 90%; max-width: 360px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); position: relative; max-height: 90vh; overflow-y: auto; }
+        .modal-box input[type="text"], .modal-box select { padding: 12px; font-size: 16px; border-radius: 6px; border: none; margin-bottom: 20px; width: 90%; background: #444; color: white; outline: none; }
+        .modal-box input[type="range"] { width: 100%; margin: 15px 0; }
+        .modal-box input[type="file"] { margin-bottom: 20px; color: white; width: 90%; }
+        
+        .modal-plates { display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px; text-align: left; }
+        
+        /* Шапка и профиль */
+        .header { display: flex; justify-content: space-between; font-size: 16px; margin-bottom: 20px; background: #252525; padding: 15px; border-radius: 8px; align-items: center; }
+        .profile-section { display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 5px; border-radius: 8px; transition: 0.2s; }
+        .profile-section:active { background: #444; }
+        .header-name { color: #66bb6a; font-weight: bold; }
+        .avatar { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; background-color: #444; border: 2px solid #66bb6a; }
