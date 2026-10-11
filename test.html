@@ -2,11 +2,15 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-select=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Симулятор Номеров</title>
+    <link rel="manifest" href="manifest.json">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Montserrat:wght@700;800;900&display=swap" rel="stylesheet">
+    <!-- Подключение Firebase SDK для базы данных, аккаунтов и мультиплеера -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
     <style>
         :root {
             --bg-main: #0e1117;
@@ -1517,45 +1521,76 @@
             transform: translate(-50%, -70%) scale(1.1);
         }
         .race-touch-controls {
-            max-width: 400px;
+            max-width: 440px;
             margin: 10px auto 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .touch-row-top {
             display: grid;
-            grid-template-columns: 1fr 1.2fr 1fr 1fr;
+            grid-template-columns: 1fr 1fr 1fr 1.2fr;
             gap: 8px;
         }
         .touch-btn {
-            background: rgba(255, 255, 255, 0.07);
+            background: rgba(255, 255, 255, 0.08);
             border: 1px solid var(--border-subtle);
             color: #fff;
             font-weight: 800;
-            padding: 14px 6px;
+            padding: 13px 6px;
             border-radius: var(--radius-md);
             cursor: pointer;
             user-select: none;
-            touch-action: manipulation;
+            -webkit-user-select: none;
+            touch-action: none;
             font-size: 13px;
-            transition: background 0.1s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            transition: all 0.1s ease;
         }
-        .touch-btn:active {
-            background: rgba(255, 255, 255, 0.2);
+        .touch-btn:active, .touch-btn.pressed {
+            transform: scale(0.96);
+            background: rgba(255, 255, 255, 0.22);
         }
-        .touch-nitro {
-            background: linear-gradient(135deg, rgba(37, 99, 235, 0.4), rgba(59, 130, 246, 0.2));
-            border-color: #3b82f6;
-            color: #60a5fa;
+        .touch-steer {
+            font-size: 16px;
+            background: rgba(255, 255, 255, 0.06);
         }
-        .touch-nitro:active {
-            background: #3b82f6;
+        .touch-brake {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.35), rgba(185, 28, 28, 0.2));
+            border-color: #ef4444;
+            color: #fca5a5;
+        }
+        .touch-brake:active, .touch-brake.pressed {
+            background: #ef4444;
             color: #fff;
         }
         .touch-gas {
-            background: linear-gradient(135deg, rgba(16, 185, 129, 0.4), rgba(5, 150, 105, 0.2));
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.35), rgba(5, 150, 105, 0.2));
             border-color: #10b981;
             color: #34d399;
         }
-        .touch-gas:active {
+        .touch-gas:active, .touch-gas.pressed {
             background: #10b981;
             color: #fff;
+        }
+        .touch-nitro-bar {
+            width: 100%;
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.4), rgba(37, 99, 235, 0.25));
+            border: 1px solid #3b82f6;
+            color: #93c5fd;
+            font-size: 14px;
+            letter-spacing: 0.5px;
+            padding: 12px;
+        }
+        .touch-nitro-bar:active, .touch-nitro-bar.pressed {
+            background: #2563eb;
+            color: #fff;
+            box-shadow: 0 0 16px rgba(59, 130, 246, 0.6);
         }
         .gameover-stats-card {
             background: rgba(0, 0, 0, 0.35);
@@ -1573,6 +1608,316 @@
             justify-content: space-between;
             align-items: center;
         }
+
+        /* --- ОНЛАЙН, МУЛЬТИПЛЕЕР И РЫНОК --- */
+        .cloud-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: var(--radius-full);
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-dim);
+        }
+        .cloud-badge.online {
+            color: #34d399;
+            border-color: rgba(16, 185, 129, 0.35);
+            background: rgba(16, 185, 129, 0.12);
+        }
+        .multi-nav-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+            border-bottom: 1px solid var(--border-subtle);
+            padding-bottom: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .multi-nav-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-muted);
+            padding: 8px 16px;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+        .multi-nav-btn.active {
+            background: var(--accent-green);
+            color: #000;
+            border-color: var(--accent-green);
+        }
+        .market-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 14px;
+        }
+        .market-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            transition: transform 0.2s, border-color 0.2s;
+        }
+        .market-card:hover {
+            transform: translateY(-2px);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+        .market-card-seller {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 12px;
+            color: var(--text-dim);
+        }
+        .market-seller-badge {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-weight: 600;
+            color: #fff;
+        }
+        .market-seller-avatar {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 1px solid var(--border-subtle);
+        }
+        .market-price-tag {
+            font-size: 17px;
+            font-weight: 900;
+            color: #fbbf24;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        /* --- ЖИВОЙ ЧАТ --- */
+        .chat-container {
+            background: rgba(0, 0, 0, 0.35);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            display: flex;
+            flex-direction: column;
+            height: 480px;
+            overflow: hidden;
+        }
+        .chat-header {
+            padding: 12px 14px;
+            background: rgba(255, 255, 255, 0.03);
+            border-bottom: 1px solid var(--border-subtle);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13px;
+        }
+        .chat-messages {
+            flex: 1;
+            padding: 14px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            -webkit-overflow-scrolling: touch;
+        }
+        .chat-bubble {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 8px 12px;
+            font-size: 13px;
+            max-width: 82%;
+            align-self: flex-start;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            word-break: break-word;
+        }
+        .chat-bubble.mine {
+            align-self: flex-end;
+            background: rgba(16, 185, 129, 0.15);
+            border-color: rgba(16, 185, 129, 0.3);
+        }
+        .chat-bubble.system {
+            align-self: center;
+            max-width: 95%;
+            background: rgba(245, 158, 11, 0.12);
+            border-color: rgba(245, 158, 11, 0.3);
+            color: #fbbf24;
+            text-align: center;
+            font-size: 12px;
+            padding: 6px 14px;
+        }
+        .chat-author {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            color: var(--text-dim);
+            margin-bottom: 4px;
+            font-weight: 700;
+        }
+        .chat-author-avatar {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+        .chat-input-bar {
+            padding: 10px 12px;
+            background: rgba(0, 0, 0, 0.45);
+            border-top: 1px solid var(--border-subtle);
+            display: flex;
+            gap: 8px;
+        }
+        .chat-input {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid var(--border-subtle);
+            color: #fff;
+            padding: 10px 14px;
+            border-radius: var(--radius-sm);
+            font-size: 13px;
+            outline: none;
+        }
+        .chat-input:focus {
+            border-color: var(--accent-green);
+        }
+
+        /* --- АВТОРИЗАЦИЯ И ПРОФИЛЬ --- */
+        .auth-tabs {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 16px;
+            border-bottom: 1px solid var(--border-subtle);
+            padding-bottom: 10px;
+        }
+        .auth-tab-btn {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-muted);
+            padding: 9px 10px;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 700;
+            text-align: center;
+            transition: all 0.2s;
+        }
+        .auth-tab-btn.active {
+            background: var(--accent-green);
+            color: #000;
+            border-color: var(--accent-green);
+        }
+        .avatar-presets-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin: 10px 0 14px 0;
+        }
+        .preset-avatar-item {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            border: 2px solid transparent;
+            cursor: pointer;
+            object-fit: cover;
+            transition: all 0.2s;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.08);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+        .preset-avatar-item:hover, .preset-avatar-item.selected {
+            border-color: var(--accent-green);
+            transform: scale(1.1);
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
+        }
+
+        /* --- МОБИЛЬНАЯ АДАПТАЦИЯ (<= 768px) --- */
+        @media (max-width: 768px) {
+            body {
+                padding-bottom: calc(85px + env(safe-area-inset-bottom));
+            }
+            .main-container {
+                padding-bottom: 20px;
+            }
+            .nav-tabs {
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                z-index: 999;
+                background: rgba(14, 17, 23, 0.95);
+                backdrop-filter: blur(20px);
+                -webkit-backdrop-filter: blur(20px);
+                border-top: 1px solid rgba(255, 255, 255, 0.12);
+                border-bottom: none;
+                border-radius: 20px 20px 0 0;
+                padding: 6px 6px calc(6px + env(safe-area-inset-bottom)) 6px;
+                margin-bottom: 0;
+                display: flex;
+                justify-content: space-around;
+                box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.7);
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+            .nav-tab {
+                flex: 1;
+                min-width: 46px;
+                padding: 6px 2px;
+                font-size: 10px;
+                flex-direction: column;
+                gap: 2px;
+                text-align: center;
+                border-radius: var(--radius-sm);
+                position: relative;
+            }
+            .nav-tab span {
+                font-size: 17px;
+            }
+            .nav-tab-badge {
+                position: absolute;
+                top: 2px;
+                right: 2px;
+                font-size: 9px;
+                padding: 1px 4px;
+            }
+            .header-hud {
+                flex-wrap: wrap;
+                gap: 10px;
+                padding: 12px;
+            }
+            .hud-player {
+                flex: 1 1 auto;
+            }
+            .hud-level-box {
+                flex: 1 1 100%;
+                order: 3;
+            }
+            .hud-actions {
+                order: 2;
+                display: flex;
+                align-items: center;
+                gap: 6px;
+            }
+            .plate-wrapper {
+                transform: scale(0.85);
+                transform-origin: center center;
+            }
+            .chat-container {
+                height: 380px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -1580,45 +1925,30 @@
     <!-- Canvas для праздничного салюта -->
     <canvas id="fx-canvas"></canvas>
 
-    <!-- ВЕРХНЯЯ ПАНЕЛЬ ТЕСТОВОГО РЕЖИМА (SANDBOX) -->
-    <div class="test-banner">
-        <div class="test-banner-title">
-            <span>🧪 ПЕСОЧНИЦА</span>
-            <span class="test-badge">PRO UI</span>
-        </div>
-        <div class="test-actions">
-            <button class="test-btn" onclick="addTestBalance(100000)">+100K ₽</button>
-            <button class="test-btn" onclick="addTestBalance(1000000)">+1M ₽</button>
-            <button class="test-btn" onclick="addTestLevel()">+1 Ур.</button>
-            <button class="test-btn" onclick="giveRandomElitePlate()">+Блатной</button>
-            <button class="test-btn test-btn-reset" onclick="resetTestProgress()">Сброс</button>
-        </div>
-    </div>
-
     <div class="main-container">
 
-        <!-- GAMING HUD (ПРОФИЛЬ, БАЛАНС, УРОВЕНЬ, ОПЫТ) -->
+        <!-- GAMING HUD (ПРОФИЛЬ, БАЛАНС, УРОВЕНЬ, ОПЫТ, ОБЛАКО) -->
         <div class="header-hud">
-            <div class="hud-player" onclick="openProfileModal()" title="Нажмите для настройки профиля">
+            <div class="hud-player" onclick="openProfileModal()" title="Нажмите для настройки профиля и синхронизации">
                 <div class="avatar-wrap">
-                    <img id="header-avatar" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=" class="avatar">
+                    <img id="header-avatar" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='50' fill='%231f2937'/><text x='50' y='65' font-size='48' text-anchor='middle'>🏎️</text></svg>" class="avatar">
                     <div class="avatar-badge"></div>
                 </div>
                 <div class="hud-player-info">
                     <div class="hud-player-name">
-                        <span id="player-name">Тестер</span>
-                        <small>PRO</small>
+                        <span id="player-name">Игрок</span>
+                        <span class="cloud-badge online" id="cloud-status-badge">🟢 Облако</span>
                     </div>
                     <div class="hud-balance">
-                        💰 <span id="balance">350 000</span> ₽
+                        💰 <span id="balance">50 000</span> ₽
                     </div>
                 </div>
             </div>
 
             <div class="hud-level-box">
                 <div class="hud-level-header">
-                    <span class="hud-lvl-pill">LVL <span id="player-level">3</span></span>
-                    <span class="hud-xp-text"><span id="current-exp">35</span> / <span id="needed-exp">120</span> XP</span>
+                    <span class="hud-lvl-pill">LVL <span id="player-level">1</span></span>
+                    <span class="hud-xp-text"><span id="current-exp">0</span> / <span id="needed-exp">10</span> XP</span>
                 </div>
                 <div class="hud-progress-bg">
                     <div class="hud-progress-fill" id="exp-bar"></div>
@@ -1626,6 +1956,7 @@
             </div>
 
             <div class="hud-actions">
+                <button class="hud-icon-btn" onclick="openProfileModal()" title="Профиль и Аккаунт">👤</button>
                 <button class="hud-icon-btn" onclick="openSettings()" title="Настройки">⚙️</button>
             </div>
         </div>
@@ -1636,7 +1967,7 @@
                 <span>🚗</span> Номера
             </div>
             <div class="nav-tab" onclick="switchTab('inventory', this)">
-                <span>🎒</span> Инвентарь <span class="nav-tab-badge" id="inv-count-badge">2</span>
+                <span>🎒</span> Инвентарь <span class="nav-tab-badge" id="inv-count-badge">0</span>
             </div>
             <div class="nav-tab" onclick="switchTab('garage', this)">
                 <span>🏎️</span> Гараж <span class="nav-tab-badge" id="garage-count-badge">1</span>
@@ -1649,6 +1980,9 @@
             </div>
             <div class="nav-tab" onclick="switchTab('leaderboard', this)">
                 <span>🏆</span> Рейтинг
+            </div>
+            <div class="nav-tab" onclick="switchTab('multiplayer', this)">
+                <span>🌐</span> Онлайн
             </div>
         </div>
 
@@ -1862,12 +2196,15 @@
                         <div id="race-popup-msg" class="race-popup-msg"></div>
                     </div>
 
-                    <!-- Мобильные сенсорные кнопки управления -->
+                    <!-- Мобильные сенсорные педали управления (5 педалей) -->
                     <div class="race-touch-controls">
-                        <button class="touch-btn touch-steer" id="btn-touch-left" onpointerdown="setRaceKey('left', true)" onpointerup="setRaceKey('left', false)" onpointerleave="setRaceKey('left', false)">◀</button>
-                        <button class="touch-btn touch-nitro" id="btn-touch-nitro" onpointerdown="setRaceKey('nitro', true)" onpointerup="setRaceKey('nitro', false)">🚀 НИТРО</button>
-                        <button class="touch-btn touch-gas" id="btn-touch-gas" onpointerdown="setRaceKey('gas', true)" onpointerup="setRaceKey('gas', false)" onpointerleave="setRaceKey('gas', false)">⚡ ГАЗ</button>
-                        <button class="touch-btn touch-steer" id="btn-touch-right" onpointerdown="setRaceKey('right', true)" onpointerup="setRaceKey('right', false)" onpointerleave="setRaceKey('right', false)">▶</button>
+                        <div class="touch-row-top">
+                            <button class="touch-btn touch-steer" id="btn-touch-left" onpointerdown="setRaceKey('left', true)" onpointerup="setRaceKey('left', false)" onpointercancel="setRaceKey('left', false)">◀</button>
+                            <button class="touch-btn touch-steer" id="btn-touch-right" onpointerdown="setRaceKey('right', true)" onpointerup="setRaceKey('right', false)" onpointercancel="setRaceKey('right', false)">▶</button>
+                            <button class="touch-btn touch-brake" id="btn-touch-brake" onpointerdown="setRaceKey('brake', true)" onpointerup="setRaceKey('brake', false)" onpointercancel="setRaceKey('brake', false)">🛑 СТОП</button>
+                            <button class="touch-btn touch-gas" id="btn-touch-gas" onpointerdown="setRaceKey('gas', true)" onpointerup="setRaceKey('gas', false)" onpointercancel="setRaceKey('gas', false)">⚡ ГАЗ</button>
+                        </div>
+                        <button class="touch-btn touch-nitro touch-nitro-bar" id="btn-touch-nitro" onpointerdown="setRaceKey('nitro', true)" onpointerup="setRaceKey('nitro', false)" onpointercancel="setRaceKey('nitro', false)">🚀 НИТРО УСКОРЕНИЕ</button>
                     </div>
                 </div>
             </div>
@@ -1956,9 +2293,10 @@
             <div class="section-box">
                 <div class="section-header">
                     <div class="section-title">🏆 Таблица Лидеров</div>
-                    <div style="display: flex; gap: 6px;">
-                        <button class="test-btn" id="lead-filter-balance" onclick="setLeaderboardFilter('balance')">💰 Баланс</button>
+                    <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                        <button class="test-btn test-btn-reset" id="lead-filter-balance" onclick="setLeaderboardFilter('balance')">💰 Баланс</button>
                         <button class="test-btn" id="lead-filter-level" onclick="setLeaderboardFilter('level')">⭐ Уровень</button>
+                        <button class="test-btn" id="lead-filter-speed" onclick="setLeaderboardFilter('speed')">🏎️ Скорость</button>
                         <button class="test-btn" onclick="renderLeaderboard()" title="Обновить">🔄</button>
                     </div>
                 </div>
@@ -1982,23 +2320,160 @@
             </div>
         </div>
 
+        <!-- 7. ВКЛАДКА: ОНЛАЙН (АВТОРЫНОК И ЧАТ) -->
+        <div id="multiplayer" class="tab-content hidden">
+            <div class="section-box">
+                <div class="section-header">
+                    <div class="section-title">🌐 Онлайн Центр</div>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <span class="cloud-badge online" id="multi-online-count">🟢 Онлайн: 1</span>
+                    </div>
+                </div>
+
+                <!-- Под-вкладки: Рынок / Чат -->
+                <div class="multi-nav-tabs">
+                    <button class="multi-nav-btn active" id="btn-subtab-market" onclick="switchMultiSubTab('market')">🛒 Рынок Номеров</button>
+                    <button class="multi-nav-btn" id="btn-subtab-chat" onclick="switchMultiSubTab('chat')">💬 Общий Чат & События</button>
+                    <button class="btn btn-green" style="margin-left:auto; padding: 6px 14px; font-size:12px;" onclick="openSellPlateModal()">+ Выставить номер</button>
+                </div>
+
+                <!-- Подвкладка: Рынок номеров -->
+                <div id="multi-subtab-market">
+                    <div style="font-size:13px; color:var(--text-dim); margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
+                        <span>Активные лоты игроков со всего сервера (покупка и продажа номеров):</span>
+                        <button class="test-btn" onclick="fetchMarketListings()" title="Обновить рынок">🔄</button>
+                    </div>
+                    <div id="market-listings-grid" class="market-grid">
+                        <div style="grid-column: 1/-1; text-align:center; padding:30px; color:var(--text-dim);">Загрузка лотов авторынка...</div>
+                    </div>
+                </div>
+
+                <!-- Подвкладка: Чат -->
+                <div id="multi-subtab-chat" class="hidden">
+                    <div class="chat-container">
+                        <div class="chat-header">
+                            <span>🔥 Живой чат и хроника рекордов сервера</span>
+                            <span style="font-size:11px; color:var(--text-dim);">Реальное время</span>
+                        </div>
+                        <div class="chat-messages" id="chat-messages-box">
+                            <div class="chat-bubble system">Добро пожаловать в общий чат Симулятора Номеров! Делитесь дропами и рекордами.</div>
+                        </div>
+                        <div class="chat-input-bar">
+                            <input type="text" id="chat-input-field" class="chat-input" placeholder="Напишите сообщение..." maxlength="120" onkeydown="if(event.key==='Enter') sendChatMessage()">
+                            <button class="btn btn-green" style="padding: 8px 16px;" onclick="sendChatMessage()">Отправить</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
 
-    <!-- МОДАЛЬНОЕ ОКНО: ПРОФИЛЬ -->
+    <!-- МОДАЛЬНОЕ ОКНО: АККАУНТ И ОБЛАЧНАЯ СИНХРОНИЗАЦИЯ -->
     <div id="auth-modal" class="modal-overlay">
-        <div class="modal-box">
-            <h3 style="margin-top:0; color: var(--accent-green); margin-bottom: 8px;">Профиль игрока</h3>
-            <p style="font-size: 13px; color: var(--text-dim); margin-bottom: 14px;">Настройте ваш аватар и никнейм:</p>
-            <input type="text" id="nickname-input" placeholder="Никнейм" maxlength="15" value="Тестер">
-            
-            <div style="margin: 10px 0 16px 0; text-align: left;">
-                <label style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 6px;">Загрузить свой аватар:</label>
-                <input type="file" id="avatar-input" accept="image/*" style="font-size: 13px; color: #aaa;">
+        <div class="modal-box" style="max-width: 440px;">
+            <div class="auth-tabs">
+                <button class="auth-tab-btn active" id="tab-btn-auth-profile" onclick="switchAuthTab('profile')">👤 Профиль</button>
+                <button class="auth-tab-btn" id="tab-btn-auth-login" onclick="switchAuthTab('login')">🔑 Вход</button>
+                <button class="auth-tab-btn" id="tab-btn-auth-reg" onclick="switchAuthTab('register')">✨ Регистрация</button>
             </div>
 
-            <div style="display: flex; gap: 8px;">
-                <button class="btn btn-green" onclick="saveTestProfile()">Сохранить</button>
-                <button class="btn btn-close" onclick="closeProfileModal()">Отмена</button>
+            <!-- Вкладка: Профиль игрока -->
+            <div id="auth-panel-profile">
+                <div style="text-align: center; margin-bottom: 14px;">
+                    <img id="auth-profile-avatar-preview" src="" class="avatar" style="width: 68px; height: 68px; margin: 0 auto 8px auto; border-width: 3px;">
+                    <div style="font-size: 16px; font-weight: 800; color: #fff;" id="auth-profile-display-name">Игрок</div>
+                    <div style="font-size: 12px; color: var(--accent-green); margin-top: 4px;" id="auth-cloud-status-text">🟢 Облачная синхронизация активна</div>
+                </div>
+
+                <div style="margin-bottom: 12px;">
+                    <label style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 4px;">Никнейм:</label>
+                    <input type="text" id="nickname-input" placeholder="Никнейм" maxlength="15" style="width: 100%; padding: 10px; background: rgba(255,255,255,0.06); border: 1px solid var(--border-subtle); color: #fff; border-radius: var(--radius-sm); font-size: 14px;">
+                </div>
+
+                <div style="margin-bottom: 12px;">
+                    <label style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 4px;">Выберите аватар:</label>
+                    <div class="avatar-presets-grid" id="avatar-presets-container">
+                        <!-- Пресеты аватаров -->
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 16px;">
+                    <label style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 4px;">Или загрузите свое фото:</label>
+                    <input type="file" id="avatar-input" accept="image/*" style="font-size: 12px; color: #aaa;">
+                </div>
+
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <button class="btn btn-green" style="flex: 1;" onclick="saveAccountProfile()">Сохранить профиль</button>
+                    <button class="btn btn-blue" onclick="syncCloudNow()">☁️ Синхр.</button>
+                    <button class="btn btn-close" onclick="closeProfileModal()">Закрыть</button>
+                </div>
+
+                <div style="margin-top: 14px; text-align: center;">
+                    <button class="test-btn" style="color: #ef4444; border-color: rgba(239, 68, 68, 0.4);" onclick="logoutAccount()">Сменить / Выйти из аккаунта</button>
+                </div>
+            </div>
+
+            <!-- Вкладка: Вход по Никнейму и PIN -->
+            <div id="auth-panel-login" class="hidden">
+                <h3 style="margin-top:0; color:var(--accent-green); margin-bottom:6px;">Вход в аккаунт</h3>
+                <p style="font-size:12px; color:var(--text-dim); margin-bottom:14px;">Введите ваш никнейм и 4-значный PIN-код:</p>
+                <div style="margin-bottom: 12px;">
+                    <label style="font-size:12px; color:var(--text-muted); display:block; margin-bottom:4px;">Никнейм:</label>
+                    <input type="text" id="login-nickname-input" placeholder="Ваш никнейм" maxlength="15" style="width:100%; padding:10px; background:rgba(255,255,255,0.06); border:1px solid var(--border-subtle); color:#fff; border-radius:var(--radius-sm); font-size:14px;">
+                </div>
+                <div style="margin-bottom: 16px;">
+                    <label style="font-size:12px; color:var(--text-muted); display:block; margin-bottom:4px;">PIN-код (4 цифры):</label>
+                    <input type="password" id="login-pin-input" placeholder="••••" maxlength="4" style="width:100%; padding:10px; background:rgba(255,255,255,0.06); border:1px solid var(--border-subtle); color:#fff; border-radius:var(--radius-sm); font-size:18px; letter-spacing:4px; text-align:center;">
+                </div>
+                <div style="display:flex; gap:8px;">
+                    <button class="btn btn-green" style="flex:1;" onclick="handleLoginAction()">Войти</button>
+                    <button class="btn btn-close" onclick="closeProfileModal()">Отмена</button>
+                </div>
+                <div style="margin-top:14px; text-align:center;">
+                    <button class="test-btn" onclick="playAsGuest()">Играть как Гость</button>
+                </div>
+            </div>
+
+            <!-- Вкладка: Регистрация нового аккаунта -->
+            <div id="auth-panel-register" class="hidden">
+                <h3 style="margin-top:0; color:var(--accent-green); margin-bottom:6px;">Создать аккаунт</h3>
+                <p style="font-size:12px; color:var(--text-dim); margin-bottom:14px;">Ваш прогресс будет сохраняться на сервере и доступен с любого устройства:</p>
+                <div style="margin-bottom: 10px;">
+                    <label style="font-size:12px; color:var(--text-muted); display:block; margin-bottom:4px;">Придумайте никнейм:</label>
+                    <input type="text" id="reg-nickname-input" placeholder="Никнейм (от 3 симв.)" maxlength="15" style="width:100%; padding:10px; background:rgba(255,255,255,0.06); border:1px solid var(--border-subtle); color:#fff; border-radius:var(--radius-sm); font-size:14px;">
+                </div>
+                <div style="margin-bottom: 10px;">
+                    <label style="font-size:12px; color:var(--text-muted); display:block; margin-bottom:4px;">Придумайте PIN-код (4 цифры для входа):</label>
+                    <input type="password" id="reg-pin-input" placeholder="••••" maxlength="4" style="width:100%; padding:10px; background:rgba(255,255,255,0.06); border:1px solid var(--border-subtle); color:#fff; border-radius:var(--radius-sm); font-size:18px; letter-spacing:4px; text-align:center;">
+                </div>
+                <div style="display:flex; gap:8px; margin-top:14px;">
+                    <button class="btn btn-green" style="flex:1;" onclick="handleRegisterAction()">Зарегистрироваться</button>
+                    <button class="btn btn-close" onclick="closeProfileModal()">Отмена</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- МОДАЛЬНОЕ ОКНО: ПРОДАЖА НОМЕРА НА РЫНОК -->
+    <div id="sell-plate-modal" class="modal-overlay">
+        <div class="modal-box">
+            <h3 style="margin-top:0; color:var(--accent-green); margin-bottom:8px;">Выставить номер на рынок</h3>
+            <p style="font-size:13px; color:var(--text-dim); margin-bottom:12px;">Выберите номер из вашего инвентаря и установите цену для других игроков:</p>
+            
+            <div style="margin-bottom:12px;">
+                <label style="font-size:12px; color:var(--text-muted); display:block; margin-bottom:6px;">Номер из инвентаря:</label>
+                <select id="sell-plate-select" class="control-select" style="width:100%; padding:10px;"></select>
+            </div>
+
+            <div style="margin-bottom:16px;">
+                <label style="font-size:12px; color:var(--text-muted); display:block; margin-bottom:6px;">Цена продажи (₽):</label>
+                <input type="number" id="sell-plate-price" placeholder="Например, 150000" min="1000" style="width:100%; padding:10px; background:rgba(255,255,255,0.06); border:1px solid var(--border-subtle); color:#fff; border-radius:var(--radius-sm); font-size:14px;">
+            </div>
+
+            <div style="display:flex; gap:8px;">
+                <button class="btn btn-green" onclick="confirmSellPlate()">Выставить на продажу</button>
+                <button class="btn btn-close" onclick="closeSellPlateModal()">Отмена</button>
             </div>
         </div>
     </div>
@@ -2191,30 +2666,52 @@
             }
         ];
 
-        // Состояние тестового игрока
-        let balance = 3500000;
-        let nickname = 'Тестер';
+        // --- FIREBASE REALTIME DATABASE CONFIGURATION ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyCqB07GAN9V6fnIAREdI-0tfv3IoEfe90A",
+            authDomain: "bazanomerann.firebaseapp.com",
+            databaseURL: "https://bazanomerann-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "bazanomerann",
+            storageBucket: "bazanomerann.firebasestorage.app",
+            messagingSenderId: "617812786114",
+            appId: "1:617812786114:web:3eea847912501323e7745b"
+        };
+
+        let db = null;
+        let isFirebaseOnline = false;
+        try {
+            if (typeof firebase !== 'undefined' && firebase.initializeApp) {
+                firebase.initializeApp(firebaseConfig);
+                db = firebase.database();
+                isFirebaseOnline = true;
+            }
+        } catch (e) {
+            console.warn("Firebase init error:", e);
+            isFirebaseOnline = false;
+        }
+
+        // Чистое состояние официального игрока (без читов и тестовых заглушек)
+        let balance = 50000;
+        let nickname = 'Игрок_' + Math.floor(1000 + Math.random() * 9000);
+        let playerPin = '0000';
         let avatarData = ''; 
-        let inventory = [
-            { text: "В 777 ОР | 77 RUS", price: 950000, rarity: { text: "Легендарный", bg: "#f59e0b", color: "#000", border: "1px solid black", glow: "none" } },
-            { text: "А 123 ВС | 199 RUS", price: 22000, rarity: { text: "Необычный", bg: "#3b82f6", color: "#fff", border: "1px solid black", glow: "none" } }
-        ]; 
+        let inventory = []; 
         let myCars = [
             { 
-                name: "Lada Priora БПАН", 
-                basePrice: 350000, 
+                name: "ВАЗ-2107 «Жигули»", 
+                basePrice: 80000, 
                 category: "Седан",
-                img: "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/1e/Lada_Priora_2018.jpg/500px-Lada_Priora_2018.jpg",
-                plate: { text: "А 500 АА | 777 RUS", price: 750000, rarity: { text: "Легендарный", bg: "#f59e0b", color: "#000", border: "1px solid black", glow: "none" } } 
+                img: "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/d4/Lada_2107_front_20080116.jpg/800px-Lada_2107_front_20080116.jpg",
+                plate: null 
             }
-        ];    
+        ]; 
         
         let globalVolume = 0.5;
         let audioCtx = null;
         
         // Система Опыта
-        let playerLevel = 3;
-        let playerExp = 35;
+        let playerLevel = 1;
+        let playerExp = 0;
         const expRewards = { "Обычный": 1, "Необычный": 3, "Редкий": 7, "Супер редкий": 10, "Эпический": 13, "Легендарный": 20, "Крутой": 30, "БЛАТНОЙ": 100, "МИФИЧЕСКИЙ": 150 };
         
         // Генератор
@@ -2245,17 +2742,31 @@
         let wonCarObj = null;
         let currentCarIndexForAttach = -1;
 
-        // ПРЕДЗАПОЛНЕННЫЕ ИГРОКИ ДЛЯ РЕЙТИНГА
+        // Предустановленные SVG-аватары
+        const AVATAR_PRESETS = [
+            "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='50' fill='%231e293b'/><text x='50' y='64' font-size='48' text-anchor='middle'>🏎️</text></svg>",
+            "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='50' fill='%23b45309'/><text x='50' y='64' font-size='48' text-anchor='middle'>👑</text></svg>",
+            "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='50' fill='%23047857'/><text x='50' y='64' font-size='48' text-anchor='middle'>🦁</text></svg>",
+            "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='50' fill='%231d4ed8'/><text x='50' y='64' font-size='48' text-anchor='middle'>⚡</text></svg>",
+            "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='50' fill='%236d28d9'/><text x='50' y='64' font-size='48' text-anchor='middle'>🐯</text></svg>",
+            "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='50' fill='%23be123c'/><text x='50' y='64' font-size='48' text-anchor='middle'>🚀</text></svg>",
+            "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='50' fill='%23334155'/><text x='50' y='64' font-size='48' text-anchor='middle'>🐺</text></svg>",
+            "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='50' fill='%230f172a'/><text x='50' y='64' font-size='48' text-anchor='middle'>🕶️</text></svg>"
+        ];
+
+        // КЭШ И СЕРВЕРНЫЕ ДАННЫЕ
+        let cloudLeaderboardList = [];
+        let marketLots = {};
+        let chatMessagesList = [];
+        let activeMultiSubTab = 'market';
+
         let mockOtherPlayers = [
-            { nickname: "Alex_777", balance: 24500000, playerLevel: 142, avatarData: "", bestPlate: "А 777 АА | 77 RUS", carsCount: 5, updatedAt: Date.now() - 120000 },
-            { nickname: "SpeedDemon", balance: 14200000, playerLevel: 98, avatarData: "", bestPlate: "В 001 ОР | 777 RUS", carsCount: 4, updatedAt: Date.now() - 600000 },
-            { nickname: "Smotra_RU", balance: 9800000, playerLevel: 76, avatarData: "", bestPlate: "Е 777 КХ | 99 RUS", carsCount: 3, updatedAt: Date.now() - 1800000 },
-            { nickname: "Bimmer_M5", balance: 6500000, playerLevel: 54, avatarData: "", bestPlate: "М 555 ММ | 77 RUS", carsCount: 4, updatedAt: Date.now() - 3600000 },
-            { nickname: "Kolesa_PRO", balance: 4200000, playerLevel: 41, avatarData: "", bestPlate: "О 007 ОО | 197 RUS", carsCount: 2, updatedAt: Date.now() - 7200000 },
-            { nickname: "LadaRacer", balance: 1800000, playerLevel: 28, avatarData: "", bestPlate: "Х 777 ХХ | 52 RUS", carsCount: 2, updatedAt: Date.now() - 14400000 },
-            { nickname: "NightDriver", balance: 950000, playerLevel: 19, avatarData: "", bestPlate: "Т 100 ТТ | 77 RUS", carsCount: 1, updatedAt: Date.now() - 28800000 },
-            { nickname: "GIBDD_Boss", balance: 620000, playerLevel: 12, avatarData: "", bestPlate: "А 011 ЕО | 12 RUS", carsCount: 2, updatedAt: Date.now() - 43200000 },
-            { nickname: "Novichok_01", balance: 80000, playerLevel: 2, avatarData: "", bestPlate: "С 321 СС | 12 RUS", carsCount: 1, updatedAt: Date.now() - 86400000 }
+            { nickname: "Alex_777", balance: 24500000, playerLevel: 142, avatarData: AVATAR_PRESETS[1], bestPlate: "А 777 АА | 77 RUS", carsCount: 5, bestSpeed: 340, updatedAt: Date.now() - 120000 },
+            { nickname: "SpeedDemon", balance: 14200000, playerLevel: 98, avatarData: AVATAR_PRESETS[0], bestPlate: "В 001 ОР | 777 RUS", carsCount: 4, bestSpeed: 382, updatedAt: Date.now() - 600000 },
+            { nickname: "Smotra_RU", balance: 9800000, playerLevel: 76, avatarData: AVATAR_PRESETS[2], bestPlate: "Е 777 КХ | 99 RUS", carsCount: 3, bestSpeed: 310, updatedAt: Date.now() - 1800000 },
+            { nickname: "Bimmer_M5", balance: 6500000, playerLevel: 54, avatarData: AVATAR_PRESETS[3], bestPlate: "М 555 ММ | 77 RUS", carsCount: 4, bestSpeed: 295, updatedAt: Date.now() - 3600000 },
+            { nickname: "Kolesa_PRO", balance: 4200000, playerLevel: 41, avatarData: AVATAR_PRESETS[4], bestPlate: "О 007 ОО | 197 RUS", carsCount: 2, bestSpeed: 270, updatedAt: Date.now() - 7200000 },
+            { nickname: "LadaRacer", balance: 1800000, playerLevel: 28, avatarData: AVATAR_PRESETS[6], bestPlate: "Х 777 ХХ | 52 RUS", carsCount: 2, bestSpeed: 240, updatedAt: Date.now() - 14400000 }
         ];
 
         let leaderboardFilter = 'balance';
@@ -2266,6 +2777,7 @@
         }
 
         function sanitizeKey(name) {
+            if (!name) return 'player_' + Date.now();
             return name.trim().toLowerCase().replace(/[.#$\[\]\/]/g, '_');
         }
 
@@ -2423,41 +2935,134 @@
             else plateBox.classList.add('glow-none');
         }
 
-        // --- ИНИЦИАЛИЗАЦИЯ И ХРАНИЛИЩЕ ---
+        // --- ИНИЦИАЛИЗАЦИЯ, ХРАНИЛИЩЕ И ОБЛАКО FIREBASE ---
         window.onload = function() {
-            loadTestStorage();
+            loadProgress();
             updateBalance();
             updateExpUI();
             renderInventory();
             renderCars();
             checkCanSaveButton();
             renderLeaderboard();
+            renderAvatarPresets();
+            setupOnlinePresence();
+            setupMultiplayerListeners();
         };
 
         function saveProgress() {
-            const data = { balance, nickname, avatarData, inventory, myCars, playerLevel, playerExp };
-            localStorage.setItem('nomera_sandbox_state', JSON.stringify(data));
+            const data = { 
+                balance, 
+                nickname, 
+                playerPin,
+                avatarData, 
+                inventory, 
+                myCars, 
+                playerLevel, 
+                playerExp,
+                raceRecords: (typeof getRaceRecords === 'function' ? getRaceRecords() : null),
+                updatedAt: Date.now()
+            };
+            
+            // Локальный кэш
+            localStorage.setItem('nomera_player_account', JSON.stringify(data));
+            localStorage.setItem('nomera_user_session', JSON.stringify({ nickname, playerPin }));
+
+            // Облачная синхронизация в Firebase
+            if (db && isFirebaseOnline && nickname) {
+                const userKey = sanitizeKey(nickname);
+                // Сохраняем полный профиль игрока
+                db.ref('users/' + userKey).update({
+                    balance: balance,
+                    nickname: nickname,
+                    playerPin: playerPin,
+                    avatarData: avatarData || AVATAR_PRESETS[0],
+                    inventory: inventory || [],
+                    myCars: myCars || [],
+                    playerLevel: playerLevel,
+                    playerExp: playerExp,
+                    updatedAt: Date.now()
+                }).catch(e => console.warn("Cloud save error:", e));
+
+                // Обновляем публичные данные в таблице лидеров
+                db.ref('leaderboard/' + userKey).update({
+                    nickname: nickname,
+                    balance: balance,
+                    playerLevel: playerLevel,
+                    avatarData: avatarData || AVATAR_PRESETS[0],
+                    bestPlate: getBestPlate(),
+                    carsCount: (myCars || []).length,
+                    bestSpeed: (data.raceRecords && data.raceRecords.bestSpeed) ? Math.round(data.raceRecords.bestSpeed) : 0,
+                    updatedAt: Date.now()
+                }).catch(e => console.warn("Leaderboard save error:", e));
+            }
+
             renderLeaderboard();
+            updateBadge();
+            updateProfileUI();
+        }
+
+        function loadProgress() {
+            const savedRaw = localStorage.getItem('nomera_player_account');
+
+            if (savedRaw) {
+                try {
+                    const d = JSON.parse(savedRaw);
+                    balance = d.balance ?? balance;
+                    nickname = d.nickname || nickname;
+                    playerPin = d.playerPin || playerPin;
+                    avatarData = d.avatarData || avatarData;
+                    inventory = Array.isArray(d.inventory) ? d.inventory : [];
+                    myCars = Array.isArray(d.myCars) && d.myCars.length > 0 ? d.myCars : myCars;
+                    playerLevel = d.playerLevel || playerLevel;
+                    playerExp = d.playerExp || playerExp;
+                    if (d.raceRecords && typeof setRaceRecords === 'function') {
+                        setRaceRecords(d.raceRecords);
+                    }
+                } catch(e) {}
+            }
+
+            // Если доступен Firebase и сохранен никнейм - синхронизируем свежие данные с сервера
+            if (db && isFirebaseOnline && nickname) {
+                const userKey = sanitizeKey(nickname);
+                db.ref('users/' + userKey).once('value', snapshot => {
+                    const cloudData = snapshot.val();
+                    if (cloudData) {
+                        balance = cloudData.balance ?? balance;
+                        playerLevel = cloudData.playerLevel ?? playerLevel;
+                        playerExp = cloudData.playerExp ?? playerExp;
+                        if (Array.isArray(cloudData.inventory)) inventory = cloudData.inventory;
+                        if (Array.isArray(cloudData.myCars) && cloudData.myCars.length > 0) myCars = cloudData.myCars;
+                        if (cloudData.avatarData) avatarData = cloudData.avatarData;
+                        updateBalance();
+                        updateExpUI();
+                        renderInventory();
+                        renderCars();
+                        updateBadge();
+                        updateProfileUI();
+                    }
+                }).catch(e => console.warn("Cloud load error:", e));
+            }
+
+            updateProfileUI();
             updateBadge();
         }
 
-        function loadTestStorage() {
-            const saved = localStorage.getItem('nomera_sandbox_state');
-            if (saved) {
-                try {
-                    const d = JSON.parse(saved);
-                    balance = d.balance ?? balance;
-                    nickname = d.nickname || nickname;
-                    avatarData = d.avatarData || avatarData;
-                    inventory = d.inventory || inventory;
-                    myCars = d.myCars || myCars;
-                    playerLevel = d.playerLevel || playerLevel;
-                    playerExp = d.playerExp || playerExp;
-                } catch(e) {}
+        function updateProfileUI() {
+            const hAvatar = document.getElementById('header-avatar');
+            if (hAvatar) hAvatar.src = avatarData || AVATAR_PRESETS[0];
+            const pName = document.getElementById('player-name');
+            if (pName) pName.innerText = escapeHtml(nickname);
+            const authName = document.getElementById('auth-profile-display-name');
+            if (authName) authName.innerText = escapeHtml(nickname);
+            const authPrev = document.getElementById('auth-profile-avatar-preview');
+            if (authPrev) authPrev.src = avatarData || AVATAR_PRESETS[0];
+            const nickInput = document.getElementById('nickname-input');
+            if (nickInput) nickInput.value = nickname;
+            const badge = document.getElementById('cloud-status-badge');
+            if (badge) {
+                badge.className = isFirebaseOnline ? 'cloud-badge online' : 'cloud-badge';
+                badge.innerText = isFirebaseOnline ? '🟢 Облако' : '⚪ Локально';
             }
-            if (avatarData) document.getElementById('header-avatar').src = avatarData;
-            document.getElementById('player-name').innerText = escapeHtml(nickname);
-            updateBadge();
         }
 
         function updateBadge() {
@@ -2467,41 +3072,68 @@
             if (gb) gb.innerText = myCars.length;
         }
 
-        function resetTestProgress() {
-            if (!confirm("Сбросить тестовый прогресс?")) return;
-            localStorage.removeItem('nomera_sandbox_state');
-            location.reload();
+        // --- ОНЛАЙН ПРИСУТСТВИЕ И СЧЕТЧИК ---
+        function setupOnlinePresence() {
+            if (!db || !isFirebaseOnline) return;
+            const userKey = sanitizeKey(nickname);
+            const onlineRef = db.ref('online/' + userKey);
+            const connectedRef = db.ref('.info/connected');
+
+            connectedRef.on('value', snap => {
+                if (snap.val() === true) {
+                    onlineRef.onDisconnect().remove();
+                    onlineRef.set({
+                        nickname: nickname,
+                        lastSeen: firebase.database.ServerValue.TIMESTAMP
+                    });
+                }
+            });
+
+            // Слушатель общего счетчика онлайн
+            db.ref('online').on('value', snap => {
+                const users = snap.val() || {};
+                const count = Math.max(1, Object.keys(users).length);
+                const countBadge = document.getElementById('multi-online-count');
+                if (countBadge) countBadge.innerText = `🟢 Онлайн: ${count}`;
+            });
         }
 
-        function addTestBalance(amount) {
-            balance += amount;
-            playCashSound();
-            updateBalance();
-            saveProgress();
+        // --- МУЛЬТИПЛЕЕР: СЛУШАТЕЛИ РЫНКА, ЧАТА И ТОПА ---
+        function setupMultiplayerListeners() {
+            if (!db || !isFirebaseOnline) {
+                renderMarketListings();
+                return;
+            }
+
+            // 1. Слушатель Лидерборда
+            db.ref('leaderboard').limitToLast(100).on('value', snap => {
+                const data = snap.val();
+                if (data) {
+                    cloudLeaderboardList = Object.values(data);
+                } else {
+                    cloudLeaderboardList = [];
+                }
+                renderLeaderboard();
+            });
+
+            // 2. Слушатель Авторынка
+            db.ref('market').limitToLast(50).on('value', snap => {
+                marketLots = snap.val() || {};
+                renderMarketListings();
+            });
+
+            // 3. Слушатель Живого Чата
+            db.ref('chat').limitToLast(40).on('value', snap => {
+                const data = snap.val() || {};
+                chatMessagesList = Object.values(data);
+                renderChatMessages();
+            });
         }
 
-        function addTestLevel() {
-            playerLevel++;
-            playerExp = 0;
-            playWinJingle("Редкий");
-            updateExpUI();
-            saveProgress();
-        }
-
-        function giveRandomElitePlate() {
-            let elite = forcePlate('БЛАТНОЙ');
-            inventory.unshift(elite);
-            addExp('БЛАТНОЙ');
-            triggerConfetti();
-            triggerScreenShake();
-            playWinJingle('БЛАТНОЙ');
-            renderInventory();
-            saveProgress();
-            alert(`Вам выдан: ${elite.text} (${elite.price.toLocaleString('ru-RU')} ₽)!`);
-        }
-
+        // --- УПРАВЛЕНИЕ АККАУНТОМ И АВТОРИЗАЦИЕЙ ---
         function openProfileModal() {
-            document.getElementById('nickname-input').value = nickname;
+            updateProfileUI();
+            switchAuthTab('profile');
             document.getElementById('auth-modal').classList.add('show');
         }
 
@@ -2509,26 +3141,465 @@
             document.getElementById('auth-modal').classList.remove('show');
         }
 
-        function saveTestProfile() {
+        function switchAuthTab(tab) {
+            document.getElementById('auth-panel-profile').classList.toggle('hidden', tab !== 'profile');
+            document.getElementById('auth-panel-login').classList.toggle('hidden', tab !== 'login');
+            document.getElementById('auth-panel-register').classList.toggle('hidden', tab !== 'register');
+
+            document.getElementById('tab-btn-auth-profile').classList.toggle('active', tab === 'profile');
+            document.getElementById('tab-btn-auth-login').classList.toggle('active', tab === 'login');
+            document.getElementById('tab-btn-auth-reg').classList.toggle('active', tab === 'register');
+        }
+
+        function renderAvatarPresets() {
+            const container = document.getElementById('avatar-presets-container');
+            if (!container) return;
+            let html = '';
+            AVATAR_PRESETS.forEach((svgUri, idx) => {
+                const isSelected = (avatarData === svgUri) || (!avatarData && idx === 0);
+                html += `<img src="${svgUri}" class="preset-avatar-item ${isSelected ? 'selected' : ''}" onclick="selectPresetAvatar('${svgUri}', this)">`;
+            });
+            container.innerHTML = html;
+        }
+
+        function selectPresetAvatar(svgUri, el) {
+            avatarData = svgUri;
+            document.querySelectorAll('.preset-avatar-item').forEach(i => i.classList.remove('selected'));
+            if (el) el.classList.add('selected');
+            const prev = document.getElementById('auth-profile-avatar-preview');
+            if (prev) prev.src = svgUri;
+        }
+
+        function saveAccountProfile() {
             const newName = document.getElementById('nickname-input').value.trim();
-            if (newName.length >= 2) nickname = newName;
-            
+            if (newName.length < 2) {
+                alert("Никнейм должен быть не короче 2 символов!");
+                return;
+            }
+
+            nickname = newName;
+
             const fileInput = document.getElementById('avatar-input');
-            if (fileInput.files && fileInput.files[0]) {
+            if (fileInput && fileInput.files && fileInput.files[0]) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     avatarData = e.target.result;
-                    document.getElementById('header-avatar').src = avatarData;
-                    document.getElementById('player-name').innerText = escapeHtml(nickname);
-                    closeProfileModal();
                     saveProgress();
+                    closeProfileModal();
+                    alert("Профиль успешно обновлен и синхронизирован!");
                 };
                 reader.readAsDataURL(fileInput.files[0]);
             } else {
-                document.getElementById('player-name').innerText = escapeHtml(nickname);
-                closeProfileModal();
                 saveProgress();
+                closeProfileModal();
+                alert("Профиль успешно обновлен и синхронизирован!");
             }
+        }
+
+        function handleLoginAction() {
+            const inputNick = (document.getElementById('login-nickname-input').value || '').trim();
+            const inputPin = (document.getElementById('login-pin-input').value || '').trim();
+
+            if (!inputNick || inputPin.length !== 4) {
+                alert("Введите никнейм и 4-значный PIN-код!");
+                return;
+            }
+
+            const userKey = sanitizeKey(inputNick);
+
+            if (db && isFirebaseOnline) {
+                db.ref('users/' + userKey).once('value', snap => {
+                    const uData = snap.val();
+                    if (!uData) {
+                        alert("Аккаунт с таким никнеймом не найден! Зарегистрируйтесь на соседней вкладке.");
+                        return;
+                    }
+                    if (uData.playerPin && uData.playerPin !== inputPin) {
+                        alert("Неверный PIN-код для этого аккаунта!");
+                        return;
+                    }
+
+                    nickname = uData.nickname || inputNick;
+                    playerPin = inputPin;
+                    balance = uData.balance ?? 50000;
+                    playerLevel = uData.playerLevel ?? 1;
+                    playerExp = uData.playerExp ?? 0;
+                    avatarData = uData.avatarData || AVATAR_PRESETS[0];
+                    inventory = Array.isArray(uData.inventory) ? uData.inventory : [];
+                    myCars = Array.isArray(uData.myCars) && uData.myCars.length > 0 ? uData.myCars : myCars;
+
+                    saveProgress();
+                    updateBalance();
+                    updateExpUI();
+                    renderInventory();
+                    renderCars();
+                    closeProfileModal();
+                    setupOnlinePresence();
+                    alert(`Добро пожаловать обратно, ${nickname}! Ваш прогресс загружен из облака.`);
+                }).catch(e => {
+                    alert("Ошибка связи с сервером при входе: " + e.message);
+                });
+            } else {
+                nickname = inputNick;
+                playerPin = inputPin;
+                saveProgress();
+                closeProfileModal();
+                alert(`Вход выполнен локально (офлайн).`);
+            }
+        }
+
+        function handleRegisterAction() {
+            const inputNick = (document.getElementById('reg-nickname-input').value || '').trim();
+            const inputPin = (document.getElementById('reg-pin-input').value || '').trim();
+
+            if (inputNick.length < 3) {
+                alert("Никнейм должен содержать минимум 3 символа!");
+                return;
+            }
+            if (inputPin.length !== 4 || !/^\d{4}$/.test(inputPin)) {
+                alert("PIN-код должен состоять ровно из 4 цифр!");
+                return;
+            }
+
+            const userKey = sanitizeKey(inputNick);
+
+            if (db && isFirebaseOnline) {
+                db.ref('users/' + userKey).once('value', snap => {
+                    if (snap.exists()) {
+                        alert("Этот никнейм уже занят другим игроком! Пожалуйста, выберите другой ник.");
+                        return;
+                    }
+
+                    nickname = inputNick;
+                    playerPin = inputPin;
+                    balance = 50000;
+                    playerLevel = 1;
+                    playerExp = 0;
+                    avatarData = avatarData || AVATAR_PRESETS[0];
+                    inventory = [];
+                    myCars = [
+                        { 
+                            name: "ВАЗ-2107 «Жигули»", 
+                            basePrice: 80000, 
+                            category: "Седан",
+                            img: "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/d4/Lada_2107_front_20080116.jpg/800px-Lada_2107_front_20080116.jpg",
+                            plate: null 
+                        }
+                    ];
+
+                    saveProgress();
+                    updateBalance();
+                    updateExpUI();
+                    renderInventory();
+                    renderCars();
+                    closeProfileModal();
+                    setupOnlinePresence();
+                    sendSystemChatMessage(`👋 Новый игрок ${nickname} присоединился к серверу!`);
+                    alert(`Поздравляем с регистрацией, ${nickname}! Вам начислен стартовый бонус 50 000 ₽ и стартовый авто в гараже.`);
+                }).catch(e => {
+                    alert("Ошибка при регистрации: " + e.message);
+                });
+            } else {
+                nickname = inputNick;
+                playerPin = inputPin;
+                saveProgress();
+                closeProfileModal();
+                alert(`Локальный аккаунт ${nickname} создан!`);
+            }
+        }
+
+        function playAsGuest() {
+            nickname = 'Гость_' + Math.floor(1000 + Math.random() * 9000);
+            playerPin = '0000';
+            avatarData = AVATAR_PRESETS[0];
+            saveProgress();
+            closeProfileModal();
+            alert(`Вы вошли как ${nickname}. Прогресс сохраняется в вашем браузере!`);
+        }
+
+        function logoutAccount() {
+            if (!confirm("Вы действительно хотите выйти из аккаунта на этом устройстве?")) return;
+            localStorage.removeItem('nomera_user_session');
+            localStorage.removeItem('nomera_player_account');
+            location.reload();
+        }
+
+        function syncCloudNow() {
+            saveProgress();
+            alert("Облачная синхронизация выполнена успешно!");
+        }
+
+        // --- МУЛЬТИПЛЕЕР: АВТОРЫНОК (P2P ТОРГОВЛЯ НОМЕРАМИ) ---
+        function switchMultiSubTab(tab) {
+            activeMultiSubTab = tab;
+            document.getElementById('multi-subtab-market').classList.toggle('hidden', tab !== 'market');
+            document.getElementById('multi-subtab-chat').classList.toggle('hidden', tab !== 'chat');
+            document.getElementById('btn-subtab-market').classList.toggle('active', tab === 'market');
+            document.getElementById('btn-subtab-chat').classList.toggle('active', tab === 'chat');
+            if (tab === 'market') renderMarketListings();
+            if (tab === 'chat') renderChatMessages();
+        }
+
+        function openSellPlateModal() {
+            if (!inventory || inventory.length === 0) {
+                alert("Ваш инвентарь пуст! Сначала выбейте или купите номер в рулетке / генераторе.");
+                return;
+            }
+            const sel = document.getElementById('sell-plate-select');
+            sel.innerHTML = '';
+            inventory.forEach((p, idx) => {
+                const opt = document.createElement('option');
+                opt.value = idx;
+                opt.text = `${p.text} (Номинал: ${p.price.toLocaleString('ru-RU')} ₽ | ${p.rarity.text})`;
+                sel.appendChild(opt);
+            });
+            document.getElementById('sell-plate-price').value = inventory[0].price;
+            document.getElementById('sell-plate-modal').classList.add('show');
+        }
+
+        function closeSellPlateModal() {
+            document.getElementById('sell-plate-modal').classList.remove('show');
+        }
+
+        function confirmSellPlate() {
+            const sel = document.getElementById('sell-plate-select');
+            const idx = parseInt(sel.value, 10);
+            const price = parseInt(document.getElementById('sell-plate-price').value, 10);
+
+            if (isNaN(idx) || !inventory[idx]) {
+                alert("Выберите корректный номер из инвентаря!");
+                return;
+            }
+            if (isNaN(price) || price < 1000) {
+                alert("Минимальная цена продажи — 1 000 ₽!");
+                return;
+            }
+
+            const plate = inventory.splice(idx, 1)[0];
+            const lotId = 'lot_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+            const lotData = {
+                lotId: lotId,
+                sellerKey: sanitizeKey(nickname),
+                sellerName: nickname,
+                sellerAvatar: avatarData || DEFAULT_AVATAR,
+                plate: plate,
+                price: price,
+                createdAt: Date.now()
+            };
+
+            if (db && isFirebaseOnline) {
+                db.ref('market/' + lotId).set(lotData).then(() => {
+                    sendSystemChatMessage(`📢 Игрок ${nickname} выставил на авторынок госномер «${plate.text}» за ${price.toLocaleString('ru-RU')} ₽!`);
+                }).catch(e => console.warn("Market lot add error:", e));
+            } else {
+                marketLots[lotId] = lotData;
+            }
+
+            saveProgress();
+            renderInventory();
+            closeSellPlateModal();
+            renderMarketListings();
+            alert(`Номер «${plate.text}» выставлен на авторынок за ${price.toLocaleString('ru-RU')} ₽!`);
+        }
+
+        function buyMarketLot(lotId) {
+            const lot = marketLots[lotId];
+            if (!lot) {
+                alert("Этот лот уже продан или снят с продажи!");
+                return;
+            }
+            if (lot.sellerKey === sanitizeKey(nickname)) {
+                alert("Это ваш собственный лот! Вы можете снять его с продажи.");
+                return;
+            }
+            if (balance < lot.price) {
+                alert(`Недостаточно средств для покупки! Требуется: ${lot.price.toLocaleString('ru-RU')} ₽, ваш баланс: ${balance.toLocaleString('ru-RU')} ₽.`);
+                return;
+            }
+
+            if (!confirm(`Купить номер «${lot.plate.text}» за ${lot.price.toLocaleString('ru-RU')} ₽ у игрока ${lot.sellerName}?`)) return;
+
+            balance -= lot.price;
+            inventory.unshift(lot.plate);
+            playCashSound();
+
+            if (db && isFirebaseOnline) {
+                // Начисляем деньги продавцу
+                db.ref('users/' + lot.sellerKey + '/balance').transaction(cur => (cur || 0) + lot.price);
+                // Удаляем лот
+                db.ref('market/' + lotId).remove();
+                sendSystemChatMessage(`🤝 Игрок ${nickname} приобрел госномер «${lot.plate.text}» у ${lot.sellerName} за ${lot.price.toLocaleString('ru-RU')} ₽!`);
+            } else {
+                delete marketLots[lotId];
+            }
+
+            saveProgress();
+            renderInventory();
+            updateBalance();
+            renderMarketListings();
+            triggerConfetti();
+            alert(`Поздравляем! Номер «${lot.plate.text}» успешно приобретен и добавлен в инвентарь!`);
+        }
+
+        function cancelMarketLot(lotId) {
+            const lot = marketLots[lotId];
+            if (!lot) return;
+            if (lot.sellerKey !== sanitizeKey(nickname)) return;
+
+            if (!confirm(`Снять номер «${lot.plate.text}» с продажи и вернуть в свой инвентарь?`)) return;
+
+            inventory.unshift(lot.plate);
+
+            if (db && isFirebaseOnline) {
+                db.ref('market/' + lotId).remove();
+            } else {
+                delete marketLots[lotId];
+            }
+
+            saveProgress();
+            renderInventory();
+            renderMarketListings();
+        }
+
+        function fetchMarketListings() {
+            if (db && isFirebaseOnline) {
+                db.ref('market').limitToLast(50).once('value', snap => {
+                    marketLots = snap.val() || {};
+                    renderMarketListings();
+                });
+            } else {
+                renderMarketListings();
+            }
+        }
+
+        function renderMarketListings() {
+            const grid = document.getElementById('market-listings-grid');
+            if (!grid) return;
+
+            const lotsArr = Object.values(marketLots || {}).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+
+            if (lotsArr.length === 0) {
+                grid.innerHTML = `
+                    <div style="grid-column: 1/-1; text-align:center; padding: 40px 20px; color: var(--text-dim); background: rgba(0,0,0,0.2); border-radius: var(--radius-md); border: 1px dashed var(--border-subtle);">
+                        <div style="font-size: 32px; margin-bottom: 8px;">🏷️</div>
+                        <div style="font-size: 15px; font-weight: 700; color: #fff; margin-bottom: 4px;">На рынке пока нет активных предложений</div>
+                        <div style="font-size: 13px;">Станьте первым продавцом — нажмите зеленую кнопку «+ Выставить номер» вверху!</div>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '';
+            lotsArr.forEach(lot => {
+                const isMine = (lot.sellerKey === sanitizeKey(nickname));
+                const plate = lot.plate;
+                const r = plate.rarity || { text: 'Обычный', bg: '#fff', color: '#000', border: '1px solid black', glow: 'none' };
+                const sellerAvatar = lot.sellerAvatar || DEFAULT_AVATAR;
+
+                html += `
+                    <div class="market-card">
+                        <div class="market-card-seller">
+                            <div class="market-seller-badge">
+                                <img src="${sellerAvatar}" class="market-seller-avatar" onerror="this.src='${DEFAULT_AVATAR}'">
+                                <span>${escapeHtml(lot.sellerName)}</span>
+                                ${isMine ? '<span style="font-size:10px; background:var(--accent-green); color:#000; padding:1px 6px; border-radius:var(--radius-full); font-weight:800;">ВЫ</span>' : ''}
+                            </div>
+                            <span class="rarity-badge" style="background:${r.bg}; color:${r.color}; border:${r.border}; font-size:10px; padding:2px 8px;">${r.text}</span>
+                        </div>
+
+                        <div style="text-align:center; margin: 4px 0;">
+                            <div class="mini-plate" style="font-size:18px; padding:6px 12px; border-width:2px; display:inline-block;">${escapeHtml(plate.text)}</div>
+                        </div>
+
+                        <div class="market-price-tag">
+                            <span style="font-size:12px; color:var(--text-dim); font-weight:500;">Цена:</span>
+                            <span>${lot.price.toLocaleString('ru-RU')} ₽</span>
+                        </div>
+
+                        <div>
+                            ${isMine 
+                                ? `<button class="btn btn-close" style="width:100%; padding:8px; font-size:12px;" onclick="cancelMarketLot('${lot.lotId}')">Снять с продажи</button>`
+                                : `<button class="btn btn-green" style="width:100%; padding:9px; font-size:13px;" onclick="buyMarketLot('${lot.lotId}')">🛒 Купить за ${lot.price.toLocaleString('ru-RU')} ₽</button>`
+                            }
+                        </div>
+                    </div>
+                `;
+            });
+
+            grid.innerHTML = html;
+        }
+
+        // --- МУЛЬТИПЛЕЕР: ЖИВОЙ ЧАТ И ОБЪЯВЛЕНИЯ ---
+        function sendChatMessage() {
+            const input = document.getElementById('chat-input-field');
+            if (!input) return;
+            const text = input.value.trim();
+            if (!text) return;
+
+            if (text.length > 120) {
+                alert("Сообщение слишком длинное (макс. 120 символов)!");
+                return;
+            }
+
+            input.value = '';
+
+            const msgObj = {
+                senderKey: sanitizeKey(nickname),
+                senderName: nickname,
+                senderAvatar: avatarData || DEFAULT_AVATAR,
+                text: text,
+                timestamp: Date.now()
+            };
+
+            if (db && isFirebaseOnline) {
+                db.ref('chat').push(msgObj).catch(e => console.warn("Chat send error:", e));
+            } else {
+                chatMessagesList.push(msgObj);
+                renderChatMessages();
+            }
+        }
+
+        function sendSystemChatMessage(systemText) {
+            const msgObj = {
+                isSystem: true,
+                text: systemText,
+                timestamp: Date.now()
+            };
+
+            if (db && isFirebaseOnline) {
+                db.ref('chat').push(msgObj).catch(e => console.warn("System chat error:", e));
+            } else {
+                chatMessagesList.push(msgObj);
+                renderChatMessages();
+            }
+        }
+
+        function renderChatMessages() {
+            const box = document.getElementById('chat-messages-box');
+            if (!box) return;
+
+            let html = '';
+            chatMessagesList.forEach(m => {
+                if (m.isSystem) {
+                    html += `<div class="chat-bubble system">📢 ${escapeHtml(m.text)}</div>`;
+                } else {
+                    const isMine = (m.senderKey === sanitizeKey(nickname));
+                    const timeStr = m.timestamp ? new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+                    html += `
+                        <div class="chat-bubble ${isMine ? 'mine' : ''}">
+                            <div class="chat-author">
+                                <img src="${m.senderAvatar || DEFAULT_AVATAR}" class="chat-author-avatar" onerror="this.src='${DEFAULT_AVATAR}'">
+                                <span>${escapeHtml(m.senderName)}</span>
+                                <span style="font-weight:400; opacity:0.6; margin-left:auto;">${timeStr}</span>
+                            </div>
+                            <div>${escapeHtml(m.text)}</div>
+                        </div>
+                    `;
+                }
+            });
+
+            box.innerHTML = html;
+            box.scrollTop = box.scrollHeight;
         }
 
         function openSettings() {
@@ -2541,7 +3612,8 @@
         }
 
         function updateBalance() {
-            document.getElementById('balance').innerText = balance.toLocaleString('ru-RU');
+            const el = document.getElementById('balance');
+            if (el) el.innerText = balance.toLocaleString('ru-RU');
         }
 
         // --- СИСТЕМА ОПЫТА ---
@@ -3526,8 +4598,12 @@
 
         function setLeaderboardFilter(filter) {
             leaderboardFilter = filter;
-            document.getElementById('lead-filter-balance').classList.toggle('test-btn-reset', filter === 'balance');
-            document.getElementById('lead-filter-level').classList.toggle('test-btn-reset', filter === 'level');
+            const bBtn = document.getElementById('lead-filter-balance');
+            const lBtn = document.getElementById('lead-filter-level');
+            const sBtn = document.getElementById('lead-filter-speed');
+            if (bBtn) bBtn.classList.toggle('test-btn-reset', filter === 'balance');
+            if (lBtn) lBtn.classList.toggle('test-btn-reset', filter === 'level');
+            if (sBtn) sBtn.classList.toggle('test-btn-reset', filter === 'speed');
             renderLeaderboard();
         }
 
@@ -3536,22 +4612,33 @@
             const podium = document.getElementById('podium-stage');
             if (!list) return;
 
+            const mySpeed = (typeof getRaceRecords === 'function' ? getRaceRecords().bestSpeed : 0) || 0;
+
             const myEntry = {
                 nickname: nickname,
                 balance: balance,
                 playerLevel: playerLevel,
-                avatarData: avatarData,
+                avatarData: avatarData || AVATAR_PRESETS[0],
                 bestPlate: getBestPlate(),
                 carsCount: myCars.length,
+                bestSpeed: Math.round(mySpeed),
                 updatedAt: Date.now()
             };
 
-            const allPlayers = [myEntry, ...mockOtherPlayers];
+            let baseList = (cloudLeaderboardList && cloudLeaderboardList.length > 0) ? [...cloudLeaderboardList] : [...mockOtherPlayers];
+            // Убираем дубликат текущего игрока из серверного списка
+            baseList = baseList.filter(p => sanitizeKey(p.nickname) !== sanitizeKey(nickname));
+            const allPlayers = [myEntry, ...baseList];
 
             allPlayers.sort((a, b) => {
                 if (leaderboardFilter === 'level') {
                     if ((b.playerLevel || 1) !== (a.playerLevel || 1)) {
                         return (b.playerLevel || 1) - (a.playerLevel || 1);
+                    }
+                    return (b.balance || 0) - (a.balance || 0);
+                } else if (leaderboardFilter === 'speed') {
+                    if ((b.bestSpeed || 0) !== (a.bestSpeed || 0)) {
+                        return (b.bestSpeed || 0) - (a.bestSpeed || 0);
                     }
                     return (b.balance || 0) - (a.balance || 0);
                 } else {
@@ -3570,14 +4657,16 @@
                 const p2 = allPlayers[1];
                 const p3 = allPlayers[2];
 
-                const getVal = (p) => leaderboardFilter === 'level' 
-                    ? `${p.playerLevel || 1} ур.` 
-                    : `${((p.balance || 0) / 1000000).toFixed(1)}M ₽`;
+                const getVal = (p) => {
+                    if (leaderboardFilter === 'level') return `${p.playerLevel || 1} ур.`;
+                    if (leaderboardFilter === 'speed') return `${Math.round(p.bestSpeed || 0)} км/ч`;
+                    return `${((p.balance || 0) / 1000000).toFixed(1)}M ₽`;
+                };
 
                 podium.innerHTML = `
                     <div class="podium-slot podium-2" onclick="openPlayerViewModal('${escapeHtml(sanitizeKey(p2.nickname))}')">
                         <div class="podium-avatar-wrap">
-                            <img src="${p2.avatarData || DEFAULT_AVATAR}" class="podium-avatar">
+                            <img src="${p2.avatarData || AVATAR_PRESETS[0]}" class="podium-avatar" onerror="this.src='${DEFAULT_AVATAR}'">
                         </div>
                         <div class="podium-name">${escapeHtml(p2.nickname)}</div>
                         <div class="podium-val">${getVal(p2)}</div>
@@ -3586,7 +4675,7 @@
                     <div class="podium-slot podium-1" onclick="openPlayerViewModal('${escapeHtml(sanitizeKey(p1.nickname))}')">
                         <div class="podium-crown">👑</div>
                         <div class="podium-avatar-wrap">
-                            <img src="${p1.avatarData || DEFAULT_AVATAR}" class="podium-avatar">
+                            <img src="${p1.avatarData || AVATAR_PRESETS[0]}" class="podium-avatar" onerror="this.src='${DEFAULT_AVATAR}'">
                         </div>
                         <div class="podium-name">${escapeHtml(p1.nickname)}</div>
                         <div class="podium-val">${getVal(p1)}</div>
@@ -3594,7 +4683,7 @@
                     </div>
                     <div class="podium-slot podium-3" onclick="openPlayerViewModal('${escapeHtml(sanitizeKey(p3.nickname))}')">
                         <div class="podium-avatar-wrap">
-                            <img src="${p3.avatarData || DEFAULT_AVATAR}" class="podium-avatar">
+                            <img src="${p3.avatarData || AVATAR_PRESETS[0]}" class="podium-avatar" onerror="this.src='${DEFAULT_AVATAR}'">
                         </div>
                         <div class="podium-name">${escapeHtml(p3.nickname)}</div>
                         <div class="podium-val">${getVal(p3)}</div>
@@ -3614,13 +4703,19 @@
                 else if (rank === 2) rankBadge = '🥈';
                 else if (rank === 3) rankBadge = '🥉';
 
-                const avatar = player.avatarData ? player.avatarData : DEFAULT_AVATAR;
+                const avatar = player.avatarData ? player.avatarData : AVATAR_PRESETS[0];
                 const escName = escapeHtml(player.nickname || 'Аноним');
+                
                 const primaryVal = leaderboardFilter === 'level' 
                     ? `${player.playerLevel || 1} ур.` 
+                    : leaderboardFilter === 'speed'
+                    ? `⚡ ${Math.round(player.bestSpeed || 0)} км/ч`
                     : `${(player.balance || 0).toLocaleString('ru-RU')} ₽`;
+                
                 const subVal = leaderboardFilter === 'level'
                     ? `${(player.balance || 0).toLocaleString('ru-RU')} ₽`
+                    : leaderboardFilter === 'speed'
+                    ? `${player.playerLevel || 1} ур. | ${(player.balance || 0).toLocaleString('ru-RU')} ₽`
                     : `${player.playerLevel || 1} уровень`;
 
                 const safeKey = escapeHtml(sanitizeKey(player.nickname || ''));
@@ -3651,30 +4746,34 @@
             const posEl = document.getElementById('my-rank-pos');
             const nameEl = document.getElementById('my-rank-name');
             const statEl = document.getElementById('my-rank-stat');
-            posEl.innerText = `#${myIndex}`;
-            nameEl.innerText = `Вы: ${escapeHtml(nickname)}`;
-            statEl.innerText = `Баланс: ${balance.toLocaleString('ru-RU')} ₽ | Уровень: ${playerLevel}`;
+            if (posEl) posEl.innerText = `#${myIndex}`;
+            if (nameEl) nameEl.innerText = `Вы: ${escapeHtml(nickname)}`;
+            if (statEl) statEl.innerText = `Баланс: ${balance.toLocaleString('ru-RU')} ₽ | Уровень: ${playerLevel} | Рекорд скорости: ${Math.round(mySpeed)} км/ч`;
         }
 
         function openPlayerViewModal(userKey) {
+            let baseList = (cloudLeaderboardList && cloudLeaderboardList.length > 0) ? [...cloudLeaderboardList] : [...mockOtherPlayers];
+            baseList = baseList.filter(p => sanitizeKey(p.nickname) !== sanitizeKey(nickname));
+            const mySpeed = (typeof getRaceRecords === 'function' ? getRaceRecords().bestSpeed : 0) || 0;
+
             const allPlayers = [{
-                nickname: nickname, balance, playerLevel, avatarData, bestPlate: getBestPlate(), carsCount: myCars.length, updatedAt: Date.now()
-            }, ...mockOtherPlayers];
+                nickname: nickname, balance, playerLevel, avatarData: avatarData || AVATAR_PRESETS[0], bestPlate: getBestPlate(), carsCount: myCars.length, bestSpeed: Math.round(mySpeed), updatedAt: Date.now()
+            }, ...baseList];
 
             const player = allPlayers.find(p => sanitizeKey(p.nickname || '') === userKey);
             if (!player) return;
 
-            document.getElementById('pv-avatar').src = player.avatarData || DEFAULT_AVATAR;
+            document.getElementById('pv-avatar').src = player.avatarData || AVATAR_PRESETS[0];
             document.getElementById('pv-name').innerText = player.nickname || 'Игрок';
-            document.getElementById('pv-level').innerText = `Уровень: ${player.playerLevel || 1}`;
+            document.getElementById('pv-level').innerText = `Уровень: ${player.playerLevel || 1} ${player.bestSpeed ? `| ⚡ ${Math.round(player.bestSpeed)} км/ч` : ''}`;
             document.getElementById('pv-balance').innerText = `${(player.balance || 0).toLocaleString('ru-RU')} ₽`;
             document.getElementById('pv-cars').innerText = player.carsCount || 0;
             document.getElementById('pv-best-plate').innerText = player.bestPlate || '—';
 
-            let lastSeenText = 'недавно';
+            let lastSeenText = 'только что';
             if (player.updatedAt) {
                 const diffMin = Math.floor((Date.now() - player.updatedAt) / 60000);
-                if (diffMin < 5) lastSeenText = 'только что';
+                if (diffMin < 2) lastSeenText = 'только что';
                 else if (diffMin < 60) lastSeenText = `${diffMin} мин. назад`;
                 else {
                     const diffHours = Math.floor(diffMin / 60);
@@ -6257,9 +7356,14 @@
         function switchTab(tabId, element) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
             document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('active'));
-            document.getElementById(tabId).classList.remove('hidden');
-            element.classList.add('active');
+            const target = document.getElementById(tabId);
+            if (target) target.classList.remove('hidden');
+            if (element) element.classList.add('active');
             if (tabId === 'leaderboard') renderLeaderboard();
+            if (tabId === 'multiplayer') {
+                if (activeMultiSubTab === 'market') renderMarketListings();
+                if (activeMultiSubTab === 'chat') renderChatMessages();
+            }
             if (tabId === 'racegame') initRaceGameTab();
             if (tabId !== 'racegame' && isRaceRunning) exitRaceGame();
         }

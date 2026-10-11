@@ -1,0 +1,29 @@
+{
+  "rules": {
+    "leaderboard": {
+      ".read": true,
+      "$userKey": {
+        ".write": "newData.hasChildren(['nickname', 'balance', 'playerLevel'])",
+        ".validate": "newData.child('balance').isNumber() && newData.child('playerLevel').isNumber()"
+      }
+    },
+    "users": {
+      "$userKey": {
+        ".read": true,
+        ".write": true
+      }
+    },
+    "market": {
+      ".read": true,
+      ".write": true
+    },
+    "chat": {
+      ".read": true,
+      ".write": true
+    },
+    "online": {
+      ".read": true,
+      ".write": true
+    }
+  }
+}
