@@ -1918,6 +1918,112 @@
                 height: 380px;
             }
         }
+
+        /* --- АДМИН-ПАНЕЛЬ И ПРИВЕТСТВЕННЫЙ БАННЕР --- */
+        .admin-glow-btn {
+            background: linear-gradient(135deg, #f59e0b, #ef4444) !important;
+            color: #fff !important;
+            border: 1px solid #fbbf24 !important;
+            font-weight: 900 !important;
+            font-size: 11px !important;
+            padding: 6px 12px !important;
+            border-radius: var(--radius-sm) !important;
+            box-shadow: 0 0 12px rgba(245, 158, 11, 0.5);
+            animation: pulseAdmin 2s infinite ease-in-out;
+            cursor: pointer;
+        }
+        @keyframes pulseAdmin {
+            0%, 100% { transform: scale(1); box-shadow: 0 0 10px rgba(245, 158, 11, 0.4); }
+            50% { transform: scale(1.05); box-shadow: 0 0 20px rgba(245, 158, 11, 0.85); }
+        }
+        .admin-modal-box {
+            max-width: 980px !important;
+            width: 96% !important;
+            max-height: 90vh;
+            overflow-y: auto;
+            text-align: left;
+        }
+        .admin-nav-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+            border-bottom: 1px solid var(--border-subtle);
+            padding-bottom: 8px;
+            flex-wrap: wrap;
+        }
+        .admin-tab-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-muted);
+            padding: 8px 14px;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+        .admin-tab-btn.active {
+            background: #f59e0b;
+            color: #000;
+            border-color: #fbbf24;
+        }
+        .admin-table-wrap {
+            overflow-x: auto;
+            background: rgba(0, 0, 0, 0.35);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            margin-top: 10px;
+        }
+        .admin-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+            text-align: left;
+        }
+        .admin-table th {
+            background: rgba(255, 255, 255, 0.06);
+            padding: 10px 12px;
+            color: var(--text-dim);
+            font-weight: 700;
+            border-bottom: 1px solid var(--border-subtle);
+            white-space: nowrap;
+        }
+        .admin-table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            white-space: nowrap;
+        }
+        .admin-table tr:hover td {
+            background: rgba(255, 255, 255, 0.04);
+        }
+        .admin-act-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 14px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            font-size: 12px;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .admin-act-row:nth-child(even) {
+            background: rgba(255, 255, 255, 0.02);
+        }
+        .welcome-card-option {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 16px;
+            margin-bottom: 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .welcome-card-option:hover {
+            border-color: var(--accent-green);
+            background: rgba(16, 185, 129, 0.08);
+            transform: translateY(-2px);
+        }
     </style>
 </head>
 <body>
@@ -1956,6 +2062,7 @@
             </div>
 
             <div class="hud-actions">
+                <button class="hud-icon-btn admin-glow-btn hidden" id="hud-admin-btn" onclick="openAdminModal()" title="Админ-Панель Сервера">👑 АДМИН</button>
                 <button class="hud-icon-btn" onclick="openProfileModal()" title="Профиль и Аккаунт">👤</button>
                 <button class="hud-icon-btn" onclick="openSettings()" title="Настройки">⚙️</button>
             </div>
@@ -1983,6 +2090,9 @@
             </div>
             <div class="nav-tab" onclick="switchTab('multiplayer', this)">
                 <span>🌐</span> Онлайн
+            </div>
+            <div class="nav-tab hidden" id="nav-tab-admin" onclick="openAdminModal()" style="border-color: rgba(245, 158, 11, 0.4); color: #fbbf24;">
+                <span>👑</span> Админ
             </div>
         </div>
 
@@ -2369,6 +2479,113 @@
 
     </div>
 
+    <!-- БАННЕР ПРИВЕТСТВИЯ ПРИ ВХОДЕ (ВХОД / РЕГИСТРАЦИЯ / БЫСТРЫЙ ГОСТЬ) -->
+    <div id="welcome-modal" class="modal-overlay">
+        <div class="modal-box" style="max-width: 480px; text-align: center;">
+            <div style="font-size: 42px; margin-bottom: 8px;">🏎️ 👑 🚗</div>
+            <h2 style="margin: 0 0 6px 0; font-size: 22px; font-weight: 900; color: #fff; letter-spacing: -0.5px;">СИМУЛЯТОР ГОСНОМЕРОВ</h2>
+            <p style="font-size: 13px; color: var(--text-dim); margin-bottom: 20px;">Крутите блатные номера, собирайте гараж суперкаров и побеждайте в онлайн-гонках!</p>
+
+            <div class="welcome-card-option" onclick="openWelcomeTab('login')">
+                <div style="font-size: 16px; font-weight: 800; color: #34d399; margin-bottom: 4px;">🔑 Войти в аккаунт</div>
+                <div style="font-size: 12px; color: var(--text-dim);">Вход по логину и паролю. Синхронизация прогресса с облаком.</div>
+            </div>
+
+            <div class="welcome-card-option" onclick="openWelcomeTab('register')">
+                <div style="font-size: 16px; font-weight: 800; color: #60a5fa; margin-bottom: 4px;">✨ Создать новый аккаунт</div>
+                <div style="font-size: 12px; color: var(--text-dim);">Быстрая регистрация + бонус 50 000 ₽ и ВАЗ-2107 в гараже!</div>
+            </div>
+
+            <div class="welcome-card-option" onclick="quickGuestStart()" style="border-style: dashed;">
+                <div style="font-size: 15px; font-weight: 700; color: #fbbf24; margin-bottom: 4px;">🚀 Быстрый старт (Гость)</div>
+                <div style="font-size: 12px; color: var(--text-dim);">Играть сразу в 1 клик без пароля и регистрации.</div>
+            </div>
+
+            <div style="margin-top: 14px;">
+                <button class="btn btn-close" style="width: 100%;" onclick="closeWelcomeModal()">Продолжить игру</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- МОДАЛЬНОЕ ОКНО: АДМИНИСТРАТИВНАЯ ПАНЕЛЬ (h3h) -->
+    <div id="admin-modal" class="modal-overlay">
+        <div class="modal-box admin-modal-box">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; border-bottom: 1px solid var(--border-subtle); padding-bottom: 10px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 22px;">👑</span>
+                    <h3 style="margin: 0; color: #fbbf24; font-size: 18px;">Админ-Панель Сервера (h3h)</h3>
+                </div>
+                <button class="btn btn-close" style="padding: 4px 12px; font-size: 12px;" onclick="closeAdminModal()">✕ Закрыть</button>
+            </div>
+
+            <div class="admin-nav-tabs">
+                <button class="admin-tab-btn active" id="btn-adm-users" onclick="switchAdminSubTab('users')">👥 База Пользователей & Пароли</button>
+                <button class="admin-tab-btn" id="btn-adm-activity" onclick="switchAdminSubTab('activity')">📡 Кто что крутит (Живой аудит)</button>
+                <button class="admin-tab-btn" id="btn-adm-tools" onclick="switchAdminSubTab('tools')">⚡ Быстрые действия</button>
+            </div>
+
+            <!-- Вкладка 1: База пользователей и пароли -->
+            <div id="adm-panel-users">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
+                    <span style="font-size: 13px; color: var(--text-dim);">Все зарегистрированные игроки на сервере (с паролями):</span>
+                    <button class="test-btn" onclick="fetchAdminUsers()" title="Обновить базу">🔄 Обновить</button>
+                </div>
+                <div class="admin-table-wrap">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Никнейм</th>
+                                <th style="color: #fbbf24;">Пароль / PIN</th>
+                                <th>Баланс</th>
+                                <th>Уровень</th>
+                                <th>Гараж / Инвентарь</th>
+                                <th>Действия Админа</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-users-tbody">
+                            <tr><td colspan="6" style="text-align: center; padding: 20px;">Загрузка базы данных пользователей...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Вкладка 2: Кто что крутит (Живой аудит) -->
+            <div id="adm-panel-activity" class="hidden">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
+                    <input type="text" id="admin-act-search" placeholder="Поиск по никнейму или действию..." style="padding: 8px 12px; background: rgba(255,255,255,0.06); border: 1px solid var(--border-subtle); color: #fff; border-radius: var(--radius-sm); font-size: 13px; min-width: 240px;" oninput="renderAdminActivity()">
+                    <button class="test-btn" onclick="clearActivityLogs()" style="color: #ef4444; border-color: rgba(239, 68, 68, 0.3);">🗑️ Очистить журнал</button>
+                </div>
+                <div id="admin-activity-list" style="max-height: 440px; overflow-y: auto; background: rgba(0,0,0,0.3); border: 1px solid var(--border-subtle); border-radius: var(--radius-md);">
+                    <div style="text-align: center; padding: 30px; color: var(--text-dim);">Загрузка журнала активности...</div>
+                </div>
+            </div>
+
+            <!-- Вкладка 3: Быстрые действия -->
+            <div id="adm-panel-tools" class="hidden">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px;">
+                    <div style="background: rgba(255,255,255,0.03); padding: 14px; border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+                        <h4 style="margin: 0 0 8px 0; color: #fff;">💰 Выдать себе баланс</h4>
+                        <p style="font-size: 12px; color: var(--text-dim); margin-bottom: 10px;">Мгновенно начислить 100 000 000 ₽ на свой аккаунт h3h:</p>
+                        <button class="btn btn-green" onclick="adminAddMyBalance(100000000)">+100 000 000 ₽</button>
+                    </div>
+
+                    <div style="background: rgba(255,255,255,0.03); padding: 14px; border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+                        <h4 style="margin: 0 0 8px 0; color: #fff;">🏎️ Выдать весь автопарк</h4>
+                        <p style="font-size: 12px; color: var(--text-dim); margin-bottom: 10px;">Добавить все 14 автомобилей в свой гараж:</p>
+                        <button class="btn btn-blue" onclick="adminGiveAllCars()">🏎️ Получить все 14 авто</button>
+                    </div>
+
+                    <div style="background: rgba(255,255,255,0.03); padding: 14px; border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+                        <h4 style="margin: 0 0 8px 0; color: #fff;">📢 Серверное объявление</h4>
+                        <p style="font-size: 12px; color: var(--text-dim); margin-bottom: 6px;">Отправить сообщение в чат от имени [👑 АДМИНИСТРАЦИЯ]:</p>
+                        <input type="text" id="admin-announcement-input" placeholder="Текст объявления..." style="width: 100%; padding: 8px; margin-bottom: 8px; background: rgba(255,255,255,0.06); border: 1px solid var(--border-subtle); color: #fff; border-radius: var(--radius-sm); font-size: 13px;">
+                        <button class="btn btn-green" onclick="adminBroadcastAnnouncement()">Отправить всем</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- МОДАЛЬНОЕ ОКНО: АККАУНТ И ОБЛАЧНАЯ СИНХРОНИЗАЦИЯ -->
     <div id="auth-modal" class="modal-overlay">
         <div class="modal-box" style="max-width: 440px;">
@@ -2414,17 +2631,18 @@
                 </div>
             </div>
 
-            <!-- Вкладка: Вход по Никнейму и PIN -->
+            <!-- Вкладка: Вход по Никнейму и Паролю -->
             <div id="auth-panel-login" class="hidden">
                 <h3 style="margin-top:0; color:var(--accent-green); margin-bottom:6px;">Вход в аккаунт</h3>
-                <p style="font-size:12px; color:var(--text-dim); margin-bottom:14px;">Введите ваш никнейм и 4-значный PIN-код:</p>
+                <p style="font-size:12px; color:var(--text-dim); margin-bottom:14px;">Введите ваш никнейм и пароль / PIN:</p>
                 <div style="margin-bottom: 12px;">
-                    <label style="font-size:12px; color:var(--text-muted); display:block; margin-bottom:4px;">Никнейм:</label>
-                    <input type="text" id="login-nickname-input" placeholder="Ваш никнейм" maxlength="15" style="width:100%; padding:10px; background:rgba(255,255,255,0.06); border:1px solid var(--border-subtle); color:#fff; border-radius:var(--radius-sm); font-size:14px;">
+                    <label style="font-size:12px; color:var(--text-muted); display:block; margin-bottom:4px;">Никнейм / Логин:</label>
+                    <input type="text" id="login-nickname-input" placeholder="Ваш никнейм" maxlength="20" style="width:100%; padding:10px; background:rgba(255,255,255,0.06); border:1px solid var(--border-subtle); color:#fff; border-radius:var(--radius-sm); font-size:14px;">
                 </div>
                 <div style="margin-bottom: 16px;">
-                    <label style="font-size:12px; color:var(--text-muted); display:block; margin-bottom:4px;">PIN-код (4 цифры):</label>
-                    <input type="password" id="login-pin-input" placeholder="••••" maxlength="4" style="width:100%; padding:10px; background:rgba(255,255,255,0.06); border:1px solid var(--border-subtle); color:#fff; border-radius:var(--radius-sm); font-size:18px; letter-spacing:4px; text-align:center;">
+                    <label style="font-size:12px; color:var(--text-muted); display:block; margin-bottom:4px;">Пароль / PIN:</label>
+                    <input type="password" id="login-pin-input" placeholder="••••••••" maxlength="30" style="width:100%; padding:10px; background:rgba(255,255,255,0.06); border:1px solid var(--border-subtle); color:#fff; border-radius:var(--radius-sm); font-size:16px;">
+                    <div style="font-size:11px; color:#fbbf24; margin-top:6px; font-weight:600;">👑 Вход админа: логин <b>h3h</b> / пароль <b>0060666rt</b></div>
                 </div>
                 <div style="display:flex; gap:8px;">
                     <button class="btn btn-green" style="flex:1;" onclick="handleLoginAction()">Войти</button>
@@ -2441,11 +2659,11 @@
                 <p style="font-size:12px; color:var(--text-dim); margin-bottom:14px;">Ваш прогресс будет сохраняться на сервере и доступен с любого устройства:</p>
                 <div style="margin-bottom: 10px;">
                     <label style="font-size:12px; color:var(--text-muted); display:block; margin-bottom:4px;">Придумайте никнейм:</label>
-                    <input type="text" id="reg-nickname-input" placeholder="Никнейм (от 3 симв.)" maxlength="15" style="width:100%; padding:10px; background:rgba(255,255,255,0.06); border:1px solid var(--border-subtle); color:#fff; border-radius:var(--radius-sm); font-size:14px;">
+                    <input type="text" id="reg-nickname-input" placeholder="Никнейм (от 3 симв.)" maxlength="20" style="width:100%; padding:10px; background:rgba(255,255,255,0.06); border:1px solid var(--border-subtle); color:#fff; border-radius:var(--radius-sm); font-size:14px;">
                 </div>
                 <div style="margin-bottom: 10px;">
-                    <label style="font-size:12px; color:var(--text-muted); display:block; margin-bottom:4px;">Придумайте PIN-код (4 цифры для входа):</label>
-                    <input type="password" id="reg-pin-input" placeholder="••••" maxlength="4" style="width:100%; padding:10px; background:rgba(255,255,255,0.06); border:1px solid var(--border-subtle); color:#fff; border-radius:var(--radius-sm); font-size:18px; letter-spacing:4px; text-align:center;">
+                    <label style="font-size:12px; color:var(--text-muted); display:block; margin-bottom:4px;">Придумайте пароль / PIN:</label>
+                    <input type="password" id="reg-pin-input" placeholder="••••••••" maxlength="30" style="width:100%; padding:10px; background:rgba(255,255,255,0.06); border:1px solid var(--border-subtle); color:#fff; border-radius:var(--radius-sm); font-size:16px;">
                 </div>
                 <div style="display:flex; gap:8px; margin-top:14px;">
                     <button class="btn btn-green" style="flex:1;" onclick="handleRegisterAction()">Зарегистрироваться</button>
@@ -2690,7 +2908,15 @@
             isFirebaseOnline = false;
         }
 
-        // Чистое состояние официального игрока (без читов и тестовых заглушек)
+        // --- АДМИНИСТРАТОР И АУДИТ ДЕЙСТВИЙ ---
+        const ADMIN_LOGIN = "h3h";
+        const ADMIN_PASS = "0060666rt";
+        let isAdmin = false;
+        let adminUsersMap = {};
+        let adminActivityLogs = [];
+        let activeAdminSubTab = 'users';
+
+        // Чистое состояние официального игрока
         let balance = 50000;
         let nickname = 'Игрок_' + Math.floor(1000 + Math.random() * 9000);
         let playerPin = '0000';
@@ -2947,9 +3173,40 @@
             renderAvatarPresets();
             setupOnlinePresence();
             setupMultiplayerListeners();
+
+            // Проверка первого визита / отсутствия активной сессии для показа приветственного баннера
+            const hasSession = localStorage.getItem('nomera_user_session');
+            const hasSeenWelcome = sessionStorage.getItem('nomera_welcome_seen');
+            if (!hasSession && !hasSeenWelcome) {
+                setTimeout(() => {
+                    openWelcomeModal();
+                }, 400);
+            }
         };
 
+        // --- ЖИВОЙ АУДИТ ДЕЙСТВИЙ («КТО ЧТО КРУТИТ») ---
+        function logPlayerActivity(action, details) {
+            const entry = {
+                nickname: nickname || "Гость",
+                action: action,
+                details: details,
+                timestamp: Date.now()
+            };
+            adminActivityLogs.unshift(entry);
+            if (adminActivityLogs.length > 200) adminActivityLogs.pop();
+            if (isAdmin) renderAdminActivity();
+
+            if (db && isFirebaseOnline) {
+                try {
+                    db.ref('activity').push(entry).catch(e => console.warn("Activity log push error:", e));
+                } catch(e) {
+                    console.warn("Activity log error:", e);
+                }
+            }
+        }
+
         function saveProgress() {
+            isAdmin = (nickname.toLowerCase() === ADMIN_LOGIN.toLowerCase() && playerPin === ADMIN_PASS);
             const data = { 
                 balance, 
                 nickname, 
@@ -2970,7 +3227,7 @@
             // Облачная синхронизация в Firebase
             if (db && isFirebaseOnline && nickname) {
                 const userKey = sanitizeKey(nickname);
-                // Сохраняем полный профиль игрока
+                // Сохраняем полный профиль игрока (включая пароль для админа)
                 db.ref('users/' + userKey).update({
                     balance: balance,
                     nickname: nickname,
@@ -3021,6 +3278,12 @@
                 } catch(e) {}
             }
 
+            // Проверка прав администратора h3h
+            isAdmin = (nickname.toLowerCase() === ADMIN_LOGIN.toLowerCase() && playerPin === ADMIN_PASS);
+            if (isAdmin) {
+                listenAdminActivity();
+            }
+
             // Если доступен Firebase и сохранен никнейм - синхронизируем свежие данные с сервера
             if (db && isFirebaseOnline && nickname) {
                 const userKey = sanitizeKey(nickname);
@@ -3030,9 +3293,16 @@
                         balance = cloudData.balance ?? balance;
                         playerLevel = cloudData.playerLevel ?? playerLevel;
                         playerExp = cloudData.playerExp ?? playerExp;
+                        if (cloudData.playerPin) playerPin = cloudData.playerPin;
                         if (Array.isArray(cloudData.inventory)) inventory = cloudData.inventory;
                         if (Array.isArray(cloudData.myCars) && cloudData.myCars.length > 0) myCars = cloudData.myCars;
                         if (cloudData.avatarData) avatarData = cloudData.avatarData;
+                        
+                        isAdmin = (nickname.toLowerCase() === ADMIN_LOGIN.toLowerCase() && playerPin === ADMIN_PASS);
+                        if (isAdmin) {
+                            listenAdminActivity();
+                        }
+                        
                         updateBalance();
                         updateExpUI();
                         renderInventory();
@@ -3063,6 +3333,12 @@
                 badge.className = isFirebaseOnline ? 'cloud-badge online' : 'cloud-badge';
                 badge.innerText = isFirebaseOnline ? '🟢 Облако' : '⚪ Локально';
             }
+
+            // Отображение кнопки и вкладки админа
+            const adminBtn = document.getElementById('hud-admin-btn');
+            if (adminBtn) adminBtn.classList.toggle('hidden', !isAdmin);
+            const adminTab = document.getElementById('nav-tab-admin');
+            if (adminTab) adminTab.classList.toggle('hidden', !isAdmin);
         }
 
         function updateBadge() {
@@ -3200,8 +3476,29 @@
             const inputNick = (document.getElementById('login-nickname-input').value || '').trim();
             const inputPin = (document.getElementById('login-pin-input').value || '').trim();
 
-            if (!inputNick || inputPin.length !== 4) {
-                alert("Введите никнейм и 4-значный PIN-код!");
+            if (!inputNick || inputPin.length < 3) {
+                alert("Введите никнейм и пароль (минимум 3 символа)!");
+                return;
+            }
+
+            // ПРОВЕРКА ВХОДА АДМИНИСТРАТОРА (h3h / 0060666rt)
+            if (inputNick.toLowerCase() === ADMIN_LOGIN.toLowerCase() && inputPin === ADMIN_PASS) {
+                nickname = ADMIN_LOGIN;
+                playerPin = ADMIN_PASS;
+                isAdmin = true;
+                if (balance < 100000000) balance = 100000000;
+                playerLevel = Math.max(playerLevel, 99);
+                saveProgress();
+                updateBalance();
+                updateExpUI();
+                renderInventory();
+                renderCars();
+                closeProfileModal();
+                setupOnlinePresence();
+                listenAdminActivity();
+                logPlayerActivity('Вход админа', `Администратор ${ADMIN_LOGIN} вошел в систему`);
+                alert(`👑 Добро пожаловать, Администратор ${ADMIN_LOGIN}!\nВам предоставлен полный доступ к базе данных пользователей с паролями и живому аудиту действий.`);
+                openAdminModal();
                 return;
             }
 
@@ -3215,7 +3512,7 @@
                         return;
                     }
                     if (uData.playerPin && uData.playerPin !== inputPin) {
-                        alert("Неверный PIN-код для этого аккаунта!");
+                        alert("Неверный пароль / PIN для этого аккаунта!");
                         return;
                     }
 
@@ -3227,6 +3524,7 @@
                     avatarData = uData.avatarData || AVATAR_PRESETS[0];
                     inventory = Array.isArray(uData.inventory) ? uData.inventory : [];
                     myCars = Array.isArray(uData.myCars) && uData.myCars.length > 0 ? uData.myCars : myCars;
+                    isAdmin = (nickname.toLowerCase() === ADMIN_LOGIN.toLowerCase() && playerPin === ADMIN_PASS);
 
                     saveProgress();
                     updateBalance();
@@ -3235,6 +3533,8 @@
                     renderCars();
                     closeProfileModal();
                     setupOnlinePresence();
+                    if (isAdmin) listenAdminActivity();
+                    logPlayerActivity('Вход', `Игрок ${nickname} вошел в свой аккаунт`);
                     alert(`Добро пожаловать обратно, ${nickname}! Ваш прогресс загружен из облака.`);
                 }).catch(e => {
                     alert("Ошибка связи с сервером при входе: " + e.message);
@@ -3242,6 +3542,7 @@
             } else {
                 nickname = inputNick;
                 playerPin = inputPin;
+                isAdmin = (nickname.toLowerCase() === ADMIN_LOGIN.toLowerCase() && playerPin === ADMIN_PASS);
                 saveProgress();
                 closeProfileModal();
                 alert(`Вход выполнен локально (офлайн).`);
@@ -3252,12 +3553,16 @@
             const inputNick = (document.getElementById('reg-nickname-input').value || '').trim();
             const inputPin = (document.getElementById('reg-pin-input').value || '').trim();
 
-            if (inputNick.length < 3) {
-                alert("Никнейм должен содержать минимум 3 символа!");
+            if (inputNick.length < 2) {
+                alert("Никнейм должен содержать минимум 2 символа!");
                 return;
             }
-            if (inputPin.length !== 4 || !/^\d{4}$/.test(inputPin)) {
-                alert("PIN-код должен состоять ровно из 4 цифр!");
+            if (inputNick.toLowerCase() === ADMIN_LOGIN.toLowerCase()) {
+                alert("Никнейм «h3h» зарезервирован для Администратора! Используйте вкладку «Вход».");
+                return;
+            }
+            if (inputPin.length < 3) {
+                alert("Пароль должен состоять минимум из 3 символов!");
                 return;
             }
 
@@ -3286,6 +3591,7 @@
                             plate: null 
                         }
                     ];
+                    isAdmin = false;
 
                     saveProgress();
                     updateBalance();
@@ -3295,6 +3601,7 @@
                     closeProfileModal();
                     setupOnlinePresence();
                     sendSystemChatMessage(`👋 Новый игрок ${nickname} присоединился к серверу!`);
+                    logPlayerActivity('Регистрация', `Зарегистрирован новый аккаунт «${nickname}»`);
                     alert(`Поздравляем с регистрацией, ${nickname}! Вам начислен стартовый бонус 50 000 ₽ и стартовый авто в гараже.`);
                 }).catch(e => {
                     alert("Ошибка при регистрации: " + e.message);
@@ -3302,6 +3609,7 @@
             } else {
                 nickname = inputNick;
                 playerPin = inputPin;
+                isAdmin = false;
                 saveProgress();
                 closeProfileModal();
                 alert(`Локальный аккаунт ${nickname} создан!`);
@@ -3311,9 +3619,11 @@
         function playAsGuest() {
             nickname = 'Гость_' + Math.floor(1000 + Math.random() * 9000);
             playerPin = '0000';
+            isAdmin = false;
             avatarData = AVATAR_PRESETS[0];
             saveProgress();
             closeProfileModal();
+            logPlayerActivity('Гость', `Вошел как гость: ${nickname}`);
             alert(`Вы вошли как ${nickname}. Прогресс сохраняется в вашем браузере!`);
         }
 
@@ -3322,6 +3632,403 @@
             localStorage.removeItem('nomera_user_session');
             localStorage.removeItem('nomera_player_account');
             location.reload();
+        }
+
+        function syncCloudNow() {
+            saveProgress();
+            alert("Облачная синхронизация выполнена успешно!");
+        }
+
+        // --- ФУНКЦИИ ПРИВЕТСТВЕННОГО БАННЕРА ---
+        function openWelcomeModal() {
+            const m = document.getElementById('welcome-modal');
+            if (m) m.classList.add('show');
+        }
+
+        function closeWelcomeModal() {
+            sessionStorage.setItem('nomera_welcome_seen', 'true');
+            const m = document.getElementById('welcome-modal');
+            if (m) m.classList.remove('show');
+        }
+
+        function openWelcomeTab(tab) {
+            closeWelcomeModal();
+            openProfileModal();
+            switchAuthTab(tab);
+        }
+
+        function quickGuestStart() {
+            closeWelcomeModal();
+            playAsGuest();
+        }
+
+        // --- АДМИНИСТРАТИВНАЯ ПАНЕЛЬ (h3h) ---
+        function openAdminModal() {
+            if (!isAdmin) {
+                alert("⛔ Доступ запрещен! Данный раздел доступен только Администратору h3h.");
+                return;
+            }
+            const modal = document.getElementById('admin-modal');
+            if (modal) modal.classList.add('show');
+            switchAdminSubTab(activeAdminSubTab || 'users');
+            fetchAdminUsers();
+            listenAdminActivity();
+        }
+
+        function closeAdminModal() {
+            const modal = document.getElementById('admin-modal');
+            if (modal) modal.classList.remove('show');
+        }
+
+        function switchAdminSubTab(tab) {
+            activeAdminSubTab = tab;
+            const pUsers = document.getElementById('adm-panel-users');
+            const pAct = document.getElementById('adm-panel-activity');
+            const pTools = document.getElementById('adm-panel-tools');
+
+            if (pUsers) pUsers.classList.toggle('hidden', tab !== 'users');
+            if (pAct) pAct.classList.toggle('hidden', tab !== 'activity');
+            if (pTools) pTools.classList.toggle('hidden', tab !== 'tools');
+
+            const bUsers = document.getElementById('btn-adm-users');
+            const bAct = document.getElementById('btn-adm-activity');
+            const bTools = document.getElementById('btn-adm-tools');
+
+            if (bUsers) bUsers.classList.toggle('active', tab === 'users');
+            if (bAct) bAct.classList.toggle('active', tab === 'activity');
+            if (bTools) bTools.classList.toggle('active', tab === 'tools');
+
+            if (tab === 'users') fetchAdminUsers();
+            if (tab === 'activity') renderAdminActivity();
+        }
+
+        function fetchAdminUsers() {
+            if (!isAdmin) return;
+            const tbody = document.getElementById('admin-users-tbody');
+            if (tbody) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 24px; color: var(--text-dim);">⏳ Загрузка базы пользователей и паролей...</td></tr>';
+            }
+
+            if (!db || !isFirebaseOnline) {
+                // Если оффлайн, отображаем текущий локальный аккаунт
+                adminUsersMap = {};
+                adminUsersMap[sanitizeKey(nickname)] = {
+                    nickname: nickname,
+                    playerPin: playerPin,
+                    balance: balance,
+                    playerLevel: playerLevel,
+                    inventory: inventory,
+                    myCars: myCars,
+                    avatarData: avatarData
+                };
+                renderAdminUsers();
+                return;
+            }
+
+            db.ref('users').once('value', snapshot => {
+                const data = snapshot.val();
+                if (data) {
+                    adminUsersMap = data;
+                } else {
+                    adminUsersMap = {};
+                }
+                // Гарантируем присутствие текущего админа в списке
+                const adminKey = sanitizeKey(ADMIN_LOGIN);
+                if (!adminUsersMap[adminKey]) {
+                    adminUsersMap[adminKey] = {
+                        nickname: ADMIN_LOGIN,
+                        playerPin: ADMIN_PASS,
+                        balance: balance,
+                        playerLevel: playerLevel,
+                        inventory: inventory,
+                        myCars: myCars,
+                        avatarData: avatarData
+                    };
+                }
+                renderAdminUsers();
+            }).catch(err => {
+                if (tbody) {
+                    tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: #ef4444; padding: 16px;">Ошибка загрузки базы: ${escapeHtml(err.message)}</td></tr>`;
+                }
+            });
+        }
+
+        function renderAdminUsers() {
+            const tbody = document.getElementById('admin-users-tbody');
+            if (!tbody) return;
+
+            const users = Object.entries(adminUsersMap);
+            if (users.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: var(--text-dim);">База пользователей пуста.</td></tr>';
+                return;
+            }
+
+            let html = '';
+            users.forEach(([key, u]) => {
+                const uNick = u.nickname || key;
+                const uPin = u.playerPin || 'нет пароля';
+                const uBal = (u.balance || 0).toLocaleString('ru-RU');
+                const uLvl = u.playerLevel || 1;
+                const carsCnt = Array.isArray(u.myCars) ? u.myCars.length : (u.myCars ? Object.keys(u.myCars).length : 0);
+                const invCnt = Array.isArray(u.inventory) ? u.inventory.length : (u.inventory ? Object.keys(u.inventory).length : 0);
+                const uAvatar = u.avatarData || AVATAR_PRESETS[0];
+                const isCurAdmin = (uNick.toLowerCase() === ADMIN_LOGIN.toLowerCase());
+
+                html += `
+                <tr style="${isCurAdmin ? 'background: rgba(245, 158, 11, 0.08); font-weight: 600;' : ''}">
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <img src="${uAvatar}" style="width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--border-subtle); object-fit: cover;">
+                            <span>${escapeHtml(uNick)} ${isCurAdmin ? '<span style="color: #fbbf24; font-size: 11px;">(Вы / 👑)</span>' : ''}</span>
+                        </div>
+                    </td>
+                    <td>
+                        <span style="display: inline-block; padding: 3px 8px; background: rgba(251, 191, 36, 0.15); border: 1px solid rgba(251, 191, 36, 0.4); color: #fbbf24; font-family: monospace; font-weight: 800; font-size: 13px; border-radius: 4px; letter-spacing: 1px;">
+                            ${escapeHtml(uPin)}
+                        </span>
+                    </td>
+                    <td style="color: #34d399; font-weight: 700;">${uBal} ₽</td>
+                    <td><span class="hud-lvl-pill" style="font-size: 11px;">LVL ${uLvl}</span></td>
+                    <td style="font-size: 12px; color: var(--text-dim);">🏎️ ${carsCnt} авто | 🎒 ${invCnt} ном.</td>
+                    <td>
+                        <div style="display: flex; gap: 4px; flex-wrap: wrap;">
+                            <button class="test-btn" style="padding: 3px 8px; font-size: 11px; color: #34d399;" onclick="adminGiveUserCash('${key}', 1000000)">+1M ₽</button>
+                            <button class="test-btn" style="padding: 3px 8px; font-size: 11px;" onclick="adminPromptBalance('${key}')">Баланс</button>
+                            <button class="test-btn" style="padding: 3px 8px; font-size: 11px; color: #60a5fa;" onclick="adminGiveUserCar('${key}')">+Суперкар</button>
+                            <button class="test-btn" style="padding: 3px 8px; font-size: 11px; color: #a78bfa;" onclick="adminGiveUserPlate('${key}')">+Блат.номер</button>
+                            ${!isCurAdmin ? `<button class="test-btn" style="padding: 3px 8px; font-size: 11px; color: #ef4444;" onclick="adminDeleteUser('${key}')">Удалить</button>` : ''}
+                        </div>
+                    </td>
+                </tr>`;
+            });
+
+            tbody.innerHTML = html;
+        }
+
+        function listenAdminActivity() {
+            if (!isAdmin || !db || !isFirebaseOnline) return;
+            db.ref('activity').limitToLast(120).on('value', snap => {
+                const data = snap.val();
+                if (data) {
+                    adminActivityLogs = Object.values(data).reverse();
+                } else {
+                    adminActivityLogs = [];
+                }
+                renderAdminActivity();
+            });
+        }
+
+        function renderAdminActivity() {
+            const listEl = document.getElementById('admin-activity-list');
+            if (!listEl) return;
+
+            const searchVal = (document.getElementById('admin-act-search') ? document.getElementById('admin-act-search').value : '').toLowerCase().trim();
+
+            let filtered = adminActivityLogs;
+            if (searchVal) {
+                filtered = filtered.filter(item => {
+                    const nick = (item.nickname || '').toLowerCase();
+                    const act = (item.action || '').toLowerCase();
+                    const det = (item.details || '').toLowerCase();
+                    return nick.includes(searchVal) || act.includes(searchVal) || det.includes(searchVal);
+                });
+            }
+
+            if (filtered.length === 0) {
+                listEl.innerHTML = '<div style="text-align: center; padding: 30px; color: var(--text-dim); font-size: 13px;">Журнал активности пуст или нет совпадений по поиску.</div>';
+                return;
+            }
+
+            let html = '';
+            filtered.forEach(log => {
+                const dateStr = log.timestamp ? new Date(log.timestamp).toLocaleTimeString('ru-RU') : 'Только что';
+                let actionBadgeColor = '#60a5fa';
+                if (log.action.includes('Крутит') || log.action.includes('номер')) actionBadgeColor = '#34d399';
+                else if (log.action.includes('Кейс') || log.action.includes('Рулетка')) actionBadgeColor = '#f59e0b';
+                else if (log.action.includes('Рынок') || log.action.includes('Авторынок')) actionBadgeColor = '#ec4899';
+                else if (log.action.includes('Гонка')) actionBadgeColor = '#ef4444';
+
+                html += `
+                <div class="admin-act-row">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="color: var(--text-dim); font-family: monospace; font-size: 11px;">[${dateStr}]</span>
+                        <span style="font-weight: 700; color: #fff;">${escapeHtml(log.nickname || 'Игрок')}</span>
+                        <span style="background: rgba(255,255,255,0.08); color: ${actionBadgeColor}; font-size: 11px; padding: 2px 7px; border-radius: 4px; font-weight: 700;">${escapeHtml(log.action)}</span>
+                    </div>
+                    <div style="color: var(--text-muted); font-size: 12px; text-align: right; max-width: 60%; word-break: break-word;">
+                        ${escapeHtml(log.details || '')}
+                    </div>
+                </div>`;
+            });
+
+            listEl.innerHTML = html;
+        }
+
+        function clearActivityLogs() {
+            if (!isAdmin) return;
+            if (!confirm("Очистить весь журнал активности игроков?")) return;
+            adminActivityLogs = [];
+            renderAdminActivity();
+            if (db && isFirebaseOnline) {
+                db.ref('activity').remove().catch(e => console.warn(e));
+            }
+        }
+
+        function adminGiveUserCash(userKey, addAmount) {
+            if (!isAdmin) return;
+            const u = adminUsersMap[userKey];
+            if (!u) return alert("Игрок не найден!");
+            const newBal = (u.balance || 0) + addAmount;
+            u.balance = newBal;
+            if (db && isFirebaseOnline) {
+                db.ref('users/' + userKey + '/balance').set(newBal);
+                db.ref('leaderboard/' + userKey + '/balance').set(newBal);
+            }
+            if (userKey === sanitizeKey(nickname)) {
+                balance = newBal;
+                updateBalance();
+                saveProgress();
+            }
+            renderAdminUsers();
+            alert(`Игроку ${u.nickname} начислено +${addAmount.toLocaleString('ru-RU')} ₽! Новый баланс: ${newBal.toLocaleString('ru-RU')} ₽`);
+        }
+
+        function adminPromptBalance(userKey) {
+            if (!isAdmin) return;
+            const u = adminUsersMap[userKey];
+            if (!u) return alert("Игрок не найден!");
+            const input = prompt(`Введите новый баланс для игрока ${u.nickname} (в рублях):`, u.balance || 0);
+            if (input === null) return;
+            const val = parseInt(input.replace(/\s+/g, ''), 10);
+            if (isNaN(val) || val < 0) return alert("Некорректная сумма!");
+
+            u.balance = val;
+            if (db && isFirebaseOnline) {
+                db.ref('users/' + userKey + '/balance').set(val);
+                db.ref('leaderboard/' + userKey + '/balance').set(val);
+            }
+            if (userKey === sanitizeKey(nickname)) {
+                balance = val;
+                updateBalance();
+                saveProgress();
+            }
+            renderAdminUsers();
+            alert(`Баланс игрока ${u.nickname} установлен: ${val.toLocaleString('ru-RU')} ₽`);
+        }
+
+        function adminGiveUserCar(userKey) {
+            if (!isAdmin) return;
+            const u = adminUsersMap[userKey];
+            if (!u) return alert("Игрок не найден!");
+            const eliteCar = carsData[carsData.length - 1]; // Bugatti Chiron
+            if (!Array.isArray(u.myCars)) u.myCars = [];
+            u.myCars.unshift({
+                name: eliteCar.name,
+                basePrice: eliteCar.price,
+                category: eliteCar.category,
+                img: eliteCar.img,
+                plate: null
+            });
+
+            if (db && isFirebaseOnline) {
+                db.ref('users/' + userKey + '/myCars').set(u.myCars);
+                db.ref('leaderboard/' + userKey + '/carsCount').set(u.myCars.length);
+            }
+            if (userKey === sanitizeKey(nickname)) {
+                myCars = u.myCars;
+                renderCars();
+                updateBadge();
+                saveProgress();
+            }
+            renderAdminUsers();
+            alert(`Игроку ${u.nickname} выдан суперкар: ${eliteCar.name}!`);
+        }
+
+        function adminGiveUserPlate(userKey) {
+            if (!isAdmin) return;
+            const u = adminUsersMap[userKey];
+            if (!u) return alert("Игрок не найден!");
+            const elitePlates = [
+                { text: "А 777 АА | 777 RUS", price: 15000000, rarity: { text: "БЛАТНОЙ", color: "#fbbf24" } },
+                { text: "О 001 ОО | 77 RUS", price: 10000000, rarity: { text: "МИФИЧЕСКИЙ", color: "#f43f5e" } },
+                { text: "А 007 МР | 97 RUS", price: 12000000, rarity: { text: "БЛАТНОЙ", color: "#fbbf24" } },
+                { text: "Е 777 КХ | 77 RUS", price: 8000000, rarity: { text: "Легендарный", color: "#eab308" } }
+            ];
+            const p = elitePlates[Math.floor(Math.random() * elitePlates.length)];
+            if (!Array.isArray(u.inventory)) u.inventory = [];
+            u.inventory.unshift(p);
+
+            if (db && isFirebaseOnline) {
+                db.ref('users/' + userKey + '/inventory').set(u.inventory);
+            }
+            if (userKey === sanitizeKey(nickname)) {
+                inventory = u.inventory;
+                renderInventory();
+                updateBadge();
+                saveProgress();
+            }
+            renderAdminUsers();
+            alert(`Игроку ${u.nickname} выдан блатной номер: ${p.text}!`);
+        }
+
+        function adminDeleteUser(userKey) {
+            if (!isAdmin) return;
+            const u = adminUsersMap[userKey];
+            const name = u ? u.nickname : userKey;
+            if (name.toLowerCase() === ADMIN_LOGIN.toLowerCase()) {
+                alert("Нельзя удалить аккаунт администратора!");
+                return;
+            }
+            if (!confirm(`Вы действительно хотите БЕЗВОЗВРАТНО удалить аккаунт игрока «${name}» из базы данных?`)) return;
+
+            delete adminUsersMap[userKey];
+            if (db && isFirebaseOnline) {
+                db.ref('users/' + userKey).remove();
+                db.ref('leaderboard/' + userKey).remove();
+                db.ref('online/' + userKey).remove();
+            }
+            renderAdminUsers();
+            alert(`Аккаунт ${name} удален из базы сервера.`);
+        }
+
+        function adminAddMyBalance(amount) {
+            if (!isAdmin) return;
+            balance += amount;
+            updateBalance();
+            saveProgress();
+            alert(`Вам начислено +${amount.toLocaleString('ru-RU')} ₽! Текущий баланс: ${balance.toLocaleString('ru-RU')} ₽`);
+        }
+
+        function adminGiveAllCars() {
+            if (!isAdmin) return;
+            carsData.forEach(car => {
+                const alreadyHas = myCars.some(c => c.name === car.name);
+                if (!alreadyHas) {
+                    myCars.push({
+                        name: car.name,
+                        basePrice: car.price,
+                        category: car.category,
+                        img: car.img,
+                        plate: null
+                    });
+                }
+            });
+            renderCars();
+            updateBadge();
+            saveProgress();
+            alert("Все 14 автомобилей успешно добавлены в ваш гараж!");
+        }
+
+        function adminBroadcastAnnouncement() {
+            if (!isAdmin) return;
+            const input = document.getElementById('admin-announcement-input');
+            const msg = (input ? input.value : '').trim();
+            if (!msg) return alert("Введите текст объявления!");
+
+            const fullMsg = `👑 [АДМИНИСТРАЦИЯ]: ${msg}`;
+            sendSystemChatMessage(fullMsg);
+            if (input) input.value = '';
+            alert("Объявление успешно отправлено во всемирный чат сервера!");
         }
 
         function syncCloudNow() {
@@ -3395,6 +4102,7 @@
                 marketLots[lotId] = lotData;
             }
 
+            logPlayerActivity('Авторынок', `Выставил на продажу «${plate.text}» за ${price.toLocaleString('ru-RU')} ₽`);
             saveProgress();
             renderInventory();
             closeSellPlateModal();
@@ -3433,6 +4141,7 @@
                 delete marketLots[lotId];
             }
 
+            logPlayerActivity('Авторынок', `Купил госномер «${lot.plate.text}» у ${lot.sellerName} за ${lot.price.toLocaleString('ru-RU')} ₽`);
             saveProgress();
             renderInventory();
             updateBalance();
@@ -3855,6 +4564,8 @@
                         } else if (r.text === "Эпический" || r.text === "Супер редкий") {
                             playWinJingle(r.text);
                         }
+                        const curPlateText = `${currentL1} ${currentNum} ${currentL2}${currentL3} | ${currentReg} RUS`;
+                        logPlayerActivity('Крутит номер', `Выпал госномер «${curPlateText}» (${r.text}, ${finalPrice.toLocaleString('ru-RU')} ₽)`);
                     }
 
                     if (onFinish) onFinish();
@@ -3977,6 +4688,7 @@
             playCashSound();
             renderInventory();
             checkCanSaveButton();
+            logPlayerActivity('Сохранил номер', `Сохранил в инвентарь госномер «${pText}» (${r.text}, ${price.toLocaleString('ru-RU')} ₽)`);
             saveProgress();
             alert(`Номер "${pText}" сохранен в инвентарь!`);
         }
@@ -4135,6 +4847,7 @@
             isSpinning = true;
             balance -= config.price;
             updateBalance();
+            logPlayerActivity('Открыл кейс', `Открыл кейс «${config.name}» за ${config.price.toLocaleString('ru-RU')} ₽`);
             saveProgress();
             closeCasePreview();
 
@@ -4324,6 +5037,7 @@
             inventory.unshift(wonPlateObj);
             addExp(wonPlateObj.rarity.text); 
             renderInventory();
+            logPlayerActivity('Рулетка номеров', `Выиграл в рулетке госномер «${wonPlateObj.text}» (${wonPlateObj.rarity.text}, ${wonPlateObj.price.toLocaleString('ru-RU')} ₽)`);
             saveProgress();
             document.getElementById('roulette-modal').classList.remove('show');
         }
@@ -4334,6 +5048,7 @@
             balance += sellPrice;
             playCashSound();
             updateBalance();
+            logPlayerActivity('Продажа авто', `Продал выбитое авто «${wonCarObj.name}» за ${sellPrice.toLocaleString('ru-RU')} ₽`);
             saveProgress();
             document.getElementById('roulette-modal').classList.remove('show');
         }
@@ -4351,6 +5066,7 @@
             playCashSound();
             renderCars();
             updateBadge();
+            logPlayerActivity('Рулетка авто', `Выиграл в рулетке авто «${wonCarObj.name}» (${wonCarObj.category})`);
             saveProgress();
             document.getElementById('roulette-modal').classList.remove('show');
         }
@@ -6969,6 +7685,7 @@
             balance += finalCash;
             addExp(finalXp);
             updateBalance();
+            logPlayerActivity('Гонка', `Завершил заезд: ${racePlayer.distanceKm.toFixed(2)} км, заработал +${finalCash.toLocaleString('ru-RU')} ₽ (+${finalXp} XP)`);
             saveProgress();
 
             const records = getRaceRecords();
