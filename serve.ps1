@@ -1,5 +1,6 @@
 $port = 5500
-$root = $PSScriptRoot
+$root = [System.IO.Path]::GetFullPath($PSScriptRoot)
+$rootPrefix = $root.TrimEnd([System.IO.Path]::DirectorySeparatorChar) + [System.IO.Path]::DirectorySeparatorChar
 $listener = New-Object System.Net.HttpListener
 $listener.Prefixes.Add("http://localhost:$port/")
 $listener.Start()
@@ -19,6 +20,12 @@ try {
 
             $filePath = Join-Path $root ($urlPath.TrimStart("/").Replace("/", [System.IO.Path]::DirectorySeparatorChar))
 
+            $filePath = [System.IO.Path]::GetFullPath($filePath)
+            if (-not $filePath.StartsWith($rootPrefix, [System.StringComparison]::OrdinalIgnoreCase)) {
+                $response.StatusCode = 403
+                continue
+            }
+
             if (Test-Path $filePath -PathType Leaf) {
                 $bytes = [System.IO.File]::ReadAllBytes($filePath)
                 $ext = [System.IO.Path]::GetExtension($filePath).ToLower()
@@ -29,6 +36,7 @@ try {
                     ".json" { $contentType = "application/json; charset=utf-8" }
                     ".css"  { $contentType = "text/css; charset=utf-8" }
                     ".png"  { $contentType = "image/png" }
+                    ".svg"  { $contentType = "image/svg+xml" }
                     ".jpg"  { $contentType = "image/jpeg" }
                     ".ico"  { $contentType = "image/x-icon" }
                 }

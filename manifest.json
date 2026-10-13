@@ -1,15 +1,24 @@
 {
-  "name": "Мое Приложение",
-  "short_name": "App",
+  "name": "H3H Nomera — Симулятор госномеров",
+  "short_name": "H3H Nomera",
   "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#000000",
+  "background_color": "#0b1020",
+  "theme_color": "#0b1020",
   "icons": [
     {
-      "src": "https://cdn-icons-png.flaticon.com/512/732/732221.png",
+      "src": "./icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icons/icon-512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     }
-  ]
+  ],
+  "id": "./",
+  "scope": "./"
 }

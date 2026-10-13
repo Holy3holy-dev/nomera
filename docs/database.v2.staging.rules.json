@@ -1,0 +1,30 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "economy": {
+      "v2": {
+        "accounts": {
+          "$uid": {
+            ".read": "auth != null && auth.uid === $uid",
+            ".write": false
+          }
+        },
+        "market": {
+          ".read": true,
+          ".write": false
+        },
+        "operations": { ".read": false, ".write": false }
+      }
+    },
+    "public": {
+      "v2": {
+        ".read": true,
+        ".write": false
+      }
+    },
+    "credentials": { ".read": false, ".write": false },
+    "legacyMappings": { ".read": false, ".write": false },
+    "audit": { ".read": false, ".write": false }
+  }
+}
