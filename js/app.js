@@ -205,7 +205,7 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
         let isSpinning = false;
         let isAutoSpinning = false;
         const lettersArr = ['А', 'В', 'Е', 'К', 'М', 'Н', 'О', 'Р', 'С', 'Т', 'У', 'Х'];
-        const eliteLetters = ['ААА', 'АМР', 'ВВВ', 'ВОР', 'ТТТ', 'ХХХ', 'ККК', 'ЕКХ', 'АЕО'];
+        const eliteLetters = ['ААА', 'АМР', 'ВВВ', 'ВОР', 'ТТТ', 'ХХХ', 'ККК', 'ЕКХ', 'АЕО', 'ООО', 'ССС', 'МММ', 'СКР', 'УУУ'];
         let currentL1 = '-', currentL2 = '-', currentL3 = '-';
         let currentNum = '---';
         let currentReg = '777';
@@ -216,6 +216,7 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
         let boardHasLetters = false;
         let boardHasNumbers = false;
 
+        let pityCounterBoth = 0;
         let pityCounterLet = 0;
         let currentPityTargetLet = 40;
         let pityCounterNum = 0;
@@ -513,6 +514,7 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                 dailyBonus,
                 dailyQuests,
                 achievements,
+                pityCounterBoth,
                 raceRecords: (typeof getRaceRecords === 'function' ? getRaceRecords() : null),
                 updatedAt: Date.now()
             };
@@ -548,6 +550,7 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                     dailyBonus = d.dailyBonus || { lastClaimDate: null, streak: 0 };
                     dailyQuests = d.dailyQuests || { date: null, progress: { spins: 0, distance: 0, tune: 0 }, claimed: {} };
                     achievements = d.achievements || {};
+                    pityCounterBoth = typeof d.pityCounterBoth === 'number' ? d.pityCounterBoth : 0;
                     if (d.raceRecords && typeof setRaceRecords === 'function') {
                         setRaceRecords(d.raceRecords);
                     }
@@ -556,6 +559,7 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
 
             updateProfileUI();
             updateBadge();
+            updatePityUI();
         }
 
         function updateProfileUI() {
@@ -2157,29 +2161,59 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
 
         // --- ЛОГИКА РАСЧЕТА ЦЕНЫ И РЕДКОСТИ ---
         function getCalculatedPrice(l1, l2, l3, num, reg) {
-            let price = 500;
-            let letters = l1 + l2 + l3;
+            let price = 1200;
+            let letters = (l1 || '') + (l2 || '') + (l3 || '');
+            const isTripleLetters = (l1 === l2 && l2 === l3);
+            const isMirrorLetters = (l1 === l3 && l1 !== l2);
+            const isPairLetters = (l1 === l2 || l2 === l3) && !isTripleLetters;
 
+            // 1. Престижные серии
             if (eliteLetters.includes(letters)) {
-                if (num === '011') return 10000000;
-                if (num === '777') price += 4000000;
-                else if (num[0] === num[1] && num[1] === num[2]) price += 1500000;
-                else if (num === '001') price += 800000;
-                else price += 300000;
+                if (num === '011') return 12000000;
+                if (num === '777') price += 5000000;
+                else if (num[0] === num[1] && num[1] === num[2]) price += 2000000;
+                else if (num === '001') price += 1200000;
+                else price += 450000;
             }
-            if (letters === 'ВОР') price += 800000;
-            if (letters === 'ЕКХ') price += 1000000;
-            if (letters === 'АМР') price += 1200000;
+            if (letters === 'ЕКХ') price += 1500000;
+            if (letters === 'АМР') price += 1500000;
+            if (letters === 'ВОР') price += 1000000;
+            if (letters === 'ООО') price += 850000;
+            if (letters === 'ААА') price += 1200000;
+            if (letters === 'МММ') price += 750000;
+            if (letters === 'ССС') price += 650000;
+            if (letters === 'СКР') price += 700000;
+
+            // 2. Структура букв
+            if (isTripleLetters) price += 350000;
+            else if (isMirrorLetters) price += 25000;
+            else if (isPairLetters) price += 15000;
+
+            // 3. Комбинации цифр
             if (num === '011') price += 1500000;
+            if (num[0] === num[1] && num[1] === num[2]) {
+                price += (num === '777' ? 800000 : 350000);
+            } else if (num === '001') {
+                price += 400000;
+            } else if (num === '007') {
+                price += 250000;
+            } else if (num.startsWith('00')) {
+                price += 110000;
+            } else if (num.endsWith('00')) {
+                price += 80000;
+            } else if (['123','234','345','456','567','678','789','987','876','543','321'].includes(num)) {
+                price += 65000;
+            } else if (num[0] === num[2]) {
+                price += 35000;
+            } else if (['010','020','030','040','050','060','070','080','090'].includes(num)) {
+                price += 45000;
+            }
 
-            if (num[0] === num[1] && num[1] === num[2]) price += (num === '777') ? 500000 : 250000;
-            else if (num === '007') price += 150000;
-            else if (num.startsWith('00')) price += 70000;
-            else if (num.endsWith('00')) price += 50000;
-            else if (num[0] === num[2]) price += 25000;
-
-            if (l1 === l2 && l2 === l3) price += 150000;
-            if (reg === '777' || reg === '77') price += 20000;
+            // 4. Престижные регионы
+            if (['777','77','99','799','797'].includes(reg)) price += 35000;
+            else if (['78','98','178','198'].includes(reg)) price += 25000;
+            else if (reg === '95') price += 30000;
+            else if (reg === '16' || reg === '116' || reg === '716') price += 15000;
 
             return price;
         }
@@ -2194,8 +2228,8 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
             if (price >= 1000000) return { text: "Легендарный", color: "black", bg: "#f59e0b", border: "1px solid black", glow: "legendary" };
             if (price >= 300000) return { text: "Эпический", color: "white", bg: "#8b5cf6", border: "1px solid black", glow: "epic" };
             if (price >= 100000) return { text: "Супер редкий", color: "white", bg: "#ef4444", border: "1px solid black", glow: "super" };
-            if (price >= 30000) return { text: "Редкий", color: "white", bg: "#10b981", border: "1px solid black", glow: "rare" };
-            if (price >= 5000) return { text: "Необычный", color: "white", bg: "#3b82f6", border: "1px solid black", glow: "uncommon" };
+            if (price >= 35000) return { text: "Редкий", color: "white", bg: "#10b981", border: "1px solid black", glow: "rare" };
+            if (price >= 6000) return { text: "Необычный", color: "white", bg: "#3b82f6", border: "1px solid black", glow: "uncommon" };
             return { text: "Обычный", color: "white", bg: "transparent", border: "none", glow: "none" };
         }
 
@@ -2371,7 +2405,9 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                         let finalPrice = calculatePrice();
                         let r = getRarity(finalPrice);
                         flashPlateReward(r.text);
-                        if (r.text === "БЛАТНОЙ" || r.text === "Легендарный" || r.text === "Мифический") {
+                        if (r.text === "БЛАТНОЙ" || r.text === "Легендарный" || r.text === "Крутой" || r.text === "Мифический") {
+                            pityCounterBoth = 0;
+                            updatePityUI();
                             triggerLegendaryEffect();
                             triggerScreenShake();
                             playWinJingle(r.text);
@@ -2411,6 +2447,10 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
             if(!ensureOnlineAccess())return;
             serverSpinBusy=true;
             try {
+                if (mode === 'both') {
+                    pityCounterBoth++;
+                    updatePityUI();
+                }
                 const data=await onlineRequest('roll',{mode,region:currentReg});
                 setOnlineProfile(data.profile);
                 syncServerDraft(data.draft);
@@ -2427,6 +2467,117 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
             } catch(e) {notifyUser('Спин не выполнен: '+e.message,'error');}
             finally {serverSpinBusy=false;}
         }
+
+        function updatePityUI() {
+            const countEl = document.getElementById('pity-count');
+            const milestoneEl = document.getElementById('pity-next-milestone');
+            const fillEl = document.getElementById('pity-progress-fill');
+            if (!countEl || !milestoneEl || !fillEl) return;
+
+            countEl.innerText = pityCounterBoth;
+            let nextText = '';
+            let percent = 0;
+
+            if (pityCounterBoth < 15) {
+                nextText = `До Редкого: ${15 - pityCounterBoth}`;
+                percent = Math.min(100, Math.round((pityCounterBoth / 15) * 100));
+            } else if (pityCounterBoth < 45) {
+                nextText = `До Эпического: ${45 - pityCounterBoth}`;
+                percent = Math.min(100, Math.round(((pityCounterBoth - 15) / 30) * 100));
+            } else if (pityCounterBoth < 100) {
+                nextText = `До Легендарного: ${100 - pityCounterBoth}`;
+                percent = Math.min(100, Math.round(((pityCounterBoth - 45) / 55) * 100));
+            } else {
+                nextText = '🔥 Гарант активен!';
+                percent = 100;
+            }
+
+            milestoneEl.innerText = nextText;
+            fillEl.style.width = `${percent}%`;
+        }
+
+        function generateLuckyNumberLocal(forceTier) {
+            if (forceTier === 'legendary') {
+                return randomItem(['777', '777', '001', '007', '011', '111', '555', '888', '999']);
+            }
+            if (forceTier === 'epic') {
+                return randomItem([
+                    '111','222','333','444','555','666','777','888','999',
+                    '100','200','300','400','500','600','700','800','900',
+                    '002','003','004','005','006','007','008','009'
+                ]);
+            }
+            if (forceTier === 'rare') {
+                const k = Math.floor(Math.random() * 4);
+                const d1 = Math.floor(Math.random() * 10);
+                const d2 = Math.floor(Math.random() * 10);
+                if (k === 0) return `${d1}${d2}${d1}`;
+                if (k === 1) return randomItem(['123','234','345','456','567','678','789','987','654','321']);
+                if (k === 2) return `0${d1}0`;
+                return `${d1}${d2}0`;
+            }
+
+            const roll = Math.floor(Math.random() * 1000);
+            if (roll < 25) {
+                return randomItem(['777','777','001','007','011','111','555','888','999']);
+            }
+            if (roll < 100) {
+                return randomItem([
+                    '111','222','333','444','555','666','777','888','999',
+                    '100','200','300','400','500','600','700','800','900',
+                    '002','003','004','005','006','007','008','009'
+                ]);
+            }
+            if (roll < 280) {
+                const d1 = Math.floor(Math.random() * 10);
+                const d2 = Math.floor(Math.random() * 10);
+                const k = Math.floor(Math.random() * 4);
+                if (k === 0) return `${d1}${d2}${d1}`;
+                if (k === 1) return randomItem(['123','234','345','456','567','678','789','987','654','321']);
+                if (k === 2) return `0${d1}0`;
+                return `${d1}${d2}0`;
+            }
+            return Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+        }
+
+        function generateLuckyLettersLocal(forceTier) {
+            if (forceTier === 'legendary') {
+                const elite = randomItem(['ААА', 'АМР', 'ВОР', 'ЕКХ', 'ООО', 'ССС', 'МММ', 'СКР']);
+                return [elite[0], elite[1], elite[2]];
+            }
+            if (forceTier === 'epic') {
+                if (Math.random() < 0.6) {
+                    const elite = randomItem(eliteLetters);
+                    return [elite[0], elite[1], elite[2]];
+                }
+                const l = randomItem(lettersArr);
+                return [l, l, l];
+            }
+            if (forceTier === 'rare') {
+                const l1 = randomItem(lettersArr);
+                const l2 = randomItem(lettersArr);
+                if (Math.random() < 0.5) return [l1, l2, l1];
+                return Math.random() < 0.5 ? [l1, l1, l2] : [l2, l1, l1];
+            }
+
+            const roll = Math.floor(Math.random() * 1000);
+            if (roll < 30) {
+                const elite = randomItem(eliteLetters);
+                return [elite[0], elite[1], elite[2]];
+            }
+            if (roll < 110) {
+                const l = randomItem(lettersArr);
+                return [l, l, l];
+            }
+            if (roll < 270) {
+                const l1 = randomItem(lettersArr);
+                const l2 = randomItem(lettersArr);
+                if (Math.random() < 0.5) return [l1, l2, l1];
+                return Math.random() < 0.5 ? [l1, l1, l2] : [l2, l1, l1];
+            }
+            return [randomItem(lettersArr), randomItem(lettersArr), randomItem(lettersArr)];
+        }
+
         // --- ВАРИАНТЫ ПРОКРУТОК ---
         function spinNumbers() {
             if(onlineProfile)return serverSpin('numbers');
@@ -2441,7 +2592,7 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                 pityCounterNum = 0;
                 n = Math.random() < 0.25 ? '777' : Math.floor(Math.random() * 10).toString().repeat(3);
             } else {
-                n = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+                n = generateLuckyNumberLocal();
             }
 
             currentNum = n;
@@ -2468,9 +2619,8 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                 let elite = randomItem(eliteLetters);
                 l1 = elite[0]; l2 = elite[1]; l3 = elite[2];
             } else {
-                l1 = randomItem(lettersArr);
-                l2 = randomItem(lettersArr);
-                l3 = randomItem(lettersArr);
+                let letArr = generateLuckyLettersLocal();
+                l1 = letArr[0]; l2 = letArr[1]; l3 = letArr[2];
             }
 
             currentL1 = l1; currentL2 = l2; currentL3 = l3;
@@ -2490,8 +2640,15 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
             balance -= 900;
             updateBalance();
 
-            let n = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-            let l1 = randomItem(lettersArr), l2 = randomItem(lettersArr), l3 = randomItem(lettersArr);
+            pityCounterBoth++;
+            let forceTier = null;
+            if (pityCounterBoth >= 100) forceTier = 'legendary';
+            else if (pityCounterBoth >= 45) forceTier = 'epic';
+            else if (pityCounterBoth >= 15) forceTier = 'rare';
+
+            let n = generateLuckyNumberLocal(forceTier);
+            let letArr = generateLuckyLettersLocal(forceTier);
+            let l1 = letArr[0], l2 = letArr[1], l3 = letArr[2];
 
             currentNum = n;
             currentL1 = l1; currentL2 = l2; currentL3 = l3;
@@ -2499,6 +2656,8 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
             boardHasNumbers = true;
             hasSpunLetSinceSave = true;
             hasSpunNumSinceSave = true;
+
+            updatePityUI();
 
             const targets = ['cell-l1', 'cell-n1', 'cell-n2', 'cell-n3', 'cell-l2', 'cell-l3'];
             const finals = {
@@ -6211,7 +6370,7 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
             racePlayer.isDrafting = !!draftingCar;
             if (racePlayer.isDrafting) {
                 // Бонус за слипстрим
-                racePlayer.earnedCash += 280 * stats.rewardMult * dt;
+                racePlayer.earnedCash += 420 * stats.rewardMult * dt;
             }
 
             // 4. Управление продольной скоростью
@@ -6884,10 +7043,10 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
 
             const roll = Math.random();
             let type = 'cash';
-            let amount = 2500;
+            let amount = 3000;
             if (roll < 0.35) {
                 type = 'cash';
-                amount = Math.random() < 0.2 ? 7500 : 2500;
+                amount = Math.random() < 0.2 ? 10000 : 3000;
             } else if (roll < 0.65) {
                 type = 'fuel';
                 amount = 5.0;

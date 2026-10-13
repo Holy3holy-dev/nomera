@@ -227,5 +227,70 @@ test('race weather atmosphere selector and visual effects work properly', () => 
     assert.equal(rainBiome.isRain, true);
 });
 
+test('economy and plate price calculation parity with special series, ladders and round hundreds', () => {
+    const c = require('../netlify/functions/lib/online-core.cjs');
+    const app = createApp();
+
+    // 1. Base plate price
+    const baseLocal = app.run('getCalculatedPrice("А", "В", "К", "492", "50")');
+    const baseServer = c.priceOfPlate('А', 'В', 'К', '492', '50');
+    assert.equal(baseLocal, 1200);
+    assert.equal(baseServer, 1200);
+    assert.equal(c.rarityOfPrice(baseServer), 'Обычный');
+
+    // 2. Ladder bonus (123)
+    const ladderLocal = app.run('getCalculatedPrice("А", "В", "К", "123", "50")');
+    const ladderServer = c.priceOfPlate('А', 'В', 'К', '123', '50');
+    assert.equal(ladderLocal, 66200);
+    assert.equal(ladderServer, 66200);
+    assert.equal(c.rarityOfPrice(ladderServer), 'Редкий');
+
+    // 3. Round hundreds bonus (500)
+    const hundredLocal = app.run('getCalculatedPrice("А", "В", "К", "500", "50")');
+    const hundredServer = c.priceOfPlate('А', 'В', 'К', '500', '50');
+    assert.equal(hundredLocal, 81200);
+    assert.equal(hundredServer, 81200);
+    assert.equal(c.rarityOfPrice(hundredServer), 'Редкий');
+
+    // 4. Elite series ООО
+    const oooLocal = app.run('getCalculatedPrice("О", "О", "О", "492", "50")');
+    const oooServer = c.priceOfPlate('О', 'О', 'О', '492', '50');
+    assert.equal(oooLocal, 1651200);
+    assert.equal(oooServer, 1651200);
+    assert.equal(c.rarityOfPrice(oooServer), 'Легендарный');
+
+    // 5. Blatnoy jackpot: 011 with ЕКХ
+    const jackpotLocal = app.run('getCalculatedPrice("Е", "К", "Х", "011", "777")');
+    const jackpotServer = c.priceOfPlate('Е', 'К', 'Х', '011', '777');
+    assert.equal(jackpotLocal, 12000000);
+    assert.equal(jackpotServer, 12000000);
+    assert.equal(c.rarityOfPrice(jackpotServer), 'БЛАТНОЙ');
+});
+
+test('pity system increments on spins and triggers guarantees', () => {
+    const app = createApp({
+        saved: {
+            nickname: 'PityTester',
+            balance: 50000,
+            pityCounterBoth: 14
+        }
+    });
+    app.run('loadProgress()');
+    assert.equal(app.run('pityCounterBoth'), 14);
+
+    // Spin both should increment pityCounterBoth to 15 (Rare guarantee tier)
+    app.run('spinBoth()');
+    assert.equal(app.run('pityCounterBoth'), 15);
+    const priceAfter15 = app.run('calculatePrice()');
+    assert(priceAfter15 >= 6000, `Expected at least uncommon/rare, got ${priceAfter15}`);
+
+    // Set pity counter to 99 and spin -> hits 100, forcing legendary/blatnoy
+    app.run('isSpinning = false; pityCounterBoth = 99; spinBoth();');
+    assert.equal(app.run('pityCounterBoth'), 100);
+    const luckyNum = app.run('currentNum');
+    assert(['777','001','007','011','111','555','888','999'].includes(luckyNum));
+});
+
+
 
 
