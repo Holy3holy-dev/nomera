@@ -2361,3 +2361,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .online-v44-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .online-v44-bar small{font-size:11px;color:var(--text-dim);flex:1 1 100%;line-height:1.5}
 .online-v44-input{width:100%;margin:6px 0 12px;padding:11px;border-radius:8px;border:1px solid var(--border-subtle);background:rgba(255,255,255,.06);color:#fff;font-size:14px}
+
+/* H3H Admin password & badges */
+.admin-pass-code { display: inline-block; background: rgba(245, 158, 11, 0.15); color: #fbbf24; padding: 2px 7px; border-radius: 4px; font-family: monospace; font-size: 11px; border: 1px solid rgba(245, 158, 11, 0.3); }
+.admin-glow-btn.active-admin { box-shadow: 0 0 16px rgba(52, 211, 153, 0.7); border-color: #34d399 !important; }

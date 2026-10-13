@@ -48,3 +48,36 @@ test('admin balance response provides authoritative amount, without exposing unr
   assert.doesNotMatch(code,/nickname:key,playerLevel:1,inventory:\[\],myCars:\[\]/);
   assert.match(code,/\{balance:confirmedBalance\}/);
 });
+
+test('admin login elevates role and user management supports renaming, balances, and deletion', async () => {
+  const app = createApp({saved:{nickname:'Racer_77',balance:50000}});
+  app.run('loadProgress()');
+  let calledActions = [];
+  app.context.fetch = async (_url, options) => {
+    if (options.method === 'GET') return {ok: true, json: async () => ({ok: true, users: [{key: 'player_1', nickname: 'Бывалый', pin: '123456', balance: 75000, playerLevel: 3}]})};
+    const payload = JSON.parse(options.body || '{}');
+    calledActions.push(payload.action);
+    if (payload.action === 'login') return {ok: true, json: async () => ({ok: true, role: 'admin'})};
+    if (payload.action === 'renameUser') return {ok: true, json: async () => ({ok: true, newNickname: payload.newNickname})};
+    if (payload.action === 'deleteUser') return {ok: true, json: async () => ({ok: true})};
+    if (payload.action === 'setBalance') return {ok: true, json: async () => ({ok: true, balance: payload.amount})};
+    return {ok: true, json: async () => ({ok: true})};
+  };
+  await app.run(`adminSignIn('h3h', '0060666rt')`);
+  assert.equal(app.run('isAdmin'), true);
+  assert.ok(calledActions.includes('login'));
+
+  await app.run('fetchAdminUsers()');
+  const usersMap = app.run('adminUsersMap');
+  assert.ok(usersMap['player_1']);
+  assert.equal(usersMap['player_1'].pin, '123456');
+
+  await app.run(`adminExecute('renameUser', {key: 'player_1', newNickname: 'НовыйНик'})`);
+  assert.ok(calledActions.includes('renameUser'));
+
+  await app.run(`adminExecute('setBalance', {key: 'player_1', amount: 500000})`);
+  assert.ok(calledActions.includes('setBalance'));
+
+  await app.run(`adminExecute('deleteUser', {key: 'player_1'})`);
+  assert.ok(calledActions.includes('deleteUser'));
+});

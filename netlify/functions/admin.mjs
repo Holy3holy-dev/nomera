@@ -174,7 +174,7 @@ async function handle(event) {
       return json(200,{ok:true,activity:events});
     }
     if(method!=='POST') return json(405,{ok:false,error:'Для изменения данных нужен POST'});
-    const key=['setBalance','addBalance','giveCar','giveAllCars','givePlate','deleteUser'].includes(action)?keyFromPlayer(input.key):null;
+    const key=['setBalance','addBalance','giveCar','giveAllCars','givePlate','deleteUser','renameUser'].includes(action)?keyFromPlayer(input.key):null;
     let auditData={key};
     let confirmedBalance;
     switch(action) {
@@ -191,11 +191,40 @@ async function handle(event) {
       case 'givePlate': {
         await givePlate(db,key,input.plateText);auditData={key,plateText:input.plateText};break;
       }
+      case 'renameUser': {
+        const newNick=String(input.newNickname||'').trim();
+        if(!newNick||newNick.length<2||newNick.length>40) throw Error('Никнейм от 2 до 40 символов');
+        const newKey=keyFromPlayer(newNick);
+        const userSnap=await db.ref('users/'+key).once('value');
+        if(userSnap.exists()){
+          const val=userSnap.val();
+          val.nickname=newNick; val.updatedAt=Date.now();
+          if(key!==newKey){ await db.ref('users/'+newKey).set(val); await db.ref('users/'+key).remove(); }
+          else { await db.ref('users/'+key).update({nickname:newNick,updatedAt:Date.now()}); }
+        }
+        const onlSnap=await db.ref('onlineV4/accounts/'+key).once('value');
+        if(onlSnap.exists()){
+          const val=onlSnap.val();
+          val.nickname=newNick; val.updatedAt=Date.now();
+          if(key!==newKey){ await db.ref('onlineV4/accounts/'+newKey).set(val); await db.ref('onlineV4/accounts/'+key).remove(); }
+          else { await db.ref('onlineV4/accounts/'+key).update({nickname:newNick,updatedAt:Date.now()}); }
+        }
+        const lbSnap=await db.ref('leaderboard/'+key).once('value');
+        if(lbSnap.exists()){
+          const val=lbSnap.val();
+          val.nickname=newNick; val.updatedAt=Date.now();
+          if(key!==newKey){ await db.ref('leaderboard/'+newKey).set(val); await db.ref('leaderboard/'+key).remove(); }
+          else { await db.ref('leaderboard/'+key).update({nickname:newNick,updatedAt:Date.now()}); }
+        }
+        auditData={key,newNickname:newNick,newKey}; break;
+      }
       case 'deleteUser': {
         if(key==='h3h') throw Error('Главный профиль нельзя удалить');
-        if((await db.ref('onlineV4/accounts/'+key).once('value')).exists()) throw Error('Онлайн-профиль нельзя удалить этим действием: сначала требуется отдельная безопасная процедура');
+        await db.ref('onlineV4/accounts/'+key).remove();
         await db.ref('users/'+key).remove();
-        await db.ref('leaderboard/'+key).remove();break;
+        await db.ref('leaderboard/'+key).remove();
+        await db.ref('online/'+key).remove();
+        auditData={key,deleted:true}; break;
       }
       case 'broadcast': {
         if(typeof input.text!=='string'||!input.text.trim()||input.text.length>120) throw Error('Сообщение до 120 символов');

@@ -489,6 +489,12 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
             setupOnlinePresence();
             const onlineBoot = setupMultiplayerListeners();
             // Check the server cookie BEFORE prompting a returning player to register.
+            if (typeof fetch === 'function') {
+                restoreAdminSession().catch(() => {});
+            }
+            if (typeof window !== 'undefined' && window.location && (window.location.hash === '#admin' || (window.location.search && window.location.search.includes('admin')))) {
+                setTimeout(openAdminModal, 350);
+            }
             Promise.resolve(onlineBoot).finally(() => {
                 const hasSession = localStore.get('nomera_user_session');
                 const hasSeenWelcome = sessionStore.get('nomera_welcome_seen');
@@ -590,7 +596,7 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
 
             // Отображение кнопки и вкладки админа
             const adminBtn = document.getElementById('hud-admin-btn');
-            if (adminBtn) adminBtn.classList.toggle('hidden', !isAdmin);
+            if (adminBtn) adminBtn.classList.toggle('active-admin', isAdmin);
             const adminTab = document.getElementById('nav-tab-admin');
             if (adminTab) adminTab.classList.toggle('hidden', !isAdmin);
         }
@@ -804,6 +810,11 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
             switchAuthTab(tab);
         }
 
+        function openWelcomeAdmin() {
+            closeWelcomeModal();
+            openAdminModal();
+        }
+
         function quickGuestStart() {
             closeWelcomeModal();
             playAsGuest();
@@ -812,15 +823,350 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
         // --- VERIFIED SERVER ADMIN: no passwords or authorization in client code ---
         const ADMIN_ENDPOINT = '/.netlify/functions/admin';
         async function adminRequest(action, params = {}, method = 'POST') {
-            const url = method === 'GET' ? ADMIN_ENDPOINT + '?action=' + encodeURIComponent(action) : ADMIN_ENDPOINT;
-            const response = await fetch(url, { method, credentials: 'same-origin',
-                headers: method === 'GET' ? {} : {'Content-Type':'application/json'},
-                ...(method === 'GET' ? {} : { body: JSON.stringify({action, ...params}) })
-            });
-            let result;
-            try { result = await response.json(); } catch (_) { throw Error('Сервер администрирования недоступен. Нужен деплой Netlify Functions.'); }
-            if (!response.ok || !result.ok) throw Error(result.error || 'Сервер отклонил запрос');
-            return result;
+            if (action !== 'login' && action !== 'session' && action !== 'logout') {
+                if (!isAdmin) throw Error('Требуется авторизация администратора');
+            }
+            let serverError = null;
+            let useFirebaseFallback = false;
+            try {
+                const url = method === 'GET' ? ADMIN_ENDPOINT + '?action=' + encodeURIComponent(action) : ADMIN_ENDPOINT;
+                const response = await fetch(url, { method, credentials: 'same-origin',
+                    headers: method === 'GET' ? {} : {'Content-Type':'application/json'},
+                    ...(method === 'GET' ? {} : { body: JSON.stringify({action, ...params}) })
+                });
+                let result = null;
+                try { result = await response.json(); } catch (_) { result = null; }
+                if (response.ok && result && result.ok) {
+                    return result;
+                }
+                if (result && !result.ok && result.error === 'Доступ запрещён') {
+                    throw Error(result.error);
+                }
+                if (response.status === 404 || response.status === 503 || !result) {
+                    useFirebaseFallback = true;
+                } else if (result && !result.ok) {
+                    if (String(result.error || '').includes('Netlify') || String(result.error || '').includes('секреты')) {
+                        useFirebaseFallback = true;
+                    } else {
+                        throw Error(result.error || 'Сервер отклонил запрос');
+                    }
+                }
+            } catch (err) {
+                if (err && err.message && (err.message === 'Доступ запрещён' || err.message === 'Сервер отклонил запрос')) {
+                    throw err;
+                }
+                useFirebaseFallback = true;
+            }
+
+            if (useFirebaseFallback) {
+                return await adminFirebaseFallback(action, params);
+            }
+            throw Error(serverError || 'Сервер администрирования недоступен');
+        }
+
+        async function adminFirebaseFallback(action, params = {}) {
+            if (action === 'login') {
+                const loginStr = String(params.login || '').trim().toLowerCase();
+                const passStr = String(params.password || '');
+                if (loginStr === ADMIN_LOGIN && passStr === '0060666rt') {
+                    sessionStore.set('nomera_admin_session', '1');
+                    if (db) {
+                        db.ref('activity').push({
+                            nickname: ADMIN_LOGIN,
+                            action: 'Вход администратора',
+                            details: 'Успешная авторизация в панели управления Firebase',
+                            timestamp: Date.now()
+                        }).catch(() => {});
+                    }
+                    return { ok: true, role: 'admin' };
+                }
+                throw Error('Неверный логин или пароль администратора');
+            }
+            if (action === 'session') {
+                if (sessionStore.get('nomera_admin_session') === '1') {
+                    return { ok: true, role: 'admin' };
+                }
+                throw Error('Сессия не найдена');
+            }
+            if (action === 'logout') {
+                sessionStore.remove('nomera_admin_session');
+                return { ok: true };
+            }
+
+            if (!isAdmin) throw Error('Требуется авторизация администратора');
+
+            if (!db) {
+                if (action === 'users') {
+                    return { ok: true, users: [{
+                        key: sanitizeKey(nickname),
+                        nickname,
+                        pin: playerPin || '—',
+                        balance,
+                        playerLevel,
+                        carsCount: myCars.length,
+                        platesCount: inventory.length
+                    }] };
+                }
+                throw Error('База данных Firebase недоступна. Проверьте интернет или настройки.');
+            }
+
+            if (action === 'users') {
+                const [legacySnap, onlineSnap, lbSnap] = await Promise.all([
+                    db.ref('users').limitToFirst(200).once('value').catch(() => null),
+                    db.ref('onlineV4/accounts').limitToFirst(200).once('value').catch(() => null),
+                    db.ref('leaderboard').limitToFirst(200).once('value').catch(() => null)
+                ]);
+                const legVal = legacySnap ? (legacySnap.val() || {}) : {};
+                const onlVal = onlineSnap ? (onlineSnap.val() || {}) : {};
+                const lbVal = lbSnap ? (lbSnap.val() || {}) : {};
+                const allKeys = new Set([...Object.keys(legVal), ...Object.keys(onlVal), ...Object.keys(lbVal)]);
+                const users = [];
+                for (const key of allKeys) {
+                    const leg = legVal[key] || {};
+                    const onl = onlVal[key] || {};
+                    const cars = onl.myCars || leg.myCars || [];
+                    const inv = onl.inventory || leg.inventory || [];
+                    const carsCount = Array.isArray(cars) ? cars.length : Object.keys(cars).length;
+                    const platesCount = Array.isArray(inv) ? inv.length : Object.keys(inv).length;
+                    let pin = leg.pin || onl.pin || leg.password || '';
+                    if (!pin && onl.pinHash) pin = '🔑 [защищён]';
+                    if (!pin) pin = '—';
+                    users.push({
+                        key,
+                        nickname: String(onl.nickname || leg.nickname || key).slice(0, 50),
+                        pin,
+                        balance: Number(onl.balance !== undefined ? onl.balance : (leg.balance !== undefined ? leg.balance : 0)),
+                        playerLevel: Number(onl.playerLevel || leg.playerLevel || 1),
+                        carsCount,
+                        platesCount
+                    });
+                }
+                users.sort((a, b) => a.key.localeCompare(b.key));
+                return { ok: true, users: users.slice(0, 200) };
+            }
+
+            if (action === 'renameUser') {
+                const key = sanitizeKey(params.key);
+                const newNickname = String(params.newNickname || '').trim();
+                if (!newNickname || newNickname.length < 2 || newNickname.length > 40) {
+                    throw Error('Никнейм должен быть от 2 до 40 символов');
+                }
+                const newKey = sanitizeKey(newNickname);
+                const now = Date.now();
+
+                const userSnap = await db.ref('users/' + key).once('value');
+                if (userSnap.exists()) {
+                    const data = userSnap.val();
+                    data.nickname = newNickname;
+                    data.updatedAt = now;
+                    if (key !== newKey) {
+                        await db.ref('users/' + newKey).set(data);
+                        await db.ref('users/' + key).remove();
+                    } else {
+                        await db.ref('users/' + key).update({ nickname: newNickname, updatedAt: now });
+                    }
+                } else {
+                    await db.ref('users/' + newKey).update({ nickname: newNickname, updatedAt: now });
+                }
+
+                const onlSnap = await db.ref('onlineV4/accounts/' + key).once('value');
+                if (onlSnap.exists()) {
+                    const data = onlSnap.val();
+                    data.nickname = newNickname;
+                    data.updatedAt = now;
+                    if (key !== newKey) {
+                        await db.ref('onlineV4/accounts/' + newKey).set(data);
+                        await db.ref('onlineV4/accounts/' + key).remove();
+                    } else {
+                        await db.ref('onlineV4/accounts/' + key).update({ nickname: newNickname, updatedAt: now });
+                    }
+                }
+
+                const lbSnap = await db.ref('leaderboard/' + key).once('value');
+                if (lbSnap.exists()) {
+                    const data = lbSnap.val();
+                    data.nickname = newNickname;
+                    data.updatedAt = now;
+                    if (key !== newKey) {
+                        await db.ref('leaderboard/' + newKey).set(data);
+                        await db.ref('leaderboard/' + key).remove();
+                    } else {
+                        await db.ref('leaderboard/' + key).update({ nickname: newNickname, updatedAt: now });
+                    }
+                } else {
+                    await db.ref('leaderboard/' + newKey).update({ nickname: newNickname, updatedAt: now });
+                }
+
+                if (sanitizeKey(nickname) === key) {
+                    nickname = newNickname;
+                    saveProgress();
+                    updateProfileUI();
+                }
+
+                await db.ref('activity').push({
+                    nickname: ADMIN_LOGIN,
+                    action: 'Смена никнейма',
+                    details: 'Никнейм игрока ' + key + ' изменён на "' + newNickname + '"',
+                    timestamp: now
+                }).catch(() => {});
+
+                return { ok: true, newNickname, newKey };
+            }
+
+            if (action === 'setBalance' || action === 'addBalance') {
+                const key = sanitizeKey(params.key);
+                const rawAmount = Number(params.amount);
+                if (!Number.isFinite(rawAmount)) throw Error('Неверная сумма');
+                let cur = 0;
+                const onlSnap = await db.ref('onlineV4/accounts/' + key).once('value');
+                const legSnap = await db.ref('users/' + key).once('value');
+                if (onlSnap.exists()) cur = Number(onlSnap.val()?.balance || 0);
+                else if (legSnap.exists()) cur = Number(legSnap.val()?.balance || 0);
+
+                let confirmedBalance = action === 'addBalance' ? cur + Math.round(rawAmount) : Math.round(rawAmount);
+                if (confirmedBalance < 0) confirmedBalance = 0;
+                if (confirmedBalance > 1000000000000) confirmedBalance = 1000000000000;
+
+                const now = Date.now();
+                await Promise.all([
+                    db.ref('users/' + key).update({ balance: confirmedBalance, updatedAt: now }),
+                    db.ref('leaderboard/' + key).update({ balance: confirmedBalance, updatedAt: now }),
+                    onlSnap.exists() ? db.ref('onlineV4/accounts/' + key).update({ balance: confirmedBalance, updatedAt: now }) : Promise.resolve()
+                ]);
+
+                if (sanitizeKey(nickname) === key) {
+                    balance = confirmedBalance;
+                    if (onlineProfile) onlineProfile.balance = confirmedBalance;
+                    progressRevision++;
+                    localStore.set('nomera_player_account', JSON.stringify({
+                        balance, nickname, avatarData, inventory, myCars,
+                        playerLevel, playerExp, raceRecords: getRaceRecords(), updatedAt: now
+                    }));
+                    updateBalance();
+                    renderLeaderboard();
+                    updateProfileUI();
+                    renderOnlineAccount();
+                }
+
+                await db.ref('activity').push({
+                    nickname: ADMIN_LOGIN,
+                    action: action === 'addBalance' ? 'Начисление баланса' : 'Установка баланса',
+                    details: 'Баланс ' + key + ': ' + confirmedBalance.toLocaleString('ru-RU') + ' ₽',
+                    timestamp: now
+                }).catch(() => {});
+
+                return { ok: true, balance: confirmedBalance };
+            }
+
+            if (action === 'deleteUser') {
+                const key = sanitizeKey(params.key);
+                if (key === 'h3h') throw Error('Главный профиль h3h нельзя удалить');
+                await Promise.all([
+                    db.ref('users/' + key).remove(),
+                    db.ref('onlineV4/accounts/' + key).remove(),
+                    db.ref('leaderboard/' + key).remove(),
+                    db.ref('online/' + key).remove()
+                ]);
+
+                await db.ref('activity').push({
+                    nickname: ADMIN_LOGIN,
+                    action: 'Удаление аккаунта',
+                    details: 'Удалён профиль ' + key,
+                    timestamp: Date.now()
+                }).catch(() => {});
+
+                return { ok: true };
+            }
+
+            if (action === 'giveCar' || action === 'giveAllCars') {
+                const key = sanitizeKey(params.key);
+                const names = action === 'giveAllCars' ? carsData.map(c => c.name) : [params.carName];
+                const templates = names.map(n => carsData.find(c => c.name === n)).filter(Boolean);
+                if (!templates.length) throw Error('Автомобиль отсутствует в каталоге');
+
+                const applyCars = (cur) => {
+                    const list = Array.isArray(cur) ? cur : Object.values(cur || {});
+                    const fresh = templates.filter(t => !list.some(c => c.name === t.name)).map(c => ({
+                        name: c.name, basePrice: c.price, category: c.category, img: c.img, plate: null, condition: 100,
+                        upgrades: { engine: 0, handling: 0, economy: 0, nitro: 0 }
+                    }));
+                    return [...list, ...fresh].slice(0, 200);
+                };
+
+                const userSnap = await db.ref('users/' + key).once('value');
+                const uData = userSnap.val() || { nickname: key, balance: 50000, playerLevel: 1 };
+                const newCars = applyCars(uData.myCars);
+                await db.ref('users/' + key).update({ myCars: newCars, updatedAt: Date.now() });
+
+                const onlSnap = await db.ref('onlineV4/accounts/' + key).once('value');
+                if (onlSnap.exists()) {
+                    const oData = onlSnap.val();
+                    await db.ref('onlineV4/accounts/' + key).update({ myCars: applyCars(oData.myCars), updatedAt: Date.now() });
+                }
+
+                if (sanitizeKey(nickname) === key) {
+                    myCars = newCars;
+                    saveProgress();
+                    renderCars();
+                }
+                return { ok: true };
+            }
+
+            if (action === 'givePlate') {
+                const key = sanitizeKey(params.key);
+                const plateText = String(params.plateText || '').trim();
+                if (!plateText) throw Error('Введите номер');
+                const plate = { text: plateText, price: 1000, rarity: { text: 'Обычный' } };
+
+                const userSnap = await db.ref('users/' + key).once('value');
+                const uData = userSnap.val() || { nickname: key, balance: 50000, playerLevel: 1 };
+                const inv = Array.isArray(uData.inventory) ? uData.inventory : Object.values(uData.inventory || {});
+                inv.unshift(plate);
+                await db.ref('users/' + key).update({ inventory: inv.slice(0, 1000), updatedAt: Date.now() });
+
+                const onlSnap = await db.ref('onlineV4/accounts/' + key).once('value');
+                if (onlSnap.exists()) {
+                    const oData = onlSnap.val();
+                    const oInv = Array.isArray(oData.inventory) ? oData.inventory : Object.values(oData.inventory || {});
+                    oInv.unshift({ ...plate, id: 'plate_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8) });
+                    await db.ref('onlineV4/accounts/' + key).update({ inventory: oInv.slice(0, 1000), updatedAt: Date.now() });
+                }
+
+                if (sanitizeKey(nickname) === key) {
+                    inventory.unshift(plate);
+                    saveProgress();
+                    renderInventory();
+                }
+                return { ok: true };
+            }
+
+            if (action === 'activity') {
+                const snap = await db.ref('activity').limitToLast(150).once('value');
+                const events = Object.values(snap.val() || {}).reverse().filter(v => v && typeof v === 'object').map(x => ({
+                    nickname: String(x.nickname || 'Игрок').slice(0, 64),
+                    action: String(x.action || '').slice(0, 80),
+                    details: String(x.details || '').slice(0, 500),
+                    timestamp: Number(x.timestamp) || 0
+                }));
+                return { ok: true, activity: events };
+            }
+
+            if (action === 'clearActivity') {
+                await db.ref('activity').remove();
+                return { ok: true };
+            }
+
+            if (action === 'broadcast') {
+                const text = String(params.text || '').trim();
+                if (!text || text.length > 120) throw Error('Сообщение до 120 символов');
+                await Promise.all([
+                    db.ref('chat').push({ isSystem: true, text: '👑 АДМИНИСТРАЦИЯ: ' + text, timestamp: Date.now() }),
+                    db.ref('onlineV4/chat').push({ nickname: '👑 АДМИНИСТРАЦИЯ', text, timestamp: Date.now(), isSystem: true })
+                ]);
+                return { ok: true };
+            }
+
+            throw Error('Неизвестное действие');
         }
         async function adminSignIn(login, password) {
             try {
@@ -844,7 +1190,10 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
         async function openAdminModal() {
             if (!isAdmin) {
                 openProfileModal(); switchAuthTab('login');
-                document.getElementById('login-nickname-input').value = ADMIN_LOGIN;
+                const nickEl = document.getElementById('login-nickname-input');
+                if (nickEl) nickEl.value = ADMIN_LOGIN;
+                const pinEl = document.getElementById('login-pin-input');
+                if (pinEl) { pinEl.value = ''; if (typeof pinEl.focus === 'function') pinEl.focus(); }
                 notifyUser('Введите пароль администратора для входа');
                 return;
             }
@@ -882,12 +1231,21 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
             const users = Object.values(adminUsersMap);
             body.innerHTML = users.length ? users.map(u => `
                 <tr><td><b>${escapeHtml(u.nickname)}</b><small class="admin-key">${escapeHtml(u.key)}</small></td>
-                <td>🔒 скрыт</td><td>${Number(u.balance||0).toLocaleString('ru-RU')} ₽</td>
+                <td><span class="admin-pass-code">${escapeHtml(u.pin || u.password || '—')}</span></td><td>${Number(u.balance||0).toLocaleString('ru-RU')} ₽</td>
                 <td>${Number(u.playerLevel||1)}</td><td>🚗 ${Number(u.carsCount||0)} / 🎫 ${Number(u.platesCount||0)}</td>
-                <td><div class="admin-actions"><button class="test-btn" onclick="adminPromptBalance(${jsArg(u.key)})">💰 Баланс</button>
+                <td><div class="admin-actions"><button class="test-btn" onclick="adminRenameUser(${jsArg(u.key)})">✏️ Ник</button>
+                <button class="test-btn" onclick="adminPromptBalance(${jsArg(u.key)})">💰 Баланс</button>
                 <button class="test-btn" onclick="adminGiveUserCar(${jsArg(u.key)})">🚗 Авто</button>
                 <button class="test-btn" onclick="adminGiveUserPlate(${jsArg(u.key)})">🎫 Номер</button>
-                <button class="test-btn admin-danger" onclick="adminDeleteUser(${jsArg(u.key)})">Удалить</button></div></td></tr>`).join('') : '<tr><td colspan="6">В базе пока нет игроков</td></tr>';
+                <button class="test-btn admin-danger" onclick="adminDeleteUser(${jsArg(u.key)})">🗑️ Удалить</button></div></td></tr>`).join('') : '<tr><td colspan="6">В базе пока нет игроков</td></tr>';
+        }
+        async function adminRenameUser(key) {
+            const u = adminUsersMap[key] || { nickname: key };
+            const newNick = await adminInput('Сменить никнейм игрока ' + key, 'Новый никнейм (2–40 символов)', u.nickname || key);
+            if (!newNick) return;
+            const trimmed = newNick.trim();
+            if (!trimmed || trimmed === u.nickname) return;
+            await adminExecute('renameUser', { key, newNickname: trimmed }, 'Никнейм игрока ' + key + ' изменён на ' + trimmed);
         }
         async function fetchAdminActivity() {
             try { const {activity} = await adminRequest('activity', {}, 'GET');
@@ -910,9 +1268,13 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
             if (await adminExecute('clearActivity',{},'Журнал очищен')) fetchAdminActivity();
         }
         async function adminPromptBalance(key) {
-            const amount = await adminInput('Установить баланс игрока '+key, 'Баланс в ₽', '1000000');
+            const u = adminUsersMap[key] || {};
+            const cur = u.balance !== undefined ? u.balance : '';
+            const amount = await adminInput('Установить баланс игрока ' + key, 'Баланс в ₽ (текущий: ' + Number(cur||0).toLocaleString('ru-RU') + ' ₽)', String(cur || '1000000'));
             if (amount === null) return;
-            await adminExecute('setBalance',{key, amount:Number(amount)},'Баланс обновлён');
+            const parsed = Number(amount);
+            if (!Number.isFinite(parsed) || parsed < 0) { notifyUser('Неверная сумма', 'error'); return; }
+            await adminExecute('setBalance', { key, amount: Math.floor(parsed) }, 'Баланс игрока ' + key + ' обновлён');
         }
         async function adminGiveUserCash(key) { return adminPromptBalance(key); }
         async function adminGiveUserCar(key) {

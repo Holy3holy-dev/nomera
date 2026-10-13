@@ -21,7 +21,7 @@
     <!-- Подключение Firebase SDK для базы данных, аккаунтов и мультиплеера -->
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
-    <link rel="stylesheet" href="./styles.css?v=5b17df256f83">
+    <link rel="stylesheet" href="./styles.css?v=902390ff07b8">
 </head>
 <body>
     <svg class="icon-sprite" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><defs><symbol id="icon-plate" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M7 10h5m-5 4h5m4-4v4"/></symbol><symbol id="icon-collection" viewBox="0 0 24 24"><rect x="4" y="7" width="16" height="13" rx="2"/><path d="M8 7V4h8v3m-8 5h8m-8 4h5"/></symbol><symbol id="icon-garage" viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v10H3zM7 21V12h10v9m-10-5h10"/></symbol><symbol id="icon-race" viewBox="0 0 24 24"><path d="M5 21V3m0 1h6l2 2h7v10h-7l-2-2H5m6-10v10m2-8v10"/></symbol><symbol id="icon-case" viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="14" rx="2"/><path d="M12 7v14M3 12h18m-9-5C4 7 5 1 8 3l4 4m0 0c8 0 7-6 4-4z"/></symbol><symbol id="icon-rating" viewBox="0 0 24 24"><path d="M7 3h10v5a5 5 0 01-10 0zm10 2h4v3a4 4 0 01-4 4M7 5H3v3a4 4 0 004 4m5 1v5m-4 3h8m-6-3h4"/></symbol><symbol id="icon-online" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><ellipse cx="12" cy="12" rx="4" ry="9"/><path d="M3 12h18"/></symbol><symbol id="icon-profile" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M5 21v-2a7 7 0 0114 0v2"/></symbol><symbol id="icon-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3M5 5l2 2m10 10l2 2M5 19l2-2M17 7l2-2"/></symbol></defs></svg>
@@ -81,7 +81,7 @@
             </div>
 
             <div class="hud-actions">
-                <button class="hud-icon-btn admin-glow-btn hidden" id="hud-admin-btn" onclick="openAdminModal()" title="Админ-Панель Сервера">👑 АДМИН</button>
+                <button class="hud-icon-btn admin-glow-btn" id="hud-admin-btn" onclick="openAdminModal()" title="Админ-Панель (h3h)">👑 АДМИН</button>
                 <button class="hud-icon-btn" onclick="openProfileModal()" title="Профиль и Аккаунт" aria-label="Профиль"><svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24"><use href="#icon-profile"/></svg></button>
                 <button class="hud-icon-btn" onclick="openSettings()" title="Настройки" aria-label="Настройки"><svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24"><use href="#icon-settings"/></svg></button>
             </div>
@@ -568,6 +568,11 @@
                 <div style="font-size: 12px; color: var(--text-dim);">Быстрая регистрация + бонус 50 000 ₽ и ВАЗ-2107 в гараже!</div>
             </div>
 
+            <div class="welcome-card-option" onclick="openWelcomeAdmin()" style="border-color: rgba(245, 158, 11, 0.4); background: rgba(245, 158, 11, 0.06);">
+                <div style="font-size: 15px; font-weight: 800; color: #fbbf24; margin-bottom: 4px;">👑 Вход для администратора (h3h)</div>
+                <div style="font-size: 12px; color: var(--text-dim);">Управление базой: смена ников, балансы, пароли и удаление аккаунтов.</div>
+            </div>
+
             <div class="welcome-card-option" onclick="quickGuestStart()" style="border-style: dashed;">
                 <div style="font-size: 15px; font-weight: 700; color: #fbbf24; margin-bottom: 4px;">🚀 Быстрый старт (Гость)</div>
                 <div style="font-size: 12px; color: var(--text-dim);">Играть сразу в 1 клик без пароля и регистрации.</div>
@@ -608,7 +613,7 @@
                         <thead>
                             <tr>
                                 <th>Никнейм</th>
-                                <th>Авторизация</th>
+                                <th>Пароль / PIN</th>
                                 <th>Баланс</th>
                                 <th>Уровень</th>
                                 <th>Гараж / Инвентарь</th>
@@ -883,11 +888,11 @@
         }
     </script>
     <script src="/.netlify/functions/firebase-web-config"></script>
-    <script src="./js/security.js?v=5cc426efe69b"></script>
-    <script src="./js/storage.js?v=327dc7592b84"></script>
-    <script src="./js/race-records.js?v=eaeaf8e59fc2"></script>
-    <script src="./js/race-economy.js?v=6185d5bc30a5"></script>
-    <script src="./js/audio.js?v=59465c7aad9f"></script>
-    <script src="./js/app.js?v=72e0c2a98270"></script>
+    <script src="./js/security.js?v=16d79caeb075"></script>
+    <script src="./js/storage.js?v=3c82419118a8"></script>
+    <script src="./js/race-records.js?v=9c07941a09a1"></script>
+    <script src="./js/race-economy.js?v=793acd278494"></script>
+    <script src="./js/audio.js?v=2fecd96cf1bd"></script>
+    <script src="./js/app.js?v=714d694a6474"></script>
 </body>
 </html>
