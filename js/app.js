@@ -802,15 +802,41 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
 
         function playAsGuest() {
             nickname = 'Гость_' + Math.floor(1000 + Math.random() * 9000);
+            balance = 50000;
+            inventory = [];
+            myCars = [
+                {
+                    name: "ВАЗ-2107 «Жигули»",
+                    basePrice: 80000,
+                    category: "Седан",
+                    img: "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/d4/Lada_2107_front_20080116.jpg/800px-Lada_2107_front_20080116.jpg",
+                    plate: null,
+                    condition: 100,
+                    upgrades: { engine: 0, handling: 0, economy: 0, nitro: 0 }
+                }
+            ];
+            playerLevel = 1;
+            playerExp = 0;
             raceRecordStore.bind(sanitizeKey(nickname));
             playerPin = '';
             isAdmin = false;
             avatarData = AVATAR_PRESETS[0];
-            onlineProfile=null;renderOnlineAccount();
+            onlineProfile = null;
+            localStore.remove('nomera_user_session');
+            updateBalance();
+            updateExpUI();
+            renderInventory();
+            renderCars();
+            renderOnlineAccount();
             saveProgress();
             closeProfileModal();
             logPlayerActivity('Гость', `Вошел как гость: ${nickname}`);
-            notifyUser(`Вы вошли как ${nickname}. Прогресс сохраняется в вашем браузере!`);
+            notifyUser(`Вы вошли как ${nickname}. Стартовый баланс: 50 000 ₽.`);
+        }
+
+        async function resetGuestProfile() {
+            if (!(await confirmAction("Сбросить профиль гостя к начальным 50 000 ₽ и базовой машине?"))) return;
+            playAsGuest();
         }
 
         async function logoutAccount() {

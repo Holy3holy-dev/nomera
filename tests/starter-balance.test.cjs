@@ -35,3 +35,15 @@ test('server signup reserves the admin identity regardless of client behavior',(
   const src=fs.readFileSync(path.join(__dirname,'../netlify/functions/online.mjs'),'utf8');
   assert.match(src,/if\(key==='h3h'\)return output\(400/);
 });
+
+test('playAsGuest cleans up local balance to 50,000 and default garage', () => {
+  const { createApp } = require('./helpers/create-app.cjs');
+  const app = createApp({ saved: { nickname: 'RichPlayer', balance: 999999999, inventory: [{ text: 'А 777 АА | 77 RUS' }] } });
+  app.run('loadProgress()');
+  assert.equal(app.run('balance'), 999999999);
+  app.run('playAsGuest()');
+  assert.equal(app.run('balance'), 50000);
+  assert.match(app.run('nickname'), /^Гость_\d+$/);
+  assert.equal(app.run('inventory.length'), 0);
+  assert.equal(app.run('myCars[0].name'), 'ВАЗ-2107 «Жигули»');
+});
