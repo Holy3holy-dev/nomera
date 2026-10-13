@@ -364,5 +364,49 @@ test('leaderboard renders visible player avatars and safeImageUrl accepts SVG da
     assert.ok(!html.includes('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII='), 'Leaderboard must not contain 1x1 transparent fallback');
 });
 
+test('safeImageUrl and getPlayerAvatar support custom uploaded jpeg, jpg, png photos and relative paths', () => {
+    const sec = require('../js/security.js');
+    const customJpeg = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////wgALCAABAAEBAREA/8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABPxA=';
+    const customJpg = 'data:image/jpg;base64,/9j/4AAQSkZJRg==';
+    const newlinePng = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk\r\nYAAAAAYAAjCB0C8AAAAASUVORK5CYII=\n';
+    const relativeIcon = './icons/car-placeholder.svg';
+
+    assert.equal(sec.safeImageUrl(customJpeg, 'err'), customJpeg);
+    assert.equal(sec.safeImageUrl(customJpg, 'err'), customJpg);
+    assert.equal(sec.safeImageUrl(newlinePng, 'err'), newlinePng.replace(/\s+/g, ''));
+    assert.equal(sec.safeImageUrl(relativeIcon, 'err'), relativeIcon);
+    assert.equal(sec.safeImageUrl('javascript:alert(1)', 'err'), 'err');
+
+    const app = createApp({
+        saved: {
+            nickname: 'PhotoUser',
+            balance: 50000000,
+            avatarData: customJpeg
+        }
+    });
+    app.run('loadProgress()');
+    app.run(`
+        cloudLeaderboardList = [
+            { nickname: 'PlayerCustom', balance: 70000000, playerLevel: 15, avatarData: ${JSON.stringify(customJpeg)} },
+            { nickname: 'PlayerPresets', balance: 30000000, playerLevel: 8 },
+            { nickname: 'PhotoUser', balance: 50000000, playerLevel: 10, avatarData: ${JSON.stringify(customJpeg)} }
+        ];
+        renderLeaderboard();
+    `);
+
+    // Verify custom avatar is returned for PlayerCustom and PhotoUser
+    const avatarCustom = app.run('getPlayerAvatar(cloudLeaderboardList[0])');
+    assert.equal(avatarCustom, customJpeg, 'getPlayerAvatar must return the uploaded custom image, not a preset');
+
+    // Verify custom avatar is rendered into leaderboard HTML
+    const listHtml = app.elements.get('leaderboard-list').innerHTML;
+    assert.ok(listHtml.includes(customJpeg), 'Leaderboard list must render the custom uploaded avatar');
+
+    const podiumHtml = app.elements.get('podium-stage').innerHTML;
+    assert.ok(podiumHtml.includes(customJpeg), 'Leaderboard podium must render the custom uploaded avatar');
+    assert.ok(podiumHtml.includes('handleAvatarError'), 'Podium must use handleAvatarError for safe fallback');
+});
+
+
 
 

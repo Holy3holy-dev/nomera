@@ -313,6 +313,12 @@ const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/20
             return AVATAR_PRESETS[idx];
         }
 
+        window.handleAvatarError = function(img, fallbackIdx = 0) {
+            if (!img) return;
+            img.onerror = null;
+            img.src = (Array.isArray(AVATAR_PRESETS) && AVATAR_PRESETS[fallbackIdx]) ? AVATAR_PRESETS[fallbackIdx] : DEFAULT_AVATAR;
+        };
+
         // КЭШ И СЕРВЕРНЫЕ ДАННЫЕ
         let cloudLeaderboardList = [];
         let marketLots = {};
@@ -662,6 +668,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/20
             updateBadge();
             updateProfileUI();
             if (typeof syncCloudGarage === 'function') syncCloudGarage();
+            if (onlineProfile && typeof syncMyLeaderboardEntry === 'function') syncMyLeaderboardEntry();
         }
 
         function loadProgress() {
@@ -776,6 +783,11 @@ const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/20
                     const newBal = Number(data.balance) || 0;
 
                     onlineProfile.balance = newBal;
+                    if (data.avatarData && data.avatarData !== avatarData) {
+                        avatarData = data.avatarData;
+                        onlineProfile.avatarData = data.avatarData;
+                        updateProfileUI();
+                    }
                     if (Array.isArray(data.inventory)) onlineProfile.inventory = data.inventory;
                     if (Array.isArray(data.myCars)) onlineProfile.myCars = data.myCars;
                     if (data.draft) onlineProfile.draft = data.draft;
@@ -895,7 +907,67 @@ const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/20
             if (el) el.classList.add('selected');
             const prev = document.getElementById('auth-profile-avatar-preview');
             if (prev) prev.src = safeImageUrl(svgUri, AVATAR_PRESETS[0], AVATAR_PRESETS);
+            const fileInput = document.getElementById('avatar-input');
+            if (fileInput) fileInput.value = '';
         }
+
+        function compressAndSetAvatar(file, callback) {
+            if (!file || !file.type || !file.type.startsWith('image/')) {
+                notifyUser('Пожалуйста, выберите файл изображения', 'error');
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const rawUri = e.target.result;
+                if (typeof document === 'undefined' || typeof Image === 'undefined') {
+                    const clean = String(rawUri || '').replace(/\s+/g, '');
+                    callback(clean);
+                    return;
+                }
+                const img = new Image();
+                img.onload = function() {
+                    try {
+                        const canvas = document.createElement('canvas');
+                        const maxDim = 160;
+                        canvas.width = maxDim;
+                        canvas.height = maxDim;
+                        const ctx = canvas.getContext('2d');
+                        if (!ctx) throw new Error('Canvas 2D unavailable');
+                        
+                        const minEdge = Math.min(img.width, img.height);
+                        const sx = (img.width - minEdge) / 2;
+                        const sy = (img.height - minEdge) / 2;
+                        ctx.drawImage(img, sx, sy, minEdge, minEdge, 0, 0, maxDim, maxDim);
+                        
+                        const compressed = canvas.toDataURL('image/jpeg', 0.85);
+                        callback(compressed);
+                    } catch (_) {
+                        const clean = String(rawUri || '').replace(/\s+/g, '');
+                        callback(clean.length < 350000 ? clean : rawUri);
+                    }
+                };
+                img.onerror = function() {
+                    notifyUser('Не удалось декодировать изображение', 'error');
+                };
+                img.src = rawUri;
+            };
+            reader.onerror = function() {
+                notifyUser('Ошибка чтения файла', 'error');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function handleAvatarFileSelect(input) {
+            if (!input || !input.files || !input.files[0]) return;
+            compressAndSetAvatar(input.files[0], function(uri) {
+                avatarData = uri;
+                document.querySelectorAll('.preset-avatar-item').forEach(i => i.classList.remove('selected'));
+                const prev = document.getElementById('auth-profile-avatar-preview');
+                if (prev) prev.src = safeImageUrl(uri, AVATAR_PRESETS[0], AVATAR_PRESETS);
+                notifyUser('Фото выбрано. Нажмите «Сохранить профиль», чтобы сохранить.');
+            });
+        }
+        window.handleAvatarFileSelect = handleAvatarFileSelect;
 
         function saveAccountProfile() {
             const newName = document.getElementById('nickname-input').value.trim();
@@ -911,19 +983,26 @@ const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/20
             nickname = newName;
 
             const fileInput = document.getElementById('avatar-input');
-            if (fileInput && fileInput.files && fileInput.files[0]) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    avatarData = e.target.result;
-                    saveProgress();
-                    closeProfileModal();
-                    notifyUser("Профиль обновлён. Результат сохранения показан в строке статуса.");
-                };
-                reader.readAsDataURL(fileInput.files[0]);
-            } else {
+            const finishSave = function() {
                 saveProgress();
+                if (onlineProfile) {
+                    onlineProfile.avatarData = avatarData;
+                }
+                syncMyLeaderboardEntry();
+                updateProfileUI();
+                renderLeaderboard();
                 closeProfileModal();
-                notifyUser("Профиль обновлён. Результат сохранения показан в строке статуса.");
+                notifyUser("Профиль и аватар успешно сохранены!");
+            };
+
+            if (fileInput && fileInput.files && fileInput.files[0]) {
+                compressAndSetAvatar(fileInput.files[0], function(compressed) {
+                    avatarData = compressed;
+                    fileInput.value = '';
+                    finishSave();
+                });
+            } else {
+                finishSave();
             }
         }
 
@@ -2200,6 +2279,13 @@ const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/20
 
         function setOnlineProfile(profile,applyInventory=false) {
             onlineProfile=profile;
+            if (profile && profile.avatarData && profile.avatarData !== avatarData) {
+                avatarData = profile.avatarData;
+                updateProfileUI();
+            } else if (onlineProfile && avatarData && !onlineProfile.avatarData) {
+                onlineProfile.avatarData = avatarData;
+                if (typeof syncMyLeaderboardEntry === 'function') syncMyLeaderboardEntry();
+            }
             if(profile && applyInventory) {
                 const owned=new Set((profile.inventory||[]).map(p=>p.text));
                 const unconfirmed=inventory.filter(p=>!p.id&&!owned.has(p.text));
@@ -2445,7 +2531,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/20
                         <div class="market-card">
                             <div class="market-card-seller">
                                 <div class="market-seller-badge">
-                                    <img src="${imageSrc(sellerAvatar)}" class="market-seller-avatar" onerror="this.src='${DEFAULT_AVATAR}'">
+                                    <img src="${imageSrc(sellerAvatar)}" class="market-seller-avatar" onerror="handleAvatarError(this, 0)">
                                     <span>${escapeHtml(lot.sellerName)}</span>
                                     ${isMine ? '<span style="font-size:10px; background:var(--accent-green); color:#000; padding:1px 6px; border-radius:var(--radius-full); font-weight:800;">ВЫ</span>' : ''}
                                 </div>
@@ -2482,7 +2568,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/20
                         <div class="market-card">
                             <div class="market-card-seller">
                                 <div class="market-seller-badge">
-                                    <img src="${imageSrc(sellerAvatar)}" class="market-seller-avatar" onerror="this.src='${DEFAULT_AVATAR}'">
+                                    <img src="${imageSrc(sellerAvatar)}" class="market-seller-avatar" onerror="handleAvatarError(this, 0)">
                                     <span>${escapeHtml(lot.sellerName)}</span>
                                     ${isMine ? '<span style="font-size:10px; background:var(--accent-green); color:#000; padding:1px 6px; border-radius:var(--radius-full); font-weight:800;">ВЫ</span>' : ''}
                                 </div>
@@ -2546,7 +2632,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/20
                     html += `
                         <div class="chat-bubble ${isMine ? 'mine' : ''}">
                             <div class="chat-author">
-                                <img src="${imageSrc(m.senderAvatar || DEFAULT_AVATAR)}" class="chat-author-avatar" onerror="this.src='${DEFAULT_AVATAR}'">
+                                <img src="${imageSrc(m.senderAvatar || DEFAULT_AVATAR)}" class="chat-author-avatar" onerror="handleAvatarError(this, 0)">
                                 ${titleBadgeHtml}
                                 <span>${escapeHtml(m.senderName)}</span>
                                 <span style="font-weight:400; opacity:0.6; margin-left:auto;">${timeStr}</span>
@@ -4708,7 +4794,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/20
         function syncMyLeaderboardEntry() {
             if (!onlineProfile || !db || typeof db.ref !== 'function') return;
             try {
-                const ref = db.ref('leaderboard/' + sanitizeKey(nickname));
+                const userKey = sanitizeKey(nickname);
+                if (!userKey) return;
+                const ref = db.ref('leaderboard/' + userKey);
                 if (!ref || typeof ref.update !== 'function') return;
                 const mySpeed = (typeof getRaceRecords === 'function' ? getRaceRecords().bestSpeed : 0) || 0;
                 const displayBal = (onlineProfile && Number.isFinite(Number(onlineProfile.balance)))
@@ -4725,6 +4813,11 @@ const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/20
                     bestSpeed: Math.round(mySpeed || 0),
                     updatedAt: Date.now()
                 }).catch(() => {});
+
+                if (onlineProfile) {
+                    db.ref('onlineV4/accounts/' + userKey).update({ avatarData: avatarData || AVATAR_PRESETS[0], updatedAt: Date.now() }).catch(() => {});
+                    db.ref('users/' + userKey).update({ avatarData: avatarData || AVATAR_PRESETS[0], updatedAt: Date.now() }).catch(() => {});
+                }
             } catch (_) {}
         }
 
@@ -4787,7 +4880,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/20
                 podium.innerHTML = `
                     <div class="podium-slot podium-2" onclick="openPlayerViewModal(${jsArg(sanitizeKey(p2.nickname))})">
                         <div class="podium-avatar-wrap">
-                            <img src="${imageSrc(getPlayerAvatar(p2))}" class="podium-avatar" onerror="this.src=AVATAR_PRESETS[1]">
+                            <img src="${imageSrc(getPlayerAvatar(p2))}" class="podium-avatar" onerror="handleAvatarError(this, 1)">
                         </div>
                         <div class="podium-name">${escapeHtml(p2.nickname)}</div>
                         <div class="podium-val">${getVal(p2)}</div>
@@ -4796,7 +4889,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/20
                     <div class="podium-slot podium-1" onclick="openPlayerViewModal(${jsArg(sanitizeKey(p1.nickname))})">
                         <div class="podium-crown">👑</div>
                         <div class="podium-avatar-wrap">
-                            <img src="${imageSrc(getPlayerAvatar(p1))}" class="podium-avatar" onerror="this.src=AVATAR_PRESETS[0]">
+                            <img src="${imageSrc(getPlayerAvatar(p1))}" class="podium-avatar" onerror="handleAvatarError(this, 0)">
                         </div>
                         <div class="podium-name">${escapeHtml(p1.nickname)}</div>
                         <div class="podium-val">${getVal(p1)}</div>
@@ -4804,7 +4897,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/20
                     </div>
                     <div class="podium-slot podium-3" onclick="openPlayerViewModal(${jsArg(sanitizeKey(p3.nickname))})">
                         <div class="podium-avatar-wrap">
-                            <img src="${imageSrc(getPlayerAvatar(p3))}" class="podium-avatar" onerror="this.src=AVATAR_PRESETS[2]">
+                            <img src="${imageSrc(getPlayerAvatar(p3))}" class="podium-avatar" onerror="handleAvatarError(this, 2)">
                         </div>
                         <div class="podium-name">${escapeHtml(p3.nickname)}</div>
                         <div class="podium-val">${getVal(p3)}</div>
@@ -4845,7 +4938,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/20
                     <div class="lead-row ${isMe ? 'is-me' : ''}" onclick="openPlayerViewModal(${jsArg(safeKey)})">
                         <div class="lead-left">
                             <div class="lead-rank">${rankBadge}</div>
-                            <img src="${imageSrc(avatar)}" class="lead-avatar" onerror="this.src=AVATAR_PRESETS[0]">
+                            <img src="${imageSrc(avatar)}" class="lead-avatar" onerror="handleAvatarError(this, 0)">
                             <div>
                                 <div class="lead-info-name">
                                     ${escName}
@@ -4885,7 +4978,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/20
             const player = allPlayers.find(p => sanitizeKey(p.nickname || '') === userKey);
             if (!player) return;
 
-            document.getElementById('pv-avatar').src = imageSrc(getPlayerAvatar(player));
+            document.getElementById('pv-avatar').src = safeImageUrl(getPlayerAvatar(player), DEFAULT_AVATAR, [...AVATAR_PRESETS, DEFAULT_CAR_IMG]);
             document.getElementById('pv-name').innerText = player.nickname || 'Игрок';
             document.getElementById('pv-level').innerText = `Уровень: ${escapeHtml(player.playerLevel || 1)} ${player.bestSpeed ? `| ⚡ ${Math.round(player.bestSpeed)} км/ч` : ''}`;
             document.getElementById('pv-balance').innerText = `${Number(player.balance || 0).toLocaleString('ru-RU')} ₽`;

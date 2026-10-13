@@ -9,12 +9,16 @@
     function safeImageUrl(value, fallback, trusted = []) {
         if (typeof value !== 'string') return fallback;
         if (trusted.includes(value)) return value;
-        if (/^data:image\/(png|jpeg|gif|webp|svg\+xml);base64,[A-Za-z0-9+/=]+$/i.test(value)) return value;
-        if (/^data:image\/svg\+xml;(?:utf8|charset=utf-8),[A-Za-z0-9%_\-.<>/='\"#;:& ]+$/i.test(value) && !/[<"'](?:script|object|embed)/i.test(value)) return value;
+        const clean = value.trim();
+        if (/^\.?\/[a-zA-Z0-9_\-\.\/]+\.(png|jpe?g|svg|webp|gif)$/i.test(clean)) return clean;
+        if (/^data:image\/(png|jpe?g|gif|webp|svg\+xml|pjpeg);base64,[A-Za-z0-9+/=\s]+$/i.test(clean)) {
+            return clean.replace(/\s+/g, '');
+        }
+        if (/^data:image\/svg\+xml;(?:utf8|charset=utf-8),[A-Za-z0-9%_\-.<>/='\"#;:& ]+$/i.test(clean) && !/[<"'](?:script|object|embed)/i.test(clean)) return clean;
         try {
-            const url = new URL(value);
+            const url = new URL(clean);
             if (url.protocol === 'https:' && !url.username && !url.password) return url.href;
-        } catch (_) { /* Untrusted and relative URLs are rejected. */ }
+        } catch (_) { /* Untrusted and invalid URLs are rejected. */ }
         return fallback;
     }
     const api = { escapeHtml, jsArg, safeImageUrl };
