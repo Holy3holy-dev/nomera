@@ -95,7 +95,7 @@ async function handle(request,context={}){
     if(request.method!=='POST'||!['sell','buy','cancel','chat','roll','claim','syncGarage','setRegion'].includes(action))return output(400,{ok:false,error:'Неизвестное действие'});
     const txnInput={...data,lotId:action==='sell'?'lot_'+uniqueId():data.lotId,
       plateId:action==='claim'?'plate_'+uniqueId():data.plateId,
-      roll:action==='roll'?core.secureRoll(data.mode):undefined,
+      roll:action==='roll'?core.secureRoll(data.mode, Number(data.pity || 0)):undefined,
       messageId:'msg_'+String(Date.now()).padStart(13,'0')+'_'+uniqueId()};
     // A fresh Admin SDK instance may invoke a parent transaction with a locally cached null.
     // Load the authoritative parent first, and distinguish an expired/deleted account

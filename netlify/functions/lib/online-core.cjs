@@ -181,18 +181,41 @@ function rarityOfPrice(p){
   return 'Обычный';
 }
 
-function secureRoll(mode){
+function secureRoll(mode, pity = 0){
   if(!['both','numbers','letters'].includes(mode))throw Error('Неверный тип спина');
   const choose=arr=>arr[crypto.randomInt(arr.length)];
+  const pityNum = Number.isSafeInteger(pity) && pity > 0 ? Math.min(200, pity) : 0;
+  const luckBonus = Math.min(200, Math.floor(pityNum * 3));
+
+  let forceTier = null;
+  if (mode === 'both') {
+    if (pityNum >= 120) forceTier = 'legendary';
+    else if (pityNum >= 65) forceTier = 'epic';
+    else if (pityNum >= 25) forceTier = 'rare';
+  }
 
   function generateLuckyNumber() {
+    if (forceTier === 'legendary') {
+      return choose(['777','001','007','011','111','555','888','999']);
+    }
+    if (forceTier === 'epic') {
+      return choose([
+        '111','222','333','444','555','666','888','999',
+        '100','200','300','400','500','600','700','800','900',
+        '002','003','004','005','006','007','008','009'
+      ]);
+    }
+    if (forceTier === 'rare') {
+      return choose(['123','234','345','456','567','678','789','987','876','765','654','543','432','321']);
+    }
+
     const roll = crypto.randomInt(1000);
-    // ~0.5% джекпот-цифры (777, 001, 007, 011)
-    if (roll < 5) {
+    const jackpotCutoff = Math.min(40, 5 + Math.floor(luckBonus * 0.1));
+    if (roll < jackpotCutoff) {
       return choose(['777','001','007','011']);
     }
-    // ~2.0% три одинаковые, круглые сотни и первые десятки
-    if (roll < 25) {
+    const epicCutoff = Math.min(120, 25 + Math.floor(luckBonus * 0.4));
+    if (roll < epicCutoff) {
       const epicPool = [
         '111','222','333','444','555','666','888','999',
         '100','200','300','400','500','600','700','800','900',
@@ -200,33 +223,49 @@ function secureRoll(mode){
       ];
       return choose(epicPool);
     }
-    // ~3.5% лесенки
-    if (roll < 60) {
+    const ladderCutoff = Math.min(260, 60 + luckBonus);
+    if (roll < ladderCutoff) {
       return choose(['123','234','345','456','567','678','789','987','876','765','654','543','432','321']);
     }
-    // 94% честные случайные цифры 000-999
     return String(crypto.randomInt(1000)).padStart(3, '0');
   }
 
   function generateLuckyLetters() {
-    const roll = crypto.randomInt(1000);
-    // ~0.8% спецсерия
-    if (roll < 8) {
-      const elite = choose(ELITES);
+    if (forceTier === 'legendary') {
+      const elite = choose(['ААА','АМР','ВОР','ЕКХ','ООО','ССС','МММ','СКР']);
       return [elite[0], elite[1], elite[2]];
     }
-    // ~2.0% три одинаковые буквы
-    if (roll < 28) {
+    if (forceTier === 'epic') {
+      if (crypto.randomInt(100) < 60) {
+        const elite = choose(ELITES);
+        return [elite[0], elite[1], elite[2]];
+      }
       const l = choose(LETTERS);
       return [l, l, l];
     }
-    // ~5.0% зеркальные буквы
-    if (roll < 78) {
+    if (forceTier === 'rare') {
       const l1 = choose(LETTERS);
       const l2 = choose(LETTERS);
       return [l1, l2, l1];
     }
-    // 92.2% честные случайные буквы
+
+    const roll = crypto.randomInt(1000);
+    const eliteCutoff = Math.min(40, 8 + Math.floor(luckBonus * 0.1));
+    if (roll < eliteCutoff) {
+      const elite = choose(ELITES);
+      return [elite[0], elite[1], elite[2]];
+    }
+    const tripleCutoff = Math.min(120, 28 + Math.floor(luckBonus * 0.4));
+    if (roll < tripleCutoff) {
+      const l = choose(LETTERS);
+      return [l, l, l];
+    }
+    const mirrorCutoff = Math.min(260, 78 + luckBonus);
+    if (roll < mirrorCutoff) {
+      const l1 = choose(LETTERS);
+      const l2 = choose(LETTERS);
+      return [l1, l2, l1];
+    }
     return [choose(LETTERS), choose(LETTERS), choose(LETTERS)];
   }
 
@@ -236,7 +275,7 @@ function secureRoll(mode){
     letters: mode === 'numbers' ? null : generateLuckyLetters()
   };
 }
-function draftOf(a){return a?.draft&&typeof a.draft==='object'?a.draft:{num:'---',letters:['-','-','-'],reg:'777',hasNumbers:false,hasLetters:false,changedNumbers:false,changedLetters:false};}
+function draftOf(a){return a?.draft&&typeof a.draft==='object'?a.draft:{num:'---',letters:['-','-','-'],reg:'777',hasNumbers:false,hasLetters:false,changedNumbers:false,changedLetters:false,pityCounter:0};}
 function sanitizedProfile(a){return {nickname:a.nickname, balance:a.balance, inventory:a.inventory||[], myCars:a.myCars||[], playerLevel:a.playerLevel||1, playerExp:a.playerExp||0, updatedAt:a.updatedAt||0, draft:a.draft||null};}
 function mutate(state, action, key, data, now=Date.now()) {
   if (!state || typeof state!=='object') state={};
@@ -255,7 +294,16 @@ function mutate(state, action, key, data, now=Date.now()) {
     const draft={...draftOf(a),reg:data.region};
     if(roll.num!==null){draft.num=roll.num;draft.hasNumbers=true;draft.changedNumbers=true;}
     if(roll.letters!==null){draft.letters=roll.letters;draft.hasLetters=true;draft.changedLetters=true;}
-    accounts[key]={...a,balance:a.balance-cost,draft,updatedAt:now};
+    let nextPity = (draft.pityCounter || 0) + (roll.mode === 'both' ? 1 : 0);
+    if (draft.hasNumbers && draft.hasLetters && draft.num !== '---' && Array.isArray(draft.letters)) {
+      const p = priceOfPlate(draft.letters[0], draft.letters[1], draft.letters[2], draft.num, data.region);
+      const r = rarityOfPrice(p);
+      if (['Редкий', 'Супер редкий', 'Эпический', 'Легендарный', 'БЛАТНОЙ'].includes(r)) {
+        nextPity = 0;
+      }
+    }
+    draft.pityCounter = nextPity;
+    accounts[key]={...a,balance:a.balance-cost,draft,pityCounter:nextPity,updatedAt:now};
   } else if(action==='setRegion') {
     if(!data?.region || !/^\d{2,3}$/.test(data.region)) throw Error('Неверный регион');
     const draft={...draftOf(a), reg:data.region};

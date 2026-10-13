@@ -2242,6 +2242,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .pity-header { display:flex; justify-content:space-between; align-items:center; font-size:11px; }
 .pity-title { color:#ffd6dc; font-weight:600; }
 .pity-title strong { color:#34d399; }
+.pity-boost { display:inline-block; padding:1px 6px; margin-left:6px; border-radius:999px; font-size:9px; font-weight:700; color:#34d399; background:rgba(16,185,129,.15); border:1px solid rgba(16,185,129,.35); letter-spacing:0.3px; vertical-align:middle; transition:all .2s ease; }
+.pity-boost.active { color:#fbbf24; background:rgba(245,158,11,.15); border-color:rgba(245,158,11,.4); box-shadow:0 0 8px rgba(245,158,11,.2); }
 .pity-label { color:#f87171; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; }
 .pity-progress-track { width:100%; height:6px; background:#241116; border-radius:999px; overflow:hidden; border:1px solid #4a1c24; }
 .pity-progress-fill { height:100%; background:linear-gradient(90deg, #10b981, #f59e0b, #ef4444); border-radius:999px; transition:width 0.3s cubic-bezier(0.4, 0, 0.2, 1); }

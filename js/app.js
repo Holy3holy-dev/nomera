@@ -707,9 +707,57 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
             if(badge) badge.textContent='V4.4.5';
         }
 
+        let myAccountRef = null;
+        let myAccountRefListener = null;
+
+        function detachMyOnlineAccount() {
+            if (myAccountRef && myAccountRefListener) {
+                try { myAccountRef.off('value', myAccountRefListener); } catch (_) {}
+            }
+            myAccountRef = null;
+            myAccountRefListener = null;
+        }
+
+        function attachMyOnlineAccount(userKey) {
+            if (!db || typeof db.ref !== 'function' || !userKey) return;
+            detachMyOnlineAccount();
+            try {
+                myAccountRef = db.ref('onlineV4/accounts/' + userKey);
+                myAccountRefListener = snap => {
+                    const data = snap.val();
+                    if (!data || !onlineProfile) return;
+                    const prevBal = Number(onlineProfile.balance) || 0;
+                    const newBal = Number(data.balance) || 0;
+
+                    onlineProfile.balance = newBal;
+                    if (Array.isArray(data.inventory)) onlineProfile.inventory = data.inventory;
+                    if (Array.isArray(data.myCars)) onlineProfile.myCars = data.myCars;
+                    if (data.draft) onlineProfile.draft = data.draft;
+
+                    renderOnlineAccount();
+
+                    if (newBal > prevBal && prevBal > 0) {
+                        const diff = newBal - prevBal;
+                        balance += diff;
+                        updateBalance();
+                        notifyUser(`💰 Начислено ${diff.toLocaleString('ru-RU')} ₽ за продажу на бирже!`, 'success');
+                        playCashSound();
+                        if (typeof sound?.haptic === 'function') sound.haptic('win');
+                        saveProgress();
+                    }
+                };
+                myAccountRef.on('value', myAccountRefListener);
+            } catch (_) {}
+        }
+
         function setupMultiplayerListeners() {
             refreshOnlinePublic().catch(()=>{});
-            const sessionPromise = restoreOnlineSession();
+            const sessionPromise = restoreOnlineSession().then(ok => {
+                if (ok && onlineProfile) {
+                    attachMyOnlineAccount(sanitizeKey(onlineProfile.nickname));
+                }
+                return ok;
+            });
             if (db && typeof db.ref === 'function') {
                 try {
                     db.ref('.info/connected').on('value', snap => {
@@ -847,6 +895,7 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                 localStore.set('nomera_user_session', JSON.stringify({nickname}));
             }
             setOnlineProfile(profile, true);
+            attachMyOnlineAccount(sanitizeKey(profile.nickname));
             if(profile.draft) syncServerDraft(profile.draft);
             updateProfileUI();
         }
@@ -917,6 +966,7 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
             isAdmin = false;
             avatarData = AVATAR_PRESETS[0];
             onlineProfile = null;
+            detachMyOnlineAccount();
             localStore.remove('nomera_user_session');
             updateBalance();
             updateExpUI();
@@ -1936,7 +1986,7 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                         else if (pityCounterBoth >= 65) forceTier = 'epic';
                         else if (pityCounterBoth >= 25) forceTier = 'rare';
                     }
-                    newNum = generateLuckyNumberLocal(forceTier);
+                    newNum = generateLuckyNumberLocal(forceTier, pityCounterBoth);
                     hasNumbers = true;
                     changedNumbers = true;
                 }
@@ -1947,9 +1997,18 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                         else if (pityCounterBoth >= 65) forceTier = 'epic';
                         else if (pityCounterBoth >= 25) forceTier = 'rare';
                     }
-                    newLetters = generateLuckyLettersLocal(forceTier);
+                    newLetters = generateLuckyLettersLocal(forceTier, pityCounterBoth);
                     hasLetters = true;
                     changedLetters = true;
+                }
+
+                let nextPity = (existingDraft.pityCounter || pityCounterBoth || 0) + (params.mode === 'both' ? 1 : 0);
+                if (hasNumbers && hasLetters && newNum !== '---' && Array.isArray(newLetters)) {
+                    const price = getCalculatedPrice(newLetters[0], newLetters[1], newLetters[2], newNum, params.region || existingDraft.reg || currentReg || '77');
+                    const r = getRarity(price);
+                    if (['Редкий', 'Супер редкий', 'Эпический', 'Легендарный', 'БЛАТНОЙ'].includes(r?.text)) {
+                        nextPity = 0;
+                    }
                 }
 
                 const draft = {
@@ -1959,7 +2018,8 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                     hasNumbers,
                     hasLetters,
                     changedNumbers,
-                    changedLetters
+                    changedLetters,
+                    pityCounter: nextPity
                 };
 
                 onlineProfile.draft = draft;
@@ -2193,6 +2253,17 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                 myCars.push(lot.car);
                 if (db) {
                     db.ref('onlineV4/market/' + lotId).remove().catch(() => {});
+                    if (lot.sellerKey) {
+                        db.ref('onlineV4/accounts/' + lot.sellerKey + '/balance').transaction(cur => {
+                            return (Number(cur) || 0) + lot.price;
+                        }).catch(() => {});
+                        db.ref('users/' + lot.sellerKey + '/balance').transaction(cur => {
+                            return (Number(cur) || 0) + lot.price;
+                        }).catch(() => {});
+                        db.ref('leaderboard/' + lot.sellerKey + '/balance').transaction(cur => {
+                            return (Number(cur) || 0) + lot.price;
+                        }).catch(() => {});
+                    }
                 }
                 delete marketLots[lotId];
                 playCashSound();
@@ -2711,25 +2782,20 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                         let finalPrice = calculatePrice();
                         let r = getRarity(finalPrice);
                         flashPlateReward(r.text);
-                        if (r.text === "БЛАТНОЙ" || r.text === "Легендарный" || r.text === "Крутой" || r.text === "Мифический") {
+                        const isHighTier = ['Редкий', 'Супер редкий', 'Эпический', 'Легендарный', 'БЛАТНОЙ', 'Крутой', 'Мифический'].includes(r.text);
+                        if (isHighTier) {
                             pityCounterBoth = 0;
                             updatePityUI();
+                        }
+                        if (r.text === "БЛАТНОЙ" || r.text === "Легендарный" || r.text === "Крутой" || r.text === "Мифический") {
                             triggerLegendaryEffect();
                             triggerScreenShake();
                             playWinJingle(r.text);
                             if (typeof sound?.haptic === 'function') sound.haptic('win');
                         } else if (r.text === "Эпический") {
-                            if (pityCounterBoth >= 25 && pityCounterBoth < 65) {
-                                pityCounterBoth = 0;
-                                updatePityUI();
-                            }
                             playWinJingle(r.text);
                             if (typeof sound?.haptic === 'function') sound.haptic('win');
                         } else if (r.text === "Редкий") {
-                            if (pityCounterBoth < 25) {
-                                pityCounterBoth = 0;
-                                updatePityUI();
-                            }
                             if (typeof sound?.haptic === 'function') sound.haptic('medium');
                         } else if (r.text === "Супер редкий") {
                             playWinJingle(r.text);
@@ -2802,8 +2868,12 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                 } else if (mode === 'letters') {
                     pityCounterLet++;
                 }
-                const data=await onlineRequest('roll',{mode,region:currentReg});
+                const data=await onlineRequest('roll',{mode,region:currentReg,pity:pityCounterBoth});
+                if (data.draft && typeof data.draft.pityCounter === 'number') {
+                    pityCounterBoth = data.draft.pityCounter;
+                }
                 setOnlineProfile(data.profile);
+                updatePityUI();
                 syncServerDraft(data.draft, mode);
                 const targets=mode==='both'
                     ? ['cell-l1','cell-n1','cell-n2','cell-n3','cell-l2','cell-l3']
@@ -2815,13 +2885,30 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
             finally {serverSpinBusy=false;}
         }
 
+        function getLuckBonus(pity) {
+            const p = Number.isFinite(pity) && pity > 0 ? Math.min(200, pity) : 0;
+            return Math.min(200, Math.floor(p * 3));
+        }
+
         function updatePityUI() {
             const countEl = document.getElementById('pity-count');
             const milestoneEl = document.getElementById('pity-next-milestone');
             const fillEl = document.getElementById('pity-progress-fill');
+            const boostEl = document.getElementById('pity-boost-badge');
             if (!countEl || !milestoneEl || !fillEl) return;
 
             countEl.innerText = pityCounterBoth;
+            const luckBonus = getLuckBonus(pityCounterBoth);
+            if (boostEl) {
+                boostEl.innerText = `+${luckBonus}%`;
+                boostEl.title = `Шансы на редкие номера увеличены на ${luckBonus}%`;
+                if (luckBonus > 0) {
+                    boostEl.classList.add('active');
+                } else {
+                    boostEl.classList.remove('active');
+                }
+            }
+
             let nextText = '';
             let percent = 0;
 
@@ -2843,7 +2930,7 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
             fillEl.style.width = `${percent}%`;
         }
 
-        function generateLuckyNumberLocal(forceTier) {
+        function generateLuckyNumberLocal(forceTier, pity = 0) {
             if (forceTier === 'legendary') {
                 return randomItem(['777', '777', '001', '007', '011', '111', '555', '888', '999']);
             }
@@ -2858,24 +2945,28 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                 return randomItem(['123','234','345','456','567','678','789','987','876','765','654','543','432','321']);
             }
 
+            const luckBonus = getLuckBonus(pity);
             const roll = Math.floor(Math.random() * 1000);
-            if (roll < 5) {
+            const jackpotCutoff = Math.min(40, 5 + Math.floor(luckBonus * 0.1));
+            if (roll < jackpotCutoff) {
                 return randomItem(['777','001','007','011']);
             }
-            if (roll < 25) {
+            const epicCutoff = Math.min(120, 25 + Math.floor(luckBonus * 0.4));
+            if (roll < epicCutoff) {
                 return randomItem([
                     '111','222','333','444','555','666','888','999',
                     '100','200','300','400','500','600','700','800','900',
                     '002','003','004','005','006','007','008','009'
                 ]);
             }
-            if (roll < 60) {
+            const ladderCutoff = Math.min(260, 60 + luckBonus);
+            if (roll < ladderCutoff) {
                 return randomItem(['123','234','345','456','567','678','789','987','876','765','654','543','432','321']);
             }
             return Math.floor(Math.random() * 1000).toString().padStart(3, '0');
         }
 
-        function generateLuckyLettersLocal(forceTier) {
+        function generateLuckyLettersLocal(forceTier, pity = 0) {
             if (forceTier === 'legendary') {
                 const elite = randomItem(['ААА', 'АМР', 'ВОР', 'ЕКХ', 'ООО', 'ССС', 'МММ', 'СКР']);
                 return [elite[0], elite[1], elite[2]];
@@ -2894,16 +2985,20 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                 return [l1, l2, l1];
             }
 
+            const luckBonus = getLuckBonus(pity);
             const roll = Math.floor(Math.random() * 1000);
-            if (roll < 8) {
+            const eliteCutoff = Math.min(40, 8 + Math.floor(luckBonus * 0.1));
+            if (roll < eliteCutoff) {
                 const elite = randomItem(eliteLetters);
                 return [elite[0], elite[1], elite[2]];
             }
-            if (roll < 28) {
+            const tripleCutoff = Math.min(120, 28 + Math.floor(luckBonus * 0.4));
+            if (roll < tripleCutoff) {
                 const l = randomItem(lettersArr);
                 return [l, l, l];
             }
-            if (roll < 78) {
+            const mirrorCutoff = Math.min(260, 78 + luckBonus);
+            if (roll < mirrorCutoff) {
                 const l1 = randomItem(lettersArr);
                 const l2 = randomItem(lettersArr);
                 return [l1, l2, l1];
@@ -2925,7 +3020,7 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                 pityCounterNum = 0;
                 n = Math.random() < 0.25 ? '777' : Math.floor(Math.random() * 10).toString().repeat(3);
             } else {
-                n = generateLuckyNumberLocal();
+                n = generateLuckyNumberLocal(null, pityCounterNum);
             }
 
             currentNum = n;
@@ -2952,7 +3047,7 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                 let elite = randomItem(eliteLetters);
                 l1 = elite[0]; l2 = elite[1]; l3 = elite[2];
             } else {
-                let letArr = generateLuckyLettersLocal();
+                let letArr = generateLuckyLettersLocal(null, pityCounterLet);
                 l1 = letArr[0]; l2 = letArr[1]; l3 = letArr[2];
             }
 
@@ -2979,8 +3074,8 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
             else if (pityCounterBoth >= 65) forceTier = 'epic';
             else if (pityCounterBoth >= 25) forceTier = 'rare';
 
-            let n = generateLuckyNumberLocal(forceTier);
-            let letArr = generateLuckyLettersLocal(forceTier);
+            let n = generateLuckyNumberLocal(forceTier, pityCounterBoth);
+            let letArr = generateLuckyLettersLocal(forceTier, pityCounterBoth);
             let l1 = letArr[0], l2 = letArr[1], l3 = letArr[2];
 
             currentNum = n;
