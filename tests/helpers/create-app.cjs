@@ -9,14 +9,17 @@ function createApp({saved = null, denyStorage = false, cloud = null} = {}) {
     const ctx = new Proxy({}, {get: (_,key) => key === 'measureText' ? () => ({width:20}) : () => {}});
     function element(id) {
         if (!ids.has(id)) return null;
-        if (!elements.has(id)) elements.set(id, {
-            id, style:{}, value:'', innerHTML:'', innerText:'', textContent:'', width:400,height:620,
-            classList:{add(){},remove(){},toggle(){},contains(){return false;}},
-            setAttribute(){}, dataset:{},
-            getContext:()=>ctx, addEventListener(){}, setPointerCapture(){},
-            appendChild(){}, querySelectorAll:()=>[], querySelector:()=>null,
-            getBoundingClientRect:()=>({width:400,height:620})
-        });
+        if (!elements.has(id)) {
+            const span = { innerText:'', textContent:'' };
+            elements.set(id, {
+                id, style:{}, value:'', innerHTML:'', innerText:'', textContent:'', width:400,height:620,
+                classList:{add(){},remove(){},toggle(){},contains(){return false;}},
+                setAttribute(){}, dataset:{},
+                getContext:()=>ctx, addEventListener(){}, setPointerCapture(){},
+                appendChild(){}, querySelectorAll:()=>[], querySelector:(s)=>s==='.char-span'?span:null,
+                getBoundingClientRect:()=>({width:400,height:620})
+            });
+        }
         return elements.get(id);
     }
     const data = new Map(saved ? [['nomera_player_account',JSON.stringify(saved)]] : []);

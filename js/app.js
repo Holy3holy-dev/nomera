@@ -1731,29 +1731,89 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                 if (onlineProfile.balance < cost) throw Error('Недостаточно средств для спина');
                 const newBal = onlineProfile.balance - cost;
                 const userKey = sanitizeKey(onlineProfile.nickname);
-                await Promise.all([
-                    db.ref('onlineV4/accounts/' + userKey).update({ balance: newBal, updatedAt: Date.now() }),
-                    db.ref('users/' + userKey).update({ balance: newBal, updatedAt: Date.now() }).catch(() => {}),
-                    db.ref('leaderboard/' + userKey).update({ balance: newBal, updatedAt: Date.now() }).catch(() => {})
-                ]);
+
+                const existingDraft = (onlineProfile.draft && typeof onlineProfile.draft === 'object') ? onlineProfile.draft : {
+                    letters: [currentL1 !== '-' ? currentL1 : 'А', currentL2 !== '-' ? currentL2 : 'А', currentL3 !== '-' ? currentL3 : 'А'],
+                    num: currentNum !== '---' ? currentNum : '111',
+                    reg: params.region || currentReg || '77',
+                    hasNumbers: boardHasNumbers,
+                    hasLetters: boardHasLetters,
+                    changedNumbers: hasSpunNumSinceSave,
+                    changedLetters: hasSpunLetSinceSave
+                };
+
+                let newNum = existingDraft.num;
+                let newLetters = Array.isArray(existingDraft.letters) ? [...existingDraft.letters] : ['А', 'А', 'А'];
+                let hasNumbers = !!existingDraft.hasNumbers;
+                let hasLetters = !!existingDraft.hasLetters;
+                let changedNumbers = !!existingDraft.changedNumbers;
+                let changedLetters = !!existingDraft.changedLetters;
+
+                if (params.mode === 'both' || params.mode === 'numbers') {
+                    let forceTier = null;
+                    if (params.mode === 'both') {
+                        if (pityCounterBoth >= 120) forceTier = 'legendary';
+                        else if (pityCounterBoth >= 65) forceTier = 'epic';
+                        else if (pityCounterBoth >= 25) forceTier = 'rare';
+                    }
+                    newNum = generateLuckyNumberLocal(forceTier);
+                    hasNumbers = true;
+                    changedNumbers = true;
+                }
+                if (params.mode === 'both' || params.mode === 'letters') {
+                    let forceTier = null;
+                    if (params.mode === 'both') {
+                        if (pityCounterBoth >= 120) forceTier = 'legendary';
+                        else if (pityCounterBoth >= 65) forceTier = 'epic';
+                        else if (pityCounterBoth >= 25) forceTier = 'rare';
+                    }
+                    newLetters = generateLuckyLettersLocal(forceTier);
+                    hasLetters = true;
+                    changedLetters = true;
+                }
+
+                const draft = {
+                    letters: newLetters,
+                    num: newNum,
+                    reg: params.region || existingDraft.reg || currentReg || '77',
+                    hasNumbers,
+                    hasLetters,
+                    changedNumbers,
+                    changedLetters
+                };
+
+                onlineProfile.draft = draft;
                 onlineProfile.balance = newBal;
                 balance = newBal;
                 updateBalance();
-                const letters = ['А', 'В', 'Е', 'К', 'М', 'Н', 'О', 'Р', 'С', 'Т', 'У', 'Х'];
-                const draft = {
-                    letters: [letters[Math.floor(Math.random()*letters.length)], letters[Math.floor(Math.random()*letters.length)], letters[Math.floor(Math.random()*letters.length)]],
-                    num: String(Math.floor(100 + Math.random()*900)),
-                    reg: params.region || '77',
-                    hasNumbers: true, hasLetters: true, changedNumbers: true, changedLetters: true
-                };
+
+                await Promise.all([
+                    db.ref('onlineV4/accounts/' + userKey).update({ balance: newBal, draft, updatedAt: Date.now() }),
+                    db.ref('users/' + userKey).update({ balance: newBal, updatedAt: Date.now() }).catch(() => {}),
+                    db.ref('leaderboard/' + userKey).update({ balance: newBal, updatedAt: Date.now() }).catch(() => {})
+                ]);
+
                 return { ok: true, profile: onlineProfile, draft };
             }
 
             if (action === 'claim') {
                 if (!onlineProfile) throw Error('Требуется вход');
                 const userKey = sanitizeKey(onlineProfile.nickname);
-                const plateText = `${currentL1} ${currentNum} ${currentL2}${currentL3} | ${currentReg} RUS`;
-                const price = typeof calculatePrice === 'function' ? calculatePrice() : 2500;
+                const draft = (onlineProfile.draft && typeof onlineProfile.draft === 'object') ? onlineProfile.draft : {
+                    letters: [currentL1, currentL2, currentL3],
+                    num: currentNum,
+                    reg: currentReg,
+                    hasNumbers: boardHasNumbers,
+                    hasLetters: boardHasLetters,
+                    changedNumbers: hasSpunNumSinceSave,
+                    changedLetters: hasSpunLetSinceSave
+                };
+                if (!draft.hasNumbers || !draft.hasLetters || !draft.changedNumbers || !draft.changedLetters) {
+                    throw Error('Сначала прокрутите цифры и буквы');
+                }
+                const [l1, l2, l3] = draft.letters;
+                const plateText = `${l1} ${draft.num} ${l2}${l3} | ${draft.reg} RUS`;
+                const price = typeof getCalculatedPrice === 'function' ? getCalculatedPrice(l1, l2, l3, draft.num, draft.reg) : (typeof calculatePrice === 'function' ? calculatePrice() : 2500);
                 const r = typeof getRarity === 'function' ? getRarity(price) : { text: 'Обычный' };
                 const plate = {
                     id: 'plate_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
@@ -1762,12 +1822,18 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                     rarity: { text: (r && r.text) || 'Обычный' }
                 };
                 const inv = [plate, ...(onlineProfile.inventory || [])];
+                const updatedDraft = {
+                    ...draft,
+                    changedNumbers: false,
+                    changedLetters: false
+                };
+                onlineProfile.draft = updatedDraft;
+                onlineProfile.inventory = inv;
                 await Promise.all([
-                    db.ref('onlineV4/accounts/' + userKey + '/inventory').set(inv),
+                    db.ref('onlineV4/accounts/' + userKey).update({ inventory: inv, draft: updatedDraft, updatedAt: Date.now() }),
                     db.ref('users/' + userKey + '/inventory').set(inv).catch(() => {})
                 ]);
-                onlineProfile.inventory = inv;
-                return { ok: true, profile: onlineProfile, plate };
+                return { ok: true, profile: onlineProfile, plate, draft: updatedDraft };
             }
 
             throw Error('Неизвестное действие');
@@ -2202,7 +2268,7 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                 price += 35000;
             } else if (num.endsWith('00')) {
                 price += 25000;
-            } else if (['123','234','345','456','567','678','789','987','876','543','321'].includes(num)) {
+            } else if (['123','234','345','456','567','678','789','987','876','765','654','543','432','321'].includes(num)) {
                 price += 20000;
             } else if (['010','020','030','040','050','060','070','080','090'].includes(num)) {
                 price += 2000;
@@ -2447,18 +2513,44 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
         // One generator UI. Signed-in players receive a server-authorized number;
         // guest spins stay local and are never sellable on the online market.
         let serverSpinBusy=false;
-        function syncServerDraft(draft) {
+        function syncServerDraft(draft, mode) {
             if(!draft)return;
-            const letters=draft.letters||['-','-','-'];
-            [currentL1,currentL2,currentL3]=letters;
-            currentNum=draft.num||'---';
-            currentReg=draft.reg||'777';
-            document.getElementById('region').innerText=currentReg;
-            boardHasLetters=!!draft.hasLetters;
-            boardHasNumbers=!!draft.hasNumbers;
-            hasSpunLetSinceSave=!!draft.changedLetters;
-            hasSpunNumSinceSave=!!draft.changedNumbers;
-            mustSpinBothForNextSave=true;
+            const updateLetters = (mode === 'both' || mode === 'letters' || !mode);
+            const updateNumbers = (mode === 'both' || mode === 'numbers' || !mode);
+
+            if (updateLetters && (draft.hasLetters || mode === 'both' || mode === 'letters')) {
+                if (draft.letters && Array.isArray(draft.letters)) {
+                    [currentL1, currentL2, currentL3] = draft.letters;
+                    if (!mode) {
+                        setCellChar('cell-l1', currentL1);
+                        setCellChar('cell-l2', currentL2);
+                        setCellChar('cell-l3', currentL3);
+                    }
+                }
+                boardHasLetters = !!draft.hasLetters;
+                hasSpunLetSinceSave = !!draft.changedLetters;
+            }
+
+            if (updateNumbers && (draft.hasNumbers || mode === 'both' || mode === 'numbers')) {
+                if (draft.num) {
+                    currentNum = draft.num;
+                    if (!mode && currentNum.length === 3) {
+                        setCellChar('cell-n1', currentNum[0]);
+                        setCellChar('cell-n2', currentNum[1]);
+                        setCellChar('cell-n3', currentNum[2]);
+                    }
+                }
+                boardHasNumbers = !!draft.hasNumbers;
+                hasSpunNumSinceSave = !!draft.changedNumbers;
+            }
+
+            if (draft.reg) {
+                currentReg = draft.reg;
+                const regEl = document.getElementById('region');
+                if (regEl) regEl.innerText = currentReg;
+            }
+
+            mustSpinBothForNextSave = true;
             checkCanSaveButton();
         }
         async function serverSpin(mode) {
@@ -2469,19 +2561,19 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                 if (mode === 'both') {
                     pityCounterBoth++;
                     updatePityUI();
+                } else if (mode === 'numbers') {
+                    pityCounterNum++;
+                } else if (mode === 'letters') {
+                    pityCounterLet++;
                 }
                 const data=await onlineRequest('roll',{mode,region:currentReg});
                 setOnlineProfile(data.profile);
-                syncServerDraft(data.draft);
+                syncServerDraft(data.draft, mode);
                 const targets=mode==='both'
                     ? ['cell-l1','cell-n1','cell-n2','cell-n3','cell-l2','cell-l3']
                     : mode==='numbers'?['cell-n1','cell-n2','cell-n3']:['cell-l1','cell-l2','cell-l3'];
                 const chars={'cell-l1':currentL1,'cell-n1':currentNum[0], 'cell-n2':currentNum[1],
                     'cell-n3':currentNum[2], 'cell-l2':currentL2,'cell-l3':currentL3};
-                // A new device may not have the previous portion of the generated plate drawn.
-                for(const id of ['cell-l1','cell-l2','cell-l3','cell-n1','cell-n2','cell-n3']) {
-                    if(!targets.includes(id))setCellChar(id,chars[id]);
-                }
                 executeCellSpin(targets,chars);
             } catch(e) {notifyUser('Спин не выполнен: '+e.message,'error');}
             finally {serverSpinBusy=false;}
@@ -2527,7 +2619,7 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                 ]);
             }
             if (forceTier === 'rare') {
-                return randomItem(['123','234','345','456','567','678','789','987','654','321']);
+                return randomItem(['123','234','345','456','567','678','789','987','876','765','654','543','432','321']);
             }
 
             const roll = Math.floor(Math.random() * 1000);
@@ -2542,7 +2634,7 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                 ]);
             }
             if (roll < 60) {
-                return randomItem(['123','234','345','456','567','678','789','987','654','321']);
+                return randomItem(['123','234','345','456','567','678','789','987','876','765','654','543','432','321']);
             }
             return Math.floor(Math.random() * 1000).toString().padStart(3, '0');
         }
