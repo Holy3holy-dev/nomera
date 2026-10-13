@@ -1,0 +1,62 @@
+name: Auto Unpack Zip
+
+on:
+  push:
+    paths:
+      - '**.zip'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  unpack:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Unpack Zip and Overwrite Files
+        run: |
+          shopt -s nullglob
+          zip_files=( *.zip )
+          if [ ${#zip_files[@]} -gt 0 ]; then
+            for f in "${zip_files[@]}"; do
+              echo "Распаковка $f..."
+              mkdir -p __temp_unpacked
+              unzip -o "$f" -d __temp_unpacked
+              rm -f "$f"
+              
+              # Если внутри архива файлы лежали в подпапке
+              subdirs=( __temp_unpacked/* )
+              if [ ${#subdirs[@]} -eq 1 ] && [ -d "${subdirs[0]}" ] && [ ! -f __temp_unpacked/index.html ]; then
+                cp -rf "${subdirs[0]}"/* .
+              else
+                cp -rf __temp_unpacked/* .
+              fi
+              rm -rf __temp_unpacked
+            done
+          fi
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Update Cache Hashes
+        run: |
+          if [ -f scripts/release-assets.cjs ]; then
+            node scripts/release-assets.cjs || true
+          fi
+
+      - name: Commit and Push Unpacked Files
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --staged --quiet; then
+            echo "Нет изменений для коммита."
+          else
+            git commit -m "Автоматическая распаковка архива и обновление кэша"
+            git push
+          fi
