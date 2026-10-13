@@ -2,92 +2,22 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
 
         const DEFAULT_CAR_IMG = "./icons/car-placeholder.svg";
 
-        // Автосалон (14 автомобилей с точными фото)
+        // Автосалон (14 автомобилей с точными пиксельными моделями)
         const carsData = [
-            {
-                name: "ВАЗ-2107 «Жигули»",
-                category: "Классика",
-                price: 120000,
-                img: "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/46/VAZ-2107_in_Tsaghkadzor.jpg/960px-VAZ-2107_in_Tsaghkadzor.jpg"
-            },
-            {
-                name: "Lada Priora БПАН",
-                category: "Седан",
-                price: 350000,
-                img: "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/1e/Lada_Priora_2018.jpg/960px-Lada_Priora_2018.jpg"
-            },
-            {
-                name: "Lada Vesta Sport",
-                category: "Спорт-седан",
-                price: 850000,
-                img: "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/8d/2024_Lada_Vesta_sedan_white_front.jpg/960px-2024_Lada_Vesta_sedan_white_front.jpg"
-            },
-            {
-                name: "Volkswagen Polo",
-                category: "Городской",
-                price: 950000,
-                img: "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/79/VW_Polo_beats_%28VI%29_%E2%80%93_f_03032019.jpg/960px-VW_Polo_beats_%28VI%29_%E2%80%93_f_03032019.jpg"
-            },
-            {
-                name: "BMW M5 E60 V10",
-                category: "Легенда",
-                price: 2200000,
-                img: "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/b3/BMW_M5_E60_Silver_Grey_Metallic_01.jpg/960px-BMW_M5_E60_Silver_Grey_Metallic_01.jpg"
-            },
-            {
-                name: "Toyota Camry 3.5",
-                category: "Бизнес",
-                price: 2800000,
-                img: "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/ac/2018_Toyota_Camry_%28ASV70R%29_Ascent_sedan_%282018-08-27%29_01.jpg/960px-2018_Toyota_Camry_%28ASV70R%29_Ascent_sedan_%282018-08-27%29_01.jpg"
-            },
-            {
-                name: "Toyota Land Cruiser 300",
-                category: "Внедорожник",
-                price: 5500000,
-                img: "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/6d/2021_Toyota_Land_Cruiser_300_3.4_ZX_%28Colombia%29_front_view_04.png/960px-2021_Toyota_Land_Cruiser_300_3.4_ZX_%28Colombia%29_front_view_04.png"
-            },
-            {
-                name: "Mercedes-Benz E63s AMG",
-                category: "Премиум-спорт",
-                price: 7800000,
-                img: "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/75/Mercedes-AMG_E63_S_%28W213%29_Washington_DC_Metro_Area%2C_USA_%287%29.jpg/960px-Mercedes-AMG_E63_S_%28W213%29_Washington_DC_Metro_Area%2C_USA_%287%29.jpg"
-            },
-            {
-                name: "Audi RS6 Avant",
-                category: "Универсал-ракета",
-                price: 9200000,
-                img: "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/20/2021_Audi_RS6_Avant_in_Nardo_Gray%2C_front_right.jpg/960px-2021_Audi_RS6_Avant_in_Nardo_Gray%2C_front_right.jpg"
-            },
-            {
-                name: "BMW M5 F90 Competition",
-                category: "Спорткар",
-                price: 11500000,
-                img: "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/24/BMW_M5_F90_Competition_BMW_Individual_Tanzanite_Blue_Metallic.jpg/960px-BMW_M5_F90_Competition_BMW_Individual_Tanzanite_Blue_Metallic.jpg"
-            },
-            {
-                name: "Mercedes-Benz G63 AMG «Гелик»",
-                category: "Люкс Внедорожник",
-                price: 18000000,
-                img: "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/38/Mercedes-Benz_W463_G_350_BlueTEC_01.jpg/960px-Mercedes-Benz_W463_G_350_BlueTEC_01.jpg"
-            },
-            {
-                name: "Porsche 911 Turbo S",
-                category: "Суперкар",
-                price: 25000000,
-                img: "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a2/Porsche_911_No_1000000%2C_70_Years_Porsche_Sports_Car%2C_Berlin_%281X7A3888%29.jpg/960px-Porsche_911_No_1000000%2C_70_Years_Porsche_Sports_Car%2C_Berlin_%281X7A3888%29.jpg"
-            },
-            {
-                name: "Rolls-Royce Cullinan",
-                category: "Ультра-Люкс",
-                price: 55000000,
-                img: "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/0d/2019_Rolls-Royce_Cullinan_V12_Automatic_6.75_Front.jpg/960px-2019_Rolls-Royce_Cullinan_V12_Automatic_6.75_Front.jpg"
-            },
-            {
-                name: "Bugatti Chiron Super Sport",
-                category: "Гиперкар",
-                price: 190000000,
-                img: "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/18/Bugatti_Chiron_1.jpg/960px-Bugatti_Chiron_1.jpg"
-            }
+            { name: "ВАЗ-2107 «Жигули»", category: "Классика", price: 120000, img: DEFAULT_CAR_IMG },
+            { name: "Lada Priora БПАН", category: "Седан", price: 350000, img: DEFAULT_CAR_IMG },
+            { name: "Lada Vesta Sport", category: "Спорт-седан", price: 850000, img: DEFAULT_CAR_IMG },
+            { name: "Volkswagen Polo", category: "Городской", price: 950000, img: DEFAULT_CAR_IMG },
+            { name: "BMW M5 E60 V10", category: "Легенда", price: 2200000, img: DEFAULT_CAR_IMG },
+            { name: "Toyota Camry 3.5", category: "Бизнес", price: 2800000, img: DEFAULT_CAR_IMG },
+            { name: "Toyota Land Cruiser 300", category: "Внедорожник", price: 5500000, img: DEFAULT_CAR_IMG },
+            { name: "Mercedes-Benz E63s AMG", category: "Премиум-спорт", price: 7800000, img: DEFAULT_CAR_IMG },
+            { name: "Audi RS6 Avant", category: "Универсал-ракета", price: 9200000, img: DEFAULT_CAR_IMG },
+            { name: "BMW M5 F90 Competition", category: "Спорткар", price: 11500000, img: DEFAULT_CAR_IMG },
+            { name: "Mercedes-Benz G63 AMG «Гелик»", category: "Люкс Внедорожник", price: 18000000, img: DEFAULT_CAR_IMG },
+            { name: "Porsche 911 Turbo S", category: "Суперкар", price: 25000000, img: DEFAULT_CAR_IMG },
+            { name: "Rolls-Royce Cullinan", category: "Ультра-Люкс", price: 55000000, img: DEFAULT_CAR_IMG },
+            { name: "Bugatti Chiron Super Sport", category: "Гиперкар", price: 190000000, img: DEFAULT_CAR_IMG }
         ];
 
         // Non-blocking alerts, native browser dialogs replaced by accessible in-page UI.
@@ -2068,6 +1998,9 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
 
                             <div style="text-align:center; margin:6px 0;">
                                 <div style="font-size:15px; font-weight:800; color:#fff;">🏎️ ${escapeHtml(car.name)} ${stylingBadge}</div>
+                                <div class="car-img-wrap" style="height: 110px; border-radius: var(--radius-sm); margin: 6px 0;">
+                                    <img src="${getCarSpriteDataUrl(car.name, car.styling)}" class="car-img car-sprite-img" alt="${escapeHtml(car.name)}">
+                                </div>
                                 ${plateHtml}
                                 <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">Состояние: ${Math.round(car.condition || 100)}%</div>
                             </div>
@@ -2738,7 +2671,7 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                     list.innerHTML += `
                         <div style="background: rgba(255,255,255,0.04); border: 1px solid var(--border-subtle); padding: 8px 12px; border-radius: var(--radius-sm); display: flex; justify-content: space-between; align-items: center; gap: 10px;">
                             <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
-                                <img src="${imageSrc(car.img)}" onerror="this.onerror=null; this.src='./icons/car-placeholder.svg';" style="width: 58px; height: 38px; object-fit: cover; border-radius: 4px; flex-shrink: 0; border: 1px solid rgba(255,255,255,0.1);">
+                                <img src="${getCarSpriteDataUrl(car.name)}" class="car-sprite-img" onerror="this.onerror=null; this.src='./icons/car-placeholder.svg';" style="width: 58px; height: 38px; object-fit: contain; border-radius: 4px; flex-shrink: 0; border: 1px solid rgba(255,255,255,0.1);">
                                 <div style="min-width: 0;">
                                     <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
                                         <span style="font-size: 10px; padding: 2px 6px; border-radius: 4px; background:${r.bg}; color:${r.color}; font-weight:700;">${escapeHtml(r.text)}</span>
@@ -2852,7 +2785,7 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                     let rColor = item.rarity ? (item.rarity.bg.startsWith('linear') ? '#ef4444' : item.rarity.bg) : "#555";
                     track.innerHTML += `
                         <div class="roulette-card" id="rcard-${i}" style="border-bottom-color: ${rColor}; padding: 6px; text-align: center;">
-                            <img src="${imageSrc(item.img)}" onerror="this.onerror=null; this.src='./icons/car-placeholder.svg';" style="width: 124px; height: 50px; object-fit: cover; border-radius: 4px; display: block; margin: 0 auto 5px auto; border: 1px solid rgba(255,255,255,0.1);">
+                            <img src="${getCarSpriteDataUrl(item.name)}" class="car-sprite-img" onerror="this.onerror=null; this.src='./icons/car-placeholder.svg';" style="width: 124px; height: 50px; object-fit: contain; border-radius: 4px; display: block; margin: 0 auto 5px auto; border: 1px solid rgba(255,255,255,0.1);">
                             <div style="font-size: 11px; font-weight: 800; color: #fff; max-width: 125px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(item.name)}</div>
                             <div class="r-price" style="color: ${rColor}; margin-top: 2px;">${Number(item.price || 0).toLocaleString('ru-RU')} ₽</div>
                         </div>
@@ -2919,7 +2852,7 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                     document.getElementById('roulette-actions-plate').classList.add('hidden');
                     document.getElementById('roulette-actions-car').classList.remove('hidden');
 
-                    document.getElementById('roulette-car-img').src = wonCarObj.img;
+                    document.getElementById('roulette-car-img').src = getCarSpriteDataUrl(wonCarObj.name);
                     document.getElementById('roulette-car-name').innerText = wonCarObj.name;
                     document.getElementById('roulette-car-category').innerText = wonCarObj.category || 'Автомобиль';
                     document.getElementById('roulette-price').innerText = `Рыночная цена: ${wonCarObj.price.toLocaleString('ru-RU')} ₽`;
@@ -3103,7 +3036,7 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                 list.innerHTML += `
                     <div class="car-shop-card">
                         <div class="car-img-wrap">
-                            <img src="${imageSrc(car.img)}" class="car-img" onerror="this.onerror=null; this.src='./icons/car-placeholder.svg';" alt="${escapeHtml(car.name)}">
+                            <img src="${getCarSpriteDataUrl(car.name)}" class="car-img car-sprite-img" onerror="this.onerror=null; this.src='./icons/car-placeholder.svg';" alt="${escapeHtml(car.name)}">
                             <span class="car-category-pill">${escapeHtml(car.category || 'Авто')}</span>
                         </div>
                         <div class="car-info-body">
@@ -3129,7 +3062,6 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
             let html = '';
             myCars.forEach((car, index) => {
                 const template = carsData.find(c => c.name === car.name) || {};
-                const carImg = car.img || template.img || DEFAULT_CAR_IMG;
                 const carCategory = car.category || template.category || 'Автомобиль';
                 const carSellPrice = (car.basePrice || template.price || 500000) * 0.9;
 
@@ -3208,7 +3140,7 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                             <span class="car-category-pill" style="position: static;">${escapeHtml(carCategory)}</span>
                         </div>
                         <div class="car-img-wrap" style="height: 150px;">
-                            <img src="${imageSrc(carImg)}" class="car-img" onerror="this.onerror=null; this.src='./icons/car-placeholder.svg';" alt="${escapeHtml(car.name)}">
+                            <img src="${getCarSpriteDataUrl(car.name, car.styling)}" class="car-img car-sprite-img" onerror="this.onerror=null; this.src='./icons/car-placeholder.svg';" alt="${escapeHtml(car.name)}">
                         </div>
                         <div class="garage-tuning">
                             <div class="garage-condition-heading"><b>🧰 Состояние ${Math.round(state.condition)}%</b><span>${state.condition < 35 ? '🔴 Сильный износ' : state.condition < 75 ? '🟡 Нужен ремонт' : '🟢 Исправен'}</span></div>
@@ -3433,6 +3365,7 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
 
             const modal = document.getElementById('styling-modal');
             if (modal) modal.classList.add('show');
+            updateStylingModalPreview();
         }
 
         function closeStylingModal() {
@@ -3444,8 +3377,9 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
         function selectStylingColor(col) {
             stylingTempColor = col;
             document.querySelectorAll('.styling-swatch').forEach(sw => {
-                sw.classList.toggle('active', sw.style.backgroundColor === col || sw.getAttribute('style').includes(col));
+                sw.classList.toggle('active', sw.style.backgroundColor === col || sw.getAttribute('style')?.includes(col));
             });
+            updateStylingModalPreview();
         }
 
         function selectStylingTint(tint) {
@@ -3453,6 +3387,7 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
             document.querySelectorAll('#styling-tint-chips .styling-chip').forEach(btn => {
                 btn.classList.toggle('active', Number(btn.dataset.tint) === stylingTempTint);
             });
+            updateStylingModalPreview();
         }
 
         function selectStylingNeon(neon) {
@@ -3460,6 +3395,7 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
             document.querySelectorAll('#styling-neon-chips .styling-chip').forEach(btn => {
                 btn.classList.toggle('active', btn.dataset.neon === stylingTempNeon);
             });
+            updateStylingModalPreview();
         }
 
         async function confirmApplyStyling() {
@@ -3484,6 +3420,7 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
             }
 
             car.styling = { color: stylingTempColor, tint: stylingTempTint, neon: stylingTempNeon };
+            carSpriteCache.clear();
             recordQuestProgress('tune', 1);
             checkAchievements();
             playCashSound();
@@ -3850,8 +3787,10 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
             const car = myCars[idx];
             const desc = document.getElementById('sell-car-desc');
             const priceInput = document.getElementById('sell-car-price');
-            if (car && desc) {
-                desc.innerText = `Продажа «${car.name}». Госномер: ${car.plate ? car.plate.text : 'нет'}. Состояние: ${Math.round(car.condition || 100)}%.`;
+            const prevImg = document.getElementById('sell-car-preview-img');
+            if (car) {
+                if (prevImg) prevImg.src = getCarSpriteDataUrl(car.name, car.styling);
+                if (desc) desc.innerText = `Продажа «${car.name}». Госномер: ${car.plate ? car.plate.text : 'нет'}. Состояние: ${Math.round(car.condition || 100)}%.`;
                 if (priceInput && !priceInput.value) {
                     priceInput.value = Math.round((car.basePrice || 200000) * 1.1);
                 }
@@ -4191,6 +4130,35 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                 ctx.fillRect(Math.round(cx + ox * s), Math.round(cy + oy * s), Math.round(w * s), Math.round(h * s));
             }
 
+            // Динамический расчёт светотени и оттенков для кузова любого цвета
+            function getPaletteShades(hex) {
+                let clean = String(hex || '#94a3b8').replace('#', '');
+                if (clean.length === 3) clean = clean.split('').map(c => c + c).join('');
+                if (clean.length !== 6) clean = '94a3b8';
+                const r = parseInt(clean.substring(0, 2), 16) || 0;
+                const g = parseInt(clean.substring(2, 4), 16) || 0;
+                const b = parseInt(clean.substring(4, 6), 16) || 0;
+
+                function adj(factor, off = 0) {
+                    const nr = Math.min(255, Math.max(0, Math.round(r * factor + off)));
+                    const ng = Math.min(255, Math.max(0, Math.round(g * factor + off)));
+                    const nb = Math.min(255, Math.max(0, Math.round(b * factor + off)));
+                    return '#' + [nr, ng, nb].map(x => x.toString(16).padStart(2, '0')).join('');
+                }
+
+                return {
+                    dark: adj(0.65, -15),
+                    mid: adj(0.85, -5),
+                    base: '#' + clean,
+                    light: adj(1.18, 25),
+                    bright: adj(1.38, 45)
+                };
+            }
+
+            function getBodyTones(factoryDefault) {
+                return getPaletteShades(options.color || factoryDefault);
+            }
+
             // Неоновая подсветка днища
             if (options.neon && options.neon !== 'none') {
                 ctx.save();
@@ -4254,6 +4222,7 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
 
             switch(name) {
                 case "ВАЗ-2107 «Жигули»": {
+                    const bt = getBodyTones("#991b1b");
                     // Тень
                     px(-11, -23, 22, 48, "rgba(0,0,0,0.4)");
                     // Штампованные диски с хромированными колпаками
@@ -4264,11 +4233,11 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                     px(-9, 23, 1, 1, "#f8fafc");
                     px(8, 23, 1, 1, "#f8fafc");
 
-                    // Кузов: вишневый глянец (многослойный шейдинг)
-                    px(-9, -24, 18, 46, "#7f1d1d"); // Базовый темный рубин
-                    px(-8, -23, 16, 44, "#991b1b"); // Основной тон
-                    px(-7, -22, 14, 11, "#b91c1c"); // Капот highlight
-                    px(-1, -22, 2, 11, "#dc2626"); // Центральное ребро капота 2107
+                    // Кузов (многослойный динамический шейдинг)
+                    px(-9, -24, 18, 46, bt.dark); // Базовый темный рубин
+                    px(-8, -23, 16, 44, bt.mid); // Основной тон
+                    px(-7, -22, 14, 11, bt.light); // Капот highlight
+                    px(-1, -22, 2, 11, bt.bright); // Центральное ребро капота 2107
 
                     // Бамперы: хром с черной резиновой накладкой и клыками
                     px(-10, -25, 20, 2, "#e2e8f0");
@@ -4295,7 +4264,7 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                     px(9, -24, 1, 3, "#f59e0b");
 
                     // Зеркало на водительской двери
-                    drawMirrors(18, -10, "#09090b", "#94a3b8");
+                    drawMirrors(18, -10, bt.dark, "#94a3b8");
 
                     // Лобовое стекло с резинкой и дворниками
                     drawGlass(-8, -10, 16, 6, "#1e293b", true);
@@ -4303,10 +4272,10 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                     px(1, -11, 3, 1, "#09090b");
 
                     // Крыша с водостоками
-                    px(-8, -4, 16, 14, "#991b1b");
-                    px(-7, -3, 14, 12, "#b91c1c");
-                    px(-8, -4, 1, 14, "#7f1d1d");
-                    px(7, -4, 1, 14, "#7f1d1d");
+                    px(-8, -4, 16, 14, bt.mid);
+                    px(-7, -3, 14, 12, bt.light);
+                    px(-8, -4, 1, 14, bt.dark);
+                    px(7, -4, 1, 14, bt.dark);
 
                     // Заднее стекло с медными нитями обогрева
                     drawGlass(-8, 10, 16, 5, "#1e293b", false);
@@ -4314,7 +4283,7 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                     px(-6, 13, 12, 1, "rgba(249,115,22,0.45)");
 
                     // Багажник и хром замок
-                    px(-7, 16, 14, 5, "#991b1b");
+                    px(-7, 16, 14, 5, bt.mid);
                     px(-1, 20, 2, 1, "#e2e8f0");
 
                     // Трехсекционные советские фонари
@@ -4331,6 +4300,7 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                 }
 
                 case "Lada Priora БПАН": {
+                    const bt = getBodyTones("#0d1017");
                     // Заниженная тень в пол
                     px(-11, -23, 22, 48, "rgba(0,0,0,0.65)");
                     // Заправленные внутрь арки колеса Торусы с отрицательным развалом и красными суппортами
@@ -4349,14 +4319,14 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                     px(-9, 10, 1, 3, "#cbd5e1");
                     px(8, 10, 1, 3, "#cbd5e1");
 
-                    // Кузов: ультра-черный глянец «Космос»
-                    px(-9, -24, 18, 47, "#050608");
-                    px(-8, -23, 16, 45, "#0d1017");
-                    px(-7, -22, 14, 11, "#171c26");
-                    px(-1, -22, 2, 11, "#252e3d");
+                    // Кузов
+                    px(-9, -24, 18, 47, bt.dark);
+                    px(-8, -23, 16, 45, bt.mid);
+                    px(-7, -22, 14, 11, bt.light);
+                    px(-1, -22, 2, 11, bt.bright);
 
                     // Бампер Приора-2 со сплиттером
-                    px(-9, -24, 18, 2, "#050608");
+                    px(-9, -24, 18, 2, bt.dark);
                     px(-5, -24, 10, 1, "#181a20");
                     px(-1, -24, 2, 1, "#60a5fa");
 
@@ -4367,26 +4337,26 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                     px(6, -23, 2, 1, "#ffffff");
 
                     // Зеркала Priora SE в цвет кузова с повторителями
-                    px(-11, -10, 2, 3, "#050608");
-                    px(9, -10, 2, 3, "#050608");
+                    px(-11, -10, 2, 3, bt.dark);
+                    px(9, -10, 2, 3, bt.dark);
                     px(-11, -9, 1, 1, "#f59e0b");
                     px(10, -9, 1, 1, "#f59e0b");
 
-                    // Тонировка 100% «вхлам» + наклейка «БПАН»
-                    px(-8, -10, 16, 6, "#020304");
+                    // Тонировка + наклейка «БПАН»
+                    drawGlass(-8, -10, 16, 6, "#020304", false);
                     px(-5, -10, 10, 1, "#ffffff");
                     px(-4, -9, 8, 1, "rgba(255,255,255,0.75)");
 
-                    // Крыша черная
-                    px(-8, -4, 16, 14, "#090b0e");
-                    px(-7, -3, 14, 12, "#11141c");
+                    // Крыша
+                    px(-8, -4, 16, 14, bt.mid);
+                    px(-7, -3, 14, 12, bt.light);
 
-                    // Заднее стекло глухая тонировка
-                    px(-8, 10, 16, 5, "#020304");
+                    // Заднее стекло тонировка
+                    drawGlass(-8, 10, 16, 5, "#020304", false);
 
                     // Крышка багажника с сабвуферным спойлером дактейл
-                    px(-8, 20, 16, 2, "#181a20");
-                    px(-7, 20, 14, 1, "#272a34");
+                    px(-8, 20, 16, 2, bt.mid);
+                    px(-7, 20, 14, 1, bt.bright);
 
                     // Тонированные в черный задние фонари
                     px(-9, 21, 4, 2, "#450a0a");
@@ -4402,14 +4372,15 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                 }
 
                 case "Lada Vesta Sport": {
+                    const bt = getBodyTones("#f8fafc");
                     px(-11, -24, 22, 48, "rgba(0,0,0,0.35)");
                     // 17-дюймовые диски Vesta Sport + красные суппорты
                     drawWheels(19, 24, "#e2e8f0", "#ef4444", "#334155");
 
-                    // Белоснежный кузов с черной крышей и красными акцентами
-                    px(-9, -24, 18, 47, "#e2e8f0");
-                    px(-8, -23, 16, 45, "#ffffff");
-                    px(-7, -22, 14, 11, "#ffffff");
+                    // Кузов с черной крышей и красными акцентами
+                    px(-9, -24, 18, 47, bt.dark);
+                    px(-8, -23, 16, 45, bt.base);
+                    px(-7, -22, 14, 11, bt.light);
 
                     // Фирменный X-Face: хромированные бумеранги спереди
                     px(-9, -23, 2, 4, "#cbd5e1");
@@ -4462,17 +4433,18 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                 }
 
                 case "Volkswagen Polo": {
+                    const bt = getBodyTones("#2563eb");
                     px(-10, -22, 20, 45, "rgba(0,0,0,0.35)");
                     // Серебристые 10-спицевые диски Tosa
                     drawWheels(18, 22, "#cbd5e1", null, "#475569");
 
-                    // Кузов: Lapiz Blue Metallic
-                    px(-8, -23, 16, 45, "#1e3a8a");
-                    px(-7, -22, 14, 43, "#2563eb");
-                    px(-6, -21, 12, 11, "#3b82f6");
+                    // Кузов
+                    px(-8, -23, 16, 45, bt.dark);
+                    px(-7, -22, 14, 43, bt.mid);
+                    px(-6, -21, 12, 11, bt.light);
                     // Двойные линии выштамповки капота
-                    px(-3, -21, 1, 10, "#1d4ed8");
-                    px(2, -21, 1, 10, "#1d4ed8");
+                    px(-3, -21, 1, 10, bt.dark);
+                    px(2, -21, 1, 10, bt.dark);
 
                     // Немецкая решетка: хромированная поперечная линия соединяет фары
                     px(-6, -23, 12, 1, "#e2e8f0");
@@ -4485,13 +4457,13 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                     px(-8, -22, 2, 1, "#bae6fd");
                     px(6, -22, 2, 1, "#bae6fd");
 
-                    drawMirrors(18, -10, "#1e3a8a", "#60a5fa");
+                    drawMirrors(18, -10, bt.dark, "#60a5fa");
 
                     // Остекление
                     drawGlass(-7, -10, 14, 5, "#0f172a", true);
                     // Крыша
-                    px(-7, -5, 14, 14, "#2563eb");
-                    px(-6, -4, 12, 12, "#3b82f6");
+                    px(-7, -5, 14, 14, bt.mid);
+                    px(-6, -4, 12, 12, bt.light);
                     drawGlass(-7, 9, 14, 5, "#0f172a", true);
 
                     // Геометричные граненые фонари Polo
@@ -4506,15 +4478,16 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                 }
 
                 case "BMW M5 E60 V10": {
+                    const bt = getBodyTones("#94a3b8");
                     px(-12, -25, 24, 50, "rgba(0,0,0,0.4)");
                     // M-диски Style 166 + синие M суппорты
                     drawWheels(20, 25, "#e2e8f0", "#2563eb", "#334155");
 
-                    // Кузов: Silverstone II Silver-Blue metallic
-                    px(-10, -25, 20, 50, "#64748b");
-                    px(-9, -24, 18, 48, "#94a3b8");
-                    px(-8, -23, 16, 12, "#cbd5e1");
-                    px(-7, -22, 14, 10, "#e2e8f0");
+                    // Кузов
+                    px(-10, -25, 20, 50, bt.dark);
+                    px(-9, -24, 18, 48, bt.mid);
+                    px(-8, -23, 16, 12, bt.light);
+                    px(-7, -22, 14, 10, bt.bright);
 
                     // Ноздри BMW с M-триколором (Cyan, Blue, Red)
                     px(-4, -25, 3, 2, "#09090b");
@@ -4533,16 +4506,16 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                     px(-11, -12, 1, 4, "#e2e8f0");
                     px(10, -12, 1, 4, "#e2e8f0");
 
-                    drawMirrors(20, -11, "#94a3b8", "#38bdf8");
+                    drawMirrors(20, -11, bt.mid, "#38bdf8");
 
                     // Остекление
                     drawGlass(-9, -11, 18, 6, "#0f172a", true);
-                    px(-8, -5, 16, 15, "#94a3b8");
-                    px(-7, -4, 14, 13, "#cbd5e1");
+                    px(-8, -5, 16, 15, bt.mid);
+                    px(-7, -4, 14, 13, bt.light);
                     drawGlass(-9, 10, 18, 5, "#0f172a", true);
 
                     // Багажник «Bangle butt» со спойлером
-                    px(-8, 22, 16, 2, "#64748b");
+                    px(-8, 22, 16, 2, bt.dark);
                     // Задние L-образные фонари
                     px(-10, 22, 4, 2, "#ef4444");
                     px(6, 22, 4, 2, "#ef4444");
@@ -4558,13 +4531,14 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                 }
 
                 case "Toyota Camry 3.5": {
+                    const bt = getBodyTones("#111827");
                     px(-12, -25, 24, 51, "rgba(0,0,0,0.4)");
                     drawWheels(20, 25, "#cbd5e1", null, "#374151");
 
-                    // Кузов: Черный графит Attitude Black
-                    px(-10, -25, 20, 50, "#090a0f");
-                    px(-9, -24, 18, 48, "#111827");
-                    px(-8, -23, 16, 12, "#1f2937");
+                    // Кузов
+                    px(-10, -25, 20, 50, bt.dark);
+                    px(-9, -24, 18, 48, bt.mid);
+                    px(-8, -23, 16, 12, bt.light);
 
                     // Агрессивная решетка 3.5 (широкий трапециевидный зев)
                     px(-7, -25, 14, 3, "#111827");
@@ -4584,11 +4558,11 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                     px(-10, -2, 1, 2, "#ffffff");
                     px(9, -2, 1, 2, "#ffffff");
 
-                    drawMirrors(20, -11, "#090a0f", "#38bdf8");
+                    drawMirrors(20, -11, bt.dark, "#38bdf8");
 
                     drawGlass(-8, -10, 16, 6, "#0f172a", true);
-                    px(-8, -4, 16, 14, "#111827");
-                    px(-7, -3, 14, 12, "#1f2937");
+                    px(-8, -4, 16, 14, bt.mid);
+                    px(-7, -3, 14, 12, bt.light);
                     drawGlass(-8, 10, 16, 5, "#0f172a", true);
 
                     // Широкая сабля на багажнике хром
@@ -4605,6 +4579,7 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                 }
 
                 case "Toyota Land Cruiser 300": {
+                    const bt = getBodyTones("#f1f5f9");
                     // Мощный большой внедорожник
                     px(-13, -26, 26, 54, "rgba(0,0,0,0.45)");
                     // 20" колеса
@@ -4613,13 +4588,13 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                     px(-13, -13, 2, 30, "#475569");
                     px(11, -13, 2, 30, "#475569");
 
-                    // Массивный кузов Белый Перламутр
-                    px(-11, -26, 22, 53, "#cbd5e1");
-                    px(-10, -25, 20, 51, "#f1f5f9");
-                    px(-9, -24, 18, 14, "#ffffff");
+                    // Массивный кузов
+                    px(-11, -26, 22, 53, bt.dark);
+                    px(-10, -25, 20, 51, bt.mid);
+                    px(-9, -24, 18, 14, bt.light);
                     // Двойные мускулистые ребра на капоте LC300
-                    px(-5, -24, 2, 13, "#e2e8f0");
-                    px(3, -24, 2, 13, "#e2e8f0");
+                    px(-5, -24, 2, 13, bt.dark);
+                    px(3, -24, 2, 13, bt.dark);
 
                     // Огромная 4-полосная решетка радиатора хром
                     px(-8, -26, 16, 5, "#e2e8f0");
@@ -4637,15 +4612,15 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                     px(-10, -8, 1, 23, "#94a3b8");
                     px(9, -8, 1, 23, "#94a3b8");
 
-                    drawMirrors(22, -12, "#cbd5e1", "#38bdf8");
+                    drawMirrors(22, -12, bt.dark, "#38bdf8");
 
                     drawGlass(-9, -11, 18, 6, "#0f172a", true);
-                    px(-9, -5, 18, 17, "#f1f5f9");
-                    px(-8, -4, 16, 15, "#ffffff");
+                    px(-9, -5, 18, 17, bt.mid);
+                    px(-8, -4, 16, 15, bt.light);
                     drawGlass(-9, 12, 18, 5, "#0f172a", true);
 
                     // Спойлер с дополнительным стоп-сигналом
-                    px(-9, 23, 18, 2, "#e2e8f0");
+                    px(-9, 23, 18, 2, bt.dark);
                     px(-2, 23, 4, 1, "#ef4444");
 
                     // L-образные LED фонари
@@ -4657,14 +4632,15 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                 }
 
                 case "Mercedes-Benz E63s AMG": {
+                    const bt = getBodyTones("#3f3f46");
                     px(-12, -25, 24, 51, "rgba(0,0,0,0.4)");
                     // Черные кованые AMG диски + золотые керамические суппорты AMG Carbon Ceramic
                     drawWheels(20, 25, "#18181b", "#f59e0b", "#3f3f46");
 
-                    // Кузов: Матовый Графит Magno
-                    px(-10, -25, 20, 50, "#27272a");
-                    px(-9, -24, 18, 48, "#3f3f46");
-                    px(-8, -23, 16, 12, "#52525b");
+                    // Кузов
+                    px(-10, -25, 20, 50, bt.dark);
+                    px(-9, -24, 18, 48, bt.mid);
+                    px(-8, -23, 16, 12, bt.light);
 
                     // Фирменная решетка Panamericana с 12 вертикальными зубьями хром
                     px(-5, -25, 10, 3, "#18181b");
@@ -4705,21 +4681,22 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                 }
 
                 case "Audi RS6 Avant": {
+                    const bt = getBodyTones("#78716c");
                     // Широкий злой универсал
                     px(-13, -26, 26, 53, "rgba(0,0,0,0.45)");
                     // Расширители крыльев Quattro (Blister Fenders)
-                    px(-12, -20, 2, 11, "#6b7280");
-                    px(10, -20, 2, 11, "#6b7280");
-                    px(-12, 11, 2, 11, "#6b7280");
-                    px(10, 11, 2, 11, "#6b7280");
+                    px(-12, -20, 2, 11, bt.dark);
+                    px(10, -20, 2, 11, bt.dark);
+                    px(-12, 11, 2, 11, bt.dark);
+                    px(10, 11, 2, 11, bt.dark);
 
                     // 22" диски с красными суппортами RS
                     drawWheels(22, 26, "#1e293b", "#ef4444", "#475569");
 
-                    // Nardo Gray кузов
-                    px(-10, -26, 20, 52, "#64748b");
-                    px(-9, -25, 18, 50, "#78716c");
-                    px(-8, -24, 16, 13, "#9ca3af");
+                    // Кузов
+                    px(-10, -26, 20, 52, bt.dark);
+                    px(-9, -25, 18, 50, bt.mid);
+                    px(-8, -24, 16, 13, bt.light);
 
                     // Черная сотовая решетка Singleframe с шильдиком quattro
                     px(-7, -26, 14, 4, "#0c0a09");
@@ -4739,8 +4716,8 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                     drawMirrors(21, -12, "#09090b", "#38bdf8");
 
                     drawGlass(-9, -11, 18, 6, "#0f172a", true);
-                    px(-8, -5, 16, 19, "#78716c");
-                    px(-7, -4, 14, 17, "#9ca3af");
+                    px(-8, -5, 16, 19, bt.mid);
+                    px(-7, -4, 14, 17, bt.light);
                     // Задний козырек-спойлер над стеклом багажника
                     px(-9, 14, 18, 3, "#18181b");
                     drawGlass(-9, 17, 18, 4, "#0f172a", false);
@@ -4759,19 +4736,20 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                 }
 
                 case "BMW M5 F90 Competition": {
+                    const bt = getBodyTones("#1d4ed8");
                     px(-12, -25, 24, 51, "rgba(0,0,0,0.4)");
                     // Черные Competition диски + золотые керамические суппорты M Carbon Ceramic
                     drawWheels(20, 25, "#09090b", "#eab308", "#334155");
 
-                    // Кузов: Deep Marina Bay Blue Metallic
-                    px(-10, -25, 20, 50, "#1e3a8a");
-                    px(-9, -24, 18, 48, "#1d4ed8");
-                    px(-8, -23, 16, 12, "#2563eb");
-                    px(-7, -22, 14, 10, "#3b82f6");
+                    // Кузов
+                    px(-10, -25, 20, 50, bt.dark);
+                    px(-9, -24, 18, 48, bt.mid);
+                    px(-8, -23, 16, 12, bt.light);
+                    px(-7, -22, 14, 10, bt.bright);
 
                     // Черные ноздри Shadowline с шильдиком M5 Competition
                     px(-4, -25, 8, 3, "#000000");
-                    px(-1, -25, 2, 3, "#1e3a8a");
+                    px(-1, -25, 2, 3, bt.dark);
                     px(2, -25, 1, 1, "#e2e8f0");
 
                     // Laserlight фары с синими X-элементами
@@ -4781,8 +4759,7 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                     px(6, -24, 2, 1, "#ffffff");
 
                     // Двурогие зеркала M
-                    px(-11, -11, 2, 3, "#000000");
-                    px(9, -11, 2, 3, "#000000");
+                    drawMirrors(20, -11, "#000000", "#38bdf8");
 
                     drawGlass(-9, -11, 18, 6, "#0f172a", true);
 
@@ -4809,15 +4786,16 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                 }
 
                 case "Mercedes-Benz G63 AMG «Гелик»": {
+                    const bt = getBodyTones("#11141a");
                     // Квадратный брутальный силуэт внедорожника
                     px(-13, -25, 26, 52, "rgba(0,0,0,0.5)");
                     // 22" AMG кованые диски + красные суппорты
                     drawWheels(22, 26, "#18181b", "#ef4444", "#334155");
 
-                    // Черный цвет кузова Obsidian Black
-                    px(-11, -25, 22, 50, "#07080a");
-                    px(-10, -24, 20, 48, "#11141a");
-                    px(-9, -23, 18, 12, "#1c212c");
+                    // Кузов
+                    px(-11, -25, 22, 50, bt.dark);
+                    px(-10, -24, 20, 48, bt.mid);
+                    px(-9, -23, 18, 12, bt.light);
 
                     // Круглые фары LED Halo
                     px(-10, -25, 4, 4, "#ffffff");
@@ -4841,15 +4819,14 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                     px(11, -18, 1, 38, "#475569");
 
                     // Квадратные зеркала
-                    drawMirrors(22, -11, "#07080a", "#38bdf8");
+                    drawMirrors(22, -11, bt.dark, "#38bdf8");
 
                     // Прямое лобовое стекло с резинкой
-                    px(-9, -11, 18, 5, "#0f172a");
-                    px(-8, -10, 16, 1, "rgba(255,255,255,0.4)");
+                    drawGlass(-9, -11, 18, 5, "#0f172a", true);
 
                     // Крыша с водосточными желобами
-                    px(-10, -6, 20, 16, "#07080a");
-                    px(-9, -5, 18, 14, "#11141a");
+                    px(-10, -6, 20, 16, bt.dark);
+                    px(-9, -5, 18, 14, bt.mid);
 
                     drawGlass(-9, 10, 18, 5, "#0f172a", false);
 
@@ -4859,16 +4836,17 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
 
                     // Запаска на задней двери с хромированным кольцом и звездой
                     px(-6, 20, 12, 6, "#e2e8f0");
-                    px(-5, 21, 10, 4, "#07080a");
+                    px(-5, 21, 10, 4, bt.dark);
                     px(-1, 22, 2, 2, "#e2e8f0");
                     break;
                 }
 
                 case "Porsche 911 Turbo S": {
+                    const bt = getBodyTones("#dc2626");
                     px(-12, -24, 24, 49, "rgba(0,0,0,0.4)");
                     // Широкие бедра задних крыльев с воздухозаборниками интеркулера
-                    px(-12, 4, 24, 16, "#991b1b");
-                    px(-11, 5, 22, 14, "#dc2626");
+                    px(-12, 4, 24, 16, bt.dark);
+                    px(-11, 5, 22, 14, bt.mid);
                     // Жабры забора воздуха турбин
                     px(-12, 7, 2, 6, "#09090b");
                     px(10, 7, 2, 6, "#09090b");
@@ -4876,11 +4854,11 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                     // Центргайки + желтые керамические суппорты PCCB
                     drawWheels(20, 24, "#09090b", "#facc15", "#334155");
 
-                    // Кузов: Guards Red
-                    px(-9, -24, 18, 48, "#991b1b");
-                    px(-8, -23, 16, 46, "#dc2626");
-                    px(-7, -22, 14, 12, "#ef4444");
-                    px(-6, -21, 12, 10, "#f87171");
+                    // Кузов
+                    px(-9, -24, 18, 48, bt.dark);
+                    px(-8, -23, 16, 46, bt.mid);
+                    px(-7, -22, 14, 12, bt.light);
+                    px(-6, -21, 12, 10, bt.bright);
 
                     // Каплевидные 4-точечные LED фары
                     px(-9, -24, 4, 3, "#bae6fd");
@@ -4888,12 +4866,12 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                     px(-8, -23, 2, 1, "#ffffff");
                     px(6, -23, 2, 1, "#ffffff");
 
-                    drawMirrors(19, -10, "#991b1b", "#38bdf8");
+                    drawMirrors(19, -10, bt.dark, "#38bdf8");
 
                     // Каплевидная кабина с плавным сужением назад
                     drawGlass(-7, -10, 14, 6, "#0f172a", true);
-                    px(-6, -4, 12, 12, "#b91c1c");
-                    px(-5, -3, 10, 10, "#dc2626");
+                    px(-6, -4, 12, 12, bt.dark);
+                    px(-5, -3, 10, 10, bt.mid);
                     drawGlass(-7, 8, 14, 6, "#0f172a", true);
 
                     // Активное антикрыло Turbo S
@@ -4912,15 +4890,16 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                 }
 
                 case "Rolls-Royce Cullinan": {
+                    const bt = getBodyTones("#111827");
                     // Самый монументальный внедорожник
                     px(-14, -27, 28, 56, "rgba(0,0,0,0.5)");
                     // 22" диски с неподвижными центрами RR
                     drawWheels(23, 27, "#e2e8f0", null, "#475569");
 
-                    // Midnight Sapphire ультра-люкс цвет
-                    px(-12, -27, 24, 55, "#0b0f19");
-                    px(-11, -26, 22, 53, "#111827");
-                    px(-10, -25, 20, 15, "#1e293b");
+                    // Кузов
+                    px(-12, -27, 24, 55, bt.dark);
+                    px(-11, -26, 22, 53, bt.mid);
+                    px(-10, -25, 20, 15, bt.light);
 
                     // Монументальная хромированная решетка Pantheon
                     px(-6, -27, 12, 6, "#f8fafc");
@@ -4944,10 +4923,10 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                     px(-12, -1, 1, 3, "#ffffff");
                     px(11, -1, 1, 3, "#ffffff");
 
-                    drawMirrors(23, -12, "#0b0f19", "#38bdf8");
+                    drawMirrors(23, -12, bt.dark, "#38bdf8");
 
                     drawGlass(-10, -11, 20, 6, "#0a0d14", true);
-                    px(-9, -5, 18, 18, "#111827");
+                    px(-9, -5, 18, 18, bt.mid);
                     drawGlass(-10, 13, 20, 5, "#0a0d14", true);
 
                     // Вертикальные хрустальные фонари
@@ -4961,14 +4940,15 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                 }
 
                 case "Bugatti Chiron Super Sport": {
+                    const bt = getBodyTones("#2563eb");
                     px(-14, -27, 28, 55, "rgba(0,0,0,0.45)");
                     // Легкие турбинные диски Chiron
                     drawWheels(23, 26, "#09090b", "#38bdf8", "#475569");
 
-                    // Двухцветная окраска: ярко-синий перед French Racing Blue, карбоновый зад
-                    px(-11, -27, 22, 26, "#1d4ed8");
-                    px(-10, -26, 20, 24, "#2563eb");
-                    px(-9, -25, 18, 12, "#3b82f6");
+                    // Двухцветная окраска: цветной перед, карбоновый зад
+                    px(-11, -27, 22, 26, bt.dark);
+                    px(-10, -26, 20, 24, bt.mid);
+                    px(-9, -25, 18, 12, bt.light);
                     px(-11, -1, 22, 28, "#060709");
                     px(-10, 0, 20, 26, "#111827");
 
@@ -4977,7 +4957,7 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                     px(9, -14, 2, 28, "#60a5fa");
 
                     // Центральный аэродинамический плавник-киль
-                    px(-1, -8, 2, 32, "#1d4ed8");
+                    px(-1, -8, 2, 32, bt.dark);
 
                     // Подкова радиатора Bugatti с красной эмблемой Macaron
                     px(-4, -27, 8, 3, "#000000");
@@ -4987,7 +4967,7 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                     px(-11, -26, 5, 2, "#67e8f9");
                     px(6, -26, 5, 2, "#67e8f9");
 
-                    drawMirrors(22, -11, "#1d4ed8", "#38bdf8");
+                    drawMirrors(22, -11, bt.dark, "#38bdf8");
 
                     drawGlass(-8, -10, 16, 6, "#0f172a", true);
                     px(-7, -4, 14, 12, "#060709");
@@ -5223,6 +5203,97 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
             }
         }
 
+        // 🎨 ГЕНЕРАТОР ПИКСЕЛЬНЫХ СПРАЙТОВ АВТОМОБИЛЕЙ СО СТАЙЛИНГОМ И ПОДИУМОМ
+        function renderCarSpriteToContext(ctx, width, height, name, styling = {}, options = {}) {
+            ctx.clearRect(0, 0, width, height);
+
+            // Тёмный подиум автосалона с мягким световым пятном
+            const bgGrad = ctx.createRadialGradient(width / 2, height / 2, 10, width / 2, height / 2, width * 0.65);
+            bgGrad.addColorStop(0, '#1c2438');
+            bgGrad.addColorStop(0.6, '#0f1422');
+            bgGrad.addColorStop(1, '#080a11');
+            ctx.fillStyle = bgGrad;
+            ctx.fillRect(0, 0, width, height);
+
+            // Тонкое кольцо подсветки подиума
+            ctx.save();
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.06)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.ellipse(width / 2, height / 2 + 8, width * 0.42, height * 0.34, 0, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.restore();
+
+            const cx = width / 2;
+            const cy = height / 2;
+            const tilt = (options.tilt !== undefined) ? options.tilt : (Math.PI / 2);
+            const scale = options.scale || (width <= 140 ? 1.3 : 2.4);
+
+            drawPixelCar(ctx, cx, cy, name, scale, {
+                color: styling?.color,
+                tint: styling?.tint,
+                neon: styling?.neon,
+                tilt: tilt,
+                lightsOn: true
+            });
+        }
+
+        const carSpriteCache = new Map();
+
+        function getCarSpriteDataUrl(name, styling = {}, options = {}) {
+            const color = styling?.color || '';
+            const tint = Number(styling?.tint || 0);
+            const neon = styling?.neon || 'none';
+            const tilt = (options.tilt !== undefined) ? options.tilt : (Math.PI / 2);
+            const width = options.width || 260;
+            const height = options.height || 150;
+            const cacheKey = `${name}_${color}_${tint}_${neon}_${tilt}_${width}_${height}`;
+            if (carSpriteCache.has(cacheKey)) {
+                return carSpriteCache.get(cacheKey);
+            }
+
+            if (typeof document === 'undefined' || !document.createElement) {
+                return DEFAULT_CAR_IMG;
+            }
+
+            try {
+                const canvas = document.createElement('canvas');
+                if (!canvas || typeof canvas.getContext !== 'function') {
+                    return DEFAULT_CAR_IMG;
+                }
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                if (!ctx || typeof ctx.fillRect !== 'function' || typeof canvas.toDataURL !== 'function') {
+                    return DEFAULT_CAR_IMG;
+                }
+
+                renderCarSpriteToContext(ctx, width, height, name, { color, tint, neon }, { tilt });
+                const dataUrl = canvas.toDataURL('image/png');
+                if (dataUrl && dataUrl.startsWith('data:image')) {
+                    if (carSpriteCache.size > 250) carSpriteCache.clear();
+                    carSpriteCache.set(cacheKey, dataUrl);
+                    return dataUrl;
+                }
+            } catch(e) {}
+            return DEFAULT_CAR_IMG;
+        }
+
+        function updateStylingModalPreview() {
+            const canvas = document.getElementById('styling-preview-canvas');
+            if (!canvas || typeof canvas.getContext !== 'function') return;
+            const car = (stylingActiveCarIndex >= 0 && myCars[stylingActiveCarIndex]) ? myCars[stylingActiveCarIndex] : null;
+            if (!car) return;
+            const ctx = canvas.getContext('2d');
+            if (!ctx || typeof ctx.fillRect !== 'function') return;
+            renderCarSpriteToContext(ctx, canvas.width, canvas.height, car.name, {
+                color: stylingTempColor,
+                tint: stylingTempTint,
+                neon: stylingTempNeon
+            });
+        }
+
+
         // ==========================================
         // 🎮 ИГРОВАЯ ЛОГИКА И ЦИКЛ ЗАЕЗДА
         // ==========================================
@@ -5402,7 +5473,12 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                 cvs.width = 44;
                 cvs.height = 68;
                 const cCtx = cvs.getContext('2d');
-                drawPixelCar(cCtx, 22, 34, carItem.name, 1.1);
+                const ownedCar = carItem.owned ? myCars[carItem.index] : null;
+                drawPixelCar(cCtx, 22, 34, carItem.name, 1.1, {
+                    color: ownedCar?.styling?.color,
+                    tint: ownedCar?.styling?.tint,
+                    neon: ownedCar?.styling?.neon
+                });
 
                 const nameDiv = document.createElement('div');
                 nameDiv.style.fontSize = '10px';
@@ -5529,7 +5605,12 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
             if (canvas) {
                 const ctx = canvas.getContext('2d');
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
-                drawPixelCar(ctx, canvas.width / 2, canvas.height / 2 + 10, selectedRaceCarName, 2.4, { lightsOn: true });
+                drawPixelCar(ctx, canvas.width / 2, canvas.height / 2 + 10, selectedRaceCarName, 2.4, {
+                    lightsOn: true,
+                    color: ownedCarObj?.styling?.color,
+                    tint: ownedCarObj?.styling?.tint,
+                    neon: ownedCarObj?.styling?.neon
+                });
             }
         }
 
@@ -6712,6 +6793,7 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                     nitro: racePlayer.isNitroActive,
                     braking: raceKeys.brake,
                     tilt: racePlayer.tilt,
+                    color: activeCar?.styling?.color,
                     neon: activeCar?.styling?.neon,
                     tint: activeCar?.styling?.tint
                 });

@@ -144,3 +144,36 @@ test('car market listing removes car from garage and buying restores car to buye
     assert.equal(app.run('myCars[1].name'), 'Lada Priora БПАН');
     assert.equal(app.run('balance'), 250000); // 500 000 - 250 000
 });
+
+test('car sprite generation and drawPixelCar support styling color, tint and neon for all car models', () => {
+    const app = createApp({
+        saved: {
+            nickname: 'SpriteTester',
+            balance: 500000,
+            myCars: [
+                { name: 'ВАЗ-2107 «Жигули»', condition: 100, styling: { color: '#ef4444', tint: 75, neon: '#00f0ff' } },
+                { name: 'BMW M5 F90', condition: 95, styling: { color: '#3b82f6', tint: 50, neon: '#a855f7' } }
+            ]
+        }
+    });
+    app.run('loadProgress()');
+
+    // Test that getCarSpriteDataUrl runs safely for any car and returns string
+    const cars = app.run('carsData.map(c => c.name)');
+    assert.ok(cars.length >= 14);
+    for (const carName of cars) {
+        const url = app.run(`getCarSpriteDataUrl(${JSON.stringify(carName)}, { color: "#10b981", tint: 30, neon: "#22c55e" })`);
+        assert.equal(typeof url, 'string');
+    }
+
+    // Test that garage card rendering contains car-sprite-img
+    app.run('renderCars()');
+    const garageHtml = app.run('document.getElementById("my-cars").innerHTML');
+    assert.match(garageHtml, /car-sprite-img/);
+
+    // Test that shop rendering contains car-sprite-img
+    const shopHtml = app.run('document.getElementById("garage-list").innerHTML');
+    assert.match(shopHtml, /car-sprite-img/);
+});
+
+
