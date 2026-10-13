@@ -86,13 +86,41 @@
             },
             preferences: () => ({...prefs}),
             available: () => !unavailable,
+            haptic(pattern = 'light') {
+                try {
+                    const nav = typeof navigator !== 'undefined' ? navigator : root.navigator;
+                    if (nav && typeof nav.vibrate === 'function') {
+                        if (pattern === 'light') nav.vibrate(12);
+                        else if (pattern === 'medium') nav.vibrate(28);
+                        else if (pattern === 'heavy') nav.vibrate([45, 25, 45]);
+                        else if (pattern === 'nitro') nav.vibrate([25, 15, 25]);
+                        else if (pattern === 'win') nav.vibrate([35, 45, 35, 45, 75]);
+                        else if (pattern === 'crash') nav.vibrate([110, 35, 80]);
+                        else if (Array.isArray(pattern) || typeof pattern === 'number') nav.vibrate(pattern);
+                    }
+                } catch (_) {}
+            },
             click() { tone(650, 0.035, 0.07, 0, 'sine', 380); },
+            button() { tone(520, 0.025, 0.05, 0, 'sine', 340); },
             tick() {
                 if (!context || context.currentTime - lastTick < 0.035) return;
                 lastTick = context.currentTime; tone(780, 0.035, 0.10, 0, 'triangle', 320);
             },
             lock(pitch = 1) { tone(180 * pitch, 0.13, 0.19, 0, 'sine', 45); tone(1150 * pitch, 0.045, 0.06); },
             cash() { [880, 1174.66, 1567.98].forEach((freq,i) => tone(freq, 0.24, 0.10, i * 0.065, 'triangle')); },
+            nitro() {
+                tone(380, 0.28, 0.15, 0, 'sawtooth', 760);
+                tone(720, 0.22, 0.09, 0.03, 'triangle', 1150);
+            },
+            brake() {
+                tone(340, 0.14, 0.09, 0, 'sawtooth', 140);
+                tone(680, 0.08, 0.06, 0.02, 'triangle', 260);
+            },
+            whoosh() { tone(640, 0.18, 0.07, 0, 'sine', 280); },
+            error() {
+                tone(220, 0.12, 0.12, 0, 'triangle', 160);
+                tone(160, 0.18, 0.12, 0.07, 'triangle', 120);
+            },
             win(rarity) {
                 const rare = ['БЛАТНОЙ','Легендарный','МИФИЧЕСКИЙ','Крутой'].includes(rarity);
                 (rare ? [329.63,493.88,659.25,987.77] : [392,493.88,587.33]).forEach((freq,i) => {

@@ -44,3 +44,22 @@ test('background suspension stops engine and active notes; volume is bounded',as
     assert(context.created.every(node=>node.stopped));assert.equal(context.suspended,1);
     sound.unlock();await Promise.resolve();assert.equal(context.state,'running');
 });
+test('new audio tones and haptics trigger gracefully and create expected nodes',()=>{
+    const context=fakeContext();const sound=createAudio({contextFactory:()=>context});sound.unlock();
+    const vibrateCalled = [];
+    const origNav = Object.getOwnPropertyDescriptor(globalThis, 'navigator');
+    Object.defineProperty(globalThis, 'navigator', { value: { vibrate: (p) => vibrateCalled.push(p) }, configurable: true, writable: true });
+    sound.button();
+    sound.nitro();
+    sound.brake();
+    sound.whoosh();
+    sound.error();
+    assert(context.created.length >= 5);
+    sound.haptic('light');
+    sound.haptic('nitro');
+    sound.haptic('crash');
+    assert.deepEqual(vibrateCalled, [12, [25, 15, 25], [110, 35, 80]]);
+    if (origNav) Object.defineProperty(globalThis, 'navigator', origNav);
+    else delete globalThis.navigator;
+});
+

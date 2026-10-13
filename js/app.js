@@ -23,11 +23,18 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
         // Non-blocking alerts, native browser dialogs replaced by accessible in-page UI.
         let toastTimer = null;
         function notifyUser(message, kind = 'info') {
+            const isErr = kind === 'error' || /ошибка|неверн|недостаточно|не хватает|не удалось|недоступ|пуст|занят|заблокирован/i.test(String(message));
+            if (isErr) {
+                if (typeof sound?.error === 'function') sound.error();
+                if (typeof sound?.haptic === 'function') sound.haptic('heavy');
+            } else {
+                if (typeof sound?.haptic === 'function') sound.haptic('light');
+            }
             const host = document.getElementById('h3h-toast-stack');
             if (!host) { console.info(String(message)); return; }
             const toast = document.createElement('div');
             if (typeof toast.setAttribute !== 'function') { console.info(String(message)); return; }
-            toast.className = 'h3h-toast ' + (kind === 'error' || /ошибка|неверн|недостаточно|не хватает|не удалось|недоступ|пуст|занят|заблокирован/i.test(String(message)) ? 'toast-error' : 'toast-ok');
+            toast.className = 'h3h-toast ' + (isErr ? 'toast-error' : 'toast-ok');
             toast.setAttribute('role', 'status');
             toast.textContent = String(message);
             host.appendChild(toast);
@@ -452,8 +459,10 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
             showSaveStatus(saveStatus);
             document.querySelectorAll('.touch-btn').forEach(button => {
                 button.addEventListener('pointerdown', event => {
-                    button.setPointerCapture(event.pointerId);
-                    event.preventDefault();
+                    if (typeof button.setPointerCapture === 'function' && event.pointerId !== undefined) {
+                        try { button.setPointerCapture(event.pointerId); } catch (_) {}
+                    }
+                    if (typeof event.preventDefault === 'function') event.preventDefault();
                 });
                 button.addEventListener('lostpointercapture', () => {
                     const key = button.id.replace('btn-touch-', '');
@@ -461,6 +470,64 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                 });
             });
             document.addEventListener('touchcancel', resetRaceKeys);
+
+            // Прямое управление касанием / перетаскиванием по экрану холста трассы
+            const raceCanvas = document.getElementById('race-canvas');
+            if (raceCanvas && typeof raceCanvas.addEventListener === 'function') {
+                let canvasSteerPointerId = null;
+                const updateCanvasSteer = (e) => {
+                    if (typeof raceCanvas.getBoundingClientRect !== 'function') return;
+                    const rect = raceCanvas.getBoundingClientRect();
+                    const clientX = e.clientX ?? (e.touches && e.touches[0] ? e.touches[0].clientX : null);
+                    if (clientX === null || !rect.width) return;
+                    const relX = clientX - rect.left;
+                    if (relX < rect.width * 0.44) {
+                        setRaceKey('left', true);
+                        setRaceKey('right', false);
+                    } else if (relX > rect.width * 0.56) {
+                        setRaceKey('right', true);
+                        setRaceKey('left', false);
+                    } else {
+                        setRaceKey('left', false);
+                        setRaceKey('right', false);
+                    }
+                };
+                raceCanvas.addEventListener('pointerdown', (e) => {
+                    if (!isRaceRunning) return;
+                    canvasSteerPointerId = e.pointerId;
+                    if (typeof raceCanvas.setPointerCapture === 'function' && e.pointerId !== undefined) {
+                        try { raceCanvas.setPointerCapture(e.pointerId); } catch (_) {}
+                    }
+                    updateCanvasSteer(e);
+                    if (typeof e.preventDefault === 'function') e.preventDefault();
+                });
+                raceCanvas.addEventListener('pointermove', (e) => {
+                    if (canvasSteerPointerId !== null && isRaceRunning) {
+                        updateCanvasSteer(e);
+                        if (typeof e.preventDefault === 'function') e.preventDefault();
+                    }
+                });
+                const releaseCanvasSteer = (e) => {
+                    if (canvasSteerPointerId !== null) {
+                        canvasSteerPointerId = null;
+                        if (typeof raceCanvas.releasePointerCapture === 'function' && e && e.pointerId !== undefined) {
+                            try { raceCanvas.releasePointerCapture(e.pointerId); } catch (_) {}
+                        }
+                        setRaceKey('left', false);
+                        setRaceKey('right', false);
+                    }
+                };
+                raceCanvas.addEventListener('pointerup', releaseCanvasSteer);
+                raceCanvas.addEventListener('pointercancel', releaseCanvasSteer);
+                raceCanvas.addEventListener('lostpointercapture', releaseCanvasSteer);
+            }
+
+            // Тактильный виброотклик на клики по кнопкам интерфейса
+            document.addEventListener('click', (e) => {
+                if (e.target && typeof e.target.closest === 'function' && e.target.closest('button, .btn, .nav-tab, .touch-btn, .inv-card, .dealership-card')) {
+                    if (typeof sound?.haptic === 'function') sound.haptic('light');
+                }
+            });
             loadProgress();
             updateBalance();
             updateExpUI();
@@ -2460,6 +2527,7 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
 
                         let pitch = 0.9 + (targets.indexOf(id) * 0.1);
                         playLockSound(pitch);
+                        if (typeof sound?.haptic === 'function') sound.haptic('medium');
                     }
                 });
 
@@ -2485,19 +2553,23 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                             triggerLegendaryEffect();
                             triggerScreenShake();
                             playWinJingle(r.text);
+                            if (typeof sound?.haptic === 'function') sound.haptic('win');
                         } else if (r.text === "Эпический") {
                             if (pityCounterBoth >= 25 && pityCounterBoth < 65) {
                                 pityCounterBoth = 0;
                                 updatePityUI();
                             }
                             playWinJingle(r.text);
+                            if (typeof sound?.haptic === 'function') sound.haptic('win');
                         } else if (r.text === "Редкий") {
                             if (pityCounterBoth < 25) {
                                 pityCounterBoth = 0;
                                 updatePityUI();
                             }
+                            if (typeof sound?.haptic === 'function') sound.haptic('medium');
                         } else if (r.text === "Супер редкий") {
                             playWinJingle(r.text);
+                            if (typeof sound?.haptic === 'function') sound.haptic('win');
                         }
                         const curPlateText = `${currentL1} ${currentNum} ${currentL2}${currentL3} | ${currentReg} RUS`;
                         logPlayerActivity('Крутит номер', `Выпал госномер «${curPlateText}» (${escapeHtml(r.text)}, ${finalPrice.toLocaleString('ru-RU')} ₽)`);
@@ -6249,8 +6321,18 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
             if (salonSection) salonSection.scrollIntoView({ behavior: 'smooth' });
         }
 
+        function updateTouchBtnUI(key, active) {
+            const btn = document.getElementById('btn-touch-' + key);
+            if (btn && btn.classList && typeof btn.classList.toggle === 'function') {
+                btn.classList.toggle('pressed', !!active);
+            }
+        }
+
         function resetRaceKeys() {
-            Object.keys(raceKeys).forEach(key => raceKeys[key] = false);
+            Object.keys(raceKeys).forEach(key => {
+                raceKeys[key] = false;
+                updateTouchBtnUI(key, false);
+            });
         }
         window.addEventListener('blur', resetRaceKeys);
         document.addEventListener('visibilitychange', () => {
@@ -6259,7 +6341,38 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
         });
 
         function setRaceKey(key, state) {
-            if (raceKeys[key] !== undefined) raceKeys[key] = state;
+            if (raceKeys[key] !== undefined) {
+                raceKeys[key] = !!state;
+                updateTouchBtnUI(key, !!state);
+            }
+        }
+
+        function handleTouchControl(e, key, state) {
+            if (e) {
+                if (e.target && e.pointerId !== undefined) {
+                    if (state && typeof e.target.setPointerCapture === 'function') {
+                        try { e.target.setPointerCapture(e.pointerId); } catch (_) {}
+                    }
+                    if (!state && typeof e.target.releasePointerCapture === 'function') {
+                        try { e.target.releasePointerCapture(e.pointerId); } catch (_) {}
+                    }
+                }
+                if (typeof e.preventDefault === 'function') {
+                    e.preventDefault();
+                }
+            }
+            setRaceKey(key, state);
+            if (state) {
+                if (key === 'nitro') {
+                    if (typeof sound?.nitro === 'function') sound.nitro();
+                    if (typeof sound?.haptic === 'function') sound.haptic('nitro');
+                } else if (key === 'brake') {
+                    if (typeof sound?.brake === 'function') sound.brake();
+                    if (typeof sound?.haptic === 'function') sound.haptic('medium');
+                } else {
+                    if (typeof sound?.haptic === 'function') sound.haptic('light');
+                }
+            }
         }
 
         window.addEventListener('keydown', (e) => {
@@ -7171,7 +7284,7 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
             isRaceRunning = false;
             resetRaceKeys();
             sound.stopEngine();
-            if (crashed) { sound.crash(); triggerScreenShake(); }
+            if (crashed) { sound.crash(); triggerScreenShake(); if (typeof sound?.haptic === 'function') sound.haptic('crash'); }
             document.body.classList.remove('race-active');
             if (raceAnimFrame) cancelAnimationFrame(raceAnimFrame);
 
@@ -7672,6 +7785,32 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
             if (biome.isRain && raceLightningFlash > 0) {
                 ctx.fillStyle = `rgba(224, 242, 254, ${Math.min(0.42, raceLightningFlash * 1.8)})`;
                 ctx.fillRect(0, 0, W, H);
+            }
+
+            // 10.5. Скоростные линии (Speed Lines) и визуальный форсаж нитро
+            if (racePlayer.speed > 160 || racePlayer.isNitroActive) {
+                const intensity = Math.min(1.0, (racePlayer.speed - 160) / 100 + (racePlayer.isNitroActive ? 0.6 : 0));
+                ctx.save();
+                ctx.lineWidth = racePlayer.isNitroActive ? 2.5 : 1.8;
+                ctx.strokeStyle = racePlayer.isNitroActive ? `rgba(96, 165, 250, ${intensity * 0.7})` : `rgba(255, 255, 255, ${intensity * 0.45})`;
+                ctx.beginPath();
+                const lineCount = racePlayer.isNitroActive ? 18 : 12;
+                for (let li = 0; li < lineCount; li++) {
+                    const seed = (li * 97 + Math.floor(raceRoadOffset * 4)) % 1000;
+                    const lx = (seed * 4.3) % W;
+                    const ly = (seed * 6.7) % H;
+                    const len = (40 + (seed % 60)) * (racePlayer.speed / 120);
+                    ctx.moveTo(lx, ly);
+                    ctx.lineTo(lx - (roadCurve * 0.15), ly + len);
+                }
+                ctx.stroke();
+                ctx.restore();
+            }
+
+            // Обновление индикатора нитро на мобильной панели
+            const touchNitroVal = document.getElementById('hud-touch-nitro-val');
+            if (touchNitroVal) {
+                touchNitroVal.textContent = Math.round(racePlayer.nitro) + '%';
             }
 
             // 11. Игровой HUD на Canvas

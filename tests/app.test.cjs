@@ -205,3 +205,19 @@ test('online button opens the same login modal, no second online registration',(
     const html=require('node:fs').readFileSync(require('node:path').join(__dirname,'../index.html'),'utf8');
     assert(!html.includes('id="online-access-modal"'));
 });
+
+test('mobile touch controls handlePointerCapture and update visual button pressed state', () => {
+    const app = createApp();
+    app.run(`
+        handleTouchControl({ target: { setPointerCapture(id) { globalThis.mockCaptured = id; } }, pointerId: 42, preventDefault(){} }, 'gas', true);
+    `);
+    assert.equal(app.run('raceKeys.gas'), true);
+    assert.equal(app.run('globalThis.mockCaptured'), 42);
+
+    app.run(`
+        handleTouchControl({ target: { releasePointerCapture(id) { globalThis.mockReleased = id; } }, pointerId: 42, preventDefault(){} }, 'gas', false);
+    `);
+    assert.equal(app.run('raceKeys.gas'), false);
+    assert.equal(app.run('globalThis.mockReleased'), 42);
+});
+
