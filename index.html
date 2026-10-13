@@ -60,7 +60,7 @@
         <div class="header-hud">
             <div class="hud-player" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openProfileModal();}" onclick="openProfileModal()" title="Нажмите для настройки профиля и синхронизации">
                 <div class="avatar-wrap">
-                    <img id="header-avatar" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='50' fill='%23232c1c'/><g fill='none' stroke='%23d2f465' stroke-width='3'><path d='M20 57l9-17 15-4h20l11 13 7 4v15H20z'/><path d='M34 40h27l9 12H27'/><circle cx='34' cy='67' r='7' fill='%23232c1c'/><circle cx='68' cy='67' r='7' fill='%23232c1c'/></g></svg>" class="avatar" alt="Аватар игрока">
+                    <img id="header-avatar" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAxMDAgMTAwJz48cmVjdCB3aWR0aD0nMTAwJyBoZWlnaHQ9JzEwMCcgcng9JzUwJyBmaWxsPScjMjMyYzFjJy8+PGcgZmlsbD0nbm9uZScgc3Ryb2tlPScjZDJmNDY1JyBzdHJva2Utd2lkdGg9JzMnPjxwYXRoIGQ9J00yMCA1N2w5LTE3IDE1LTRoMjBsMTEgMTMgNyA0djE1SDIweicvPjxwYXRoIGQ9J00zNCA0MGgyN2w5IDEySDI3Jy8+PGNpcmNsZSBjeD0nMzQnIGN5PSc2Nycgcj0nNycgZmlsbD0nIzIzMmMxYycvPjxjaXJjbGUgY3g9JzY4JyBjeT0nNjcnIHI9JzcnIGZpbGw9JyMyMzJjMWMnLz48L2c+PC9zdmc+" class="avatar" alt="Аватар игрока" onerror="handleAvatarError(this, 0)">
                     <div class="avatar-badge"></div>
                 </div>
                 <div class="hud-player-info">
@@ -649,7 +649,7 @@
                 <div id="my-rank-banner" class="lead-row is-me" style="margin-bottom: 14px;">
                     <div class="lead-left">
                         <div class="lead-rank" id="my-rank-pos" style="color: var(--accent-green);">#—</div>
-                        <img id="my-rank-avatar" src="" class="lead-avatar" onerror="handleAvatarError(this, 0)">
+                        <img id="my-rank-avatar" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAxMDAgMTAwJz48cmVjdCB3aWR0aD0nMTAwJyBoZWlnaHQ9JzEwMCcgcng9JzUwJyBmaWxsPScjMjMyYzFjJy8+PGcgZmlsbD0nbm9uZScgc3Ryb2tlPScjZDJmNDY1JyBzdHJva2Utd2lkdGg9JzMnPjxwYXRoIGQ9J00yMCA1N2w5LTE3IDE1LTRoMjBsMTEgMTMgNyA0djE1SDIweicvPjxwYXRoIGQ9J00zNCA0MGgyN2w5IDEySDI3Jy8+PGNpcmNsZSBjeD0nMzQnIGN5PSc2Nycgcj0nNycgZmlsbD0nIzIzMmMxYycvPjxjaXJjbGUgY3g9JzY4JyBjeT0nNjcnIHI9JzcnIGZpbGw9JyMyMzJjMWMnLz48L2c+PC9zdmc=" class="lead-avatar" alt="Ваш аватар" onerror="handleAvatarError(this, 0)">
                         <div>
                             <div class="lead-info-name" id="my-rank-name">Ваша позиция</div>
                             <div class="lead-sub" id="my-rank-stat">Загрузка данных...</div>
@@ -845,7 +845,7 @@
             <!-- Вкладка: Профиль игрока -->
             <div id="auth-panel-profile">
                 <div style="text-align: center; margin-bottom: 14px;">
-                    <img id="auth-profile-avatar-preview" src="" class="avatar" style="width: 68px; height: 68px; margin: 0 auto 8px auto; border-width: 3px;">
+                    <img id="auth-profile-avatar-preview" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAxMDAgMTAwJz48cmVjdCB3aWR0aD0nMTAwJyBoZWlnaHQ9JzEwMCcgcng9JzUwJyBmaWxsPScjMjMyYzFjJy8+PGcgZmlsbD0nbm9uZScgc3Ryb2tlPScjZDJmNDY1JyBzdHJva2Utd2lkdGg9JzMnPjxwYXRoIGQ9J00yMCA1N2w5LTE3IDE1LTRoMjBsMTEgMTMgNyA0djE1SDIweicvPjxwYXRoIGQ9J00zNCA0MGgyN2w5IDEySDI3Jy8+PGNpcmNsZSBjeD0nMzQnIGN5PSc2Nycgcj0nNycgZmlsbD0nIzIzMmMxYycvPjxjaXJjbGUgY3g9JzY4JyBjeT0nNjcnIHI9JzcnIGZpbGw9JyMyMzJjMWMnLz48L2c+PC9zdmc=" class="avatar" alt="Превью аватара" onerror="handleAvatarError(this, 0)" style="width: 68px; height: 68px; margin: 0 auto 8px auto; border-width: 3px;">
                     <div style="font-size: 16px; font-weight: 800; color: #fff;" id="auth-profile-display-name">Игрок</div>
                     <div style="font-size: 12px; color: var(--accent-green); margin-top: 4px;" id="auth-cloud-status-text">⚪ Войдите для доступа к онлайн-функциям</div>
                 </div>
@@ -956,9 +956,9 @@
     </div>
 
     <!-- МОДАЛЬНОЕ ОКНО: ПРОСМОТР ИГРОКА ИЗ ТОПА -->
-    <div id="player-view-modal" class="modal-overlay">
+    <div id="player-view-modal" class="modal-overlay" onclick="if(event.target===this)closePlayerViewModal()">
         <div class="modal-box" style="text-align: center;">
-            <img id="pv-avatar" src="" class="avatar" style="width: 72px; height: 72px; margin: 0 auto 10px auto; border-width: 3px;">
+            <img id="pv-avatar" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAxMDAgMTAwJz48cmVjdCB3aWR0aD0nMTAwJyBoZWlnaHQ9JzEwMCcgcng9JzUwJyBmaWxsPScjMjMyYzFjJy8+PGcgZmlsbD0nbm9uZScgc3Ryb2tlPScjZDJmNDY1JyBzdHJva2Utd2lkdGg9JzMnPjxwYXRoIGQ9J00yMCA1N2w5LTE3IDE1LTRoMjBsMTEgMTMgNyA0djE1SDIweicvPjxwYXRoIGQ9J00zNCA0MGgyN2w5IDEySDI3Jy8+PGNpcmNsZSBjeD0nMzQnIGN5PSc2Nycgcj0nNycgZmlsbD0nIzIzMmMxYycvPjxjaXJjbGUgY3g9JzY4JyBjeT0nNjcnIHI9JzcnIGZpbGw9JyMyMzJjMWMnLz48L2c+PC9zdmc=" class="avatar" alt="Аватар игрока" onerror="handleAvatarError(this, 0)" style="width: 72px; height: 72px; margin: 0 auto 10px auto; border-width: 3px;">
             <h3 id="pv-name" style="margin: 4px 0; color: var(--accent-green); font-size: 18px;">Игрок</h3>
             <div style="font-size: 12px; color: #fbbf24; margin-bottom: 16px;" id="pv-level">Уровень: 1</div>
 
@@ -1159,11 +1159,11 @@
         }
     </script>
     <script src="/.netlify/functions/firebase-web-config"></script>
-    <script src="./js/security.js?v=a368e7308e53"></script>
+    <script src="./js/security.js?v=02e3f2433778"></script>
     <script src="./js/storage.js?v=3c82419118a8"></script>
     <script src="./js/race-records.js?v=9c07941a09a1"></script>
     <script src="./js/race-economy.js?v=714a56ce8e7e"></script>
     <script src="./js/audio.js?v=201e625de396"></script>
-    <script src="./js/app.js?v=74fa431708e7"></script>
+    <script src="./js/app.js?v=c668403e5164"></script>
 </body>
 </html>

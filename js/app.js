@@ -1,4 +1,4 @@
-const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='50' fill='%23232c1c'/><g fill='none' stroke='%23d2f465' stroke-width='3'><path d='M20 57l9-17 15-4h20l11 13 7 4v15H20z'/><path d='M34 40h27l9 12H27'/><circle cx='34' cy='67' r='7' fill='%23232c1c'/><circle cx='68' cy='67' r='7' fill='%23232c1c'/></g></svg>";
+const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAxMDAgMTAwJz48cmVjdCB3aWR0aD0nMTAwJyBoZWlnaHQ9JzEwMCcgcng9JzUwJyBmaWxsPScjMjMyYzFjJy8+PGcgZmlsbD0nbm9uZScgc3Ryb2tlPScjZDJmNDY1JyBzdHJva2Utd2lkdGg9JzMnPjxwYXRoIGQ9J00yMCA1N2w5LTE3IDE1LTRoMjBsMTEgMTMgNyA0djE1SDIweicvPjxwYXRoIGQ9J00zNCA0MGgyN2w5IDEySDI3Jy8+PGNpcmNsZSBjeD0nMzQnIGN5PSc2Nycgcj0nNycgZmlsbD0nIzIzMmMxYycvPjxjaXJjbGUgY3g9JzY4JyBjeT0nNjcnIHI9JzcnIGZpbGw9JyMyMzJjMWMnLz48L2c+PC9zdmc=";
 
         const DEFAULT_CAR_IMG = "./icons/car-placeholder.svg";
 
@@ -286,22 +286,32 @@ const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/20
 
         // Предустановленные SVG-аватары
         const AVATAR_PRESETS = [
-            "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='50' fill='%23232c1c'/><g fill='none' stroke='%23d2f465' stroke-width='3'><path d='M20 57l9-17 15-4h20l11 13 7 4v15H20z'/><path d='M34 40h27l9 12H27'/><circle cx='34' cy='67' r='7' fill='%23232c1c'/><circle cx='68' cy='67' r='7' fill='%23232c1c'/></g></svg>",
-            "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='50' fill='%23b45309'/><text x='50' y='64' font-size='48' text-anchor='middle'>👑</text></svg>",
-            "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='50' fill='%23047857'/><text x='50' y='64' font-size='48' text-anchor='middle'>🦁</text></svg>",
-            "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='50' fill='%231d4ed8'/><text x='50' y='64' font-size='48' text-anchor='middle'>⚡</text></svg>",
-            "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='50' fill='%236d28d9'/><text x='50' y='64' font-size='48' text-anchor='middle'>🐯</text></svg>",
-            "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='50' fill='%23be123c'/><text x='50' y='64' font-size='48' text-anchor='middle'>🚀</text></svg>",
-            "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='50' fill='%23334155'/><text x='50' y='64' font-size='48' text-anchor='middle'>🐺</text></svg>",
-            "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='50' fill='%230f172a'/><text x='50' y='64' font-size='48' text-anchor='middle'>🕶️</text></svg>"
+            "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAxMDAgMTAwJz48cmVjdCB3aWR0aD0nMTAwJyBoZWlnaHQ9JzEwMCcgcng9JzUwJyBmaWxsPScjMjMyYzFjJy8+PGcgZmlsbD0nbm9uZScgc3Ryb2tlPScjZDJmNDY1JyBzdHJva2Utd2lkdGg9JzMnPjxwYXRoIGQ9J00yMCA1N2w5LTE3IDE1LTRoMjBsMTEgMTMgNyA0djE1SDIweicvPjxwYXRoIGQ9J00zNCA0MGgyN2w5IDEySDI3Jy8+PGNpcmNsZSBjeD0nMzQnIGN5PSc2Nycgcj0nNycgZmlsbD0nIzIzMmMxYycvPjxjaXJjbGUgY3g9JzY4JyBjeT0nNjcnIHI9JzcnIGZpbGw9JyMyMzJjMWMnLz48L2c+PC9zdmc+",
+            "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAxMDAgMTAwJz48cmVjdCB3aWR0aD0nMTAwJyBoZWlnaHQ9JzEwMCcgcng9JzUwJyBmaWxsPScjYjQ1MzA5Jy8+PHRleHQgeD0nNTAnIHk9JzY0JyBmb250LXNpemU9JzQ4JyB0ZXh0LWFuY2hvcj0nbWlkZGxlJz7wn5GRPC90ZXh0Pjwvc3ZnPg==",
+            "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAxMDAgMTAwJz48cmVjdCB3aWR0aD0nMTAwJyBoZWlnaHQ9JzEwMCcgcng9JzUwJyBmaWxsPScjMDQ3ODU3Jy8+PHRleHQgeD0nNTAnIHk9JzY0JyBmb250LXNpemU9JzQ4JyB0ZXh0LWFuY2hvcj0nbWlkZGxlJz7wn6aBPC90ZXh0Pjwvc3ZnPg==",
+            "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAxMDAgMTAwJz48cmVjdCB3aWR0aD0nMTAwJyBoZWlnaHQ9JzEwMCcgcng9JzUwJyBmaWxsPScjMWQ0ZWQ4Jy8+PHRleHQgeD0nNTAnIHk9JzY0JyBmb250LXNpemU9JzQ4JyB0ZXh0LWFuY2hvcj0nbWlkZGxlJz7imqE8L3RleHQ+PC9zdmc+",
+            "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAxMDAgMTAwJz48cmVjdCB3aWR0aD0nMTAwJyBoZWlnaHQ9JzEwMCcgcng9JzUwJyBmaWxsPScjNmQyOGQ5Jy8+PHRleHQgeD0nNTAnIHk9JzY0JyBmb250LXNpemU9JzQ4JyB0ZXh0LWFuY2hvcj0nbWlkZGxlJz7wn5CvPC90ZXh0Pjwvc3ZnPg==",
+            "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAxMDAgMTAwJz48cmVjdCB3aWR0aD0nMTAwJyBoZWlnaHQ9JzEwMCcgcng9JzUwJyBmaWxsPScjYmUxMjNjJy8+PHRleHQgeD0nNTAnIHk9JzY0JyBmb250LXNpemU9JzQ4JyB0ZXh0LWFuY2hvcj0nbWlkZGxlJz7wn5qAPC90ZXh0Pjwvc3ZnPg==",
+            "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAxMDAgMTAwJz48cmVjdCB3aWR0aD0nMTAwJyBoZWlnaHQ9JzEwMCcgcng9JzUwJyBmaWxsPScjMzM0MTU1Jy8+PHRleHQgeD0nNTAnIHk9JzY0JyBmb250LXNpemU9JzQ4JyB0ZXh0LWFuY2hvcj0nbWlkZGxlJz7wn5C6PC90ZXh0Pjwvc3ZnPg==",
+            "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAxMDAgMTAwJz48cmVjdCB3aWR0aD0nMTAwJyBoZWlnaHQ9JzEwMCcgcng9JzUwJyBmaWxsPScjMGYxNzJhJy8+PHRleHQgeD0nNTAnIHk9JzY0JyBmb250LXNpemU9JzQ4JyB0ZXh0LWFuY2hvcj0nbWlkZGxlJz7wn5W277iPPC90ZXh0Pjwvc3ZnPg=="
         ];
 
         function getPlayerAvatar(player) {
             if (!player || typeof player !== 'object') return AVATAR_PRESETS[0];
-            const raw = player.avatarData;
-            if (raw && typeof raw === 'string' && raw.trim().length > 0 && raw !== AVATAR_PRESETS[0]) {
-                const safe = safeImageUrl(raw, null, AVATAR_PRESETS);
-                if (safe) return safe;
+            let raw = player.avatarData;
+            if (raw && typeof raw === 'string') {
+                raw = raw.trim();
+                if (/^data:image\/svg\+xml;(?:utf8|charset=utf-8),/i.test(raw)) {
+                    try {
+                        const svgBody = raw.replace(/^data:image\/svg\+xml;(?:utf8|charset=utf-8),/i, '');
+                        const decodedSvg = decodeURIComponent(svgBody);
+                        raw = 'data:image/svg+xml;base64,' + (typeof Buffer !== 'undefined' ? Buffer.from(decodedSvg, 'utf8').toString('base64') : btoa(unescape(encodeURIComponent(decodedSvg))));
+                    } catch (_) {}
+                }
+                if (raw.length > 0 && raw !== AVATAR_PRESETS[0]) {
+                    const safe = safeImageUrl(raw, null, AVATAR_PRESETS);
+                    if (safe) return safe;
+                }
             }
             const name = String(player.nickname || 'Гость');
             let hash = 0;
@@ -683,6 +693,13 @@ const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/20
                     raceRecordStore.bind(sanitizeKey(nickname), { legacy: true, snapshot: d.raceRecords });
                     playerPin = d.playerPin || playerPin;
                     avatarData = d.avatarData || avatarData;
+                    if (typeof avatarData === 'string' && /^data:image\/svg\+xml;(?:utf8|charset=utf-8),/i.test(avatarData)) {
+                        try {
+                            const svgBody = avatarData.replace(/^data:image\/svg\+xml;(?:utf8|charset=utf-8),/i, '');
+                            const decodedSvg = decodeURIComponent(svgBody);
+                            avatarData = 'data:image/svg+xml;base64,' + (typeof Buffer !== 'undefined' ? Buffer.from(decodedSvg, 'utf8').toString('base64') : btoa(unescape(encodeURIComponent(decodedSvg))));
+                        } catch (_) {}
+                    }
                     inventory = Array.isArray(d.inventory) ? d.inventory : [];
                     myCars = Array.isArray(d.myCars) ? d.myCars.map(c => {
                         if (!c || typeof c !== 'object') return null;
@@ -910,6 +927,13 @@ const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/20
             if (prev) prev.src = safeImageUrl(svgUri, AVATAR_PRESETS[0], AVATAR_PRESETS);
             const fileInput = document.getElementById('avatar-input');
             if (fileInput) fileInput.value = '';
+            saveProgress();
+            if (onlineProfile) {
+                onlineProfile.avatarData = avatarData;
+            }
+            syncMyLeaderboardEntry();
+            updateProfileUI();
+            renderLeaderboard();
         }
 
         function compressAndSetAvatar(file, callback) {
@@ -966,7 +990,14 @@ const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/20
                 document.querySelectorAll('.preset-avatar-item').forEach(i => i.classList.remove('selected'));
                 const prev = document.getElementById('auth-profile-avatar-preview');
                 if (prev) prev.src = safeImageUrl(uri, AVATAR_PRESETS[0], AVATAR_PRESETS);
-                notifyUser('Фото выбрано. Нажмите «Сохранить профиль», чтобы сохранить.');
+                saveProgress();
+                if (onlineProfile) {
+                    onlineProfile.avatarData = avatarData;
+                }
+                syncMyLeaderboardEntry();
+                updateProfileUI();
+                renderLeaderboard();
+                notifyUser('Фото выбрано и сохранено!');
             });
         }
         window.handleAvatarFileSelect = handleAvatarFileSelect;
@@ -2282,9 +2313,20 @@ const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/20
 
         function setOnlineProfile(profile,applyInventory=false) {
             onlineProfile=profile;
-            if (profile && profile.avatarData && profile.avatarData !== avatarData) {
-                avatarData = profile.avatarData;
-                updateProfileUI();
+            if (profile && profile.avatarData) {
+                let av = profile.avatarData;
+                if (/^data:image\/svg\+xml;(?:utf8|charset=utf-8),/i.test(av)) {
+                    try {
+                        const svgBody = av.replace(/^data:image\/svg\+xml;(?:utf8|charset=utf-8),/i, '');
+                        const decodedSvg = decodeURIComponent(svgBody);
+                        av = 'data:image/svg+xml;base64,' + (typeof Buffer !== 'undefined' ? Buffer.from(decodedSvg, 'utf8').toString('base64') : btoa(unescape(encodeURIComponent(decodedSvg))));
+                    } catch (_) {}
+                }
+                if (av !== avatarData) {
+                    avatarData = av;
+                    updateProfileUI();
+                    renderLeaderboard();
+                }
             } else if (onlineProfile && avatarData && !onlineProfile.avatarData) {
                 onlineProfile.avatarData = avatarData;
                 if (typeof syncMyLeaderboardEntry === 'function') syncMyLeaderboardEntry();
@@ -2741,6 +2783,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/20
                 : (expRewards[rarityText] || 0);
             playerExp += amount;
 
+            const oldLevel = playerLevel;
             let needed = getExpNeeded(playerLevel);
             while (playerExp >= needed && playerLevel < 777) {
                 playerExp -= needed;
@@ -2748,6 +2791,10 @@ const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/20
                 needed = getExpNeeded(playerLevel);
             }
             updateExpUI();
+            if (playerLevel !== oldLevel) {
+                syncMyLeaderboardEntry();
+                renderLeaderboard();
+            }
         }
 
         function updateExpUI() {
@@ -4811,7 +4858,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/20
         }
 
         function syncMyLeaderboardEntry() {
-            if (!onlineProfile || !db || typeof db.ref !== 'function') return;
+            if (!db || typeof db.ref !== 'function') return;
             try {
                 const userKey = sanitizeKey(nickname);
                 if (!userKey) return;
@@ -4821,7 +4868,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/20
                 const displayBal = (onlineProfile && Number.isFinite(Number(onlineProfile.balance)))
                     ? Number(onlineProfile.balance)
                     : (Number.isFinite(balance) ? balance : 50000);
-                ref.update({
+                const entry = {
                     nickname: nickname,
                     balance: Math.round(displayBal),
                     playerLevel: playerLevel || 1,
@@ -4831,7 +4878,13 @@ const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/20
                     carsCount: (myCars || []).length,
                     bestSpeed: Math.round(mySpeed || 0),
                     updatedAt: Date.now()
-                }).catch(() => {});
+                };
+                ref.update(entry).catch(() => {});
+
+                if (Array.isArray(cloudLeaderboardList)) {
+                    const idx = cloudLeaderboardList.findIndex(p => sanitizeKey(p && p.nickname) === userKey);
+                    if (idx >= 0) cloudLeaderboardList[idx] = { ...cloudLeaderboardList[idx], ...entry };
+                }
 
                 if (onlineProfile) {
                     db.ref('onlineV4/accounts/' + userKey).update({ avatarData: avatarData || '', updatedAt: Date.now() }).catch(() => {});
@@ -4860,8 +4913,17 @@ const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/20
 
             let baseList = (cloudLeaderboardList && cloudLeaderboardList.length > 0) ? [...cloudLeaderboardList] : [...mockOtherPlayers];
             // Убираем дубликат текущего игрока из серверного списка
-            baseList = baseList.filter(p => sanitizeKey(p.nickname) !== sanitizeKey(nickname));
-            const allPlayers = [myEntry, ...baseList];
+            baseList = baseList.filter(p => sanitizeKey(p && p.nickname) !== sanitizeKey(nickname));
+            const seenKeys = new Set([sanitizeKey(nickname)]);
+            const dedupedBase = [];
+            for (const p of baseList) {
+                if (!p || !p.nickname) continue;
+                const k = sanitizeKey(p.nickname);
+                if (!k || seenKeys.has(k)) continue;
+                seenKeys.add(k);
+                dedupedBase.push(p);
+            }
+            const allPlayers = [myEntry, ...dedupedBase];
 
             allPlayers.sort((a, b) => {
                 if (leaderboardFilter === 'level') {
@@ -4885,44 +4947,48 @@ const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/20
             let myIndex = -1;
 
             // Рендер подиума (ТОП-1, 2, 3)
-            if (podium && allPlayers.length >= 3) {
-                const p1 = allPlayers[0];
-                const p2 = allPlayers[1];
-                const p3 = allPlayers[2];
+            if (podium) {
+                if (allPlayers.length >= 3) {
+                    const p1 = allPlayers[0];
+                    const p2 = allPlayers[1];
+                    const p3 = allPlayers[2];
 
-                const getVal = (p) => {
-                    if (leaderboardFilter === 'level') return `${p.playerLevel || 1} ур.`;
-                    if (leaderboardFilter === 'speed') return `${Math.round(p.bestSpeed || 0)} км/ч`;
-                    return `${((p.balance || 0) / 1000000).toFixed(1)}M ₽`;
-                };
+                    const getVal = (p) => {
+                        if (leaderboardFilter === 'level') return `${p.playerLevel || 1} ур.`;
+                        if (leaderboardFilter === 'speed') return `${Math.round(p.bestSpeed || 0)} км/ч`;
+                        return `${((p.balance || 0) / 1000000).toFixed(1)}M ₽`;
+                    };
 
-                podium.innerHTML = `
-                    <div class="podium-slot podium-2" onclick="openPlayerViewModal(${jsArg(sanitizeKey(p2.nickname))})">
-                        <div class="podium-avatar-wrap">
-                            <img src="${imageSrc(getPlayerAvatar(p2))}" class="podium-avatar" onerror="handleAvatarError(this, 1)">
+                    podium.innerHTML = `
+                        <div class="podium-slot podium-2" onclick="openPlayerViewModal(${jsArg(sanitizeKey(p2.nickname))})">
+                            <div class="podium-avatar-wrap">
+                                <img src="${imageSrc(getPlayerAvatar(p2))}" class="podium-avatar" onerror="handleAvatarError(this, 1)">
+                            </div>
+                            <div class="podium-name">${escapeHtml(p2.nickname)}</div>
+                            <div class="podium-val">${getVal(p2)}</div>
+                            <div class="podium-pedestal">2</div>
                         </div>
-                        <div class="podium-name">${escapeHtml(p2.nickname)}</div>
-                        <div class="podium-val">${getVal(p2)}</div>
-                        <div class="podium-pedestal">2</div>
-                    </div>
-                    <div class="podium-slot podium-1" onclick="openPlayerViewModal(${jsArg(sanitizeKey(p1.nickname))})">
-                        <div class="podium-crown">👑</div>
-                        <div class="podium-avatar-wrap">
-                            <img src="${imageSrc(getPlayerAvatar(p1))}" class="podium-avatar" onerror="handleAvatarError(this, 0)">
+                        <div class="podium-slot podium-1" onclick="openPlayerViewModal(${jsArg(sanitizeKey(p1.nickname))})">
+                            <div class="podium-crown">👑</div>
+                            <div class="podium-avatar-wrap">
+                                <img src="${imageSrc(getPlayerAvatar(p1))}" class="podium-avatar" onerror="handleAvatarError(this, 0)">
+                            </div>
+                            <div class="podium-name">${escapeHtml(p1.nickname)}</div>
+                            <div class="podium-val">${getVal(p1)}</div>
+                            <div class="podium-pedestal">1</div>
                         </div>
-                        <div class="podium-name">${escapeHtml(p1.nickname)}</div>
-                        <div class="podium-val">${getVal(p1)}</div>
-                        <div class="podium-pedestal">1</div>
-                    </div>
-                    <div class="podium-slot podium-3" onclick="openPlayerViewModal(${jsArg(sanitizeKey(p3.nickname))})">
-                        <div class="podium-avatar-wrap">
-                            <img src="${imageSrc(getPlayerAvatar(p3))}" class="podium-avatar" onerror="handleAvatarError(this, 2)">
+                        <div class="podium-slot podium-3" onclick="openPlayerViewModal(${jsArg(sanitizeKey(p3.nickname))})">
+                            <div class="podium-avatar-wrap">
+                                <img src="${imageSrc(getPlayerAvatar(p3))}" class="podium-avatar" onerror="handleAvatarError(this, 2)">
+                            </div>
+                            <div class="podium-name">${escapeHtml(p3.nickname)}</div>
+                            <div class="podium-val">${getVal(p3)}</div>
+                            <div class="podium-pedestal">3</div>
                         </div>
-                        <div class="podium-name">${escapeHtml(p3.nickname)}</div>
-                        <div class="podium-val">${getVal(p3)}</div>
-                        <div class="podium-pedestal">3</div>
-                    </div>
-                `;
+                    `;
+                } else {
+                    podium.innerHTML = '';
+                }
             }
 
             let html = '';
@@ -4985,28 +5051,28 @@ const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/20
             const displayBal = (onlineProfile && Number.isFinite(Number(onlineProfile.balance))) ? Number(onlineProfile.balance) : balance;
             if (statEl) statEl.innerText = `Баланс: ${Math.round(displayBal).toLocaleString('ru-RU')} ₽ | Уровень: ${playerLevel} | Рекорд скорости: ${Math.round(mySpeed)} км/ч`;
             if (myAvatarEl) {
-                myAvatarEl.src = imageSrc(getPlayerAvatar(myEntry));
+                myAvatarEl.onerror = function() { handleAvatarError(this, 0); };
+                myAvatarEl.src = safeImageUrl(getPlayerAvatar(myEntry), DEFAULT_AVATAR, AVATAR_PRESETS);
             }
         }
 
-        function openPlayerViewModal(userKey) {
-            let baseList = (cloudLeaderboardList && cloudLeaderboardList.length > 0) ? [...cloudLeaderboardList] : [...mockOtherPlayers];
-            baseList = baseList.filter(p => sanitizeKey(p.nickname) !== sanitizeKey(nickname));
-            const mySpeed = (typeof getRaceRecords === 'function' ? getRaceRecords().bestSpeed : 0) || 0;
-
-            const allPlayers = [{
-                nickname: nickname, balance: (onlineProfile && Number.isFinite(Number(onlineProfile.balance))) ? Number(onlineProfile.balance) : balance, playerLevel, avatarData: avatarData || '', bestPlate: getBestPlate(), carsCount: myCars.length, bestSpeed: Math.round(mySpeed), updatedAt: Date.now()
-            }, ...baseList];
-
-            const player = allPlayers.find(p => sanitizeKey(p.nickname || '') === userKey);
+        function renderPlayerViewModal(player) {
             if (!player) return;
-
-            document.getElementById('pv-avatar').src = safeImageUrl(getPlayerAvatar(player), DEFAULT_AVATAR, [...AVATAR_PRESETS, DEFAULT_CAR_IMG]);
-            document.getElementById('pv-name').innerText = player.nickname || 'Игрок';
-            document.getElementById('pv-level').innerText = `Уровень: ${escapeHtml(player.playerLevel || 1)} ${player.bestSpeed ? `| ⚡ ${Math.round(player.bestSpeed)} км/ч` : ''}`;
-            document.getElementById('pv-balance').innerText = `${Number(player.balance || 0).toLocaleString('ru-RU')} ₽`;
-            document.getElementById('pv-cars').innerText = player.carsCount || 0;
-            document.getElementById('pv-best-plate').innerText = player.bestPlate || '—';
+            const modalAvatar = document.getElementById('pv-avatar');
+            if (modalAvatar) {
+                modalAvatar.onerror = function() { handleAvatarError(this, 0); };
+                modalAvatar.src = safeImageUrl(getPlayerAvatar(player), DEFAULT_AVATAR, [...AVATAR_PRESETS, DEFAULT_CAR_IMG]);
+            }
+            const nameEl = document.getElementById('pv-name');
+            if (nameEl) nameEl.innerText = player.nickname || 'Игрок';
+            const lvlEl = document.getElementById('pv-level');
+            if (lvlEl) lvlEl.innerText = `Уровень: ${escapeHtml(player.playerLevel || 1)} ${player.bestSpeed ? `| ⚡ ${Math.round(player.bestSpeed)} км/ч` : ''}`;
+            const balEl = document.getElementById('pv-balance');
+            if (balEl) balEl.innerText = `${Number(player.balance || 0).toLocaleString('ru-RU')} ₽`;
+            const carsEl = document.getElementById('pv-cars');
+            if (carsEl) carsEl.innerText = player.carsCount || 0;
+            const plateEl = document.getElementById('pv-best-plate');
+            if (plateEl) plateEl.innerText = player.bestPlate || '—';
 
             let lastSeenText = 'только что';
             if (player.updatedAt) {
@@ -5019,8 +5085,32 @@ const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/20
                     else lastSeenText = `${Math.floor(diffHours / 24)} дн. назад`;
                 }
             }
-            document.getElementById('pv-last-seen').innerText = lastSeenText;
-            document.getElementById('player-view-modal').classList.add('show');
+            const lastSeenEl = document.getElementById('pv-last-seen');
+            if (lastSeenEl) lastSeenEl.innerText = lastSeenText;
+            const modal = document.getElementById('player-view-modal');
+            if (modal) modal.classList.add('show');
+        }
+
+        function openPlayerViewModal(userKey) {
+            let baseList = (cloudLeaderboardList && cloudLeaderboardList.length > 0) ? [...cloudLeaderboardList] : [...mockOtherPlayers];
+            baseList = baseList.filter(p => sanitizeKey(p && p.nickname) !== sanitizeKey(nickname));
+            const mySpeed = (typeof getRaceRecords === 'function' ? getRaceRecords().bestSpeed : 0) || 0;
+
+            const allPlayers = [{
+                nickname: nickname, balance: (onlineProfile && Number.isFinite(Number(onlineProfile.balance))) ? Number(onlineProfile.balance) : balance, playerLevel, avatarData: avatarData || '', bestPlate: getBestPlate(), carsCount: myCars.length, bestSpeed: Math.round(mySpeed), updatedAt: Date.now()
+            }, ...baseList];
+
+            const player = allPlayers.find(p => sanitizeKey(p && p.nickname || '') === userKey);
+            if (player) {
+                renderPlayerViewModal(player);
+                return;
+            }
+            if (db && typeof db.ref === 'function') {
+                db.ref('leaderboard/' + userKey).once('value').then(snap => {
+                    const val = snap.val();
+                    if (val) renderPlayerViewModal(val);
+                }).catch(() => {});
+            }
         }
 
         // ==========================================
@@ -8650,6 +8740,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/20
             achievements.totalDistanceKm = Number(achievements.totalDistanceKm || 0) + (racePlayer.distanceKm || 0);
             checkAchievements();
             saveProgress();
+            syncMyLeaderboardEntry();
             updateRaceRecordsUI();
             renderCars();
 
