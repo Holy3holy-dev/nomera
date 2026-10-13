@@ -1,4 +1,4 @@
-const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
+const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='50' fill='%23232c1c'/><g fill='none' stroke='%23d2f465' stroke-width='3'><path d='M20 57l9-17 15-4h20l11 13 7 4v15H20z'/><path d='M34 40h27l9 12H27'/><circle cx='34' cy='67' r='7' fill='%23232c1c'/><circle cx='68' cy='67' r='7' fill='%23232c1c'/></g></svg>";
 
         const DEFAULT_CAR_IMG = "./icons/car-placeholder.svg";
 
@@ -295,6 +295,23 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
             "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='50' fill='%23334155'/><text x='50' y='64' font-size='48' text-anchor='middle'>🐺</text></svg>",
             "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='50' fill='%230f172a'/><text x='50' y='64' font-size='48' text-anchor='middle'>🕶️</text></svg>"
         ];
+
+        function getPlayerAvatar(player) {
+            if (!player || typeof player !== 'object') return AVATAR_PRESETS[0];
+            const raw = player.avatarData;
+            if (raw && typeof raw === 'string' && raw.trim().length > 0) {
+                const safe = safeImageUrl(raw, null, AVATAR_PRESETS);
+                if (safe) return safe;
+            }
+            const name = String(player.nickname || 'Гость');
+            let hash = 0;
+            for (let i = 0; i < name.length; i++) {
+                hash = ((hash << 5) - hash) + name.charCodeAt(i);
+                hash |= 0;
+            }
+            const idx = Math.abs(hash) % AVATAR_PRESETS.length;
+            return AVATAR_PRESETS[idx];
+        }
 
         // КЭШ И СЕРВЕРНЫЕ ДАННЫЕ
         let cloudLeaderboardList = [];
@@ -654,13 +671,20 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
             if (savedRaw) {
                 try {
                     const d = JSON.parse(savedRaw);
-                    balance = d.balance ?? balance;
+                    balance = Number.isFinite(Number(d.balance)) ? Number(d.balance) : balance;
                     nickname = d.nickname || nickname;
                     raceRecordStore.bind(sanitizeKey(nickname), { legacy: true, snapshot: d.raceRecords });
                     playerPin = d.playerPin || playerPin;
                     avatarData = d.avatarData || avatarData;
                     inventory = Array.isArray(d.inventory) ? d.inventory : [];
-                    myCars = Array.isArray(d.myCars) ? d.myCars : myCars;
+                    myCars = Array.isArray(d.myCars) ? d.myCars.map(c => {
+                        if (!c || typeof c !== 'object') return null;
+                        const template = (typeof carsData !== 'undefined' && Array.isArray(carsData)) ? (carsData.find(t => t && t.name === c.name) || {}) : {};
+                        return {
+                            ...c,
+                            basePrice: Number(c.basePrice || template.price || 80000)
+                        };
+                    }).filter(Boolean) : myCars;
                     playerLevel = d.playerLevel || playerLevel;
                     playerExp = d.playerExp || playerExp;
                     playerTitle = d.playerTitle || playerTitle || 'novice';
@@ -761,6 +785,12 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                     // Never credit funds during active spins or when the roll is in flight
                     if (isSpinning || serverSpinBusy) return;
 
+                    // Stale snapshot check
+                    if (data.updatedAt && typeof lastSpendTimestamp === 'number' && lastSpendTimestamp > 0 && data.updatedAt < lastSpendTimestamp) {
+                        return;
+                    }
+
+                    const effectiveCurrent = Math.max(balance, prevBal);
                     if (newBal > prevBal && prevBal > 0) {
                         const diff = newBal - prevBal;
                         balance += diff;
@@ -773,6 +803,8 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                         balance = newBal;
                         updateBalance();
                         saveProgress();
+                    } else {
+                        updateBalance();
                     }
                 };
                 myAccountRef.on('value', myAccountRefListener);
@@ -1989,14 +2021,17 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                 const amount = Math.floor(Number(params.amount) || 0);
                 if (!Number.isFinite(amount) || amount <= 0) throw Error('Некорректная сумма');
                 const userKey = sanitizeKey(onlineProfile.nickname);
-                const newBal = Math.max(0, (Number(onlineProfile.balance) || 0) - amount);
+                const curBal = Number.isFinite(Number(onlineProfile.balance)) ? Number(onlineProfile.balance) : balance;
+                const newBal = Number.isFinite(Number(params.targetBalance))
+                    ? Math.max(0, Math.floor(Number(params.targetBalance)))
+                    : Math.max(0, curBal - amount);
                 onlineProfile.balance = newBal;
                 balance = Math.min(balance, newBal);
                 updateBalance();
                 await Promise.all([
                     db.ref('onlineV4/accounts/' + userKey).update({ balance: newBal, updatedAt: Date.now() }),
                     db.ref('users/' + userKey).update({ balance: newBal, updatedAt: Date.now() }).catch(() => {}),
-                    db.ref('leaderboard/' + userKey).update({ balance: newBal, updatedAt: Date.now() }).catch(() => {})
+                    db.ref('leaderboard/' + userKey).update({ balance: newBal, avatarData: avatarData || AVATAR_PRESETS[0], updatedAt: Date.now() }).catch(() => {})
                 ]);
                 return { ok: true, profile: onlineProfile, balance: newBal };
             }
@@ -2170,7 +2205,14 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                 const unconfirmed=inventory.filter(p=>!p.id&&!owned.has(p.text));
                 inventory=[...(profile.inventory||[]),...unconfirmed];
                 if (Array.isArray(profile.myCars) && profile.myCars.length > 0) {
-                    myCars = profile.myCars;
+                    myCars = profile.myCars.map(c => {
+                        if (!c || typeof c !== 'object') return null;
+                        const template = (typeof carsData !== 'undefined' && Array.isArray(carsData)) ? (carsData.find(t => t && t.name === c.name) || {}) : {};
+                        return {
+                            ...c,
+                            basePrice: Number(c.basePrice || template.price || 80000)
+                        };
+                    }).filter(Boolean);
                     renderCars();
                 } else if (myCars && myCars.length > 0) {
                     syncCloudGarage();
@@ -2179,6 +2221,7 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                 saveProgress();
             }
             renderOnlineAccount();
+            updateBalance();
         }
         async function refreshOnlinePublic() {
             const data=await onlineRequest('public',{},'GET');
@@ -2528,15 +2571,30 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
         }
 
         function updateBalance() {
+            if (!Number.isFinite(balance)) balance = 50000;
+            const displayBal = (onlineProfile && Number.isFinite(Number(onlineProfile.balance)))
+                ? Number(onlineProfile.balance)
+                : balance;
             const el = document.getElementById('balance');
-            if (el) el.innerText = balance.toLocaleString('ru-RU');
+            if (el) el.innerText = Math.round(displayBal).toLocaleString('ru-RU');
+            const onlineBal = document.getElementById('online-balance');
+            if (onlineBal && onlineProfile && Number.isFinite(Number(onlineProfile.balance))) {
+                onlineBal.innerText = Math.round(Number(onlineProfile.balance)).toLocaleString('ru-RU');
+            }
+            const genOnlineWallet = document.getElementById('generator-online-wallet');
+            if (genOnlineWallet && onlineProfile && Number.isFinite(Number(onlineProfile.balance))) {
+                genOnlineWallet.innerText = `Онлайн-кошелёк: ${Math.round(Number(onlineProfile.balance)).toLocaleString('ru-RU')} ₽`;
+            }
         }
 
+        let lastSpendTimestamp = 0;
         function deductPlayerBalance(amount, reason = '') {
             const num = Math.floor(Number(amount) || 0);
             if (!Number.isFinite(num) || num <= 0) return false;
+            if (!Number.isFinite(balance)) balance = 50000;
             if (balance < num) return false;
             balance = Math.max(0, balance - num);
+            lastSpendTimestamp = Date.now();
             if (onlineProfile) {
                 onlineProfile.balance = balance;
                 renderOnlineAccount();
@@ -2545,9 +2603,9 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                     const now = Date.now();
                     db.ref('onlineV4/accounts/' + key).update({ balance, updatedAt: now }).catch(() => {});
                     db.ref('users/' + key).update({ balance, updatedAt: now }).catch(() => {});
-                    db.ref('leaderboard/' + key).update({ balance, updatedAt: now }).catch(() => {});
+                    db.ref('leaderboard/' + key).update({ balance, avatarData: avatarData || AVATAR_PRESETS[0], updatedAt: now }).catch(() => {});
                 }
-                onlineRequest('spend', { amount: num, reason }).catch(() => {});
+                onlineRequest('spend', { amount: num, targetBalance: balance, reason }).catch(() => {});
             }
             updateBalance();
             saveProgress();
@@ -2926,7 +2984,10 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
             if(isSpinning||serverSpinBusy)return;
             if(!ensureOnlineAccess())return;
             const spinCost = mode === 'both' ? 900 : 500;
-            if (balance < spinCost || (onlineProfile && Number(onlineProfile.balance) < spinCost)) {
+            const curOnlineBal = (onlineProfile && Number.isFinite(Number(onlineProfile.balance)))
+                ? Number(onlineProfile.balance)
+                : balance;
+            if (curOnlineBal < spinCost) {
                 notifyUser(`Недостаточно средств для спина (${spinCost} ₽)!`, 'error');
                 return;
             }
@@ -2945,6 +3006,7 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                     pityCounterBoth = data.draft.pityCounter;
                 }
                 setOnlineProfile(data.profile);
+                updateBalance();
                 updatePityUI();
                 syncServerDraft(data.draft, mode);
                 const targets=mode==='both'
@@ -2954,7 +3016,10 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                     'cell-n3':currentNum[2], 'cell-l2':currentL2,'cell-l3':currentL3};
                 executeCellSpin(targets,chars);
             } catch(e) {notifyUser('Спин не выполнен: '+e.message,'error');}
-            finally {serverSpinBusy=false;}
+            finally {
+                serverSpinBusy=false;
+                updateBalance();
+            }
         }
 
         function getLuckBonus(pity) {
@@ -3769,12 +3834,14 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
             myCars.forEach((car, index) => {
                 const template = carsData.find(c => c.name === car.name) || {};
                 const carCategory = car.category || template.category || 'Автомобиль';
-                const carSellPrice = (car.basePrice || template.price || 500000) * 0.9;
+                const carBasePrice = Math.max(10000, Number(car.basePrice || template.price || 80000));
+                const carSellPrice = Math.floor(carBasePrice * 0.9);
 
                 let bumperHtml = '';
                 if (car.plate) {
-                    let detachCost = car.plate.price * 0.1;
-                    let totalSellPrice = carSellPrice + (car.plate.price * 0.95);
+                    let platePrice = Number.isFinite(Number(car.plate.price)) ? Number(car.plate.price) : 0;
+                    let detachCost = Math.floor(platePrice * 0.1);
+                    let totalSellPrice = Math.floor(carSellPrice + (platePrice * 0.95));
                     const r = getRarity(Number(car.plate.price) || 0);
                     let rHtml = r.text !== "Обычный"
                         ? `<span style="font-size: 9px; padding: 2px 8px; border-radius: var(--radius-full); background:${r.bg}; color:${r.color}; font-weight:800; margin-bottom: 6px; display: inline-block;">${escapeHtml(r.text)}</span>`
@@ -3932,32 +3999,54 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
         function sellCar(index, hasPlate) {
             let car = myCars[index];
             if (!car) return;
-            let profit = Math.floor(car.basePrice * 0.9 + (hasPlate && car.plate ? car.plate.price * 0.95 : 0));
+            const template = (typeof carsData !== 'undefined' && Array.isArray(carsData))
+                ? (carsData.find(c => c && c.name === car.name) || {})
+                : {};
+            const basePrice = Math.max(10000, Number(car.basePrice || template.price || 80000));
+            const platePrice = (hasPlate && car.plate && Number.isFinite(Number(car.plate.price)))
+                ? Math.max(0, Number(car.plate.price))
+                : 0;
+            let profit = Math.floor(basePrice * 0.9 + (hasPlate ? platePrice * 0.95 : 0));
+            if (!Number.isFinite(profit) || profit <= 0) profit = Math.floor(basePrice * 0.9);
+            if (!Number.isFinite(profit) || profit <= 0) profit = 72000;
+
+            // If the plate was attached and NOT sold, return it to player's inventory
+            if (!hasPlate && car.plate) {
+                inventory.unshift(car.plate);
+                renderInventory();
+            }
+
+            if (!Number.isFinite(balance)) balance = 50000;
             balance += profit;
             playCashSound();
             myCars.splice(index, 1);
+
             if (onlineProfile) {
-                onlineProfile.balance = (Number(onlineProfile.balance) || 0) + profit;
+                const curOnlineBal = Number.isFinite(Number(onlineProfile.balance)) ? Number(onlineProfile.balance) : balance;
+                onlineProfile.balance = curOnlineBal + profit;
                 onlineProfile.myCars = [...myCars];
-                if (db) {
+                if (db && typeof db.ref === 'function') {
                     const key = sanitizeKey(onlineProfile.nickname);
+                    const now = Date.now();
                     db.ref('onlineV4/accounts/' + key).update({
                         balance: onlineProfile.balance,
                         myCars: onlineProfile.myCars,
-                        updatedAt: Date.now()
+                        updatedAt: now
                     }).catch(() => {});
                     db.ref('users/' + key).update({
                         balance: onlineProfile.balance,
                         myCars: onlineProfile.myCars,
-                        updatedAt: Date.now()
+                        updatedAt: now
                     }).catch(() => {});
                     db.ref('leaderboard/' + key).update({
                         balance: onlineProfile.balance,
                         carsCount: myCars.length,
-                        updatedAt: Date.now()
+                        avatarData: avatarData || AVATAR_PRESETS[0],
+                        updatedAt: now
                     }).catch(() => {});
                 }
             }
+            if (typeof syncCloudGarage === 'function') syncCloudGarage();
             updateBalance();
             renderCars();
             saveProgress();
@@ -4616,6 +4705,29 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
             renderLeaderboard();
         }
 
+        function syncMyLeaderboardEntry() {
+            if (!onlineProfile || !db || typeof db.ref !== 'function') return;
+            try {
+                const ref = db.ref('leaderboard/' + sanitizeKey(nickname));
+                if (!ref || typeof ref.update !== 'function') return;
+                const mySpeed = (typeof getRaceRecords === 'function' ? getRaceRecords().bestSpeed : 0) || 0;
+                const displayBal = (onlineProfile && Number.isFinite(Number(onlineProfile.balance)))
+                    ? Number(onlineProfile.balance)
+                    : (Number.isFinite(balance) ? balance : 50000);
+                ref.update({
+                    nickname: nickname,
+                    balance: Math.round(displayBal),
+                    playerLevel: playerLevel || 1,
+                    playerExp: playerExp || 0,
+                    avatarData: avatarData || AVATAR_PRESETS[0],
+                    bestPlate: getBestPlate() || '—',
+                    carsCount: (myCars || []).length,
+                    bestSpeed: Math.round(mySpeed || 0),
+                    updatedAt: Date.now()
+                }).catch(() => {});
+            } catch (_) {}
+        }
+
         function renderLeaderboard() {
             const list = document.getElementById('leaderboard-list');
             const podium = document.getElementById('podium-stage');
@@ -4625,7 +4737,7 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
 
             const myEntry = {
                 nickname: nickname,
-                balance: balance,
+                balance: (onlineProfile && Number.isFinite(Number(onlineProfile.balance))) ? Number(onlineProfile.balance) : balance,
                 playerLevel: playerLevel,
                 avatarData: avatarData || AVATAR_PRESETS[0],
                 bestPlate: getBestPlate(),
@@ -4675,7 +4787,7 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                 podium.innerHTML = `
                     <div class="podium-slot podium-2" onclick="openPlayerViewModal(${jsArg(sanitizeKey(p2.nickname))})">
                         <div class="podium-avatar-wrap">
-                            <img src="${imageSrc(p2.avatarData || AVATAR_PRESETS[0])}" class="podium-avatar" onerror="this.src='${DEFAULT_AVATAR}'">
+                            <img src="${imageSrc(getPlayerAvatar(p2))}" class="podium-avatar" onerror="this.src=AVATAR_PRESETS[1]">
                         </div>
                         <div class="podium-name">${escapeHtml(p2.nickname)}</div>
                         <div class="podium-val">${getVal(p2)}</div>
@@ -4684,7 +4796,7 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                     <div class="podium-slot podium-1" onclick="openPlayerViewModal(${jsArg(sanitizeKey(p1.nickname))})">
                         <div class="podium-crown">👑</div>
                         <div class="podium-avatar-wrap">
-                            <img src="${imageSrc(p1.avatarData || AVATAR_PRESETS[0])}" class="podium-avatar" onerror="this.src='${DEFAULT_AVATAR}'">
+                            <img src="${imageSrc(getPlayerAvatar(p1))}" class="podium-avatar" onerror="this.src=AVATAR_PRESETS[0]">
                         </div>
                         <div class="podium-name">${escapeHtml(p1.nickname)}</div>
                         <div class="podium-val">${getVal(p1)}</div>
@@ -4692,7 +4804,7 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                     </div>
                     <div class="podium-slot podium-3" onclick="openPlayerViewModal(${jsArg(sanitizeKey(p3.nickname))})">
                         <div class="podium-avatar-wrap">
-                            <img src="${imageSrc(p3.avatarData || AVATAR_PRESETS[0])}" class="podium-avatar" onerror="this.src='${DEFAULT_AVATAR}'">
+                            <img src="${imageSrc(getPlayerAvatar(p3))}" class="podium-avatar" onerror="this.src=AVATAR_PRESETS[2]">
                         </div>
                         <div class="podium-name">${escapeHtml(p3.nickname)}</div>
                         <div class="podium-val">${getVal(p3)}</div>
@@ -4712,7 +4824,7 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                 else if (rank === 2) rankBadge = '🥈';
                 else if (rank === 3) rankBadge = '🥉';
 
-                const avatar = player.avatarData ? player.avatarData : AVATAR_PRESETS[0];
+                const avatar = getPlayerAvatar(player);
                 const escName = escapeHtml(player.nickname || 'Аноним');
 
                 const primaryVal = leaderboardFilter === 'level'
@@ -4733,7 +4845,7 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                     <div class="lead-row ${isMe ? 'is-me' : ''}" onclick="openPlayerViewModal(${jsArg(safeKey)})">
                         <div class="lead-left">
                             <div class="lead-rank">${rankBadge}</div>
-                            <img src="${imageSrc(avatar)}" class="lead-avatar" onerror="this.src='${DEFAULT_AVATAR}'">
+                            <img src="${imageSrc(avatar)}" class="lead-avatar" onerror="this.src=AVATAR_PRESETS[0]">
                             <div>
                                 <div class="lead-info-name">
                                     ${escName}
@@ -4757,7 +4869,8 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
             const statEl = document.getElementById('my-rank-stat');
             if (posEl) posEl.innerText = `#${myIndex}`;
             if (nameEl) nameEl.innerText = `Вы: ${nickname}`;
-            if (statEl) statEl.innerText = `Баланс: ${balance.toLocaleString('ru-RU')} ₽ | Уровень: ${playerLevel} | Рекорд скорости: ${Math.round(mySpeed)} км/ч`;
+            const displayBal = (onlineProfile && Number.isFinite(Number(onlineProfile.balance))) ? Number(onlineProfile.balance) : balance;
+            if (statEl) statEl.innerText = `Баланс: ${Math.round(displayBal).toLocaleString('ru-RU')} ₽ | Уровень: ${playerLevel} | Рекорд скорости: ${Math.round(mySpeed)} км/ч`;
         }
 
         function openPlayerViewModal(userKey) {
@@ -4766,13 +4879,13 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
             const mySpeed = (typeof getRaceRecords === 'function' ? getRaceRecords().bestSpeed : 0) || 0;
 
             const allPlayers = [{
-                nickname: nickname, balance, playerLevel, avatarData: avatarData || AVATAR_PRESETS[0], bestPlate: getBestPlate(), carsCount: myCars.length, bestSpeed: Math.round(mySpeed), updatedAt: Date.now()
+                nickname: nickname, balance: (onlineProfile && Number.isFinite(Number(onlineProfile.balance))) ? Number(onlineProfile.balance) : balance, playerLevel, avatarData: avatarData || AVATAR_PRESETS[0], bestPlate: getBestPlate(), carsCount: myCars.length, bestSpeed: Math.round(mySpeed), updatedAt: Date.now()
             }, ...baseList];
 
             const player = allPlayers.find(p => sanitizeKey(p.nickname || '') === userKey);
             if (!player) return;
 
-            document.getElementById('pv-avatar').src = safeImageUrl(player.avatarData, AVATAR_PRESETS[0], AVATAR_PRESETS);
+            document.getElementById('pv-avatar').src = imageSrc(getPlayerAvatar(player));
             document.getElementById('pv-name').innerText = player.nickname || 'Игрок';
             document.getElementById('pv-level').innerText = `Уровень: ${escapeHtml(player.playerLevel || 1)} ${player.bestSpeed ? `| ⚡ ${Math.round(player.bestSpeed)} км/ч` : ''}`;
             document.getElementById('pv-balance').innerText = `${Number(player.balance || 0).toLocaleString('ru-RU')} ₽`;

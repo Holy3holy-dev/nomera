@@ -9,7 +9,8 @@
     function safeImageUrl(value, fallback, trusted = []) {
         if (typeof value !== 'string') return fallback;
         if (trusted.includes(value)) return value;
-        if (/^data:image\/(png|jpeg|gif|webp);base64,[A-Za-z0-9+/=]+$/i.test(value)) return value;
+        if (/^data:image\/(png|jpeg|gif|webp|svg\+xml);base64,[A-Za-z0-9+/=]+$/i.test(value)) return value;
+        if (/^data:image\/svg\+xml;(?:utf8|charset=utf-8),[A-Za-z0-9%_\-.<>/='\"#;:& ]+$/i.test(value) && !/[<"'](?:script|object|embed)/i.test(value)) return value;
         try {
             const url = new URL(value);
             if (url.protocol === 'https:' && !url.username && !url.password) return url.href;

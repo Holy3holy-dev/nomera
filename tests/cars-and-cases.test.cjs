@@ -257,4 +257,112 @@ test('onlineFirebaseFallback roll never overwrites spent local balance with old 
     assert.equal(app.run('balance'), 50000, 'Local cash must be preserved, not overwritten with 120M');
 });
 
+test('sellCar handles cars with missing basePrice and never yields NaN', () => {
+    const app = createApp({
+        saved: {
+            nickname: 'GarageTester',
+            balance: 50000,
+            myCars: [
+                { name: 'ВАЗ-2107 «Жигули»' } // Notice missing basePrice!
+            ]
+        }
+    });
+    app.run('loadProgress()');
+    assert.equal(app.run('myCars.length'), 1);
+    assert.equal(app.run('myCars[0].basePrice'), 120000); // Normalized from carsData
+
+    // Delete basePrice explicitly to simulate legacy or corrupted data
+    app.run('delete myCars[0].basePrice');
+    assert.equal(app.run('myCars[0].basePrice'), undefined);
+
+    // Selling car must calculate profit via template fallback and must NOT yield NaN
+    app.run('sellCar(0, false)');
+    assert.equal(app.run('myCars.length'), 0);
+    const bal = app.run('balance');
+    assert.ok(Number.isFinite(bal), 'Balance must be finite');
+    assert.ok(bal > 50000, 'Balance must have received sale profit');
+    assert.notEqual(app.elements.get('balance').innerText, 'не число');
+});
+
+test('sellCar without plate preserves the plate in inventory', () => {
+    const app = createApp({
+        saved: {
+            nickname: 'PlateKeeper',
+            balance: 50000,
+            inventory: [],
+            myCars: [
+                {
+                    name: 'ВАЗ-2107 «Жигули»',
+                    basePrice: 120000,
+                    plate: { text: 'А 777 АА | 77 RUS', price: 770500, rarity: { text: 'Эпический' } }
+                }
+            ]
+        }
+    });
+    app.run('loadProgress()');
+    assert.equal(app.run('inventory.length'), 0);
+    assert.equal(app.run('myCars.length'), 1);
+
+    // Sell only car (hasPlate = false)
+    app.run('sellCar(0, false)');
+    assert.equal(app.run('myCars.length'), 0);
+    // The plate must be returned to inventory!
+    assert.equal(app.run('inventory.length'), 1);
+    assert.equal(app.run('inventory[0].text'), 'А 777 АА | 77 RUS');
+});
+
+test('sellCar with plate sells both car and plate', () => {
+    const app = createApp({
+        saved: {
+            nickname: 'BundleSeller',
+            balance: 50000,
+            inventory: [],
+            myCars: [
+                {
+                    name: 'ВАЗ-2107 «Жигули»',
+                    basePrice: 120000,
+                    plate: { text: 'В 001 ОР | 77 RUS', price: 100000, rarity: { text: 'Супер редкий' } }
+                }
+            ]
+        }
+    });
+    app.run('loadProgress()');
+    // Expected profit: Math.floor(120000 * 0.9 + 100000 * 0.95) = 108000 + 95000 = 203000
+    app.run('sellCar(0, true)');
+    assert.equal(app.run('myCars.length'), 0);
+    assert.equal(app.run('inventory.length'), 0);
+    assert.equal(app.run('balance'), 50000 + 203000);
+});
+
+test('leaderboard renders visible player avatars and safeImageUrl accepts SVG data URIs', () => {
+    const app = createApp({
+        saved: {
+            nickname: 'AvatarTester',
+            balance: 100000
+        }
+    });
+    app.run('loadProgress()');
+    app.run(`
+        cloudLeaderboardList = [
+            { nickname: 'PlayerA', balance: 500000, playerLevel: 10 },
+            { nickname: 'PlayerB', balance: 300000, playerLevel: 5, avatarData: AVATAR_PRESETS[2] },
+            { nickname: 'PlayerC', balance: 100000, playerLevel: 2 }
+        ];
+        renderLeaderboard();
+    `);
+
+    // Verify getPlayerAvatar returns valid avatar strings
+    const a1 = app.run('getPlayerAvatar(cloudLeaderboardList[0])');
+    const a2 = app.run('getPlayerAvatar(cloudLeaderboardList[1])');
+    const a3 = app.run('getPlayerAvatar(cloudLeaderboardList[2])');
+    assert.ok(typeof a1 === 'string' && a1.startsWith('data:image/svg+xml'));
+    assert.ok(typeof a2 === 'string' && a2.startsWith('data:image/svg+xml'));
+    assert.ok(typeof a3 === 'string' && a3.startsWith('data:image/svg+xml'));
+
+    // Check leaderboard list HTML contains no 1x1 transparent png
+    const html = app.elements.get('leaderboard-list').innerHTML;
+    assert.ok(!html.includes('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII='), 'Leaderboard must not contain 1x1 transparent fallback');
+});
+
+
 
