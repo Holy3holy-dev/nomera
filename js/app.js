@@ -5139,7 +5139,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/20
             }
         };
 
-        // 🎨 РЕНДЕРЕР ПИКСЕЛЬНЫХ МОДЕЛЕЙ ВЫСОКОЙ ДЕТАЛИЗАЦИИ ДЛЯ ВСЕХ 25 АВТОМОБИЛЕЙ
+        // 🎨 ВЫСОКОДЕТАЛИЗИРОВАННЫЙ РЕНДЕРЕР РЕАЛИСТИЧНЫХ МОДЕЛЕЙ АВТОМОБИЛЕЙ (25 ПРОТОТИПОВ)
         function drawPixelCar(ctx, cx, cy, name, scale = 1, options = {}) {
             const s = scale;
             if (options.tilt) {
@@ -5151,6 +5151,88 @@ const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/20
             function px(ox, oy, w, h, col) {
                 ctx.fillStyle = col;
                 ctx.fillRect(Math.round(cx + ox * s), Math.round(cy + oy * s), Math.round(w * s), Math.round(h * s));
+            }
+
+            // Плавное заполнение векторного полигона
+            function fillPoly(pts, fillCol, strokeCol = null, strokeW = 1) {
+                if (!pts || pts.length < 3) return;
+                ctx.save();
+                ctx.beginPath();
+                ctx.moveTo(Math.round(cx + pts[0][0] * s), Math.round(cy + pts[0][1] * s));
+                for (let i = 1; i < pts.length; i++) {
+                    ctx.lineTo(Math.round(cx + pts[i][0] * s), Math.round(cy + pts[i][1] * s));
+                }
+                ctx.closePath();
+                ctx.fillStyle = fillCol;
+                ctx.fill();
+                if (strokeCol) {
+                    ctx.strokeStyle = strokeCol;
+                    ctx.lineWidth = strokeW * s;
+                    ctx.stroke();
+                }
+                ctx.restore();
+            }
+
+            // Закругленный прямоугольник для плавных контуров кузова
+            function fillRound(ox, oy, w, h, rad, fillCol, strokeCol = null, strokeW = 1) {
+                ctx.save();
+                const rx = Math.round(cx + ox * s);
+                const ry = Math.round(cy + oy * s);
+                const rw = Math.round(w * s);
+                const rh = Math.round(h * s);
+                const r = Math.min(Math.min(rw, rh) / 2, Math.max(0, rad * s));
+                ctx.beginPath();
+                if (typeof ctx.roundRect === 'function') {
+                    ctx.roundRect(rx, ry, rw, rh, r);
+                } else {
+                    ctx.moveTo(rx + r, ry);
+                    ctx.lineTo(rx + rw - r, ry);
+                    ctx.quadraticCurveTo(rx + rw, ry, rx + rw, ry + r);
+                    ctx.lineTo(rx + rw, ry + rh - r);
+                    ctx.quadraticCurveTo(rx + rw, ry + rh, rx + rw - r, ry + rh);
+                    ctx.lineTo(rx + r, ry + rh);
+                    ctx.quadraticCurveTo(rx, ry + rh, rx, ry + rh - r);
+                    ctx.lineTo(rx, ry + r);
+                    ctx.quadraticCurveTo(rx, ry, rx + r, ry);
+                    ctx.closePath();
+                }
+                ctx.fillStyle = fillCol;
+                ctx.fill();
+                if (strokeCol) {
+                    ctx.strokeStyle = strokeCol;
+                    ctx.lineWidth = strokeW * s;
+                    ctx.stroke();
+                }
+                ctx.restore();
+            }
+
+            // Вертикальный линейный градиент для светотени
+            function gradV(oy1, oy2, col1, col2) {
+                if (!ctx || typeof ctx.createLinearGradient !== 'function') return col1;
+                try {
+                    const g = ctx.createLinearGradient(0, Math.round(cy + oy1 * s), 0, Math.round(cy + oy2 * s));
+                    if (g && typeof g.addColorStop === 'function') {
+                        g.addColorStop(0, col1);
+                        g.addColorStop(1, col2);
+                        return g;
+                    }
+                } catch (_) {}
+                return col1;
+            }
+
+            // Горизонтальный градиент для объемной выпуклости капота и крыши
+            function gradH(ox1, ox2, colSide, colCenter) {
+                if (!ctx || typeof ctx.createLinearGradient !== 'function') return colCenter;
+                try {
+                    const g = ctx.createLinearGradient(Math.round(cx + ox1 * s), 0, Math.round(cx + ox2 * s), 0);
+                    if (g && typeof g.addColorStop === 'function') {
+                        g.addColorStop(0, colSide);
+                        g.addColorStop(0.5, colCenter);
+                        g.addColorStop(1, colSide);
+                        return g;
+                    }
+                } catch (_) {}
+                return colCenter;
             }
 
             // Динамический расчёт светотени и оттенков для кузова любого цвета
@@ -5170,11 +5252,15 @@ const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/20
                 }
 
                 return {
-                    dark: adj(0.65, -15),
+                    darkest: adj(0.48, -25),
+                    dark: adj(0.66, -14),
                     mid: adj(0.85, -5),
                     base: '#' + clean,
-                    light: adj(1.18, 25),
-                    bright: adj(1.38, 45)
+                    light: adj(1.18, 22),
+                    bright: adj(1.38, 42),
+                    highlight: adj(1.52, 60),
+                    metalV: gradV(-25, 25, adj(1.22, 28), adj(0.75, -8)),
+                    metalH: gradH(-10, 10, adj(0.72, -8), adj(1.22, 28))
                 };
             }
 
@@ -5188,7 +5274,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/20
                 ctx.shadowBlur = 18 * s;
                 ctx.shadowColor = options.neon;
                 ctx.fillStyle = options.neon;
-                ctx.globalAlpha = 0.68;
+                ctx.globalAlpha = 0.72;
                 ctx.fillRect(Math.round(cx - 14 * s), Math.round(cy - 24 * s), Math.round(28 * s), Math.round(48 * s));
                 ctx.restore();
             }
@@ -5198,68 +5284,102 @@ const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/20
                 const hw = Math.round((w / 2 + 1) * s);
                 const hl = Math.round((l / 2 + 2) * s);
                 ctx.save();
-                ctx.fillStyle = "rgba(0,0,0,0.45)";
+                ctx.fillStyle = "rgba(0,0,0,0.48)";
                 ctx.beginPath();
                 ctx.ellipse(Math.round(cx), Math.round(cy + 1 * s), hw, hl, 0, 0, Math.PI * 2);
                 ctx.fill();
                 ctx.restore();
             }
 
-            // Колеса с дисками, тормозными дисками и цветными суппортами
-            function drawWheels(w, l, rimCol = "#94a3b8", caliperCol = null, discCol = "#334155") {
+            // Высокодетализированные колеса с легкосплавными дисками и суппортами
+            function drawWheels(w, l, rimCol = "#94a3b8", caliperCol = null, discCol = "#334155", isWide = false) {
                 const wx = Math.round(w / 2);
-                // Шины (резина)
-                px(-wx - 2, -l + 8, 4, 8, "#09090b");
-                px(wx - 2, -l + 8, 4, 8, "#09090b");
-                px(-wx - 2, l - 16, 4, 8, "#09090b");
-                px(wx - 2, l - 16, 4, 8, "#09090b");
+                const frontL = -l + 8;
+                const rearL = l - 16;
+                const fw = isWide ? 4.2 : 3.6;
+                const rw = isWide ? 5.2 : 4.0;
+                // Передние шины
+                fillRound(-wx - 2.5, frontL, fw, 8.5, 2, "#09090b");
+                fillRound(wx - (isWide ? 1.8 : 1.2), frontL, fw, 8.5, 2, "#09090b");
+                // Задние шины
+                fillRound(-wx - (isWide ? 2.8 : 1.8), rearL, rw, 9, 2, "#09090b");
+                fillRound(wx - (isWide ? 2.2 : 1.8), rearL, rw, 9, 2, "#09090b");
+
                 // Тормозные диски
                 if (discCol) {
-                    px(-wx - 1, -l + 10, 2, 4, discCol);
-                    px(wx - 1, -l + 10, 2, 4, discCol);
-                    px(-wx - 1, l - 14, 2, 4, discCol);
-                    px(wx - 1, l - 14, 2, 4, discCol);
+                    px(-wx - 1, frontL + 2, 2, 4.5, discCol);
+                    px(wx - 1, frontL + 2, 2, 4.5, discCol);
+                    px(-wx - 1, rearL + 2, 2.2, 5, discCol);
+                    px(wx - 1, rearL + 2, 2.2, 5, discCol);
                 }
-                // Тормозные суппорты (Brembo, M-Sport, AMG, PCCB)
+                // Фирменные суппорты (Brembo, M-Sport, AMG, PCCB)
                 if (caliperCol) {
-                    px(-wx - 1, -l + 9, 2, 2, caliperCol);
-                    px(wx - 1, -l + 9, 2, 2, caliperCol);
-                    px(-wx - 1, l - 15, 2, 2, caliperCol);
-                    px(wx - 1, l - 15, 2, 2, caliperCol);
+                    px(-wx - 1.2, frontL + 1, 2, 2.5, caliperCol);
+                    px(wx - 1, frontL + 1, 2, 2.5, caliperCol);
+                    px(-wx - 1.2, rearL + 5, 2, 2.5, caliperCol);
+                    px(wx - 1, rearL + 5, 2, 2.5, caliperCol);
                 }
                 // Диски
-                px(-wx, -l + 10, 2, 4, rimCol);
-                px(wx - 2, -l + 10, 2, 4, rimCol);
-                px(-wx, l - 14, 2, 4, rimCol);
-                px(wx - 2, l - 14, 2, 4, rimCol);
+                px(-wx, frontL + 2, 2, 4.5, rimCol);
+                px(wx - 2, frontL + 2, 2, 4.5, rimCol);
+                px(-wx, rearL + 2, 2.2, 5, rimCol);
+                px(wx - 2, rearL + 2, 2.2, 5, rimCol);
             }
 
-            // Остекление с реалистичными бликами, сужением стоек и тонировкой
-            function drawGlass(gx, gy, gw, gh, glassCol = "#0f172a", glare = true) {
+            // Остекление с реалистичными бликами, анатомическим изгибом и тонировкой
+            function drawGlass(gx, gy, gw, gh, glassCol = "#0b1329", glare = true) {
                 let col = glassCol;
-                if (options.tint >= 95) col = "#020617";
-                else if (options.tint >= 50) col = "#090d16";
+                if (options.tint >= 95) col = "#020408";
+                else if (options.tint >= 50) col = "#080c18";
                 const isFront = gy < 0;
-                for (let i = 0; i < gh; i++) {
-                    const rowY = gy + i;
-                    const t = isFront ? (i / (gh || 1)) : (1 - i / (gh || 1));
-                    const taper = Math.round(t * 1.5);
-                    const rw = Math.max(4, gw - taper * 2);
-                    px(gx + taper, rowY, rw, 1, col);
-                }
-                if (glare && gw >= 6 && gh >= 3 && (!options.tint || options.tint < 95)) {
-                    px(gx + 2, gy + 1, Math.max(2, Math.floor(gw / 3)), 1, "rgba(255,255,255,0.45)");
-                    px(gx + 3, gy + 2, Math.max(2, Math.floor(gw / 4)), 1, "rgba(255,255,255,0.22)");
+                const topW = isFront ? (gw - 3) : gw;
+                const btmW = isFront ? gw : (gw - 3);
+                fillPoly([
+                    [-topW/2, gy],
+                    [topW/2, gy],
+                    [btmW/2, gy + gh],
+                    [-btmW/2, gy + gh]
+                ], col);
+
+                if (glare && (!options.tint || options.tint < 95)) {
+                    fillPoly([
+                        [-topW/2 + 2, gy + 1],
+                        [-topW/2 + 5, gy + 1],
+                        [-btmW/2 + 7, gy + gh - 1],
+                        [-btmW/2 + 4, gy + gh - 1]
+                    ], "rgba(255,255,255,0.35)");
                 }
             }
 
             // Боковые зеркала
             function drawMirrors(w, y, bodyCol = "#334155", glassCol = "#38bdf8") {
                 const mx = Math.round(w / 2);
-                px(-mx - 2, y, 2, 3, bodyCol);
-                px(mx, y, 2, 3, bodyCol);
-                px(-mx - 1, y + 1, 1, 1, glassCol);
-                px(mx, y + 1, 1, 1, glassCol);
+                fillRound(-mx - 2.8, y, 2.6, 3.2, 1, bodyCol);
+                fillRound(mx + 0.2, y, 2.6, 3.2, 1, bodyCol);
+                px(-mx - 1.5, y + 1, 1, 1.2, glassCol);
+                px(mx + 0.5, y + 1, 1, 1.2, glassCol);
+            }
+
+            // Фары со светодиодным ореолом
+            function drawHeadlights(lx, rx, y, w, h, col = "#ffffff", isRound = false) {
+                if (isRound) {
+                    ctx.save();
+                    ctx.fillStyle = col;
+                    ctx.beginPath();
+                    ctx.arc(Math.round(cx + lx * s), Math.round(cy + y * s), Math.max(1, (w/2)*s), 0, Math.PI*2);
+                    ctx.arc(Math.round(cx + rx * s), Math.round(cy + y * s), Math.max(1, (w/2)*s), 0, Math.PI*2);
+                    ctx.fill();
+                    ctx.restore();
+                } else {
+                    fillRound(lx - w/2, y, w, h, 1, col);
+                    fillRound(rx - w/2, y, w, h, 1, col);
+                }
+            }
+
+            // Задние фонари
+            function drawTaillights(lx, rx, y, w, h, col = "#dc2626") {
+                fillRound(lx - w/2, y, w, h, 1, col);
+                fillRound(rx - w/2, y, w, h, 1, col);
             }
 
             switch(name) {
@@ -5267,1430 +5387,1141 @@ const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/20
                     const bt = getBodyTones("#991b1b");
                     drawShadow(20, 48);
                     drawWheels(18, 23, "#e2e8f0", null, "#1e293b");
-                    // Советские резиновые брызговики с белыми точками
+
+                    // Советские брызговики с белыми точками
                     px(-10, 22, 3, 2, "#09090b");
                     px(7, 22, 3, 2, "#09090b");
                     px(-9, 23, 1, 1, "#f8fafc");
                     px(8, 23, 1, 1, "#f8fafc");
 
-                    // Угловатый аутентичный кузов советской классики
-                    px(-9, -24, 18, 2, bt.dark); // Верхний брус передка
-                    px(-8, -23, 16, 2, bt.mid);
-                    px(-9, -22, 18, 12, bt.dark); // Капот
-                    px(-8, -22, 16, 12, bt.mid);
-                    px(-7, -21, 14, 10, bt.light);
-                    px(-1, -22, 2, 11, bt.bright); // Центральное ребро капота 2107
+                    // Базовый силуэт кузова седана
+                    fillRound(-8.5, -24, 17, 46, 2, bt.mid, bt.dark, 1);
+                    // Капот с центральным характерным ребром 2107
+                    fillRound(-8, -23, 16, 12, 1, bt.light);
+                    px(-0.6, -23, 1.2, 12, bt.bright);
 
-                    // Классические хромированные водостоки и салон
-                    px(-9, -10, 18, 20, bt.dark);
-                    px(-8, -10, 16, 20, bt.mid);
+                    // Хромированные бамперы с резиновой накладкой и клыками
+                    fillRound(-9.5, -25.5, 19, 2.5, 1, "#e2e8f0");
+                    px(-7.5, -25.5, 15, 1.2, "#0f172a");
+                    fillRound(-9.5, 21.5, 19, 2.5, 1, "#e2e8f0");
+                    px(-7.5, 22.5, 15, 1.2, "#0f172a");
 
-                    // Багажник угловатый
-                    px(-9, 10, 18, 12, bt.dark);
-                    px(-8, 10, 16, 12, bt.mid);
+                    // Легендарная высокая решетка-утюг ВАЗ-2107 (хром + черная сетка + золотая Ладья)
+                    fillRound(-4.5, -25, 9, 3.2, 1, "#f8fafc");
+                    fillRound(-3.5, -24.5, 7, 2.2, 0.5, "#0f172a");
+                    px(-0.8, -24.5, 1.6, 1.2, "#f59e0b");
 
-                    // Бамперы: хром с черной резиновой накладкой и клыками
-                    px(-10, -25, 20, 2, "#e2e8f0");
-                    px(-8, -25, 16, 1, "#0f172a");
-                    px(-11, -25, 1, 2, "#0f172a");
-                    px(10, -25, 1, 2, "#0f172a");
-                    px(-10, 22, 20, 2, "#e2e8f0");
-                    px(-8, 22, 16, 1, "#0f172a");
-                    px(-11, 22, 1, 2, "#0f172a");
-                    px(10, 22, 1, 2, "#0f172a");
+                    // Чехословацкие прямоугольные блок-фары + оранжевые поворотники
+                    drawHeadlights(-6.5, 6.5, -24.5, 3.5, 2.5, "#fef9c3");
+                    px(-8.8, -24.5, 1.8, 2.5, "#f59e0b");
+                    px(7.0, -24.5, 1.8, 2.5, "#f59e0b");
 
-                    // Легендарная высокая решетка «утюг» 2107
-                    px(-5, -24, 10, 3, "#f1f5f9");
-                    px(-4, -23, 8, 2, "#0f172a");
-                    px(-4, -23, 8, 1, "#cbd5e1");
-                    px(-1, -24, 2, 1, "#f59e0b"); // Ладья (золотой шильдик)
-
-                    // Чехословацкие прямоугольные фары + оранжевые поворотники
-                    px(-9, -24, 4, 3, "#fef9c3");
-                    px(5, -24, 4, 3, "#fef9c3");
-                    px(-9, -23, 2, 1, "#ffffff");
-                    px(7, -23, 2, 1, "#ffffff");
-                    px(-10, -24, 1, 3, "#f59e0b");
-                    px(9, -24, 1, 3, "#f59e0b");
-
-                    // Зеркало на водительской двери
                     drawMirrors(18, -10, bt.dark, "#94a3b8");
 
-                    // Лобовое стекло с резинкой и дворниками
-                    drawGlass(-8, -10, 16, 6, "#1e293b", true);
-                    px(-4, -11, 3, 1, "#09090b");
-                    px(1, -11, 3, 1, "#09090b");
+                    // Лобовое стекло с резинкой
+                    drawGlass(-7.5, -10.5, 15, 6.5, "#1e293b", true);
 
-                    // Крыша с водостоками
-                    px(-8, -4, 16, 14, bt.mid);
-                    px(-7, -3, 14, 12, bt.light);
-                    px(-8, -4, 1, 14, bt.dark);
-                    px(7, -4, 1, 14, bt.dark);
+                    // Крыша с хромированными водостоками
+                    fillRound(-7.5, -4, 15, 14, 1, bt.mid);
+                    px(-7.5, -4, 1, 14, "#e2e8f0");
+                    px(6.5, -4, 1, 14, "#e2e8f0");
 
                     // Заднее стекло с медными нитями обогрева
-                    drawGlass(-8, 10, 16, 5, "#1e293b", false);
-                    px(-6, 11, 12, 1, "rgba(249,115,22,0.45)");
-                    px(-6, 13, 12, 1, "rgba(249,115,22,0.45)");
+                    drawGlass(-7.5, 10, 15, 5.5, "#1e293b", false);
+                    px(-5.5, 11.5, 11, 0.8, "rgba(249,115,22,0.45)");
+                    px(-5.5, 13.5, 11, 0.8, "rgba(249,115,22,0.45)");
 
-                    // Багажник и хром замок
-                    px(-7, 16, 14, 5, bt.mid);
-                    px(-1, 20, 2, 1, "#e2e8f0");
+                    // Багажник и замок
+                    fillRound(-7.5, 15.5, 15, 6, 1, bt.mid);
+                    px(-0.8, 20.5, 1.6, 1, "#e2e8f0");
 
-                    // Трехсекционные советские фонари
-                    px(-9, 20, 4, 2, "#f59e0b");
-                    px(-7, 20, 2, 2, "#f8fafc");
-                    px(-5, 20, 2, 2, "#dc2626");
-                    px(3, 20, 2, 2, "#dc2626");
-                    px(5, 20, 2, 2, "#f8fafc");
-                    px(7, 20, 2, 2, "#f59e0b");
+                    // Трехсекционные задние фонари
+                    px(-8.5, 20.5, 2.5, 2, "#f59e0b");
+                    px(-6.0, 20.5, 1.8, 2, "#f8fafc");
+                    px(-4.2, 20.5, 2.2, 2, "#dc2626");
+                    px(2.0, 20.5, 2.2, 2, "#dc2626");
+                    px(4.2, 20.5, 1.8, 2, "#f8fafc");
+                    px(6.0, 20.5, 2.5, 2, "#f59e0b");
 
-                    // Выхлопная труба
-                    px(5, 24, 2, 2, "#cbd5e1");
+                    // Хромированный выхлоп
+                    px(4.8, 23.5, 2, 2, "#cbd5e1");
+                    break;
+                }
+
+                case "ВАЗ-2109 «Девятка»": {
+                    const bt = getBodyTones("#dc2626");
+                    drawShadow(20, 47);
+                    drawWheels(18, 23, "#94a3b8", null, "#1e293b");
+
+                    // Клиновидный аэродинамичный нос «зубило» с коротким крылом
+                    fillPoly([
+                        [-5.5, -24.5], [5.5, -24.5],
+                        [8.5, -18], [8.5, 18],
+                        [7.5, 22], [-7.5, 22],
+                        [-8.5, 18], [-8.5, -18]
+                    ], bt.mid, bt.dark, 1);
+
+                    // Черные широкие пластиковые бамперы девятки
+                    fillRound(-8.5, -24.5, 17, 3, 1, "#181a20");
+                    fillRound(-8.5, 20.5, 17, 3, 1, "#181a20");
+
+                    // Черная решетка радиатора с полосами
+                    fillRound(-4.5, -24, 9, 2, 0.5, "#09090b");
+                    px(-0.8, -23.8, 1.6, 1, "#e2e8f0");
+
+                    // Фары со скошенными стеклами и оранжевыми поворотниками
+                    drawHeadlights(-6.5, 6.5, -23.5, 3.2, 2.2, "#fef08a");
+                    px(-8.2, -23.5, 1.6, 2.2, "#f59e0b");
+                    px(6.6, -23.5, 1.6, 2.2, "#f59e0b");
+
+                    // Капот со скосом
+                    fillRound(-7, -21.5, 14, 10.5, 1, bt.light);
+
+                    // Черные молдинги вдоль бортов девятки
+                    px(-8.5, -12, 1, 28, "#181a20");
+                    px(7.5, -12, 1, 28, "#181a20");
+
+                    drawMirrors(18, -10.5, "#181a20", "#94a3b8");
+
+                    drawGlass(-7.5, -10.5, 15, 6.5, "#1e293b", true);
+
+                    // Крыша
+                    fillRound(-7.2, -4, 14.4, 13.5, 1, bt.mid);
+
+                    // Заднее стекло хэтчбека со стеклоочистителем
+                    drawGlass(-7.2, 9.5, 14.4, 6, "#1e293b", false);
+                    px(-2, 10.5, 4.5, 0.8, "#09090b");
+
+                    // Черный пластиковый козырек на двери багажника
+                    fillRound(-7.5, 15.5, 15, 1.8, 0.5, "#181a20");
+
+                    // Задние фонари
+                    drawTaillights(-6.5, 6.5, 19.5, 3.5, 2, "#dc2626");
+                    px(-6.5, 19.5, 1.5, 1, "#f59e0b");
+                    px(5.0, 19.5, 1.5, 1, "#f59e0b");
+
+                    px(4.5, 23, 2.2, 2, "#94a3b8");
+                    break;
+                }
+
+                case "ГАЗ-24 «Волга»": {
+                    const bt = getBodyTones("#0f172a");
+                    drawShadow(22, 53);
+                    drawWheels(20, 26, "#f8fafc", null, "#334155");
+
+                    fillRound(-9.5, -26, 19, 52, 2, bt.mid, bt.dark, 1);
+                    fillRound(-8.5, -25, 17, 14.5, 1, bt.light);
+                    px(-0.5, -25, 1, 14.5, "#e2e8f0");
+
+                    fillRound(-10.5, -27, 21, 2.8, 1, "#f1f5f9");
+                    fillRound(-10.5, 24.5, 21, 2.8, 1, "#f1f5f9");
+
+                    fillRound(-6, -26.5, 12, 3, 1, "#e2e8f0");
+                    for (let x = -5; x <= 5; x += 1.6) px(x, -26.5, 0.8, 3, "#09090b");
+                    px(-0.8, -26.5, 1.6, 1.2, "#dc2626");
+
+                    drawHeadlights(-7.5, 7.5, -25.5, 3.8, 3.8, "#fef9c3", true);
+                    px(-8.8, -25.5, 1.4, 2, "#f59e0b");
+                    px(7.4, -25.5, 1.4, 2, "#f59e0b");
+
+                    drawMirrors(20, -14, "#e2e8f0", "#94a3b8");
+
+                    drawGlass(-8.5, -11.5, 17, 7, "#1e293b", true);
+                    px(-8, -9, 0.8, 3, "#e2e8f0");
+                    px(7.2, -9, 0.8, 3, "#e2e8f0");
+
+                    fillRound(-8.2, -4.5, 16.4, 15, 1, bt.mid);
+
+                    drawGlass(-8.2, 10.5, 16.4, 6, "#1e293b", false);
+
+                    fillRound(-8.5, 16.5, 17, 8.5, 1, bt.mid);
+                    fillRound(-5, 23.5, 10, 1.2, 0.5, "#f1f5f9");
+
+                    px(-9, 22.5, 2.4, 3, "#dc2626");
+                    px(6.6, 22.5, 2.4, 3, "#dc2626");
+                    px(-8.2, 22.5, 1, 1.5, "#f59e0b");
+                    px(7.2, 22.5, 1, 1.5, "#f59e0b");
+
+                    px(5.5, 26, 2, 2.5, "#cbd5e1");
                     break;
                 }
 
                 case "Lada Priora БПАН": {
-                    const bt = getBodyTones("#0d1017");
+                    const bt = getBodyTones("#090a0f");
                     drawShadow(19, 47);
-                    // Заниженные заправленные внутрь арки колеса Торусы с отрицательным развалом
-                    drawWheels(18, 23, "#cbd5e1", "#ef4444", "#334155");
+                    drawWheels(18, 23, "#e2e8f0", "#ef4444", "#334155");
 
-                    // Обтекаемый скругленный клиновидный кузов (БПАН занижение, гладкие грани)
-                    px(-5, -25, 10, 2, bt.dark); // Закругленный нос
-                    px(-8, -24, 16, 2, bt.dark);
-                    px(-7, -24, 14, 2, bt.mid);
+                    fillRound(-8.5, -24.5, 17, 47, 3, bt.mid, bt.dark, 1);
 
-                    // Капот обтекаемый со сужением вперед
-                    px(-8, -22, 16, 11, bt.dark);
-                    px(-7, -22, 14, 11, bt.mid);
-                    px(-6, -21, 12, 9, bt.light);
+                    fillRound(-7.5, -25, 15, 2.5, 1, "#111827");
+                    fillRound(-3, -25, 6, 1.2, 0.5, "#1f2937");
 
-                    // Гладкие боковины (талия 17)
-                    px(-8, -11, 16, 20, bt.dark);
-                    px(-7, -11, 14, 20, bt.mid);
+                    drawHeadlights(-6.5, 6.5, -24, 3.6, 2.2, "#a5f3fc");
+                    px(-6.5, -24, 1.8, 1, "#ffffff");
+                    px(4.7, -24, 1.8, 1, "#ffffff");
 
-                    // Задние крылья со скосом
-                    px(-8, 9, 16, 11, bt.dark);
-                    px(-7, 9, 14, 11, bt.mid);
-                    px(-7, 20, 14, 2, bt.mid); // Скругленная корма
-                    px(-6, 22, 12, 2, bt.dark);
+                    fillRound(-7.5, -22, 15, 11, 2, bt.light);
 
-                    // Бампер Приора-2 со сплиттером
-                    px(-5, -25, 10, 1, "#181a20");
-                    px(-1, -25, 2, 1, "#60a5fa");
+                    drawMirrors(18, -10.5, bt.dark, "#38bdf8");
 
-                    // Ксеноновые ледяные ДХО / фары линзы со скошенной формой
-                    px(-8, -24, 4, 2, "#a5f3fc");
-                    px(4, -24, 4, 2, "#a5f3fc");
-                    px(-7, -24, 2, 1, "#ffffff");
-                    px(5, -24, 2, 1, "#ffffff");
+                    drawGlass(-7.8, -10.5, 15.6, 6.5, "#010204", false);
+                    px(-4, -10.5, 8, 1, "#ffffff");
 
-                    // Зеркала Priora SE в цвет кузова с повторителями
-                    px(-10, -10, 2, 3, bt.dark);
-                    px(8, -10, 2, 3, bt.dark);
-                    px(-10, -9, 1, 1, "#f59e0b");
-                    px(9, -9, 1, 1, "#f59e0b");
+                    fillRound(-7.2, -4, 14.4, 14, 1, bt.mid);
 
-                    // Тонировка + наклейка «БПАН»
-                    drawGlass(-8, -10, 16, 6, "#020304", false);
-                    px(-5, -10, 10, 1, "#ffffff");
-                    px(-4, -9, 8, 1, "rgba(255,255,255,0.75)");
+                    drawGlass(-7.5, 10, 15, 5.5, "#010204", false);
 
-                    // Крыша
-                    px(-7, -4, 14, 14, bt.mid);
-                    px(-6, -3, 12, 12, bt.light);
+                    fillRound(-8, 20.5, 16, 2, 0.5, bt.bright);
 
-                    // Заднее стекло тонировка
-                    drawGlass(-8, 10, 16, 5, "#020304", false);
+                    drawTaillights(-7.2, 7.2, 21.5, 2.8, 2, "#450a0a");
 
-                    // Крышка багажника с сабвуферным спойлером дактейл
-                    px(-7, 20, 14, 2, bt.mid);
-                    px(-6, 20, 12, 1, bt.bright);
+                    px(4.5, 23.5, 2.8, 2.5, "#38bdf8");
+                    px(4.8, 25.5, 2.2, 1.5, "#f59e0b");
+                    break;
+                }
 
-                    // Тонированные в черный задние фонари
-                    px(-8, 21, 3, 2, "#450a0a");
-                    px(5, 21, 3, 2, "#450a0a");
-                    px(-7, 21, 2, 1, "#7f1d1d");
-                    px(5, 21, 2, 1, "#7f1d1d");
+                case "Hyundai Solaris": {
+                    const bt = getBodyTones("#e2e8f0");
+                    drawShadow(20, 49);
+                    drawWheels(19, 24, "#cbd5e1", null, "#475569");
 
-                    // Прямоточная банка выхлопа под углом с обожженным титаном
-                    px(5, 22, 3, 3, "#38bdf8");
-                    px(5, 24, 2, 2, "#f59e0b");
-                    px(6, 25, 2, 2, "#cbd5e1");
+                    fillRound(-8.5, -25, 17, 48, 4, bt.mid, bt.dark, 1);
+
+                    fillPoly([
+                        [-4, -25], [4, -25],
+                        [5, -22], [-5, -22]
+                    ], "#111827", "#e2e8f0", 0.8);
+
+                    drawHeadlights(-6.8, 6.8, -24.5, 3.5, 3, "#bae6fd");
+                    px(-7.5, -23.5, 1.2, 2, "#ffffff");
+                    px(6.3, -23.5, 1.2, 2, "#ffffff");
+
+                    fillRound(-7.5, -21.5, 15, 11, 2, bt.light);
+
+                    drawMirrors(19, -10.5, bt.mid, "#38bdf8");
+
+                    drawGlass(-7.8, -10.5, 15.6, 6.5, "#0f172a", true);
+
+                    fillRound(-7.2, -4, 14.4, 14.5, 2, bt.mid);
+
+                    drawGlass(-7.5, 10.5, 15, 5.5, "#0f172a", true);
+
+                    drawTaillights(-7.2, 7.2, 21.5, 3.2, 2.2, "#ef4444");
+                    px(-7.2, 21.5, 1.4, 1, "#fca5a5");
+                    px(5.8, 21.5, 1.4, 1, "#fca5a5");
                     break;
                 }
 
                 case "Lada Vesta Sport": {
                     const bt = getBodyTones("#f8fafc");
-                    drawShadow(19, 48);
-                    drawWheels(19, 24, "#e2e8f0", "#ef4444", "#334155");
+                    drawShadow(21, 49);
+                    drawWheels(20, 24, "#1e293b", "#ef4444", "#475569");
 
-                    // Аэродинамичный нос с красным гоночным сплиттером
-                    px(-5, -25, 10, 2, bt.dark);
-                    px(-8, -24, 16, 2, bt.dark);
-                    px(-7, -24, 14, 2, bt.base);
-                    px(-6, -25, 12, 1, "#ef4444"); // Красная губа
+                    fillRound(-9, -25, 18, 48, 3, bt.mid, bt.dark, 1);
 
-                    // Мускулистый капот и передние крылья
-                    px(-8, -22, 16, 11, bt.dark);
-                    px(-7, -22, 14, 11, bt.base);
-                    px(-6, -21, 12, 9, bt.light);
+                    fillRound(-5, -25.5, 10, 3.2, 1, "#09090b");
+                    px(-6.5, -25, 1.5, 2.5, "#e2e8f0");
+                    px(5.0, -25, 1.5, 2.5, "#e2e8f0");
+                    fillRound(-8.5, -25.5, 17, 1.2, 0.5, "#ef4444");
 
-                    // Талия кузова с красной полосой порогов
-                    px(-8, -11, 16, 20, bt.dark);
-                    px(-7, -11, 14, 20, bt.base);
-                    px(-8, -10, 1, 19, "#ef4444");
-                    px(7, -10, 1, 19, "#ef4444");
+                    drawHeadlights(-7.2, 7.2, -24.5, 3.8, 2.2, "#e0f2fe");
 
-                    // Задние крылья и спойлер багажника
-                    px(-8, 9, 16, 12, bt.dark);
-                    px(-7, 9, 14, 12, bt.base);
-                    px(-7, 21, 14, 2, "#09090b"); // Черный спойлер
-                    px(-6, 21, 12, 1, "#ef4444"); // Красный акцент спойлера
-                    px(-6, 23, 12, 2, bt.dark);
+                    fillRound(-8, -22, 16, 11, 2, bt.light);
 
-                    // Фирменный X-Face: хромированные бумеранги спереди
-                    px(-8, -23, 2, 4, "#cbd5e1");
-                    px(6, -23, 2, 4, "#cbd5e1");
-                    px(-6, -21, 2, 3, "#cbd5e1");
-                    px(4, -21, 2, 3, "#cbd5e1");
-                    // Черная решетка радиатора с шильдиком Sport
-                    px(-4, -24, 8, 3, "#09090b");
-                    px(2, -23, 2, 1, "#ef4444");
+                    px(-9, -7, 0.8, 10, bt.dark);
+                    px(8.2, -7, 0.8, 10, bt.dark);
 
-                    // Фары со светодиодными стрелами-бумерангами
-                    px(-8, -24, 4, 2, "#e0f2fe");
-                    px(4, -24, 4, 2, "#e0f2fe");
-                    px(-7, -23, 2, 1, "#ffffff");
-                    px(5, -23, 2, 1, "#ffffff");
+                    drawMirrors(20, -10.5, "#09090b", "#38bdf8");
 
-                    // Черные спортивные зеркала
-                    drawMirrors(19, -10, "#09090b", "#38bdf8");
+                    drawGlass(-8, -10.5, 16, 6.5, "#0f172a", true);
 
-                    // Остекление
-                    drawGlass(-8, -10, 16, 6, "#1e293b", true);
+                    fillRound(-7.5, -4, 15, 14.5, 1, "#09090b");
 
-                    // Черная глянцевая крыша + плавник акулы
-                    px(-7, -4, 14, 14, "#09090b");
-                    px(-6, -3, 12, 12, "#18181b");
-                    px(-1, 8, 2, 2, "#000000");
+                    drawGlass(-7.8, 10.5, 15.6, 5.5, "#0f172a", false);
 
-                    drawGlass(-8, 10, 16, 5, "#1e293b", true);
+                    fillRound(-8.5, 20.5, 17, 2, 0.5, bt.bright);
+                    px(-1.5, 20.5, 3, 0.8, "#09090b");
 
-                    // 3D задние светодиодные фонари со скошенными стрелками
-                    px(-8, 21, 3, 2, "#dc2626");
-                    px(5, 21, 3, 2, "#dc2626");
-                    px(-7, 21, 2, 1, "#f87171");
-                    px(5, 21, 2, 1, "#f87171");
+                    drawTaillights(-7.5, 7.5, 21.5, 3.6, 2.2, "#dc2626");
 
-                    // Двойной выхлоп в спортивном диффузоре
-                    px(-6, 24, 2, 2, "#cbd5e1");
-                    px(4, 24, 2, 2, "#cbd5e1");
-                    px(-5, 23, 10, 1, "#09090b");
+                    fillRound(-7, 22.5, 14, 1, 0.5, "#ef4444");
+                    px(4.2, 23.2, 3.2, 1.8, "#cbd5e1");
                     break;
                 }
 
                 case "Volkswagen Polo": {
-                    const bt = getBodyTones("#2563eb");
-                    // Компактный городской хэтчбек/лифтбек: короткие пропорции
-                    drawShadow(18, 42);
-                    drawWheels(18, 21, "#cbd5e1", null, "#475569");
-
-                    // Аккуратный скругленный нос городского европейского авто
-                    px(-5, -21, 10, 2, bt.dark);
-                    px(-7, -20, 14, 2, bt.dark);
-                    px(-6, -20, 12, 2, bt.mid);
-
-                    // Компактный капот с выштамповками (ширина 16)
-                    px(-7, -18, 14, 9, bt.dark);
-                    px(-6, -18, 12, 9, bt.mid);
-                    px(-5, -17, 10, 7, bt.light);
-                    px(-3, -17, 1, 7, bt.dark);
-                    px(2, -17, 1, 7, bt.dark);
-
-                    // Салон и боковины (длина меньше, чем у седанов)
-                    px(-7, -9, 14, 18, bt.dark);
-                    px(-6, -9, 12, 18, bt.mid);
-
-                    // Компактная корма хэтчбека
-                    px(-7, 9, 14, 10, bt.dark);
-                    px(-6, 9, 12, 10, bt.mid);
-                    px(-5, 19, 10, 2, bt.dark);
-
-                    // Немецкая решетка: хромированная поперечная линия соединяет фары
-                    px(-5, -21, 10, 1, "#e2e8f0");
-                    px(-4, -20, 8, 1, "#0f172a");
-
-                    // Светодиодные фары с четкими линзами
-                    px(-7, -21, 3, 2, "#f8fafc");
-                    px(4, -21, 3, 2, "#f8fafc");
-                    px(-7, -20, 2, 1, "#bae6fd");
-                    px(5, -20, 2, 1, "#bae6fd");
-
-                    drawMirrors(17, -9, bt.dark, "#60a5fa");
-
-                    // Остекление
-                    drawGlass(-6, -9, 12, 5, "#0f172a", true);
-                    // Крыша
-                    px(-6, -4, 12, 12, bt.mid);
-                    px(-5, -3, 10, 10, bt.light);
-                    drawGlass(-6, 8, 12, 5, "#0f172a", true);
-
-                    // Геометричные граненые фонари Polo
-                    px(-7, 18, 3, 2, "#b91c1c");
-                    px(4, 18, 3, 2, "#b91c1c");
-                    px(-6, 18, 2, 1, "#ef4444");
-                    px(4, 18, 2, 1, "#ef4444");
-
-                    // Хромированная планка выхлопа на бампере
-                    px(-4, 20, 8, 1, "#cbd5e1");
-                    break;
-                }
-
-                case "BMW M5 E60 V10": {
-                    const bt = getBodyTones("#94a3b8");
-                    drawShadow(21, 49);
-                    drawWheels(20, 25, "#e2e8f0", "#2563eb", "#334155");
-
-                    // Аэродинамичный хищный нос со скошенными углами
-                    px(-6, -26, 12, 2, bt.dark);
-                    px(-9, -25, 18, 3, bt.dark);
-                    px(-8, -25, 16, 2, bt.mid);
-
-                    // Рельефный капот Flame Surfacing
-                    px(-9, -22, 18, 11, bt.dark);
-                    px(-8, -22, 16, 11, bt.mid);
-                    px(-6, -21, 12, 9, bt.light);
-                    px(-5, -20, 10, 7, bt.bright);
-
-                    // Двери и талия со спортивными порогами M
-                    px(-8, -11, 16, 20, bt.dark);
-                    px(-7, -11, 14, 20, bt.mid);
-
-                    // Задние мускулистые крылья
-                    px(-9, 9, 18, 12, bt.dark);
-                    px(-8, 9, 16, 12, bt.mid);
-
-                    // Культовый рельефный багажник «Bangle Butt» (ступенчатый контур)
-                    px(-8, 21, 16, 2, bt.dark);
-                    px(-6, 21, 12, 1, bt.bright); // Ступенька крышки багажника Bangle
-                    px(-7, 23, 14, 2, bt.dark);   // Скругленный бампер
-
-                    // Ноздри BMW с M-триколором (Cyan, Blue, Red)
-                    px(-4, -25, 3, 2, "#09090b");
-                    px(1, -25, 3, 2, "#09090b");
-                    px(-3, -25, 1, 2, "#06b6d4");
-                    px(-2, -25, 1, 2, "#1d4ed8");
-                    px(-1, -25, 1, 2, "#ef4444");
-
-                    // Легендарные янтарные ангельские глазки (Angel Eyes E60)
-                    px(-8, -25, 4, 3, "#fef08a");
-                    px(4, -25, 4, 3, "#fef08a");
-                    px(-7, -24, 2, 1, "#ca8a04");
-                    px(5, -24, 2, 1, "#ca8a04");
-
-                    // Жабра на переднем крыле с M-лого
-                    px(-10, -12, 1, 4, "#e2e8f0");
-                    px(9, -12, 1, 4, "#e2e8f0");
-
-                    drawMirrors(20, -11, bt.mid, "#38bdf8");
-
-                    // Остекление
-                    drawGlass(-8, -11, 16, 6, "#0f172a", true);
-                    px(-7, -5, 14, 15, bt.mid);
-                    px(-6, -4, 12, 13, bt.light);
-                    drawGlass(-8, 10, 16, 5, "#0f172a", true);
-
-                    // Задние L-образные фонари, обтекающие углы
-                    px(-9, 22, 4, 2, "#ef4444");
-                    px(5, 22, 4, 2, "#ef4444");
-                    px(-8, 22, 3, 1, "#fca5a5");
-                    px(5, 22, 3, 1, "#fca5a5");
-
-                    // Четыре титановых выхлопных трубы с синим отливом (V10 Quad Exhaust)
-                    px(-8, 25, 2, 2, "#38bdf8");
-                    px(-5, 25, 2, 2, "#38bdf8");
-                    px(3, 25, 2, 2, "#38bdf8");
-                    px(6, 25, 2, 2, "#38bdf8");
-                    break;
-                }
-
-                case "Toyota Camry 3.5": {
-                    const bt = getBodyTones("#111827");
-                    drawShadow(21, 51);
-                    drawWheels(20, 25, "#cbd5e1", null, "#374151");
-
-                    // Стреловидный острый нос (Keen Look V-образный капот)
-                    px(-4, -26, 8, 1, bt.dark);  // Острый нос
-                    px(-7, -25, 14, 2, bt.dark); // Скос к фарам
-                    px(-9, -24, 18, 2, bt.dark);
-                    px(-6, -25, 12, 2, bt.mid);
-
-                    // Длинный аэродинамический капот и передние крылья
-                    px(-9, -22, 18, 11, bt.dark);
-                    px(-8, -22, 16, 11, bt.mid);
-                    px(-7, -21, 14, 9, bt.light);
-
-                    // Скульптурная талия и двери со стреловидной выштамповкой
-                    px(-8, -11, 16, 21, bt.dark);
-                    px(-7, -11, 14, 21, bt.mid);
-                    // Хромированные молдинги окон
-                    px(-8, -10, 1, 20, "#e2e8f0");
-                    px(7, -10, 1, 20, "#e2e8f0");
-
-                    // Задние мускулистые крылья седана
-                    px(-9, 10, 18, 11, bt.dark);
-                    px(-8, 10, 16, 11, bt.mid);
-
-                    // Багажник со скошенными углами и интегрированным дактейлом
-                    px(-8, 21, 16, 2, bt.dark);
-                    px(-7, 21, 14, 1, bt.bright);
-                    px(-6, 23, 12, 2, bt.dark); // Скругленный задний бампер
-
-                    // Агрессивная решетка 3.5 (широкий трапециевидный зев)
-                    px(-6, -25, 12, 3, "#111827");
-                    px(-5, -24, 10, 1, "#374151");
-                    px(-1, -25, 2, 1, "#e2e8f0");
-
-                    // Трехлинзовые фары Triple-LED с ресницами
-                    px(-9, -25, 3, 2, "#bae6fd");
-                    px(6, -25, 3, 2, "#bae6fd");
-                    px(-8, -24, 2, 1, "#ffffff");
-                    px(6, -24, 2, 1, "#ffffff");
-
-                    drawMirrors(19, -11, bt.dark, "#38bdf8");
-
-                    drawGlass(-8, -10, 16, 6, "#0f172a", true);
-                    px(-7, -4, 14, 14, bt.mid);
-                    px(-6, -3, 12, 12, bt.light);
-                    drawGlass(-8, 10, 16, 5, "#0f172a", true);
-
-                    // Широкая сабля на багажнике хром и фонари
-                    px(-6, 22, 12, 1, "#e2e8f0");
-                    px(-8, 22, 3, 2, "#dc2626");
-                    px(5, 22, 3, 2, "#dc2626");
-                    px(-7, 22, 2, 1, "#ef4444");
-                    px(5, 22, 2, 1, "#ef4444");
-
-                    // Настоящий двойной выхлоп 3.5 по бокам бампера
-                    px(-6, 25, 3, 2, "#cbd5e1");
-                    px(3, 25, 3, 2, "#cbd5e1");
-                    break;
-                }
-
-                case "Toyota Land Cruiser 300": {
                     const bt = getBodyTones("#f1f5f9");
-                    drawShadow(23, 52);
-                    drawWheels(22, 27, "#cbd5e1", null, "#475569");
+                    drawShadow(20, 48);
+                    drawWheels(19, 24, "#cbd5e1", null, "#475569");
 
-                    // Массивный высокий внедорожник: широкие мощные плечи
-                    px(-8, -26, 16, 2, bt.dark);
-                    px(-10, -25, 20, 3, bt.dark);
-                    px(-9, -25, 18, 2, bt.mid);
+                    fillRound(-8.5, -24.5, 17, 47, 2.5, bt.mid, bt.dark, 1);
 
-                    // Огромный капот с центральной выштамповкой
-                    px(-11, -22, 22, 12, bt.dark);
-                    px(-10, -22, 20, 12, bt.mid);
-                    px(-7, -21, 14, 10, bt.light);
-                    px(-2, -21, 4, 9, bt.dark); // Центральное углубление LC300
+                    fillRound(-5, -24.8, 10, 2.2, 0.5, "#0f172a");
+                    px(-5, -24.5, 10, 0.8, "#e2e8f0");
+                    px(-0.8, -24.8, 1.6, 1.6, "#f8fafc");
 
-                    // Мускулистые боковины внедорожника с подножками
-                    px(-10, -10, 20, 20, bt.dark);
-                    px(-9, -10, 18, 20, bt.mid);
-                    // Подножки
-                    px(-11, -9, 1, 18, "#334155");
-                    px(10, -9, 1, 18, "#334155");
+                    drawHeadlights(-6.8, 6.8, -24, 3.4, 2.2, "#f8fafc");
+                    px(-6.8, -23, 3.4, 0.8, "#38bdf8");
+                    px(3.4, -23, 3.4, 0.8, "#38bdf8");
 
-                    // Широкие задние крылья и массивная задняя дверь
-                    px(-11, 10, 22, 13, bt.dark);
-                    px(-10, 10, 20, 13, bt.mid);
-                    px(-9, 23, 18, 2, bt.dark);
+                    fillRound(-7.5, -21.8, 15, 11, 1.5, bt.light);
 
-                    // Огромная 4-полосная решетка радиатора хром
-                    px(-7, -26, 14, 5, "#e2e8f0");
-                    px(-6, -25, 12, 1, "#0f172a");
-                    px(-6, -23, 12, 1, "#0f172a");
-                    px(-1, -25, 2, 2, "#38bdf8");
+                    drawMirrors(19, -10.5, bt.mid, "#38bdf8");
 
-                    // 3-секционные LED фары
-                    px(-10, -26, 3, 3, "#bae6fd");
-                    px(7, -26, 3, 3, "#bae6fd");
-                    px(-9, -25, 2, 1, "#ffffff");
-                    px(7, -25, 2, 1, "#ffffff");
+                    drawGlass(-7.8, -10.5, 15.6, 6.5, "#0f172a", true);
 
-                    // Серебристые рейлинги на крыше
-                    px(-9, -8, 1, 23, "#94a3b8");
-                    px(8, -8, 1, 23, "#94a3b8");
+                    fillRound(-7.2, -4, 14.4, 14, 1, bt.mid);
 
-                    drawMirrors(22, -12, bt.dark, "#38bdf8");
+                    drawGlass(-7.5, 10, 15, 5.5, "#0f172a", true);
 
-                    drawGlass(-9, -11, 18, 6, "#0f172a", true);
-                    px(-8, -5, 16, 17, bt.mid);
-                    px(-7, -4, 14, 15, bt.light);
-                    drawGlass(-9, 12, 18, 5, "#0f172a", true);
+                    drawTaillights(-7.2, 7.2, 21, 3.4, 2, "#dc2626");
+                    px(-7.2, 21.5, 1.8, 1, "#fca5a5");
+                    px(5.4, 21.5, 1.8, 1, "#fca5a5");
 
-                    // Спойлер с дополнительным стоп-сигналом
-                    px(-9, 23, 18, 2, bt.dark);
-                    px(-2, 23, 4, 1, "#ef4444");
-
-                    // L-образные LED фонари
-                    px(-10, 24, 4, 2, "#dc2626");
-                    px(6, 24, 4, 2, "#dc2626");
-                    px(-9, 24, 2, 1, "#fca5a5");
-                    px(7, 24, 2, 1, "#fca5a5");
-                    break;
-                }
-
-                case "Mercedes-Benz E63s AMG": {
-                    const bt = getBodyTones("#3f3f46");
-                    drawShadow(21, 50);
-                    drawWheels(20, 25, "#18181b", "#f59e0b", "#3f3f46");
-
-                    // Выпуклый нос Panamericana (выступает вперед по центру)
-                    px(-5, -26, 10, 2, bt.dark);
-                    px(-8, -25, 16, 2, bt.dark);
-                    px(-9, -24, 18, 2, bt.dark);
-                    px(-7, -25, 14, 2, bt.mid);
-
-                    // Мускулистые передние крылья V8 Biturbo
-                    px(-9, -22, 18, 11, bt.dark);
-                    px(-8, -22, 16, 11, bt.mid);
-                    px(-6, -21, 12, 9, bt.light);
-
-                    // Элегантная талия купеобразного седана
-                    px(-8, -11, 16, 20, bt.dark);
-                    px(-7, -11, 14, 20, bt.mid);
-
-                    // Задние широкие крылья AMG
-                    px(-9, 9, 18, 12, bt.dark);
-                    px(-8, 9, 16, 12, bt.mid);
-
-                    // Покатый закругленный багажник со спойлером
-                    px(-8, 21, 16, 2, "#09090b");
-                    px(-7, 23, 14, 2, bt.dark);
-
-                    // Фирменная решетка Panamericana с 12 вертикальными зубьями хром
-                    px(-4, -25, 8, 3, "#18181b");
-                    px(-3, -25, 1, 3, "#e2e8f0");
-                    px(-1, -25, 2, 2, "#ffffff");
-                    px(2, -25, 1, 3, "#e2e8f0");
-
-                    // Фары Multibeam LED с синей подсветкой
-                    px(-8, -25, 3, 2, "#38bdf8");
-                    px(5, -25, 3, 2, "#38bdf8");
-                    px(-7, -24, 2, 1, "#ffffff");
-                    px(5, -24, 2, 1, "#ffffff");
-
-                    // Карбоновые корпуса зеркал
-                    drawMirrors(20, -11, "#09090b", "#38bdf8");
-
-                    // Панорамная черная крыша
-                    drawGlass(-8, -11, 16, 6, "#0f172a", true);
-                    px(-7, -5, 14, 15, "#09090b");
-                    px(-6, -4, 12, 13, "#18181b");
-                    drawGlass(-8, 10, 16, 5, "#0f172a", true);
-
-                    // Фонари «Звездная пыль» (Stardust LED)
-                    px(-8, 22, 3, 2, "#ef4444");
-                    px(5, 22, 3, 2, "#ef4444");
-
-                    // Трапециевидные сдвоенные выхлопы AMG
-                    px(-7, 24, 3, 2, "#09090b");
-                    px(4, 24, 3, 2, "#09090b");
-                    px(-6, 24, 1, 2, "#71717a");
-                    px(5, 24, 1, 2, "#71717a");
-                    break;
-                }
-
-                case "Audi RS6 Avant": {
-                    const bt = getBodyTones("#78716c");
-                    drawShadow(22, 52);
-                    // 22" диски с красными суппортами RS
-                    drawWheels(22, 26, "#1e293b", "#ef4444", "#475569");
-
-                    // Злой широкий шестиугольный перед Singleframe со скошенными углами
-                    px(-6, -26, 12, 2, bt.dark); // Центральный сплиттер
-                    px(-9, -25, 18, 3, bt.dark);
-                    px(-8, -25, 16, 2, bt.mid);
-
-                    // Легендарные расширители крыльев Quattro Blisters над передними колесами (ширина 21!)
-                    px(-10, -22, 20, 11, bt.dark);
-                    px(-9, -22, 18, 11, bt.mid);
-                    px(-7, -21, 14, 9, bt.light);
-
-                    // Утопленная талия по дверям (ширина 18)
-                    px(-8, -11, 16, 19, bt.dark);
-                    px(-7, -11, 14, 19, bt.mid);
-
-                    // Мускулистые задние арки Quattro Blisters (ширина 21.5!)
-                    px(-10, 8, 20, 13, bt.dark);
-                    px(-9, 8, 18, 13, bt.mid);
-
-                    // Рейлинги на длинной крыше универсала
-                    px(-8, -9, 1, 23, "#0f172a");
-                    px(7, -9, 1, 23, "#0f172a");
-
-                    // Задний козырек-спойлер над стеклом багажника
-                    px(-9, 14, 18, 3, "#18181b");
-                    drawGlass(-8, 17, 16, 4, "#0f172a", false);
-
-                    // Задний диффузор со скругленными углами
-                    px(-8, 21, 16, 3, bt.dark);
-                    px(-6, 24, 12, 2, "#09090b");
-
-                    // Черная сотовая решетка Singleframe с шильдиком quattro
-                    px(-6, -26, 12, 4, "#0c0a09");
-                    px(-3, -24, 6, 1, "#e2e8f0");
-                    px(-1, -26, 2, 1, "#cbd5e1");
-
-                    // HD Matrix LED фары с синим лазером
-                    px(-9, -26, 3, 2, "#38bdf8");
-                    px(6, -26, 3, 2, "#38bdf8");
-                    px(-9, -25, 2, 1, "#ffffff");
-                    px(7, -25, 2, 1, "#ffffff");
-
-                    drawMirrors(21, -12, "#09090b", "#38bdf8");
-
-                    drawGlass(-8, -11, 16, 6, "#0f172a", true);
-                    px(-7, -5, 14, 19, bt.mid);
-                    px(-6, -4, 12, 17, bt.light);
-
-                    // Светодиодная полоса фонарей RS6 с анимацией
-                    px(-8, 23, 16, 1, "#ef4444");
-                    px(-9, 23, 3, 2, "#dc2626");
-                    px(6, 23, 3, 2, "#dc2626");
-
-                    // Огромные овальные трубы RS (самые большие пушки)
-                    px(-7, 25, 3, 2, "#cbd5e1");
-                    px(4, 25, 3, 2, "#cbd5e1");
-                    px(-6, 25, 1, 2, "#09090b");
-                    px(5, 25, 1, 2, "#09090b");
-                    break;
-                }
-
-                case "BMW M5 F90 Competition": {
-                    const bt = getBodyTones("#1d4ed8");
-                    drawShadow(21, 50);
-                    drawWheels(20, 25, "#09090b", "#eab308", "#334155");
-
-                    // Нос с двойными ноздрями M (скошенные углы, передний сплиттер)
-                    px(-6, -26, 12, 2, bt.dark);
-                    px(-9, -25, 18, 3, bt.dark);
-                    px(-8, -25, 16, 2, bt.mid);
-
-                    // Мускулистые передние M-крылья и капот с двойным пауэрдоумом
-                    px(-9, -22, 18, 11, bt.dark);
-                    px(-8, -22, 16, 11, bt.mid);
-                    px(-6, -21, 12, 9, bt.light);
-                    px(-2, -21, 1, 8, bt.dark); // Двойные ребра пауэрдоума
-                    px(1, -21, 1, 8, bt.dark);
-
-                    // Талия вдоль дверей с аэродинамическими порогами M
-                    px(-8, -11, 16, 20, bt.dark);
-                    px(-7, -11, 14, 20, bt.mid);
-
-                    // Задние мускулистые крылья M-sedan
-                    px(-9, 9, 18, 12, bt.dark);
-                    px(-8, 9, 16, 12, bt.mid);
-
-                    // Багажник со скошенными углами и карбоновым M-спойлером
-                    px(-8, 21, 16, 2, "#000000"); // Карбоновый спойлер
-                    px(-7, 23, 14, 2, bt.dark);   // Задний бампер со скошенными углами
-
-                    // Черные ноздри Shadowline с шильдиком M5 Competition
-                    px(-4, -25, 8, 3, "#000000");
-                    px(-1, -25, 2, 3, bt.dark);
-                    px(2, -25, 1, 1, "#e2e8f0");
-
-                    // Laserlight фары с синими X-элементами
-                    px(-8, -25, 3, 2, "#38bdf8");
-                    px(5, -25, 3, 2, "#38bdf8");
-                    px(-7, -24, 2, 1, "#ffffff");
-                    px(5, -24, 2, 1, "#ffffff");
-
-                    // Двурогие зеркала M
-                    drawMirrors(20, -11, "#000000", "#38bdf8");
-
-                    drawGlass(-8, -11, 16, 6, "#0f172a", true);
-
-                    // Карбоновая крыша с характерным центральным желобом
-                    px(-7, -5, 14, 15, "#09090b");
-                    px(-5, -4, 10, 13, "#18181b");
-                    px(-1, -5, 2, 15, "#050505");
-
-                    drawGlass(-8, 10, 16, 5, "#0f172a", true);
-
-                    // Трехмерные задние фонари L-образной формы
-                    px(-8, 22, 3, 2, "#ef4444");
-                    px(5, 22, 3, 2, "#ef4444");
-
-                    // Черные четверные 100-мм выхлопы M Sport
-                    px(-7, 24, 2, 2, "#000000");
-                    px(5, 24, 2, 2, "#000000");
-                    px(-5, 24, 2, 2, "#000000");
-                    px(3, 24, 2, 2, "#000000");
-                    break;
-                }
-
-                case "Mercedes-Benz G63 AMG «Гелик»": {
-                    const bt = getBodyTones("#11141a");
-                    drawShadow(22, 50);
-                    drawWheels(22, 26, "#18181b", "#ef4444", "#334155");
-
-                    // Знаменитый КВАДРАТНЫЙ силуэт (брутальный "кирпич") — с аутентичными рожками-поворотниками, боковым выхлопом и запаской!
-                    px(-10, -25, 20, 3, bt.dark);
-                    px(-9, -24, 18, 2, bt.mid);
-
-                    // Капот с выступающими углами и рожками
-                    px(-10, -22, 20, 12, bt.dark);
-                    px(-9, -22, 18, 12, bt.mid);
-                    // Поворотники на крыльях (визитная карточка G-Class!)
-                    px(-11, -21, 2, 3, "#f59e0b");
-                    px(9, -21, 2, 3, "#f59e0b");
-
-                    // Прямые борта с резино-металлическими молдингами
-                    px(-10, -10, 20, 20, bt.dark);
-                    px(-9, -10, 18, 20, bt.mid);
-                    px(-11, -10, 1, 20, "#475569");
-                    px(10, -10, 1, 20, "#475569");
-
-                    // Круглые фары LED Halo
-                    px(-9, -25, 3, 3, "#ffffff");
-                    px(6, -25, 3, 3, "#ffffff");
-                    px(-8, -24, 1, 1, "#38bdf8");
-                    px(7, -24, 1, 1, "#38bdf8");
-
-                    // Решетка Panamericana вертикальные планки
-                    px(-5, -25, 10, 3, "#000000");
-                    px(-4, -25, 1, 3, "#cbd5e1");
-                    px(-2, -25, 1, 3, "#cbd5e1");
-                    px(1, -25, 1, 3, "#cbd5e1");
-                    px(3, -25, 1, 3, "#cbd5e1");
-
-                    // Квадратные зеркала
-                    drawMirrors(22, -11, bt.dark, "#38bdf8");
-
-                    // Прямое лобовое стекло с резинкой
-                    drawGlass(-8, -11, 16, 5, "#0f172a", true);
-
-                    // Крыша с водосточными желобами
-                    px(-9, -6, 18, 16, bt.dark);
-                    px(-8, -5, 16, 14, bt.mid);
-
-                    drawGlass(-8, 10, 16, 5, "#0f172a", false);
-
-                    // Знаменитый боковой выхлоп AMG под задними порогами!
-                    px(-12, 8, 2, 5, "#cbd5e1");
-                    px(10, 8, 2, 5, "#cbd5e1");
-
-                    // Квадратная корма с запаской на задней двери
-                    px(-10, 10, 20, 14, bt.dark);
-                    px(-9, 10, 18, 14, bt.mid);
-                    // Запаска на задней двери с хромированным кольцом и звездой
-                    px(-6, 20, 12, 6, "#e2e8f0");
-                    px(-5, 21, 10, 4, bt.dark);
-                    px(-1, 22, 2, 2, "#e2e8f0");
-                    break;
-                }
-
-                case "Porsche 911 Turbo S": {
-                    const bt = getBodyTones("#dc2626");
-                    drawShadow(23, 49);
-                    // Центргайки + желтые керамические суппорты PCCB
-                    drawWheels(20, 24, "#09090b", "#facc15", "#334155");
-
-                    // Нос и передний бампер (округлый нос, скругленные углы)
-                    px(-5, -24, 10, 1, bt.dark); // Самый кончик носа (закругление)
-                    px(-7, -23, 14, 2, bt.dark); // Скругленный передний бампер
-                    px(-6, -23, 12, 2, bt.mid);
-
-                    // Передние крылья и капот (капот утоплен между крыльями)
-                    px(-8, -21, 16, 11, bt.dark);
-                    px(-7, -21, 14, 11, bt.mid);
-                    px(-4, -20, 8, 9, bt.light); // Утопленный капот по центру
-                    px(-1, -20, 2, 9, bt.bright);
-
-                    // Каплевидные 4-точечные LED фары на крыльях
-                    px(-8, -23, 3, 2, "#bae6fd");
-                    px(5, -23, 3, 2, "#bae6fd");
-                    px(-7, -23, 1, 1, "#ffffff");
-                    px(5, -23, 1, 1, "#ffffff");
-
-                    drawMirrors(19, -10, bt.dark, "#38bdf8");
-
-                    // Талия вдоль дверей (сужение кузова до ширины 14-15)
-                    px(-7, -10, 14, 14, bt.dark);
-                    px(-6, -10, 12, 14, bt.mid);
-
-                    // Каплевидная кабина с плавным сужением назад
-                    drawGlass(-6, -10, 12, 6, "#0f172a", true);
-                    px(-5, -4, 10, 12, bt.dark);
-                    px(-4, -3, 8, 10, bt.mid);
-                    drawGlass(-6, 8, 12, 6, "#0f172a", true);
-
-                    // Знаменитые широченные задние бедра Turbo S (ширина расширяется до 22!)
-                    px(-11, 4, 22, 14, bt.dark); // Мощные боковые расширения
-                    px(-10, 5, 20, 12, bt.mid);
-                    // Жабры воздухозаборников турбин на крыльях
-                    px(-11, 6, 2, 7, "#09090b");
-                    px(9, 6, 2, 7, "#09090b");
-
-                    // Корма и покатый скос задней части (сужение до 17, затем до 12)
-                    px(-9, 18, 18, 4, bt.dark);
-                    px(-8, 18, 16, 4, bt.mid);
-                    px(-7, 22, 14, 2, bt.dark); // Закругленный задний бампер
-                    px(-5, 23, 10, 1, bt.dark); // Центральный диффузор
-
-                    // Активное антикрыло Turbo S
-                    px(-10, 16, 20, 3, "#18181b");
-                    px(-8, 15, 2, 2, "#09090b");
-                    px(6, 15, 2, 2, "#09090b");
-
-                    // Непрерывная 3D светодиодная полоса во всю ширину кормы
-                    px(-9, 21, 18, 1, "#ef4444");
-                    px(-8, 21, 16, 1, "#fca5a5");
-
-                    // Четырехугольные насадки спортивного выхлопа
-                    px(-7, 23, 3, 2, "#cbd5e1");
-                    px(4, 23, 3, 2, "#cbd5e1");
-                    break;
-                }
-
-                case "Rolls-Royce Cullinan": {
-                    const bt = getBodyTones("#111827");
-                    drawShadow(24, 55);
-                    // 22" диски с неподвижными центрами RR
-                    drawWheels(23, 27, "#e2e8f0", null, "#475569");
-
-                    // Монументальный кузов самого роскошного SUV
-                    px(-9, -27, 18, 3, bt.dark);
-                    px(-11, -25, 22, 3, bt.dark);
-                    px(-10, -25, 20, 2, bt.mid);
-
-                    // Длинный плоский капот Rolls-Royce
-                    px(-11, -22, 22, 13, bt.dark);
-                    px(-10, -22, 20, 13, bt.mid);
-                    px(-8, -21, 16, 11, bt.light);
-
-                    // Монументальная хромированная решетка Pantheon
-                    px(-6, -27, 12, 6, "#f8fafc");
-                    px(-5, -26, 1, 4, "#475569");
-                    px(-3, -26, 1, 4, "#475569");
-                    px(-1, -26, 1, 4, "#475569");
-                    px(1, -26, 1, 4, "#475569");
-                    px(3, -26, 1, 4, "#475569");
-                    // Статуэтка «Дух Экстаза» (Spirit of Ecstasy) на капоте
-                    px(-1, -29, 2, 3, "#ffffff");
-
-                    // Прямоугольные лазерные фары
-                    px(-10, -27, 3, 3, "#bae6fd");
-                    px(7, -27, 3, 3, "#bae6fd");
-
-                    // Ручная серебряная линия Coachline вдоль всего кузова
-                    px(-11, -23, 1, 45, "#e2e8f0");
-                    px(10, -23, 1, 45, "#e2e8f0");
-
-                    // Салон и распашные двери Coach Doors с хромированными ручками встык
-                    px(-11, -9, 22, 22, bt.dark);
-                    px(-10, -9, 20, 22, bt.mid);
-                    px(-11, -1, 1, 3, "#ffffff");
-                    px(10, -1, 1, 3, "#ffffff");
-
-                    drawMirrors(23, -12, bt.dark, "#38bdf8");
-
-                    drawGlass(-9, -11, 18, 6, "#0a0d14", true);
-                    px(-8, -5, 16, 18, bt.mid);
-                    drawGlass(-9, 13, 18, 5, "#0a0d14", true);
-
-                    // Монументальная строгая задняя часть
-                    px(-11, 13, 22, 13, bt.dark);
-                    px(-10, 13, 20, 13, bt.mid);
-                    px(-9, 26, 18, 2, bt.dark);
-
-                    // Вертикальные хрустальные фонари
-                    px(-11, 21, 2, 5, "#dc2626");
-                    px(9, 21, 2, 5, "#dc2626");
-
-                    // Интегрированные полированные выхлопы
-                    px(-8, 26, 3, 2, "#e2e8f0");
-                    px(5, 26, 3, 2, "#e2e8f0");
-                    break;
-                }
-
-                case "Bugatti Chiron Super Sport": {
-                    const bt = getBodyTones("#2563eb");
-                    drawShadow(24, 54);
-                    // Легкие турбинные диски Chiron
-                    drawWheels(23, 26, "#09090b", "#38bdf8", "#475569");
-
-                    // Нос с подковообразной решеткой (закругленный каплевидный сплиттер)
-                    px(-4, -27, 8, 2, "#000000"); // Подкова Bugatti
-                    px(-1, -27, 2, 1, "#ef4444"); // Красный Macaron
-                    px(-8, -26, 16, 2, bt.dark);  // Закругленный передний спойлер
-                    px(-10, -25, 20, 3, bt.dark); // Передний сплиттер расширяется к крыльям
-
-                    // Передние аэродинамические крылья (ширина 22)
-                    px(-11, -22, 22, 10, bt.dark);
-                    px(-10, -22, 20, 10, bt.mid);
-                    px(-5, -22, 10, 9, bt.light);
-
-                    // 8-глазые светодиодные кубы фар (Quad-LED 8-Eyes)
-                    px(-10, -26, 4, 2, "#67e8f9");
-                    px(6, -26, 4, 2, "#67e8f9");
-
-                    drawMirrors(22, -11, bt.dark, "#38bdf8");
-
-                    // Аэродинамические боковые вырезы (Bugatti C-Line сужение до 19)
-                    px(-10, -12, 20, 14, bt.dark);
-                    px(-9, -12, 18, 14, bt.mid);
-                    // Хромированная/алюминиевая дуга Bugatti C-Line (полукруглая линия воздухозаборника)
-                    px(-10, -10, 2, 12, "#93c5fd");
-                    px(8, -10, 2, 12, "#93c5fd");
-
-                    drawGlass(-7, -10, 14, 6, "#0f172a", true);
-                    px(-6, -4, 12, 12, "#060709");
-
-                    // Массивные задние плечи двигателя W16 (ширина 24!)
-                    px(-12, 2, 24, 18, "#060709");
-                    px(-11, 3, 22, 16, "#111827");
-
-                    // Открытый двигатель W16 квад-турбо (впускные коллекторы титан)
-                    px(-5, 8, 10, 6, "#cbd5e1");
-                    px(-3, 8, 6, 6, "#475569");
-
-                    // Центральный аэродинамический плавник-киль
-                    px(-1, -10, 2, 32, bt.dark);
-
-                    // Аэродинамический сужающийся хвост и диффузор (сужение до 18, затем до 12)
-                    px(-10, 20, 20, 3, "#060709");
-                    px(-8, 23, 16, 2, "#060709");
-                    px(-6, 25, 12, 2, "#000000"); // Диффузор
-
-                    // Непрерывная 1.6-метровая полоса фонаря во всю ширину
-                    px(-10, 23, 20, 1, "#ef4444");
-                    px(-9, 23, 18, 1, "#f87171");
-
-                    // Четыре вертикально сдвоенных титановых выхлопа в гоночном диффузоре
-                    px(-2, 25, 4, 3, "#94a3b8");
-                    px(-1, 25, 2, 3, "#09090b");
-                    break;
-                }
-
-                case "ВАЗ-2109 «Девятка»": {
-                    const bt = getBodyTones("#475569");
-                    drawShadow(18, 44);
-                    drawWheels(18, 22, "#cbd5e1", null, "#334155");
-                    // Короткое крыло / зубило нос
-                    px(-8, -23, 16, 2, bt.dark);
-                    px(-8, -21, 16, 11, bt.mid);
-                    px(-6, -20, 12, 9, bt.light);
-                    // Черная решетка радиатора и бамперы
-                    px(-9, -24, 18, 2, "#1e293b");
-                    px(-9, 21, 18, 2, "#1e293b");
-                    // Прямоугольные фары и оранжевые поворотники
-                    px(-8, -23, 3, 2, "#fef08a");
-                    px(5, -23, 3, 2, "#fef08a");
-                    px(-9, -23, 1, 2, "#f59e0b");
-                    px(8, -23, 1, 2, "#f59e0b");
-                    drawMirrors(17, -9, bt.dark);
-                    drawGlass(-7, -9, 14, 5, "#0f172a", true);
-                    px(-7, -4, 14, 13, bt.mid);
-                    // Задняя дверь хэтчбека со спойлером
-                    drawGlass(-7, 9, 14, 6, "#0f172a", false);
-                    px(-8, 15, 16, 6, bt.dark);
-                    px(-8, 16, 16, 2, "#09090b"); // Спойлер
-                    // Задние фонари
-                    px(-8, 20, 4, 2, "#dc2626");
-                    px(4, 20, 4, 2, "#dc2626");
-                    px(5, 23, 2, 2, "#94a3b8");
-                    break;
-                }
-
-                case "ГАЗ-24 «Волга»": {
-                    const bt = getBodyTones("#1e293b");
-                    drawShadow(21, 50);
-                    drawWheels(20, 24, "#e2e8f0", null, "#334155");
-                    // Монументальный длинный капот
-                    px(-9, -25, 18, 3, "#e2e8f0"); // Хром бампер
-                    px(-9, -22, 18, 13, bt.mid);
-                    px(-7, -21, 14, 11, bt.light);
-                    px(-1, -22, 2, 12, bt.bright);
-                    // Хромированная решетка «китовый ус»
-                    px(-7, -24, 14, 2, "#f1f5f9");
-                    px(-8, -24, 2, 2, "#fef08a");
-                    px(6, -24, 2, 2, "#fef08a");
-                    drawMirrors(19, -9, "#e2e8f0");
-                    drawGlass(-8, -9, 16, 5, "#1e293b", true);
-                    px(-8, -4, 16, 15, bt.mid);
-                    drawGlass(-8, 11, 16, 5, "#1e293b", false);
-                    // Длинный плоский багажник
-                    px(-9, 16, 18, 8, bt.dark);
-                    px(-8, 17, 16, 6, bt.mid);
-                    px(-9, 24, 18, 2, "#e2e8f0"); // Задний хром бампер
-                    // Вертикальные советские задние фонари
-                    px(-8, 23, 2, 2, "#dc2626");
-                    px(6, 23, 2, 2, "#dc2626");
-                    px(5, 26, 2, 2, "#cbd5e1");
-                    break;
-                }
-
-                case "Hyundai Solaris": {
-                    const bt = getBodyTones("#94a3b8");
-                    drawShadow(19, 45);
-                    drawWheels(18, 22, "#cbd5e1", null, "#334155");
-                    // Обтекаемый капот с гранями
-                    px(-7, -23, 14, 2, bt.dark);
-                    px(-8, -21, 16, 11, bt.mid);
-                    px(-6, -20, 12, 9, bt.light);
-                    // Шестиугольная решетка и фары
-                    px(-4, -23, 8, 2, "#1e293b");
-                    px(-8, -22, 3, 2, "#e0f2fe");
-                    px(5, -22, 3, 2, "#e0f2fe");
-                    drawMirrors(18, -9, bt.dark);
-                    drawGlass(-7, -9, 14, 6, "#0f172a", true);
-                    px(-7, -3, 14, 14, bt.mid);
-                    drawGlass(-7, 11, 14, 5, "#0f172a", false);
-                    px(-8, 16, 16, 6, bt.dark);
-                    px(-7, 17, 14, 4, bt.mid);
-                    // Светодиодные фонари с саблями
-                    px(-8, 21, 4, 2, "#dc2626");
-                    px(4, 21, 4, 2, "#dc2626");
-                    px(5, 23, 2, 1, "#64748b");
+                    px(-5.5, 23, 2, 1.8, "#94a3b8");
                     break;
                 }
 
                 case "Toyota Mark II Tourer V": {
                     const bt = getBodyTones("#f8fafc");
-                    drawShadow(20, 48);
-                    drawWheels(19, 24, "#cbd5e1", "#f59e0b", "#475569");
-                    // Агрессивный JDM нос с интеркулером
-                    px(-8, -24, 16, 2, bt.dark);
-                    px(-5, -24, 10, 2, "#0f172a"); // Вырез интеркулера
-                    px(-4, -24, 8, 1, "#94a3b8");
-                    px(-9, -22, 18, 12, bt.mid);
-                    px(-7, -21, 14, 10, bt.light);
-                    // Линзованные хрустальные фары Mark II
-                    px(-8, -23, 3, 2, "#e0f2fe");
-                    px(5, -23, 3, 2, "#e0f2fe");
-                    drawMirrors(19, -9, bt.dark);
-                    drawGlass(-8, -9, 16, 6, "#0f172a", true);
-                    px(-8, -3, 16, 14, bt.mid);
-                    drawGlass(-8, 11, 16, 5, "#0f172a", false);
-                    // Широкий седан багажник со спойлером
-                    px(-9, 16, 18, 7, bt.dark);
-                    px(-8, 17, 16, 5, bt.mid);
-                    px(-8, 22, 16, 1, "#09090b"); // Лип спойлер
-                    // Легендарная сплошная полоса фонарей Mark II
-                    px(-8, 21, 16, 2, "#dc2626");
-                    px(-3, 21, 6, 1, "#f8fafc"); // Задний ход
-                    // Огромная японская банка выхлопа
-                    px(5, 24, 3, 3, "#f1f5f9");
+                    drawShadow(22, 52);
+                    drawWheels(21, 26, "#e2e8f0", "#eab308", "#334155", true);
+
+                    fillRound(-9.5, -26, 19, 51, 3, bt.mid, bt.dark, 1);
+
+                    fillRound(-9.2, -26.5, 18.4, 2.2, 1, "#181a20");
+
+                    fillRound(-4.5, -25.8, 9, 2.2, 0.5, "#09090b");
+                    px(-0.8, -25.5, 1.6, 1.2, "#eab308");
+
+                    drawHeadlights(-7.2, 7.2, -25, 3.8, 2.5, "#e0f2fe");
+                    px(-9.2, -25, 1.8, 2.5, "#f59e0b");
+                    px(7.4, -25, 1.8, 2.5, "#f59e0b");
+
+                    fillRound(-8.5, -22.5, 17, 12, 1.5, bt.light);
+
+                    drawMirrors(21, -11, bt.dark, "#38bdf8");
+
+                    drawGlass(-8.5, -11, 17, 7, "#0f172a", true);
+
+                    fillRound(-8, -4, 16, 14.5, 1, bt.mid);
+
+                    drawGlass(-8.5, 10.5, 17, 6, "#0f172a", true);
+
+                    fillRound(-8.5, 22, 17, 2.5, 0.5, "#dc2626");
+                    px(-3, 22.2, 6, 1.2, "#fca5a5");
+                    px(-0.8, 22.5, 1.6, 1, "#f59e0b");
+
+                    px(5.2, 24.5, 3.2, 3, "#38bdf8");
+                    px(5.5, 27, 2.5, 1.5, "#f59e0b");
                     break;
                 }
 
                 case "Subaru Impreza WRX STI": {
                     const bt = getBodyTones("#1d4ed8");
-                    drawShadow(20, 47);
-                    // Золотые кованые диски BBS
-                    drawWheels(19, 23, "#f59e0b", "#ef4444", "#475569");
-                    // Массивный ноздря-воздухозаборник капота STI
-                    px(-8, -24, 16, 2, bt.dark);
-                    px(-9, -22, 18, 12, bt.mid);
-                    px(-7, -21, 14, 10, bt.light);
-                    px(-4, -18, 8, 4, "#0f172a"); // Hood scoop
-                    px(-3, -17, 6, 2, "#000000");
-                    // Линзованные агрессивные фары
-                    px(-8, -23, 3, 2, "#67e8f9");
-                    px(5, -23, 3, 2, "#67e8f9");
-                    drawMirrors(19, -9, bt.dark);
-                    drawGlass(-7, -9, 14, 6, "#0f172a", true);
-                    px(-7, -3, 14, 14, bt.mid);
-                    drawGlass(-7, 11, 14, 5, "#0f172a", false);
-                    px(-8, 16, 16, 6, bt.dark);
-                    // Высокое раллийное антикрыло STI
-                    px(-9, 19, 18, 3, bt.dark);
-                    px(-9, 18, 2, 4, "#09090b");
-                    px(7, 18, 2, 4, "#09090b");
-                    // Сдвоенные выхлопы слева и справа
-                    px(-7, 23, 3, 2, "#e2e8f0");
-                    px(4, 23, 3, 2, "#e2e8f0");
-                    // Задние фонари
-                    px(-8, 21, 3, 2, "#dc2626");
-                    px(5, 21, 3, 2, "#dc2626");
+                    drawShadow(22, 50);
+                    drawWheels(21, 25, "#eab308", "#a3e635", "#334155", true);
+
+                    fillRound(-9.5, -25.5, 19, 49, 3, bt.mid, bt.dark, 1);
+
+                    fillRound(-8.5, -26, 17, 2.5, 1, "#09090b");
+                    px(-0.8, -25.5, 1.6, 1, "#dc2626");
+
+                    drawHeadlights(-7.5, 7.5, -25, 4, 2.5, "#e0f2fe");
+                    px(-7.5, -24.5, 1, 2, "#38bdf8");
+                    px(6.5, -24.5, 1, 2, "#38bdf8");
+
+                    fillRound(-8.5, -22.5, 17, 11.5, 2, bt.light);
+                    fillRound(-4.5, -19.5, 9, 4.2, 1.5, "#09090b");
+                    fillRound(-3.5, -18.5, 7, 2.5, 1, bt.darkest);
+
+                    px(-9.5, -12, 1, 4, "#09090b");
+                    px(8.5, -12, 1, 4, "#09090b");
+
+                    drawMirrors(21, -11, bt.dark, "#38bdf8");
+
+                    drawGlass(-8.5, -11, 17, 6.5, "#0f172a", true);
+
+                    fillRound(-8, -4.5, 16, 14.5, 1.5, bt.mid);
+
+                    drawGlass(-8.5, 10, 17, 5.5, "#0f172a", true);
+
+                    fillRound(-10, 20.5, 20, 2.8, 1, bt.bright);
+                    px(-8, 19, 2, 2.5, bt.dark);
+                    px(6, 19, 2, 2.5, bt.dark);
+
+                    drawTaillights(-7.5, 7.5, 22.5, 3.8, 2.2, "#dc2626");
+
+                    px(-7.5, 25, 2, 2.2, "#cbd5e1");
+                    px(-4.8, 25, 2, 2.2, "#cbd5e1");
+                    px(2.8, 25, 2, 2.2, "#cbd5e1");
+                    px(5.5, 25, 2, 2.2, "#cbd5e1");
+                    break;
+                }
+
+                case "BMW M5 E60 V10": {
+                    const bt = getBodyTones("#64748b");
+                    drawShadow(22, 51);
+                    drawWheels(21, 26, "#e2e8f0", "#2563eb", "#334155", true);
+
+                    fillRound(-9.5, -26, 19, 50, 3, bt.mid, bt.dark, 1);
+
+                    fillRound(-4.5, -26, 4, 2.5, 0.8, "#09090b");
+                    fillRound(0.5, -26, 4, 2.5, 0.8, "#09090b");
+                    px(-3.2, -26, 1, 2.5, "#06b6d4");
+                    px(-2.2, -26, 1, 2.5, "#1d4ed8");
+                    px(-1.2, -26, 1, 2.5, "#ef4444");
+
+                    drawHeadlights(-7.5, 7.5, -25, 4, 2.8, "#fef08a");
+                    px(-7.5, -24.5, 1.8, 1.8, "#ca8a04");
+                    px(5.7, -24.5, 1.8, 1.8, "#ca8a04");
+
+                    fillRound(-8.5, -23, 17, 12, 2, bt.light);
+
+                    px(-9.8, -12, 1.2, 4.5, "#e2e8f0");
+                    px(8.6, -12, 1.2, 4.5, "#e2e8f0");
+
+                    drawMirrors(21, -11, bt.dark, "#38bdf8");
+
+                    drawGlass(-8.5, -11, 17, 6.5, "#0f172a", true);
+
+                    fillRound(-8, -4.5, 16, 14.5, 1.5, bt.mid);
+
+                    drawGlass(-8.5, 10, 17, 5.5, "#0f172a", true);
+
+                    fillRound(-8.5, 20.5, 17, 2.5, 1, bt.bright);
+                    fillRound(-7.5, 22.5, 15, 2, 1, bt.dark);
+
+                    drawTaillights(-7.8, 7.8, 22, 4, 2.2, "#ef4444");
+                    px(-7.8, 22, 2.2, 1, "#fca5a5");
+                    px(5.6, 22, 2.2, 1, "#fca5a5");
+
+                    px(-7.8, 25, 2, 2.5, "#38bdf8");
+                    px(-5.2, 25, 2, 2.5, "#38bdf8");
+                    px(3.2, 25, 2, 2.5, "#38bdf8");
+                    px(5.8, 25, 2, 2.5, "#38bdf8");
                     break;
                 }
 
                 case "Nissan Silvia S15 Spec-R": {
-                    const bt = getBodyTones("#0284c7");
-                    drawShadow(19, 46);
-                    drawWheels(18, 23, "#e2e8f0", "#ef4444", "#475569");
-                    // Низкий клиновидный дрифт профиль
-                    px(-7, -24, 14, 2, bt.dark);
-                    px(-8, -22, 16, 12, bt.mid);
-                    px(-6, -21, 12, 10, bt.light);
-                    // Прищуренные линзы Silvia S15
-                    px(-7, -23, 3, 2, "#38bdf8");
-                    px(4, -23, 3, 2, "#38bdf8");
-                    drawMirrors(18, -9, bt.dark);
-                    drawGlass(-7, -9, 14, 6, "#09090b", true);
-                    px(-7, -3, 14, 13, bt.mid);
-                    drawGlass(-7, 10, 14, 6, "#09090b", false);
-                    px(-8, 16, 16, 6, bt.dark);
-                    // Карбоновое дрифт-антикрыло GT Wing
-                    px(-9, 19, 18, 2, "#09090b");
-                    // Задние фонари со стрелками
-                    px(-8, 21, 4, 2, "#dc2626");
-                    px(4, 21, 4, 2, "#dc2626");
-                    // Прямоточный титановый выхлоп
-                    px(5, 23, 3, 3, "#60a5fa");
+                    const bt = getBodyTones("#f8fafc");
+                    drawShadow(21, 48);
+                    drawWheels(20, 24, "#e2e8f0", "#ef4444", "#334155", true);
+
+                    fillRound(-9, -25, 18, 47, 3.5, bt.mid, bt.dark, 1);
+
+                    fillRound(-5, -25.5, 10, 2, 1, "#09090b");
+
+                    drawHeadlights(-7, 7, -24.5, 3.6, 2.2, "#e0f2fe");
+                    px(-8, -24.2, 1.2, 2, "#38bdf8");
+                    px(6.8, -24.2, 1.2, 2, "#38bdf8");
+
+                    fillRound(-8, -22.5, 16, 11, 2, bt.light);
+
+                    drawMirrors(20, -11, bt.dark, "#38bdf8");
+
+                    drawGlass(-8, -11, 16, 6.5, "#0f172a", true);
+
+                    fillRound(-7.5, -4.5, 15, 13.5, 2, bt.mid);
+
+                    drawGlass(-8, 9, 16, 6, "#0f172a", true);
+
+                    fillRound(-9.5, 19.5, 19, 2.5, 0.8, bt.bright);
+                    px(-7.5, 18, 1.5, 2.5, bt.dark);
+                    px(6, 18, 1.5, 2.5, bt.dark);
+
+                    drawTaillights(-7.2, 7.2, 21.5, 3.6, 2, "#dc2626");
+
+                    px(5, 23.5, 3, 2.8, "#38bdf8");
+                    break;
+                }
+
+                case "Toyota Camry 3.5": {
+                    const bt = getBodyTones("#0f172a");
+                    drawShadow(22, 52);
+                    drawWheels(21, 26, "#cbd5e1", null, "#475569");
+
+                    fillRound(-9.5, -26, 19, 51, 3, bt.mid, bt.dark, 1);
+
+                    fillPoly([
+                        [-5.5, -26], [5.5, -26],
+                        [7.5, -23], [-7.5, -23]
+                    ], "#09090b", "#475569", 0.8);
+
+                    drawHeadlights(-7.5, 7.5, -25.2, 3.8, 2.2, "#e0f2fe");
+                    px(-7.5, -24.5, 1.2, 1, "#ffffff");
+                    px(6.3, -24.5, 1.2, 1, "#ffffff");
+
+                    fillRound(-8.5, -22.5, 17, 12, 2, bt.light);
+
+                    drawMirrors(21, -11, bt.dark, "#38bdf8");
+
+                    drawGlass(-8.5, -11, 17, 7, "#0f172a", true);
+
+                    fillRound(-8, -4, 16, 14.5, 1.5, bt.mid);
+                    px(-8.8, -10, 0.8, 20, "#e2e8f0");
+                    px(8, -10, 0.8, 20, "#e2e8f0");
+
+                    drawGlass(-8.5, 10.5, 17, 6, "#0f172a", true);
+
+                    fillRound(-8.5, 21, 17, 2, 0.5, bt.bright);
+
+                    drawTaillights(-7.8, 7.8, 22.2, 3.8, 2.2, "#dc2626");
+
+                    px(-7.5, 25, 2.8, 2, "#cbd5e1");
+                    px(4.7, 25, 2.8, 2, "#cbd5e1");
+                    break;
+                }
+
+                case "Toyota Land Cruiser 300": {
+                    const bt = getBodyTones("#f8fafc");
+                    drawShadow(25, 54);
+                    drawWheels(23, 27, "#cbd5e1", null, "#475569", true);
+
+                    fillRound(-11, -26.5, 22, 53, 3, bt.mid, bt.dark, 1.2);
+
+                    fillRound(-10, -25.5, 20, 14, 2, bt.light);
+                    fillRound(-3, -24, 6, 11, 1, bt.mid);
+
+                    fillRound(-8.5, -27, 17, 4.5, 1, "#e2e8f0");
+                    for (let y = -26.5; y <= -23.5; y += 1.4) px(-7.5, y, 15, 0.8, "#0f172a");
+                    px(-1.2, -25.5, 2.4, 1.8, "#e2e8f0");
+
+                    drawHeadlights(-9, 9, -26, 4.2, 2.8, "#f8fafc");
+
+                    fillRound(-12, -10, 1.5, 22, 0.5, "#334155");
+                    fillRound(10.5, -10, 1.5, 22, 0.5, "#334155");
+
+                    drawMirrors(23, -12, bt.dark, "#38bdf8");
+
+                    drawGlass(-9.5, -11.5, 19, 7.5, "#0f172a", true);
+
+                    fillRound(-9.2, -4, 18.4, 16, 2, bt.mid);
+                    px(-9, -5, 1, 17, "#334155");
+                    px(8, -5, 1, 17, "#334155");
+
+                    drawGlass(-9.5, 12, 19, 6.5, "#0f172a", false);
+
+                    fillRound(-9.5, 18.5, 19, 2.2, 0.8, bt.bright);
+
+                    drawTaillights(-9, 9, 23.5, 4.5, 2.5, "#dc2626");
+
+                    px(6.5, 26.5, 3, 2, "#94a3b8");
                     break;
                 }
 
                 case "Nissan GT-R R35 Nismo": {
-                    const bt = getBodyTones("#64748b");
-                    drawShadow(22, 49);
-                    drawWheels(20, 24, "#09090b", "#ef4444", "#334155");
-                    // Карбоновый сплиттер с красной полосой Nismo
-                    px(-9, -25, 18, 2, "#09090b");
-                    px(-8, -25, 16, 1, "#ef4444");
-                    px(-10, -23, 20, 12, bt.dark);
-                    px(-8, -22, 16, 11, bt.mid);
-                    px(-5, -21, 10, 9, bt.light);
-                    // Воздуховоды NACA на капоте
-                    px(-4, -18, 2, 3, "#0f172a");
-                    px(2, -18, 2, 3, "#0f172a");
-                    // Молниевидные фары GT-R
-                    px(-9, -24, 3, 3, "#38bdf8");
-                    px(6, -24, 3, 3, "#38bdf8");
-                    drawMirrors(20, -10, "#09090b", "#ef4444");
-                    drawGlass(-8, -10, 16, 6, "#09090b", true);
-                    px(-8, -4, 16, 14, bt.mid);
-                    drawGlass(-8, 10, 16, 6, "#09090b", false);
-                    // Карбоновое антикрыло Nismo
-                    px(-10, 19, 20, 2, "#09090b");
-                    px(-10, 18, 2, 3, "#ef4444");
-                    px(8, 18, 2, 3, "#ef4444");
-                    // Легендарные 4 круглых кольца фонарей GT-R
-                    px(-8, 21, 3, 2, "#dc2626");
-                    px(-5, 21, 3, 2, "#ef4444");
-                    px(2, 21, 3, 2, "#ef4444");
-                    px(5, 21, 3, 2, "#dc2626");
-                    // 4 гигантских титановых сопла выхлопа
-                    px(-7, 24, 4, 2, "#38bdf8");
-                    px(3, 24, 4, 2, "#38bdf8");
+                    const bt = getBodyTones("#f8fafc");
+                    drawShadow(23, 51);
+                    drawWheels(22, 26, "#09090b", "#f59e0b", "#334155", true);
+
+                    fillRound(-10, -25.5, 20, 50, 3, bt.mid, bt.dark, 1);
+
+                    fillRound(-10, -26.5, 20, 2.8, 1, "#09090b");
+                    fillRound(-9.5, -26.8, 19, 0.8, 0.5, "#ef4444");
+
+                    fillRound(-5.5, -25.5, 11, 3, 0.8, "#09090b");
+                    px(-1.2, -25, 2.4, 1.2, "#e2e8f0");
+
+                    drawHeadlights(-8, 8, -25, 3.8, 3.2, "#e0f2fe");
+                    px(-8, -24.5, 1.2, 2.5, "#38bdf8");
+                    px(6.8, -24.5, 1.2, 2.5, "#38bdf8");
+
+                    fillRound(-9, -22.5, 18, 12, 2, bt.light);
+                    fillRound(-4.5, -18, 2.5, 3, 0.8, "#09090b");
+                    fillRound(2, -18, 2.5, 3, 0.8, "#09090b");
+
+                    px(-10.2, -12, 1.2, 4.5, "#09090b");
+                    px(9, -12, 1.2, 4.5, "#09090b");
+
+                    drawMirrors(22, -11, "#09090b", "#38bdf8");
+
+                    drawGlass(-8.8, -11, 17.6, 6.5, "#0f172a", true);
+
+                    fillRound(-8.2, -4.5, 16.4, 14.5, 1.5, "#09090b");
+
+                    drawGlass(-8.8, 10, 17.6, 5.5, "#0f172a", true);
+
+                    fillRound(-10.5, 19.5, 21, 2.8, 1, "#09090b");
+                    fillRound(-10, 19.8, 20, 0.8, 0.5, "#ef4444");
+                    px(-8, 18, 1.8, 2.5, "#334155");
+                    px(6.2, 18, 1.8, 2.5, "#334155");
+
+                    drawHeadlights(-7.5, -4.5, 22.5, 2.8, 2.8, "#ef4444", true);
+                    drawHeadlights(4.5, 7.5, 22.5, 2.8, 2.8, "#ef4444", true);
+
+                    px(-7.5, 25, 2.5, 2.5, "#38bdf8");
+                    px(-4.5, 25, 2.5, 2.5, "#38bdf8");
+                    px(2, 25, 2.5, 2.5, "#38bdf8");
+                    px(5, 25, 2.5, 2.5, "#38bdf8");
+                    break;
+                }
+
+                case "Mercedes-Benz E63s AMG": {
+                    const bt = getBodyTones("#18181b");
+                    drawShadow(23, 52);
+                    drawWheels(22, 26, "#e2e8f0", "#ef4444", "#334155", true);
+
+                    fillRound(-10, -26, 20, 51, 3, bt.mid, bt.dark, 1);
+
+                    fillRound(-6, -26.5, 12, 3.5, 1.2, "#09090b");
+                    for (let x = -4.5; x <= 4.5; x += 1.8) px(x, -26.5, 0.8, 3.5, "#e2e8f0");
+                    px(-1.2, -25.5, 2.4, 2, "#f8fafc");
+
+                    drawHeadlights(-8, 8, -25.2, 4, 2.5, "#e0f2fe");
+                    px(-8, -24.5, 2.5, 0.8, "#38bdf8");
+                    px(5.5, -24.5, 2.5, 0.8, "#38bdf8");
+
+                    fillRound(-9, -23, 18, 12.5, 2, bt.light);
+                    px(-3.5, -22, 1, 10, bt.bright);
+                    px(2.5, -22, 1, 10, bt.bright);
+
+                    px(-10.2, -12, 1, 4.5, "#e2e8f0");
+                    px(9.2, -12, 1, 4.5, "#e2e8f0");
+
+                    drawMirrors(22, -11, bt.dark, "#38bdf8");
+
+                    drawGlass(-8.8, -11, 17.6, 7, "#0f172a", true);
+
+                    fillRound(-8.2, -4, 16.4, 14.5, 1.5, "#09090b");
+
+                    drawGlass(-8.8, 10.5, 17.6, 6, "#0f172a", true);
+
+                    fillRound(-9, 21.2, 18, 1.8, 0.5, "#09090b");
+
+                    drawTaillights(-8, 8, 22.5, 4, 2.2, "#dc2626");
+
+                    px(-7.5, 25.2, 2.6, 2, "#e2e8f0");
+                    px(-4.5, 25.2, 2.6, 2, "#e2e8f0");
+                    px(2, 25.2, 2.6, 2, "#e2e8f0");
+                    px(5, 25.2, 2.6, 2, "#e2e8f0");
+                    break;
+                }
+
+                case "Audi RS6 Avant": {
+                    const bt = getBodyTones("#475569");
+                    drawShadow(24, 53);
+                    drawWheels(23, 27, "#09090b", "#3b82f6", "#334155", true);
+
+                    fillRound(-10.5, -26, 21, 52, 3, bt.mid, bt.dark, 1.2);
+
+                    fillRound(-7, -26.8, 14, 3.8, 1.2, "#09090b");
+                    px(-1.2, -25.8, 2.4, 1.4, "#e2e8f0");
+
+                    drawHeadlights(-8.5, 8.5, -25.5, 4.2, 2.6, "#e0f2fe");
+                    for (let i = 0; i < 3; i++) {
+                        px(-8.5 + i * 1.2, -24.5, 0.8, 1.2, "#38bdf8");
+                        px(6.5 + i * 1.2, -24.5, 0.8, 1.2, "#38bdf8");
+                    }
+
+                    fillRound(-9.5, -23, 19, 12, 2, bt.light);
+
+                    drawMirrors(23, -11.5, "#09090b", "#38bdf8");
+
+                    drawGlass(-9.2, -11.5, 18.4, 7, "#0f172a", true);
+
+                    fillRound(-8.5, -4.5, 17, 16.5, 2, bt.mid);
+                    px(-8.5, -5, 1, 16, "#09090b");
+                    px(7.5, -5, 1, 16, "#09090b");
+
+                    drawGlass(-9, 12, 18, 6.5, "#0f172a", false);
+                    fillRound(-9.5, 12, 19, 1.8, 0.5, "#09090b");
+
+                    drawTaillights(-8.5, 8.5, 23, 4.5, 2.2, "#dc2626");
+
+                    fillRound(-7.5, 25.5, 3.8, 2.5, 1.2, "#09090b", "#e2e8f0", 0.8);
+                    fillRound(3.7, 25.5, 3.8, 2.5, 1.2, "#09090b", "#e2e8f0", 0.8);
+                    break;
+                }
+
+                case "BMW M5 F90 Competition": {
+                    const bt = getBodyTones("#1e3a8a");
+                    drawShadow(23, 52);
+                    drawWheels(22, 26, "#09090b", "#f59e0b", "#334155", true);
+
+                    fillRound(-10, -26, 20, 51, 3, bt.mid, bt.dark, 1);
+
+                    fillRound(-5, -26.5, 4.5, 2.8, 0.8, "#09090b");
+                    fillRound(0.5, -26.5, 4.5, 2.8, 0.8, "#09090b");
+                    px(1.5, -26, 1.2, 0.8, "#ef4444");
+
+                    drawHeadlights(-8, 8, -25.2, 4, 2.5, "#f8fafc");
+                    px(-8, -24.5, 1.5, 1.5, "#2563eb");
+                    px(6.5, -24.5, 1.5, 1.5, "#2563eb");
+
+                    fillRound(-9, -23, 18, 12.5, 2, bt.light);
+
+                    drawMirrors(22, -11, "#09090b", "#38bdf8");
+
+                    drawGlass(-8.8, -11, 17.6, 7, "#0f172a", true);
+
+                    fillRound(-8.2, -4, 16.4, 14.5, 1.5, "#09090b");
+                    px(-1.2, -4, 2.4, 14.5, "#18181b");
+
+                    drawGlass(-8.8, 10.5, 17.6, 6, "#0f172a", true);
+
+                    fillRound(-9, 21.2, 18, 1.8, 0.5, "#09090b");
+
+                    drawTaillights(-8, 8, 22.5, 4, 2.2, "#ef4444");
+
+                    px(-7.5, 25.2, 2.2, 2.2, "#09090b");
+                    px(-4.8, 25.2, 2.2, 2.2, "#09090b");
+                    px(2.6, 25.2, 2.2, 2.2, "#09090b");
+                    px(5.3, 25.2, 2.2, 2.2, "#09090b");
                     break;
                 }
 
                 case "BMW M8 Gran Coupe": {
-                    const bt = getBodyTones("#1e3a8a");
-                    drawShadow(22, 51);
-                    drawWheels(21, 25, "#09090b", "#3b82f6", "#475569");
-                    // Хищный нос, широкие ноздри M с подсветкой
-                    px(-9, -26, 18, 2, bt.dark);
-                    px(-5, -26, 10, 2, "#09090b");
-                    px(-5, -25, 4, 1, "#60a5fa");
-                    px(1, -25, 4, 1, "#60a5fa");
-                    px(-10, -24, 20, 13, bt.dark);
-                    px(-8, -23, 16, 12, bt.mid);
-                    px(-5, -22, 10, 10, bt.light);
-                    // Лазерные фары Laserlight с синими акцентами
-                    px(-9, -25, 3, 2, "#38bdf8");
-                    px(6, -25, 3, 2, "#38bdf8");
-                    drawMirrors(21, -10, bt.dark);
-                    drawGlass(-8, -10, 16, 6, "#09090b", true);
-                    px(-8, -4, 16, 15, bt.mid);
-                    drawGlass(-8, 11, 16, 6, "#09090b", false);
-                    px(-9, 17, 18, 6, bt.dark);
-                    // Карбоновый дактейл
-                    px(-8, 22, 16, 2, "#09090b");
-                    // Тонкие L-образные OLED фонари
-                    px(-9, 21, 6, 2, "#dc2626");
-                    px(3, 21, 6, 2, "#dc2626");
-                    // 4 черных хромированных патрубка M
-                    px(-7, 24, 4, 2, "#1e293b");
-                    px(3, 24, 4, 2, "#1e293b");
+                    const bt = getBodyTones("#0f172a");
+                    drawShadow(24, 54);
+                    drawWheels(23, 27, "#e2e8f0", "#ef4444", "#334155", true);
+
+                    fillRound(-10.5, -27, 21, 53, 3.5, bt.mid, bt.dark, 1);
+
+                    fillRound(-5.5, -27.5, 5, 2.5, 0.8, "#09090b");
+                    fillRound(0.5, -27.5, 5, 2.5, 0.8, "#09090b");
+
+                    drawHeadlights(-8.5, 8.5, -26.5, 4.2, 2.2, "#f8fafc");
+                    px(-8.5, -25.8, 1.8, 1.2, "#38bdf8");
+                    px(6.7, -25.8, 1.8, 1.2, "#38bdf8");
+
+                    fillRound(-9.5, -24.5, 19, 14, 2, bt.light);
+
+                    drawMirrors(23, -12, "#09090b", "#38bdf8");
+
+                    drawGlass(-9.2, -12, 18.4, 7.5, "#0f172a", true);
+
+                    fillRound(-8.5, -4.5, 17, 15, 2, "#09090b");
+
+                    drawGlass(-9, 10.5, 18, 6.5, "#0f172a", true);
+
+                    fillRound(-9.5, 21.5, 19, 2, 0.5, bt.bright);
+
+                    drawTaillights(-8.5, 8.5, 23, 4.5, 1.8, "#dc2626");
+                    px(-8.5, 23.2, 2.5, 0.8, "#fca5a5");
+                    px(6.0, 23.2, 2.5, 0.8, "#fca5a5");
+
+                    px(-8, 25.8, 2.2, 2.2, "#09090b");
+                    px(-5.2, 25.8, 2.2, 2.2, "#09090b");
+                    px(3, 25.8, 2.2, 2.2, "#09090b");
+                    px(5.8, 25.8, 2.2, 2.2, "#09090b");
+                    break;
+                }
+
+                case "Mercedes-Benz G63 AMG «Гелик»": {
+                    const bt = getBodyTones("#09090b");
+                    drawShadow(23, 50);
+                    drawWheels(22, 25, "#e2e8f0", "#ef4444", "#334155", true);
+
+                    fillRound(-10, -25, 20, 48, 1, bt.mid, bt.dark, 1.2);
+
+                    fillRound(-6, -26, 12, 3.5, 0.5, "#09090b");
+                    for (let x = -4.5; x <= 4.5; x += 1.8) px(x, -26, 0.8, 3.5, "#e2e8f0");
+                    px(-1.2, -25, 2.4, 2, "#f8fafc");
+
+                    drawHeadlights(-7.8, 7.8, -24.5, 3.8, 3.8, "#f8fafc", true);
+                    drawHeadlights(-7.8, 7.8, -24.5, 2.2, 2.2, "#09090b", true);
+
+                    fillRound(-9.8, -24.5, 2.4, 2.8, 0.5, "#f59e0b");
+                    fillRound(7.4, -24.5, 2.4, 2.8, 0.5, "#f59e0b");
+
+                    fillRound(-8.5, -22, 17, 11, 0.5, bt.light);
+
+                    px(-10.2, -15, 0.8, 32, "#334155");
+                    px(9.4, -15, 0.8, 32, "#334155");
+
+                    drawMirrors(22, -11, bt.dark, "#38bdf8");
+
+                    drawGlass(-8.5, -11, 17, 6.5, "#0f172a", true);
+
+                    fillRound(-8.5, -4.5, 17, 16.5, 0.5, bt.mid);
+                    for (let x = -6; x <= 6; x += 3) px(x, -4.5, 0.8, 16.5, bt.dark);
+
+                    drawGlass(-8.5, 12, 17, 5.5, "#0f172a", false);
+
+                    px(-11.5, 5, 1.8, 3.5, "#e2e8f0");
+                    px(9.7, 5, 1.8, 3.5, "#e2e8f0");
+
+                    drawHeadlights(0, 0, 23.5, 10, 6, "#e2e8f0", true);
+                    drawHeadlights(0, 0, 23.5, 7.5, 4.5, "#09090b", true);
+                    px(-1.2, 23, 2.4, 1.5, "#f8fafc");
+
+                    drawTaillights(-8.5, 8.5, 22.5, 3.2, 1.8, "#dc2626");
+                    break;
+                }
+
+                case "Porsche 911 Turbo S": {
+                    const bt = getBodyTones("#f8fafc");
+                    drawShadow(23, 50);
+                    drawWheels(22, 25, "#09090b", "#eab308", "#334155", true);
+
+                    fillRound(-10, -25, 20, 49, 4.5, bt.mid, bt.dark, 1);
+
+                    drawHeadlights(-7.2, 7.2, -24, 4, 4, "#f8fafc", true);
+                    for (let a = 0; a < 4; a++) {
+                        const ang = a * Math.PI / 2;
+                        px(-7.2 + Math.cos(ang) * 1.2, -24 + Math.sin(ang) * 1.2, 0.8, 0.8, "#38bdf8");
+                        px(7.2 + Math.cos(ang) * 1.2, -24 + Math.sin(ang) * 1.2, 0.8, 0.8, "#38bdf8");
+                    }
+
+                    fillRound(-8, -22, 16, 11, 3, bt.light);
+
+                    drawMirrors(22, -10.5, bt.dark, "#38bdf8");
+
+                    drawGlass(-8, -10.5, 16, 6.5, "#0f172a", true);
+
+                    fillRound(-7.5, -4, 15, 13, 2.5, bt.mid);
+
+                    fillRound(-10.8, 5, 2.5, 7, 1, "#09090b");
+                    fillRound(8.3, 5, 2.5, 7, 1, "#09090b");
+
+                    drawGlass(-7.5, 9, 15, 6, "#0f172a", true);
+
+                    fillRound(-5, 15.5, 10, 4.5, 0.5, "#09090b");
+                    for (let x = -4; x <= 4; x += 1.6) px(x, 15.5, 0.8, 4.5, "#cbd5e1");
+
+                    fillRound(-10, 20.5, 20, 2.5, 0.8, bt.bright);
+
+                    fillRound(-9.5, 22.8, 19, 1.2, 0.5, "#ef4444");
+
+                    px(-7.5, 25, 2.5, 2, "#cbd5e1");
+                    px(-4.5, 25, 2.5, 2, "#cbd5e1");
+                    px(2, 25, 2.5, 2, "#cbd5e1");
+                    px(5, 25, 2.5, 2, "#cbd5e1");
                     break;
                 }
 
                 case "Lamborghini Huracan Performante": {
-                    const bt = getBodyTones("#22c55e");
-                    drawShadow(22, 47);
-                    drawWheels(21, 24, "#09090b", "#f59e0b", "#334155");
-                    // Ультра-низкий клиновидный нос Lambo
-                    px(-7, -25, 14, 2, "#09090b"); // ALA сплиттер
-                    px(-9, -23, 18, 11, bt.dark);
-                    px(-7, -22, 14, 10, bt.mid);
-                    px(-4, -21, 8, 8, bt.light);
-                    // Y-образные светодиодные фары
-                    px(-8, -24, 3, 2, "#f8fafc");
-                    px(5, -24, 3, 2, "#f8fafc");
-                    drawMirrors(21, -9, bt.dark);
-                    drawGlass(-7, -9, 14, 6, "#09090b", true);
-                    px(-7, -3, 14, 10, bt.mid);
-                    // Стеклянная крышка V10 двигателя
-                    drawGlass(-6, 7, 12, 8, "#0f172a", false);
-                    px(-3, 9, 6, 4, "#cbd5e1"); // Коллекторы V10
-                    // Массивное Forged Composite антикрыло ALA
-                    px(-10, 18, 20, 2, "#09090b");
-                    px(-6, 17, 2, 4, "#1e293b");
-                    px(4, 17, 2, 4, "#1e293b");
-                    // Задние Y-фонари
-                    px(-9, 20, 5, 2, "#dc2626");
-                    px(4, 20, 5, 2, "#dc2626");
-                    // Высоко поднятые по центру сопла V10
-                    px(-3, 21, 6, 3, "#f97316");
+                    const bt = getBodyTones("#84cc16");
+                    drawShadow(24, 50);
+                    drawWheels(23, 25, "#09090b", "#84cc16", "#334155", true);
+
+                    fillPoly([
+                        [0, -26.5], [6, -25], [10.5, -20],
+                        [10.5, 18], [9, 23.5], [-9, 23.5],
+                        [-10.5, 18], [-10.5, -20], [-6, -25]
+                    ], bt.mid, bt.dark, 1);
+
+                    fillRound(-8.5, -26.5, 17, 2, 0.5, "#18181b");
+
+                    drawHeadlights(-7.5, 7.5, -24.5, 3.8, 2.5, "#e0f2fe");
+                    px(-7.5, -24.2, 1.5, 1, "#ffffff");
+                    px(6, -24.2, 1.5, 1, "#ffffff");
+
+                    fillPoly([
+                        [0, -25], [6.5, -21], [6.5, -11],
+                        [-6.5, -11], [-6.5, -21]
+                    ], bt.light);
+
+                    drawMirrors(23, -11, "#18181b", "#38bdf8");
+
+                    drawGlass(-8, -11, 16, 7, "#0f172a", true);
+
+                    fillRound(-7.2, -4, 14.4, 12, 1, bt.mid);
+
+                    drawGlass(-6.5, 8, 13, 7.5, "#0f172a", false);
+                    fillRound(-2.5, 9.5, 5, 4.5, 1, "#d97706");
+
+                    fillRound(-10.5, 19.5, 21, 2.6, 0.8, "#18181b");
+                    px(-8, 18, 1.8, 2.5, "#09090b");
+                    px(6.2, 18, 1.8, 2.5, "#09090b");
+
+                    drawTaillights(-8, 8, 22.2, 3.8, 1.8, "#dc2626");
+
+                    drawHeadlights(-2.2, 2.2, 23.2, 2.5, 2.5, "#e2e8f0", true);
+                    drawHeadlights(-2.2, 2.2, 23.2, 1.5, 1.5, "#09090b", true);
+                    break;
+                }
+
+                case "Rolls-Royce Cullinan": {
+                    const bt = getBodyTones("#09090b");
+                    drawShadow(25, 55);
+                    drawWheels(24, 27, "#f8fafc", null, "#475569", true);
+
+                    fillRound(-11, -27, 22, 54, 2.5, bt.mid, bt.dark, 1.2);
+
+                    fillRound(-10, -26, 20, 15, 1.5, bt.light);
+
+                    fillRound(-6.5, -27.5, 13, 4, 0.8, "#f1f5f9");
+                    for (let x = -5; x <= 5; x += 1.4) px(x, -27.5, 0.8, 4, "#09090b");
+                    fillRound(-0.8, -28.2, 1.6, 1.5, 0.5, "#f8fafc");
+
+                    drawHeadlights(-9, 9, -26.5, 4.2, 2.8, "#f8fafc");
+                    px(-9, -25.5, 3.5, 0.8, "#38bdf8");
+                    px(5.5, -25.5, 3.5, 0.8, "#38bdf8");
+
+                    drawMirrors(24, -12, "#f1f5f9", "#38bdf8");
+
+                    drawGlass(-9.5, -12, 19, 7.5, "#0f172a", true);
+
+                    fillRound(-9.2, -4.5, 18.4, 16.5, 1, bt.mid);
+                    px(-10.2, 1, 1, 2.5, "#f8fafc");
+                    px(-10.2, 4, 1, 2.5, "#f8fafc");
+                    px(9.2, 1, 1, 2.5, "#f8fafc");
+                    px(9.2, 4, 1, 2.5, "#f8fafc");
+
+                    drawGlass(-9.5, 12, 19, 6.5, "#0f172a", false);
+
+                    px(-9.8, 22.5, 2.5, 4.5, "#dc2626");
+                    px(7.3, 22.5, 2.5, 4.5, "#dc2626");
+                    px(-9.8, 22.5, 2.5, 0.8, "#f8fafc");
+                    px(7.3, 22.5, 2.5, 0.8, "#f8fafc");
+
+                    px(-6, 26.5, 3, 1.5, "#f1f5f9");
+                    px(3, 26.5, 3, 1.5, "#f1f5f9");
                     break;
                 }
 
                 case "Ferrari SF90 Stradale": {
                     const bt = getBodyTones("#dc2626");
-                    drawShadow(22, 48);
-                    drawWheels(21, 24, "#09090b", "#eab308", "#475569");
-                    // Формульный нос с прорезями
-                    px(-6, -26, 12, 2, "#09090b");
-                    px(-9, -24, 18, 12, bt.dark);
-                    px(-7, -23, 14, 11, bt.mid);
-                    px(-4, -22, 8, 9, bt.light);
-                    // Горизонтальные узкие матричные фары
-                    px(-8, -25, 4, 1, "#67e8f9");
-                    px(4, -25, 4, 1, "#67e8f9");
-                    drawMirrors(21, -9, bt.dark);
-                    drawGlass(-7, -9, 14, 6, "#09090b", true);
-                    px(-7, -3, 14, 11, bt.mid);
-                    // Прозрачная крышка V8 гибрид
-                    drawGlass(-6, 8, 12, 7, "#0f172a", false);
-                    px(-3, 9, 6, 4, "#dc2626");
-                    // Активное антикрыло shut-off Gurney
-                    px(-9, 18, 18, 2, bt.dark);
-                    // Квадратные задние кольца фонарей
-                    px(-8, 20, 3, 2, "#ef4444");
-                    px(5, 20, 3, 2, "#ef4444");
-                    // Центральные сдвоенные выхлопы
-                    px(-2, 20, 4, 3, "#38bdf8");
+                    drawShadow(24, 50);
+                    drawWheels(23, 25, "#09090b", "#f59e0b", "#334155", true);
+
+                    fillPoly([
+                        [0, -26], [6, -24.5], [10.5, -18],
+                        [10.5, 18], [8.5, 23], [-8.5, 23],
+                        [-10.5, 18], [-10.5, -18], [-6, -24.5]
+                    ], bt.mid, bt.dark, 1);
+
+                    fillRound(-7, -25.5, 14, 2, 0.8, "#09090b");
+                    fillRound(-3, -22.5, 6, 4, 1, "#09090b");
+
+                    drawHeadlights(-7.8, 7.8, -24, 3.8, 1.8, "#f8fafc");
+
+                    fillRound(-8, -19.5, 16, 8.5, 2, bt.light);
+
+                    drawMirrors(23, -11, bt.dark, "#38bdf8");
+
+                    drawGlass(-7.8, -11, 15.6, 7.5, "#010204", true);
+
+                    drawGlass(-6.5, 8.5, 13, 7.5, "#010204", false);
+                    px(-2.2, 10, 1.8, 4, "#ef4444");
+                    px(0.4, 10, 1.8, 4, "#ef4444");
+
+                    fillRound(-9, 19.5, 18, 2.2, 0.8, bt.bright);
+
+                    drawTaillights(-7.5, 7.5, 22.2, 3.5, 1.5, "#dc2626");
+
+                    drawHeadlights(-2.2, 2.2, 22.5, 2.4, 2.4, "#cbd5e1", true);
+                    drawHeadlights(-2.2, 2.2, 22.5, 1.4, 1.4, "#09090b", true);
+                    break;
+                }
+
+                case "Bugatti Chiron Super Sport": {
+                    const bt = getBodyTones("#09090b");
+                    drawShadow(24, 54);
+                    drawWheels(23, 27, "#09090b", "#f97316", "#334155", true);
+
+                    fillRound(-10.5, -26.5, 21, 53, 4, bt.mid, bt.dark, 1.2);
+
+                    fillRound(-4.5, -27.5, 9, 3.8, 1.5, "#e2e8f0");
+                    fillRound(-3.5, -27, 7, 3, 1, "#09090b");
+                    px(-1, -26.5, 2, 1.5, "#dc2626");
+
+                    for (let i = 0; i < 4; i++) {
+                        px(-8.8 + i * 1.1, -25.5, 0.8, 1.8, "#38bdf8");
+                        px(5.5 + i * 1.1, -25.5, 0.8, 1.8, "#38bdf8");
+                    }
+
+                    px(-0.6, -26, 1.2, 50, "#f97316");
+
+                    px(-10.2, -15, 1, 24, "#f97316");
+                    px(9.2, -15, 1, 24, "#f97316");
+
+                    drawMirrors(23, -11.5, "#09090b", "#38bdf8");
+
+                    drawGlass(-8.5, -11.5, 17, 7.5, "#09090b", true);
+
+                    fillRound(-7.5, -4, 15, 12, 1.5, bt.mid);
+                    fillRound(-5, 8, 10, 5, 1, "#18181b");
+
+                    fillRound(-9.5, 17.5, 19, 7.5, 1.5, bt.mid);
+
+                    fillRound(-10, 24.5, 20, 1.2, 0.5, "#ef4444");
+
+                    px(-1.8, 25.5, 1.6, 1.6, "#38bdf8");
+                    px(0.2, 25.5, 1.6, 1.6, "#38bdf8");
+                    px(-1.8, 27.2, 1.6, 1.6, "#38bdf8");
+                    px(0.2, 27.2, 1.6, 1.6, "#38bdf8");
                     break;
                 }
 
                 case "Koenigsegg Jesko Attack": {
-                    const bt = getBodyTones("#f97316");
-                    drawShadow(23, 52);
-                    drawWheels(22, 25, "#09090b", "#22c55e", "#475569");
-                    // Экстремальный трековый сплиттер с канардами
-                    px(-10, -26, 20, 2, "#09090b");
-                    px(-11, -26, 2, 3, "#09090b");
-                    px(9, -26, 2, 3, "#09090b");
-                    px(-10, -24, 20, 13, bt.dark);
-                    px(-8, -23, 16, 12, bt.mid);
-                    px(-4, -22, 8, 9, bt.light);
-                    // Фары-хищники
-                    px(-9, -25, 3, 2, "#67e8f9");
-                    px(6, -25, 3, 2, "#67e8f9");
-                    drawMirrors(22, -10, "#09090b");
-                    // Кокпит «капля-пузырь» истребителя
-                    drawGlass(-6, -10, 12, 8, "#09090b", true);
-                    px(-6, -2, 12, 10, bt.mid);
-                    // Гигантское верхнее антикрыло типа «лебединая шея»
-                    px(-11, 17, 22, 2, "#09090b");
-                    px(-1, 8, 2, 10, "#09090b"); // Центральный верхний пилон
-                    // Задний диффузор и огромный центральный выхлоп
-                    px(-9, 21, 18, 3, "#09090b");
-                    px(-2, 22, 4, 3, "#38bdf8"); // Пламя выхлопа
-                    px(-8, 20, 4, 1, "#ef4444");
-                    px(4, 20, 4, 1, "#ef4444");
+                    const bt = getBodyTones("#f8fafc");
+                    drawShadow(25, 52);
+                    drawWheels(24, 26, "#09090b", "#10b981", "#334155", true);
+
+                    fillPoly([
+                        [0, -26.5], [7, -25], [11, -19],
+                        [11, 18], [9.5, 23.5], [-9.5, 23.5],
+                        [-11, 18], [-11, -19], [-7, -25]
+                    ], bt.mid, bt.dark, 1.2);
+
+                    fillRound(-10.5, -26.5, 21, 2.5, 1, "#09090b");
+                    px(-10.5, -26.5, 2, 0.8, "#10b981");
+                    px(8.5, -26.5, 2, 0.8, "#10b981");
+
+                    drawHeadlights(-8, 8, -25, 4.2, 2.2, "#f8fafc");
+
+                    fillRound(-8.5, -22.5, 17, 10, 2, bt.light);
+                    fillRound(-3.5, -20, 7, 4.5, 1, "#09090b");
+
+                    drawMirrors(24, -11, "#09090b", "#38bdf8");
+
+                    drawGlass(-8.5, -11, 17, 8.5, "#010204", true);
+
+                    fillRound(-2, -5, 4, 6, 1, "#09090b");
+                    px(-1.2, -5, 2.4, 1.5, "#10b981");
+
+                    fillRound(-12, 19.5, 24, 3.2, 1.2, "#09090b", "#10b981", 0.8);
+                    px(-7, 17.5, 2, 3.5, "#18181b");
+                    px(5, 17.5, 2, 3.5, "#18181b");
+
+                    drawTaillights(-8.5, 8.5, 23, 4, 1.5, "#dc2626");
+
+                    fillRound(-3, 24.5, 6, 2.8, 1, "#09090b", "#10b981", 0.8);
+                    px(-1.5, 24.8, 3, 1.5, "#38bdf8");
                     break;
                 }
 
                 case "ДПС / Полиция": {
-                    px(-11, -24, 22, 48, "rgba(0,0,0,0.4)");
-                    drawWheels(19, 24, "#cbd5e1", null, "#334155");
+                    const bt = getBodyTones("#f8fafc");
+                    drawShadow(21, 50);
+                    drawWheels(20, 25, "#e2e8f0", null, "#334155");
 
-                    // Белоснежный кузов Skoda/Octavia ДПС
-                    px(-9, -24, 18, 47, "#e2e8f0");
-                    px(-8, -23, 16, 45, "#ffffff");
-                    px(-7, -22, 14, 12, "#f8fafc");
+                    fillRound(-9, -25, 18, 49, 3, bt.mid, bt.dark, 1);
 
-                    // Синяя полоса ДПС на капоте с надписью
-                    px(-6, -21, 12, 5, "#1d4ed8");
-                    px(-4, -19, 8, 1, "#ffffff");
+                    fillRound(-8, -23, 16, 11, 1.5, bt.light);
+                    fillRound(-3, -22, 6, 10, 0.5, "#1d4ed8");
+                    px(-2, -18, 4, 1.2, "#f8fafc");
 
-                    // Синие полосы по бортам с желтыми светоотражающими кантами
-                    px(-10, -16, 2, 31, "#1d4ed8");
-                    px(8, -16, 2, 31, "#1d4ed8");
-                    px(-10, -1, 2, 2, "#f59e0b");
-                    px(8, -1, 2, 2, "#f59e0b");
+                    px(-9, -12, 1.2, 28, "#1d4ed8");
+                    px(7.8, -12, 1.2, 28, "#1d4ed8");
 
-                    // Фары и решетка
-                    px(-9, -24, 3, 2, "#fef3c7");
-                    px(6, -24, 3, 2, "#fef3c7");
-                    px(-5, -24, 10, 2, "#1e293b");
+                    drawHeadlights(-7, 7, -24.5, 3.6, 2.5, "#f8fafc");
 
-                    drawMirrors(19, -10, "#ffffff", "#38bdf8");
+                    drawMirrors(20, -11, bt.dark, "#38bdf8");
 
-                    drawGlass(-8, -10, 16, 6, "#1e293b", true);
-                    px(-7, -4, 14, 14, "#ffffff");
-                    drawGlass(-8, 10, 16, 5, "#1e293b", true);
+                    drawGlass(-8, -11, 16, 6.5, "#0f172a", true);
 
-                    // Мигалка ДПС на крыше (стробоскоп: синий и красный попеременно)
-                    const strobe = Math.floor(Date.now() / 90) % 2;
-                    px(-7, -4, 6, 4, strobe === 0 ? "#38bdf8" : "#1e40af");
-                    px(1, -4, 6, 4, strobe === 1 ? "#ef4444" : "#991b1b");
-                    px(-1, -4, 2, 4, "#cbd5e1");
+                    fillRound(-7.5, -4.5, 15, 14, 1, bt.mid);
 
-                    // Ореол свечения спецсигналов
-                    ctx.fillStyle = strobe === 0 ? "rgba(56, 189, 248, 0.45)" : "rgba(239, 68, 68, 0.45)";
-                    ctx.beginPath();
-                    ctx.arc(cx, cy - 2 * s, 18 * s, 0, Math.PI * 2);
-                    ctx.fill();
+                    fillRound(-6, -1, 12, 3.5, 1, "#e2e8f0");
+                    const flashPhase = (Date.now() % 600) < 300;
+                    fillRound(-5.5, -0.8, 5, 3, 0.8, flashPhase ? "#3b82f6" : "#1d4ed8");
+                    fillRound(0.5, -0.8, 5, 3, 0.8, flashPhase ? "#ef4444" : "#991b1b");
 
-                    // Задние фонари
-                    px(-9, 21, 3, 2, "#dc2626");
-                    px(6, 21, 3, 2, "#dc2626");
-                    // Шевроны на заднем бампере
-                    px(-6, 22, 12, 1, "#f59e0b");
+                    drawGlass(-8, 9.5, 16, 5.5, "#0f172a", false);
+
+                    fillRound(-8, 15, 16, 7, 1, bt.mid);
+                    fillRound(-4, 17, 8, 2, 0.5, "#1d4ed8");
+
+                    drawTaillights(-7.5, 7.5, 22, 3.8, 2.2, "#dc2626");
                     break;
                 }
 
                 case "КАМАЗ / Фура": {
-                    // Тень длинной фуры
-                    px(-14, -36, 28, 74, "rgba(0,0,0,0.5)");
-                    // 6 массивных сдвоенных колес с дисками
+                    const bt = getBodyTones("#f8fafc");
+                    drawShadow(25, 74);
                     const wx = 12;
-                    px(-wx - 2, -26, 4, 8, "#09090b");
-                    px(wx - 2, -26, 4, 8, "#09090b");
-                    px(-wx - 2, 8, 4, 8, "#09090b");
-                    px(wx - 2, 8, 4, 8, "#09090b");
-                    px(-wx - 2, 23, 4, 8, "#09090b");
-                    px(wx - 2, 23, 4, 8, "#09090b");
+                    fillRound(-wx - 2, -32, 4.2, 9, 2, "#09090b");
+                    fillRound(wx - 2.2, -32, 4.2, 9, 2, "#09090b");
+                    fillRound(-wx - 2, 16, 4.2, 9, 2, "#09090b");
+                    fillRound(wx - 2.2, 16, 4.2, 9, 2, "#09090b");
+                    fillRound(-wx - 2, 26, 4.2, 9, 2, "#09090b");
+                    fillRound(wx - 2.2, 26, 4.2, 9, 2, "#09090b");
 
-                    px(-wx - 1, -25, 2, 6, "#64748b");
-                    px(wx - 1, -25, 2, 6, "#64748b");
-                    px(-wx - 1, 9, 2, 6, "#64748b");
-                    px(wx - 1, 9, 2, 6, "#64748b");
-                    px(-wx - 1, 24, 2, 6, "#64748b");
-                    px(wx - 1, 24, 2, 6, "#64748b");
+                    fillRound(-11, -37, 22, 22, 2.5, bt.mid, bt.dark, 1.2);
+                    drawGlass(-10, -35.5, 20, 7.5, "#0f172a", true);
+                    px(-4, -36.5, 1.5, 1, "#f59e0b");
+                    px(0, -36.5, 1.5, 1, "#f59e0b");
+                    px(4, -36.5, 1.5, 1, "#f59e0b");
 
-                    // Оранжевая кабина КАМАЗ
-                    px(-11, -36, 22, 19, "#c2410c");
-                    px(-10, -35, 20, 17, "#ea580c");
-                    px(-9, -34, 18, 14, "#f97316");
+                    drawHeadlights(-8.5, 8.5, -36.8, 4.5, 3, "#fef9c3");
 
-                    // Белый спойлер-обтекатель на крыше
-                    px(-8, -26, 16, 8, "#f8fafc");
+                    px(-13, -33, 2, 4, "#09090b");
+                    px(11, -33, 2, 4, "#09090b");
 
-                    // 5 автопоездных огней на козырьке кабины
-                    for (let lx = -6; lx <= 6; lx += 3) {
-                        px(lx, -36, 2, 1, "#f59e0b");
-                    }
+                    px(10, -17, 1.8, 3, "#e2e8f0");
 
-                    // Лобовое панорамное стекло кабины
-                    drawGlass(-10, -33, 20, 6, "#0f172a", true);
-                    px(-5, -34, 3, 1, "#09090b");
-                    px(2, -34, 3, 1, "#09090b");
+                    fillRound(-11.5, -14, 23, 50, 1.5, "#334155", "#1e293b", 1);
+                    for (let y = -10; y <= 32; y += 5) px(-10.5, y, 21, 0.8, "#475569");
 
-                    // Решетка радиатора и шильдик «КАМАЗ»
-                    px(-6, -36, 12, 2, "#1e293b");
-                    px(-4, -36, 8, 1, "#e2e8f0");
-
-                    // Фары в бампере
-                    px(-10, -36, 3, 2, "#fef08a");
-                    px(7, -36, 3, 2, "#fef08a");
-
-                    // Большие грузовые зеркала на кронштейнах
-                    px(-14, -32, 2, 6, "#0f172a");
-                    px(12, -32, 2, 6, "#0f172a");
-                    px(-14, -31, 1, 4, "#38bdf8");
-                    px(13, -31, 1, 4, "#38bdf8");
-
-                    // Седельно-сцепное устройство
-                    px(-5, -17, 10, 4, "#334155");
-
-                    // Длинный гофрированный полуприцеп
-                    px(-12, -13, 24, 49, "#334155");
-                    px(-11, -12, 22, 47, "#475569");
-                    px(-10, -11, 20, 45, "#64748b");
-                    // Ребра жесткости гофры прицепа
-                    for (let ry = -8; ry < 32; ry += 6) {
-                        px(-11, ry, 22, 1, "#334155");
-                        px(-10, ry + 1, 20, 1, "#94a3b8");
-                    }
-                    // Светоотражающая красно-белая лента по периметру
-                    px(-12, -12, 1, 46, "#ef4444");
-                    px(11, -12, 1, 46, "#ef4444");
-
-                    // Задний противоподкатный брус и фонари
-                    px(-11, 34, 22, 2, "#cbd5e1");
-                    px(-10, 33, 4, 2, "#dc2626");
-                    px(6, 33, 4, 2, "#dc2626");
-                    px(-6, 33, 2, 2, "#f59e0b");
-                    px(4, 33, 2, 2, "#f59e0b");
+                    fillRound(-11, 35, 22, 2.5, 0.5, "#18181b");
+                    drawTaillights(-8.5, 8.5, 35.2, 4.5, 2, "#dc2626");
+                    px(-8.5, 35.2, 1.5, 1, "#f59e0b");
+                    px(7, 35.2, 1.5, 1, "#f59e0b");
                     break;
                 }
 
                 case "Дорожный конус": {
-                    px(-7, -7, 14, 14, "rgba(0,0,0,0.35)");
-                    // Утяжеленное черное восьмиугольное резиновое основание
-                    px(-6, 3, 12, 4, "#09090b");
-                    px(-5, 2, 10, 6, "#18181b");
-                    // Оранжевое коническое тело со светоотражающими полосами 3M
-                    px(-5, 0, 10, 3, "#ea580c");
-                    px(-4, -2, 8, 3, "#f8fafc");
-                    px(-4, -1, 8, 1, "#cbd5e1");
-                    px(-3, -4, 6, 2, "#f97316");
-                    px(-3, -6, 6, 2, "#f8fafc");
-                    px(-2, -8, 4, 2, "#ea580c");
-                    px(-1, -9, 2, 1, "#09090b");
+                    fillRound(-6, -6, 12, 12, 1, "#09090b");
+                    fillRound(-5, -5, 10, 10, 1, "#ea580c");
+                    fillRound(-4, -4, 8, 8, 3, "#f97316");
+                    fillRound(-3, -3, 6, 6, 2, "#f8fafc");
+                    fillRound(-2, -2, 4, 4, 1.5, "#f97316");
+                    fillRound(-1, -1, 2, 2, 1, "#ffffff");
                     break;
                 }
 
                 default: {
-                    px(-10, -22, 20, 45, "rgba(0,0,0,0.35)");
-                    drawWheels(18, 22, "#94a3b8");
-                    px(-8, -23, 16, 45, "#1d4ed8");
-                    px(-7, -22, 14, 43, "#2563eb");
-                    drawGlass(-7, -9, 14, 5, "#1e293b", true);
-                    px(-6, -4, 12, 13, "#3b82f6");
-                    drawGlass(-7, 9, 14, 5, "#1e293b", true);
-                    px(-8, -23, 3, 2, "#f8fafc");
-                    px(5, -23, 3, 2, "#f8fafc");
-                    px(-8, 21, 3, 2, "#dc2626");
-                    px(5, 21, 3, 2, "#dc2626");
+                    const bt = getBodyTones("#3b82f6");
+                    drawShadow(20, 48);
+                    drawWheels(18, 24, "#cbd5e1", null, "#334155");
+                    fillRound(-8.5, -24.5, 17, 47, 3, bt.mid, bt.dark, 1);
+                    drawHeadlights(-6.5, 6.5, -24, 3.5, 2.2, "#f8fafc");
+                    fillRound(-7.5, -22, 15, 11, 2, bt.light);
+                    drawMirrors(18, -10.5, bt.dark, "#38bdf8");
+                    drawGlass(-7.8, -10.5, 15.6, 6.5, "#0f172a", true);
+                    fillRound(-7.2, -4, 14.4, 14, 1.5, bt.mid);
+                    drawGlass(-7.5, 10, 15, 5.5, "#0f172a", true);
+                    drawTaillights(-7.2, 7.2, 21.5, 3.5, 2, "#dc2626");
+                    break;
                 }
             }
 
-            // Объемные лучи фар (Headlights volumetric beams)
+            // Свет фар при включенном ближнем/дальнем
             if (options.lightsOn) {
                 const frontY = name === "КАМАЗ / Фура" ? (cy - 36 * s) : (cy - 24 * s);
                 const beamReach = 145 * s;
                 const spread = 28 * s;
 
                 // 1. Левый луч
-                const gradL = ctx.createLinearGradient(cx - 7 * s, frontY, cx - 18 * s, frontY - beamReach);
-                gradL.addColorStop(0, "rgba(255, 255, 235, 0.65)");
-                gradL.addColorStop(0.2, "rgba(254, 240, 138, 0.35)");
-                gradL.addColorStop(0.65, "rgba(254, 240, 138, 0.12)");
-                gradL.addColorStop(1, "rgba(254, 240, 138, 0)");
+                if (ctx && typeof ctx.createLinearGradient === 'function') {
+                    try {
+                        const gradL = ctx.createLinearGradient(cx - 7 * s, frontY, cx - 18 * s, frontY - beamReach);
+                        if (gradL && typeof gradL.addColorStop === 'function') {
+                            gradL.addColorStop(0, "rgba(255, 255, 235, 0.65)");
+                            gradL.addColorStop(0.2, "rgba(254, 240, 138, 0.35)");
+                            gradL.addColorStop(0.65, "rgba(254, 240, 138, 0.12)");
+                            gradL.addColorStop(1, "rgba(254, 240, 138, 0)");
+                            ctx.fillStyle = gradL;
+                            ctx.beginPath();
+                            ctx.moveTo(cx - 7 * s, frontY);
+                            ctx.lineTo(cx - (7 * s + spread), frontY - beamReach);
+                            ctx.lineTo(cx - (7 * s - spread * 0.4), frontY - beamReach);
+                            ctx.closePath();
+                            ctx.fill();
+                        }
+                    } catch (_) {}
 
-                ctx.fillStyle = gradL;
-                ctx.beginPath();
-                ctx.moveTo(cx - 7 * s, frontY);
-                ctx.lineTo(cx - (7 * s + spread), frontY - beamReach);
-                ctx.lineTo(cx - (7 * s - spread * 0.4), frontY - beamReach);
-                ctx.closePath();
-                ctx.fill();
-
-                // 2. Правый луч
-                const gradR = ctx.createLinearGradient(cx + 7 * s, frontY, cx + 18 * s, frontY - beamReach);
-                gradR.addColorStop(0, "rgba(255, 255, 235, 0.65)");
-                gradR.addColorStop(0.2, "rgba(254, 240, 138, 0.35)");
-                gradR.addColorStop(0.65, "rgba(254, 240, 138, 0.12)");
-                gradR.addColorStop(1, "rgba(254, 240, 138, 0)");
-
-                ctx.fillStyle = gradR;
-                ctx.beginPath();
-                ctx.moveTo(cx + 7 * s, frontY);
-                ctx.lineTo(cx + (7 * s - spread * 0.4), frontY - beamReach);
-                ctx.lineTo(cx + (7 * s + spread), frontY - beamReach);
-                ctx.closePath();
-                ctx.fill();
+                    try {
+                        const gradR = ctx.createLinearGradient(cx + 7 * s, frontY, cx + 18 * s, frontY - beamReach);
+                        if (gradR && typeof gradR.addColorStop === 'function') {
+                            gradR.addColorStop(0, "rgba(255, 255, 235, 0.65)");
+                            gradR.addColorStop(0.2, "rgba(254, 240, 138, 0.35)");
+                            gradR.addColorStop(0.65, "rgba(254, 240, 138, 0.12)");
+                            gradR.addColorStop(1, "rgba(254, 240, 138, 0)");
+                            ctx.fillStyle = gradR;
+                            ctx.beginPath();
+                            ctx.moveTo(cx + 7 * s, frontY);
+                            ctx.lineTo(cx + (7 * s - spread * 0.4), frontY - beamReach);
+                            ctx.lineTo(cx + (7 * s + spread), frontY - beamReach);
+                            ctx.closePath();
+                            ctx.fill();
+                        }
+                    } catch (_) {}
+                }
 
                 // 3. Световое пятно на асфальте перед машиной
                 ctx.save();
@@ -6710,7 +6541,6 @@ const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/20
                 ctx.shadowBlur = 14 * s;
                 ctx.shadowColor = "#00f0ff";
 
-                // Левое сопло: плазменный сине-голубой факел
                 ctx.fillStyle = "#00f0ff";
                 ctx.beginPath();
                 ctx.moveTo(cx - 8 * s, rearY);
@@ -6719,7 +6549,6 @@ const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/20
                 ctx.closePath();
                 ctx.fill();
 
-                // Правое сопло
                 ctx.beginPath();
                 ctx.moveTo(cx + 4 * s, rearY);
                 ctx.lineTo(cx + 6 * s + (Math.random() - 0.5) * 3, rearY + fLen);
@@ -6727,18 +6556,17 @@ const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/20
                 ctx.closePath();
                 ctx.fill();
 
-                // Внутреннее горячее ядро пламени (бело-желтое)
                 ctx.fillStyle = "#fef08a";
                 ctx.beginPath();
                 ctx.moveTo(cx - 7 * s, rearY);
-                ctx.lineTo(cx - 6 * s, rearY + fLen * 0.48);
+                ctx.lineTo(cx - 6 * s + (Math.random() - 0.5) * 2, rearY + fLen * 0.48);
                 ctx.lineTo(cx - 5 * s, rearY);
                 ctx.closePath();
                 ctx.fill();
 
                 ctx.beginPath();
                 ctx.moveTo(cx + 5 * s, rearY);
-                ctx.lineTo(cx + 6 * s, rearY + fLen * 0.48);
+                ctx.lineTo(cx + 6 * s + (Math.random() - 0.5) * 2, rearY + fLen * 0.48);
                 ctx.lineTo(cx + 7 * s, rearY);
                 ctx.closePath();
                 ctx.fill();
@@ -6746,7 +6574,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/20
                 ctx.restore();
             }
 
-            // Стоп-сигналы при торможении (яркий красный ареол и пятно на асфальте)
+            // Стоп-сигналы при торможении
             if (options.braking) {
                 const rearY = name === "КАМАЗ / Фура" ? (cy + 34 * s) : (cy + 24 * s);
                 ctx.save();
@@ -6758,7 +6586,6 @@ const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/20
                 ctx.arc(cx + 8 * s, rearY, 5 * s, 0, Math.PI * 2);
                 ctx.fill();
 
-                // Красный отсвет на асфальте позади машины
                 ctx.fillStyle = "rgba(239, 68, 68, 0.28)";
                 ctx.beginPath();
                 ctx.ellipse(cx, rearY + 12 * s, 22 * s, 10 * s, 0, 0, Math.PI * 2);
@@ -6766,7 +6593,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/20
                 ctx.restore();
             }
 
-            // Поворотники (мигалки оранжевым при перестроении)
+            // Поворотники
             if (options.blinkerLeft) {
                 const fY = name === "КАМАЗ / Фура" ? (cy - 36 * s) : (cy - 24 * s);
                 const rY = name === "КАМАЗ / Фура" ? (cy + 33 * s) : (cy + 21 * s);
