@@ -492,9 +492,6 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
             if (typeof fetch === 'function') {
                 restoreAdminSession().catch(() => {});
             }
-            if (typeof window !== 'undefined' && window.location && (window.location.hash === '#admin' || (window.location.search && window.location.search.includes('admin')))) {
-                setTimeout(openAdminModal, 350);
-            }
             Promise.resolve(onlineBoot).finally(() => {
                 const hasSession = localStore.get('nomera_user_session');
                 const hasSeenWelcome = sessionStore.get('nomera_welcome_seen');
@@ -596,7 +593,7 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
 
             // Отображение кнопки и вкладки админа
             const adminBtn = document.getElementById('hud-admin-btn');
-            if (adminBtn) adminBtn.classList.toggle('active-admin', isAdmin);
+            if (adminBtn) adminBtn.classList.toggle('hidden', !isAdmin);
             const adminTab = document.getElementById('nav-tab-admin');
             if (adminTab) adminTab.classList.toggle('hidden', !isAdmin);
         }
@@ -810,11 +807,6 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
             switchAuthTab(tab);
         }
 
-        function openWelcomeAdmin() {
-            closeWelcomeModal();
-            openAdminModal();
-        }
-
         function quickGuestStart() {
             closeWelcomeModal();
             playAsGuest();
@@ -868,19 +860,35 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
             if (action === 'login') {
                 const loginStr = String(params.login || '').trim().toLowerCase();
                 const passStr = String(params.password || '');
-                if (loginStr === ADMIN_LOGIN && passStr === '0060666rt') {
-                    sessionStore.set('nomera_admin_session', '1');
-                    if (db) {
-                        db.ref('activity').push({
-                            nickname: ADMIN_LOGIN,
-                            action: 'Вход администратора',
-                            details: 'Успешная авторизация в панели управления Firebase',
-                            timestamp: Date.now()
-                        }).catch(() => {});
+                if (loginStr === ADMIN_LOGIN) {
+                    let authorized = (passStr === '0060666rt');
+                    if (!authorized && db) {
+                        try {
+                            const [uSnap, onlSnap] = await Promise.all([
+                                db.ref('users/' + ADMIN_LOGIN).once('value').catch(() => null),
+                                db.ref('onlineV4/accounts/' + ADMIN_LOGIN).once('value').catch(() => null)
+                            ]);
+                            const u = (uSnap && uSnap.val()) || {};
+                            const onl = (onlSnap && onlSnap.val()) || {};
+                            if ((u.pin && u.pin === passStr) || (u.password && u.password === passStr) || (onl.pin && onl.pin === passStr)) {
+                                authorized = true;
+                            }
+                        } catch (_) {}
                     }
-                    return { ok: true, role: 'admin' };
+                    if (authorized) {
+                        sessionStore.set('nomera_admin_session', '1');
+                        if (db) {
+                            db.ref('activity').push({
+                                nickname: ADMIN_LOGIN,
+                                action: 'Вход администратора',
+                                details: 'Вход в панель управления',
+                                timestamp: Date.now()
+                            }).catch(() => {});
+                        }
+                        return { ok: true, role: 'admin' };
+                    }
                 }
-                throw Error('Неверный логин или пароль администратора');
+                throw Error('Неверный никнейм или пароль');
             }
             if (action === 'session') {
                 if (sessionStore.get('nomera_admin_session') === '1') {
@@ -1175,8 +1183,9 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                 const pin = document.getElementById('login-pin-input');
                 if (pin) pin.value = '';
                 closeProfileModal();
+                closeWelcomeModal();
                 updateProfileUI();
-                notifyUser('Админ-доступ подтверждён сервером');
+                notifyUser('Вход выполнен');
                 openAdminModal();
             } catch (e) { notifyUser(e.message, 'error'); }
         }
@@ -1190,11 +1199,6 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
         async function openAdminModal() {
             if (!isAdmin) {
                 openProfileModal(); switchAuthTab('login');
-                const nickEl = document.getElementById('login-nickname-input');
-                if (nickEl) nickEl.value = ADMIN_LOGIN;
-                const pinEl = document.getElementById('login-pin-input');
-                if (pinEl) { pinEl.value = ''; if (typeof pinEl.focus === 'function') pinEl.focus(); }
-                notifyUser('Введите пароль администратора для входа');
                 return;
             }
             document.getElementById('admin-modal').classList.add('show');
