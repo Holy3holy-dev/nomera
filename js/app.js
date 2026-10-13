@@ -4873,6 +4873,9 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                 damageBlink: 0,
                 isOnWall: false,
                 fuelLiters: 0,
+                fuelTankCapacity: 20,
+                fuelCurrent: 20,
+                fuelWarningTimer: 0,
                 fuelConsumption: stats.consumption,
                 startCondition: activeRaceCar.condition,
                 damageTaken: 0,
@@ -4986,7 +4989,7 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
             racePlayer.isDrafting = !!draftingCar;
             if (racePlayer.isDrafting) {
                 // Бонус за слипстрим
-                racePlayer.earnedCash += 2200 * stats.rewardMult * dt;
+                racePlayer.earnedCash += 280 * stats.rewardMult * dt;
             }
 
             // 4. Управление продольной скоростью
@@ -5012,10 +5015,34 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
             }
             racePlayer.peakSpeed = Math.max(racePlayer.peakSpeed, racePlayer.speed);
             // Meter real distance and driving style: nitro and heavy throttle cost fuel.
-            racePlayer.fuelLiters += NomeraRaceEconomy.fuelForFrame({
+            const burnedFuel = NomeraRaceEconomy.fuelForFrame({
                 speed:racePlayer.speed, seconds:dt, consumption:racePlayer.fuelConsumption,
                 gas:raceKeys.gas, nitro:racePlayer.isNitroActive, drafting:racePlayer.isDrafting
             });
+            racePlayer.fuelLiters += burnedFuel;
+            if (racePlayer.fuelCurrent !== undefined) {
+                racePlayer.fuelCurrent = Math.max(0, racePlayer.fuelCurrent - burnedFuel);
+                if (racePlayer.fuelCurrent <= 0) {
+                    racePlayer.targetSpeed = 0;
+                    racePlayer.speed = Math.max(0, racePlayer.speed - 90 * dt);
+                    if (racePlayer.fuelWarningTimer <= 0) {
+                        showRacePopup("⛽ БАК ПУСТ! ДВИГАТЕЛЬ ЗАГЛОХ!", "#ef4444");
+                        racePlayer.fuelWarningTimer = 1.2;
+                    } else {
+                        racePlayer.fuelWarningTimer -= dt;
+                    }
+                    if (racePlayer.speed <= 5) {
+                        settleRaceRun('fuel');
+                        return;
+                    }
+                } else if (racePlayer.fuelCurrent < 4.0) {
+                    racePlayer.fuelWarningTimer -= dt;
+                    if (racePlayer.fuelWarningTimer <= 0) {
+                        showRacePopup(`⚠️ МАЛО ТОПЛИВА! ОСТАЛОСЬ ${racePlayer.fuelCurrent.toFixed(1)} Л`, "#f59e0b");
+                        racePlayer.fuelWarningTimer = 4.0;
+                    }
+                }
+            }
 
             // 5. Инерция руления и крен кузова
             const maxLateral = racePlayer.handling * 42;
@@ -5170,7 +5197,7 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
 
             // Заработок денег (СТРОГО 0 ₽ ПРИ КАСАНИИ СТЕНЫ + ШТРАФ ЗА РЕМОНТ КУЗОВА!)
             if (!racePlayer.isOnWall && racePlayer.speed > 25) {
-                const cashRatePerSec = (racePlayer.speed * 12) * stats.rewardMult;
+                const cashRatePerSec = (racePlayer.speed * 1.6) * stats.rewardMult;
                 racePlayer.earnedCash += cashRatePerSec * dt;
             } else if (racePlayer.isOnWall && racePlayer.speed > 5) {
                 // Штраф за трение об отбойник
@@ -5192,7 +5219,7 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
 
             // Спавн трафика
             trafficSpawnTimer += dt;
-            const spawnInterval = Math.max(0.85, 2.1 - (racePlayer.speed / 300));
+            const spawnInterval = Math.max(0.70, 2.0 - (racePlayer.distanceKm * 0.05) - (racePlayer.speed / 380));
             if (trafficSpawnTimer > spawnInterval) {
                 trafficSpawnTimer = 0;
                 spawnTrafficCar();
@@ -5345,7 +5372,7 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                         racePlayer.overtakesCount++;
                         racePlayer.combo = Math.min(8, racePlayer.combo + 1);
                         racePlayer.comboTimer = 3.5;
-                        const bonus = Math.round(20000 * stats.rewardMult * racePlayer.combo);
+                        const bonus = Math.round(1800 * stats.rewardMult * racePlayer.combo);
                         racePlayer.earnedCash += bonus;
                         showRacePopup(`🔥 ОБГОН! +${bonus.toLocaleString('ru-RU')} ₽ (x${racePlayer.combo})`, '#fbbf24');
                         playCashSound();
@@ -5437,6 +5464,13 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                         const amount = Math.round(c.amount * stats.rewardMult);
                         racePlayer.earnedCash += amount;
                         showRacePopup(`💰 +${amount.toLocaleString('ru-RU')} ₽!`, '#10b981');
+                        playCashSound();
+                    } else if (c.type === 'fuel') {
+                        const added = c.amount || 5.0;
+                        if (racePlayer.fuelCurrent !== undefined) {
+                            racePlayer.fuelCurrent = Math.min(racePlayer.fuelTankCapacity || 20, racePlayer.fuelCurrent + added);
+                        }
+                        showRacePopup(`⛽ +${added.toFixed(1)} Л БЕНЗИНА!`, '#10b981');
                         playCashSound();
                     } else if (c.type === 'nitro') {
                         racePlayer.nitro = Math.min(100, racePlayer.nitro + 50);
@@ -5563,10 +5597,13 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
 
             const roll = Math.random();
             let type = 'cash';
-            let amount = 30000;
-            if (roll < 0.55) {
+            let amount = 2500;
+            if (roll < 0.35) {
                 type = 'cash';
-                amount = Math.random() < 0.2 ? 100000 : 35000;
+                amount = Math.random() < 0.2 ? 7500 : 2500;
+            } else if (roll < 0.65) {
+                type = 'fuel';
+                amount = 5.0;
             } else if (roll < 0.85) {
                 type = 'nitro';
             } else {
@@ -5606,14 +5643,14 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
             balance = receipt.walletAfter;
             addExp(finalXp);
             updateBalance();
-            logPlayerActivity('Гонка', `Заезд ${crashed ? 'авария' : 'выход'}: ${racePlayer.distanceKm.toFixed(2)} км, до расходов ${receipt.gross} ₽, бензин -${receipt.fuelCost} ₽, итог ${receipt.credited} ₽`);
+            logPlayerActivity('Гонка', `Заезд ${crashed === 'fuel' ? 'закончился бензин' : (crashed ? 'авария' : 'выход')}: ${racePlayer.distanceKm.toFixed(2)} км, до расходов ${receipt.gross} ₽, бензин -${receipt.fuelCost} ₽, итог ${receipt.credited} ₽`);
             // Race records track received net winnings, never fuel-free gross income.
             saveRaceRecords(NomeraRaceRecords.finishRecords(getRaceRecords(), racePlayer, Math.max(0, receipt.credited)));
             saveProgress();
             updateRaceRecordsUI();
             renderCars();
 
-            document.getElementById('gameover-title').innerText = crashed ? '💥 Заезд завершён!' : '🏁 Заезд завершён';
+            document.getElementById('gameover-title').innerText = crashed === 'fuel' ? '⛽ Закончился бензин!' : (crashed ? '💥 Заезд завершён!' : '🏁 Заезд завершён');
             document.getElementById('go-stat-dist').innerText = `${racePlayer.distanceKm.toFixed(2)} км`;
             document.getElementById('go-stat-speed').innerText = `${Math.round(racePlayer.peakSpeed)} км/ч`;
             document.getElementById('go-stat-overtakes').innerText = `${racePlayer.overtakesCount}`;
@@ -5811,6 +5848,18 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                     ctx.textAlign = "center";
                     ctx.textBaseline = "middle";
                     ctx.fillText("₽", 0, 0);
+                } else if (c.type === 'fuel') {
+                    ctx.fillStyle = "#dc2626";
+                    ctx.beginPath();
+                    ctx.roundRect(-8, -10, 16, 20, 3);
+                    ctx.fill();
+                    ctx.fillStyle = "#ef4444";
+                    ctx.fillRect(-6, -8, 12, 16);
+                    ctx.fillStyle = "#ffffff";
+                    ctx.font = "bold 9px sans-serif";
+                    ctx.textAlign = "center";
+                    ctx.textBaseline = "middle";
+                    ctx.fillText("⛽", 0, 0);
                 } else if (c.type === 'nitro') {
                     ctx.fillStyle = "#2563eb";
                     ctx.beginPath();
@@ -5926,30 +5975,38 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
             ctx.textAlign = "center";
             ctx.fillText(`${biome.icon} ${biome.name}`, W / 2, 26);
 
-            // Спидометр
-            ctx.fillStyle = "rgba(0, 0, 0, 0.65)";
+            // Спидометр и датчики
+            ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
             ctx.beginPath();
-            ctx.roundRect(10, 10, 110, 58, 8);
+            ctx.roundRect(10, 10, 126, 76, 8);
             ctx.fill();
-            ctx.strokeStyle = "rgba(255, 255, 255, 0.1)";
+            ctx.strokeStyle = "rgba(255, 255, 255, 0.12)";
             ctx.lineWidth = 1;
             ctx.stroke();
 
             ctx.fillStyle = "#38bdf8";
             ctx.font = "900 22px var(--font-plate)";
             ctx.textAlign = "left";
-            ctx.fillText(`${Math.round(racePlayer.speed)}`, 18, 40);
+            ctx.fillText(`${Math.round(racePlayer.speed)}`, 18, 38);
 
             ctx.fillStyle = "rgba(255, 255, 255, 0.7)";
             ctx.font = "10px sans-serif";
-            ctx.fillText("КМ/Ч", 68, 38);
+            ctx.fillText("КМ/Ч", 68, 36);
 
             ctx.fillStyle = "#fbbf24";
             ctx.font = "700 11px sans-serif";
-            ctx.fillText(`🛣️ ${racePlayer.distanceKm.toFixed(2)} км`, 18, 58);
-            ctx.fillStyle = '#c9f267';
+            ctx.fillText(`🛣️ ${racePlayer.distanceKm.toFixed(2)} км`, 18, 54);
+
+            const curFuel = racePlayer.fuelCurrent !== undefined ? racePlayer.fuelCurrent : 20;
+            const capFuel = racePlayer.fuelTankCapacity || 20;
+            const fuelPct = Math.max(0, Math.min(100, Math.round((curFuel / capFuel) * 100)));
+            ctx.fillStyle = fuelPct < 20 ? '#ef4444' : (fuelPct < 45 ? '#f59e0b' : '#34d399');
             ctx.font = '700 10px sans-serif';
-            ctx.fillText(`⛽ ${(racePlayer.fuelLiters || 0).toFixed(2)} л · ~${Math.round((racePlayer.fuelLiters || 0)*NomeraRaceEconomy.FUEL_PRICE)} ₽`, 18, 75);
+            ctx.fillText(`⛽ БАК: ${curFuel.toFixed(1)} / ${capFuel} л (${fuelPct}%)`, 18, 68);
+
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.55)';
+            ctx.font = '600 9px sans-serif';
+            ctx.fillText(`Расход: −${Math.round((racePlayer.fuelLiters || 0) * NomeraRaceEconomy.FUEL_PRICE)} ₽`, 18, 80);
 
             // Заработок за заезд
             ctx.fillStyle = "rgba(0, 0, 0, 0.65)";

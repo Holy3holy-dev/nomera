@@ -58,7 +58,7 @@
     function fuelForFrame({speed, seconds, consumption, gas = false, nitro = false, drafting = false}) {
         const distance = clamp(finite(speed), 0, 1000) / 3600 * clamp(finite(seconds), 0, 0.1);
         const litersPer100Km = clamp(finite(consumption, 12), 1, 100);
-        const drivingFactor = (gas ? 1.14 : 1) * (nitro ? 1.32 : 1) * (drafting ? 0.92 : 1);
+        const drivingFactor = (gas ? 1.25 : 1) * (nitro ? 1.65 : 1) * (drafting ? 0.90 : 1);
         return distance * litersPer100Km / 100 * drivingFactor;
     }
     function settle(gross, usedLiters, availableBalance) {
