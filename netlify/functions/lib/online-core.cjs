@@ -67,19 +67,19 @@ const LETTERS = ['А','В','Е','К','М','Н','О','Р','С','Т','У','Х'];
 const ELITES = ['ААА','АМР','ВВВ','ВОР','ТТТ','ХХХ','ККК','ЕКХ','АЕО','ООО','ССС','МММ','СКР','УУУ'];
 
 function priceOfPlate(l1,l2,l3,num,reg) {
-  let price = 1200; // Базовая честная стоимость любого номера
-  const letters = l1 + l2 + l3;
+  let price = 450; // Базовая стоимость простого номера
+  const letters = (l1||'') + (l2||'') + (l3||'');
   const isTripleLetters = (l1 === l2 && l2 === l3);
   const isMirrorLetters = (l1 === l3 && l1 !== l2);
   const isPairLetters = (l1 === l2 || l2 === l3) && !isTripleLetters;
 
-  // 1. Престижные серии
+  // 1. Престижные буквенные серии
   if (ELITES.includes(letters)) {
     if (num === '011') return 12000000;
     if (num === '777') price += 5000000;
     else if (num[0] === num[1] && num[1] === num[2]) price += 2000000;
     else if (num === '001') price += 1200000;
-    else price += 450000;
+    else price += 400000;
   }
   if (letters === 'ЕКХ') price += 1500000;
   if (letters === 'АМР') price += 1500000;
@@ -89,37 +89,45 @@ function priceOfPlate(l1,l2,l3,num,reg) {
   if (letters === 'МММ') price += 750000;
   if (letters === 'ССС') price += 650000;
   if (letters === 'СКР') price += 700000;
+  if (letters === 'УУУ') price += 600000;
 
   // 2. Структура букв
   if (isTripleLetters) price += 350000;
-  else if (isMirrorLetters) price += 25000;
-  else if (isPairLetters) price += 15000;
+  else if (isMirrorLetters) price += 1800;
+  else if (isPairLetters) price += 1200;
 
   // 3. Комбинации цифр
   if (num === '011') price += 1500000;
   if (num[0] === num[1] && num[1] === num[2]) {
-    price += (num === '777' ? 800000 : 350000);
+    price += (num === '777' ? 750000 : 320000);
   } else if (num === '001') {
-    price += 400000;
+    price += 350000;
   } else if (num === '007') {
-    price += 250000;
+    price += 120000;
   } else if (num.startsWith('00')) {
-    price += 110000;
-  } else if (num.endsWith('00')) {
-    price += 80000;
-  } else if (['123','234','345','456','567','678','789','987','876','543','321'].includes(num)) {
-    price += 65000;
-  } else if (num[0] === num[2]) {
     price += 35000;
+  } else if (num.endsWith('00')) {
+    price += 25000;
+  } else if (['123','234','345','456','567','678','789','987','876','543','321'].includes(num)) {
+    price += 20000;
   } else if (['010','020','030','040','050','060','070','080','090'].includes(num)) {
-    price += 45000;
+    price += 2000;
+  } else if (num[0] === num[2]) {
+    price += 1600;
   }
 
-  // 4. Престижные регионы
-  if (['777','77','99','799','797'].includes(reg)) price += 35000;
-  else if (['78','98','178','198'].includes(reg)) price += 25000;
-  else if (reg === '95') price += 30000;
-  else if (reg === '16' || reg === '116' || reg === '716') price += 15000;
+  // 4. Регионы (символическая надбавка за столичные регионы + синергия с элитой)
+  if (['777','77','99','799','797'].includes(reg)) {
+    price += 250;
+    if (num === '777') price += 500000;
+    if (isTripleLetters) price += 50000;
+  } else if (['78','98','178','198'].includes(reg)) {
+    price += 200;
+  } else if (reg === '95') {
+    price += 200;
+  } else if (reg === '16' || reg === '116' || reg === '716') {
+    price += 150;
+  }
 
   return price;
 }
@@ -129,9 +137,9 @@ function rarityOfPrice(p){
   if(p>=3000000)return 'Крутой';
   if(p>=1000000)return 'Легендарный';
   if(p>=300000)return 'Эпический';
-  if(p>=100000)return 'Супер редкий';
-  if(p>=35000)return 'Редкий';
-  if(p>=6000)return 'Необычный';
+  if(p>=80000)return 'Супер редкий';
+  if(p>=18000)return 'Редкий';
+  if(p>=2000)return 'Необычный';
   return 'Обычный';
 }
 
@@ -141,54 +149,46 @@ function secureRoll(mode){
 
   function generateLuckyNumber() {
     const roll = crypto.randomInt(1000);
-    // ~2.5% джекпот-цифры (777, 001, 007, 011, 111, 555, 888, 999)
-    if (roll < 25) {
-      return choose(['777','777','001','007','011','111','555','888','999']);
+    // ~0.5% джекпот-цифры (777, 001, 007, 011)
+    if (roll < 5) {
+      return choose(['777','001','007','011']);
     }
-    // ~7.5% три одинаковые, круглые сотни и первые десятки
-    if (roll < 100) {
+    // ~2.0% три одинаковые, круглые сотни и первые десятки
+    if (roll < 25) {
       const epicPool = [
-        '111','222','333','444','555','666','777','888','999',
+        '111','222','333','444','555','666','888','999',
         '100','200','300','400','500','600','700','800','900',
         '002','003','004','005','006','007','008','009'
       ];
       return choose(epicPool);
     }
-    // ~18% зеркалки, лесенки и круглые десятки
-    if (roll < 280) {
-      const d1 = crypto.randomInt(10);
-      const d2 = crypto.randomInt(10);
-      const k = crypto.randomInt(4);
-      if (k === 0) return `${d1}${d2}${d1}`;
-      if (k === 1) return choose(['123','234','345','456','567','678','789','987','654','321']);
-      if (k === 2) return `0${d1}0`;
-      return `${d1}${d2}0`;
+    // ~3.5% лесенки
+    if (roll < 60) {
+      return choose(['123','234','345','456','567','678','789','987','654','321']);
     }
-    // Стандартные случайные цифры 000-999
+    // 94% честные случайные цифры 000-999
     return String(crypto.randomInt(1000)).padStart(3, '0');
   }
 
   function generateLuckyLetters() {
     const roll = crypto.randomInt(1000);
-    // ~3% спецсерия
-    if (roll < 30) {
+    // ~0.8% спецсерия
+    if (roll < 8) {
       const elite = choose(ELITES);
       return [elite[0], elite[1], elite[2]];
     }
-    // ~8% три одинаковые буквы
-    if (roll < 110) {
+    // ~2.0% три одинаковые буквы
+    if (roll < 28) {
       const l = choose(LETTERS);
       return [l, l, l];
     }
-    // ~16% зеркальные или парные буквы
-    if (roll < 270) {
+    // ~5.0% зеркальные буквы
+    if (roll < 78) {
       const l1 = choose(LETTERS);
       const l2 = choose(LETTERS);
-      if (crypto.randomInt(2) === 0) {
-        return [l1, l2, l1];
-      }
-      return crypto.randomInt(2) === 0 ? [l1, l1, l2] : [l2, l1, l1];
+      return [l1, l2, l1];
     }
+    // 92.2% честные случайные буквы
     return [choose(LETTERS), choose(LETTERS), choose(LETTERS)];
   }
 

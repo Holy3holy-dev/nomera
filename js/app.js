@@ -2161,7 +2161,7 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
 
         // --- ЛОГИКА РАСЧЕТА ЦЕНЫ И РЕДКОСТИ ---
         function getCalculatedPrice(l1, l2, l3, num, reg) {
-            let price = 1200;
+            let price = 450;
             let letters = (l1 || '') + (l2 || '') + (l3 || '');
             const isTripleLetters = (l1 === l2 && l2 === l3);
             const isMirrorLetters = (l1 === l3 && l1 !== l2);
@@ -2173,7 +2173,7 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                 if (num === '777') price += 5000000;
                 else if (num[0] === num[1] && num[1] === num[2]) price += 2000000;
                 else if (num === '001') price += 1200000;
-                else price += 450000;
+                else price += 400000;
             }
             if (letters === 'ЕКХ') price += 1500000;
             if (letters === 'АМР') price += 1500000;
@@ -2183,37 +2183,45 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
             if (letters === 'МММ') price += 750000;
             if (letters === 'ССС') price += 650000;
             if (letters === 'СКР') price += 700000;
+            if (letters === 'УУУ') price += 600000;
 
             // 2. Структура букв
             if (isTripleLetters) price += 350000;
-            else if (isMirrorLetters) price += 25000;
-            else if (isPairLetters) price += 15000;
+            else if (isMirrorLetters) price += 1800;
+            else if (isPairLetters) price += 1200;
 
             // 3. Комбинации цифр
             if (num === '011') price += 1500000;
             if (num[0] === num[1] && num[1] === num[2]) {
-                price += (num === '777' ? 800000 : 350000);
+                price += (num === '777' ? 750000 : 320000);
             } else if (num === '001') {
-                price += 400000;
+                price += 350000;
             } else if (num === '007') {
-                price += 250000;
+                price += 120000;
             } else if (num.startsWith('00')) {
-                price += 110000;
-            } else if (num.endsWith('00')) {
-                price += 80000;
-            } else if (['123','234','345','456','567','678','789','987','876','543','321'].includes(num)) {
-                price += 65000;
-            } else if (num[0] === num[2]) {
                 price += 35000;
+            } else if (num.endsWith('00')) {
+                price += 25000;
+            } else if (['123','234','345','456','567','678','789','987','876','543','321'].includes(num)) {
+                price += 20000;
             } else if (['010','020','030','040','050','060','070','080','090'].includes(num)) {
-                price += 45000;
+                price += 2000;
+            } else if (num[0] === num[2]) {
+                price += 1600;
             }
 
-            // 4. Престижные регионы
-            if (['777','77','99','799','797'].includes(reg)) price += 35000;
-            else if (['78','98','178','198'].includes(reg)) price += 25000;
-            else if (reg === '95') price += 30000;
-            else if (reg === '16' || reg === '116' || reg === '716') price += 15000;
+            // 4. Престижные регионы (символическая надбавка + синергия с элитой)
+            if (['777','77','99','799','797'].includes(reg)) {
+                price += 250;
+                if (num === '777') price += 500000;
+                if (isTripleLetters) price += 50000;
+            } else if (['78','98','178','198'].includes(reg)) {
+                price += 200;
+            } else if (reg === '95') {
+                price += 200;
+            } else if (reg === '16' || reg === '116' || reg === '716') {
+                price += 150;
+            }
 
             return price;
         }
@@ -2227,9 +2235,9 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
             if (price >= 3000000) return { text: "Крутой", color: "white", bg: "linear-gradient(45deg, #ff1493, #8a2be2)", border: "1px solid #ff1493", glow: "blatnoy" };
             if (price >= 1000000) return { text: "Легендарный", color: "black", bg: "#f59e0b", border: "1px solid black", glow: "legendary" };
             if (price >= 300000) return { text: "Эпический", color: "white", bg: "#8b5cf6", border: "1px solid black", glow: "epic" };
-            if (price >= 100000) return { text: "Супер редкий", color: "white", bg: "#ef4444", border: "1px solid black", glow: "super" };
-            if (price >= 35000) return { text: "Редкий", color: "white", bg: "#10b981", border: "1px solid black", glow: "rare" };
-            if (price >= 6000) return { text: "Необычный", color: "white", bg: "#3b82f6", border: "1px solid black", glow: "uncommon" };
+            if (price >= 80000) return { text: "Супер редкий", color: "white", bg: "#ef4444", border: "1px solid black", glow: "super" };
+            if (price >= 18000) return { text: "Редкий", color: "white", bg: "#10b981", border: "1px solid black", glow: "rare" };
+            if (price >= 2000) return { text: "Необычный", color: "white", bg: "#3b82f6", border: "1px solid black", glow: "uncommon" };
             return { text: "Обычный", color: "white", bg: "transparent", border: "none", glow: "none" };
         }
 
@@ -2411,7 +2419,18 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                             triggerLegendaryEffect();
                             triggerScreenShake();
                             playWinJingle(r.text);
-                        } else if (r.text === "Эпический" || r.text === "Супер редкий") {
+                        } else if (r.text === "Эпический") {
+                            if (pityCounterBoth >= 25 && pityCounterBoth < 65) {
+                                pityCounterBoth = 0;
+                                updatePityUI();
+                            }
+                            playWinJingle(r.text);
+                        } else if (r.text === "Редкий") {
+                            if (pityCounterBoth < 25) {
+                                pityCounterBoth = 0;
+                                updatePityUI();
+                            }
+                        } else if (r.text === "Супер редкий") {
                             playWinJingle(r.text);
                         }
                         const curPlateText = `${currentL1} ${currentNum} ${currentL2}${currentL3} | ${currentReg} RUS`;
@@ -2478,15 +2497,15 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
             let nextText = '';
             let percent = 0;
 
-            if (pityCounterBoth < 15) {
-                nextText = `До Редкого: ${15 - pityCounterBoth}`;
-                percent = Math.min(100, Math.round((pityCounterBoth / 15) * 100));
-            } else if (pityCounterBoth < 45) {
-                nextText = `До Эпического: ${45 - pityCounterBoth}`;
-                percent = Math.min(100, Math.round(((pityCounterBoth - 15) / 30) * 100));
-            } else if (pityCounterBoth < 100) {
-                nextText = `До Легендарного: ${100 - pityCounterBoth}`;
-                percent = Math.min(100, Math.round(((pityCounterBoth - 45) / 55) * 100));
+            if (pityCounterBoth < 25) {
+                nextText = `До Редкого: ${25 - pityCounterBoth}`;
+                percent = Math.min(100, Math.round((pityCounterBoth / 25) * 100));
+            } else if (pityCounterBoth < 65) {
+                nextText = `До Эпического: ${65 - pityCounterBoth}`;
+                percent = Math.min(100, Math.round(((pityCounterBoth - 25) / 40) * 100));
+            } else if (pityCounterBoth < 120) {
+                nextText = `До Легендарного: ${120 - pityCounterBoth}`;
+                percent = Math.min(100, Math.round(((pityCounterBoth - 65) / 55) * 100));
             } else {
                 nextText = '🔥 Гарант активен!';
                 percent = 100;
@@ -2502,40 +2521,28 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
             }
             if (forceTier === 'epic') {
                 return randomItem([
-                    '111','222','333','444','555','666','777','888','999',
+                    '111','222','333','444','555','666','888','999',
                     '100','200','300','400','500','600','700','800','900',
                     '002','003','004','005','006','007','008','009'
                 ]);
             }
             if (forceTier === 'rare') {
-                const k = Math.floor(Math.random() * 4);
-                const d1 = Math.floor(Math.random() * 10);
-                const d2 = Math.floor(Math.random() * 10);
-                if (k === 0) return `${d1}${d2}${d1}`;
-                if (k === 1) return randomItem(['123','234','345','456','567','678','789','987','654','321']);
-                if (k === 2) return `0${d1}0`;
-                return `${d1}${d2}0`;
+                return randomItem(['123','234','345','456','567','678','789','987','654','321']);
             }
 
             const roll = Math.floor(Math.random() * 1000);
-            if (roll < 25) {
-                return randomItem(['777','777','001','007','011','111','555','888','999']);
+            if (roll < 5) {
+                return randomItem(['777','001','007','011']);
             }
-            if (roll < 100) {
+            if (roll < 25) {
                 return randomItem([
-                    '111','222','333','444','555','666','777','888','999',
+                    '111','222','333','444','555','666','888','999',
                     '100','200','300','400','500','600','700','800','900',
                     '002','003','004','005','006','007','008','009'
                 ]);
             }
-            if (roll < 280) {
-                const d1 = Math.floor(Math.random() * 10);
-                const d2 = Math.floor(Math.random() * 10);
-                const k = Math.floor(Math.random() * 4);
-                if (k === 0) return `${d1}${d2}${d1}`;
-                if (k === 1) return randomItem(['123','234','345','456','567','678','789','987','654','321']);
-                if (k === 2) return `0${d1}0`;
-                return `${d1}${d2}0`;
+            if (roll < 60) {
+                return randomItem(['123','234','345','456','567','678','789','987','654','321']);
             }
             return Math.floor(Math.random() * 1000).toString().padStart(3, '0');
         }
@@ -2556,24 +2563,22 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
             if (forceTier === 'rare') {
                 const l1 = randomItem(lettersArr);
                 const l2 = randomItem(lettersArr);
-                if (Math.random() < 0.5) return [l1, l2, l1];
-                return Math.random() < 0.5 ? [l1, l1, l2] : [l2, l1, l1];
+                return [l1, l2, l1];
             }
 
             const roll = Math.floor(Math.random() * 1000);
-            if (roll < 30) {
+            if (roll < 8) {
                 const elite = randomItem(eliteLetters);
                 return [elite[0], elite[1], elite[2]];
             }
-            if (roll < 110) {
+            if (roll < 28) {
                 const l = randomItem(lettersArr);
                 return [l, l, l];
             }
-            if (roll < 270) {
+            if (roll < 78) {
                 const l1 = randomItem(lettersArr);
                 const l2 = randomItem(lettersArr);
-                if (Math.random() < 0.5) return [l1, l2, l1];
-                return Math.random() < 0.5 ? [l1, l1, l2] : [l2, l1, l1];
+                return [l1, l2, l1];
             }
             return [randomItem(lettersArr), randomItem(lettersArr), randomItem(lettersArr)];
         }
@@ -2642,9 +2647,9 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
 
             pityCounterBoth++;
             let forceTier = null;
-            if (pityCounterBoth >= 100) forceTier = 'legendary';
-            else if (pityCounterBoth >= 45) forceTier = 'epic';
-            else if (pityCounterBoth >= 15) forceTier = 'rare';
+            if (pityCounterBoth >= 120) forceTier = 'legendary';
+            else if (pityCounterBoth >= 65) forceTier = 'epic';
+            else if (pityCounterBoth >= 25) forceTier = 'rare';
 
             let n = generateLuckyNumberLocal(forceTier);
             let letArr = generateLuckyLettersLocal(forceTier);
