@@ -7179,6 +7179,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/20
             updateRaceCarShowcase();
             updateRaceRecordsUI();
             setRaceWeather(raceSelectedWeather);
+            initRaceTouchControls();
         }
 
         function renderRaceCarPicker() {
@@ -7372,6 +7373,8 @@ const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/20
             }
         }
 
+        const activeRacePointers = new Map();
+
         function updateTouchBtnUI(key, active) {
             const btn = document.getElementById('btn-touch-' + key);
             if (btn && btn.classList && typeof btn.classList.toggle === 'function') {
@@ -7380,6 +7383,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/20
         }
 
         function resetRaceKeys() {
+            activeRacePointers.clear();
             Object.keys(raceKeys).forEach(key => {
                 raceKeys[key] = false;
                 updateTouchBtnUI(key, false);
@@ -7411,6 +7415,13 @@ const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/20
                 if (typeof e.preventDefault === 'function') {
                     e.preventDefault();
                 }
+                if (e.pointerId !== undefined) {
+                    if (state) {
+                        activeRacePointers.set(e.pointerId, key);
+                    } else if (activeRacePointers.get(e.pointerId) === key) {
+                        activeRacePointers.delete(e.pointerId);
+                    }
+                }
             }
             setRaceKey(key, state);
             if (state) {
@@ -7426,6 +7437,77 @@ const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/20
                 } else {
                     if (typeof sound?.haptic === 'function') sound.haptic('light');
                 }
+            }
+        }
+
+        function initRaceTouchControls() {
+            if (typeof document === 'undefined') return;
+            const steerZone = document.getElementById('touch-steer-zone');
+            if (steerZone && !steerZone._boundSteer) {
+                steerZone._boundSteer = true;
+                let steerPointerId = null;
+
+                const updateSteerFromPoint = (clientX) => {
+                    if (!steerZone.getBoundingClientRect) return;
+                    const rect = steerZone.getBoundingClientRect();
+                    if (!rect || !rect.width) return;
+                    const relX = (clientX - rect.left) / rect.width;
+                    if (relX < 0.46) {
+                        setRaceKey('left', true);
+                        setRaceKey('right', false);
+                    } else if (relX > 0.54) {
+                        setRaceKey('right', true);
+                        setRaceKey('left', false);
+                    } else {
+                        setRaceKey('left', false);
+                        setRaceKey('right', false);
+                    }
+                };
+
+                steerZone.addEventListener('pointerdown', (e) => {
+                    if (e && typeof e.preventDefault === 'function') e.preventDefault();
+                    steerPointerId = e.pointerId;
+                    activeRacePointers.set(e.pointerId, 'steer');
+                    updateSteerFromPoint(e.clientX);
+                    if (typeof sound?.haptic === 'function') sound.haptic('light');
+                });
+
+                steerZone.addEventListener('pointermove', (e) => {
+                    if (steerPointerId !== e.pointerId) return;
+                    if (e && typeof e.preventDefault === 'function') e.preventDefault();
+                    updateSteerFromPoint(e.clientX);
+                });
+
+                const clearSteer = (e) => {
+                    if (steerPointerId === e.pointerId) {
+                        if (e && typeof e.preventDefault === 'function') e.preventDefault();
+                        steerPointerId = null;
+                        activeRacePointers.delete(e.pointerId);
+                        setRaceKey('left', false);
+                        setRaceKey('right', false);
+                    }
+                };
+                steerZone.addEventListener('pointerup', clearSteer);
+                steerZone.addEventListener('pointercancel', clearSteer);
+                steerZone.addEventListener('lostpointercapture', clearSteer);
+            }
+
+            if (typeof window !== 'undefined' && !window._boundRacePointerRelease) {
+                window._boundRacePointerRelease = true;
+                const releasePointer = (e) => {
+                    if (e && e.pointerId !== undefined && activeRacePointers.has(e.pointerId)) {
+                        const key = activeRacePointers.get(e.pointerId);
+                        activeRacePointers.delete(e.pointerId);
+                        if (key === 'steer') {
+                            setRaceKey('left', false);
+                            setRaceKey('right', false);
+                        } else if (key) {
+                            setRaceKey(key, false);
+                        }
+                    }
+                };
+                window.addEventListener('pointerup', releasePointer);
+                window.addEventListener('pointercancel', releasePointer);
             }
         }
 
@@ -7497,6 +7579,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/20
                 y: 470,
                 vx: 0,
                 tilt: 0,
+                yawAngle: 0,
                 speed: 70,
                 peakSpeed: 70,
                 targetSpeed: stats.speed * 0.7,
@@ -7527,6 +7610,11 @@ const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/20
                 driftComboTimer: 0,
                 driftDuration: 0,
                 isDrifting: false,
+                isCounterSteering: false,
+                counterSteerTimer: 0,
+                counterSteerPopupTimer: 0,
+                driftQuality: '',
+                driftAngleDeg: 0,
                 maxDriftCombo: 1,
                 damageTaken: 0,
                 tunedStats: stats
@@ -7550,6 +7638,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/20
 
             document.getElementById('race-menu-container').classList.add('hidden');
             document.getElementById('race-play-container').classList.remove('hidden');
+            initRaceTouchControls();
 
             isRaceRunning = true;
             document.body.classList.add("race-active");
@@ -7720,14 +7809,30 @@ const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/20
             const maxLateral = racePlayer.handling * 42 * (isHandbrake ? (1 + (driftMult - 1) * 0.7) : 1);
             const steerRate = racePlayer.handling * 185 * (isHandbrake ? 1.4 : 1);
 
-            if (raceKeys.left) {
+            // Контр-руление: когда автомобиль смещается в одну сторону, а руль повернут в противоположную
+            const isCounterSteer = (racePlayer.vx > 16 && raceKeys.left) || (racePlayer.vx < -16 && raceKeys.right);
+            racePlayer.isCounterSteering = isCounterSteer;
+
+            if (isCounterSteer) {
+                // Стабилизация заноса при контр-рулении: контролируемое удержание траектории
+                const stabilizeDecay = (raceCurrentMode === 'drift' || isHandbrake) ? 0.35 : 0.15;
+                racePlayer.vx *= Math.pow(stabilizeDecay, dt);
+                const counterTorque = (racePlayer.vx > 0 ? -1 : 1) * steerRate * 0.52 * dt;
+                racePlayer.vx += counterTorque;
+            } else if (raceKeys.left) {
                 racePlayer.vx = Math.max(-maxLateral, racePlayer.vx - steerRate * dt);
             } else if (raceKeys.right) {
                 racePlayer.vx = Math.min(maxLateral, racePlayer.vx + steerRate * dt);
             } else {
                 // Плавное затухание инерции (при заносе/ручнике скольжение длится дольше)
-                const decayBase = (isHandbrake || raceCurrentMode === 'drift') ? 0.08 : 0.015;
+                const decayBase = (isHandbrake || raceCurrentMode === 'drift') ? 0.10 : 0.015;
                 racePlayer.vx *= Math.pow(decayBase, dt);
+            }
+
+            // Power Oversteer (тяга и поддержание заноса при нажатом газе)
+            if (raceKeys.gas && (isHandbrake || Math.abs(racePlayer.vx) > maxLateral * 0.36 || raceCurrentMode === 'drift') && Math.abs(racePlayer.vx) > 18) {
+                const oversteerPush = (racePlayer.vx >= 0 ? 1 : -1) * (stats.accel * 9.5) * dt;
+                racePlayer.vx = Math.max(-maxLateral, Math.min(maxLateral, racePlayer.vx + oversteerPush));
             }
 
             // Торможение при ручнике
@@ -7816,86 +7921,154 @@ const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/20
                 }
             }
 
-            // Плавный крен кузова при повороте и заносе
-            const tiltScale = isHandbrake ? 0.32 : 0.18;
-            const targetTilt = (racePlayer.vx / maxLateral) * tiltScale;
-            racePlayer.tilt += (targetTilt - racePlayer.tilt) * 12 * dt;
+            // Динамический угол скольжения кузова (Yaw Angle) и крен кузова (Tilt)
+            const slipRatio = Math.max(-1, Math.min(1, racePlayer.vx / maxLateral));
+            const maxYaw = (isHandbrake ? 0.60 : 0.44) * (raceCurrentMode === 'drift' ? 1.15 : 1.0);
+            let targetYaw = slipRatio * maxYaw;
+            if (isCounterSteer) {
+                targetYaw *= 1.25; // Более глубокий и зрелищный угол при контр-рулении
+            }
+            targetYaw = Math.max(-0.64, Math.min(0.64, targetYaw));
+            const yawRate = isHandbrake ? 15 : 11;
+            racePlayer.yawAngle = (racePlayer.yawAngle || 0) + (targetYaw - (racePlayer.yawAngle || 0)) * yawRate * dt;
+            racePlayer.tilt = racePlayer.yawAngle; // Синхронизируем tilt для обратной совместимости
 
             // Проверка состояния дрифта
-            const isDriftingNow = (isHandbrake || Math.abs(racePlayer.vx) > (maxLateral * 0.42) || raceCurrentMode === 'drift')
-                && Math.abs(racePlayer.vx) > 22
+            const isDriftingNow = (isHandbrake || Math.abs(racePlayer.vx) > (maxLateral * 0.40) || raceCurrentMode === 'drift')
+                && Math.abs(racePlayer.vx) > 20
                 && racePlayer.speed > 35
                 && !racePlayer.isOnWall;
 
             if (isDriftingNow) {
                 racePlayer.isDrifting = true;
                 racePlayer.driftDuration += dt;
-                racePlayer.driftComboTimer = 1.8;
-                racePlayer.driftCombo = Math.min(5, 1 + Math.floor(racePlayer.driftDuration / 2.2));
+                racePlayer.driftComboTimer = 2.0; // 2 секунды на переход между поворотами
+                racePlayer.driftCombo = Math.min(5, 1 + Math.floor(racePlayer.driftDuration / 2.0));
                 racePlayer.maxDriftCombo = Math.max(racePlayer.maxDriftCombo || 1, racePlayer.driftCombo);
 
-                // Начисление очков дрифта
-                const driftRate = Math.round((racePlayer.speed * 0.28) * (Math.abs(racePlayer.vx) / maxLateral) * 18 * driftMult * racePlayer.driftCombo);
+                // Оценка угла и качества заноса
+                const driftDeg = Math.round(Math.abs(racePlayer.yawAngle) * (180 / Math.PI));
+                racePlayer.driftAngleDeg = driftDeg;
+                let angleMult = 1.0;
+                if (driftDeg >= 26) {
+                    racePlayer.driftQuality = '🔥 ИДЕАЛЬНЫЙ TSUDO';
+                    angleMult = 1.8;
+                } else if (driftDeg >= 16) {
+                    racePlayer.driftQuality = '⚡ ОТЛИЧНЫЙ УГОЛ';
+                    angleMult = 1.4;
+                } else {
+                    racePlayer.driftQuality = '🌪️ ХОРОШИЙ ДРИФТ';
+                    angleMult = 1.0;
+                }
+
+                // Бонус за контр-руление
+                let counterMult = 1.0;
+                if (isCounterSteer) {
+                    counterMult = 1.5;
+                    racePlayer.counterSteerTimer = (racePlayer.counterSteerTimer || 0) + dt;
+                    if (racePlayer.counterSteerTimer >= 0.35 && (racePlayer.counterSteerPopupTimer || 0) <= 0) {
+                        racePlayer.counterSteerPopupTimer = 1.4;
+                        showRacePopup("🔄 КОНТР-РУЛЕНИЕ +50%!", "#38bdf8");
+                        if (typeof sound?.haptic === 'function') sound.haptic('light');
+                    }
+                } else {
+                    racePlayer.counterSteerTimer = 0;
+                }
+                if (racePlayer.counterSteerPopupTimer > 0) {
+                    racePlayer.counterSteerPopupTimer -= dt;
+                }
+
+                // Начисление очков дрифта с учетом комбо, угла и контр-руления
+                const driftRate = Math.round((racePlayer.speed * 0.28) * (Math.abs(racePlayer.vx) / maxLateral) * 18 * driftMult * racePlayer.driftCombo * angleMult * counterMult);
                 racePlayer.driftCurrentScore += driftRate * dt;
                 racePlayer.driftScore += driftRate * dt;
 
-                // Звук визга резины
+                // Звук визга резины и тактильная отдача
                 const nowMs = performance.now();
-                if (nowMs - lastDriftScreechTime > 340) {
+                if (nowMs - lastDriftScreechTime > 320) {
                     lastDriftScreechTime = nowMs;
                     if (typeof sound?.drift === 'function') sound.drift();
                     if (typeof sound?.haptic === 'function') sound.haptic('light');
                 }
 
-                // Дым из-под задних покрышек
-                for (let smk = 0; smk < 2; smk++) {
-                    const side = Math.random() < 0.5 ? -11 : 11;
+                // Расчет координат задних шин с учетом угла поворота кузова
+                const cosYaw = Math.cos(racePlayer.yawAngle || 0);
+                const sinYaw = Math.sin(racePlayer.yawAngle || 0);
+                // Заднее левое колесо (-9, +14), заднее правое колесо (+9, +14)
+                const rlx = racePlayer.x + (-9 * cosYaw - 14 * sinYaw);
+                const rly = racePlayer.y + (-9 * sinYaw + 14 * cosYaw);
+                const rrx = racePlayer.x + (9 * cosYaw - 14 * sinYaw);
+                const rry = racePlayer.y + (9 * sinYaw + 14 * cosYaw);
+
+                // Двухпоточный реалистичный дым из-под задних покрышек
+                const smokeWaves = (isHandbrake || racePlayer.isNitroActive || raceKeys.gas) ? 3 : 2;
+                for (let smk = 0; smk < smokeWaves; smk++) {
+                    const isLeftWheel = smk % 2 === 0;
+                    const wx = isLeftWheel ? rlx : rrx;
+                    const wy = isLeftWheel ? rly : rry;
                     raceDriftSmoke.push({
-                        x: racePlayer.x + side + (Math.random() - 0.5) * 4,
-                        y: racePlayer.y + 18,
-                        vx: (side > 0 ? 12 : -12) + (Math.random() - 0.5) * 16,
-                        vy: 20 + Math.random() * 35,
-                        size: 3.5 + Math.random() * 4.0,
-                        life: 0.65
+                        x: wx + (Math.random() - 0.5) * 4,
+                        y: wy + (Math.random() - 0.5) * 4,
+                        vx: (racePlayer.vx * 0.22) + (Math.random() - 0.5) * 18,
+                        vy: 20 + Math.random() * 32,
+                        size: 3.8 + Math.random() * 4.2,
+                        life: 0.70
                     });
                 }
 
-                // Следы шин
-                raceSkidmarks.push({
-                    x: racePlayer.x,
-                    y: racePlayer.y + 16,
-                    life: 0.95
-                });
+                // Следы шин от обоих задних колес
+                raceSkidmarks.push({ x: rlx, y: rly, life: 1.0 });
+                raceSkidmarks.push({ x: rrx, y: rry, life: 1.0 });
+
+                // Искры от трения шин при глубоком угле заноса
+                if (driftDeg >= 22 && Math.random() < 0.35) {
+                    const sparkX = racePlayer.vx > 0 ? rlx : rrx;
+                    raceSparks.push({
+                        x: sparkX,
+                        y: racePlayer.y + 14,
+                        vx: (Math.random() - 0.5) * 40,
+                        vy: -Math.random() * 30,
+                        life: 0.25,
+                        color: '#fbbf24'
+                    });
+                }
 
                 if (Number(achievements.driftBestScore || 0) < Math.round(racePlayer.driftScore)) achievements.driftBestScore = Math.round(racePlayer.driftScore);
                 if (Number(achievements.driftMaxCombo || 0) < racePlayer.driftCombo) achievements.driftMaxCombo = racePlayer.driftCombo;
                 if (racePlayer.driftScore >= 1000 || racePlayer.driftCombo >= 5) checkAchievements();
             } else {
                 racePlayer.isDrifting = false;
+                racePlayer.isCounterSteering = false;
+                racePlayer.counterSteerTimer = 0;
                 if (racePlayer.driftComboTimer > 0) {
                     racePlayer.driftComboTimer -= dt;
                     if (racePlayer.driftComboTimer <= 0) {
-                        if (racePlayer.driftCurrentScore > 35) {
+                        if (racePlayer.driftCurrentScore > 30) {
                             const bankedPoints = Math.round(racePlayer.driftCurrentScore);
                             const bankedCash = Math.round(bankedPoints * 1.5 * (stats.rewardMult || 1.0));
                             racePlayer.earnedCash += bankedCash;
                             showRacePopup(`🌪️ ЗАНОС: +${bankedPoints} PTS (+${bankedCash.toLocaleString('ru-RU')} ₽)`, '#fbbf24');
+                            if (typeof sound?.cash === 'function') sound.cash();
+                            if (typeof sound?.haptic === 'function') sound.haptic('win');
                             checkAchievements();
                         }
                         racePlayer.driftCurrentScore = 0;
                         racePlayer.driftCombo = 1;
                         racePlayer.driftDuration = 0;
+                        racePlayer.driftQuality = '';
                     }
                 }
             }
 
             // Срыв дрифта при ударе о стену
-            if (racePlayer.isOnWall && racePlayer.driftCurrentScore > 35) {
+            if (racePlayer.isOnWall && racePlayer.driftCurrentScore > 30) {
                 showRacePopup("💥 ДРИФТ СОРВАН!", "#ef4444");
                 racePlayer.driftCurrentScore = 0;
                 racePlayer.driftCombo = 1;
                 racePlayer.driftDuration = 0;
+                racePlayer.driftQuality = '';
                 racePlayer.isDrifting = false;
+                racePlayer.isCounterSteering = false;
             }
 
             // 6. Генерация следов шин при резком торможении
@@ -9016,7 +9189,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/20
                     lightsOn: true,
                     nitro: racePlayer.isNitroActive,
                     braking: raceKeys.brake,
-                    tilt: racePlayer.tilt,
+                    tilt: (racePlayer.yawAngle !== undefined ? racePlayer.yawAngle : racePlayer.tilt),
                     color: activeCar?.styling?.color,
                     neon: activeCar?.styling?.neon,
                     tint: activeCar?.styling?.tint
@@ -9095,6 +9268,16 @@ const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/20
                 }
             }
 
+            const qualityBadge = document.getElementById('game-drift-quality');
+            if (qualityBadge) {
+                if (racePlayer.isDrifting && (racePlayer.isCounterSteering || racePlayer.driftQuality)) {
+                    qualityBadge.textContent = racePlayer.isCounterSteering ? '🔄 КОНТР-РУЛЬ' : (racePlayer.driftQuality || '⚡ УГОЛ');
+                    qualityBadge.classList.remove('hidden');
+                } else {
+                    qualityBadge.classList.add('hidden');
+                }
+            }
+
             // 11. Игровой HUD на Canvas
             // Плашка текущего биома по центру сверху
             ctx.fillStyle = "rgba(10, 15, 29, 0.85)";
@@ -9112,20 +9295,37 @@ const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/20
 
             // Оверлей активного дрифта прямо под биомом
             if (racePlayer.isDrifting || racePlayer.driftCurrentScore > 0) {
-                const bw = 170;
-                const bh = 24;
-                ctx.fillStyle = "rgba(15, 23, 42, 0.9)";
+                const bw = 186;
+                const bh = 28;
+                ctx.fillStyle = "rgba(15, 23, 42, 0.92)";
                 ctx.beginPath();
-                ctx.roundRect(W / 2 - bw / 2, 38, bw, bh, 5);
+                ctx.roundRect(W / 2 - bw / 2, 38, bw, bh, 6);
                 ctx.fill();
-                ctx.strokeStyle = "#f59e0b";
-                ctx.lineWidth = 1.5;
+                ctx.strokeStyle = racePlayer.isCounterSteering ? "#38bdf8" : "#f59e0b";
+                ctx.lineWidth = 1.6;
                 ctx.stroke();
 
                 ctx.fillStyle = "#fbbf24";
                 ctx.font = "900 11px sans-serif";
                 ctx.textAlign = "center";
-                ctx.fillText(`🌪️ ДРИФТ x${racePlayer.driftCombo} • ${Math.round(racePlayer.driftCurrentScore)} PTS`, W / 2, 54);
+                ctx.fillText(`🌪️ ДРИФТ x${racePlayer.driftCombo} • ${Math.round(racePlayer.driftCurrentScore)} PTS`, W / 2, 51);
+
+                if (racePlayer.isCounterSteering) {
+                    ctx.fillStyle = "#38bdf8";
+                    ctx.font = "bold 9px sans-serif";
+                    ctx.fillText("🔄 КОНТР-РУЛЕНИЕ (+50% PTS)", W / 2, 62);
+                } else if (racePlayer.driftQuality) {
+                    ctx.fillStyle = "#a3e635";
+                    ctx.font = "bold 9px sans-serif";
+                    ctx.fillText(racePlayer.driftQuality, W / 2, 62);
+                }
+
+                // Combo timer gauge bar
+                if (racePlayer.driftComboTimer > 0) {
+                    const timerPct = Math.min(1, Math.max(0, racePlayer.driftComboTimer / 2.0));
+                    ctx.fillStyle = racePlayer.isCounterSteering ? "#38bdf8" : "rgba(245, 158, 11, 0.9)";
+                    ctx.fillRect(W / 2 - (bw - 16) / 2, 38 + bh - 2.5, (bw - 16) * timerPct, 2);
+                }
             }
 
             // Спидометр и датчики (Улучшенная контрастность и читабельность)
