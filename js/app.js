@@ -1787,19 +1787,28 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
 
         function openSellPlateModal() {
             if (!ensureOnlineAccess()) return;
-            if (!onlineProfile.inventory || onlineProfile.inventory.length === 0) {
-                notifyUser('У тебя пока нет номеров для продажи. Войди в аккаунт, открой «Номера», прокрути и сохрани номер — он появится здесь.', 'error');
+            const plates = (onlineProfile && Array.isArray(onlineProfile.inventory) && onlineProfile.inventory.length > 0)
+                ? onlineProfile.inventory
+                : inventory;
+            if (!plates || plates.length === 0) {
+                notifyUser('У тебя пока нет номеров для продажи. Открой «Генератор», прокрути и сохрани номер — он появится здесь.', 'error');
                 return;
             }
+            plates.forEach((p, idx) => {
+                if (!p.id) p.id = 'plate_' + Date.now() + '_' + idx;
+            });
+            if (onlineProfile) onlineProfile.inventory = plates;
+            inventory = plates;
             const sel = document.getElementById('sell-plate-select');
             sel.innerHTML = '';
-            onlineProfile.inventory.forEach((p) => {
+            plates.forEach((p) => {
                 const opt = document.createElement('option');
                 opt.value = p.id;
-                opt.text = `${p.text} (Номинал: ${p.price.toLocaleString('ru-RU')} ₽ | ${p.rarity.text})`;
+                const rText = (p.rarity && p.rarity.text) || 'Обычный';
+                opt.text = `${p.text} (Номинал: ${Number(p.price || 0).toLocaleString('ru-RU')} ₽ | ${rText})`;
                 sel.appendChild(opt);
             });
-            document.getElementById('sell-plate-price').value = onlineProfile.inventory[0].price;
+            document.getElementById('sell-plate-price').value = plates[0].price || 10000;
             document.getElementById('sell-plate-modal').classList.add('show');
         }
 
@@ -2836,8 +2845,7 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                             <span class="inv-card-price">${Number(item.price || 0).toLocaleString('ru-RU')} ₽</span>
                         </div>
                         <div class="mini-plate">${escapeHtml(item.text)}</div>
-                        ${item.id ? `<button class="btn btn-green" style="padding:8px 12px; width:100%;" onclick="openSellPlateModal()">🛒 Выставить на рынок</button>`
-                          : `<button class="btn btn-close" style="padding:8px 12px; width:100%;" onclick="sellPlate(${index}, ${Number(item.price)||0})">Продать локально (+${Number(item.price||0).toLocaleString('ru-RU')} ₽)</button>`}
+                        <button class="btn btn-close" style="padding:8px 12px; width:100%;" onclick="sellPlate(${index})">Продать (+${Number(item.price||0).toLocaleString('ru-RU')} ₽)</button>
                     </div>`;
             });
             updateBadge();
@@ -2846,14 +2854,35 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
         function sellPlate(index) {
             const item = inventory[index];
             if (!item || !Number.isFinite(item.price) || item.price < 0) return;
-            if(item.id) { notifyUser('Подтверждённый номер можно продать только через серверный рынок.', 'error'); return; }
             const price = item.price;
             inventory.splice(index, 1);
             balance += price;
+            if (onlineProfile) {
+                onlineProfile.balance = (Number(onlineProfile.balance) || 0) + price;
+                onlineProfile.inventory = [...inventory];
+                if (db) {
+                    const key = sanitizeKey(onlineProfile.nickname);
+                    db.ref('onlineV4/accounts/' + key).update({
+                        balance: onlineProfile.balance,
+                        inventory: onlineProfile.inventory,
+                        updatedAt: Date.now()
+                    }).catch(() => {});
+                    db.ref('users/' + key).update({
+                        balance: onlineProfile.balance,
+                        inventory: onlineProfile.inventory,
+                        updatedAt: Date.now()
+                    }).catch(() => {});
+                    db.ref('leaderboard/' + key).update({
+                        balance: onlineProfile.balance,
+                        updatedAt: Date.now()
+                    }).catch(() => {});
+                }
+            }
             playCashSound();
             updateBalance();
             renderInventory();
             saveProgress();
+            notifyUser(`Номер «${item.text}» продан за ${price.toLocaleString('ru-RU')} ₽!`);
         }
 
         // --- ГАРАЖ ---
@@ -3045,14 +3074,36 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
         function sellCar(index, hasPlate) {
             let car = myCars[index];
             if (!car) return;
-            let profit = car.basePrice * 0.9;
-            if (hasPlate && car.plate) profit += car.plate.price * 0.95;
+            let profit = Math.floor(car.basePrice * 0.9 + (hasPlate && car.plate ? car.plate.price * 0.95 : 0));
             balance += profit;
             playCashSound();
             myCars.splice(index, 1);
+            if (onlineProfile) {
+                onlineProfile.balance = (Number(onlineProfile.balance) || 0) + profit;
+                onlineProfile.myCars = [...myCars];
+                if (db) {
+                    const key = sanitizeKey(onlineProfile.nickname);
+                    db.ref('onlineV4/accounts/' + key).update({
+                        balance: onlineProfile.balance,
+                        myCars: onlineProfile.myCars,
+                        updatedAt: Date.now()
+                    }).catch(() => {});
+                    db.ref('users/' + key).update({
+                        balance: onlineProfile.balance,
+                        myCars: onlineProfile.myCars,
+                        updatedAt: Date.now()
+                    }).catch(() => {});
+                    db.ref('leaderboard/' + key).update({
+                        balance: onlineProfile.balance,
+                        carsCount: myCars.length,
+                        updatedAt: Date.now()
+                    }).catch(() => {});
+                }
+            }
             updateBalance();
             renderCars();
             saveProgress();
+            notifyUser(`Автомобиль «${car.name}» продан за ${profit.toLocaleString('ru-RU')} ₽!`);
         }
 
         function detachPlate(index) {

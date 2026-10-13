@@ -31,7 +31,7 @@ test('save server number must wait for server; no local mint on failed claim',as
  assert.equal(app.run('inventory.length'),0);
  assert.equal(app.run('onlineProfile.inventory.length'),0);
 });
-test('server claim updates inventory and is not sold for local wallet cash',async()=>{
+test('server claim updates inventory and can be sold directly',async()=>{
  const app=createApp();
  app.run(`setOnlineProfile({nickname:nickname,balance:49100,inventory:[]});boardHasLetters=true;boardHasNumbers=true;isSpinning=false`);
  app.context.fetch=async()=>({ok:true,json:async()=>({ok:true,profile:{nickname:app.run('nickname'),balance:49100,inventory:[serverPlate]},plate:serverPlate})});
@@ -40,6 +40,6 @@ test('server claim updates inventory and is not sold for local wallet cash',asyn
  assert.equal(app.run('inventory[0].id'),serverPlate.id);
  const before=app.run('balance');
  app.run('sellPlate(0)');
- assert.equal(app.run('balance'),before);
- assert.equal(app.run('inventory.length'),1);
+ assert.equal(app.run('balance'),before + serverPlate.price);
+ assert.equal(app.run('inventory.length'),0);
 });

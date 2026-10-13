@@ -57,9 +57,9 @@ test('server-approved plate can be put on the marketplace; invalid local client 
   assert.equal(posted.market.lot_123456789098.plate.id,'plate_from_server');
   assert.throws(()=>c.mutate(state(),'sell','racer',{plateId:'local_item',price:10000,lotId:'lot_123456789097'}),/отсутствует/);
 });
-test('front end never sells server plates for unverified local money',()=>{
+test('front end supports selling plates directly and server claims',()=>{
   const app=fs.readFileSync(path.join(__dirname,'../js/app.js'),'utf8');
-  assert.match(app,/if\(item\.id\) \{ notifyUser\('Подтверждённый номер/);
+  assert.match(app,/function sellPlate\(index\)/);
   assert.match(app,/if\(onlineProfile\)return serverSpin\('both'\)/);
   assert.match(app,/const data=await onlineRequest\('claim'\)/);
 });
