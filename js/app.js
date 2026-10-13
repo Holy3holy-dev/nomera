@@ -402,7 +402,9 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
             const tab = [...document.querySelectorAll('.nav-tab')].find(button => button.dataset.tab === id);
             switchTab(id, tab);
         }
-        document.addEventListener('pointerdown', () => { if (!document.hidden) initAudio(); }, {passive: true});
+        ['touchstart', 'touchend', 'pointerdown', 'click'].forEach(evt => {
+            document.addEventListener(evt, () => { if (!document.hidden) initAudio(); }, {passive: true});
+        });
         document.addEventListener('keydown', () => { if (!document.hidden) initAudio(); });
         document.addEventListener('click', event => {
             const button = event.target.closest('button, .plate-region');
@@ -755,6 +757,9 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                     if (data.draft) onlineProfile.draft = data.draft;
 
                     renderOnlineAccount();
+
+                    // Never credit funds during active spins or when the roll is in flight
+                    if (isSpinning || serverSpinBusy) return;
 
                     if (newBal > prevBal && prevBal > 0) {
                         const diff = newBal - prevBal;
@@ -2679,7 +2684,7 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
             if (boardHasLetters && boardHasNumbers) {
                 let price = calculatePrice();
                 let rarity = getRarity(price);
-                document.getElementById('current-price-display').innerHTML = `Оценка номера: <b style="color:var(--accent-green); margin-left:4px;">${price.toLocaleString('ru-RU')} ₽</b>`;
+                document.getElementById('current-price-display').innerHTML = `Оценка номера: <b style="color:var(--accent-green); margin-left:4px;">${price.toLocaleString('ru-RU')} ₽</b> <span style="font-size:11px; opacity:0.75; font-weight:600; margin-left:4px;">(для инвентаря)</span>`;
                 let rLabel = document.getElementById('gen-rarity');
                 rLabel.innerText = rarity.text;
                 rLabel.style.background = rarity.bg;
@@ -3218,15 +3223,15 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                 isCar: true,
                 price: 650000,
                 cars: [
-                    { name: "ВАЗ-2107 «Жигули»", weight: 30 },
-                    { name: "ВАЗ-2109 «Девятка»", weight: 25 },
-                    { name: "ГАЗ-24 «Волга»", weight: 18 },
-                    { name: "Lada Priora БПАН", weight: 14 },
-                    { name: "Hyundai Solaris", weight: 7 },
-                    { name: "Lada Vesta Sport", weight: 3.5 },
-                    { name: "Volkswagen Polo", weight: 1.5 },
-                    { name: "Toyota Mark II Tourer V", weight: 0.8 },
-                    { name: "Subaru Impreza WRX STI", weight: 0.2 }
+                    { name: "ВАЗ-2107 «Жигули»", weight: 18 },
+                    { name: "ВАЗ-2109 «Девятка»", weight: 18 },
+                    { name: "ГАЗ-24 «Волга»", weight: 16 },
+                    { name: "Lada Priora БПАН", weight: 15 },
+                    { name: "Hyundai Solaris", weight: 12 },
+                    { name: "Lada Vesta Sport", weight: 9 },
+                    { name: "Volkswagen Polo", weight: 6 },
+                    { name: "Toyota Mark II Tourer V", weight: 4 },
+                    { name: "Subaru Impreza WRX STI", weight: 2 }
                 ]
             },
             'car_luxury': {
@@ -3235,16 +3240,17 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                 isCar: true,
                 price: 7500000,
                 cars: [
-                    { name: "Toyota Mark II Tourer V", weight: 28 },
-                    { name: "Subaru Impreza WRX STI", weight: 22 },
-                    { name: "BMW M5 E60 V10", weight: 18 },
+                    { name: "Toyota Mark II Tourer V", weight: 12 },
+                    { name: "Subaru Impreza WRX STI", weight: 12 },
+                    { name: "BMW M5 E60 V10", weight: 14 },
                     { name: "Nissan Silvia S15 Spec-R", weight: 14 },
-                    { name: "Toyota Camry 3.5", weight: 10 },
-                    { name: "Toyota Land Cruiser 300", weight: 5 },
-                    { name: "Nissan GT-R R35 Nismo", weight: 2 },
-                    { name: "Mercedes-Benz E63s AMG", weight: 0.7 },
-                    { name: "Audi RS6 Avant", weight: 0.25 },
-                    { name: "BMW M5 F90 Competition", weight: 0.05 }
+                    { name: "Toyota Camry 3.5", weight: 15 },
+                    { name: "Toyota Land Cruiser 300", weight: 15 },
+                    { name: "Nissan GT-R R35 Nismo", weight: 9 },
+                    { name: "Mercedes-Benz E63s AMG", weight: 6 },
+                    { name: "Audi RS6 Avant", weight: 4 },
+                    { name: "BMW M5 F90 Competition", weight: 1.9 },
+                    { name: "Bugatti Chiron Super Sport", weight: 0.1 }
                 ]
             },
             'car_hyper': {
@@ -3253,17 +3259,17 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                 isCar: true,
                 price: 45000000,
                 cars: [
-                    { name: "Mercedes-Benz E63s AMG", weight: 30 },
-                    { name: "Audi RS6 Avant", weight: 25 },
-                    { name: "BMW M5 F90 Competition", weight: 20 },
-                    { name: "BMW M8 Gran Coupe", weight: 12 },
-                    { name: "Mercedes-Benz G63 AMG «Гелик»", weight: 7 },
-                    { name: "Porsche 911 Turbo S", weight: 3.5 },
-                    { name: "Lamborghini Huracan Performante", weight: 1.6 },
-                    { name: "Rolls-Royce Cullinan", weight: 0.6 },
-                    { name: "Ferrari SF90 Stradale", weight: 0.2 },
-                    { name: "Bugatti Chiron Super Sport", weight: 0.08 },
-                    { name: "Koenigsegg Jesko Attack", weight: 0.02 }
+                    { name: "Mercedes-Benz E63s AMG", weight: 8 },
+                    { name: "Audi RS6 Avant", weight: 9 },
+                    { name: "BMW M5 F90 Competition", weight: 11 },
+                    { name: "BMW M8 Gran Coupe", weight: 14 },
+                    { name: "Mercedes-Benz G63 AMG «Гелик»", weight: 17 },
+                    { name: "Porsche 911 Turbo S", weight: 16 },
+                    { name: "Lamborghini Huracan Performante", weight: 11 },
+                    { name: "Rolls-Royce Cullinan", weight: 7 },
+                    { name: "Ferrari SF90 Stradale", weight: 5.5 },
+                    { name: "Bugatti Chiron Super Sport", weight: 1.2 },
+                    { name: "Koenigsegg Jesko Attack", weight: 0.3 }
                 ]
             }
         };

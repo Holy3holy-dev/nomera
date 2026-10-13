@@ -126,3 +126,54 @@ test('dealership category filters correctly isolate price tiers', () => {
     assert.ok(!listBudget.includes('Koenigsegg Jesko Attack'));
 });
 
+test('Bugatti Chiron Super Sport is in luxury box at small percentage and cases have rewarding EV', () => {
+    const app = createApp();
+    const configs = app.run('caseConfigs');
+    const lux = configs.car_luxury;
+    assert.ok(lux, 'car_luxury case must exist');
+    const bugatti = lux.cars.find(c => c.name === 'Bugatti Chiron Super Sport');
+    assert.ok(bugatti, 'Bugatti Chiron Super Sport must be present in car_luxury');
+    assert.equal(bugatti.weight, 0.1, 'Bugatti Chiron Super Sport must have small weight 0.1% in car_luxury');
+
+    const carPrices = Object.fromEntries(app.run('carsData.map(c => [c.name, c.price])'));
+    for (const key of ['car_standard', 'car_luxury', 'car_hyper']) {
+        const box = configs[key];
+        const totalWeight = box.cars.reduce((s, c) => s + c.weight, 0);
+        const ev = box.cars.reduce((s, c) => s + c.weight * carPrices[c.name], 0) / totalWeight;
+        const ratio = ev / box.price;
+        // Check EV is rewarding (>= 50% and <= 75%)
+        assert.ok(ratio >= 0.50 && ratio <= 0.75, `Expected ${key} return ratio >= 0.50 and <= 0.75, got ${ratio.toFixed(3)}`);
+        // Resale (at 90%) must be strictly less than case cost to prevent money duplication
+        assert.ok(ev * 0.9 < box.price, `Resale exploit in ${key}`);
+    }
+});
+
+test('spinning numbers deducts spin cost and NEVER credits balance automatically', () => {
+    const app = createApp({
+        saved: {
+            nickname: 'PlateTester',
+            balance: 50000,
+            pityCounterBoth: 120
+        }
+    });
+    app.run('loadProgress()');
+    assert.equal(app.run('balance'), 50000);
+
+    // Guest spin numbers
+    app.run('spinNumbers()');
+    assert.equal(app.run('balance'), 49500, 'spinNumbers must deduct 500 ₽, never credit money');
+
+    // Reset spinning flag after animation finishes
+    app.run('isSpinning = false;');
+
+    // Guest full spin
+    app.run('spinBoth()');
+    assert.equal(app.run('balance'), 48600, 'spinBoth must deduct 900 ₽ (49500 - 900 = 48600)');
+
+    // Even if elite numbers roll, balance must remain untouched
+    const price = app.run('calculatePrice()');
+    assert.ok(typeof price === 'number' && price > 0);
+    assert.equal(app.run('balance'), 48600, 'Plate valuation must never be credited to balance');
+});
+
+
