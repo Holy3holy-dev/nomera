@@ -869,7 +869,7 @@
 
     <!-- Public Firebase Web configuration is loaded from server runtime, never a private service account. -->
     <script>
-        if (!window.NOMERA_FIREBASE_WEB_CONFIG && window.location.hostname.includes('github.io')) {
+        if (!window.NOMERA_FIREBASE_WEB_CONFIG) {
             window.NOMERA_FIREBASE_WEB_CONFIG = {
                 apiKey: "AIzaSyBf4QuJ35sbVtFuLYzf_2T4MjONWIH47-s",
                 authDomain: "h3h-nomera-server.firebaseapp.com",
@@ -888,6 +888,6 @@
     <script src="./js/race-records.js?v=9c07941a09a1"></script>
     <script src="./js/race-economy.js?v=793acd278494"></script>
     <script src="./js/audio.js?v=2fecd96cf1bd"></script>
-    <script src="./js/app.js?v=15c1a6bd8137"></script>
+    <script src="./js/app.js?v=70c142e9af72"></script>
 </body>
 </html>

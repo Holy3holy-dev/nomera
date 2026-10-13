@@ -1356,26 +1356,298 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
         const ONLINE_ENDPOINT='/.netlify/functions/online';
         let onlineProfile=null;
         async function onlineRequest(action,params={},method='POST') {
-            const url=ONLINE_ENDPOINT+(method==='GET'?'?action='+encodeURIComponent(action):'');
-            const res=await fetch(url,{method,credentials:'same-origin',
-                ...(method==='POST'?{headers:{'Content-Type':'application/json'},body:JSON.stringify({action,...params})}:{})});
-            const body=await res.json().catch(()=>({ok:false,error:'Не удалось получить ответ сервера'}));
-            if(!res.ok||!body.ok) {
-                if(res.status===401 && action!=='login' && action!=='register' && action!=='logout') {
-                    onlineProfile=null;
-                    renderOnlineAccount();
-                    updateProfileUI();
-                    // A genuine expired session should lead to sign-in, not to
-                    // a confusing second registration or another local spin.
-                    if(['roll','claim','sell','buy','cancel','chat'].includes(action)) {
-                        openProfileModal();
-                        switchAuthTab('login');
+            let useFirebaseFallback = false;
+            let body = null;
+            try {
+                const url=ONLINE_ENDPOINT+(method==='GET'?'?action='+encodeURIComponent(action):'');
+                const res=await fetch(url,{method,credentials:'same-origin',
+                    ...(method==='POST'?{headers:{'Content-Type':'application/json'},body:JSON.stringify({action,...params})}:{})});
+                if (res.status === 404 || res.status === 503) {
+                    useFirebaseFallback = true;
+                } else {
+                    body = await res.json().catch(() => null);
+                    if (!body) {
+                        useFirebaseFallback = true;
+                    } else if (res.ok && body.ok) {
+                        return body;
+                    } else {
+                        const errMsg = String(body?.error || '');
+                        if (errMsg.includes('секреты') || errMsg.includes('Netlify') || errMsg.includes('не настроен')) {
+                            useFirebaseFallback = true;
+                        } else {
+                            if(res.status===401 && action!=='login' && action!=='register' && action!=='logout') {
+                                onlineProfile=null;
+                                renderOnlineAccount();
+                                updateProfileUI();
+                                if(['roll','claim','sell','buy','cancel','chat'].includes(action)) {
+                                    openProfileModal();
+                                    switchAuthTab('login');
+                                }
+                            }
+                            throw Error(body?.error||'Ошибка сервера');
+                        }
                     }
                 }
-                throw Error(body.error||'Ошибка сервера');
+            } catch (err) {
+                if (err && err.message && !err.message.includes('Не удалось получить ответ') && !err.message.includes('Failed to fetch') && !err.message.includes('JSON')) {
+                    throw err;
+                }
+                useFirebaseFallback = true;
             }
-            return body;
+
+            if (useFirebaseFallback) {
+                return await onlineFirebaseFallback(action, params);
+            }
+            throw Error('Не удалось получить ответ сервера');
         }
+
+        async function onlineFirebaseFallback(action, params = {}) {
+            if (!db) {
+                throw Error('Firebase не подключен. Проверьте подключение к базе данных.');
+            }
+
+            if (action === 'register') {
+                const nickname = String(params.nickname || '').trim();
+                const pin = String(params.pin || '');
+                if (!nickname || !/^[\p{L}\p{N}_\- ]{2,40}$/u.test(nickname)) {
+                    throw Error('Никнейм: 2–40 символов, буквы, цифры, пробел, _ или -');
+                }
+                const key = sanitizeKey(nickname);
+                if (key === ADMIN_LOGIN) {
+                    throw Error('Имя h3h зарезервировано для админки. Выберите другой никнейм.');
+                }
+                if (!pin || pin.length < 6) {
+                    throw Error('Пароль не короче 6 символов');
+                }
+
+                const [onlSnap, userSnap] = await Promise.all([
+                    db.ref('onlineV4/accounts/' + key).once('value').catch(() => null),
+                    db.ref('users/' + key).once('value').catch(() => null)
+                ]);
+                if ((onlSnap && onlSnap.exists()) || (userSnap && userSnap.exists())) {
+                    throw Error('Такой никнейм уже занят. Используйте вход');
+                }
+
+                const now = Date.now();
+                const starterCar = {
+                    name: "ВАЗ-2107 «Жигули»",
+                    category: "Классика",
+                    price: 120000,
+                    condition: 100,
+                    plate: null,
+                    upgrades: { engine: 0, handling: 0, economy: 0, nitro: 0 }
+                };
+                const starterProfile = {
+                    nickname,
+                    key,
+                    pin,
+                    balance: 50000,
+                    inventory: [],
+                    myCars: [starterCar],
+                    playerLevel: 1,
+                    playerExp: 0,
+                    createdAt: now,
+                    updatedAt: now
+                };
+
+                await Promise.all([
+                    db.ref('onlineV4/accounts/' + key).set(starterProfile),
+                    db.ref('users/' + key).set(starterProfile),
+                    db.ref('leaderboard/' + key).set({ nickname, balance: 50000, playerLevel: 1, updatedAt: now })
+                ]);
+
+                localStore.set('nomera_user_session', JSON.stringify({ key, nickname }));
+                return { ok: true, profile: starterProfile };
+            }
+
+            if (action === 'login') {
+                const nickname = String(params.nickname || '').trim();
+                const pin = String(params.pin || '');
+                const key = sanitizeKey(nickname);
+
+                const [onlSnap, userSnap] = await Promise.all([
+                    db.ref('onlineV4/accounts/' + key).once('value').catch(() => null),
+                    db.ref('users/' + key).once('value').catch(() => null)
+                ]);
+                const onl = onlSnap ? onlSnap.val() : null;
+                const usr = userSnap ? userSnap.val() : null;
+                const account = onl || usr;
+                if (!account) {
+                    throw Error('Неверный никнейм или PIN');
+                }
+                const savedPin = account.pin || account.password || '';
+                if (savedPin && savedPin !== pin) {
+                    throw Error('Неверный никнейм или PIN');
+                }
+
+                const profile = {
+                    nickname: account.nickname || nickname,
+                    key,
+                    balance: Number(account.balance !== undefined ? account.balance : 50000),
+                    inventory: Array.isArray(account.inventory) ? account.inventory : Object.values(account.inventory || {}),
+                    myCars: Array.isArray(account.myCars) ? account.myCars : Object.values(account.myCars || {}),
+                    playerLevel: Number(account.playerLevel || 1),
+                    playerExp: Number(account.playerExp || 0)
+                };
+
+                localStore.set('nomera_user_session', JSON.stringify({ key, nickname: profile.nickname }));
+                return { ok: true, profile };
+            }
+
+            if (action === 'public') {
+                const [marketSnap, chatSnap] = await Promise.all([
+                    db.ref('onlineV4/market').limitToLast(100).once('value').catch(() => null),
+                    db.ref('onlineV4/chat').limitToLast(40).once('value').catch(() => null)
+                ]);
+                const market = (marketSnap && marketSnap.val()) || {};
+                const chatMap = (chatSnap && chatSnap.val()) || {};
+                const chat = Object.values(chatMap).sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+                return { ok: true, market, chat };
+            }
+
+            if (action === 'chat') {
+                const text = String(params.text || '').trim();
+                if (!text || text.length > 120) throw Error('Сообщение до 120 символов');
+                const sender = (onlineProfile && onlineProfile.nickname) || nickname || 'Игрок';
+                await db.ref('onlineV4/chat').push({
+                    senderName: sender,
+                    nickname: sender,
+                    text,
+                    timestamp: Date.now()
+                });
+                return { ok: true };
+            }
+
+            if (action === 'me') {
+                const sessionRaw = localStore.get('nomera_user_session');
+                if (!sessionRaw) throw Error('Сессия не найдена');
+                let session;
+                try { session = JSON.parse(sessionRaw); } catch (_) { throw Error('Сессия повреждена'); }
+                const key = session.key || sanitizeKey(session.nickname);
+                const onlSnap = await db.ref('onlineV4/accounts/' + key).once('value');
+                if (!onlSnap.exists()) {
+                    localStore.remove('nomera_user_session');
+                    throw Error('Аккаунт не найден');
+                }
+                const account = onlSnap.val();
+                return { ok: true, profile: account, key };
+            }
+
+            if (action === 'logout') {
+                localStore.remove('nomera_user_session');
+                return { ok: true };
+            }
+
+            if (action === 'sell') {
+                const plateId = params.plateId;
+                const price = Number(params.price);
+                if (!Number.isFinite(price) || price < 100 || price > 1000000000) throw Error('Минимальная цена 100 ₽');
+                if (!onlineProfile) throw Error('Требуется вход в онлайн-профиль');
+                const key = sanitizeKey(onlineProfile.nickname);
+                const inv = onlineProfile.inventory || [];
+                const plateIdx = inv.findIndex(p => p.id === plateId || p.text === params.text);
+                if (plateIdx === -1) throw Error('Этот номер отсутствует в вашем инвентаре');
+                const plate = inv[plateIdx];
+                const lotId = 'lot_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+                const lot = {
+                    id: lotId,
+                    seller: onlineProfile.nickname,
+                    sellerKey: key,
+                    plate,
+                    price,
+                    createdAt: Date.now()
+                };
+                inv.splice(plateIdx, 1);
+                await Promise.all([
+                    db.ref('onlineV4/market/' + lotId).set(lot),
+                    db.ref('onlineV4/accounts/' + key + '/inventory').set(inv)
+                ]);
+                onlineProfile.inventory = inv;
+                return { ok: true, lot };
+            }
+
+            if (action === 'buy') {
+                const lotId = params.lotId;
+                if (!onlineProfile) throw Error('Требуется вход в онлайн-профиль');
+                const buyerKey = sanitizeKey(onlineProfile.nickname);
+                const lotSnap = await db.ref('onlineV4/market/' + lotId).once('value');
+                if (!lotSnap.exists()) throw Error('Лот уже куплен или снят с продажи');
+                const lot = lotSnap.val();
+                if (lot.sellerKey === buyerKey) throw Error('Нельзя купить собственный номер');
+                if (onlineProfile.balance < lot.price) throw Error('Недостаточно средств');
+
+                const newBuyerBalance = onlineProfile.balance - lot.price;
+                const buyerInv = [...(onlineProfile.inventory || []), lot.plate];
+                const sellerKey = lot.sellerKey;
+                const sellerSnap = await db.ref('onlineV4/accounts/' + sellerKey).once('value');
+                const sellerAcc = sellerSnap.val() || {};
+                const newSellerBalance = (Number(sellerAcc.balance) || 0) + lot.price;
+
+                await Promise.all([
+                    db.ref('onlineV4/market/' + lotId).remove(),
+                    db.ref('onlineV4/accounts/' + buyerKey).update({ balance: newBuyerBalance, inventory: buyerInv, updatedAt: Date.now() }),
+                    db.ref('onlineV4/accounts/' + sellerKey).update({ balance: newSellerBalance, updatedAt: Date.now() })
+                ]);
+
+                onlineProfile.balance = newBuyerBalance;
+                onlineProfile.inventory = buyerInv;
+                return { ok: true, balance: newBuyerBalance, inventory: buyerInv };
+            }
+
+            if (action === 'cancel') {
+                const lotId = params.lotId;
+                if (!onlineProfile) throw Error('Требуется вход в онлайн-профиль');
+                const userKey = sanitizeKey(onlineProfile.nickname);
+                const lotSnap = await db.ref('onlineV4/market/' + lotId).once('value');
+                if (!lotSnap.exists()) throw Error('Лот не найден');
+                const lot = lotSnap.val();
+                if (lot.sellerKey !== userKey) throw Error('Лот принадлежит другому игроку');
+                const inv = [...(onlineProfile.inventory || []), lot.plate];
+                await Promise.all([
+                    db.ref('onlineV4/market/' + lotId).remove(),
+                    db.ref('onlineV4/accounts/' + userKey + '/inventory').set(inv)
+                ]);
+                onlineProfile.inventory = inv;
+                return { ok: true, inventory: inv };
+            }
+
+            if (action === 'roll') {
+                if (!onlineProfile) throw Error('Требуется вход');
+                const cost = params.mode === 'both' ? 900 : 500;
+                if (onlineProfile.balance < cost) throw Error('Недостаточно средств для спина');
+                const newBal = onlineProfile.balance - cost;
+                const userKey = sanitizeKey(onlineProfile.nickname);
+                await db.ref('onlineV4/accounts/' + userKey).update({ balance: newBal, updatedAt: Date.now() });
+                onlineProfile.balance = newBal;
+                const letters = ['А', 'В', 'Е', 'К', 'М', 'Н', 'О', 'Р', 'С', 'Т', 'У', 'Х'];
+                const draft = {
+                    letters: [letters[Math.floor(Math.random()*letters.length)], letters[Math.floor(Math.random()*letters.length)], letters[Math.floor(Math.random()*letters.length)]],
+                    num: String(Math.floor(100 + Math.random()*900)),
+                    reg: params.region || '77',
+                    hasNumbers: true, hasLetters: true, changedNumbers: true, changedLetters: true
+                };
+                return { ok: true, profile: onlineProfile, draft };
+            }
+
+            if (action === 'claim') {
+                if (!onlineProfile) throw Error('Требуется вход');
+                const userKey = sanitizeKey(onlineProfile.nickname);
+                const plateText = String(currentLetters[0] + ' ' + currentNum + ' ' + currentLetters[1] + currentLetters[2] + ' | ' + currentReg + ' RUS');
+                const plate = {
+                    id: 'plate_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
+                    text: plateText,
+                    price: 2500,
+                    rarity: { text: 'Редкий' }
+                };
+                const inv = [plate, ...(onlineProfile.inventory || [])];
+                await db.ref('onlineV4/accounts/' + userKey + '/inventory').set(inv);
+                onlineProfile.inventory = inv;
+                return { ok: true, profile: onlineProfile, plate };
+            }
+
+            throw Error('Неизвестное действие');
+        }
+
         function renderOnlineAccount() {
             const el=document.getElementById('online-account-status');
             if(!el)return;
