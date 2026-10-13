@@ -611,7 +611,7 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
 
         // --- ОНЛАЙН ПРИСУТСТВИЕ И СЧЕТЧИК ---
         function setupOnlinePresence() {
-            setFirebaseState('🌐 Онлайн: сервер Netlify', true);
+            setFirebaseState(isFirebaseOnline ? '🟢 Онлайн: Firebase' : '🌐 Онлайн: подключение...', true);
             const badge=document.getElementById('multi-online-count');
             if(badge) badge.textContent='V4.4.5';
         }
@@ -619,6 +619,40 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
         function setupMultiplayerListeners() {
             refreshOnlinePublic().catch(()=>{});
             const sessionPromise = restoreOnlineSession();
+            if (db && typeof db.ref === 'function') {
+                try {
+                    db.ref('.info/connected').on('value', snap => {
+                        isFirebaseConnected = !!snap.val();
+                        if (isFirebaseConnected) {
+                            setFirebaseState('🟢 Firebase: онлайн', true);
+                            const pKey = sanitizeKey(nickname || 'Гость');
+                            const presenceRef = db.ref('presence/' + pKey);
+                            presenceRef.set({ nickname: nickname || 'Гость', timestamp: Date.now() }).catch(() => {});
+                            if (presenceRef.onDisconnect) presenceRef.onDisconnect().remove();
+                        } else {
+                            setFirebaseState('⚪ Firebase: подключение...', false);
+                        }
+                    });
+                    db.ref('presence').on('value', snap => {
+                        const count = Object.keys(snap.val() || {}).length || 1;
+                        const badge = document.getElementById('multi-online-count');
+                        if (badge) badge.textContent = `${count} онлайн`;
+                    });
+                    db.ref('onlineV4/chat').limitToLast(50).on('value', snap => {
+                        const chatMap = snap.val() || {};
+                        chatMessagesList = Object.values(chatMap).sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+                        renderChatMessages();
+                    });
+                    db.ref('onlineV4/market').limitToLast(100).on('value', snap => {
+                        marketLots = snap.val() || {};
+                        renderMarketListings();
+                    });
+                    db.ref('leaderboard').limitToLast(100).on('value', snap => {
+                        cloudLeaderboardList = Object.values(snap.val() || {});
+                        renderLeaderboard();
+                    });
+                } catch (_) {}
+            }
             setInterval(()=>{ if(!document.hidden) refreshOnlinePublic().catch(()=>{}); },12000);
             return sessionPromise;
         }
@@ -1495,13 +1529,18 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
             }
 
             if (action === 'public') {
-                const [marketSnap, chatSnap] = await Promise.all([
+                const [marketSnap, chatSnap, lbSnap] = await Promise.all([
                     db.ref('onlineV4/market').limitToLast(100).once('value').catch(() => null),
-                    db.ref('onlineV4/chat').limitToLast(40).once('value').catch(() => null)
+                    db.ref('onlineV4/chat').limitToLast(50).once('value').catch(() => null),
+                    db.ref('leaderboard').limitToLast(100).once('value').catch(() => null)
                 ]);
                 const market = (marketSnap && marketSnap.val()) || {};
                 const chatMap = (chatSnap && chatSnap.val()) || {};
                 const chat = Object.values(chatMap).sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+                if (lbSnap && lbSnap.exists()) {
+                    cloudLeaderboardList = Object.values(lbSnap.val() || {});
+                    renderLeaderboard();
+                }
                 return { ok: true, market, chat };
             }
 
@@ -1509,13 +1548,21 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                 const text = String(params.text || '').trim();
                 if (!text || text.length > 120) throw Error('Сообщение до 120 символов');
                 const sender = (onlineProfile && onlineProfile.nickname) || nickname || 'Игрок';
-                await db.ref('onlineV4/chat').push({
+                const msgId = 'msg_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+                const msg = {
+                    id: msgId,
                     senderName: sender,
                     nickname: sender,
+                    senderKey: sanitizeKey(sender),
+                    senderAvatar: (onlineProfile && onlineProfile.avatarData) || avatarData || DEFAULT_AVATAR,
                     text,
                     timestamp: Date.now()
-                });
-                return { ok: true };
+                };
+                await Promise.all([
+                    db.ref('onlineV4/chat/' + msgId).set(msg),
+                    db.ref('chat/' + msgId).set(msg).catch(() => {})
+                ]);
+                return { ok: true, message: msg };
             }
 
             if (action === 'me') {
@@ -1541,18 +1588,22 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
             if (action === 'sell') {
                 const plateId = params.plateId;
                 const price = Number(params.price);
-                if (!Number.isFinite(price) || price < 100 || price > 1000000000) throw Error('Минимальная цена 100 ₽');
+                if (!Number.isFinite(price) || price < 1000 || price > 1000000000000) throw Error('Минимальная цена 1 000 ₽');
                 if (!onlineProfile) throw Error('Требуется вход в онлайн-профиль');
                 const key = sanitizeKey(onlineProfile.nickname);
-                const inv = onlineProfile.inventory || [];
+                const inv = Array.isArray(onlineProfile.inventory) ? [...onlineProfile.inventory] : [];
                 const plateIdx = inv.findIndex(p => p.id === plateId || p.text === params.text);
                 if (plateIdx === -1) throw Error('Этот номер отсутствует в вашем инвентаре');
-                const plate = inv[plateIdx];
+                const plate = { ...inv[plateIdx] };
+                if (!plate.id) plate.id = 'plate_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
                 const lotId = 'lot_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
                 const lot = {
                     id: lotId,
+                    lotId: lotId,
                     seller: onlineProfile.nickname,
+                    sellerName: onlineProfile.nickname,
                     sellerKey: key,
+                    sellerAvatar: avatarData || DEFAULT_AVATAR,
                     plate,
                     price,
                     createdAt: Date.now()
@@ -1560,10 +1611,11 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                 inv.splice(plateIdx, 1);
                 await Promise.all([
                     db.ref('onlineV4/market/' + lotId).set(lot),
-                    db.ref('onlineV4/accounts/' + key + '/inventory').set(inv)
+                    db.ref('onlineV4/accounts/' + key + '/inventory').set(inv),
+                    db.ref('users/' + key + '/inventory').set(inv).catch(() => {})
                 ]);
                 onlineProfile.inventory = inv;
-                return { ok: true, lot };
+                return { ok: true, profile: onlineProfile, lot };
             }
 
             if (action === 'buy') {
@@ -1574,10 +1626,10 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                 if (!lotSnap.exists()) throw Error('Лот уже куплен или снят с продажи');
                 const lot = lotSnap.val();
                 if (lot.sellerKey === buyerKey) throw Error('Нельзя купить собственный номер');
-                if (onlineProfile.balance < lot.price) throw Error('Недостаточно средств');
+                if (onlineProfile.balance < lot.price) throw Error('Недостаточно средств на онлайн-кошельке');
 
                 const newBuyerBalance = onlineProfile.balance - lot.price;
-                const buyerInv = [...(onlineProfile.inventory || []), lot.plate];
+                const buyerInv = [lot.plate, ...(onlineProfile.inventory || [])];
                 const sellerKey = lot.sellerKey;
                 const sellerSnap = await db.ref('onlineV4/accounts/' + sellerKey).once('value');
                 const sellerAcc = sellerSnap.val() || {};
@@ -1586,12 +1638,17 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                 await Promise.all([
                     db.ref('onlineV4/market/' + lotId).remove(),
                     db.ref('onlineV4/accounts/' + buyerKey).update({ balance: newBuyerBalance, inventory: buyerInv, updatedAt: Date.now() }),
-                    db.ref('onlineV4/accounts/' + sellerKey).update({ balance: newSellerBalance, updatedAt: Date.now() })
+                    db.ref('onlineV4/accounts/' + sellerKey).update({ balance: newSellerBalance, updatedAt: Date.now() }),
+                    db.ref('users/' + buyerKey).update({ balance: newBuyerBalance, inventory: buyerInv, updatedAt: Date.now() }).catch(() => {}),
+                    db.ref('users/' + sellerKey).update({ balance: newSellerBalance, updatedAt: Date.now() }).catch(() => {}),
+                    db.ref('leaderboard/' + buyerKey).update({ balance: newBuyerBalance, updatedAt: Date.now() }).catch(() => {}),
+                    db.ref('leaderboard/' + sellerKey).update({ balance: newSellerBalance, updatedAt: Date.now() }).catch(() => {})
                 ]);
 
                 onlineProfile.balance = newBuyerBalance;
                 onlineProfile.inventory = buyerInv;
-                return { ok: true, balance: newBuyerBalance, inventory: buyerInv };
+                balance = newBuyerBalance;
+                return { ok: true, profile: onlineProfile, balance: newBuyerBalance, inventory: buyerInv };
             }
 
             if (action === 'cancel') {
@@ -1602,13 +1659,14 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                 if (!lotSnap.exists()) throw Error('Лот не найден');
                 const lot = lotSnap.val();
                 if (lot.sellerKey !== userKey) throw Error('Лот принадлежит другому игроку');
-                const inv = [...(onlineProfile.inventory || []), lot.plate];
+                const inv = [lot.plate, ...(onlineProfile.inventory || [])];
                 await Promise.all([
                     db.ref('onlineV4/market/' + lotId).remove(),
-                    db.ref('onlineV4/accounts/' + userKey + '/inventory').set(inv)
+                    db.ref('onlineV4/accounts/' + userKey + '/inventory').set(inv),
+                    db.ref('users/' + userKey + '/inventory').set(inv).catch(() => {})
                 ]);
                 onlineProfile.inventory = inv;
-                return { ok: true, inventory: inv };
+                return { ok: true, profile: onlineProfile, inventory: inv };
             }
 
             if (action === 'roll') {
@@ -1617,8 +1675,14 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                 if (onlineProfile.balance < cost) throw Error('Недостаточно средств для спина');
                 const newBal = onlineProfile.balance - cost;
                 const userKey = sanitizeKey(onlineProfile.nickname);
-                await db.ref('onlineV4/accounts/' + userKey).update({ balance: newBal, updatedAt: Date.now() });
+                await Promise.all([
+                    db.ref('onlineV4/accounts/' + userKey).update({ balance: newBal, updatedAt: Date.now() }),
+                    db.ref('users/' + userKey).update({ balance: newBal, updatedAt: Date.now() }).catch(() => {}),
+                    db.ref('leaderboard/' + userKey).update({ balance: newBal, updatedAt: Date.now() }).catch(() => {})
+                ]);
                 onlineProfile.balance = newBal;
+                balance = newBal;
+                updateBalance();
                 const letters = ['А', 'В', 'Е', 'К', 'М', 'Н', 'О', 'Р', 'С', 'Т', 'У', 'Х'];
                 const draft = {
                     letters: [letters[Math.floor(Math.random()*letters.length)], letters[Math.floor(Math.random()*letters.length)], letters[Math.floor(Math.random()*letters.length)]],
@@ -1632,15 +1696,20 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
             if (action === 'claim') {
                 if (!onlineProfile) throw Error('Требуется вход');
                 const userKey = sanitizeKey(onlineProfile.nickname);
-                const plateText = String(currentLetters[0] + ' ' + currentNum + ' ' + currentLetters[1] + currentLetters[2] + ' | ' + currentReg + ' RUS');
+                const plateText = `${currentL1} ${currentNum} ${currentL2}${currentL3} | ${currentReg} RUS`;
+                const price = typeof calculatePrice === 'function' ? calculatePrice() : 2500;
+                const r = typeof getRarity === 'function' ? getRarity(price) : { text: 'Обычный' };
                 const plate = {
                     id: 'plate_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
                     text: plateText,
-                    price: 2500,
-                    rarity: { text: 'Редкий' }
+                    price: price || 2500,
+                    rarity: { text: (r && r.text) || 'Обычный' }
                 };
                 const inv = [plate, ...(onlineProfile.inventory || [])];
-                await db.ref('onlineV4/accounts/' + userKey + '/inventory').set(inv);
+                await Promise.all([
+                    db.ref('onlineV4/accounts/' + userKey + '/inventory').set(inv),
+                    db.ref('users/' + userKey + '/inventory').set(inv).catch(() => {})
+                ]);
                 onlineProfile.inventory = inv;
                 return { ok: true, profile: onlineProfile, plate };
             }
