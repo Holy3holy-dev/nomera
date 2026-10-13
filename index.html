@@ -21,7 +21,7 @@
     <!-- Подключение Firebase SDK для базы данных, аккаунтов и мультиплеера -->
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
-    <link rel="stylesheet" href="./styles.css?v=10044376a122">
+    <link rel="stylesheet" href="./styles.css?v=32c0cde829e3">
 </head>
 <body>
     <svg class="icon-sprite" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><defs><symbol id="icon-plate" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M7 10h5m-5 4h5m4-4v4"/></symbol><symbol id="icon-collection" viewBox="0 0 24 24"><rect x="4" y="7" width="16" height="13" rx="2"/><path d="M8 7V4h8v3m-8 5h8m-8 4h5"/></symbol><symbol id="icon-garage" viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v10H3zM7 21V12h10v9m-10-5h10"/></symbol><symbol id="icon-race" viewBox="0 0 24 24"><path d="M5 21V3m0 1h6l2 2h7v10h-7l-2-2H5m6-10v10m2-8v10"/></symbol><symbol id="icon-case" viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="14" rx="2"/><path d="M12 7v14M3 12h18m-9-5C4 7 5 1 8 3l4 4m0 0c8 0 7-6 4-4z"/></symbol><symbol id="icon-rating" viewBox="0 0 24 24"><path d="M7 3h10v5a5 5 0 01-10 0zm10 2h4v3a4 4 0 01-4 4M7 5H3v3a4 4 0 004 4m5 1v5m-4 3h8m-6-3h4"/></symbol><symbol id="icon-online" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><ellipse cx="12" cy="12" rx="4" ry="9"/><path d="M3 12h18"/></symbol><symbol id="icon-profile" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M5 21v-2a7 7 0 0114 0v2"/></symbol><symbol id="icon-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3M5 5l2 2m10 10l2 2M5 19l2-2M17 7l2-2"/></symbol></defs></svg>
@@ -82,6 +82,7 @@
 
             <div class="hud-actions">
                 <button class="hud-icon-btn admin-glow-btn hidden" id="hud-admin-btn" onclick="openAdminModal()" title="Админ-Панель">👑 АДМИН</button>
+                <button class="hud-icon-btn" id="hud-daily-btn" onclick="openDailyModal()" title="Ежедневные бонусы и задания" aria-label="Бонусы" style="color: #c9f267; position: relative;">🎁<span id="daily-badge-dot" style="display:none;position:absolute;top:2px;right:2px;width:7px;height:7px;background:#ff2e4c;border-radius:50%;"></span></button>
                 <button class="hud-icon-btn" onclick="openProfileModal()" title="Профиль и Аккаунт" aria-label="Профиль"><svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24"><use href="#icon-profile"/></svg></button>
                 <button class="hud-icon-btn" onclick="openSettings()" title="Настройки" aria-label="Настройки"><svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24"><use href="#icon-settings"/></svg></button>
             </div>
@@ -215,15 +216,27 @@
             </aside></div>
         </div>
 
-        <!-- 2. ВКЛАДКА: ИНВЕНТАРЬ -->
+        <!-- 2. ВКЛАДКА: ИНВЕНТАРЬ И ДОСТИЖЕНИЯ -->
         <div id="inventory" class="tab-content hidden">
             <div class="section-box">
                 <div class="section-header">
                     <div class="section-title">
-                        <span>🎒</span> Моя коллекция номеров
+                        <span>🎒</span> Моя коллекция
                     </div>
                 </div>
-                <div class="inventory-grid" id="inventory-list"></div>
+
+                <div class="market-type-nav" style="margin-bottom: 14px;">
+                    <button class="market-type-btn active" id="btn-col-plates" onclick="switchCollectionTab('plates')">🎒 Номера</button>
+                    <button class="market-type-btn" id="btn-col-achieve" onclick="switchCollectionTab('achieve')">🏆 Достижения (Ачивки)</button>
+                </div>
+
+                <div id="col-subtab-plates">
+                    <div class="inventory-grid" id="inventory-list"></div>
+                </div>
+
+                <div id="col-subtab-achieve" class="hidden">
+                    <div id="achievements-list"></div>
+                </div>
             </div>
         </div>
 
@@ -245,7 +258,47 @@
         <!-- 4. ВКЛАДКА: УЛИЧНЫЕ ГОНКИ (МИНИ-ИГРА) -->
         <div id="racegame" class="tab-content hidden">
             <div class="section-box" style="padding: 16px;">
-                <!-- Меню выбора авто и рекордов -->
+                <!-- Переключатель режима заездов: Трасса / Дрэг -->
+                <div class="market-type-nav" style="margin-bottom: 14px;">
+                    <button class="market-type-btn active" id="btn-race-mode-circuit" onclick="switchRaceMode('circuit')">🏁 Трасса (Выживание)</button>
+                    <button class="market-type-btn" id="btn-race-mode-drag" onclick="switchRaceMode('drag')">⚡ Дрэг-рейсинг (1/4 мили)</button>
+                </div>
+
+                <!-- Меню Дрэг-рейсинга -->
+                <div id="drag-menu-container" class="hidden">
+                    <div class="section-header" style="text-align: center; display: block; margin-bottom: 14px;">
+                        <div class="section-title" style="font-size: 20px; color: #ff2e4c; justify-content: center;">
+                            ⚡ Дрэг-Рейсинг: Дуэль 402 м
+                        </div>
+                        <p style="font-size: 13px; color: var(--text-dim); margin: 6px 0 0 0;">
+                            Прямая дуэль 1 на 1 на 1/4 мили. Следи за светофором, стартуй без фальстарта, дави нитро и забирай банк!
+                        </p>
+                    </div>
+
+                    <!-- Стартовая елка светофора -->
+                    <div class="drag-tree-container">
+                        <div class="drag-light red" id="drag-light-red1"></div>
+                        <div class="drag-light red" id="drag-light-red2"></div>
+                        <div class="drag-light yellow" id="drag-light-yellow"></div>
+                        <div class="drag-light green" id="drag-light-green"></div>
+                        <div class="drag-light false-start" id="drag-light-false"></div>
+                    </div>
+
+                    <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 14px; margin: 12px 0;">
+                        <div style="font-size: 13px; font-weight: 800; color: #fff; margin-bottom: 8px;">Выберите ставку заезда:</div>
+                        <div class="styling-options-row" id="drag-bet-chips">
+                            <button type="button" class="styling-chip active" data-bet="0" onclick="selectDragBet(0)">0 ₽ (Тренировка)</button>
+                            <button type="button" class="styling-chip" data-bet="25000" onclick="selectDragBet(25000)">25 000 ₽</button>
+                            <button type="button" class="styling-chip" data-bet="100000" onclick="selectDragBet(100000)">100 000 ₽</button>
+                            <button type="button" class="styling-chip" data-bet="250000" onclick="selectDragBet(250000)">250 000 ₽</button>
+                        </div>
+                        <div style="font-size: 11px; color: var(--text-muted); margin-top: 6px;" id="drag-rival-info">Соперник: Случайный гонщик из топа</div>
+                    </div>
+
+                    <button class="btn btn-green race-start-btn" onclick="startDragRace()">🚦 На старт! Выехать на дрэг</button>
+                </div>
+
+                <!-- Меню выбора авто и рекордов (Кольцевая трасса) -->
                 <div id="race-menu-container">
                     <div class="section-header" style="text-align: center; display: block; margin-bottom: 14px;">
                         <div class="section-title" style="font-size: 20px; color: #f59e0b; justify-content: center;">
@@ -514,15 +567,22 @@
 
                 <!-- Под-вкладки: Рынок / Чат -->
                 <div class="multi-nav-tabs">
-                    <button class="multi-nav-btn active" id="btn-subtab-market" onclick="switchMultiSubTab('market')">🛒 Рынок Номеров</button>
+                    <button class="multi-nav-btn active" id="btn-subtab-market" onclick="switchMultiSubTab('market')">🛒 Рынок & Биржа</button>
                     <button class="multi-nav-btn" id="btn-subtab-chat" onclick="switchMultiSubTab('chat')">💬 Общий Чат & События</button>
-                    <button class="btn btn-green" style="margin-left:auto; padding: 6px 14px; font-size:12px;" onclick="openSellPlateModal()">+ Выставить номер</button>
+                    <button class="btn btn-green" style="margin-left:auto; padding: 6px 10px; font-size:11px;" onclick="openSellPlateModal()">+ Номер</button>
+                    <button class="btn btn-blue" style="margin-left:6px; padding: 6px 10px; font-size:11px;" onclick="openSellCarModalFromMarket()">+ Авто</button>
                 </div>
 
-                <!-- Подвкладка: Рынок номеров -->
+                <!-- Подвкладка: Рынок номеров и автомобилей -->
                 <div id="multi-subtab-market">
+                    <div class="market-type-nav" style="margin-bottom: 12px;">
+                        <button class="market-type-btn active" id="btn-mkt-filter-all" onclick="filterMarketListings('all')">Все лоты</button>
+                        <button class="market-type-btn" id="btn-mkt-filter-plates" onclick="filterMarketListings('plates')">🔢 Номера</button>
+                        <button class="market-type-btn" id="btn-mkt-filter-cars" onclick="filterMarketListings('cars')">🏎️ Автомобили</button>
+                    </div>
+
                     <div style="font-size:13px; color:var(--text-dim); margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
-                        <span>Активные лоты игроков со всего сервера (покупка и продажа номеров):</span>
+                        <span>Активные лоты игроков (покупка и продажа номеров и авто):</span>
                         <button class="test-btn" onclick="fetchMarketListings()" title="Обновить рынок">🔄</button>
                     </div>
                     <div id="market-listings-grid" class="market-grid">
@@ -679,6 +739,18 @@
                 <div style="margin-bottom: 12px;">
                     <label style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 4px;">Никнейм:</label>
                     <input type="text" id="nickname-input" placeholder="Никнейм" maxlength="15" style="width: 100%; padding: 10px; background: rgba(255,255,255,0.06); border: 1px solid var(--border-subtle); color: #fff; border-radius: var(--radius-sm); font-size: 14px;">
+                </div>
+
+                <div style="margin-bottom: 12px;">
+                    <label style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 4px;">Титул / Звание в чате:</label>
+                    <select id="player-title-select" class="control-select" style="width: 100%; padding: 10px;" onchange="changePlayerTitle(this.value)">
+                        <option value="none">Без титула</option>
+                        <option value="novice">🔰 Новичок</option>
+                        <option value="racer">🏎️ Стритрейсер</option>
+                        <option value="millionaire">💰 Олигарх</option>
+                        <option value="collector">👑 Коллекционер</option>
+                        <option value="drag_king">⚡ Дрэг-мастер</option>
+                    </select>
                 </div>
 
                 <div style="margin-bottom: 12px;">
@@ -868,6 +940,87 @@
         </div>
     </div>
 
+    <!-- МОДАЛЬНОЕ ОКНО: СТАЙЛИНГ АВТОМОБИЛЯ -->
+    <div id="styling-modal" class="modal-overlay">
+        <div class="modal-box" style="max-width: 460px;">
+            <h3 style="margin-top:0; color: #fff;">🎨 Стайлинг и тюнинг внешности</h3>
+            <p style="font-size:12px; color:var(--text-dim); margin-bottom:12px;" id="styling-car-title">Настройка авто</p>
+
+            <div style="margin-bottom:14px;">
+                <div style="font-size:12px; color:#fff; font-weight:800; margin-bottom:6px;">Цвет кузова (15 000 ₽):</div>
+                <div class="styling-swatch-grid" id="styling-color-swatches"></div>
+            </div>
+
+            <div style="margin-bottom:14px;">
+                <div style="font-size:12px; color:#fff; font-weight:800; margin-bottom:6px;">Тонировка стёкол:</div>
+                <div class="styling-options-row" id="styling-tint-chips">
+                    <button type="button" class="styling-chip" data-tint="0" onclick="selectStylingTint(0)">0% Прозрачные (0 ₽)</button>
+                    <button type="button" class="styling-chip" data-tint="50" onclick="selectStylingTint(50)">50% Евро (10 000 ₽)</button>
+                    <button type="button" class="styling-chip" data-tint="95" onclick="selectStylingTint(95)">95% Глухая (25 000 ₽)</button>
+                </div>
+            </div>
+
+            <div style="margin-bottom:18px;">
+                <div style="font-size:12px; color:#fff; font-weight:800; margin-bottom:6px;">Неоновая подсветка днища (35 000 ₽):</div>
+                <div class="styling-options-row" id="styling-neon-chips">
+                    <button type="button" class="styling-chip" data-neon="none" onclick="selectStylingNeon('none')">Выкл</button>
+                    <button type="button" class="styling-chip" data-neon="#00f0ff" onclick="selectStylingNeon('#00f0ff')">Кибер-синий</button>
+                    <button type="button" class="styling-chip" data-neon="#22c55e" onclick="selectStylingNeon('#22c55e')">Зелёный лайм</button>
+                    <button type="button" class="styling-chip" data-neon="#ff0055" onclick="selectStylingNeon('#ff0055')">Неон-красный</button>
+                    <button type="button" class="styling-chip" data-neon="#a855f7" onclick="selectStylingNeon('#a855f7')">Фиолетовый</button>
+                    <button type="button" class="styling-chip" data-neon="#eab308" onclick="selectStylingNeon('#eab308')">Золото</button>
+                </div>
+            </div>
+
+            <div style="display:flex; gap:8px;">
+                <button class="btn btn-green" onclick="confirmApplyStyling()">Применить стайлинг</button>
+                <button class="btn btn-close" onclick="closeStylingModal()">Отмена</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- МОДАЛЬНОЕ ОКНО: ЕЖЕДНЕВНЫЙ БОНУС И КВЕСТЫ -->
+    <div id="daily-modal" class="modal-overlay">
+        <div class="modal-box" style="max-width: 520px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                <h3 style="margin:0; color:#c9f267; font-size:18px;">🎁 Ежедневные бонусы и квесты</h3>
+                <button class="btn btn-close" style="width:auto; padding:4px 10px; margin:0;" onclick="closeDailyModal()">✕</button>
+            </div>
+
+            <div style="font-size:12px; color:var(--text-dim); margin-bottom:10px;">Заходите каждый день за растущей наградой:</div>
+            <div class="daily-grid" id="daily-calendar-grid"></div>
+            <button class="btn btn-green" id="btn-claim-daily" style="margin-bottom:18px;" onclick="claimDailyReward()">Забрать награду дня</button>
+
+            <div style="border-top:1px solid var(--border-subtle); padding-top:14px;">
+                <div style="font-size:13px; font-weight:800; color:#fff; margin-bottom:10px;">📋 Ежедневные задания (обновляются каждые 24ч):</div>
+                <div id="daily-quests-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- МОДАЛЬНОЕ ОКНО: ВЫСТАВЛЕНИЕ АВТО НА РЫНОК -->
+    <div id="sell-car-modal" class="modal-overlay">
+        <div class="modal-box">
+            <h3 style="margin-top:0; color:#ff2e4c; margin-bottom:8px;">🏎️ Выставить автомобиль на рынок</h3>
+            <p style="font-size:13px; color:var(--text-dim); margin-bottom:12px;" id="sell-car-desc">Продажа авто со всеми улучшениями и установленным номером другим игрокам:</p>
+
+            <div style="margin-bottom:12px;" id="sell-car-select-wrapper">
+                <label style="font-size:12px; color:var(--text-muted); display:block; margin-bottom:6px;">Выберите автомобиль:</label>
+                <select id="sell-car-select" class="control-select" style="width:100%; padding:10px;" onchange="updateSellCarModalPreview()"></select>
+            </div>
+
+            <div style="margin-bottom:16px;">
+                <label style="font-size:12px; color:var(--text-muted); display:block; margin-bottom:6px;">Цена продажи (₽):</label>
+                <input type="number" id="sell-car-price" placeholder="Например, 450000" min="10000" style="width:100%; padding:10px; background:rgba(255,255,255,0.06); border:1px solid var(--border-subtle); color:#fff; border-radius:var(--radius-sm); font-size:14px;">
+            </div>
+
+            <div style="display:flex; gap:8px;">
+                <button class="btn btn-green" onclick="confirmSellCar()">Выставить на авторынок</button>
+                <button class="btn btn-close" onclick="closeSellCarModal()">Отмена</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Public Firebase Web configuration is loaded from server runtime, never a private service account. -->
     <script>
         if (!window.NOMERA_FIREBASE_WEB_CONFIG) {
@@ -889,6 +1042,6 @@
     <script src="./js/race-records.js?v=eaeaf8e59fc2"></script>
     <script src="./js/race-economy.js?v=fbfa03fdf97b"></script>
     <script src="./js/audio.js?v=59465c7aad9f"></script>
-    <script src="./js/app.js?v=711b5ea05ffa"></script>
+    <script src="./js/app.js?v=b79ec042b613"></script>
 </body>
 </html>

@@ -1,0 +1,146 @@
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const { createApp } = require('./helpers/create-app.cjs');
+
+test('car styling properly updates car styling attributes and charges balance', () => {
+    const app = createApp({
+        saved: {
+            nickname: 'Tuner_1',
+            balance: 200000,
+            myCars: [{ name: 'ВАЗ-2107 «Жигули»', condition: 100, upgrades: { engine: 0, handling: 0, economy: 0, nitro: 0 } }],
+            achievements: { styling_master: true }
+        }
+    });
+    app.run('loadProgress()');
+    assert.equal(app.run('balance'), 200000);
+    assert.equal(app.run('myCars[0].styling'), undefined);
+
+    // Open styling modal and set attributes
+    app.run('stylingActiveCarIndex = 0; stylingTempColor = "#ef4444"; stylingTempTint = 50; stylingTempNeon = "#00f0ff";');
+    app.run('confirmApplyStyling()');
+
+    assert.equal(app.run('myCars[0].styling.color'), '#ef4444');
+    assert.equal(app.run('myCars[0].styling.tint'), 50);
+    assert.equal(app.run('myCars[0].styling.neon'), '#00f0ff');
+    // Cost: 15k (paint) + 10k (50% tint) + 35k (neon) = 60 000 ₽
+    assert.equal(app.run('balance'), 140000);
+});
+
+test('daily reward grants money and increments streak once per day', () => {
+    const app = createApp({
+        saved: {
+            nickname: 'DailyPlayer',
+            balance: 50000,
+            dailyBonus: { lastClaimDate: null, streak: 0 }
+        }
+    });
+    app.run('loadProgress()');
+    assert.equal(app.run('dailyBonus.streak'), 0);
+
+    // Claim Day 1 reward (15 000 ₽)
+    app.run('claimDailyReward()');
+    assert.equal(app.run('dailyBonus.streak'), 1);
+    assert.equal(app.run('balance'), 65000);
+
+    // Trying to claim again on the same day should be ignored
+    app.run('claimDailyReward()');
+    assert.equal(app.run('dailyBonus.streak'), 1);
+    assert.equal(app.run('balance'), 65000);
+});
+
+test('daily quests progress increments and allows reward collection', () => {
+    const app = createApp({
+        saved: {
+            nickname: 'QuestPlayer',
+            balance: 10000,
+            playerExp: 0,
+            dailyQuests: { date: null, progress: { spins: 0, distance: 0, tune: 0 }, claimed: {} }
+        }
+    });
+    app.run('loadProgress()');
+    app.run('recordQuestProgress("spins", 10)');
+    assert.equal(app.run('dailyQuests.progress.spins'), 10);
+
+    // Claim spins quest (+30 000 ₽, +50 XP)
+    app.run('claimQuestReward("spins")');
+    assert.equal(app.run('balance'), 40000);
+    assert.equal(app.run('dailyQuests.claimed.spins'), true);
+
+    // Cannot claim twice
+    app.run('claimQuestReward("spins")');
+    assert.equal(app.run('balance'), 40000);
+});
+
+test('achievements unlock when conditions are met and award prizes', () => {
+    const app = createApp({
+        saved: {
+            nickname: 'Millionaire',
+            balance: 1000000,
+            achievements: {}
+        }
+    });
+    app.run('loadProgress()');
+    app.run('checkAchievements()');
+
+    // First million achievement awards 100 000 ₽
+    assert.ok(app.run('achievements.first_million'));
+    assert.equal(app.run('balance'), 1100000);
+});
+
+test('chat title selection updates player title and renders correct badge', () => {
+    const app = createApp({
+        saved: {
+            nickname: 'RacerPro',
+            playerTitle: 'novice'
+        }
+    });
+    app.run('loadProgress()');
+    assert.equal(app.run('playerTitle'), 'novice');
+
+    app.run('changePlayerTitle("racer")');
+    assert.equal(app.run('playerTitle'), 'racer');
+
+    const badgeHtml = app.run('getPlayerBadgeHtml("racer", false)');
+    assert.match(badgeHtml, /Стритрейсер/);
+
+    const adminBadgeHtml = app.run('getPlayerBadgeHtml("none", true)');
+    assert.match(adminBadgeHtml, /Администратор/);
+});
+
+test('car market listing removes car from garage and buying restores car to buyer', async () => {
+    const app = createApp({
+        saved: {
+            nickname: 'Seller',
+            balance: 500000,
+            myCars: [
+                { name: 'ВАЗ-2107 «Жигули»', condition: 100 },
+                { name: 'Lada Priora БПАН', condition: 90, styling: { color: '#ef4444', neon: '#00f0ff' } }
+            ]
+        }
+    });
+    app.run('loadProgress()');
+    assert.equal(app.run('myCars.length'), 2);
+
+    // Select car 1 and confirm sell
+    app.run('document.getElementById("sell-car-select").value = "1"');
+    app.run('document.getElementById("sell-car-price").value = "250000"');
+    await app.run('confirmSellCar()');
+
+    assert.equal(app.run('myCars.length'), 1);
+    assert.equal(app.run('myCars[0].name'), 'ВАЗ-2107 «Жигули»');
+
+    // Check lot in marketLots
+    const lotKeys = app.run('Object.keys(marketLots)');
+    assert.equal(lotKeys.length, 1);
+    const lot = app.run(`marketLots["${lotKeys[0]}"]`);
+    assert.equal(lot.type, 'car');
+    assert.equal(lot.price, 250000);
+    assert.equal(lot.car.name, 'Lada Priora БПАН');
+    assert.equal(lot.car.styling.neon, '#00f0ff');
+
+    // Buying the car lot
+    await app.run(`buyMarketLot("${lotKeys[0]}")`);
+    assert.equal(app.run('myCars.length'), 2);
+    assert.equal(app.run('myCars[1].name'), 'Lada Priora БПАН');
+    assert.equal(app.run('balance'), 250000); // 500 000 - 250 000
+});

@@ -2368,3 +2368,202 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 /* H3H Admin password & badges */
 .admin-pass-code { display: inline-block; background: rgba(245, 158, 11, 0.15); color: #fbbf24; padding: 2px 7px; border-radius: 4px; font-family: monospace; font-size: 11px; border: 1px solid rgba(245, 158, 11, 0.3); }
 .admin-glow-btn.active-admin { box-shadow: 0 0 16px rgba(255, 46, 76, 0.7); border-color: #ff2e4c !important; }
+
+/* ============================================================
+   V4.5 EXPANSION: STYLING, DAILY, ACHIEVEMENTS, DRAG, MARKET
+   ============================================================ */
+
+/* 1. Legendary effects & animations */
+@keyframes legendaryPulse {
+    0% { transform: scale(1); box-shadow: 0 0 20px rgba(234, 179, 8, 0.4); }
+    50% { transform: scale(1.04); box-shadow: 0 0 45px rgba(234, 179, 8, 0.85), 0 0 80px rgba(245, 158, 11, 0.5); }
+    100% { transform: scale(1); box-shadow: 0 0 20px rgba(234, 179, 8, 0.4); }
+}
+.legendary-glow-pulse {
+    animation: legendaryPulse 1.2s ease-in-out infinite !important;
+    border-color: #f59e0b !important;
+}
+
+/* 2. Chat titles & badges */
+.chat-title-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 10px;
+    font-weight: 800;
+    padding: 2px 6px;
+    border-radius: 99px;
+    line-height: 1.2;
+    margin-right: 4px;
+    border: 1px solid currentColor;
+    background: rgba(255, 255, 255, 0.06);
+    vertical-align: middle;
+}
+
+/* 3. Car styling modal */
+.styling-swatch-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(42px, 1fr));
+    gap: 10px;
+    margin: 10px 0 16px;
+}
+.styling-swatch {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 3px solid rgba(255, 255, 255, 0.15);
+    transition: transform 0.2s, border-color 0.2s;
+    outline: none;
+}
+.styling-swatch:hover, .styling-swatch:focus-visible {
+    transform: scale(1.15);
+}
+.styling-swatch.active {
+    border-color: #fff;
+    box-shadow: 0 0 14px currentColor;
+    transform: scale(1.1);
+}
+.styling-options-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin: 8px 0 14px;
+}
+.styling-chip {
+    padding: 8px 14px;
+    border-radius: 99px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.styling-chip:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+}
+.styling-chip.active {
+    border-color: #ff2e4c;
+    background: rgba(255, 46, 76, 0.18);
+    color: #fff;
+    box-shadow: 0 0 10px rgba(255, 46, 76, 0.35);
+}
+
+/* 4. Daily bonus calendar & quests modal */
+.daily-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+    gap: 8px;
+    margin: 12px 0 18px;
+}
+.daily-day-card {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 10px 6px;
+    text-align: center;
+    position: relative;
+    transition: all 0.2s;
+}
+.daily-day-card.claimed {
+    opacity: 0.5;
+    border-color: #4ade80;
+    background: rgba(74, 222, 128, 0.05);
+}
+.daily-day-card.today {
+    border-color: #f59e0b;
+    background: rgba(245, 158, 11, 0.12);
+    box-shadow: 0 0 16px rgba(245, 158, 11, 0.25);
+    transform: scale(1.03);
+}
+.daily-day-title { font-size: 11px; font-weight: 800; color: #fff; margin-bottom: 4px; }
+.daily-day-reward { font-size: 12px; font-weight: 900; color: #c9f267; }
+.daily-day-icon { font-size: 22px; margin: 4px 0; }
+
+.quest-item {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 12px 14px;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+}
+.quest-body { flex: 1; min-width: 0; }
+.quest-title { font-size: 13px; font-weight: 800; color: #fff; margin-bottom: 4px; }
+.quest-reward { font-size: 11px; color: #c9f267; font-weight: 700; }
+.quest-track { height: 6px; background: rgba(255,255,255,0.08); border-radius: 99px; overflow: hidden; margin-top: 6px; }
+.quest-track-bar { height: 100%; background: linear-gradient(90deg, #ff2e4c, #c9f267); border-radius: 99px; transition: width 0.3s; }
+
+/* 5. Achievements cards */
+.achievement-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 14px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: all 0.2s;
+}
+.achievement-card.unlocked {
+    border-color: rgba(245, 158, 11, 0.45);
+    background: rgba(245, 158, 11, 0.05);
+}
+.achievement-icon { font-size: 30px; line-height: 1; }
+.achievement-info { flex: 1; min-width: 0; }
+.achievement-name { font-size: 14px; font-weight: 800; color: #fff; }
+.achievement-desc { font-size: 11px; color: var(--text-dim); margin: 3px 0 6px; }
+
+/* 6. PVP Drag Racing */
+.drag-tree-container {
+    display: flex;
+    justify-content: center;
+    gap: 14px;
+    margin: 10px 0;
+    padding: 8px 14px;
+    background: #09090b;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-subtle);
+}
+.drag-light {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #27272a;
+    transition: background 0.1s, box-shadow 0.1s;
+}
+.drag-light.red.on { background: #ef4444; box-shadow: 0 0 16px #ef4444; }
+.drag-light.yellow.on { background: #eab308; box-shadow: 0 0 16px #eab308; }
+.drag-light.green.on { background: #22c55e; box-shadow: 0 0 20px #22c55e; }
+.drag-light.false-start.on { background: #b91c1c; box-shadow: 0 0 20px #dc2626; }
+
+/* 7. Market tabs & Car listings */
+.market-type-nav {
+    display: flex;
+    gap: 8px;
+    margin: 10px 0 14px;
+}
+.market-type-btn {
+    flex: 1;
+    padding: 9px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-subtle);
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--text-muted);
+    font-weight: 700;
+    font-size: 12px;
+    cursor: pointer;
+    text-align: center;
+}
+.market-type-btn.active {
+    background: rgba(255, 46, 76, 0.2);
+    border-color: #ff2e4c;
+    color: #fff;
+}
