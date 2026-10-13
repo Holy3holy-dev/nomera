@@ -92,7 +92,7 @@ async function handle(request,context={}){
       if(!a)return output(401,{ok:false,error:'Сессия устарела или аккаунт удалён. Войдите заново'},sessionCookie('',0));
       return output(200,{ok:true,profile:profileOf(a),key});
     }
-    if(request.method!=='POST'||!['sell','buy','cancel','chat','roll','claim','syncGarage','setRegion'].includes(action))return output(400,{ok:false,error:'Неизвестное действие'});
+    if(request.method!=='POST'||!['sell','buy','cancel','chat','roll','claim','syncGarage','setRegion','spend'].includes(action))return output(400,{ok:false,error:'Неизвестное действие'});
     const txnInput={...data,lotId:action==='sell'?'lot_'+uniqueId():data.lotId,
       plateId:action==='claim'?'plate_'+uniqueId():data.plateId,
       roll:action==='roll'?core.secureRoll(data.mode, Number(data.pity || 0)):undefined,

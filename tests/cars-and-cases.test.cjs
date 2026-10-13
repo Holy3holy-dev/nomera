@@ -176,4 +176,85 @@ test('spinning numbers deducts spin cost and NEVER credits balance automatically
     assert.equal(app.run('balance'), 48600, 'Plate valuation must never be credited to balance');
 });
 
+test('spending money deducts both local and online balance, subsequent spins never refund spent money', async () => {
+    const app = createApp({
+        saved: {
+            nickname: 'HighRoller',
+            balance: 30000000,
+            achievements: { first_million: true },
+            myCars: [{ name: 'ВАЗ-2107 «Жигули»', condition: 100, upgrades: { engine: 0, handling: 0, economy: 0, nitro: 0 } }]
+        }
+    });
+    app.run('loadProgress()');
+    app.run('setOnlineProfile({ nickname: "HighRoller", balance: 30000000, inventory: [], myCars: [] })');
+    assert.equal(app.run('balance'), 30000000);
+    assert.equal(app.run('onlineProfile.balance'), 30000000);
+
+    const luxPrice = app.run('caseConfigs.car_luxury.price');
+    // Buy luxury box (spending funds)
+    app.run('openCasePreview("car_luxury")');
+    app.run('buyCase()');
+    assert.equal(app.run('balance'), 30000000 - luxPrice);
+    assert.equal(app.run('onlineProfile.balance'), 30000000 - luxPrice);
+
+    // Tune the car (spending funds)
+    app.run('isRaceRunning = false;');
+    app.run('upgradeGarageCar(0, "engine")');
+    const balAfterTune = app.run('balance');
+    assert.ok(balAfterTune < 30000000 - luxPrice);
+    assert.equal(app.run('onlineProfile.balance'), balAfterTune);
+
+    // Mock roll response
+    app.context.fetch = async (url, options) => {
+        const input = JSON.parse(options.body);
+        assert.equal(input.action, 'roll');
+        return {
+            ok: true,
+            json: async () => ({
+                ok: true,
+                profile: { nickname: 'HighRoller', balance: balAfterTune - 500, inventory: [] },
+                draft: { letters: ['В', 'О', 'Р'], num: '777', reg: '77', hasNumbers: true, hasLetters: true, changedNumbers: true, changedLetters: true }
+            })
+        };
+    };
+
+    // Spin numbers
+    app.run('isSpinning = false; serverSpinBusy = false;');
+    await app.run('spinNumbers()');
+
+    // Balance must NOT jump back to 30000000!
+    assert.ok(app.run('balance') <= balAfterTune, 'Balance must never jump back to 30,000,000 after spin');
+    assert.notEqual(app.run('balance'), 30000000, 'Spent money must never be restored');
+});
+
+test('onlineFirebaseFallback roll never overwrites spent local balance with old server balance', async () => {
+    const dbData = new Map();
+    const app = createApp({
+        cloud: {
+            ref: (path) => ({
+                update: async (val) => { dbData.set(path, { ...(dbData.get(path) || {}), ...val }); },
+                set: async (val) => { dbData.set(path, val); },
+                once: async () => ({ exists: () => dbData.has(path), val: () => dbData.get(path) })
+            })
+        },
+        saved: {
+            nickname: 'FirebasePlayer',
+            balance: 50000,
+            myCars: [{ name: 'ВАЗ-2107 «Жигули»', condition: 100, upgrades: { engine: 0, handling: 0, economy: 0, nitro: 0 } }]
+        }
+    });
+    app.run('loadProgress()');
+    // Simulate onlineProfile with 120,000,000
+    app.run('onlineProfile = { nickname: "FirebasePlayer", balance: 120000000, inventory: [], myCars: [] }');
+    app.run('balance = 50000');
+
+    // Execute onlineFirebaseFallback roll directly
+    const res = await app.run('onlineFirebaseFallback("roll", { mode: "numbers", region: "77" })');
+    assert.equal(res.ok, true);
+
+    // Local balance must NEVER be 120,000,000!
+    assert.notEqual(app.run('balance'), 120000000, 'Roll must not restore 120,000,000 balance');
+    assert.equal(app.run('balance'), 50000, 'Local cash must be preserved, not overwritten with 120M');
+});
+
 

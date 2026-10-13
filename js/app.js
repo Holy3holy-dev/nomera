@@ -769,6 +769,10 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                         playCashSound();
                         if (typeof sound?.haptic === 'function') sound.haptic('win');
                         saveProgress();
+                    } else if (newBal < balance) {
+                        balance = newBal;
+                        updateBalance();
+                        saveProgress();
                     }
                 };
                 myAccountRef.on('value', myAccountRefListener);
@@ -1980,11 +1984,29 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                 return { ok: true, profile: onlineProfile };
             }
 
+            if (action === 'spend') {
+                if (!onlineProfile) throw Error('Требуется вход');
+                const amount = Math.floor(Number(params.amount) || 0);
+                if (!Number.isFinite(amount) || amount <= 0) throw Error('Некорректная сумма');
+                const userKey = sanitizeKey(onlineProfile.nickname);
+                const newBal = Math.max(0, (Number(onlineProfile.balance) || 0) - amount);
+                onlineProfile.balance = newBal;
+                balance = Math.min(balance, newBal);
+                updateBalance();
+                await Promise.all([
+                    db.ref('onlineV4/accounts/' + userKey).update({ balance: newBal, updatedAt: Date.now() }),
+                    db.ref('users/' + userKey).update({ balance: newBal, updatedAt: Date.now() }).catch(() => {}),
+                    db.ref('leaderboard/' + userKey).update({ balance: newBal, updatedAt: Date.now() }).catch(() => {})
+                ]);
+                return { ok: true, profile: onlineProfile, balance: newBal };
+            }
+
             if (action === 'roll') {
                 if (!onlineProfile) throw Error('Требуется вход');
                 const cost = params.mode === 'both' ? 900 : 500;
-                if (onlineProfile.balance < cost) throw Error('Недостаточно средств для спина');
-                const newBal = onlineProfile.balance - cost;
+                const effectiveBal = Math.min(Number(onlineProfile.balance) || 0, balance);
+                if (effectiveBal < cost) throw Error('Недостаточно средств для спина');
+                const newBal = effectiveBal - cost;
                 const userKey = sanitizeKey(onlineProfile.nickname);
 
                 const existingDraft = (onlineProfile.draft && typeof onlineProfile.draft === 'object') ? onlineProfile.draft : {
@@ -2049,8 +2071,7 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
 
                 onlineProfile.draft = draft;
                 onlineProfile.balance = newBal;
-                balance = newBal;
-                updateBalance();
+                renderOnlineAccount();
 
                 await Promise.all([
                     db.ref('onlineV4/accounts/' + userKey).update({ balance: newBal, draft, updatedAt: Date.now() }),
@@ -2274,7 +2295,7 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
             }
 
             if (lot.type === 'car') {
-                balance -= lot.price;
+                deductPlayerBalance(lot.price, `Покупка автомобиля ${lot.car?.name || ''}`);
                 myCars.push(lot.car);
                 if (db) {
                     db.ref('onlineV4/market/' + lotId).remove().catch(() => {});
@@ -2292,7 +2313,6 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                 }
                 delete marketLots[lotId];
                 playCashSound();
-                updateBalance();
                 renderCars();
                 saveProgress();
                 renderMarketListings();
@@ -2510,6 +2530,28 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
         function updateBalance() {
             const el = document.getElementById('balance');
             if (el) el.innerText = balance.toLocaleString('ru-RU');
+        }
+
+        function deductPlayerBalance(amount, reason = '') {
+            const num = Math.floor(Number(amount) || 0);
+            if (!Number.isFinite(num) || num <= 0) return false;
+            if (balance < num) return false;
+            balance = Math.max(0, balance - num);
+            if (onlineProfile) {
+                onlineProfile.balance = balance;
+                renderOnlineAccount();
+                if (db && typeof db.ref === 'function') {
+                    const key = sanitizeKey(onlineProfile.nickname);
+                    const now = Date.now();
+                    db.ref('onlineV4/accounts/' + key).update({ balance, updatedAt: now }).catch(() => {});
+                    db.ref('users/' + key).update({ balance, updatedAt: now }).catch(() => {});
+                    db.ref('leaderboard/' + key).update({ balance, updatedAt: now }).catch(() => {});
+                }
+                onlineRequest('spend', { amount: num, reason }).catch(() => {});
+            }
+            updateBalance();
+            saveProgress();
+            return true;
         }
 
         // --- СИСТЕМА ОПЫТА ---
@@ -2883,6 +2925,11 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
         async function serverSpin(mode) {
             if(isSpinning||serverSpinBusy)return;
             if(!ensureOnlineAccess())return;
+            const spinCost = mode === 'both' ? 900 : 500;
+            if (balance < spinCost || (onlineProfile && Number(onlineProfile.balance) < spinCost)) {
+                notifyUser(`Недостаточно средств для спина (${spinCost} ₽)!`, 'error');
+                return;
+            }
             serverSpinBusy=true;
             try {
                 if (mode === 'both') {
@@ -3036,8 +3083,7 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
             if(onlineProfile)return serverSpin('numbers');
             if (isSpinning) return;
             if (balance < 500) return notifyUser("Недостаточно средств для спина цифр (500 ₽)!");
-            balance -= 500;
-            updateBalance();
+            deductPlayerBalance(500, 'Спин цифр');
 
             pityCounterNum++;
             let n;
@@ -3062,8 +3108,7 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
             if(onlineProfile)return serverSpin('letters');
             if (isSpinning) return;
             if (balance < 500) return notifyUser("Недостаточно средств для спина букв (500 ₽)!");
-            balance -= 500;
-            updateBalance();
+            deductPlayerBalance(500, 'Спин букв');
 
             pityCounterLet++;
             let l1, l2, l3;
@@ -3090,8 +3135,7 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
             if(onlineProfile)return serverSpin('both');
             if (isSpinning) return;
             if (balance < 900) return notifyUser("Недостаточно средств для полного спина (900 ₽)!");
-            balance -= 900;
-            updateBalance();
+            deductPlayerBalance(900, 'Полный спин');
 
             pityCounterBoth++;
             let forceTier = null;
@@ -3357,8 +3401,7 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
             if (balance < config.price) return notifyUser("Недостаточно средств!");
 
             isSpinning = true;
-            balance -= config.price;
-            updateBalance();
+            deductPlayerBalance(config.price, `Открытие кейса «${config.name}»`);
             achievements.casesOpened = (achievements.casesOpened || 0) + 1;
             checkAchievements();
             logPlayerActivity('Открыл кейс', `Открыл кейс «${config.name}» за ${config.price.toLocaleString('ru-RU')} ₽`);
@@ -3613,12 +3656,12 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
             inventory.forEach((item, index) => {
                 const r = getRarity(Number(item.price) || 0);
                 let rarityHTML = r.text !== "Обычный"
-                    ? `<span style="font-size: 10px; padding: 2px 8px; border-radius: var(--radius-full); background:${r.bg}; color:${r.color}; font-weight:800; letter-spacing:0.5px;">${escapeHtml(r.text)}</span>`
+                    ? `<span class="inv-card-rarity" style="background:${r.bg}; color:${r.color};">${escapeHtml(r.text)}</span>`
                     : '';
 
                 list.innerHTML += `
                     <div class="inv-card">
-                        <div style="width: 100%; display: flex; justify-content: space-between; align-items: center;">
+                        <div class="inv-card-header">
                             ${rarityHTML}
                             <span class="inv-card-price">${Number(item.price || 0).toLocaleString('ru-RU')} ₽</span>
                         </div>
@@ -3844,10 +3887,9 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
             const price = NomeraRaceEconomy.upgradeCost(car.basePrice || template?.price, type, car.upgrades[type]);
             if (price === null) { notifyUser('Этот модуль уже улучшен до максимума.'); return; }
             if (balance < price) { notifyUser(`Для улучшения нужно ${price.toLocaleString('ru-RU')} ₽`, 'error'); return; }
-            balance -= price;
+            deductPlayerBalance(price, 'Тюнинг автомобиля');
             car.upgrades[type]++;
             playCashSound();
-            updateBalance();
             renderCars();
             saveProgress();
             notifyUser(`Тюнинг установлен! Уровень ${car.upgrades[type]}/${NomeraRaceEconomy.MAX_LEVEL}.`, 'success');
@@ -3862,9 +3904,8 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
             const cost = NomeraRaceEconomy.repairCost(car.basePrice || template?.price, car.condition);
             if (cost <= 0) return;
             if (balance < cost) { notifyUser(`На ремонт нужно ${cost.toLocaleString('ru-RU')} ₽`, 'error'); return; }
-            balance -= cost;
+            deductPlayerBalance(cost, 'Ремонт автомобиля');
             car.condition = 100;
-            updateBalance();
             renderCars();
             saveProgress();
             notifyUser('🔧 Машина отремонтирована! Состояние 100%.', 'success');
@@ -3874,7 +3915,7 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
             const carTemplate = carsData.find(c => c.name === name);
             if (!carTemplate) return;
             if (balance < carTemplate.price) return notifyUser(`Недостаточно средств для покупки ${name}! Нужно ${carTemplate.price.toLocaleString('ru-RU')} ₽`);
-            balance -= carTemplate.price;
+            deductPlayerBalance(carTemplate.price, `Покупка автомобиля ${name}`);
             playCashSound();
             myCars.unshift({
                 name: carTemplate.name,
@@ -3883,7 +3924,6 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                 category: carTemplate.category,
                 plate: null
             });
-            updateBalance();
             renderCars();
             saveProgress();
             notifyUser(`🎉 Поздравляем! ${name} успешно приобретен и добавлен в ваш гараж!`);
@@ -3929,10 +3969,9 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
             if (!car || !car.plate) return;
             let cost = car.plate.price * 0.1;
             if (balance < cost) return notifyUser(`Не хватает денег на снятие! Нужно ${cost.toLocaleString('ru-RU')} ₽`);
-            balance -= cost;
+            deductPlayerBalance(cost, 'Снятие номера с автомобиля');
             inventory.unshift(car.plate);
             car.plate = null;
-            updateBalance();
             renderCars();
             renderInventory();
             saveProgress();
@@ -4079,7 +4118,7 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                     notifyUser(`Для стайлинга требуется ${cost.toLocaleString('ru-RU')} ₽`, 'error');
                     return;
                 }
-                balance -= cost;
+                deductPlayerBalance(cost, 'Стайлинг автомобиля');
             }
 
             car.styling = { color: stylingTempColor, tint: stylingTempTint, neon: stylingTempNeon };
@@ -4087,7 +4126,6 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
             recordQuestProgress('tune', 1);
             checkAchievements();
             playCashSound();
-            updateBalance();
             renderCars();
             saveProgress();
             closeStylingModal();
@@ -4392,9 +4430,7 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
 
                 if (falseStart) {
                     lFalse?.classList.add('on');
-                    if (selectedDragBet > 0) balance -= selectedDragBet;
-                    updateBalance();
-                    saveProgress();
+                    if (selectedDragBet > 0) deductPlayerBalance(selectedDragBet, 'Фальстарт в дрэг-рейсинге');
                     isDragRaceRunning = false;
                     notifyUser(`🛑 Фальстарт! Вы нажали газ до зеленого. Ставка -${selectedDragBet.toLocaleString('ru-RU')} ₽ потеряна.`, 'error');
                     return;
@@ -4427,9 +4463,7 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                         saveProgress();
                         notifyUser(`🏆 ПОБЕДА НА 1/4 МИЛИ! Время: ${(10.2 + Math.random() * 0.8).toFixed(2)} с. Выигрыш: ${payout.toLocaleString('ru-RU')} ₽!`, 'success');
                     } else {
-                        if (selectedDragBet > 0) balance -= selectedDragBet;
-                        updateBalance();
-                        saveProgress();
+                        if (selectedDragBet > 0) deductPlayerBalance(selectedDragBet, 'Поражение в дрэг-рейсинге');
                         notifyUser(`Поражение в дрэге! Соперник обогнал на финише на 0.12 с. Ставка потеряна.`, 'error');
                     }
                 }, 2200);

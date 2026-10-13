@@ -304,6 +304,11 @@ function mutate(state, action, key, data, now=Date.now()) {
     }
     draft.pityCounter = nextPity;
     accounts[key]={...a,balance:a.balance-cost,draft,pityCounter:nextPity,updatedAt:now};
+  } else if(action==='spend') {
+    const amount = Math.floor(Number(data.amount) || 0);
+    if (!Number.isFinite(amount) || amount <= 0) throw Error('Некорректная сумма');
+    if (a.balance < amount) throw Error('Недостаточно денег на онлайн-кошельке');
+    accounts[key] = { ...a, balance: a.balance - amount, updatedAt: now };
   } else if(action==='setRegion') {
     if(!data?.region || !/^\d{2,3}$/.test(data.region)) throw Error('Неверный регион');
     const draft={...draftOf(a), reg:data.region};

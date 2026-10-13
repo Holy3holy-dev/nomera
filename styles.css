@@ -849,19 +849,53 @@
             color: black;
             border: 2px solid black;
             border-radius: 5px;
-            padding: 6px 12px;
+            padding: 4px 7px;
             font-family: var(--font-plate);
-            font-size: 16px;
+            font-size: clamp(11px, 3.2vw, 14px);
             font-weight: 900;
-            display: inline-block;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
             box-shadow: inset 0 1px 1px #fff, 0 4px 10px rgba(0,0,0,0.4);
-            letter-spacing: 0.5px;
+            letter-spacing: 0.3px;
+            white-space: nowrap !important;
+            max-width: 100%;
+            box-sizing: border-box;
+            text-align: center;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .inv-card-header {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 4px;
+            min-height: 20px;
         }
 
         .inv-card-price {
-            font-size: 14px;
+            font-size: clamp(10px, 2.7vw, 13px);
             font-weight: 800;
             color: var(--accent-green);
+            white-space: nowrap !important;
+            font-variant-numeric: tabular-nums;
+            flex-shrink: 0;
+            margin-left: auto;
+        }
+
+        .inv-card-rarity {
+            white-space: nowrap !important;
+            font-size: 9px !important;
+            padding: 2px 6px !important;
+            border-radius: var(--radius-full);
+            font-weight: 800;
+            letter-spacing: 0.3px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 50%;
+            flex-shrink: 1;
         }
 
         .empty-state {
@@ -2361,8 +2395,17 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
     .nav-tab { padding:10px 6px; font-size:11px; }
 }
 @media (max-width:768px) {
-    body { padding-bottom:calc(92px + env(safe-area-inset-bottom)); }
-    .main-container { max-width:620px; padding:18px 16px 28px; }
+    body {
+        padding-top: env(safe-area-inset-top, 0px);
+        padding-bottom: calc(92px + env(safe-area-inset-bottom, 0px));
+    }
+    .main-container {
+        max-width: 620px;
+        padding-top: max(44px, calc(16px + env(safe-area-inset-top, 0px))) !important;
+        padding-left: max(12px, calc(12px + env(safe-area-inset-left, 0px)));
+        padding-right: max(12px, calc(12px + env(safe-area-inset-right, 0px)));
+        padding-bottom: 28px;
+    }
     .brand-bar { margin-bottom:18px; gap:12px; }
     .brand-mark { width:44px; height:40px; font-size:17px; }
     .brand-word { font-size:21px; letter-spacing:3px; }
@@ -2416,8 +2459,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
     .race-invite .btn { font-size:11px; padding:10px; }
     .section-box { padding:18px; border-radius:18px; }
     .section-title { font-size:18px; }
-    .inventory-grid,.dealership-grid { grid-template-columns:repeat(auto-fill,minmax(145px,1fr)); gap:12px; }
-    .inv-card { padding:14px; }
+    .inventory-grid,.dealership-grid { grid-template-columns:repeat(auto-fill,minmax(155px,1fr)); gap:10px; }
+    .inv-card { padding:10px; }
     .car-info-body { padding:13px; }
     .race-car-showcase { padding:14px; }
     .race-records-bar { flex-wrap:wrap; justify-content:space-between; gap:12px; }
