@@ -1104,10 +1104,16 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                 const key = sanitizeKey(params.key);
                 if (key === 'h3h') throw Error('Главный профиль h3h нельзя удалить');
                 await Promise.all([
-                    db.ref('users/' + key).remove(),
-                    db.ref('onlineV4/accounts/' + key).remove(),
-                    db.ref('leaderboard/' + key).remove(),
-                    db.ref('online/' + key).remove()
+                    db.ref('users/' + key).remove().catch(() => {}),
+                    db.ref('onlineV4/accounts/' + key).remove().catch(() => {}),
+                    db.ref('leaderboard/' + key).remove().catch(() => {}),
+                    db.ref('online/' + key).remove().catch(() => {}),
+                    db.ref('onlineV4/market').once('value').then(snap => {
+                        const market = snap.val() || {};
+                        const deletes = Object.keys(market).filter(id => market[id]?.sellerKey === key)
+                            .map(id => db.ref('onlineV4/market/' + id).remove());
+                        return Promise.all(deletes);
+                    }).catch(() => {})
                 ]);
 
                 await db.ref('activity').push({
@@ -1330,7 +1336,12 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
         }
         async function adminDeleteUser(key) {
             if (!(await confirmAction('Удалить профиль '+key+' из базы? Действие необратимо.'))) return;
-            await adminExecute('deleteUser',{key},'Игрок удалён');
+            const ok = await adminExecute('deleteUser',{key},'Игрок удалён');
+            if (ok && sanitizeKey(nickname) === sanitizeKey(key)) {
+                onlineProfile = null;
+                playAsGuest();
+                renderOnlineAccount();
+            }
         }
         async function adminAddMyBalance(amount = 100000000) {
             // Admin is a permission, not the active game account: grant to the visible player.
@@ -1380,9 +1391,28 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
             return new Promise(resolve => {
                 const yes = document.getElementById('h3h-admin-input-ok');
                 const no = document.getElementById('h3h-admin-input-cancel');
-                const done = value => { pane.classList.remove('show'); yes.removeEventListener('click',accept); no.removeEventListener('click',cancel); resolve(value); };
-                const accept = () => done(input.value.trim()); const cancel = () => done(null);
-                yes.addEventListener('click',accept); no.addEventListener('click',cancel);
+                const done = value => {
+                    pane.classList.remove('show');
+                    yes.removeEventListener('click', accept);
+                    no.removeEventListener('click', cancel);
+                    pane.removeEventListener('click', backdrop);
+                    input.removeEventListener('keydown', keydown);
+                    document.removeEventListener('keydown', escapeKey);
+                    resolve(value);
+                };
+                const accept = () => done(input.value.trim());
+                const cancel = () => done(null);
+                const backdrop = e => { if (e.target === pane) done(null); };
+                const keydown = e => {
+                    if (e.key === 'Enter') { e.preventDefault(); accept(); }
+                    else if (e.key === 'Escape') { e.preventDefault(); cancel(); }
+                };
+                const escapeKey = e => { if (e.key === 'Escape') cancel(); };
+                yes.addEventListener('click', accept);
+                no.addEventListener('click', cancel);
+                pane.addEventListener('click', backdrop);
+                input.addEventListener('keydown', keydown);
+                document.addEventListener('keydown', escapeKey);
             });
         }
 

@@ -54,13 +54,17 @@ function userShape(key,u) {
 async function adjustBalance(db,key,value,isDelta) {
   const onlineSnap=await db.ref('onlineV4/accounts/'+key).once('value');
   if(onlineSnap.exists()) {
+    const loaded=onlineSnap.val();
+    let first=true;
     const ref=db.ref('onlineV4/accounts/'+key);
     const tx=await ref.transaction(a=>{
-      if(!a) return;
-      const current=Number.isSafeInteger(a.balance)?a.balance:0;
+      const base=(first&&a==null)?loaded:a;
+      first=false;
+      if(!base) return;
+      const current=Number.isSafeInteger(base.balance)?base.balance:0;
       const next=isDelta?current+value:value;
       if(!Number.isSafeInteger(next)||next<0||next>1000000000000) return;
-      return {...a,balance:next,updatedAt:Date.now()};
+      return {...base,balance:next,updatedAt:Date.now()};
     },undefined,false);
     if(!tx.committed)throw Error('Баланс выходит за допустимые пределы');
     const confirmed=tx.snapshot.val().balance;
@@ -69,8 +73,13 @@ async function adjustBalance(db,key,value,isDelta) {
     return confirmed;
   }
   const ref=db.ref('users/'+key);
+  const legSnap=await ref.once('value');
+  const loadedLeg=legSnap.val();
+  let firstLeg=true;
   const result=await ref.transaction(old=>{
-    const profile=old && typeof old==='object' ? old : {nickname:key,playerLevel:1}; // Never invent empty garage on a wallet-only grant
+    const base=(firstLeg&&old==null)?loadedLeg:old;
+    firstLeg=false;
+    const profile=base && typeof base==='object' ? base : {nickname:key,playerLevel:1}; // Never invent empty garage on a wallet-only grant
     const current=Number.isSafeInteger(profile.balance) ? profile.balance : 0;
     const next=isDelta ? current+value : value;
     if (!Number.isSafeInteger(next) || next<0 || next>1000000000000) return; // abort
@@ -90,12 +99,26 @@ async function addCars(db,key,names) {
     return {...profile,myCars:[...existing,...fresh].slice(0,200),updatedAt:Date.now()};
   };
   const onlineRef=db.ref('onlineV4/accounts/'+key);
-  if((await onlineRef.once('value')).exists()) {
-    const done=await onlineRef.transaction(v=>v?add(v):undefined,undefined,false);
+  const onlineSnap=await onlineRef.once('value');
+  if(onlineSnap.exists()) {
+    const loaded=onlineSnap.val();
+    let first=true;
+    const done=await onlineRef.transaction(v=>{
+      const base=(first&&v==null)?loaded:v;
+      first=false;
+      return base?add(base):undefined;
+    },undefined,false);
     if(!done.committed)throw Error('Не удалось обновить онлайн-гараж');
   }
   const ref=db.ref('users/'+key);
-  const result=await ref.transaction(old=>add(old && typeof old==='object'?old:{nickname:key,balance:50000,playerLevel:1}),undefined,false);
+  const legSnap=await ref.once('value');
+  const loadedLeg=legSnap.val();
+  let firstLeg=true;
+  const result=await ref.transaction(old=>{
+    const base=(firstLeg&&old==null)?loadedLeg:old;
+    firstLeg=false;
+    return add(base && typeof base==='object'?base:{nickname:key,balance:50000,playerLevel:1});
+  },undefined,false);
   if (!result.committed) throw Error('Не удалось обновить гараж');
   await db.ref('leaderboard/'+key).update({carsCount:Object.keys(result.snapshot.val().myCars||{}).length});
 }
@@ -103,18 +126,28 @@ async function givePlate(db,key,plateText) {
   if(typeof plateText!=='string'||plateText.length>36||!/^([АВЕКМНОРСТУХ] [0-9]{3} [АВЕКМНОРСТУХ]{2} \| [0-9]{2,3} RUS)$/u.test(plateText)) throw Error('Неверный формат номера');
   const plate={text:plateText,price:1000,rarity:{text:'Обычный'}};
   const onlineRef=db.ref('onlineV4/accounts/'+key);
-  if((await onlineRef.once('value')).exists()) {
+  const onlineSnap=await onlineRef.once('value');
+  if(onlineSnap.exists()) {
+    const loaded=onlineSnap.val();
+    let first=true;
     const confirmed=await onlineRef.transaction(v=>{
-      if(!v)return;
-      const inv=Array.isArray(v.inventory)?v.inventory:Object.values(v.inventory||{});
+      const base=(first&&v==null)?loaded:v;
+      first=false;
+      if(!base)return;
+      const inv=Array.isArray(base.inventory)?base.inventory:Object.values(base.inventory||{});
       if(inv.length>=1000)return;
-      return {...v,inventory:[{...plate,id:'plate_'+crypto.randomBytes(15).toString('base64url')},...inv],updatedAt:Date.now()};
+      return {...base,inventory:[{...plate,id:'plate_'+crypto.randomBytes(15).toString('base64url')},...inv],updatedAt:Date.now()};
     },undefined,false);
     if(!confirmed.committed)throw Error('Онлайн-инвентарь заполнен');
   }
   const ref=db.ref('users/'+key);
+  const legSnap=await ref.once('value');
+  const loadedLeg=legSnap.val();
+  let firstLeg=true;
   const result=await ref.transaction(old=>{
-    const profile=old && typeof old==='object' ? old : {nickname:key,balance:50000,playerLevel:1};
+    const base=(firstLeg&&old==null)?loadedLeg:old;
+    firstLeg=false;
+    const profile=base && typeof base==='object' ? base : {nickname:key,balance:50000,playerLevel:1};
     const inv=Array.isArray(profile.inventory)?profile.inventory:Object.values(profile.inventory||{});
     return {...profile,inventory:[plate,...inv].slice(0,1000),updatedAt:Date.now()};
   },undefined,false);
@@ -220,6 +253,12 @@ async function handle(event) {
       }
       case 'deleteUser': {
         if(key==='h3h') throw Error('Главный профиль нельзя удалить');
+        const marketSnap = await db.ref('onlineV4/market').once('value').catch(() => null);
+        if (marketSnap && marketSnap.exists()) {
+          const market = marketSnap.val() || {};
+          const toRemove = Object.keys(market).filter(id => market[id]?.sellerKey === key);
+          await Promise.all(toRemove.map(id => db.ref('onlineV4/market/' + id).remove().catch(() => {})));
+        }
         await db.ref('onlineV4/accounts/'+key).remove();
         await db.ref('users/'+key).remove();
         await db.ref('leaderboard/'+key).remove();

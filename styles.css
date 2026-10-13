@@ -2301,6 +2301,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .h3h-toast.toast-hide {opacity:0;transform:translateX(18px);transition:opacity .25s,transform .25s;}
 @keyframes h3h-toast-in {from{opacity:0;transform:translateY(-14px) scale(.97);}to{opacity:1;transform:translateY(0) scale(1);}}
 .h3h-dialog {max-width:410px;width:min(100%,410px);text-align:left;}
+#h3h-confirm,
+#h3h-admin-input {z-index:100050 !important;}
 .h3h-dialog h3 {margin:0 0 13px;font-size:20px;color:#ff2e4c;}
 .h3h-dialog p,.h3h-dialog label {white-space:normal;overflow-wrap:anywhere;color:#ffd6dc;font-size:14px;line-height:1.6;}
 .h3h-dialog-actions {display:flex;gap:10px;justify-content:flex-end;margin-top:20px;}

@@ -45,3 +45,19 @@ test('unauthenticated requests never load Firebase and reject cross-site POST',a
   } finally {if(old.hash===undefined)delete process.env.NOMERA_ADMIN_PASSWORD_HASH;else process.env.NOMERA_ADMIN_PASSWORD_HASH=old.hash;
     if(old.secret===undefined)delete process.env.NOMERA_ADMIN_SESSION_SECRET;else process.env.NOMERA_ADMIN_SESSION_SECRET=old.secret;}
 });
+
+test('admin adjustBalance and give items protect against RTDB transaction initial null abort', async () => {
+  const fs = require('node:fs');
+  const path = require('node:path');
+  const code = fs.readFileSync(path.join(__dirname, '../netlify/functions/admin.mjs'), 'utf8');
+  assert.match(code, /first\s*&&\s*a\s*==\s*null/);
+  assert.match(code, /first\s*&&\s*v\s*==\s*null/);
+  assert.match(code, /onlineV4\/market/);
+});
+
+test('admin dialogs have elevated z-index above admin modal', () => {
+  const fs = require('node:fs');
+  const path = require('node:path');
+  const css = fs.readFileSync(path.join(__dirname, '../styles.css'), 'utf8');
+  assert.match(css, /#h3h-confirm[\s\S]*#h3h-admin-input[\s\S]*z-index:\s*100050/);
+});
