@@ -1,28 +1,6 @@
 {
   "rules": {
-    "leaderboard": {
-      ".read": true,
-      ".write": true
-    },
-    "users": {
-      ".read": true,
-      ".write": true
-    },
-    "market": {
-      ".read": true,
-      ".write": true
-    },
-    "chat": {
-      ".read": true,
-      ".write": true
-    },
-    "online": {
-      ".read": true,
-      ".write": true
-    },
-    "activity": {
-      ".read": true,
-      ".write": true
-    }
+    ".read": false,
+    ".write": false
   }
 }

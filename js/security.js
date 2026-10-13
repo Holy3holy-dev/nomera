@@ -1,0 +1,22 @@
+(function (root) {
+    'use strict';
+    function escapeHtml(value) {
+        return String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'}[c]));
+    }
+    function jsArg(value) {
+        return escapeHtml(JSON.stringify(String(value ?? '')).replace(/</g, '\\u003c').replace(/>/g, '\\u003e').replace(/&/g, '\\u0026'));
+    }
+    function safeImageUrl(value, fallback, trusted = []) {
+        if (typeof value !== 'string') return fallback;
+        if (trusted.includes(value)) return value;
+        if (/^data:image\/(png|jpeg|gif|webp);base64,[A-Za-z0-9+/=]+$/i.test(value)) return value;
+        try {
+            const url = new URL(value);
+            if (url.protocol === 'https:' && !url.username && !url.password) return url.href;
+        } catch (_) { /* Untrusted and relative URLs are rejected. */ }
+        return fallback;
+    }
+    const api = { escapeHtml, jsArg, safeImageUrl };
+    if (typeof module !== 'undefined' && module.exports) module.exports = api;
+    else root.NomeraSecurity = api;
+})(typeof globalThis !== 'undefined' ? globalThis : this);

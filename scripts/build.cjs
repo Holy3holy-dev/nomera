@@ -1,0 +1,13 @@
+'use strict';
+// Public web directory contains only client assets. Never publish source, functions or secrets.
+const fs=require('node:fs');
+const path=require('node:path');
+const root=path.resolve(__dirname,'..');
+const dist=path.join(root,'dist');
+fs.rmSync(dist,{recursive:true,force:true});
+fs.mkdirSync(dist,{recursive:true});
+for(const name of ['index.html','test.html','styles.css','manifest.json','sw.js']){
+  fs.copyFileSync(path.join(root,name),path.join(dist,name));
+}
+for(const folder of ['js','icons']) fs.cpSync(path.join(root,folder),path.join(dist,folder),{recursive:true});
+console.log('Clean public dist ready. Private server code stays outside publish directory.');

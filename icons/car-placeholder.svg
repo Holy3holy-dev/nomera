@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="340" viewBox="0 0 600 340">
+<rect width="600" height="340" fill="#141b11"/>
+<g fill="none" stroke="#63794b" stroke-width="3">
+<path d="M130 204l30-50 53-14h126l57 31 43 18v40H130z"/>
+<path d="M178 155l39-8h111l40 25H164m117-25v25"/>
+<circle cx="196" cy="229" r="24" fill="#141b11"/><circle cx="375" cy="229" r="24" fill="#141b11"/>
+<circle cx="196" cy="229" r="10"/><circle cx="375" cy="229" r="10"/>
+</g>
+<path d="M130 191h24m259 4h24" stroke="#d2f465" stroke-width="6"/>
+<text x="300" y="294" fill="#82996c" font-family="sans-serif" font-size="12" letter-spacing="4" text-anchor="middle">H3H / GARAGE</text>
+</svg>
