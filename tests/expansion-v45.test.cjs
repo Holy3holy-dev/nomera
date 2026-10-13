@@ -176,4 +176,56 @@ test('car sprite generation and drawPixelCar support styling color, tint and neo
     assert.match(shopHtml, /car-sprite-img/);
 });
 
+test('race weather atmosphere selector and visual effects work properly', () => {
+    const app = createApp({
+        saved: {
+            nickname: 'WeatherRacer',
+            balance: 500000,
+            myCars: [{ name: 'ВАЗ-2107 «Жигули»', condition: 100 }]
+        }
+    });
+    app.run('loadProgress()');
+
+    // Default weather is auto
+    assert.equal(app.run('raceSelectedWeather'), 'auto');
+    const autoBiome0 = app.run('getTrackBiome(1.0)');
+    assert.equal(autoBiome0.id, 'mow');
+    assert.equal(autoBiome0.isRain, false);
+    assert.equal(autoBiome0.isNight, true);
+
+    const autoBiomeRain = app.run('getTrackBiome(3.5)');
+    assert.equal(autoBiomeRain.id, 'forest');
+    assert.equal(autoBiomeRain.isRain, true);
+
+    // Switch to day mode
+    app.run('setRaceWeather("day")');
+    assert.equal(app.run('raceSelectedWeather'), 'day');
+    const dayBiome = app.run('getTrackBiome(1.0)');
+    assert.equal(dayBiome.id, 'day');
+    assert.equal(dayBiome.isRain, false);
+    assert.equal(dayBiome.isNight, false);
+
+    // Switch to sunset mode
+    app.run('setRaceWeather("sunset")');
+    assert.equal(app.run('raceSelectedWeather'), 'sunset');
+    const sunsetBiome = app.run('getTrackBiome(1.0)');
+    assert.equal(sunsetBiome.id, 'sunset');
+    assert.equal(sunsetBiome.isSunset, true);
+
+    // Switch to night mode
+    app.run('setRaceWeather("night")');
+    assert.equal(app.run('raceSelectedWeather'), 'night');
+    const nightBiome = app.run('getTrackBiome(1.0)');
+    assert.equal(nightBiome.id, 'mow');
+    assert.equal(nightBiome.isNight, true);
+
+    // Switch to rain mode
+    app.run('setRaceWeather("rain")');
+    assert.equal(app.run('raceSelectedWeather'), 'rain');
+    const rainBiome = app.run('getTrackBiome(1.0)');
+    assert.equal(rainBiome.id, 'forest');
+    assert.equal(rainBiome.isRain, true);
+});
+
+
 

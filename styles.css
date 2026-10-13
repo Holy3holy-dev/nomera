@@ -2585,3 +2585,66 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
     background: radial-gradient(circle at center, #1c2438 0%, #080a11 100%);
 }
 
+/* 9. Race Weather & Atmosphere Selector */
+.race-weather-card {
+    margin: 12px 0 14px;
+    padding: 11px 13px;
+    background: rgba(22, 9, 14, 0.75);
+    border: 1px solid rgba(255, 46, 76, 0.28);
+    border-radius: 12px;
+}
+.race-weather-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 9px;
+}
+.race-weather-title {
+    font-size: 12px;
+    font-weight: 800;
+    color: #f8fafc;
+}
+.race-weather-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: #38bdf8;
+    background: rgba(56, 189, 248, 0.12);
+    padding: 2px 8px;
+    border-radius: 99px;
+    border: 1px solid rgba(56, 189, 248, 0.25);
+}
+.race-weather-buttons {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+.race-weather-btn {
+    flex: 1 1 calc(20% - 6px);
+    min-width: 62px;
+    padding: 8px 4px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.05);
+    color: #cbd5e1;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    text-align: center;
+    white-space: nowrap;
+    transition: all 0.18s ease;
+}
+.race-weather-btn:hover {
+    background: rgba(255, 255, 255, 0.12);
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.25);
+}
+.race-weather-btn.active {
+    background: rgba(255, 46, 76, 0.22);
+    border-color: #ff2e4c;
+    color: #fff;
+    box-shadow: 0 0 12px rgba(255, 46, 76, 0.45);
+}
+
+

@@ -5310,43 +5310,114 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                 }
             }
 
-            // Фары светят вперед (Headlights beam)
+            // Объемные лучи фар (Headlights volumetric beams)
             if (options.lightsOn) {
-                const frontY = name === "КАМАЗ / Фура" ? (cy - 36 * s) : (cy - 25 * s);
-                const grad = ctx.createLinearGradient(0, frontY, 0, frontY - 110 * s);
-                grad.addColorStop(0, "rgba(254, 240, 138, 0.45)");
-                grad.addColorStop(0.3, "rgba(254, 240, 138, 0.2)");
-                grad.addColorStop(1, "rgba(254, 240, 138, 0)");
-                ctx.fillStyle = grad;
+                const frontY = name === "КАМАЗ / Фура" ? (cy - 36 * s) : (cy - 24 * s);
+                const beamReach = 145 * s;
+                const spread = 28 * s;
+
+                // 1. Левый луч
+                const gradL = ctx.createLinearGradient(cx - 7 * s, frontY, cx - 18 * s, frontY - beamReach);
+                gradL.addColorStop(0, "rgba(255, 255, 235, 0.65)");
+                gradL.addColorStop(0.2, "rgba(254, 240, 138, 0.35)");
+                gradL.addColorStop(0.65, "rgba(254, 240, 138, 0.12)");
+                gradL.addColorStop(1, "rgba(254, 240, 138, 0)");
+
+                ctx.fillStyle = gradL;
                 ctx.beginPath();
-                ctx.moveTo(cx - 8 * s, frontY);
-                ctx.lineTo(cx - 32 * s, frontY - 110 * s);
-                ctx.lineTo(cx + 32 * s, frontY - 110 * s);
-                ctx.lineTo(cx + 8 * s, frontY);
+                ctx.moveTo(cx - 7 * s, frontY);
+                ctx.lineTo(cx - (7 * s + spread), frontY - beamReach);
+                ctx.lineTo(cx - (7 * s - spread * 0.4), frontY - beamReach);
                 ctx.closePath();
                 ctx.fill();
+
+                // 2. Правый луч
+                const gradR = ctx.createLinearGradient(cx + 7 * s, frontY, cx + 18 * s, frontY - beamReach);
+                gradR.addColorStop(0, "rgba(255, 255, 235, 0.65)");
+                gradR.addColorStop(0.2, "rgba(254, 240, 138, 0.35)");
+                gradR.addColorStop(0.65, "rgba(254, 240, 138, 0.12)");
+                gradR.addColorStop(1, "rgba(254, 240, 138, 0)");
+
+                ctx.fillStyle = gradR;
+                ctx.beginPath();
+                ctx.moveTo(cx + 7 * s, frontY);
+                ctx.lineTo(cx + (7 * s - spread * 0.4), frontY - beamReach);
+                ctx.lineTo(cx + (7 * s + spread), frontY - beamReach);
+                ctx.closePath();
+                ctx.fill();
+
+                // 3. Световое пятно на асфальте перед машиной
+                ctx.save();
+                ctx.fillStyle = "rgba(254, 240, 138, 0.14)";
+                ctx.beginPath();
+                ctx.ellipse(cx, frontY - 70 * s, 34 * s, 65 * s, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
             }
 
-            // Нитро пламя из глушителей
+            // Нитро пламя из глушителей (двойные языки пламени с градиентом)
             if (options.nitro) {
                 const rearY = name === "КАМАЗ / Фура" ? (cy + 34 * s) : (cy + 24 * s);
-                const fLen = (14 + Math.random() * 8) * s;
-                ctx.fillStyle = "#38bdf8";
-                ctx.fillRect(cx - 6 * s, rearY, 3 * s, fLen);
-                ctx.fillRect(cx + 3 * s, rearY, 3 * s, fLen);
-                ctx.fillStyle = "#f59e0b";
-                ctx.fillRect(cx - 5 * s, rearY, 1.5 * s, fLen * 0.7);
-                ctx.fillRect(cx + 4 * s, rearY, 1.5 * s, fLen * 0.7);
+                const fLen = (20 + Math.random() * 14) * s;
+
+                ctx.save();
+                ctx.shadowBlur = 14 * s;
+                ctx.shadowColor = "#00f0ff";
+
+                // Левое сопло: плазменный сине-голубой факел
+                ctx.fillStyle = "#00f0ff";
+                ctx.beginPath();
+                ctx.moveTo(cx - 8 * s, rearY);
+                ctx.lineTo(cx - 6 * s + (Math.random() - 0.5) * 3, rearY + fLen);
+                ctx.lineTo(cx - 4 * s, rearY);
+                ctx.closePath();
+                ctx.fill();
+
+                // Правое сопло
+                ctx.beginPath();
+                ctx.moveTo(cx + 4 * s, rearY);
+                ctx.lineTo(cx + 6 * s + (Math.random() - 0.5) * 3, rearY + fLen);
+                ctx.lineTo(cx + 8 * s, rearY);
+                ctx.closePath();
+                ctx.fill();
+
+                // Внутреннее горячее ядро пламени (бело-желтое)
+                ctx.fillStyle = "#fef08a";
+                ctx.beginPath();
+                ctx.moveTo(cx - 7 * s, rearY);
+                ctx.lineTo(cx - 6 * s, rearY + fLen * 0.48);
+                ctx.lineTo(cx - 5 * s, rearY);
+                ctx.closePath();
+                ctx.fill();
+
+                ctx.beginPath();
+                ctx.moveTo(cx + 5 * s, rearY);
+                ctx.lineTo(cx + 6 * s, rearY + fLen * 0.48);
+                ctx.lineTo(cx + 7 * s, rearY);
+                ctx.closePath();
+                ctx.fill();
+
+                ctx.restore();
             }
 
-            // Стоп-сигналы при торможении
+            // Стоп-сигналы при торможении (яркий красный ареол и пятно на асфальте)
             if (options.braking) {
                 const rearY = name === "КАМАЗ / Фура" ? (cy + 34 * s) : (cy + 24 * s);
-                ctx.fillStyle = "rgba(239, 68, 68, 0.4)";
+                ctx.save();
+                ctx.shadowBlur = 12 * s;
+                ctx.shadowColor = "#ef4444";
+                ctx.fillStyle = "rgba(239, 68, 68, 0.85)";
                 ctx.beginPath();
-                ctx.arc(cx - 8 * s, rearY, 8 * s, 0, Math.PI * 2);
-                ctx.arc(cx + 8 * s, rearY, 8 * s, 0, Math.PI * 2);
+                ctx.arc(cx - 8 * s, rearY, 5 * s, 0, Math.PI * 2);
+                ctx.arc(cx + 8 * s, rearY, 5 * s, 0, Math.PI * 2);
                 ctx.fill();
+
+                // Красный отсвет на асфальте позади машины
+                ctx.fillStyle = "rgba(239, 68, 68, 0.28)";
+                ctx.beginPath();
+                ctx.ellipse(cx, rearY + 12 * s, 22 * s, 10 * s, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
             }
 
             // Поворотники (мигалки оранжевым при перестроении)
@@ -5508,6 +5579,40 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
         let targetRoadCurve = 0;
         let curveTimer = 0;
 
+        // -------------------------------------------------------------
+        // СИСТЕМА ПОГОДЫ И АТМОСФЕРЫ ЗАЕЗДА (День, Закат, Ночь, Дождь, Динамика)
+        // -------------------------------------------------------------
+        let raceSelectedWeather = 'auto';
+        let raceWaterSpray = [];
+        let raceLightningFlash = 0;
+        let raceLightningTimer = 6.0;
+        let raceLightningBolt = [];
+
+        function setRaceWeather(mode) {
+            raceSelectedWeather = mode || 'auto';
+            const labels = {
+                'auto': 'Динамическая (смена по трассе)',
+                'day': '☀️ Ясный день (высокая видимость)',
+                'sunset': '🌅 Закат (золотые и сиреневые тона)',
+                'night': '🌃 Ночной город (яркие фонари)',
+                'rain': '🌧️ Грозовой ливень (мокрый асфальт, молнии)'
+            };
+            const lbl = typeof document !== 'undefined' ? document.getElementById('race-weather-label') : null;
+            if (lbl) {
+                lbl.textContent = labels[raceSelectedWeather] || labels['auto'];
+            }
+            if (typeof document !== 'undefined') {
+                const btns = document.querySelectorAll('.race-weather-btn');
+                btns.forEach(btn => {
+                    if (btn.getAttribute('data-weather') === raceSelectedWeather) {
+                        btn.classList.add('active');
+                    } else {
+                        btn.classList.remove('active');
+                    }
+                });
+            }
+        }
+
         // Генерация частиц дождя для биома М-11
         const raceRainDrops = [];
         for (let i = 0; i < 45; i++) {
@@ -5525,8 +5630,86 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
             return roadCurve * Math.pow(factor, 1.8);
         }
 
-        // Система 4 динамических биомов по пройденной дистанции
+        // Система динамических биомов и атмосферы по дистанции / погоде
         function getTrackBiome(distKm) {
+            if (raceSelectedWeather === 'day') {
+                return {
+                    id: 'day',
+                    name: 'М-4 «Дон»: Солнечный день',
+                    icon: '☀️',
+                    tag: 'РЕЖИМ: ДЕНЬ',
+                    sky: '#38bdf8',
+                    asphalt: '#252f3f',
+                    border: '#15803d',
+                    curb1: '#dc2626',
+                    curb2: '#ffffff',
+                    lineCol: '#ffffff',
+                    themeCol: '#0284c7',
+                    isRain: false,
+                    isNight: false,
+                    isSunset: false,
+                    hasLamps: true
+                };
+            }
+            if (raceSelectedWeather === 'sunset') {
+                return {
+                    id: 'sunset',
+                    name: 'Приморское шоссе: Закат',
+                    icon: '🌅',
+                    tag: 'РЕЖИМ: ЗАКАТ',
+                    sky: '#3b0764',
+                    asphalt: '#1e1b4b',
+                    border: '#581c87',
+                    curb1: '#f59e0b',
+                    curb2: '#fde047',
+                    lineCol: '#fef08a',
+                    themeCol: '#f97316',
+                    isRain: false,
+                    isNight: true,
+                    isSunset: true,
+                    hasLamps: true
+                };
+            }
+            if (raceSelectedWeather === 'night') {
+                return {
+                    id: 'mow',
+                    name: 'МКАД: Огни ночного города',
+                    icon: '🌃',
+                    tag: 'РЕЖИМ: НОЧЬ',
+                    sky: '#040711',
+                    asphalt: '#101622',
+                    border: '#0b111e',
+                    curb1: '#ef4444',
+                    curb2: '#ffffff',
+                    lineCol: '#fbbf24',
+                    themeCol: '#38bdf8',
+                    isRain: false,
+                    isNight: true,
+                    isSunset: false,
+                    hasLamps: true
+                };
+            }
+            if (raceSelectedWeather === 'rain') {
+                return {
+                    id: 'forest',
+                    name: 'М-11 «Нева»: Ночной ливень',
+                    icon: '🌧️',
+                    tag: 'РЕЖИМ: ЛИВЕНЬ',
+                    sky: '#020d12',
+                    asphalt: '#0c161d',
+                    border: '#051f14',
+                    curb1: '#0284c7',
+                    curb2: '#f0f9ff',
+                    lineCol: '#fef08a',
+                    themeCol: '#34d399',
+                    isRain: true,
+                    isNight: true,
+                    isSunset: false,
+                    hasLamps: true
+                };
+            }
+
+            // Динамический режим ('auto') по пройденным километрам
             if (distKm < 2.5) {
                 return {
                     id: 'mow',
@@ -5539,7 +5722,11 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                     curb1: '#ef4444',
                     curb2: '#ffffff',
                     lineCol: '#fbbf24',
-                    themeCol: '#38bdf8'
+                    themeCol: '#38bdf8',
+                    isRain: false,
+                    isNight: true,
+                    isSunset: false,
+                    hasLamps: true
                 };
             } else if (distKm < 5.5) {
                 return {
@@ -5553,7 +5740,11 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                     curb1: '#0284c7',
                     curb2: '#f0f9ff',
                     lineCol: '#fef08a',
-                    themeCol: '#34d399'
+                    themeCol: '#34d399',
+                    isRain: true,
+                    isNight: true,
+                    isSunset: false,
+                    hasLamps: true
                 };
             } else if (distKm < 9.0) {
                 return {
@@ -5567,7 +5758,11 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                     curb1: '#6366f1',
                     curb2: '#c7d2fe',
                     lineCol: '#38bdf8',
-                    themeCol: '#818cf8'
+                    themeCol: '#818cf8',
+                    isRain: false,
+                    isNight: true,
+                    isSunset: true,
+                    hasLamps: true
                 };
             } else {
                 return {
@@ -5581,7 +5776,11 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                     curb1: '#ec4899',
                     curb2: '#a855f7',
                     lineCol: '#f43f5e',
-                    themeCol: '#f43f5e'
+                    themeCol: '#f43f5e',
+                    isRain: false,
+                    isNight: true,
+                    isSunset: false,
+                    hasLamps: false
                 };
             }
         }
@@ -5612,6 +5811,7 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
             renderRaceCarPicker();
             updateRaceCarShowcase();
             updateRaceRecordsUI();
+            setRaceWeather(raceSelectedWeather);
         }
 
         function renderRaceCarPicker() {
@@ -5904,6 +6104,10 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
             raceCollectibles = [];
             raceSkidmarks = [];
             raceSparks = [];
+            raceWaterSpray = [];
+            raceLightningFlash = 0;
+            raceLightningTimer = 4.5 + Math.random() * 4.0;
+            raceLightningBolt = [];
             raceRoadOffset = 0;
             trafficSpawnTimer = 0;
             collectibleSpawnTimer = 0;
@@ -6181,6 +6385,17 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
             }
 
             // 7. Обновление искр
+            if (racePlayer.isNitroActive && Math.random() < 0.6) {
+                const side = Math.random() < 0.5 ? -6 : 6;
+                raceSparks.push({
+                    x: racePlayer.x + side + (Math.random() - 0.5) * 4,
+                    y: racePlayer.y + 24,
+                    vx: (Math.random() - 0.5) * 36,
+                    vy: 60 + Math.random() * 80,
+                    life: 0.35,
+                    color: Math.random() < 0.65 ? '#00f0ff' : '#38bdf8'
+                });
+            }
             for (let i = raceSparks.length - 1; i >= 0; i--) {
                 const sp = raceSparks[i];
                 sp.x += sp.vx * dt;
@@ -6191,12 +6406,66 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                 }
             }
 
-            // 8. Обновление капель дождя
-            for (let d of raceRainDrops) {
-                d.y += (d.speed + racePlayer.speed * 1.5) * dt;
-                d.x -= 80 * dt; // наклон ветра
-                if (d.y > 620) { d.y = -20; d.x = Math.random() * 450; }
-                if (d.x < -20) d.x = 420;
+            const curBiome = getTrackBiome(racePlayer.distanceKm);
+
+            // 8. Обновление капель дождя, водяного шлейфа и молний
+            if (curBiome.isRain) {
+                for (let d of raceRainDrops) {
+                    d.y += (d.speed + racePlayer.speed * 1.5) * dt;
+                    d.x -= 80 * dt; // наклон ветра
+                    if (d.y > 620) { d.y = -20; d.x = Math.random() * 450; }
+                    if (d.x < -20) d.x = 420;
+                }
+
+                // Водяные брызги и шлейф из-под колес при движении
+                if (racePlayer.speed > 28) {
+                    const sprayCount = racePlayer.speed > 160 ? 3 : 2;
+                    for (let k = 0; k < sprayCount; k++) {
+                        const side = Math.random() < 0.5 ? -10 : 10;
+                        raceWaterSpray.push({
+                            x: racePlayer.x + side + (Math.random() - 0.5) * 4,
+                            y: racePlayer.y + 22,
+                            vx: (side > 0 ? 15 : -15) + (Math.random() - 0.5) * 20,
+                            vy: 60 + Math.random() * 100,
+                            size: 2.0 + Math.random() * 2.5,
+                            life: 1.0,
+                            decay: 2.8 + Math.random() * 1.5
+                        });
+                    }
+                }
+
+                // Таймер и вспышки молний
+                raceLightningTimer -= dt;
+                if (raceLightningTimer <= 0) {
+                    raceLightningTimer = 4.5 + Math.random() * 6.0;
+                    raceLightningFlash = 0.22;
+                    const startX = 60 + Math.random() * 280;
+                    raceLightningBolt = [{ x: startX, y: 0 }];
+                    let curX = startX;
+                    let curY = 0;
+                    while (curY < 65) {
+                        curX += (Math.random() - 0.5) * 24;
+                        curY += 8 + Math.random() * 12;
+                        raceLightningBolt.push({ x: curX, y: curY });
+                    }
+                }
+            }
+
+            if (raceLightningFlash > 0) {
+                raceLightningFlash -= dt;
+                if (raceLightningFlash < 0) raceLightningFlash = 0;
+            }
+
+            // Обновление частиц водяного шлейфа
+            for (let i = raceWaterSpray.length - 1; i >= 0; i--) {
+                const sp = raceWaterSpray[i];
+                sp.x += sp.vx * dt;
+                sp.y += (sp.vy + racePlayer.speed * 1.4) * dt;
+                sp.size += 4 * dt;
+                sp.life -= sp.decay * dt;
+                if (sp.life <= 0 || sp.y > 620) {
+                    raceWaterSpray.splice(i, 1);
+                }
             }
 
             // 9. Таймер неуязвимости после касания
@@ -6744,6 +7013,57 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                 // Неоновый туннель: свод кибер-туннеля
                 ctx.fillStyle = "#0d021a";
                 ctx.fillRect(0, 0, W, 70);
+            } else if (biome.id === 'day') {
+                // Солнечный день: холмы и облака
+                ctx.fillStyle = "#15803d";
+                ctx.fillRect(0, 52, W, 18);
+                const sunGrad = ctx.createRadialGradient(200, 24, 2, 200, 24, 22);
+                sunGrad.addColorStop(0, '#fef08a');
+                sunGrad.addColorStop(0.6, '#fde047');
+                sunGrad.addColorStop(1, 'rgba(253, 224, 71, 0)');
+                ctx.fillStyle = sunGrad;
+                ctx.beginPath();
+                ctx.arc(200, 24, 22, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = "rgba(255, 255, 255, 0.55)";
+                ctx.beginPath();
+                ctx.arc(75, 22, 14, 0, Math.PI * 2);
+                ctx.arc(95, 20, 18, 0, Math.PI * 2);
+                ctx.arc(115, 22, 13, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(295, 26, 12, 0, Math.PI * 2);
+                ctx.arc(315, 22, 16, 0, Math.PI * 2);
+                ctx.arc(335, 26, 13, 0, Math.PI * 2);
+                ctx.fill();
+            } else if (biome.id === 'sunset') {
+                // Закат: силуэты гор и заходящее солнце
+                const sunsetSun = ctx.createRadialGradient(200, 48, 4, 200, 48, 38);
+                sunsetSun.addColorStop(0, '#fbbf24');
+                sunsetSun.addColorStop(0.5, '#f97316');
+                sunsetSun.addColorStop(1, 'rgba(249, 115, 22, 0)');
+                ctx.fillStyle = sunsetSun;
+                ctx.beginPath();
+                ctx.arc(200, 48, 38, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = "#3b0764";
+                ctx.fillRect(0, 56, W, 14);
+            }
+
+            // Вспышка и ветвящаяся молния в небе
+            if (biome.isRain && raceLightningFlash > 0 && raceLightningBolt.length > 1) {
+                ctx.save();
+                ctx.strokeStyle = '#f0f9ff';
+                ctx.lineWidth = 2.2;
+                ctx.shadowColor = '#38bdf8';
+                ctx.shadowBlur = 14;
+                ctx.beginPath();
+                ctx.moveTo(raceLightningBolt[0].x, raceLightningBolt[0].y);
+                for (let k = 1; k < raceLightningBolt.length; k++) {
+                    ctx.lineTo(raceLightningBolt[k].x, raceLightningBolt[k].y);
+                }
+                ctx.stroke();
+                ctx.restore();
             }
 
             // 3. Дорожное полотно с изгибом (построчная отрисовка ломтиками по 6px)
@@ -6809,6 +7129,42 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                 }
             }
 
+            // 3.5. Фонарные столбы шоссе и световые пятна (Highway Street Lamps)
+            if (biome.hasLamps) {
+                const lampInterval = 160;
+                const startLampY = (raceRoadOffset * 1.0) % lampInterval;
+                for (let ly = startLampY; ly < H + 30; ly += lampInterval) {
+                    const lcurX = getCurveX(ly);
+                    const llEdge = 50 + lcurX;
+                    const lrEdge = 350 + lcurX;
+
+                    // Световые пятна от фонарей на асфальте
+                    ctx.save();
+                    ctx.fillStyle = biome.isRain ? "rgba(251, 191, 36, 0.09)" : (biome.isNight ? "rgba(251, 191, 36, 0.15)" : "rgba(251, 191, 36, 0.05)");
+                    ctx.beginPath();
+                    ctx.ellipse(llEdge + 28, ly, 36, 16, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.beginPath();
+                    ctx.ellipse(lrEdge - 28, ly, 36, 16, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.restore();
+
+                    // Опоры фонарей на левом отбойнике
+                    ctx.fillStyle = "#64748b";
+                    ctx.fillRect(llEdge - 8, ly - 22, 3, 24);
+                    ctx.fillRect(llEdge - 8, ly - 22, 16, 2.5);
+                    ctx.fillStyle = "#fbbf24";
+                    ctx.fillRect(llEdge + 5, ly - 20, 5, 3.5);
+
+                    // Опоры фонарей на правом отбойнике
+                    ctx.fillStyle = "#64748b";
+                    ctx.fillRect(lrEdge + 5, ly - 22, 3, 24);
+                    ctx.fillRect(lrEdge - 11, ly - 22, 16, 2.5);
+                    ctx.fillStyle = "#fbbf24";
+                    ctx.fillRect(lrEdge - 10, ly - 20, 5, 3.5);
+                }
+            }
+
             // 4. Специфические наложения биомов
             if (biome.id === 'bridge') {
                 // Подвесные ванты моста (стальные тросы)
@@ -6833,16 +7189,28 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                     ctx.arc(aX, ay, 175, Math.PI, 0);
                     ctx.stroke();
                 }
-            } else if (biome.id === 'forest') {
+            }
+            if (biome.isRain) {
                 // Отрисовка капель дождя
-                ctx.strokeStyle = "rgba(186, 230, 253, 0.4)";
-                ctx.lineWidth = 1.2;
+                ctx.strokeStyle = "rgba(186, 230, 253, 0.45)";
+                ctx.lineWidth = 1.3;
                 ctx.beginPath();
                 for (let d of raceRainDrops) {
                     ctx.moveTo(d.x, d.y);
                     ctx.lineTo(d.x - 3, d.y + d.len);
                 }
                 ctx.stroke();
+
+                // Водяной шлейф из-под колес (Rooster tails)
+                if (raceWaterSpray.length > 0) {
+                    for (let sp of raceWaterSpray) {
+                        const spX = sp.x + getCurveX(sp.y);
+                        ctx.fillStyle = `rgba(224, 242, 254, ${Math.max(0, sp.life * 0.42)})`;
+                        ctx.beginPath();
+                        ctx.arc(spX, sp.y, sp.size, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                }
             }
 
             // 5. Следы шин (Skidmarks)
@@ -6905,13 +7273,73 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                 ctx.restore();
             }
 
+            // 6.5. Отражения на мокром асфальте (Wet Road Reflections)
+            const px = racePlayer.x + getCurveX(racePlayer.y);
+            if (biome.isRain) {
+                // Отражения для трафика
+                for (let t of raceTraffic) {
+                    if (!t.isCone) {
+                        const tx = t.x + getCurveX(t.y);
+                        const rW = t.isTruck ? 32 : 22;
+                        const refGrad = ctx.createLinearGradient(0, t.y + 16, 0, t.y + 44);
+                        refGrad.addColorStop(0, "rgba(148, 163, 184, 0.28)");
+                        refGrad.addColorStop(1, "rgba(0, 0, 0, 0)");
+                        ctx.fillStyle = refGrad;
+                        ctx.fillRect(tx - rW / 2, t.y + 16, rW, 28);
+
+                        // Отражения габаритов / стоп-сигналов трафика
+                        const tailRef = ctx.createLinearGradient(0, t.y + 18, 0, t.y + 40);
+                        tailRef.addColorStop(0, t.isBraking ? "rgba(239, 68, 68, 0.65)" : "rgba(239, 68, 68, 0.35)");
+                        tailRef.addColorStop(1, "rgba(239, 68, 68, 0)");
+                        ctx.fillStyle = tailRef;
+                        ctx.fillRect(tx - 8, t.y + 18, 3, 22);
+                        ctx.fillRect(tx + 5, t.y + 18, 3, 22);
+                    }
+                }
+
+                // Отражение для автомобиля игрока
+                const activeCar = myCars[selectedRaceCarIndex] || myCars.find(c => c.name === selectedRaceCarName);
+                const pColor = activeCar?.styling?.color || "#ef4444";
+                const pNeon = activeCar?.styling?.neon;
+                const pRefGrad = ctx.createLinearGradient(0, racePlayer.y + 20, 0, racePlayer.y + 54);
+                pRefGrad.addColorStop(0, pColor);
+                pRefGrad.addColorStop(1, "rgba(0, 0, 0, 0)");
+                ctx.save();
+                ctx.globalAlpha = 0.35;
+                ctx.fillStyle = pRefGrad;
+                ctx.fillRect(px - 12, racePlayer.y + 20, 24, 34);
+                ctx.restore();
+
+                // Отражение стоп-сигналов игрока
+                const pTailRef = ctx.createLinearGradient(0, racePlayer.y + 22, 0, racePlayer.y + 50);
+                pTailRef.addColorStop(0, raceKeys.brake ? "rgba(239, 68, 68, 0.85)" : "rgba(239, 68, 68, 0.45)");
+                pTailRef.addColorStop(1, "rgba(239, 68, 68, 0)");
+                ctx.fillStyle = pTailRef;
+                ctx.fillRect(px - 8, racePlayer.y + 22, 3, 26);
+                ctx.fillRect(px + 5, racePlayer.y + 22, 3, 26);
+
+                // Отражение неона под днищем
+                if (pNeon && pNeon !== 'none') {
+                    const pNeonRef = ctx.createLinearGradient(0, racePlayer.y + 20, 0, racePlayer.y + 52);
+                    pNeonRef.addColorStop(0, pNeon);
+                    pNeonRef.addColorStop(1, "rgba(0, 0, 0, 0)");
+                    ctx.save();
+                    ctx.globalAlpha = 0.45;
+                    ctx.fillStyle = pNeonRef;
+                    ctx.fillRect(px - 14, racePlayer.y + 20, 28, 32);
+                    ctx.restore();
+                }
+            }
+
             // 7. Трафик (другие пиксельные авто, фуры, полиция, конусы)
+            const isTrafficLit = biome.isNight || biome.isRain;
             for (let t of raceTraffic) {
                 const tx = t.x + getCurveX(t.y);
                 if (t.isCone) {
                     drawPixelCar(ctx, tx, t.y, "Дорожный конус", 1.2);
                 } else if (t.isTruck) {
                     drawPixelCar(ctx, tx, t.y, "КАМАЗ / Фура", 1.0, {
+                        lightsOn: isTrafficLit,
                         tilt: t.tilt || 0,
                         braking: t.isBraking || false,
                         blinkerLeft: t.blinker === 'left' && t.blinkerFlash,
@@ -6919,6 +7347,7 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                     });
                 } else if (t.isPolice) {
                     drawPixelCar(ctx, tx, t.y, "ДПС / Полиция", 1.0, {
+                        lightsOn: isTrafficLit,
                         tilt: t.tilt || 0,
                         braking: t.isBraking || false,
                         blinkerLeft: t.blinker === 'left' && t.blinkerFlash,
@@ -6926,7 +7355,7 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                     });
                 } else {
                     drawPixelCar(ctx, tx, t.y, t.name, 1.0, {
-                        lightsOn: false,
+                        lightsOn: isTrafficLit,
                         tilt: t.tilt || 0,
                         braking: t.isBraking || false,
                         blinkerLeft: t.blinker === 'left' && t.blinkerFlash,
@@ -6951,7 +7380,6 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
             }
 
             // 9. Автомобиль игрока (с учетом угла крена кузова и мигания неуязвимости)
-            const px = racePlayer.x + getCurveX(racePlayer.y);
             const shouldBlink = racePlayer.invulnerableTimer > 0 && racePlayer.damageBlink > 2;
             if (!shouldBlink) {
                 const activeCar = myCars[selectedRaceCarIndex] || myCars.find(c => c.name === selectedRaceCarName);
@@ -6983,6 +7411,12 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                 ctx.fillRect(sx, sp.y, 2.5, 2.5);
             }
             ctx.globalAlpha = 1.0;
+
+            // Вспышка молнии на весь экран при грозе
+            if (biome.isRain && raceLightningFlash > 0) {
+                ctx.fillStyle = `rgba(224, 242, 254, ${Math.min(0.42, raceLightningFlash * 1.8)})`;
+                ctx.fillRect(0, 0, W, H);
+            }
 
             // 11. Игровой HUD на Canvas
             // Плашка текущего биома по центру сверху
