@@ -21,7 +21,7 @@ function output(status,body,setCookie=''){
 function uniqueId(){return crypto.randomBytes(15).toString('base64url');}
 function remoteIp(request,context){return context.ip||'unknown';}
 function errorMessage(e){
-  const safe=/^(Неверн|Аккаунт|Пароль|Нельзя|Рынок|Этот номер|Лот|Продавец|Инвентарь|Недостаточно|Баланс|Минимальная|Сообщение|Подождите|Уже активирован|Требуется|Доступ|Сессия)/u;
+  const safe=/^(Неверн|Аккаунт|Пароль|Нельзя|Рынок|Этот номер|Этот автомобиль|Гараж|Лот|Продавец|Инвентарь|Недостаточно|Баланс|Минимальная|Сообщение|Подождите|Уже активирован|Требуется|Доступ|Сессия)/u;
   return safe.test(e.message)?e.message:'Сервер не смог обработать запрос';
 }
 function authValue(request,secret){return verify(secret,cookie(request.headers.get('cookie')),'player');}
@@ -92,7 +92,7 @@ async function handle(request,context={}){
       if(!a)return output(401,{ok:false,error:'Сессия устарела или аккаунт удалён. Войдите заново'},sessionCookie('',0));
       return output(200,{ok:true,profile:profileOf(a),key});
     }
-    if(request.method!=='POST'||!['sell','buy','cancel','chat','roll','claim'].includes(action))return output(400,{ok:false,error:'Неизвестное действие'});
+    if(request.method!=='POST'||!['sell','buy','cancel','chat','roll','claim','syncGarage'].includes(action))return output(400,{ok:false,error:'Неизвестное действие'});
     const txnInput={...data,lotId:action==='sell'?'lot_'+uniqueId():data.lotId,
       plateId:action==='claim'?'plate_'+uniqueId():data.plateId,
       roll:action==='roll'?core.secureRoll(data.mode):undefined,

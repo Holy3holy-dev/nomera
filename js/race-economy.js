@@ -42,13 +42,22 @@
         const {condition, upgrades} = normalizeCar(car);
         // At 0% condition the car remains drivable to prevent deadlocks on an empty wallet.
         const health = 0.65 + condition / 100 * 0.35;
+        let plateMult = 1.0;
+        const rarityText = car?.plate?.rarity?.text || '';
+        if (rarityText === 'БЛАТНОЙ' || rarityText === 'Крутой') plateMult = 1.35;
+        else if (rarityText === 'Легендарный') plateMult = 1.25;
+        else if (rarityText === 'Эпический') plateMult = 1.15;
+        else if (rarityText === 'Супер редкий') plateMult = 1.10;
+        else if (rarityText === 'Редкий') plateMult = 1.05;
+
         return {
             ...baseStats,
             speed: Math.round(baseStats.speed * (1 + upgrades.engine * 0.055) * health),
             accel: Number((baseStats.accel * (1 + upgrades.engine * 0.07) * health).toFixed(2)),
             handling: Number(clamp(baseStats.handling + upgrades.handling * 0.65 - (1-health) * 3, 2, 10).toFixed(2)),
             consumption: Number(((8 + baseStats.speed / 29) * (1 - upgrades.economy * 0.085) * (1 + (1-health) * 0.45)).toFixed(2)),
-            rewardMult: baseStats.rewardMult,
+            rewardMult: Number(((baseStats.rewardMult || 1) * plateMult).toFixed(3)),
+            plateBonus: Math.round((plateMult - 1) * 100),
             nitroDrain: 28 * (1 - upgrades.nitro * 0.1),
             nitroRecharge: 4 + upgrades.nitro * 0.8,
             nitroSpeedBonus: 1.35 + upgrades.nitro * 0.025

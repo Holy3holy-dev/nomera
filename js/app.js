@@ -595,6 +595,7 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
             renderLeaderboard();
             updateBadge();
             updateProfileUI();
+            if (typeof syncCloudGarage === 'function') syncCloudGarage();
         }
 
         function loadProgress() {
@@ -1709,17 +1710,55 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
             }
 
             if (action === 'sell') {
-                const plateId = params.plateId;
                 const price = Number(params.price);
                 if (!Number.isFinite(price) || price < 1000 || price > 1000000000000) throw Error('Минимальная цена 1 000 ₽');
                 if (!onlineProfile) throw Error('Требуется вход в онлайн-профиль');
                 const key = sanitizeKey(onlineProfile.nickname);
+                const lotId = 'lot_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+
+                if (params.type === 'car') {
+                    const cars = Array.isArray(onlineProfile.myCars) && onlineProfile.myCars.length > 0
+                        ? [...onlineProfile.myCars]
+                        : [...myCars];
+                    if (cars.length <= 1) throw Error('Нельзя продать единственный автомобиль');
+                    let carIdx = -1;
+                    if (Number.isSafeInteger(params.carIndex) && params.carIndex >= 0 && params.carIndex < cars.length) {
+                        carIdx = params.carIndex;
+                    } else if (params.car && params.car.name) {
+                        carIdx = cars.findIndex(c => c && c.name === params.car.name);
+                    }
+                    if (carIdx === -1) throw Error('Этот автомобиль отсутствует в вашем гараже');
+                    const car = { ...cars[carIdx] };
+                    cars.splice(carIdx, 1);
+                    const lot = {
+                        id: lotId,
+                        lotId,
+                        type: 'car',
+                        seller: onlineProfile.nickname,
+                        sellerName: onlineProfile.nickname,
+                        sellerKey: key,
+                        sellerAvatar: avatarData || DEFAULT_AVATAR,
+                        car,
+                        price,
+                        createdAt: Date.now()
+                    };
+                    await Promise.all([
+                        db.ref('onlineV4/market/' + lotId).set(lot),
+                        db.ref('onlineV4/accounts/' + key + '/myCars').set(cars),
+                        db.ref('users/' + key + '/myCars').set(cars).catch(() => {})
+                    ]);
+                    onlineProfile.myCars = cars;
+                    myCars = cars;
+                    renderCars();
+                    saveProgress();
+                    return { ok: true, profile: onlineProfile, lot };
+                }
+
                 const inv = Array.isArray(onlineProfile.inventory) ? [...onlineProfile.inventory] : [];
-                const plateIdx = inv.findIndex(p => p.id === plateId || p.text === params.text);
+                const plateIdx = inv.findIndex(p => p.id === params.plateId || p.text === params.text);
                 if (plateIdx === -1) throw Error('Этот номер отсутствует в вашем инвентаре');
                 const plate = { ...inv[plateIdx] };
                 if (!plate.id) plate.id = 'plate_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
-                const lotId = 'lot_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
                 const lot = {
                     id: lotId,
                     lotId: lotId,
@@ -1748,16 +1787,36 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                 const lotSnap = await db.ref('onlineV4/market/' + lotId).once('value');
                 if (!lotSnap.exists()) throw Error('Лот уже куплен или снят с продажи');
                 const lot = lotSnap.val();
-                if (lot.sellerKey === buyerKey) throw Error('Нельзя купить собственный номер');
+                if (lot.sellerKey === buyerKey) throw Error('Нельзя купить собственный лот');
                 if (onlineProfile.balance < lot.price) throw Error('Недостаточно средств на онлайн-кошельке');
 
                 const newBuyerBalance = onlineProfile.balance - lot.price;
-                const buyerInv = [lot.plate, ...(onlineProfile.inventory || [])];
                 const sellerKey = lot.sellerKey;
                 const sellerSnap = await db.ref('onlineV4/accounts/' + sellerKey).once('value');
                 const sellerAcc = sellerSnap.val() || {};
                 const newSellerBalance = (Number(sellerAcc.balance) || 0) + lot.price;
 
+                if (lot.type === 'car') {
+                    const buyerCars = [...(onlineProfile.myCars || myCars), lot.car];
+                    await Promise.all([
+                        db.ref('onlineV4/market/' + lotId).remove(),
+                        db.ref('onlineV4/accounts/' + buyerKey).update({ balance: newBuyerBalance, myCars: buyerCars, updatedAt: Date.now() }),
+                        db.ref('onlineV4/accounts/' + sellerKey).update({ balance: newSellerBalance, updatedAt: Date.now() }),
+                        db.ref('users/' + buyerKey).update({ balance: newBuyerBalance, myCars: buyerCars, updatedAt: Date.now() }).catch(() => {}),
+                        db.ref('users/' + sellerKey).update({ balance: newSellerBalance, updatedAt: Date.now() }).catch(() => {}),
+                        db.ref('leaderboard/' + buyerKey).update({ balance: newBuyerBalance, updatedAt: Date.now() }).catch(() => {}),
+                        db.ref('leaderboard/' + sellerKey).update({ balance: newSellerBalance, updatedAt: Date.now() }).catch(() => {})
+                    ]);
+                    onlineProfile.balance = newBuyerBalance;
+                    onlineProfile.myCars = buyerCars;
+                    balance = newBuyerBalance;
+                    myCars = buyerCars;
+                    renderCars();
+                    saveProgress();
+                    return { ok: true, profile: onlineProfile, balance: newBuyerBalance, myCars: buyerCars };
+                }
+
+                const buyerInv = [lot.plate, ...(onlineProfile.inventory || [])];
                 await Promise.all([
                     db.ref('onlineV4/market/' + lotId).remove(),
                     db.ref('onlineV4/accounts/' + buyerKey).update({ balance: newBuyerBalance, inventory: buyerInv, updatedAt: Date.now() }),
@@ -1782,6 +1841,21 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                 if (!lotSnap.exists()) throw Error('Лот не найден');
                 const lot = lotSnap.val();
                 if (lot.sellerKey !== userKey) throw Error('Лот принадлежит другому игроку');
+
+                if (lot.type === 'car') {
+                    const cars = [lot.car, ...(onlineProfile.myCars || myCars)];
+                    await Promise.all([
+                        db.ref('onlineV4/market/' + lotId).remove(),
+                        db.ref('onlineV4/accounts/' + userKey + '/myCars').set(cars),
+                        db.ref('users/' + userKey + '/myCars').set(cars).catch(() => {})
+                    ]);
+                    onlineProfile.myCars = cars;
+                    myCars = cars;
+                    renderCars();
+                    saveProgress();
+                    return { ok: true, profile: onlineProfile, myCars: cars };
+                }
+
                 const inv = [lot.plate, ...(onlineProfile.inventory || [])];
                 await Promise.all([
                     db.ref('onlineV4/market/' + lotId).remove(),
@@ -1790,6 +1864,18 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                 ]);
                 onlineProfile.inventory = inv;
                 return { ok: true, profile: onlineProfile, inventory: inv };
+            }
+
+            if (action === 'syncGarage') {
+                if (!onlineProfile) throw Error('Требуется вход в онлайн-профиль');
+                const userKey = sanitizeKey(onlineProfile.nickname);
+                const cars = Array.isArray(params.myCars) ? params.myCars : myCars;
+                await Promise.all([
+                    db.ref('onlineV4/accounts/' + userKey + '/myCars').set(cars),
+                    db.ref('users/' + userKey + '/myCars').set(cars).catch(() => {})
+                ]);
+                onlineProfile.myCars = cars;
+                return { ok: true, profile: onlineProfile };
             }
 
             if (action === 'roll') {
@@ -1917,12 +2003,32 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                 ? `🔒 ${onlineProfile.nickname} · онлайн-кошелёк: ${Number(onlineProfile.balance).toLocaleString('ru-RU')} ₽ · подтверждено номеров: ${(onlineProfile.inventory||[]).length}`
                 : '🔒 Нет активного аккаунта · войдите или зарегистрируйтесь один раз';
         }
+        let syncGarageTimer = null;
+        function syncCloudGarage() {
+            if (!onlineProfile) return;
+            clearTimeout(syncGarageTimer);
+            syncGarageTimer = setTimeout(async () => {
+                try {
+                    await onlineRequest('syncGarage', { myCars });
+                    if (onlineProfile) onlineProfile.myCars = [...myCars];
+                } catch (e) {
+                    console.warn('Не удалось синхронизировать гараж с сервером:', e.message);
+                }
+            }, 500);
+        }
+
         function setOnlineProfile(profile,applyInventory=false) {
             onlineProfile=profile;
             if(profile && applyInventory) {
                 const owned=new Set((profile.inventory||[]).map(p=>p.text));
                 const unconfirmed=inventory.filter(p=>!p.id&&!owned.has(p.text));
                 inventory=[...(profile.inventory||[]),...unconfirmed];
+                if (Array.isArray(profile.myCars) && profile.myCars.length > 0) {
+                    myCars = profile.myCars;
+                    renderCars();
+                } else if (myCars && myCars.length > 0) {
+                    syncCloudGarage();
+                }
                 renderInventory();
                 saveProgress();
             }
@@ -2028,6 +2134,20 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
             if (!(await confirmAction(`Купить ${itemName} за ${lot.price.toLocaleString('ru-RU')} ₽?`))) return;
             if (balance < lot.price) return notifyUser('Недостаточно средств', 'error');
 
+            if (onlineProfile) {
+                try {
+                    const data = await onlineRequest('buy', { lotId });
+                    setOnlineProfile(data.profile, true);
+                    await refreshOnlinePublic();
+                    notifyUser(lot.type === 'car' ? `✅ Автомобиль «${lot.car?.name}» успешно приобретён!` : '✅ Покупка подтверждена сервером', 'success');
+                    playCashSound();
+                    return;
+                } catch (e) {
+                    notifyUser(e.message, 'error');
+                    return;
+                }
+            }
+
             if (lot.type === 'car') {
                 balance -= lot.price;
                 myCars.push(lot.car);
@@ -2045,17 +2165,23 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
             }
 
             if (!ensureOnlineAccess()) return;
-            try {
-                const data = await onlineRequest('buy', { lotId });
-                setOnlineProfile(data.profile, true);
-                await refreshOnlinePublic();
-                notifyUser('✅ Покупка подтверждена сервером');
-                playCashSound();
-            } catch (e) { notifyUser(e.message, 'error'); }
         }
         async function cancelMarketLot(lotId) {
             const lot = marketLots[lotId];
             if (!(await confirmAction('Снять лот с продажи?'))) return;
+
+            if (onlineProfile) {
+                try {
+                    const data = await onlineRequest('cancel', { lotId });
+                    setOnlineProfile(data.profile, true);
+                    await refreshOnlinePublic();
+                    notifyUser(lot?.type === 'car' ? '✅ Автомобиль возвращён в ваш гараж' : '✅ Лот снят, номер возвращён в онлайн-инвентарь');
+                    return;
+                } catch (e) {
+                    notifyUser(e.message, 'error');
+                    return;
+                }
+            }
 
             if (lot && lot.type === 'car') {
                 myCars.push(lot.car);
@@ -2071,12 +2197,6 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
             }
 
             if (!ensureOnlineAccess()) return;
-            try {
-                const data = await onlineRequest('cancel', { lotId });
-                setOnlineProfile(data.profile, true);
-                await refreshOnlinePublic();
-                notifyUser('✅ Лот снят, номер возвращён в онлайн-инвентарь');
-            } catch (e) { notifyUser(e.message, 'error'); }
         }
         async function fetchMarketListings() {
             try { await refreshOnlinePublic(); notifyUser('Рынок обновлён'); }
@@ -4138,6 +4258,28 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
             if (!car || !Number.isSafeInteger(price) || price < 10000 || price > 1000000000000) {
                 notifyUser('Укажите корректную цену (от 10 000 ₽)', 'error');
                 return;
+            }
+
+            if (onlineProfile) {
+                try {
+                    if (!Array.isArray(onlineProfile.myCars) || onlineProfile.myCars.length === 0) {
+                        await onlineRequest('syncGarage', { myCars });
+                    }
+                    const res = await onlineRequest('sell', { type: 'car', carIndex: idx, car, price });
+                    if (res.profile) setOnlineProfile(res.profile, true);
+                    else {
+                        myCars.splice(idx, 1);
+                        saveProgress();
+                        renderCars();
+                    }
+                    closeSellCarModal();
+                    await refreshOnlinePublic();
+                    notifyUser(`Автомобиль «${car.name}» выставлен на авторынок за ${price.toLocaleString('ru-RU')} ₽!`, 'success');
+                    return;
+                } catch (e) {
+                    notifyUser('Не удалось выставить авто: ' + e.message, 'error');
+                    return;
+                }
             }
 
             const lotId = 'lot_car_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
@@ -6241,7 +6383,10 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
 
             if (plateSlot) {
                 if (isOwned && ownedCarObj && ownedCarObj.plate) {
-                    plateSlot.innerHTML = `<span class="mini-plate" style="font-size: 13px; padding: 2px 8px;">${escapeHtml(ownedCarObj.plate.text)}</span>`;
+                    const bonusBadge = stats.plateBonus > 0
+                        ? `<span style="font-size: 11px; margin-left: 6px; color: #fbbf24; font-weight: 700; background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.4); padding: 2px 6px; border-radius: 4px;">✨ +${stats.plateBonus}% ₽</span>`
+                        : '';
+                    plateSlot.innerHTML = `<span class="mini-plate" style="font-size: 13px; padding: 2px 8px;">${escapeHtml(ownedCarObj.plate.text)}</span>${bonusBadge}`;
                 } else if (isOwned) {
                     plateSlot.innerHTML = `<span style="font-size: 11px; color: var(--text-dim);">Без госномера</span>`;
                 } else {
@@ -7332,6 +7477,92 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
             setTimeout(() => document.getElementById('race-gameover-modal').classList.add('show'), 300);
         }
 
+        // Кэшированные градиенты для Canvas 60 FPS (предотвращение аллокаций памяти и GC фризов)
+        let cachedSunGrad = null;
+        let cachedSunsetSun = null;
+        let cachedNormRefGrad = null;
+        let cachedNormTailBrake = null;
+        let cachedNormTailNormal = null;
+        let cachedPlayerGradColor = null;
+        let cachedPlayerGrad = null;
+        let cachedPlayerNeonColor = null;
+        let cachedPlayerNeonGrad = null;
+
+        function getSunGrad(ctx) {
+            if (!cachedSunGrad) {
+                cachedSunGrad = ctx.createRadialGradient(200, 24, 2, 200, 24, 22);
+                cachedSunGrad.addColorStop(0, '#fef08a');
+                cachedSunGrad.addColorStop(0.6, '#fde047');
+                cachedSunGrad.addColorStop(1, 'rgba(253, 224, 71, 0)');
+            }
+            return cachedSunGrad;
+        }
+
+        function getSunsetSun(ctx) {
+            if (!cachedSunsetSun) {
+                cachedSunsetSun = ctx.createRadialGradient(200, 48, 4, 200, 48, 38);
+                cachedSunsetSun.addColorStop(0, '#fbbf24');
+                cachedSunsetSun.addColorStop(0.5, '#f97316');
+                cachedSunsetSun.addColorStop(1, 'rgba(249, 115, 22, 0)');
+            }
+            return cachedSunsetSun;
+        }
+
+        function drawVerticalRef(ctx, x, y, w, h, grad) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.scale(1, h);
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, w, 1);
+            ctx.restore();
+        }
+
+        function getNormRefGrad(ctx) {
+            if (!cachedNormRefGrad) {
+                cachedNormRefGrad = ctx.createLinearGradient(0, 0, 0, 1);
+                cachedNormRefGrad.addColorStop(0, "rgba(148, 163, 184, 0.28)");
+                cachedNormRefGrad.addColorStop(1, "rgba(0, 0, 0, 0)");
+            }
+            return cachedNormRefGrad;
+        }
+
+        function getNormTailGrad(ctx, isBraking) {
+            if (isBraking) {
+                if (!cachedNormTailBrake) {
+                    cachedNormTailBrake = ctx.createLinearGradient(0, 0, 0, 1);
+                    cachedNormTailBrake.addColorStop(0, "rgba(239, 68, 68, 0.65)");
+                    cachedNormTailBrake.addColorStop(1, "rgba(239, 68, 68, 0)");
+                }
+                return cachedNormTailBrake;
+            }
+            if (!cachedNormTailNormal) {
+                cachedNormTailNormal = ctx.createLinearGradient(0, 0, 0, 1);
+                cachedNormTailNormal.addColorStop(0, "rgba(239, 68, 68, 0.35)");
+                cachedNormTailNormal.addColorStop(1, "rgba(239, 68, 68, 0)");
+            }
+            return cachedNormTailNormal;
+        }
+
+        function getPlayerRefGrad(ctx, color) {
+            if (cachedPlayerGradColor !== color || !cachedPlayerGrad) {
+                cachedPlayerGradColor = color;
+                cachedPlayerGrad = ctx.createLinearGradient(0, 0, 0, 1);
+                cachedPlayerGrad.addColorStop(0, color);
+                cachedPlayerGrad.addColorStop(1, "rgba(0, 0, 0, 0)");
+            }
+            return cachedPlayerGrad;
+        }
+
+        function getPlayerNeonGrad(ctx, neon) {
+            if (cachedPlayerNeonColor !== neon || !cachedPlayerNeonGrad) {
+                cachedPlayerNeonColor = neon;
+                cachedPlayerNeonGrad = ctx.createLinearGradient(0, 0, 0, 1);
+                cachedPlayerNeonGrad.addColorStop(0, neon);
+                cachedPlayerNeonGrad.addColorStop(1, "rgba(0, 0, 0, 0)");
+            }
+            return cachedPlayerNeonGrad;
+        }
+
         // Отрисовка кадра гонки (4 биома, изгибы трассы, визуальные эффекты)
         function renderRaceFrame() {
             const canvas = document.getElementById('race-canvas');
@@ -7386,11 +7617,7 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                 // Солнечный день: холмы и облака
                 ctx.fillStyle = "#15803d";
                 ctx.fillRect(0, 52, W, 18);
-                const sunGrad = ctx.createRadialGradient(200, 24, 2, 200, 24, 22);
-                sunGrad.addColorStop(0, '#fef08a');
-                sunGrad.addColorStop(0.6, '#fde047');
-                sunGrad.addColorStop(1, 'rgba(253, 224, 71, 0)');
-                ctx.fillStyle = sunGrad;
+                ctx.fillStyle = getSunGrad(ctx);
                 ctx.beginPath();
                 ctx.arc(200, 24, 22, 0, Math.PI * 2);
                 ctx.fill();
@@ -7407,11 +7634,7 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                 ctx.fill();
             } else if (biome.id === 'sunset') {
                 // Закат: силуэты гор и заходящее солнце
-                const sunsetSun = ctx.createRadialGradient(200, 48, 4, 200, 48, 38);
-                sunsetSun.addColorStop(0, '#fbbf24');
-                sunsetSun.addColorStop(0.5, '#f97316');
-                sunsetSun.addColorStop(1, 'rgba(249, 115, 22, 0)');
-                ctx.fillStyle = sunsetSun;
+                ctx.fillStyle = getSunsetSun(ctx);
                 ctx.beginPath();
                 ctx.arc(200, 48, 38, 0, Math.PI * 2);
                 ctx.fill();
@@ -7645,24 +7868,18 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
             // 6.5. Отражения на мокром асфальте (Wet Road Reflections)
             const px = racePlayer.x + getCurveX(racePlayer.y);
             if (biome.isRain) {
+                const normRef = getNormRefGrad(ctx);
                 // Отражения для трафика
                 for (let t of raceTraffic) {
                     if (!t.isCone) {
                         const tx = t.x + getCurveX(t.y);
                         const rW = t.isTruck ? 32 : 22;
-                        const refGrad = ctx.createLinearGradient(0, t.y + 16, 0, t.y + 44);
-                        refGrad.addColorStop(0, "rgba(148, 163, 184, 0.28)");
-                        refGrad.addColorStop(1, "rgba(0, 0, 0, 0)");
-                        ctx.fillStyle = refGrad;
-                        ctx.fillRect(tx - rW / 2, t.y + 16, rW, 28);
+                        drawVerticalRef(ctx, tx - rW / 2, t.y + 16, rW, 28, normRef);
 
                         // Отражения габаритов / стоп-сигналов трафика
-                        const tailRef = ctx.createLinearGradient(0, t.y + 18, 0, t.y + 40);
-                        tailRef.addColorStop(0, t.isBraking ? "rgba(239, 68, 68, 0.65)" : "rgba(239, 68, 68, 0.35)");
-                        tailRef.addColorStop(1, "rgba(239, 68, 68, 0)");
-                        ctx.fillStyle = tailRef;
-                        ctx.fillRect(tx - 8, t.y + 18, 3, 22);
-                        ctx.fillRect(tx + 5, t.y + 18, 3, 22);
+                        const tailRef = getNormTailGrad(ctx, t.isBraking);
+                        drawVerticalRef(ctx, tx - 8, t.y + 18, 3, 22, tailRef);
+                        drawVerticalRef(ctx, tx + 5, t.y + 18, 3, 22, tailRef);
                     }
                 }
 
@@ -7670,32 +7887,23 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                 const activeCar = myCars[selectedRaceCarIndex] || myCars.find(c => c.name === selectedRaceCarName);
                 const pColor = activeCar?.styling?.color || "#ef4444";
                 const pNeon = activeCar?.styling?.neon;
-                const pRefGrad = ctx.createLinearGradient(0, racePlayer.y + 20, 0, racePlayer.y + 54);
-                pRefGrad.addColorStop(0, pColor);
-                pRefGrad.addColorStop(1, "rgba(0, 0, 0, 0)");
+                const pRefGrad = getPlayerRefGrad(ctx, pColor);
                 ctx.save();
                 ctx.globalAlpha = 0.35;
-                ctx.fillStyle = pRefGrad;
-                ctx.fillRect(px - 12, racePlayer.y + 20, 24, 34);
+                drawVerticalRef(ctx, px - 12, racePlayer.y + 20, 24, 34, pRefGrad);
                 ctx.restore();
 
                 // Отражение стоп-сигналов игрока
-                const pTailRef = ctx.createLinearGradient(0, racePlayer.y + 22, 0, racePlayer.y + 50);
-                pTailRef.addColorStop(0, raceKeys.brake ? "rgba(239, 68, 68, 0.85)" : "rgba(239, 68, 68, 0.45)");
-                pTailRef.addColorStop(1, "rgba(239, 68, 68, 0)");
-                ctx.fillStyle = pTailRef;
-                ctx.fillRect(px - 8, racePlayer.y + 22, 3, 26);
-                ctx.fillRect(px + 5, racePlayer.y + 22, 3, 26);
+                const pTailRef = getNormTailGrad(ctx, raceKeys.brake);
+                drawVerticalRef(ctx, px - 8, racePlayer.y + 22, 3, 26, pTailRef);
+                drawVerticalRef(ctx, px + 5, racePlayer.y + 22, 3, 26, pTailRef);
 
                 // Отражение неона под днищем
                 if (pNeon && pNeon !== 'none') {
-                    const pNeonRef = ctx.createLinearGradient(0, racePlayer.y + 20, 0, racePlayer.y + 52);
-                    pNeonRef.addColorStop(0, pNeon);
-                    pNeonRef.addColorStop(1, "rgba(0, 0, 0, 0)");
+                    const pNeonRef = getPlayerNeonGrad(ctx, pNeon);
                     ctx.save();
                     ctx.globalAlpha = 0.45;
-                    ctx.fillStyle = pNeonRef;
-                    ctx.fillRect(px - 14, racePlayer.y + 20, 28, 32);
+                    drawVerticalRef(ctx, px - 14, racePlayer.y + 20, 28, 32, pNeonRef);
                     ctx.restore();
                 }
             }

@@ -61,6 +61,44 @@ function safePlate(raw,id){
   const price=Number.isSafeInteger(raw.price) && raw.price>=0 && raw.price<=MAX_MONEY ? raw.price : 1000;
   return {id, text, price, rarity:{text:typeof raw.rarity?.text==='string'?raw.rarity.text.slice(0,30):'Обычный'}};
 }
+function safeCar(raw){
+  if (!raw || typeof raw!=='object'||Array.isArray(raw)) throw Error('Неверный автомобиль');
+  const name=String(raw.name||'').trim();
+  if (!name || name.length>60) throw Error('Неверное название автомобиля');
+  const basePrice=Number.isSafeInteger(raw.basePrice) && raw.basePrice>=10000 && raw.basePrice<=MAX_MONEY ? raw.basePrice : 80000;
+  const condition=typeof raw.condition==='number' && Number.isFinite(raw.condition) ? Math.max(0,Math.min(100,Math.round(raw.condition))) : 100;
+  const category=typeof raw.category==='string' ? raw.category.trim().slice(0,30) : 'Авто';
+  const img=typeof raw.img==='string' && raw.img.length<500 ? raw.img : '';
+  let plate=null;
+  if (raw.plate && typeof raw.plate==='object') {
+    try {
+      plate=safePlate(raw.plate, String(raw.plate.id || ('plate_' + Date.now())).slice(0,80));
+    } catch { plate=null; }
+  }
+  const upgrades={engine:0,handling:0,economy:0,nitro:0};
+  if (raw.upgrades && typeof raw.upgrades==='object') {
+    for (const k of ['engine','handling','economy','nitro']) {
+      const v=Number(raw.upgrades[k]);
+      if (Number.isSafeInteger(v) && v>=0 && v<=5) upgrades[k]=v;
+    }
+  }
+  const result={name,basePrice,condition,category,img,plate,upgrades};
+  if (raw.styling && typeof raw.styling==='object') {
+    const styling={};
+    if (typeof raw.styling.color==='string' && /^#[0-9a-fA-F]{6}$/.test(raw.styling.color)) styling.color=raw.styling.color;
+    if (typeof raw.styling.neon==='string' && (/^#[0-9a-fA-F]{6}$/.test(raw.styling.neon) || raw.styling.neon==='none')) styling.neon=raw.styling.neon;
+    const tint=Number(raw.styling.tint);
+    if (Number.isSafeInteger(tint) && tint>=0 && tint<=100) styling.tint=tint;
+    if (Object.keys(styling).length>0) result.styling=styling;
+  }
+  return result;
+}
+function safeCars(list){
+  if (!Array.isArray(list)) return [];
+  return list.slice(0,50).map(c=>{
+    try { return safeCar(c); } catch { return null; }
+  }).filter(Boolean);
+}
 function money(v){if(!Number.isSafeInteger(v) ||v<0||v>MAX_MONEY) throw Error('Неверная сумма');return v;}
 // The server is authoritative for generator rolls: the browser sends only a mode and region.
 const LETTERS = ['А','В','Е','К','М','Н','О','Р','С','Т','У','Х'];
@@ -232,19 +270,41 @@ function mutate(state, action, key, data, now=Date.now()) {
     const price=money(data.price);
     if (price<1000) throw Error('Минимальная цена 1 000 ₽');
     if (Object.keys(market).length>=1000) throw Error('Рынок переполнен');
-    if (!Array.isArray(a.inventory)) throw Error('Инвентарь недоступен');
-    const pos=a.inventory.findIndex(p=>p.id===data.plateId);
-    if(pos<0) throw Error('Этот номер отсутствует в серверном инвентаре');
-    const plate=a.inventory[pos];
-    const lotId=data.lotId;
-    if (!/^[a-zA-Z0-9_-]{12,80}$/.test(lotId) || market[lotId]) throw Error('Неверный идентификатор лота');
-    accounts[key]={...a,inventory:a.inventory.filter((_,i)=>i!==pos),updatedAt:now};
-    market[lotId]={lotId,sellerKey:key,sellerName:a.nickname,plate,price,createdAt:now};
+    if (data.type === 'car') {
+      const cars = Array.isArray(a.myCars) ? a.myCars : [];
+      if (cars.length <= 1) throw Error('Нельзя продать единственный автомобиль');
+      let pos = -1;
+      if (Number.isSafeInteger(data.carIndex) && data.carIndex >= 0 && data.carIndex < cars.length) {
+        pos = data.carIndex;
+      } else if (data.car && data.car.name) {
+        pos = cars.findIndex(c => c && c.name === data.car.name);
+      }
+      if (pos < 0) throw Error('Этот автомобиль отсутствует в серверном гараже');
+      const lotId = data.lotId;
+      if (!/^[a-zA-Z0-9_-]{12,80}$/.test(lotId) || market[lotId]) throw Error('Неверный идентификатор лота');
+      const car = safeCar(cars[pos]);
+      accounts[key] = {...a, myCars: cars.filter((_, i) => i !== pos), updatedAt: now};
+      market[lotId] = {lotId, type: 'car', sellerKey: key, sellerName: a.nickname, car, price, createdAt: now};
+    } else {
+      if (!Array.isArray(a.inventory)) throw Error('Инвентарь недоступен');
+      const pos=a.inventory.findIndex(p=>p.id===data.plateId);
+      if(pos<0) throw Error('Этот номер отсутствует в серверном инвентаре');
+      const lotId=data.lotId;
+      if (!/^[a-zA-Z0-9_-]{12,80}$/.test(lotId) || market[lotId]) throw Error('Неверный идентификатор лота');
+      const plate=a.inventory[pos];
+      accounts[key]={...a,inventory:a.inventory.filter((_,i)=>i!==pos),updatedAt:now};
+      market[lotId]={lotId,sellerKey:key,sellerName:a.nickname,plate,price,createdAt:now};
+    }
   } else if (action==='cancel') {
     const lot=market[data.lotId];
     if(!lot || lot.sellerKey!==key) throw Error('Лот не найден или принадлежит другому игроку');
-    if((a.inventory||[]).length>=1000) throw Error('Инвентарь заполнен');
-    accounts[key]={...a,inventory:[lot.plate,...(a.inventory||[])],updatedAt:now};
+    if (lot.type === 'car') {
+      if ((a.myCars || []).length >= 50) throw Error('Гараж заполнен');
+      accounts[key] = {...a, myCars: [safeCar(lot.car), ...(a.myCars || [])], updatedAt: now};
+    } else {
+      if((a.inventory||[]).length>=1000) throw Error('Инвентарь заполнен');
+      accounts[key]={...a,inventory:[lot.plate,...(a.inventory||[])],updatedAt:now};
+    }
     delete market[data.lotId];
   } else if(action==='buy') {
     const lot=market[data.lotId];
@@ -252,12 +312,24 @@ function mutate(state, action, key, data, now=Date.now()) {
     if(lot.sellerKey===key) throw Error('Нельзя купить собственный лот');
     const seller=accounts[lot.sellerKey];
     if(!seller) throw Error('Продавец не найден');
-    if((a.inventory||[]).length>=1000) throw Error('Инвентарь заполнен');
     if(a.balance<lot.price) throw Error('Недостаточно денег на онлайн-кошельке');
     if(seller.balance+lot.price>MAX_MONEY) throw Error('Баланс продавца достиг лимита');
-    accounts[key]={...a,balance:a.balance-lot.price,inventory:[lot.plate,...(a.inventory||[])],updatedAt:now};
-    accounts[lot.sellerKey]={...seller,balance:seller.balance+lot.price,updatedAt:now};
+    if (lot.type === 'car') {
+      if ((a.myCars || []).length >= 50) throw Error('Гараж заполнен');
+      const car = safeCar(lot.car);
+      accounts[key] = {...a, balance: a.balance - lot.price, myCars: [...(a.myCars || []), car], updatedAt: now};
+      accounts[lot.sellerKey] = {...seller, balance: seller.balance + lot.price, updatedAt: now};
+    } else {
+      if((a.inventory||[]).length>=1000) throw Error('Инвентарь заполнен');
+      accounts[key]={...a,balance:a.balance-lot.price,inventory:[lot.plate,...(a.inventory||[])],updatedAt:now};
+      accounts[lot.sellerKey]={...seller,balance:seller.balance+lot.price,updatedAt:now};
+    }
     delete market[data.lotId];
+  } else if (action === 'syncGarage') {
+    if (!Array.isArray(data.myCars)) throw Error('Неверные данные гаража');
+    const cleanCars = safeCars(data.myCars);
+    if (cleanCars.length === 0) throw Error('Гараж не может быть пустым');
+    accounts[key] = {...a, myCars: cleanCars, updatedAt: now};
   } else if(action==='chat') {
     const msg=typeof data.text==='string'?data.text.trim():'';
     if(!msg || msg.length>120) throw Error('Сообщение должно содержать 1–120 символов');
@@ -296,4 +368,4 @@ function makeOnlineTransactionUpdate(loaded, action, key, data, now) {
     getReason() {return reason;}
   };
 }
-module.exports={COOKIE,TTL,MAX_MONEY,STARTING_BALANCE,keyOf,pinHash,checkPin,sign,verify,cookie,sessionCookie,safePlate,money,sanitizedProfile,mutate,makeOnlineTransactionUpdate,freshAccount,priceOfPlate,rarityOfPrice,secureRoll,draftOf};
+module.exports={COOKIE,TTL,MAX_MONEY,STARTING_BALANCE,keyOf,pinHash,checkPin,sign,verify,cookie,sessionCookie,safePlate,safeCar,safeCars,money,sanitizedProfile,mutate,makeOnlineTransactionUpdate,freshAccount,priceOfPlate,rarityOfPrice,secureRoll,draftOf};

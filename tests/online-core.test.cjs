@@ -72,3 +72,66 @@ test('fresh online registration gets 50,000 server rubles once, with no imported
   assert.throws(()=>c.freshAccount('bad/username','my-secret-123'),/Неверный никнейм/);
   assert.throws(()=>c.freshAccount('ValidName','123'),/Пароль/);
 });
+
+test('server car market allows selling, atomic buying with funds transfer to seller, and cancellation', () => {
+  const car1 = { name: 'ВАЗ-2107 «Жигули»', basePrice: 80000, condition: 100, upgrades: { engine: 1, handling: 0, economy: 0, nitro: 0 } };
+  const car2 = { name: 'BMW M5 F90', basePrice: 6500000, condition: 95, upgrades: { engine: 3, handling: 2, economy: 1, nitro: 1 } };
+  const s = {
+    accounts: {
+      seller: { nickname: 'Seller', balance: 10000, inventory: [], myCars: [car1, car2] },
+      buyer: { nickname: 'Buyer', balance: 500000, inventory: [], myCars: [car1] }
+    },
+    market: {},
+    chat: {}
+  };
+
+  // Cannot sell only car
+  assert.throws(() => c.mutate(s, 'sell', 'buyer', { type: 'car', carIndex: 0, lotId: 'lot_car_123456789012', price: 50000 }), /единственный/);
+
+  // Seller puts car2 on market for 200,000 ₽
+  const listed = c.mutate(s, 'sell', 'seller', { type: 'car', carIndex: 1, lotId: 'lot_car_123456789012', price: 200000 });
+  assert.equal(listed.accounts.seller.myCars.length, 1);
+  assert.equal(listed.accounts.seller.myCars[0].name, 'ВАЗ-2107 «Жигули»');
+  assert.equal(listed.market['lot_car_123456789012'].type, 'car');
+  assert.equal(listed.market['lot_car_123456789012'].car.name, 'BMW M5 F90');
+  assert.equal(listed.market['lot_car_123456789012'].price, 200000);
+
+  // Cannot self-buy
+  assert.throws(() => c.mutate(listed, 'buy', 'seller', { lotId: 'lot_car_123456789012' }), /собственный/);
+
+  // Buyer purchases car2
+  const bought = c.mutate(listed, 'buy', 'buyer', { lotId: 'lot_car_123456789012' });
+  // Buyer debited 200,000 ₽, received car
+  assert.equal(bought.accounts.buyer.balance, 300000); // 500k - 200k
+  assert.equal(bought.accounts.buyer.myCars.length, 2);
+  assert.equal(bought.accounts.buyer.myCars[1].name, 'BMW M5 F90');
+  // Seller credited 200,000 ₽
+  assert.equal(bought.accounts.seller.balance, 210000); // 10k + 200k
+  // Lot removed from market
+  assert.equal(Object.keys(bought.market).length, 0);
+
+  // Cancellation returns car to seller
+  const listedAgain = c.mutate(s, 'sell', 'seller', { type: 'car', carIndex: 1, lotId: 'lot_car_987654321012', price: 150000 });
+  const cancelled = c.mutate(listedAgain, 'cancel', 'seller', { lotId: 'lot_car_987654321012' });
+  assert.equal(cancelled.accounts.seller.myCars.length, 2);
+  assert.equal(cancelled.accounts.seller.myCars[0].name, 'BMW M5 F90');
+  assert.equal(Object.keys(cancelled.market).length, 0);
+});
+
+test('syncGarage validates cars and updates player garage', () => {
+  const s = {
+    accounts: {
+      player1: { nickname: 'Player1', balance: 50000, inventory: [], myCars: [] }
+    },
+    market: {},
+    chat: {}
+  };
+  const validCars = [
+    { name: 'Lada Priora БПАН', basePrice: 250000, condition: 98, styling: { color: '#ef4444', neon: '#00f0ff' } }
+  ];
+  const synced = c.mutate(s, 'syncGarage', 'player1', { myCars: validCars });
+  assert.equal(synced.accounts.player1.myCars.length, 1);
+  assert.equal(synced.accounts.player1.myCars[0].name, 'Lada Priora БПАН');
+  assert.equal(synced.accounts.player1.myCars[0].styling.neon, '#00f0ff');
+  assert.throws(() => c.mutate(s, 'syncGarage', 'player1', { myCars: [] }), /пустым/);
+});

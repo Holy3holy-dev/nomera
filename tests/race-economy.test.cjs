@@ -100,3 +100,41 @@ test('physics actually burns fuel during motion and upgrading economy reduces li
     app.run('exitRaceGame(); myCars[0].upgrades.economy=5; startRaceGame()');
     assert(app.run('racePlayer.fuelConsumption')<fuelConsumption);
 });
+
+test('car plate rarity applies reward multiplier and sets plateBonus in performance stats', () => {
+    const base = { speed: 200, accel: 3.0, handling: 6.0, rewardMult: 2.0 };
+    // No plate or standard
+    const noPlate = E.performance(base, { condition: 100 });
+    assert.equal(noPlate.rewardMult, 2.0);
+    assert.equal(noPlate.plateBonus, 0);
+
+    // Common
+    const common = E.performance(base, { condition: 100, plate: { text: 'А 123 ВС | 77 RUS', rarity: { text: 'Обычный' } } });
+    assert.equal(common.rewardMult, 2.0);
+    assert.equal(common.plateBonus, 0);
+
+    // Rare (+5%)
+    const rare = E.performance(base, { condition: 100, plate: { text: 'А 123 ВС | 77 RUS', rarity: { text: 'Редкий' } } });
+    assert.equal(rare.rewardMult, 2.1); // 2.0 * 1.05
+    assert.equal(rare.plateBonus, 5);
+
+    // Super rare (+10%)
+    const superRare = E.performance(base, { condition: 100, plate: { text: 'А 123 ВС | 77 RUS', rarity: { text: 'Супер редкий' } } });
+    assert.equal(superRare.rewardMult, 2.2); // 2.0 * 1.10
+    assert.equal(superRare.plateBonus, 10);
+
+    // Epic (+15%)
+    const epic = E.performance(base, { condition: 100, plate: { text: 'А 777 ВС | 77 RUS', rarity: { text: 'Эпический' } } });
+    assert.equal(epic.rewardMult, 2.3); // 2.0 * 1.15
+    assert.equal(epic.plateBonus, 15);
+
+    // Legendary (+25%)
+    const legendary = E.performance(base, { condition: 100, plate: { text: 'А 777 АА | 77 RUS', rarity: { text: 'Легендарный' } } });
+    assert.equal(legendary.rewardMult, 2.5); // 2.0 * 1.25
+    assert.equal(legendary.plateBonus, 25);
+
+    // Blatnoy / Krutoy (+35%)
+    const blatnoy = E.performance(base, { condition: 100, plate: { text: 'А 011 АА | 777 RUS', rarity: { text: 'БЛАТНОЙ' } } });
+    assert.equal(blatnoy.rewardMult, 2.7); // 2.0 * 1.35
+    assert.equal(blatnoy.plateBonus, 35);
+});
