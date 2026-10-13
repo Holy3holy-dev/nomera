@@ -101,3 +101,28 @@ test('opening a car loot box deducts balance and adds car to player garage', () 
     assert.ok(newCar.name, 'Awarded car must have a name');
     assert.equal(typeof newCar.basePrice, 'number');
 });
+
+test('dealership category filters correctly isolate price tiers', () => {
+    const app = createApp();
+    app.run('renderCars()');
+
+    // Default 'all': 25 cars rendered
+    const listAll = app.run('document.getElementById("garage-list").innerHTML');
+    assert.equal((listAll.match(/class="car-shop-card"/g) || []).length, 25);
+
+    // 'hyper': 5 cars (Huracan, Cullinan, SF90, Chiron, Jesko)
+    app.run('filterShopCars("hyper")');
+    assert.equal(app.run('currentShopFilter'), 'hyper');
+    const listHyper = app.run('document.getElementById("garage-list").innerHTML');
+    assert.equal((listHyper.match(/class="car-shop-card"/g) || []).length, 5);
+    assert.ok(listHyper.includes('Koenigsegg Jesko Attack'));
+    assert.ok(!listHyper.includes('ВАЗ-2107'));
+
+    // 'budget': 7 cars (< 1.3M)
+    app.run('filterShopCars("budget")');
+    const listBudget = app.run('document.getElementById("garage-list").innerHTML');
+    assert.ok((listBudget.match(/class="car-shop-card"/g) || []).length >= 6);
+    assert.ok(listBudget.includes('ВАЗ-2107'));
+    assert.ok(!listBudget.includes('Koenigsegg Jesko Attack'));
+});
+

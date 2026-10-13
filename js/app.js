@@ -3658,14 +3658,35 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
         }
 
         // --- ГАРАЖ ---
-        function renderCars() {
+        let currentShopFilter = 'all';
+
+        function filterShopCars(filter) {
+            currentShopFilter = filter || 'all';
+            const buttons = ['all', 'budget', 'jdm', 'premium', 'hyper'];
+            buttons.forEach(b => {
+                const btn = document.getElementById('btn-shop-' + b);
+                if (btn) btn.classList.toggle('active', b === currentShopFilter);
+            });
+            renderShopCars();
+        }
+
+        function renderShopCars() {
             let list = document.getElementById('garage-list');
-            let myCarsDiv = document.getElementById('my-cars');
+            if (!list) return;
             list.innerHTML = '';
 
-            carsData.forEach(car => {
+            const filteredCars = carsData.filter(car => {
+                if (currentShopFilter === 'budget') return car.price < 1300000;
+                if (currentShopFilter === 'jdm') return car.price >= 1300000 && car.price < 7000000;
+                if (currentShopFilter === 'premium') return car.price >= 7000000 && car.price < 30000000;
+                if (currentShopFilter === 'hyper') return car.price >= 30000000;
+                return true;
+            });
+
+            filteredCars.forEach(car => {
+                const cardId = 'shop-car-' + encodeURIComponent(car.name).replace(/%/g, '_');
                 list.innerHTML += `
-                    <div class="car-shop-card">
+                    <div class="car-shop-card" id="${cardId}">
                         <div class="car-img-wrap">
                             <img src="${getCarSpriteDataUrl(car.name)}" class="car-img car-sprite-img" onerror="this.onerror=null; this.src='./icons/car-placeholder.svg';" alt="${escapeHtml(car.name)}">
                             <span class="car-category-pill">${escapeHtml(car.category || 'Авто')}</span>
@@ -3682,6 +3703,11 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                         </div>
                     </div>`;
             });
+        }
+
+        function renderCars() {
+            renderShopCars();
+            let myCarsDiv = document.getElementById('my-cars');
 
             if (myCars.length === 0) {
                 myCarsDiv.innerHTML = `<div class="empty-state"><div class="empty-state-icon">🏎️</div><p>В вашем гараже пока нет автомобилей. Выберите и купите автомобиль в автосалоне ниже!</p></div>`;
@@ -4844,7 +4870,7 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
             }
         };
 
-        // 🎨 РЕНДЕРЕР ПИКСЕЛЬНЫХ МОДЕЛЕЙ ВЫСОКОЙ ДЕТАЛИЗАЦИИ ДЛЯ ВСЕХ 14 АВТОМОБИЛЕЙ
+        // 🎨 РЕНДЕРЕР ПИКСЕЛЬНЫХ МОДЕЛЕЙ ВЫСОКОЙ ДЕТАЛИЗАЦИИ ДЛЯ ВСЕХ 25 АВТОМОБИЛЕЙ
         function drawPixelCar(ctx, cx, cy, name, scale = 1, options = {}) {
             const s = scale;
             if (options.tilt) {
@@ -7064,8 +7090,17 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                 if (t.innerText.includes('Гараж')) garageTab = t;
             });
             if (garageTab) switchTab('garage', garageTab);
-            const salonSection = document.getElementById('garage-list');
-            if (salonSection) salonSection.scrollIntoView({ behavior: 'smooth' });
+            if (typeof filterShopCars === 'function') filterShopCars('all');
+            const cardId = 'shop-car-' + encodeURIComponent(selectedRaceCarName).replace(/%/g, '_');
+            const targetCard = document.getElementById(cardId);
+            if (targetCard) {
+                targetCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                targetCard.style.outline = '2px solid var(--accent-green)';
+                setTimeout(() => { if (targetCard) targetCard.style.outline = ''; }, 2500);
+            } else {
+                const salonSection = document.getElementById('garage-list');
+                if (salonSection) salonSection.scrollIntoView({ behavior: 'smooth' });
+            }
         }
 
         function updateTouchBtnUI(key, active) {

@@ -2757,6 +2757,42 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
     color: #fff;
 }
 
+.dealership-filter-bar {
+    display: flex;
+    gap: 8px;
+    margin: 10px 0 16px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 2px;
+}
+.dealership-filter-bar::-webkit-scrollbar {
+    display: none;
+}
+.dealership-filter-btn {
+    flex: 0 0 auto;
+    padding: 8px 14px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-subtle);
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--text-muted);
+    font-weight: 700;
+    font-size: 12px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+}
+.dealership-filter-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+}
+.dealership-filter-btn.active {
+    background: rgba(56, 189, 248, 0.18);
+    border-color: #38bdf8;
+    color: #38bdf8;
+    box-shadow: 0 0 14px rgba(56, 189, 248, 0.25);
+}
+
 /* 8. Pixel Car Sprites & Styling Live Preview */
 .car-sprite-img {
     image-rendering: -moz-crisp-edges;
