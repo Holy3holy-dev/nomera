@@ -407,6 +407,92 @@ test('safeImageUrl and getPlayerAvatar support custom uploaded jpeg, jpg, png ph
     assert.ok(podiumHtml.includes('handleAvatarError'), 'Podium must use handleAvatarError for safe fallback');
 });
 
+test('creditPlayerBalance synchronizes local balance and onlineProfile.balance and propagates to db', async () => {
+    const dbWrites = [];
+    const app = createApp({
+        cloud: {
+            ref: (path) => ({
+                update: async (val) => { dbWrites.push({ path, val }); },
+                set: async (val) => { dbWrites.push({ path, val }); },
+                once: async () => ({ exists: () => true, val: () => ({}) })
+            })
+        },
+        saved: {
+            nickname: 'SyncedPlayer',
+            balance: 50000
+        }
+    });
+    app.run('loadProgress()');
+    app.run('setOnlineProfile({ nickname: "SyncedPlayer", balance: 50000, inventory: [], myCars: [] })');
+    assert.equal(app.run('balance'), 50000);
+    assert.equal(app.run('onlineProfile.balance'), 50000);
+
+    // Credit funds
+    app.run('creditPlayerBalance(150000, "Тестовая награда")');
+    assert.equal(app.run('balance'), 200000);
+    assert.equal(app.run('onlineProfile.balance'), 200000);
+
+    // Verify updates to Firebase
+    const accWrite = dbWrites.find(w => w.path === 'onlineV4/accounts/syncedplayer');
+    assert.ok(accWrite, 'Must update onlineV4 accounts in database');
+    assert.equal(accWrite.val.balance, 200000);
+
+    // Verify UI reflects sanitized balance (no NaN)
+    const balEl = app.elements.get('balance');
+    assert.ok(balEl.innerText.includes('200\u00A0000') || balEl.innerText.includes('200 000'));
+});
+
+test('my-rank-banner displays player avatar and different nicknames hash to distinct preset avatars', () => {
+    const app = createApp({
+        saved: {
+            nickname: 'RacerAlex',
+            balance: 100000,
+            avatarData: '' // No custom avatar set
+        }
+    });
+    app.run('loadProgress()');
+    app.run('renderLeaderboard()');
+
+    // Rank banner avatar must be populated
+    const rankAvatar = app.elements.get('my-rank-avatar');
+    assert.ok(rankAvatar, '#my-rank-avatar must exist in DOM');
+    assert.ok(rankAvatar.src && rankAvatar.src.startsWith('data:image/svg+xml'), 'Rank avatar must have valid SVG preset');
+
+    // Deterministic hashing gives different presets to different nicknames
+    const a1 = app.run('getPlayerAvatar({ nickname: "SpeedKing" })');
+    const a2 = app.run('getPlayerAvatar({ nickname: "DriftQueen" })');
+    const a3 = app.run('getPlayerAvatar({ nickname: "TurboSam" })');
+    const set = new Set([a1, a2, a3]);
+    assert.ok(set.size > 1, 'Distinct nicknames must not all be forced to the same preset');
+});
+
+test('detachPlate sanitizes cost and never produces NaN balance or negative funds', () => {
+    const app = createApp({
+        saved: {
+            nickname: 'PlateTuner',
+            balance: 50000,
+            myCars: [
+                {
+                    name: 'ВАЗ-2107 «Жигули»',
+                    basePrice: 80000,
+                    plate: { text: 'А 777 АА | 77 RUS', price: 100000 }
+                }
+            ]
+        }
+    });
+    app.run('loadProgress()');
+    assert.equal(app.run('myCars[0].plate.text'), 'А 777 АА | 77 RUS');
+
+    // Detach plate (costs 10,000 ₽)
+    app.run('detachPlate(0)');
+    assert.equal(app.run('balance'), 40000);
+    assert.equal(app.run('myCars[0].plate'), null);
+    assert.equal(app.run('inventory.length'), 1);
+    assert.equal(app.run('inventory[0].text'), 'А 777 АА | 77 RUS');
+    assert.equal(Number.isFinite(app.run('balance')), true, 'Balance must stay a finite number');
+});
+
+
 
 
 

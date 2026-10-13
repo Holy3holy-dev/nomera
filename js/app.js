@@ -299,7 +299,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/20
         function getPlayerAvatar(player) {
             if (!player || typeof player !== 'object') return AVATAR_PRESETS[0];
             const raw = player.avatarData;
-            if (raw && typeof raw === 'string' && raw.trim().length > 0) {
+            if (raw && typeof raw === 'string' && raw.trim().length > 0 && raw !== AVATAR_PRESETS[0]) {
                 const safe = safeImageUrl(raw, null, AVATAR_PRESETS);
                 if (safe) return safe;
             }
@@ -871,6 +871,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/20
 
         // --- УПРАВЛЕНИЕ АККАУНТОМ И АВТОРИЗАЦИЕЙ ---
         function openProfileModal() {
+            renderAvatarPresets();
             updateProfileUI();
             switchAuthTab('profile');
             document.getElementById('auth-modal').classList.add('show');
@@ -912,7 +913,8 @@ const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/20
         }
 
         function compressAndSetAvatar(file, callback) {
-            if (!file || !file.type || !file.type.startsWith('image/')) {
+            const isImg = file && ((file.type && file.type.startsWith('image/')) || /\.(jpe?g|png|webp|gif|bmp|heic|heif)$/i.test(file.name || ''));
+            if (!isImg) {
                 notifyUser('Пожалуйста, выберите файл изображения', 'error');
                 return;
             }
@@ -934,7 +936,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/20
                         const ctx = canvas.getContext('2d');
                         if (!ctx) throw new Error('Canvas 2D unavailable');
                         
-                        const minEdge = Math.min(img.width, img.height);
+                        const minEdge = Math.min(img.width || 1, img.height || 1);
                         const sx = (img.width - minEdge) / 2;
                         const sy = (img.height - minEdge) / 2;
                         ctx.drawImage(img, sx, sy, minEdge, minEdge, 0, 0, maxDim, maxDim);
@@ -970,17 +972,15 @@ const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/20
         window.handleAvatarFileSelect = handleAvatarFileSelect;
 
         function saveAccountProfile() {
-            const newName = document.getElementById('nickname-input').value.trim();
-            if (newName.length < 2) {
-                notifyUser("Никнейм должен быть не короче 2 символов!");
-                return;
+            const nickInput = document.getElementById('nickname-input');
+            const newName = (nickInput ? nickInput.value : '').trim();
+            if (newName && newName.length >= 2) {
+                if (sanitizeKey(newName) === sanitizeKey(nickname)) {
+                    nickname = newName;
+                } else {
+                    notifyUser('Смена никнейма недоступна, но аватар сохранён!', 'warning');
+                }
             }
-
-            if (sanitizeKey(newName) !== sanitizeKey(nickname)) {
-                notifyUser('Смена никнейма временно недоступна до защищённой миграции аккаунтов. Аватар можно менять.');
-                return;
-            }
-            nickname = newName;
 
             const fileInput = document.getElementById('avatar-input');
             const finishSave = function() {
@@ -2110,7 +2110,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/20
                 await Promise.all([
                     db.ref('onlineV4/accounts/' + userKey).update({ balance: newBal, updatedAt: Date.now() }),
                     db.ref('users/' + userKey).update({ balance: newBal, updatedAt: Date.now() }).catch(() => {}),
-                    db.ref('leaderboard/' + userKey).update({ balance: newBal, avatarData: avatarData || AVATAR_PRESETS[0], updatedAt: Date.now() }).catch(() => {})
+                    db.ref('leaderboard/' + userKey).update({ balance: newBal, avatarData: avatarData || '', updatedAt: Date.now() }).catch(() => {})
                 ]);
                 return { ok: true, profile: onlineProfile, balance: newBal };
             }
@@ -2256,11 +2256,14 @@ const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/20
             const el=document.getElementById('online-account-status');
             if(!el)return;
             const wallet=document.getElementById('generator-online-wallet');
+            const safeOnlineBal = (onlineProfile && Number.isFinite(Number(onlineProfile.balance)))
+                ? Number(onlineProfile.balance)
+                : (Number.isFinite(balance) ? balance : 50000);
             if(wallet) wallet.textContent=onlineProfile
-                ? `🔒 Серверный баланс: ${Number(onlineProfile.balance).toLocaleString('ru-RU')} ₽`
+                ? `🔒 Серверный баланс: ${Math.round(safeOnlineBal).toLocaleString('ru-RU')} ₽`
                 : 'Гостевой генератор: номера нельзя выставлять. Войди в аккаунт, чтобы сохранять номера для рынка.';
             el.textContent=onlineProfile
-                ? `🔒 ${onlineProfile.nickname} · онлайн-кошелёк: ${Number(onlineProfile.balance).toLocaleString('ru-RU')} ₽ · подтверждено номеров: ${(onlineProfile.inventory||[]).length}`
+                ? `🔒 ${onlineProfile.nickname} · онлайн-кошелёк: ${Math.round(safeOnlineBal).toLocaleString('ru-RU')} ₽ · подтверждено номеров: ${(onlineProfile.inventory||[]).length}`
                 : '🔒 Нет активного аккаунта · войдите или зарегистрируйтесь один раз';
         }
         let syncGarageTimer = null;
@@ -2664,12 +2667,18 @@ const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/20
             const el = document.getElementById('balance');
             if (el) el.innerText = Math.round(displayBal).toLocaleString('ru-RU');
             const onlineBal = document.getElementById('online-balance');
-            if (onlineBal && onlineProfile && Number.isFinite(Number(onlineProfile.balance))) {
-                onlineBal.innerText = Math.round(Number(onlineProfile.balance)).toLocaleString('ru-RU');
+            if (onlineBal) {
+                const balNum = (onlineProfile && Number.isFinite(Number(onlineProfile.balance)))
+                    ? Number(onlineProfile.balance)
+                    : balance;
+                onlineBal.innerText = Math.round(balNum).toLocaleString('ru-RU');
             }
             const genOnlineWallet = document.getElementById('generator-online-wallet');
-            if (genOnlineWallet && onlineProfile && Number.isFinite(Number(onlineProfile.balance))) {
-                genOnlineWallet.innerText = `Онлайн-кошелёк: ${Math.round(Number(onlineProfile.balance)).toLocaleString('ru-RU')} ₽`;
+            if (genOnlineWallet) {
+                const balNum = (onlineProfile && Number.isFinite(Number(onlineProfile.balance)))
+                    ? Number(onlineProfile.balance)
+                    : balance;
+                genOnlineWallet.innerText = `Онлайн-кошелёк: ${Math.round(balNum).toLocaleString('ru-RU')} ₽`;
             }
         }
 
@@ -2689,13 +2698,35 @@ const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/20
                     const now = Date.now();
                     db.ref('onlineV4/accounts/' + key).update({ balance, updatedAt: now }).catch(() => {});
                     db.ref('users/' + key).update({ balance, updatedAt: now }).catch(() => {});
-                    db.ref('leaderboard/' + key).update({ balance, avatarData: avatarData || AVATAR_PRESETS[0], updatedAt: now }).catch(() => {});
+                    db.ref('leaderboard/' + key).update({ balance, avatarData: avatarData || '', updatedAt: now }).catch(() => {});
                 }
                 onlineRequest('spend', { amount: num, targetBalance: balance, reason }).catch(() => {});
             }
             updateBalance();
             saveProgress();
             return true;
+        }
+
+        function creditPlayerBalance(amount, reason = '') {
+            const num = Math.floor(Number(amount) || 0);
+            if (!Number.isFinite(num) || num <= 0) return;
+            if (!Number.isFinite(balance)) balance = 50000;
+            balance += num;
+            lastSpendTimestamp = Date.now();
+            if (onlineProfile) {
+                const cur = Number.isFinite(Number(onlineProfile.balance)) ? Number(onlineProfile.balance) : (balance - num);
+                onlineProfile.balance = Math.max(balance, cur + num);
+                renderOnlineAccount();
+                if (db && typeof db.ref === 'function') {
+                    const key = sanitizeKey(onlineProfile.nickname);
+                    const now = Date.now();
+                    db.ref('onlineV4/accounts/' + key).update({ balance: onlineProfile.balance, updatedAt: now }).catch(() => {});
+                    db.ref('users/' + key).update({ balance: onlineProfile.balance, updatedAt: now }).catch(() => {});
+                    db.ref('leaderboard/' + key).update({ balance: onlineProfile.balance, avatarData: avatarData || '', updatedAt: now }).catch(() => {});
+                }
+            }
+            updateBalance();
+            saveProgress();
         }
 
         // --- СИСТЕМА ОПЫТА ---
@@ -3738,10 +3769,8 @@ const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/20
             if (!wonPlateObj) return;
             const reward = wonPlateObj;
             wonPlateObj = null;
-            balance += reward.price;
+            creditPlayerBalance(reward.price, 'Продажа госномера из рулетки');
             playCashSound();
-            updateBalance();
-            saveProgress();
             document.getElementById('roulette-modal').classList.remove('show');
         }
 
@@ -3762,11 +3791,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/20
             const reward = wonCarObj;
             wonCarObj = null;
             let sellPrice = Math.floor(reward.price * 0.9);
-            balance += sellPrice;
+            creditPlayerBalance(sellPrice, 'Продажа авто из рулетки');
             playCashSound();
-            updateBalance();
             logPlayerActivity('Продажа авто', `Продал выбитое авто «${reward.name}» за ${sellPrice.toLocaleString('ru-RU')} ₽`);
-            saveProgress();
             document.getElementById('roulette-modal').classList.remove('show');
         }
 
@@ -3828,30 +3855,22 @@ const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/20
             if (!item || !Number.isFinite(item.price) || item.price < 0) return;
             const price = item.price;
             inventory.splice(index, 1);
-            balance += price;
+            creditPlayerBalance(price, `Продажа госномера «${item.text}»`);
             if (onlineProfile) {
-                onlineProfile.balance = (Number(onlineProfile.balance) || 0) + price;
                 onlineProfile.inventory = [...inventory];
                 if (db) {
                     const key = sanitizeKey(onlineProfile.nickname);
                     db.ref('onlineV4/accounts/' + key).update({
-                        balance: onlineProfile.balance,
                         inventory: onlineProfile.inventory,
                         updatedAt: Date.now()
                     }).catch(() => {});
                     db.ref('users/' + key).update({
-                        balance: onlineProfile.balance,
                         inventory: onlineProfile.inventory,
-                        updatedAt: Date.now()
-                    }).catch(() => {});
-                    db.ref('leaderboard/' + key).update({
-                        balance: onlineProfile.balance,
                         updatedAt: Date.now()
                     }).catch(() => {});
                 }
             }
             playCashSound();
-            updateBalance();
             renderInventory();
             saveProgress();
             notifyUser(`Номер «${item.text}» продан за ${price.toLocaleString('ru-RU')} ₽!`);
@@ -3920,12 +3939,15 @@ const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/20
             myCars.forEach((car, index) => {
                 const template = carsData.find(c => c.name === car.name) || {};
                 const carCategory = car.category || template.category || 'Автомобиль';
-                const carBasePrice = Math.max(10000, Number(car.basePrice || template.price || 80000));
+                let rawBase = Number(car.basePrice);
+                if (!Number.isFinite(rawBase) || rawBase <= 0) rawBase = Number(template.price);
+                if (!Number.isFinite(rawBase) || rawBase <= 0) rawBase = 80000;
+                const carBasePrice = Math.max(10000, Math.floor(rawBase));
                 const carSellPrice = Math.floor(carBasePrice * 0.9);
 
                 let bumperHtml = '';
                 if (car.plate) {
-                    let platePrice = Number.isFinite(Number(car.plate.price)) ? Number(car.plate.price) : 0;
+                    let platePrice = Number.isFinite(Number(car.plate.price)) ? Math.max(0, Math.floor(Number(car.plate.price))) : 0;
                     let detachCost = Math.floor(platePrice * 0.1);
                     let totalSellPrice = Math.floor(carSellPrice + (platePrice * 0.95));
                     const r = getRarity(Number(car.plate.price) || 0);
@@ -4088,9 +4110,12 @@ const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/20
             const template = (typeof carsData !== 'undefined' && Array.isArray(carsData))
                 ? (carsData.find(c => c && c.name === car.name) || {})
                 : {};
-            const basePrice = Math.max(10000, Number(car.basePrice || template.price || 80000));
+            let rawBase = Number(car.basePrice);
+            if (!Number.isFinite(rawBase) || rawBase <= 0) rawBase = Number(template.price);
+            if (!Number.isFinite(rawBase) || rawBase <= 0) rawBase = 80000;
+            const basePrice = Math.max(10000, Math.floor(rawBase));
             const platePrice = (hasPlate && car.plate && Number.isFinite(Number(car.plate.price)))
-                ? Math.max(0, Number(car.plate.price))
+                ? Math.max(0, Math.floor(Number(car.plate.price)))
                 : 0;
             let profit = Math.floor(basePrice * 0.9 + (hasPlate ? platePrice * 0.95 : 0));
             if (!Number.isFinite(profit) || profit <= 0) profit = Math.floor(basePrice * 0.9);
@@ -4102,14 +4127,11 @@ const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/20
                 renderInventory();
             }
 
-            if (!Number.isFinite(balance)) balance = 50000;
-            balance += profit;
-            playCashSound();
             myCars.splice(index, 1);
+            creditPlayerBalance(profit, `Продажа авто «${car.name}»`);
+            playCashSound();
 
             if (onlineProfile) {
-                const curOnlineBal = Number.isFinite(Number(onlineProfile.balance)) ? Number(onlineProfile.balance) : balance;
-                onlineProfile.balance = curOnlineBal + profit;
                 onlineProfile.myCars = [...myCars];
                 if (db && typeof db.ref === 'function') {
                     const key = sanitizeKey(onlineProfile.nickname);
@@ -4127,13 +4149,12 @@ const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/20
                     db.ref('leaderboard/' + key).update({
                         balance: onlineProfile.balance,
                         carsCount: myCars.length,
-                        avatarData: avatarData || AVATAR_PRESETS[0],
+                        avatarData: avatarData || '',
                         updatedAt: now
                     }).catch(() => {});
                 }
             }
             if (typeof syncCloudGarage === 'function') syncCloudGarage();
-            updateBalance();
             renderCars();
             saveProgress();
             notifyUser(`Автомобиль «${car.name}» продан за ${profit.toLocaleString('ru-RU')} ₽!`);
@@ -4142,14 +4163,18 @@ const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/20
         function detachPlate(index) {
             let car = myCars[index];
             if (!car || !car.plate) return;
-            let cost = car.plate.price * 0.1;
-            if (balance < cost) return notifyUser(`Не хватает денег на снятие! Нужно ${cost.toLocaleString('ru-RU')} ₽`);
-            deductPlayerBalance(cost, 'Снятие номера с автомобиля');
+            let cost = Math.floor(Number(car.plate.price || 0) * 0.1);
+            if (!Number.isFinite(cost) || cost < 0) cost = 0;
+            if (cost > 0 && !deductPlayerBalance(cost, 'Снятие номера с автомобиля')) {
+                return notifyUser(`Не хватает денег на снятие! Нужно ${cost.toLocaleString('ru-RU')} ₽`, 'warning');
+            }
+            playCashSound();
             inventory.unshift(car.plate);
             car.plate = null;
             renderCars();
             renderInventory();
             saveProgress();
+            notifyUser('Госномер успешно снят и возвращён в инвентарь!', 'success');
         }
 
         function openAttachModal(carIndex) {
@@ -4430,13 +4455,11 @@ const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/20
             }
             const activeDayIdx = (dailyBonus.streak || 0) % 7;
             const reward = DAILY_REWARDS[activeDayIdx];
-            balance += reward;
+            creditPlayerBalance(reward, 'Ежедневная награда');
             dailyBonus.streak = (dailyBonus.streak || 0) + 1;
             dailyBonus.lastClaimDate = today;
             playCashSound();
             triggerLegendaryEffect();
-            updateBalance();
-            saveProgress();
             renderDailyModal();
             updateDailyBadgeDot();
             notifyUser(`🎁 Награда дня получена: +${reward.toLocaleString('ru-RU')} ₽!`, 'success');
@@ -4452,11 +4475,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/20
             const def = questDefs[questId];
             if (!def || dailyQuests.claimed?.[questId]) return;
             dailyQuests.claimed[questId] = true;
-            balance += def.rewardMoney;
+            creditPlayerBalance(def.rewardMoney, 'Ежедневный квест');
             addExp(def.rewardXp);
             playCashSound();
-            updateBalance();
-            saveProgress();
             renderDailyModal();
             updateDailyBadgeDot();
             notifyUser(`Задание выполнено! +${def.rewardMoney.toLocaleString('ru-RU')} ₽, +${def.rewardXp} XP!`, 'success');
@@ -4499,11 +4520,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/20
             ACHIEVEMENTS_CATALOG.forEach(ach => {
                 if (!achievements[ach.id] && ach.check()) {
                     achievements[ach.id] = Date.now();
-                    balance += ach.reward;
+                    creditPlayerBalance(ach.reward, `Достижение: ${ach.name}`);
                     triggerLegendaryEffect();
                     notifyUser(`🏆 Достижение разблокировано: «${ach.name}»! (+${ach.reward.toLocaleString('ru-RU')} ₽)`, 'success');
-                    saveProgress();
-                    updateBalance();
                 }
             });
             renderAchievements();
@@ -4628,7 +4647,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/20
                         achievements.dragWins = (achievements.dragWins || 0) + 1;
                         const payout = selectedDragBet > 0 ? Math.round(selectedDragBet * 1.95) : 0;
                         if (selectedDragBet > 0) {
-                            balance += (payout - selectedDragBet);
+                            creditPlayerBalance(payout - selectedDragBet, 'Победа в дрэг-рейсинге');
                         }
                         addExp(80);
                         triggerLegendaryEffect();
@@ -4807,7 +4826,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/20
                     balance: Math.round(displayBal),
                     playerLevel: playerLevel || 1,
                     playerExp: playerExp || 0,
-                    avatarData: avatarData || AVATAR_PRESETS[0],
+                    avatarData: avatarData || '',
                     bestPlate: getBestPlate() || '—',
                     carsCount: (myCars || []).length,
                     bestSpeed: Math.round(mySpeed || 0),
@@ -4815,8 +4834,8 @@ const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/20
                 }).catch(() => {});
 
                 if (onlineProfile) {
-                    db.ref('onlineV4/accounts/' + userKey).update({ avatarData: avatarData || AVATAR_PRESETS[0], updatedAt: Date.now() }).catch(() => {});
-                    db.ref('users/' + userKey).update({ avatarData: avatarData || AVATAR_PRESETS[0], updatedAt: Date.now() }).catch(() => {});
+                    db.ref('onlineV4/accounts/' + userKey).update({ avatarData: avatarData || '', updatedAt: Date.now() }).catch(() => {});
+                    db.ref('users/' + userKey).update({ avatarData: avatarData || '', updatedAt: Date.now() }).catch(() => {});
                 }
             } catch (_) {}
         }
@@ -4832,14 +4851,14 @@ const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/20
                 nickname: nickname,
                 balance: (onlineProfile && Number.isFinite(Number(onlineProfile.balance))) ? Number(onlineProfile.balance) : balance,
                 playerLevel: playerLevel,
-                avatarData: avatarData || AVATAR_PRESETS[0],
+                avatarData: avatarData || '',
                 bestPlate: getBestPlate(),
                 carsCount: myCars.length,
                 bestSpeed: Math.round(mySpeed),
                 updatedAt: Date.now()
             };
 
-            let baseList = (cloudLeaderboardList && cloudLeaderboardList.length > 0) ? [...cloudLeaderboardList] : [];
+            let baseList = (cloudLeaderboardList && cloudLeaderboardList.length > 0) ? [...cloudLeaderboardList] : [...mockOtherPlayers];
             // Убираем дубликат текущего игрока из серверного списка
             baseList = baseList.filter(p => sanitizeKey(p.nickname) !== sanitizeKey(nickname));
             const allPlayers = [myEntry, ...baseList];
@@ -4960,19 +4979,23 @@ const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/20
             const posEl = document.getElementById('my-rank-pos');
             const nameEl = document.getElementById('my-rank-name');
             const statEl = document.getElementById('my-rank-stat');
+            const myAvatarEl = document.getElementById('my-rank-avatar');
             if (posEl) posEl.innerText = `#${myIndex}`;
             if (nameEl) nameEl.innerText = `Вы: ${nickname}`;
             const displayBal = (onlineProfile && Number.isFinite(Number(onlineProfile.balance))) ? Number(onlineProfile.balance) : balance;
             if (statEl) statEl.innerText = `Баланс: ${Math.round(displayBal).toLocaleString('ru-RU')} ₽ | Уровень: ${playerLevel} | Рекорд скорости: ${Math.round(mySpeed)} км/ч`;
+            if (myAvatarEl) {
+                myAvatarEl.src = imageSrc(getPlayerAvatar(myEntry));
+            }
         }
 
         function openPlayerViewModal(userKey) {
-            let baseList = (cloudLeaderboardList && cloudLeaderboardList.length > 0) ? [...cloudLeaderboardList] : [];
+            let baseList = (cloudLeaderboardList && cloudLeaderboardList.length > 0) ? [...cloudLeaderboardList] : [...mockOtherPlayers];
             baseList = baseList.filter(p => sanitizeKey(p.nickname) !== sanitizeKey(nickname));
             const mySpeed = (typeof getRaceRecords === 'function' ? getRaceRecords().bestSpeed : 0) || 0;
 
             const allPlayers = [{
-                nickname: nickname, balance: (onlineProfile && Number.isFinite(Number(onlineProfile.balance))) ? Number(onlineProfile.balance) : balance, playerLevel, avatarData: avatarData || AVATAR_PRESETS[0], bestPlate: getBestPlate(), carsCount: myCars.length, bestSpeed: Math.round(mySpeed), updatedAt: Date.now()
+                nickname: nickname, balance: (onlineProfile && Number.isFinite(Number(onlineProfile.balance))) ? Number(onlineProfile.balance) : balance, playerLevel, avatarData: avatarData || '', bestPlate: getBestPlate(), carsCount: myCars.length, bestSpeed: Math.round(mySpeed), updatedAt: Date.now()
             }, ...baseList];
 
             const player = allPlayers.find(p => sanitizeKey(p.nickname || '') === userKey);
@@ -8452,6 +8475,18 @@ const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/20
                 activeRaceCar.condition = Math.max(0, Number((activeRaceCar.condition - wear).toFixed(2)));
             }
             balance = receipt.walletAfter;
+            if (onlineProfile) {
+                const cur = Number.isFinite(Number(onlineProfile.balance)) ? Number(onlineProfile.balance) : (balance - receipt.credited);
+                onlineProfile.balance = Math.max(0, cur + receipt.credited);
+                renderOnlineAccount();
+                if (db && typeof db.ref === 'function') {
+                    const key = sanitizeKey(onlineProfile.nickname);
+                    const now = Date.now();
+                    db.ref('onlineV4/accounts/' + key).update({ balance: onlineProfile.balance, updatedAt: now }).catch(() => {});
+                    db.ref('users/' + key).update({ balance: onlineProfile.balance, updatedAt: now }).catch(() => {});
+                    db.ref('leaderboard/' + key).update({ balance: onlineProfile.balance, avatarData: avatarData || '', updatedAt: now }).catch(() => {});
+                }
+            }
             addExp(finalXp);
             updateBalance();
             logPlayerActivity('Гонка', `Заезд ${crashed === 'fuel' ? 'закончился бензин' : (crashed ? 'авария' : 'выход')}: ${racePlayer.distanceKm.toFixed(2)} км, дрифт: ${Math.round(racePlayer.driftScore || 0)} pts, до расходов ${receipt.gross} ₽, бензин -${receipt.fuelCost} ₽, итог ${receipt.credited} ₽`);
