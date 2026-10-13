@@ -1685,26 +1685,54 @@
             border-color: #34d399;
             box-shadow: 0 0 22px rgba(16, 185, 129, 0.8);
         }
-        .touch-nitro-bar {
+        .touch-actions-bar {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            width: 100%;
+        }
+        .touch-drift {
             width: 100%;
             min-height: 48px;
             flex-direction: row;
-            gap: 10px;
-            padding: 10px 16px;
-            background: linear-gradient(135deg, rgba(59, 130, 246, 0.35), rgba(37, 99, 235, 0.2));
-            border: 1px solid rgba(59, 130, 246, 0.6);
-            color: #bfdbfe;
-            font-size: 13px;
+            gap: 8px;
+            padding: 10px 14px;
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.35), rgba(217, 119, 6, 0.2));
+            border: 1px solid rgba(245, 158, 11, 0.6);
+            color: #fde68a;
+            font-size: 12px;
             letter-spacing: 0.8px;
             border-radius: 14px;
         }
-        .touch-nitro-bar .nitro-fire-icon {
-            font-size: 18px;
-        }
-        .touch-nitro-bar .nitro-text {
+        .touch-drift .touch-action-label {
             font-weight: 900;
         }
-        .touch-nitro-bar .nitro-badge {
+        .touch-drift:active, .touch-drift.pressed {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: #fff;
+            border-color: #fbbf24;
+            box-shadow: 0 0 20px rgba(245, 158, 11, 0.85);
+        }
+        .touch-nitro {
+            width: 100%;
+            min-height: 48px;
+            flex-direction: row;
+            gap: 8px;
+            padding: 10px 14px;
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.35), rgba(37, 99, 235, 0.2));
+            border: 1px solid rgba(59, 130, 246, 0.6);
+            color: #bfdbfe;
+            font-size: 12px;
+            letter-spacing: 0.8px;
+            border-radius: 14px;
+        }
+        .touch-nitro .nitro-fire-icon {
+            font-size: 18px;
+        }
+        .touch-nitro .touch-action-label, .touch-nitro-bar .nitro-text {
+            font-weight: 900;
+        }
+        .touch-nitro .nitro-badge, .touch-nitro-bar .nitro-badge {
             background: rgba(59, 130, 246, 0.45);
             border: 1px solid rgba(147, 197, 253, 0.4);
             border-radius: 20px;
@@ -1714,7 +1742,7 @@
             color: #fff;
             margin-left: auto;
         }
-        .touch-nitro-bar:active, .touch-nitro-bar.pressed {
+        .touch-nitro:active, .touch-nitro.pressed, .touch-nitro-bar:active, .touch-nitro-bar.pressed {
             background: linear-gradient(135deg, #2563eb, #1d4ed8);
             color: #fff;
             border-color: #60a5fa;

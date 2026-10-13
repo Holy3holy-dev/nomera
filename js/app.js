@@ -2,22 +2,42 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
 
         const DEFAULT_CAR_IMG = "./icons/car-placeholder.svg";
 
-        // Автосалон (14 автомобилей с точными пиксельными моделями)
+        // Автосалон (25 автомобилей всех ценовых категорий с пиксельными моделями)
         const carsData = [
+            // 1. Бюджетный класс (до 1 000 000 ₽)
             { name: "ВАЗ-2107 «Жигули»", category: "Классика", price: 120000, img: DEFAULT_CAR_IMG },
+            { name: "ВАЗ-2109 «Девятка»", category: "Хэтчбек", price: 180000, img: DEFAULT_CAR_IMG },
+            { name: "ГАЗ-24 «Волга»", category: "Ретро-седан", price: 240000, img: DEFAULT_CAR_IMG },
             { name: "Lada Priora БПАН", category: "Седан", price: 350000, img: DEFAULT_CAR_IMG },
+            { name: "Hyundai Solaris", category: "Городской", price: 650000, img: DEFAULT_CAR_IMG },
             { name: "Lada Vesta Sport", category: "Спорт-седан", price: 850000, img: DEFAULT_CAR_IMG },
             { name: "Volkswagen Polo", category: "Городской", price: 950000, img: DEFAULT_CAR_IMG },
+
+            // 2. Средний / JDM / Дрифт класс (1 000 000 — 7 000 000 ₽)
+            { name: "Toyota Mark II Tourer V", category: "Дрифт-легенда", price: 1400000, img: DEFAULT_CAR_IMG },
+            { name: "Subaru Impreza WRX STI", category: "Ралли-спорт", price: 1850000, img: DEFAULT_CAR_IMG },
             { name: "BMW M5 E60 V10", category: "Легенда", price: 2200000, img: DEFAULT_CAR_IMG },
+            { name: "Nissan Silvia S15 Spec-R", category: "Икона дрифта", price: 2600000, img: DEFAULT_CAR_IMG },
             { name: "Toyota Camry 3.5", category: "Бизнес", price: 2800000, img: DEFAULT_CAR_IMG },
             { name: "Toyota Land Cruiser 300", category: "Внедорожник", price: 5500000, img: DEFAULT_CAR_IMG },
+            { name: "Nissan GT-R R35 Nismo", category: "Спорткупе", price: 6900000, img: DEFAULT_CAR_IMG },
+
+            // 3. Премиум и Спорт (7 000 000 — 20 000 000 ₽)
             { name: "Mercedes-Benz E63s AMG", category: "Премиум-спорт", price: 7800000, img: DEFAULT_CAR_IMG },
             { name: "Audi RS6 Avant", category: "Универсал-ракета", price: 9200000, img: DEFAULT_CAR_IMG },
             { name: "BMW M5 F90 Competition", category: "Спорткар", price: 11500000, img: DEFAULT_CAR_IMG },
+            { name: "BMW M8 Gran Coupe", category: "Гран-туризмо", price: 14500000, img: DEFAULT_CAR_IMG },
             { name: "Mercedes-Benz G63 AMG «Гелик»", category: "Люкс Внедорожник", price: 18000000, img: DEFAULT_CAR_IMG },
+
+            // 4. Суперкары и Ультра-Люкс (20 000 000 — 60 000 000 ₽)
             { name: "Porsche 911 Turbo S", category: "Суперкар", price: 25000000, img: DEFAULT_CAR_IMG },
+            { name: "Lamborghini Huracan Performante", category: "Суперкар V10", price: 32000000, img: DEFAULT_CAR_IMG },
             { name: "Rolls-Royce Cullinan", category: "Ультра-Люкс", price: 55000000, img: DEFAULT_CAR_IMG },
-            { name: "Bugatti Chiron Super Sport", category: "Гиперкар", price: 190000000, img: DEFAULT_CAR_IMG }
+
+            // 5. Гиперкары (60 000 000+ ₽)
+            { name: "Ferrari SF90 Stradale", category: "Гиперкар", price: 68000000, img: DEFAULT_CAR_IMG },
+            { name: "Bugatti Chiron Super Sport", category: "Гиперкар W16", price: 190000000, img: DEFAULT_CAR_IMG },
+            { name: "Koenigsegg Jesko Attack", category: "Гиперкар Рекордсмен", price: 270000000, img: DEFAULT_CAR_IMG }
         ];
 
         // Non-blocking alerts, native browser dialogs replaced by accessible in-page UI.
@@ -3189,37 +3209,61 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
         }
 
         const caseConfigs = {
-            'normal': { title: "📦 Обычный Box", price: 5000, contents: [ {r:'Обычный', count:10}, {r:'Редкий', count:5}, {r:'Супер редкий', count:6} ], probs: [{r:'Обычный', p:0.80}, {r:'Редкий', p:0.17}, {r:'Супер редкий', p:0.03}] },
-            'super': { title: "🎁 Супер Box", price: 50000, contents: [ {r:'Редкий', count:15}, {r:'Супер редкий', count:5}, {r:'Эпический', count:6} ], probs: [{r:'Редкий', p:0.80}, {r:'Супер редкий', p:0.17}, {r:'Эпический', p:0.03}] },
-            'mega': { title: "💎 Mega Box", price: 200000, contents: [ {r:'Супер редкий', count:15}, {r:'Эпический', count:4}, {r:'Легендарный', count:5} ], probs: [{r:'Супер редкий', p:0.85}, {r:'Эпический', p:0.12}, {r:'Легендарный', p:0.03}] },
+            'normal': { title: "📦 Обычный Box", name: "Обычный Box", price: 5000, contents: [ {r:'Обычный', count:10}, {r:'Редкий', count:5}, {r:'Супер редкий', count:6} ], probs: [{r:'Обычный', p:0.80}, {r:'Редкий', p:0.17}, {r:'Супер редкий', p:0.03}] },
+            'super': { title: "🎁 Супер Box", name: "Супер Box", price: 50000, contents: [ {r:'Редкий', count:15}, {r:'Супер редкий', count:5}, {r:'Эпический', count:6} ], probs: [{r:'Редкий', p:0.80}, {r:'Супер редкий', p:0.17}, {r:'Эпический', p:0.03}] },
+            'mega': { title: "💎 Mega Box", name: "Mega Box", price: 200000, contents: [ {r:'Супер редкий', count:15}, {r:'Эпический', count:4}, {r:'Легендарный', count:5} ], probs: [{r:'Супер редкий', p:0.85}, {r:'Эпический', p:0.12}, {r:'Легендарный', p:0.03}] },
             'car_standard': {
                 title: "🏎️ Авто-Кейс",
+                name: "Авто-Кейс",
                 isCar: true,
-                price: 500000,
+                price: 650000,
                 cars: [
-                    { name: "ВАЗ-2107 «Жигули»", weight: 35 },
-                    { name: "Lada Priora БПАН", weight: 30 },
-                    { name: "Lada Vesta Sport", weight: 15 },
-                    { name: "Volkswagen Polo", weight: 12 },
-                    { name: "BMW M5 E60 V10", weight: 5 },
-                    { name: "Toyota Camry 3.5", weight: 2.5 },
-                    { name: "Toyota Land Cruiser 300", weight: 0.5 }
+                    { name: "ВАЗ-2107 «Жигули»", weight: 30 },
+                    { name: "ВАЗ-2109 «Девятка»", weight: 25 },
+                    { name: "ГАЗ-24 «Волга»", weight: 18 },
+                    { name: "Lada Priora БПАН", weight: 14 },
+                    { name: "Hyundai Solaris", weight: 7 },
+                    { name: "Lada Vesta Sport", weight: 3.5 },
+                    { name: "Volkswagen Polo", weight: 1.5 },
+                    { name: "Toyota Mark II Tourer V", weight: 0.8 },
+                    { name: "Subaru Impreza WRX STI", weight: 0.2 }
                 ]
             },
             'car_luxury': {
                 title: "👑 Элит Авто Box",
+                name: "Элит Авто Box",
                 isCar: true,
-                price: 5000000,
+                price: 7500000,
                 cars: [
-                    { name: "Toyota Camry 3.5", weight: 30 },
-                    { name: "Toyota Land Cruiser 300", weight: 26 },
-                    { name: "Mercedes-Benz E63s AMG", weight: 18 },
-                    { name: "Audi RS6 Avant", weight: 13 },
-                    { name: "BMW M5 F90 Competition", weight: 7 },
-                    { name: "Mercedes-Benz G63 AMG «Гелик»", weight: 4 },
-                    { name: "Porsche 911 Turbo S", weight: 1.5 },
-                    { name: "Rolls-Royce Cullinan", weight: 0.4 },
-                    { name: "Bugatti Chiron Super Sport", weight: 0.1 }
+                    { name: "Toyota Mark II Tourer V", weight: 28 },
+                    { name: "Subaru Impreza WRX STI", weight: 22 },
+                    { name: "BMW M5 E60 V10", weight: 18 },
+                    { name: "Nissan Silvia S15 Spec-R", weight: 14 },
+                    { name: "Toyota Camry 3.5", weight: 10 },
+                    { name: "Toyota Land Cruiser 300", weight: 5 },
+                    { name: "Nissan GT-R R35 Nismo", weight: 2 },
+                    { name: "Mercedes-Benz E63s AMG", weight: 0.7 },
+                    { name: "Audi RS6 Avant", weight: 0.25 },
+                    { name: "BMW M5 F90 Competition", weight: 0.05 }
+                ]
+            },
+            'car_hyper': {
+                title: "🔥 Гиперкар Box",
+                name: "Гиперкар Box",
+                isCar: true,
+                price: 45000000,
+                cars: [
+                    { name: "Mercedes-Benz E63s AMG", weight: 30 },
+                    { name: "Audi RS6 Avant", weight: 25 },
+                    { name: "BMW M5 F90 Competition", weight: 20 },
+                    { name: "BMW M8 Gran Coupe", weight: 12 },
+                    { name: "Mercedes-Benz G63 AMG «Гелик»", weight: 7 },
+                    { name: "Porsche 911 Turbo S", weight: 3.5 },
+                    { name: "Lamborghini Huracan Performante", weight: 1.6 },
+                    { name: "Rolls-Royce Cullinan", weight: 0.6 },
+                    { name: "Ferrari SF90 Stradale", weight: 0.2 },
+                    { name: "Bugatti Chiron Super Sport", weight: 0.08 },
+                    { name: "Koenigsegg Jesko Attack", weight: 0.02 }
                 ]
             }
         };
@@ -3394,7 +3438,7 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
             document.getElementById('roulette-modal').classList.add('show');
             initAudio();
 
-            const containerWidth = document.querySelector('.case-roulette-container').offsetWidth || 400;
+            const containerWidth = document.querySelector?.('.case-roulette-container')?.offsetWidth || 400;
             const targetX = -(winningIndex * cardWidth + (cardWidth / 2) - (containerWidth / 2) + (Math.random() * 40 - 20));
 
             let tickDelay = 70;
@@ -4176,12 +4220,34 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
         // --- 4. ДОСТИЖЕНИЯ И КОЛЛЕКЦИИ ---
         const ACHIEVEMENTS_CATALOG = [
             { id: 'first_million', icon: '💰', name: 'Первый миллион', desc: 'Накопить 1 000 000 ₽ на балансе', reward: 100000, titleReward: 'millionaire', check: () => balance >= 1000000 },
+            { id: 'billionaire', icon: '🏦', name: 'Олигарх', desc: 'Накопить 50 000 000 ₽ на балансе', reward: 2500000, titleReward: 'oligarch', check: () => balance >= 50000000 },
             { id: 'fleet_5', icon: '🏎️', name: 'Автопарк', desc: 'Собрать 5 автомобилей в гараже', reward: 150000, titleReward: 'collector', check: () => (myCars && myCars.length >= 5) },
-            { id: 'speed_200', icon: '⚡', name: 'Шумахер', desc: 'Разогнаться до 200 км/ч в гонке', reward: 80000, titleReward: 'racer', check: () => ((typeof getRaceRecords === 'function' && getRaceRecords()?.peakSpeed >= 200) || false) },
-            { id: 'drag_champ', icon: '👑', name: 'Король Дрэга', desc: 'Выиграть 3 дрэг-заезда на 1/4 мили', reward: 120000, titleReward: 'drag_king', check: () => (achievements.dragWins >= 3) },
+            { id: 'fleet_15', icon: '🏢', name: 'Синдикат', desc: 'Собрать 15 автомобилей в гараже', reward: 600000, titleReward: 'magnate', check: () => (myCars && myCars.length >= 15) },
+            { id: 'hypercar_owner', icon: '👑', name: 'Владелец Гиперкара', desc: 'Иметь в гараже гиперкар стоимостью от 50 000 000 ₽', reward: 1000000, titleReward: 'hyper_owner', check: () => (myCars && myCars.some(c => (c.price || 0) >= 50000000 || ["Bugatti Chiron Super Sport", "Koenigsegg Jesko Attack", "Ferrari SF90 Stradale", "Rolls-Royce Cullinan"].includes(c.name))) },
+            { id: 'speed_200', icon: '⚡', name: 'Шумахер', desc: 'Разогнаться до 200 км/ч в гонке', reward: 80000, titleReward: 'racer', check: () => {
+                const spd = Math.max(Number(racePlayer?.speed || 0), Number(achievements._maxSpeedSeen || 0));
+                return spd >= 200;
+            }},
+            { id: 'speed_350', icon: '🚀', name: 'Гиперзвук', desc: 'Развить скорость более 350 км/ч в заезде', reward: 500000, titleReward: 'hypersonic', check: () => {
+                const spd = Math.max(Number(racePlayer?.speed || 0), Number(achievements._maxSpeedSeen || 0));
+                return spd >= 350;
+            }},
+            { id: 'drift_first', icon: '🌪️', name: 'Первый занос', desc: 'Набрать от 1 000 очков дрифта за заезд', reward: 60000, titleReward: 'drifter', check: () => (Number(achievements.driftBestScore || 0) >= 1000 || Number(racePlayer?.driftScore || 0) >= 1000) },
+            { id: 'drift_king', icon: '🔥', name: 'Король Дрифта', desc: 'Набрать 10 000 очков дрифта за один заезд', reward: 250000, titleReward: 'drift_king', check: () => (Number(achievements.driftBestScore || 0) >= 10000 || Number(racePlayer?.driftScore || 0) >= 10000) },
+            { id: 'drift_combo_5', icon: '⚡', name: 'Комбо-Мастер x5', desc: 'Достичь комбо x5 в дрифте', reward: 150000, titleReward: null, check: () => (Number(achievements.driftMaxCombo || 0) >= 5 || Number(racePlayer?.driftCombo || 0) >= 5) },
+            { id: 'total_drift_50k', icon: '🏆', name: 'Дрифт Легенда', desc: 'Набрать 50 000 очков дрифта суммарно', reward: 300000, titleReward: 'drift_legend', check: () => (Number(achievements.driftTotalScore || 0) >= 50000) },
+            { id: 'drag_champ', icon: '🏁', name: 'Король Дрэга', desc: 'Выиграть 3 дрэг-заезда на 1/4 мили', reward: 120000, titleReward: 'drag_king', check: () => (achievements.dragWins >= 3) },
             { id: 'plate_777', icon: '🎰', name: 'Три топора', desc: 'Выбить номер с 777 в тексте', reward: 200000, titleReward: null, check: () => inventory.some(p => String(p.text).includes('777')) },
+            { id: 'blatnoy_plate', icon: '⭐', name: 'Блатная Серия', desc: 'Иметь спецсерию (АМР, ЕКХ, ААА, ВОР, ХХХ) в гараже', reward: 200000, titleReward: 'authority', check: () => (inventory && inventory.some(p => /^(АМР|ЕКХ|ААА|ВОР|ХХХ)/i.test(String(p.text || '').replace(/\s+/g, '')))) },
             { id: 'styling_master', icon: '🎨', name: 'Кастом-мастер', desc: 'Установить цвет и неон на автомобиль', reward: 60000, titleReward: null, check: () => myCars.some(c => c.styling?.neon && c.styling.neon !== 'none') },
-            { id: 'cases_10', icon: '📦', name: 'Кейсер', desc: 'Открыть 10 кейсов с номерами', reward: 75000, titleReward: null, check: () => (achievements.casesOpened >= 10) }
+            { id: 'max_tune', icon: '⚙️', name: 'Максимальный буст', desc: 'Установить 5 уровень двигателя на любой автомобиль', reward: 120000, titleReward: null, check: () => (myCars && myCars.some(c => c.upgrades?.engine >= 5)) },
+            { id: 'cases_10', icon: '📦', name: 'Кейсер', desc: 'Открыть 10 кейсов с номерами', reward: 75000, titleReward: null, check: () => (achievements.casesOpened >= 10) },
+            { id: 'cases_50', icon: '🎁', name: 'Дропоман', desc: 'Открыть 50 кейсов', reward: 250000, titleReward: null, check: () => ((achievements.casesOpened || 0) >= 50) },
+            { id: 'distance_50km', icon: '🛣️', name: 'Дальнобой', desc: 'Преодолеть 25 км общего пробега', reward: 180000, titleReward: 'traveler', check: () => {
+                const rec = (typeof getRaceRecords === 'function' ? getRaceRecords() : null);
+                return Math.max(Number(rec?.bestDistance || 0), Number(achievements.totalDistanceKm || 0)) >= 25;
+            }},
+            { id: 'overtakes_50', icon: '🏎️', name: 'Шашечник', desc: 'Совершить 50 опасных обгонов суммарно', reward: 150000, titleReward: 'infiltrator', check: () => ((achievements.overtakesTotal || 0) >= 50) }
         ];
 
         function checkAchievements() {
@@ -4667,61 +4733,114 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
         // ==========================================
 
         const carRaceStats = {
+            // 1. Бюджетный класс
             "ВАЗ-2107 «Жигули»": {
-                speed: 160, accel: 2.2, handling: 4.8, boost: 1.8, rewardMult: 1.0,
-                desc: "Советская классика с задним приводом. Легкая в потоке и маневренная в шашках!"
+                speed: 160, accel: 2.2, handling: 4.8, boost: 1.8, rewardMult: 1.0, driftFactor: 1.5,
+                desc: "Советская классика с задним приводом. Легкая в потоке и маневренная в заносах!"
+            },
+            "ВАЗ-2109 «Девятка»": {
+                speed: 170, accel: 2.4, handling: 5.2, boost: 1.9, rewardMult: 1.15, driftFactor: 1.2,
+                desc: "«Вишневая девятка» — зубило, маневренный передний привод и резвый старт."
+            },
+            "ГАЗ-24 «Волга»": {
+                speed: 175, accel: 2.3, handling: 4.5, boost: 1.8, rewardMult: 1.25, driftFactor: 1.3,
+                desc: "Советская баржа бизнес-класса с хромом и плавным тяжелым ходом."
             },
             "Lada Priora БПАН": {
-                speed: 185, accel: 2.7, handling: 5.6, boost: 2.0, rewardMult: 1.3,
+                speed: 185, accel: 2.7, handling: 5.6, boost: 2.0, rewardMult: 1.3, driftFactor: 1.3,
                 desc: "Заниженная посадка, тонировка «вкруг». Дерзкий стиль и стремительные обгоны!"
             },
+            "Hyundai Solaris": {
+                speed: 195, accel: 2.9, handling: 6.0, boost: 2.0, rewardMult: 1.45, driftFactor: 1.1,
+                desc: "Народный любимец такси и каршеринга — надежный, юркий и экономичный."
+            },
             "Lada Vesta Sport": {
-                speed: 215, accel: 3.3, handling: 6.2, boost: 2.2, rewardMult: 1.8,
+                speed: 215, accel: 3.3, handling: 6.2, boost: 2.2, rewardMult: 1.8, driftFactor: 1.2,
                 desc: "Спортивная подвеска и фирменный X-обвес для идеальной траектории на шоссе."
             },
             "Volkswagen Polo": {
-                speed: 205, accel: 3.1, handling: 6.4, boost: 2.0, rewardMult: 1.6,
+                speed: 205, accel: 3.1, handling: 6.4, boost: 2.0, rewardMult: 1.6, driftFactor: 1.1,
                 desc: "Немецкая точность управления и отличный контроль между рядами."
             },
+
+            // 2. Средний / JDM / Дрифт класс
+            "Toyota Mark II Tourer V": {
+                speed: 270, accel: 4.3, handling: 7.2, boost: 2.8, rewardMult: 2.7, driftFactor: 1.85,
+                desc: "Легендарный 1JZ-GTE твинтурбо! Король бокового скольжения и клубов дыма."
+            },
+            "Subaru Impreza WRX STI": {
+                speed: 265, accel: 4.5, handling: 8.2, boost: 2.7, rewardMult: 2.6, driftFactor: 1.4,
+                desc: "Оппозитный турбомотор и симметричный полный привод — вгрызается в любой поворот!"
+            },
             "BMW M5 E60 V10": {
-                speed: 280, accel: 4.4, handling: 7.0, boost: 2.7, rewardMult: 3.0,
+                speed: 280, accel: 4.4, handling: 7.0, boost: 2.7, rewardMult: 3.0, driftFactor: 1.6,
                 desc: "Рёв легендарного V10 под капотом! Ураганный разгон на прямых участках."
             },
+            "Nissan Silvia S15 Spec-R": {
+                speed: 275, accel: 4.6, handling: 8.0, boost: 2.9, rewardMult: 2.8, driftFactor: 2.0,
+                desc: "Икона японского D1GP! Невероятный выворот и идеальная развесовка для дрифта."
+            },
             "Toyota Camry 3.5": {
-                speed: 260, accel: 3.9, handling: 6.6, boost: 2.4, rewardMult: 2.5,
+                speed: 260, accel: 3.9, handling: 6.6, boost: 2.4, rewardMult: 2.5, driftFactor: 1.2,
                 desc: "«Камри три и пять» — левый ряд уважает, солидный и мощный ход."
             },
             "Toyota Land Cruiser 300": {
-                speed: 250, accel: 3.7, handling: 5.8, boost: 2.3, rewardMult: 3.8,
+                speed: 250, accel: 3.7, handling: 5.8, boost: 2.3, rewardMult: 3.8, driftFactor: 1.1,
                 desc: "Танк на дороге! Высокий клиренс и уверенный прорыв через плотный трафик."
             },
+            "Nissan GT-R R35 Nismo": {
+                speed: 340, accel: 6.0, handling: 8.8, boost: 3.4, rewardMult: 7.2, driftFactor: 1.35,
+                desc: "«Годзилла» на треке! Лаунч-контроль и умный полный привод ATTESA E-TS."
+            },
+
+            // 3. Премиум и Спорт
             "Mercedes-Benz E63s AMG": {
-                speed: 320, accel: 5.2, handling: 7.8, boost: 3.1, rewardMult: 5.5,
+                speed: 320, accel: 5.2, handling: 7.8, boost: 3.1, rewardMult: 5.5, driftFactor: 1.5,
                 desc: "Битурбо V8 с решёткой Panamericana. Сметает поток одним нажатием педали!"
             },
             "Audi RS6 Avant": {
-                speed: 330, accel: 5.4, handling: 8.0, boost: 3.1, rewardMult: 6.5,
+                speed: 330, accel: 5.4, handling: 8.0, boost: 3.1, rewardMult: 6.5, driftFactor: 1.3,
                 desc: "Ракета в кузове универсал! Полный привод Quattro вгрызается в любой вираж."
             },
             "BMW M5 F90 Competition": {
-                speed: 350, accel: 5.8, handling: 8.4, boost: 3.3, rewardMult: 8.0,
+                speed: 350, accel: 5.8, handling: 8.4, boost: 3.3, rewardMult: 8.0, driftFactor: 1.55,
                 desc: "Карбоновая крыша и лазерные фары. Хищный зверь на ночной скоростной магистрали."
             },
+            "BMW M8 Gran Coupe": {
+                speed: 345, accel: 5.9, handling: 8.3, boost: 3.3, rewardMult: 8.8, driftFactor: 1.45,
+                desc: "Флагманский 4.4L битурбо V8. Сочетание роскоши длинного кузова и мощи спорткара."
+            },
             "Mercedes-Benz G63 AMG «Гелик»": {
-                speed: 290, accel: 4.9, handling: 6.4, boost: 2.6, rewardMult: 9.0,
+                speed: 290, accel: 4.9, handling: 6.4, boost: 2.6, rewardMult: 9.0, driftFactor: 1.15,
                 desc: "Культовый кубик с боковым выхлопом. Абсолютный авторитет на трассе!"
             },
+
+            // 4. Суперкары и Ультра-Люкс
             "Porsche 911 Turbo S": {
-                speed: 370, accel: 6.5, handling: 9.2, boost: 3.6, rewardMult: 13.0,
+                speed: 370, accel: 6.5, handling: 9.2, boost: 3.6, rewardMult: 13.0, driftFactor: 1.45,
                 desc: "Абсолютная прижимная сила и космическая динамика разгона в левом ряду."
             },
+            "Lamborghini Huracan Performante": {
+                speed: 360, accel: 6.6, handling: 9.1, boost: 3.7, rewardMult: 14.5, driftFactor: 1.5,
+                desc: "Атмосферный V10, поющий на 8500 об/мин, и активная аэродинамика ALA!"
+            },
             "Rolls-Royce Cullinan": {
-                speed: 300, accel: 4.7, handling: 6.7, boost: 2.6, rewardMult: 16.0,
+                speed: 300, accel: 4.7, handling: 6.7, boost: 2.6, rewardMult: 16.0, driftFactor: 1.0,
                 desc: "Королевский внедорожник с грилем Pantheon. Максимальные выплаты за каждый километр!"
             },
+
+            // 5. Гиперкары
+            "Ferrari SF90 Stradale": {
+                speed: 390, accel: 7.2, handling: 9.4, boost: 4.2, rewardMult: 22.0, driftFactor: 1.4,
+                desc: "1000 л.с. гибридного совершенства из Маранелло. Молниеносный отклик электромоторов!"
+            },
             "Bugatti Chiron Super Sport": {
-                speed: 450, accel: 7.8, handling: 9.0, boost: 4.8, rewardMult: 35.0,
+                speed: 450, accel: 7.8, handling: 9.0, boost: 4.8, rewardMult: 35.0, driftFactor: 1.15,
                 desc: "1600 лошадиных сил гиперкара. Разрывает пространство со сверхзвуковой скоростью!"
+            },
+            "Koenigsegg Jesko Attack": {
+                speed: 480, accel: 8.2, handling: 9.6, boost: 5.0, rewardMult: 45.0, driftFactor: 1.6,
+                desc: "Шведский монстр на биотопливе E85 с коробкой LST. Король скорости за гранью возможного!"
             }
         };
 
@@ -5762,6 +5881,329 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                     break;
                 }
 
+                case "ВАЗ-2109 «Девятка»": {
+                    const bt = getBodyTones("#475569");
+                    drawShadow(18, 44);
+                    drawWheels(18, 22, "#cbd5e1", null, "#334155");
+                    // Короткое крыло / зубило нос
+                    px(-8, -23, 16, 2, bt.dark);
+                    px(-8, -21, 16, 11, bt.mid);
+                    px(-6, -20, 12, 9, bt.light);
+                    // Черная решетка радиатора и бамперы
+                    px(-9, -24, 18, 2, "#1e293b");
+                    px(-9, 21, 18, 2, "#1e293b");
+                    // Прямоугольные фары и оранжевые поворотники
+                    px(-8, -23, 3, 2, "#fef08a");
+                    px(5, -23, 3, 2, "#fef08a");
+                    px(-9, -23, 1, 2, "#f59e0b");
+                    px(8, -23, 1, 2, "#f59e0b");
+                    drawMirrors(17, -9, bt.dark);
+                    drawGlass(-7, -9, 14, 5, "#0f172a", true);
+                    px(-7, -4, 14, 13, bt.mid);
+                    // Задняя дверь хэтчбека со спойлером
+                    drawGlass(-7, 9, 14, 6, "#0f172a", false);
+                    px(-8, 15, 16, 6, bt.dark);
+                    px(-8, 16, 16, 2, "#09090b"); // Спойлер
+                    // Задние фонари
+                    px(-8, 20, 4, 2, "#dc2626");
+                    px(4, 20, 4, 2, "#dc2626");
+                    px(5, 23, 2, 2, "#94a3b8");
+                    break;
+                }
+
+                case "ГАЗ-24 «Волга»": {
+                    const bt = getBodyTones("#1e293b");
+                    drawShadow(21, 50);
+                    drawWheels(20, 24, "#e2e8f0", null, "#334155");
+                    // Монументальный длинный капот
+                    px(-9, -25, 18, 3, "#e2e8f0"); // Хром бампер
+                    px(-9, -22, 18, 13, bt.mid);
+                    px(-7, -21, 14, 11, bt.light);
+                    px(-1, -22, 2, 12, bt.bright);
+                    // Хромированная решетка «китовый ус»
+                    px(-7, -24, 14, 2, "#f1f5f9");
+                    px(-8, -24, 2, 2, "#fef08a");
+                    px(6, -24, 2, 2, "#fef08a");
+                    drawMirrors(19, -9, "#e2e8f0");
+                    drawGlass(-8, -9, 16, 5, "#1e293b", true);
+                    px(-8, -4, 16, 15, bt.mid);
+                    drawGlass(-8, 11, 16, 5, "#1e293b", false);
+                    // Длинный плоский багажник
+                    px(-9, 16, 18, 8, bt.dark);
+                    px(-8, 17, 16, 6, bt.mid);
+                    px(-9, 24, 18, 2, "#e2e8f0"); // Задний хром бампер
+                    // Вертикальные советские задние фонари
+                    px(-8, 23, 2, 2, "#dc2626");
+                    px(6, 23, 2, 2, "#dc2626");
+                    px(5, 26, 2, 2, "#cbd5e1");
+                    break;
+                }
+
+                case "Hyundai Solaris": {
+                    const bt = getBodyTones("#94a3b8");
+                    drawShadow(19, 45);
+                    drawWheels(18, 22, "#cbd5e1", null, "#334155");
+                    // Обтекаемый капот с гранями
+                    px(-7, -23, 14, 2, bt.dark);
+                    px(-8, -21, 16, 11, bt.mid);
+                    px(-6, -20, 12, 9, bt.light);
+                    // Шестиугольная решетка и фары
+                    px(-4, -23, 8, 2, "#1e293b");
+                    px(-8, -22, 3, 2, "#e0f2fe");
+                    px(5, -22, 3, 2, "#e0f2fe");
+                    drawMirrors(18, -9, bt.dark);
+                    drawGlass(-7, -9, 14, 6, "#0f172a", true);
+                    px(-7, -3, 14, 14, bt.mid);
+                    drawGlass(-7, 11, 14, 5, "#0f172a", false);
+                    px(-8, 16, 16, 6, bt.dark);
+                    px(-7, 17, 14, 4, bt.mid);
+                    // Светодиодные фонари с саблями
+                    px(-8, 21, 4, 2, "#dc2626");
+                    px(4, 21, 4, 2, "#dc2626");
+                    px(5, 23, 2, 1, "#64748b");
+                    break;
+                }
+
+                case "Toyota Mark II Tourer V": {
+                    const bt = getBodyTones("#f8fafc");
+                    drawShadow(20, 48);
+                    drawWheels(19, 24, "#cbd5e1", "#f59e0b", "#475569");
+                    // Агрессивный JDM нос с интеркулером
+                    px(-8, -24, 16, 2, bt.dark);
+                    px(-5, -24, 10, 2, "#0f172a"); // Вырез интеркулера
+                    px(-4, -24, 8, 1, "#94a3b8");
+                    px(-9, -22, 18, 12, bt.mid);
+                    px(-7, -21, 14, 10, bt.light);
+                    // Линзованные хрустальные фары Mark II
+                    px(-8, -23, 3, 2, "#e0f2fe");
+                    px(5, -23, 3, 2, "#e0f2fe");
+                    drawMirrors(19, -9, bt.dark);
+                    drawGlass(-8, -9, 16, 6, "#0f172a", true);
+                    px(-8, -3, 16, 14, bt.mid);
+                    drawGlass(-8, 11, 16, 5, "#0f172a", false);
+                    // Широкий седан багажник со спойлером
+                    px(-9, 16, 18, 7, bt.dark);
+                    px(-8, 17, 16, 5, bt.mid);
+                    px(-8, 22, 16, 1, "#09090b"); // Лип спойлер
+                    // Легендарная сплошная полоса фонарей Mark II
+                    px(-8, 21, 16, 2, "#dc2626");
+                    px(-3, 21, 6, 1, "#f8fafc"); // Задний ход
+                    // Огромная японская банка выхлопа
+                    px(5, 24, 3, 3, "#f1f5f9");
+                    break;
+                }
+
+                case "Subaru Impreza WRX STI": {
+                    const bt = getBodyTones("#1d4ed8");
+                    drawShadow(20, 47);
+                    // Золотые кованые диски BBS
+                    drawWheels(19, 23, "#f59e0b", "#ef4444", "#475569");
+                    // Массивный ноздря-воздухозаборник капота STI
+                    px(-8, -24, 16, 2, bt.dark);
+                    px(-9, -22, 18, 12, bt.mid);
+                    px(-7, -21, 14, 10, bt.light);
+                    px(-4, -18, 8, 4, "#0f172a"); // Hood scoop
+                    px(-3, -17, 6, 2, "#000000");
+                    // Линзованные агрессивные фары
+                    px(-8, -23, 3, 2, "#67e8f9");
+                    px(5, -23, 3, 2, "#67e8f9");
+                    drawMirrors(19, -9, bt.dark);
+                    drawGlass(-7, -9, 14, 6, "#0f172a", true);
+                    px(-7, -3, 14, 14, bt.mid);
+                    drawGlass(-7, 11, 14, 5, "#0f172a", false);
+                    px(-8, 16, 16, 6, bt.dark);
+                    // Высокое раллийное антикрыло STI
+                    px(-9, 19, 18, 3, bt.dark);
+                    px(-9, 18, 2, 4, "#09090b");
+                    px(7, 18, 2, 4, "#09090b");
+                    // Сдвоенные выхлопы слева и справа
+                    px(-7, 23, 3, 2, "#e2e8f0");
+                    px(4, 23, 3, 2, "#e2e8f0");
+                    // Задние фонари
+                    px(-8, 21, 3, 2, "#dc2626");
+                    px(5, 21, 3, 2, "#dc2626");
+                    break;
+                }
+
+                case "Nissan Silvia S15 Spec-R": {
+                    const bt = getBodyTones("#0284c7");
+                    drawShadow(19, 46);
+                    drawWheels(18, 23, "#e2e8f0", "#ef4444", "#475569");
+                    // Низкий клиновидный дрифт профиль
+                    px(-7, -24, 14, 2, bt.dark);
+                    px(-8, -22, 16, 12, bt.mid);
+                    px(-6, -21, 12, 10, bt.light);
+                    // Прищуренные линзы Silvia S15
+                    px(-7, -23, 3, 2, "#38bdf8");
+                    px(4, -23, 3, 2, "#38bdf8");
+                    drawMirrors(18, -9, bt.dark);
+                    drawGlass(-7, -9, 14, 6, "#09090b", true);
+                    px(-7, -3, 14, 13, bt.mid);
+                    drawGlass(-7, 10, 14, 6, "#09090b", false);
+                    px(-8, 16, 16, 6, bt.dark);
+                    // Карбоновое дрифт-антикрыло GT Wing
+                    px(-9, 19, 18, 2, "#09090b");
+                    // Задние фонари со стрелками
+                    px(-8, 21, 4, 2, "#dc2626");
+                    px(4, 21, 4, 2, "#dc2626");
+                    // Прямоточный титановый выхлоп
+                    px(5, 23, 3, 3, "#60a5fa");
+                    break;
+                }
+
+                case "Nissan GT-R R35 Nismo": {
+                    const bt = getBodyTones("#64748b");
+                    drawShadow(22, 49);
+                    drawWheels(20, 24, "#09090b", "#ef4444", "#334155");
+                    // Карбоновый сплиттер с красной полосой Nismo
+                    px(-9, -25, 18, 2, "#09090b");
+                    px(-8, -25, 16, 1, "#ef4444");
+                    px(-10, -23, 20, 12, bt.dark);
+                    px(-8, -22, 16, 11, bt.mid);
+                    px(-5, -21, 10, 9, bt.light);
+                    // Воздуховоды NACA на капоте
+                    px(-4, -18, 2, 3, "#0f172a");
+                    px(2, -18, 2, 3, "#0f172a");
+                    // Молниевидные фары GT-R
+                    px(-9, -24, 3, 3, "#38bdf8");
+                    px(6, -24, 3, 3, "#38bdf8");
+                    drawMirrors(20, -10, "#09090b", "#ef4444");
+                    drawGlass(-8, -10, 16, 6, "#09090b", true);
+                    px(-8, -4, 16, 14, bt.mid);
+                    drawGlass(-8, 10, 16, 6, "#09090b", false);
+                    // Карбоновое антикрыло Nismo
+                    px(-10, 19, 20, 2, "#09090b");
+                    px(-10, 18, 2, 3, "#ef4444");
+                    px(8, 18, 2, 3, "#ef4444");
+                    // Легендарные 4 круглых кольца фонарей GT-R
+                    px(-8, 21, 3, 2, "#dc2626");
+                    px(-5, 21, 3, 2, "#ef4444");
+                    px(2, 21, 3, 2, "#ef4444");
+                    px(5, 21, 3, 2, "#dc2626");
+                    // 4 гигантских титановых сопла выхлопа
+                    px(-7, 24, 4, 2, "#38bdf8");
+                    px(3, 24, 4, 2, "#38bdf8");
+                    break;
+                }
+
+                case "BMW M8 Gran Coupe": {
+                    const bt = getBodyTones("#1e3a8a");
+                    drawShadow(22, 51);
+                    drawWheels(21, 25, "#09090b", "#3b82f6", "#475569");
+                    // Хищный нос, широкие ноздри M с подсветкой
+                    px(-9, -26, 18, 2, bt.dark);
+                    px(-5, -26, 10, 2, "#09090b");
+                    px(-5, -25, 4, 1, "#60a5fa");
+                    px(1, -25, 4, 1, "#60a5fa");
+                    px(-10, -24, 20, 13, bt.dark);
+                    px(-8, -23, 16, 12, bt.mid);
+                    px(-5, -22, 10, 10, bt.light);
+                    // Лазерные фары Laserlight с синими акцентами
+                    px(-9, -25, 3, 2, "#38bdf8");
+                    px(6, -25, 3, 2, "#38bdf8");
+                    drawMirrors(21, -10, bt.dark);
+                    drawGlass(-8, -10, 16, 6, "#09090b", true);
+                    px(-8, -4, 16, 15, bt.mid);
+                    drawGlass(-8, 11, 16, 6, "#09090b", false);
+                    px(-9, 17, 18, 6, bt.dark);
+                    // Карбоновый дактейл
+                    px(-8, 22, 16, 2, "#09090b");
+                    // Тонкие L-образные OLED фонари
+                    px(-9, 21, 6, 2, "#dc2626");
+                    px(3, 21, 6, 2, "#dc2626");
+                    // 4 черных хромированных патрубка M
+                    px(-7, 24, 4, 2, "#1e293b");
+                    px(3, 24, 4, 2, "#1e293b");
+                    break;
+                }
+
+                case "Lamborghini Huracan Performante": {
+                    const bt = getBodyTones("#22c55e");
+                    drawShadow(22, 47);
+                    drawWheels(21, 24, "#09090b", "#f59e0b", "#334155");
+                    // Ультра-низкий клиновидный нос Lambo
+                    px(-7, -25, 14, 2, "#09090b"); // ALA сплиттер
+                    px(-9, -23, 18, 11, bt.dark);
+                    px(-7, -22, 14, 10, bt.mid);
+                    px(-4, -21, 8, 8, bt.light);
+                    // Y-образные светодиодные фары
+                    px(-8, -24, 3, 2, "#f8fafc");
+                    px(5, -24, 3, 2, "#f8fafc");
+                    drawMirrors(21, -9, bt.dark);
+                    drawGlass(-7, -9, 14, 6, "#09090b", true);
+                    px(-7, -3, 14, 10, bt.mid);
+                    // Стеклянная крышка V10 двигателя
+                    drawGlass(-6, 7, 12, 8, "#0f172a", false);
+                    px(-3, 9, 6, 4, "#cbd5e1"); // Коллекторы V10
+                    // Массивное Forged Composite антикрыло ALA
+                    px(-10, 18, 20, 2, "#09090b");
+                    px(-6, 17, 2, 4, "#1e293b");
+                    px(4, 17, 2, 4, "#1e293b");
+                    // Задние Y-фонари
+                    px(-9, 20, 5, 2, "#dc2626");
+                    px(4, 20, 5, 2, "#dc2626");
+                    // Высоко поднятые по центру сопла V10
+                    px(-3, 21, 6, 3, "#f97316");
+                    break;
+                }
+
+                case "Ferrari SF90 Stradale": {
+                    const bt = getBodyTones("#dc2626");
+                    drawShadow(22, 48);
+                    drawWheels(21, 24, "#09090b", "#eab308", "#475569");
+                    // Формульный нос с прорезями
+                    px(-6, -26, 12, 2, "#09090b");
+                    px(-9, -24, 18, 12, bt.dark);
+                    px(-7, -23, 14, 11, bt.mid);
+                    px(-4, -22, 8, 9, bt.light);
+                    // Горизонтальные узкие матричные фары
+                    px(-8, -25, 4, 1, "#67e8f9");
+                    px(4, -25, 4, 1, "#67e8f9");
+                    drawMirrors(21, -9, bt.dark);
+                    drawGlass(-7, -9, 14, 6, "#09090b", true);
+                    px(-7, -3, 14, 11, bt.mid);
+                    // Прозрачная крышка V8 гибрид
+                    drawGlass(-6, 8, 12, 7, "#0f172a", false);
+                    px(-3, 9, 6, 4, "#dc2626");
+                    // Активное антикрыло shut-off Gurney
+                    px(-9, 18, 18, 2, bt.dark);
+                    // Квадратные задние кольца фонарей
+                    px(-8, 20, 3, 2, "#ef4444");
+                    px(5, 20, 3, 2, "#ef4444");
+                    // Центральные сдвоенные выхлопы
+                    px(-2, 20, 4, 3, "#38bdf8");
+                    break;
+                }
+
+                case "Koenigsegg Jesko Attack": {
+                    const bt = getBodyTones("#f97316");
+                    drawShadow(23, 52);
+                    drawWheels(22, 25, "#09090b", "#22c55e", "#475569");
+                    // Экстремальный трековый сплиттер с канардами
+                    px(-10, -26, 20, 2, "#09090b");
+                    px(-11, -26, 2, 3, "#09090b");
+                    px(9, -26, 2, 3, "#09090b");
+                    px(-10, -24, 20, 13, bt.dark);
+                    px(-8, -23, 16, 12, bt.mid);
+                    px(-4, -22, 8, 9, bt.light);
+                    // Фары-хищники
+                    px(-9, -25, 3, 2, "#67e8f9");
+                    px(6, -25, 3, 2, "#67e8f9");
+                    drawMirrors(22, -10, "#09090b");
+                    // Кокпит «капля-пузырь» истребителя
+                    drawGlass(-6, -10, 12, 8, "#09090b", true);
+                    px(-6, -2, 12, 10, bt.mid);
+                    // Гигантское верхнее антикрыло типа «лебединая шея»
+                    px(-11, 17, 22, 2, "#09090b");
+                    px(-1, 8, 2, 10, "#09090b"); // Центральный верхний пилон
+                    // Задний диффузор и огромный центральный выхлоп
+                    px(-9, 21, 18, 3, "#09090b");
+                    px(-2, 22, 4, 3, "#38bdf8"); // Пламя выхлопа
+                    px(-8, 20, 4, 1, "#ef4444");
+                    px(4, 20, 4, 1, "#ef4444");
+                    break;
+                }
+
                 case "ДПС / Полиция": {
                     px(-11, -24, 22, 48, "rgba(0,0,0,0.4)");
                     drawWheels(19, 24, "#cbd5e1", null, "#334155");
@@ -6176,10 +6618,11 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
             isOnWall: false
         };
 
-        let raceKeys = { left: false, right: false, gas: false, brake: false, nitro: false };
+        let raceKeys = { left: false, right: false, gas: false, brake: false, nitro: false, drift: false };
         let raceTraffic = [];
         let raceCollectibles = [];
         let raceSkidmarks = [];
+        let raceDriftSmoke = [];
         let raceSparks = [];
         let raceRoadOffset = 0;
         let trafficSpawnTimer = 0;
@@ -6187,6 +6630,26 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
         let roadCurve = 0;
         let targetRoadCurve = 0;
         let curveTimer = 0;
+        let lastDriftScreechTime = 0;
+
+        // -------------------------------------------------------------
+        // РЕЖИМ ГОНКИ: «Шоссе (Трафик)» vs «Дрифт (Заносы)»
+        // -------------------------------------------------------------
+        let raceCurrentMode = 'highway'; // 'highway' | 'drift'
+
+        function setRaceMode(mode) {
+            raceCurrentMode = mode === 'drift' ? 'drift' : 'highway';
+            const lbl = typeof document !== 'undefined' ? document.getElementById('race-mode-label') : null;
+            if (lbl) {
+                lbl.textContent = raceCurrentMode === 'drift' ? 'Дрифт (Заносы)' : 'Шоссе (Трафик)';
+            }
+            if (typeof document !== 'undefined') {
+                const btnHighway = document.getElementById('btn-mode-highway');
+                const btnDrift = document.getElementById('btn-mode-drift');
+                if (btnHighway) btnHighway.classList.toggle('active', raceCurrentMode === 'highway');
+                if (btnDrift) btnDrift.classList.toggle('active', raceCurrentMode === 'drift');
+            }
+        }
 
         // -------------------------------------------------------------
         // СИСТЕМА ПОГОДЫ И АТМОСФЕРЫ ЗАЕЗДА (День, Закат, Ночь, Дождь, Динамика)
@@ -6650,6 +7113,9 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                 if (key === 'nitro') {
                     if (typeof sound?.nitro === 'function') sound.nitro();
                     if (typeof sound?.haptic === 'function') sound.haptic('nitro');
+                } else if (key === 'drift') {
+                    if (typeof sound?.drift === 'function') sound.drift();
+                    if (typeof sound?.haptic === 'function') sound.haptic('medium');
                 } else if (key === 'brake') {
                     if (typeof sound?.brake === 'function') sound.brake();
                     if (typeof sound?.haptic === 'function') sound.haptic('medium');
@@ -6665,7 +7131,8 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
             if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') { raceKeys.right = true; e.preventDefault(); }
             if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') { raceKeys.gas = true; e.preventDefault(); }
             if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') { raceKeys.brake = true; e.preventDefault(); }
-            if (e.key === ' ' || e.key === 'Shift') { raceKeys.nitro = true; e.preventDefault(); }
+            if (e.key === 'Shift' || e.key === 'x' || e.key === 'X' || e.key === 'c' || e.key === 'C') { raceKeys.drift = true; e.preventDefault(); }
+            if (e.key === ' ' || e.code === 'Space') { raceKeys.nitro = true; e.preventDefault(); }
         });
 
         window.addEventListener('keyup', (e) => {
@@ -6673,7 +7140,8 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
             if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') raceKeys.right = false;
             if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') raceKeys.gas = false;
             if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') raceKeys.brake = false;
-            if (e.key === ' ' || e.key === 'Shift') raceKeys.nitro = false;
+            if (e.key === 'Shift' || e.key === 'x' || e.key === 'X' || e.key === 'c' || e.key === 'C') raceKeys.drift = false;
+            if (e.key === ' ' || e.code === 'Space') raceKeys.nitro = false;
         });
 
         function showRacePopup(text, color = '#fbbf24') {
@@ -6749,6 +7217,13 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                 fuelWarningTimer: 0,
                 fuelConsumption: stats.consumption,
                 startCondition: activeRaceCar.condition,
+                driftScore: 0,
+                driftCurrentScore: 0,
+                driftCombo: 1,
+                driftComboTimer: 0,
+                driftDuration: 0,
+                isDrifting: false,
+                maxDriftCombo: 1,
                 damageTaken: 0,
                 tunedStats: stats
             };
@@ -6756,6 +7231,7 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
             raceTraffic = [];
             raceCollectibles = [];
             raceSkidmarks = [];
+            raceDriftSmoke = [];
             raceSparks = [];
             raceWaterSpray = [];
             raceLightningFlash = 0;
@@ -6824,21 +7300,27 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
             // 1. Динамические повороты трассы
             curveTimer -= dt;
             if (curveTimer <= 0) {
-                curveTimer = 4.0 + Math.random() * 3.5;
-                const r = Math.random();
-                if (r < 0.35) {
-                    targetRoadCurve = 0; // прямой участок
-                } else if (r < 0.68) {
-                    targetRoadCurve = 45 + Math.random() * 50; // поворот направо
+                if (raceCurrentMode === 'drift') {
+                    curveTimer = 1.6 + Math.random() * 2.2;
+                    const r = Math.random();
+                    if (r < 0.18) targetRoadCurve = 0;
+                    else if (r < 0.59) targetRoadCurve = 55 + Math.random() * 60;
+                    else targetRoadCurve = -(55 + Math.random() * 60);
                 } else {
-                    targetRoadCurve = -(45 + Math.random() * 50); // поворот налево
+                    curveTimer = 4.0 + Math.random() * 3.5;
+                    const r = Math.random();
+                    if (r < 0.35) targetRoadCurve = 0;
+                    else if (r < 0.68) targetRoadCurve = 45 + Math.random() * 50;
+                    else targetRoadCurve = -(45 + Math.random() * 50);
                 }
             }
-            roadCurve += (targetRoadCurve - roadCurve) * 1.5 * dt;
+            const curveTransitionRate = raceCurrentMode === 'drift' ? 2.8 : 1.5;
+            roadCurve += (targetRoadCurve - roadCurve) * curveTransitionRate * dt;
 
             // Центробежная сила при прохождении поворота
             if (Math.abs(roadCurve) > 8) {
-                const centrifugalPush = -(roadCurve / 75) * (racePlayer.speed / 130) * 45 * dt;
+                const centrifugalFactor = raceCurrentMode === 'drift' ? 65 : 45;
+                const centrifugalPush = -(roadCurve / 75) * (racePlayer.speed / 130) * centrifugalFactor * dt;
                 racePlayer.vx += centrifugalPush;
             }
 
@@ -6889,6 +7371,15 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                 racePlayer.speed = Math.max(racePlayer.targetSpeed, racePlayer.speed - 60 * dt);
             }
             racePlayer.peakSpeed = Math.max(racePlayer.peakSpeed, racePlayer.speed);
+            if (racePlayer.speed > (achievements._maxSpeedSeen || 0)) {
+                achievements._maxSpeedSeen = Math.round(racePlayer.speed);
+                if (achievements._maxSpeedSeen >= 200 && !achievements.speed_200) {
+                    checkAchievements();
+                }
+                if (achievements._maxSpeedSeen >= 350 && !achievements.speed_350) {
+                    checkAchievements();
+                }
+            }
             // Meter real distance and driving style: nitro and heavy throttle cost fuel.
             const burnedFuel = NomeraRaceEconomy.fuelForFrame({
                 speed:racePlayer.speed, seconds:dt, consumption:racePlayer.fuelConsumption,
@@ -6919,17 +7410,25 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                 }
             }
 
-            // 5. Инерция руления и крен кузова
-            const maxLateral = racePlayer.handling * 42;
-            const steerRate = racePlayer.handling * 175;
+            // 5. Инерция руления, ручник и дрифт
+            const driftMult = stats.driftFactor || 1.35;
+            const isHandbrake = !!raceKeys.drift;
+            const maxLateral = racePlayer.handling * 42 * (isHandbrake ? (1 + (driftMult - 1) * 0.7) : 1);
+            const steerRate = racePlayer.handling * 185 * (isHandbrake ? 1.4 : 1);
 
             if (raceKeys.left) {
                 racePlayer.vx = Math.max(-maxLateral, racePlayer.vx - steerRate * dt);
             } else if (raceKeys.right) {
                 racePlayer.vx = Math.min(maxLateral, racePlayer.vx + steerRate * dt);
             } else {
-                // Плавное затухание инерции
-                racePlayer.vx *= Math.pow(0.015, dt);
+                // Плавное затухание инерции (при заносе/ручнике скольжение длится дольше)
+                const decayBase = (isHandbrake || raceCurrentMode === 'drift') ? 0.08 : 0.015;
+                racePlayer.vx *= Math.pow(decayBase, dt);
+            }
+
+            // Торможение при ручнике
+            if (isHandbrake) {
+                racePlayer.speed = Math.max(25, racePlayer.speed - 35 * dt);
             }
 
             racePlayer.x += racePlayer.vx * dt;
@@ -7013,13 +7512,91 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                 }
             }
 
-            // Плавный крен кузова при повороте
-            const targetTilt = (racePlayer.vx / maxLateral) * 0.12;
-            racePlayer.tilt += (targetTilt - racePlayer.tilt) * 14 * dt;
+            // Плавный крен кузова при повороте и заносе
+            const tiltScale = isHandbrake ? 0.32 : 0.18;
+            const targetTilt = (racePlayer.vx / maxLateral) * tiltScale;
+            racePlayer.tilt += (targetTilt - racePlayer.tilt) * 12 * dt;
 
-            // 6. Генерация следов шин при заносе или резком торможении
+            // Проверка состояния дрифта
+            const isDriftingNow = (isHandbrake || Math.abs(racePlayer.vx) > (maxLateral * 0.42) || raceCurrentMode === 'drift')
+                && Math.abs(racePlayer.vx) > 22
+                && racePlayer.speed > 35
+                && !racePlayer.isOnWall;
+
+            if (isDriftingNow) {
+                racePlayer.isDrifting = true;
+                racePlayer.driftDuration += dt;
+                racePlayer.driftComboTimer = 1.8;
+                racePlayer.driftCombo = Math.min(5, 1 + Math.floor(racePlayer.driftDuration / 2.2));
+                racePlayer.maxDriftCombo = Math.max(racePlayer.maxDriftCombo || 1, racePlayer.driftCombo);
+
+                // Начисление очков дрифта
+                const driftRate = Math.round((racePlayer.speed * 0.28) * (Math.abs(racePlayer.vx) / maxLateral) * 18 * driftMult * racePlayer.driftCombo);
+                racePlayer.driftCurrentScore += driftRate * dt;
+                racePlayer.driftScore += driftRate * dt;
+
+                // Звук визга резины
+                const nowMs = performance.now();
+                if (nowMs - lastDriftScreechTime > 340) {
+                    lastDriftScreechTime = nowMs;
+                    if (typeof sound?.drift === 'function') sound.drift();
+                    if (typeof sound?.haptic === 'function') sound.haptic('light');
+                }
+
+                // Дым из-под задних покрышек
+                for (let smk = 0; smk < 2; smk++) {
+                    const side = Math.random() < 0.5 ? -11 : 11;
+                    raceDriftSmoke.push({
+                        x: racePlayer.x + side + (Math.random() - 0.5) * 4,
+                        y: racePlayer.y + 18,
+                        vx: (side > 0 ? 12 : -12) + (Math.random() - 0.5) * 16,
+                        vy: 20 + Math.random() * 35,
+                        size: 3.5 + Math.random() * 4.0,
+                        life: 0.65
+                    });
+                }
+
+                // Следы шин
+                raceSkidmarks.push({
+                    x: racePlayer.x,
+                    y: racePlayer.y + 16,
+                    life: 0.95
+                });
+
+                if (Number(achievements.driftBestScore || 0) < Math.round(racePlayer.driftScore)) achievements.driftBestScore = Math.round(racePlayer.driftScore);
+                if (Number(achievements.driftMaxCombo || 0) < racePlayer.driftCombo) achievements.driftMaxCombo = racePlayer.driftCombo;
+                if (racePlayer.driftScore >= 1000 || racePlayer.driftCombo >= 5) checkAchievements();
+            } else {
+                racePlayer.isDrifting = false;
+                if (racePlayer.driftComboTimer > 0) {
+                    racePlayer.driftComboTimer -= dt;
+                    if (racePlayer.driftComboTimer <= 0) {
+                        if (racePlayer.driftCurrentScore > 35) {
+                            const bankedPoints = Math.round(racePlayer.driftCurrentScore);
+                            const bankedCash = Math.round(bankedPoints * 1.5 * (stats.rewardMult || 1.0));
+                            racePlayer.earnedCash += bankedCash;
+                            showRacePopup(`🌪️ ЗАНОС: +${bankedPoints} PTS (+${bankedCash.toLocaleString('ru-RU')} ₽)`, '#fbbf24');
+                            checkAchievements();
+                        }
+                        racePlayer.driftCurrentScore = 0;
+                        racePlayer.driftCombo = 1;
+                        racePlayer.driftDuration = 0;
+                    }
+                }
+            }
+
+            // Срыв дрифта при ударе о стену
+            if (racePlayer.isOnWall && racePlayer.driftCurrentScore > 35) {
+                showRacePopup("💥 ДРИФТ СОРВАН!", "#ef4444");
+                racePlayer.driftCurrentScore = 0;
+                racePlayer.driftCombo = 1;
+                racePlayer.driftDuration = 0;
+                racePlayer.isDrifting = false;
+            }
+
+            // 6. Генерация следов шин при резком торможении
             const isSkidding = Math.abs(racePlayer.vx) > (maxLateral * 0.55) || (raceKeys.brake && racePlayer.speed > 80);
-            if (isSkidding) {
+            if (isSkidding && !isDriftingNow) {
                 raceSkidmarks.push({
                     x: racePlayer.x,
                     y: racePlayer.y + 16,
@@ -7034,6 +7611,18 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                 sm.life -= dt * 0.8;
                 if (sm.life <= 0 || sm.y > 620) {
                     raceSkidmarks.splice(i, 1);
+                }
+            }
+
+            // Обновление частиц дыма от шин
+            for (let i = raceDriftSmoke.length - 1; i >= 0; i--) {
+                const smk = raceDriftSmoke[i];
+                smk.x += smk.vx * dt;
+                smk.y += (smk.vy + racePlayer.speed * 1.8) * dt;
+                smk.size += 16 * dt;
+                smk.life -= 1.6 * dt;
+                if (smk.life <= 0 || smk.y > 620) {
+                    raceDriftSmoke.splice(i, 1);
                 }
             }
 
@@ -7572,9 +8161,10 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
             document.body.classList.remove('race-active');
             if (raceAnimFrame) cancelAnimationFrame(raceAnimFrame);
 
-            const gross = racePlayer.earnedCash;
+            const driftBonus = Math.round((racePlayer.driftScore || 0) * 0.8 * (racePlayer.tunedStats?.rewardMult || 1.0));
+            const gross = racePlayer.earnedCash + driftBonus;
             const receipt = NomeraRaceEconomy.settle(gross, racePlayer.fuelLiters || 0, balance);
-            const finalXp = Math.max(5, Math.round(racePlayer.distanceKm * 8 + racePlayer.overtakesCount * 3));
+            const finalXp = Math.max(5, Math.round(racePlayer.distanceKm * 8 + racePlayer.overtakesCount * 3 + (racePlayer.driftScore || 0) * 0.05));
             const wear = Math.min(75, (racePlayer.damageTaken || 0) + racePlayer.distanceKm * 0.3 + (crashed ? 18 + Math.min(15, racePlayer.speed / 25) : 0));
             if (activeRaceCar && myCars.includes(activeRaceCar)) {
                 NomeraRaceEconomy.ensureCar(activeRaceCar);
@@ -7583,10 +8173,15 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
             balance = receipt.walletAfter;
             addExp(finalXp);
             updateBalance();
-            logPlayerActivity('Гонка', `Заезд ${crashed === 'fuel' ? 'закончился бензин' : (crashed ? 'авария' : 'выход')}: ${racePlayer.distanceKm.toFixed(2)} км, до расходов ${receipt.gross} ₽, бензин -${receipt.fuelCost} ₽, итог ${receipt.credited} ₽`);
+            logPlayerActivity('Гонка', `Заезд ${crashed === 'fuel' ? 'закончился бензин' : (crashed ? 'авария' : 'выход')}: ${racePlayer.distanceKm.toFixed(2)} км, дрифт: ${Math.round(racePlayer.driftScore || 0)} pts, до расходов ${receipt.gross} ₽, бензин -${receipt.fuelCost} ₽, итог ${receipt.credited} ₽`);
             // Race records track received net winnings, never fuel-free gross income.
             saveRaceRecords(NomeraRaceRecords.finishRecords(getRaceRecords(), racePlayer, Math.max(0, receipt.credited)));
             recordQuestProgress('distance', Math.round(racePlayer.distanceKm || 0));
+            achievements.driftBestScore = Math.max(Number(achievements.driftBestScore || 0), Math.round(racePlayer.driftScore || 0));
+            achievements.driftTotalScore = Number(achievements.driftTotalScore || 0) + Math.round(racePlayer.driftScore || 0);
+            achievements.driftMaxCombo = Math.max(Number(achievements.driftMaxCombo || 0), racePlayer.maxDriftCombo || 1);
+            achievements.overtakesTotal = Number(achievements.overtakesTotal || 0) + (racePlayer.overtakesCount || 0);
+            achievements.totalDistanceKm = Number(achievements.totalDistanceKm || 0) + (racePlayer.distanceKm || 0);
             checkAchievements();
             saveProgress();
             updateRaceRecordsUI();
@@ -7596,6 +8191,8 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
             document.getElementById('go-stat-dist').innerText = `${racePlayer.distanceKm.toFixed(2)} км`;
             document.getElementById('go-stat-speed').innerText = `${Math.round(racePlayer.peakSpeed)} км/ч`;
             document.getElementById('go-stat-overtakes').innerText = `${racePlayer.overtakesCount}`;
+            const driftStat = document.getElementById('go-stat-drift');
+            if (driftStat) driftStat.innerText = `${Math.round(racePlayer.driftScore || 0)} PTS (x${racePlayer.maxDriftCombo || 1})`;
             document.getElementById('go-stat-xp').innerText = `+${finalXp} XP`;
             document.getElementById('go-stat-gross').innerText = `+${receipt.gross.toLocaleString('ru-RU')} ₽`;
             document.getElementById('go-stat-fuel').innerText = `${receipt.liters.toFixed(2)} л × ${NomeraRaceEconomy.FUEL_PRICE} ₽ = −${receipt.fuelCost.toLocaleString('ru-RU')} ₽`;
@@ -8154,20 +8751,42 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                 ctx.restore();
             }
 
+            // Дым из-под шин при заносе
+            for (let smk of raceDriftSmoke) {
+                const sx = smk.x + getCurveX(smk.y);
+                ctx.save();
+                ctx.fillStyle = `rgba(226, 232, 240, ${Math.max(0, smk.life * 0.55)})`;
+                ctx.beginPath();
+                ctx.arc(sx, smk.y, smk.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+
             // Обновление индикатора нитро на мобильной панели
             const touchNitroVal = document.getElementById('hud-touch-nitro-val');
             if (touchNitroVal) {
                 touchNitroVal.textContent = Math.round(racePlayer.nitro) + '%';
             }
 
+            // Обновление плашки дрифта в мобильном заголовке
+            const driftBadge = document.getElementById('game-drift-badge');
+            if (driftBadge) {
+                if (racePlayer.isDrifting || racePlayer.driftCurrentScore > 0) {
+                    driftBadge.textContent = `🌪️ x${racePlayer.driftCombo} | ${Math.round(racePlayer.driftCurrentScore)} PTS`;
+                    driftBadge.classList.remove('hidden');
+                } else {
+                    driftBadge.classList.add('hidden');
+                }
+            }
+
             // 11. Игровой HUD на Canvas
             // Плашка текущего биома по центру сверху
-            ctx.fillStyle = "rgba(0, 0, 0, 0.75)";
+            ctx.fillStyle = "rgba(10, 15, 29, 0.85)";
             ctx.beginPath();
-            ctx.roundRect(W / 2 - 80, 10, 160, 26, 6);
+            ctx.roundRect(W / 2 - 75, 10, 150, 24, 6);
             ctx.fill();
             ctx.strokeStyle = biome.themeCol;
-            ctx.lineWidth = 1.5;
+            ctx.lineWidth = 1.2;
             ctx.stroke();
 
             ctx.fillStyle = biome.themeCol;
@@ -8175,52 +8794,89 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
             ctx.textAlign = "center";
             ctx.fillText(`${biome.icon} ${biome.name}`, W / 2, 26);
 
-            // Спидометр и датчики
-            ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+            // Оверлей активного дрифта прямо под биомом
+            if (racePlayer.isDrifting || racePlayer.driftCurrentScore > 0) {
+                const bw = 170;
+                const bh = 24;
+                ctx.fillStyle = "rgba(15, 23, 42, 0.9)";
+                ctx.beginPath();
+                ctx.roundRect(W / 2 - bw / 2, 38, bw, bh, 5);
+                ctx.fill();
+                ctx.strokeStyle = "#f59e0b";
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+
+                ctx.fillStyle = "#fbbf24";
+                ctx.font = "900 11px sans-serif";
+                ctx.textAlign = "center";
+                ctx.fillText(`🌪️ ДРИФТ x${racePlayer.driftCombo} • ${Math.round(racePlayer.driftCurrentScore)} PTS`, W / 2, 54);
+            }
+
+            // Спидометр и датчики (Улучшенная контрастность и читабельность)
+            ctx.fillStyle = "rgba(10, 15, 29, 0.85)";
             ctx.beginPath();
-            ctx.roundRect(10, 10, 126, 76, 8);
+            ctx.roundRect(10, 10, 134, 76, 8);
             ctx.fill();
-            ctx.strokeStyle = "rgba(255, 255, 255, 0.12)";
+            ctx.strokeStyle = "rgba(255, 255, 255, 0.15)";
             ctx.lineWidth = 1;
             ctx.stroke();
 
-            ctx.fillStyle = "#38bdf8";
-            ctx.font = "900 22px var(--font-plate)";
+            // Крупный цифровой спидометр
+            const curSpd = Math.round(racePlayer.speed);
+            ctx.fillStyle = curSpd >= 260 ? "#ff2e4c" : (curSpd >= 160 ? "#fbbf24" : "#38bdf8");
+            ctx.font = "900 28px var(--font-plate)";
             ctx.textAlign = "left";
-            ctx.fillText(`${Math.round(racePlayer.speed)}`, 18, 38);
+            ctx.fillText(`${curSpd}`, 16, 38);
 
-            ctx.fillStyle = "rgba(255, 255, 255, 0.7)";
-            ctx.font = "10px sans-serif";
-            ctx.fillText("КМ/Ч", 68, 36);
+            ctx.fillStyle = "rgba(255, 255, 255, 0.75)";
+            ctx.font = "800 10px sans-serif";
+            ctx.fillText("КМ/Ч", 76, 35);
 
-            ctx.fillStyle = "#fbbf24";
-            ctx.font = "700 11px sans-serif";
-            ctx.fillText(`🛣️ ${racePlayer.distanceKm.toFixed(2)} км`, 18, 54);
+            // Дистанция
+            ctx.fillStyle = "#e2e8f0";
+            ctx.font = "700 10px sans-serif";
+            ctx.fillText(`🛣️ ${racePlayer.distanceKm.toFixed(2)} км ${raceCurrentMode === 'drift' ? '• 🌪️' : ''}`, 16, 52);
 
+            // Датчик топлива с графической шкалой
             const curFuel = racePlayer.fuelCurrent !== undefined ? racePlayer.fuelCurrent : 20;
             const capFuel = racePlayer.fuelTankCapacity || 20;
             const fuelPct = Math.max(0, Math.min(100, Math.round((curFuel / capFuel) * 100)));
-            ctx.fillStyle = fuelPct < 20 ? '#ef4444' : (fuelPct < 45 ? '#f59e0b' : '#34d399');
-            ctx.font = '700 10px sans-serif';
-            ctx.fillText(`⛽ БАК: ${curFuel.toFixed(1)} / ${capFuel} л (${fuelPct}%)`, 18, 68);
+            const isFuelLow = fuelPct < 20;
+            const fuelCol = isFuelLow ? "#ef4444" : (fuelPct < 40 ? "#f59e0b" : "#22c55e");
 
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.55)';
-            ctx.font = '600 9px sans-serif';
-            ctx.fillText(`Расход: −${Math.round((racePlayer.fuelLiters || 0) * NomeraRaceEconomy.FUEL_PRICE)} ₽`, 18, 80);
+            // Шкала топлива
+            ctx.fillStyle = "rgba(255, 255, 255, 0.15)";
+            ctx.fillRect(16, 58, 116, 6);
+            ctx.fillStyle = fuelCol;
+            ctx.fillRect(16, 58, Math.round(116 * (fuelPct / 100)), 6);
 
-            // Заработок за заезд
-            ctx.fillStyle = "rgba(0, 0, 0, 0.65)";
+            ctx.fillStyle = fuelCol;
+            ctx.font = "700 9px sans-serif";
+            ctx.fillText(`⛽ ${curFuel.toFixed(1)} Л (${fuelPct}%)`, 16, 76);
+
+            ctx.fillStyle = "rgba(255, 255, 255, 0.55)";
+            ctx.font = "600 8px sans-serif";
+            ctx.textAlign = "right";
+            ctx.fillText(`−${Math.round((racePlayer.fuelLiters || 0) * NomeraRaceEconomy.FUEL_PRICE)} ₽`, 132, 76);
+
+            // Заработок за заезд (верхний правый угол)
+            ctx.fillStyle = "rgba(10, 15, 29, 0.85)";
             ctx.beginPath();
-            ctx.roundRect(W - 135, 10, 125, 40, 8);
+            ctx.roundRect(W - 135, 10, 125, 42, 8);
             ctx.fill();
-            ctx.strokeStyle = "rgba(255, 255, 255, 0.1)";
+            ctx.strokeStyle = "rgba(255, 255, 255, 0.15)";
+            ctx.lineWidth = 1;
             ctx.stroke();
 
             ctx.fillStyle = "var(--accent-green)";
-            ctx.font = "800 13px sans-serif";
+            ctx.font = "900 14px sans-serif";
             ctx.textAlign = "right";
             const netPreview = NomeraRaceEconomy.settle(racePlayer.earnedCash, racePlayer.fuelLiters || 0, balance);
-            ctx.fillText(`${netPreview.net >= 0 ? '+' : '−'}${Math.abs(netPreview.net).toLocaleString('ru-RU')} ₽`, W - 18, 34);
+            ctx.fillText(`${netPreview.net >= 0 ? '+' : '−'}${Math.abs(netPreview.net).toLocaleString('ru-RU')} ₽`, W - 16, 32);
+
+            ctx.fillStyle = "rgba(255, 255, 255, 0.6)";
+            ctx.font = "700 9px sans-serif";
+            ctx.fillText(raceCurrentMode === 'drift' ? '🏁 Дрифт' : '🏁 Трафик', W - 16, 46);
 
             // Индикатор слипстрима
             if (racePlayer.isDrafting) {

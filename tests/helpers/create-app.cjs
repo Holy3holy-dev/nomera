@@ -31,7 +31,7 @@ function createApp({saved = null, denyStorage = false, cloud = null} = {}) {
     const events = new Map();
     const context = {
         console, URL, Math, Date, JSON, Number, String, Object, Array, Promise,
-        document:{getElementById:element, querySelectorAll:()=>[], addEventListener:(name,fn)=>events.set('document:'+name,fn),
+        document:{getElementById:element, querySelector:()=>({offsetWidth:400,offsetHeight:200}), querySelectorAll:()=>[], addEventListener:(name,fn)=>events.set('document:'+name,fn),
             createElement:()=>({}),body:{classList:{add(){},remove(){}}},hidden:false},
         localStorage:storage, sessionStorage:storage, innerWidth:390,innerHeight:844,
         addEventListener:(name,fn)=>events.set(name,fn),

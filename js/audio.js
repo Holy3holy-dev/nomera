@@ -116,6 +116,10 @@
                 tone(340, 0.14, 0.09, 0, 'sawtooth', 140);
                 tone(680, 0.08, 0.06, 0.02, 'triangle', 260);
             },
+            drift() {
+                tone(820, 0.16, 0.08, 0, 'sawtooth', 380);
+                tone(1150, 0.10, 0.05, 0.02, 'triangle', 520);
+            },
             whoosh() { tone(640, 0.18, 0.07, 0, 'sine', 280); },
             error() {
                 tone(220, 0.12, 0.12, 0, 'triangle', 160);
