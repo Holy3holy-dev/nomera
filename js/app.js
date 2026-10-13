@@ -6926,6 +6926,26 @@ const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/20
         let targetRoadCurve = 0;
         let curveTimer = 0;
         let lastDriftScreechTime = 0;
+        let raceClippingZones = [];
+        let clippingSpawnTimer = 0;
+        let raceAutoGasEnabled = false;
+        let raceHighwayEvent = null;
+        let raceHighwayEventCooldown = 18;
+
+        function toggleRaceAutoGas() {
+            raceAutoGasEnabled = !raceAutoGasEnabled;
+            if (typeof document !== 'undefined') {
+                const btn = document.getElementById('btn-touch-autogas');
+                const lbl = document.getElementById('touch-autogas-label');
+                const icn = document.getElementById('touch-autogas-icon');
+                if (btn) btn.classList.toggle('active', raceAutoGasEnabled);
+                if (lbl) lbl.textContent = raceAutoGasEnabled ? 'АВТО-ГАЗ: ВКЛ' : 'АВТО-ГАЗ: ВЫКЛ';
+                if (icn) icn.textContent = raceAutoGasEnabled ? '🔥' : '⚡';
+            }
+            if (typeof showToast === 'function') {
+                showToast(raceAutoGasEnabled ? '⚡ Авто-газ включён: машина едет сама, управляйте рулём и тормозом' : '⚡ Авто-газ выключен: ручное управление газом');
+            }
+        }
 
         // -------------------------------------------------------------
         // РЕЖИМ ГОНКИ: «Шоссе (Трафик)» vs «Дрифт (Заносы)»
@@ -7629,6 +7649,10 @@ const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/20
             raceLightningFlash = 0;
             raceLightningTimer = 4.5 + Math.random() * 4.0;
             raceLightningBolt = [];
+            raceClippingZones = [];
+            clippingSpawnTimer = 0;
+            raceHighwayEvent = null;
+            raceHighwayEventCooldown = 18 + Math.random() * 12;
             raceRoadOffset = 0;
             trafficSpawnTimer = 0;
             collectibleSpawnTimer = 0;
@@ -7747,7 +7771,8 @@ const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/20
             if (racePlayer.isNitroActive) topSpd *= stats.nitroSpeedBonus || 1.35;
             if (racePlayer.isDrafting) topSpd += 28; // слипстрим дает прирост скорости!
 
-            if (raceKeys.gas) {
+            const isGasActive = raceKeys.gas || (raceAutoGasEnabled && !raceKeys.brake && !raceKeys.drift);
+            if (isGasActive) {
                 racePlayer.targetSpeed = topSpd;
             } else if (raceKeys.brake) {
                 racePlayer.targetSpeed = 50;
@@ -7764,6 +7789,12 @@ const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/20
                 racePlayer.speed = Math.max(racePlayer.targetSpeed, racePlayer.speed - 60 * dt);
             }
             racePlayer.peakSpeed = Math.max(racePlayer.peakSpeed, racePlayer.speed);
+
+            // Динамическая адаптивная камера обзора:
+            // На высокой скорости машина плавно смещается к низу экрана, освобождая обзор вперед
+            const targetPlayerY = racePlayer.speed > 170 ? Math.min(524, 470 + (racePlayer.speed - 170) * 0.28) : 470;
+            racePlayer.y = (racePlayer.y || 470) + (targetPlayerY - (racePlayer.y || 470)) * 3.5 * dt;
+
             if (racePlayer.speed > (achievements._maxSpeedSeen || 0)) {
                 achievements._maxSpeedSeen = Math.round(racePlayer.speed);
                 if (achievements._maxSpeedSeen >= 200 && !achievements.speed_200) {
@@ -7776,7 +7807,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/20
             // Meter real distance and driving style: nitro and heavy throttle cost fuel.
             const burnedFuel = NomeraRaceEconomy.fuelForFrame({
                 speed:racePlayer.speed, seconds:dt, consumption:racePlayer.fuelConsumption,
-                gas:raceKeys.gas, nitro:racePlayer.isNitroActive, drafting:racePlayer.isDrafting
+                gas:isGasActive, nitro:racePlayer.isNitroActive, drafting:racePlayer.isDrafting
             });
             racePlayer.fuelLiters += burnedFuel;
             if (racePlayer.fuelCurrent !== undefined) {
@@ -8238,6 +8269,118 @@ const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/20
                 spawnCollectible();
             }
 
+            // ---------------------------------------------------------
+            // РЕЖИМ ДРИФТА: СПАВН И ПРОХОЖДЕНИЕ КЛИППИНГ-ЗОН (АПЕКСОВ)
+            // ---------------------------------------------------------
+            if (raceCurrentMode === 'drift') {
+                clippingSpawnTimer += dt;
+                if (clippingSpawnTimer > 2.8) {
+                    clippingSpawnTimer = 0;
+                    const isRight = roadCurve > 10 || targetRoadCurve > 10;
+                    const apexX = isRight ? 320 : 80;
+                    raceClippingZones.push({
+                        x: apexX,
+                        y: -80,
+                        side: isRight ? 'right' : 'left',
+                        hit: false
+                    });
+                }
+                for (let i = raceClippingZones.length - 1; i >= 0; i--) {
+                    const cz = raceClippingZones[i];
+                    cz.y += (racePlayer.speed * 3.5) * dt;
+                    if (!cz.hit && Math.abs(cz.y - (racePlayer.y || 470)) < 42 && Math.abs(cz.x - racePlayer.x) < 55) {
+                        cz.hit = true;
+                        if (racePlayer.isDrifting && Math.abs(racePlayer.yawAngle || 0) > 0.22) {
+                            const pts = Math.round(1500 * (racePlayer.driftCombo || 1));
+                            racePlayer.driftScore = (racePlayer.driftScore || 0) + pts;
+                            racePlayer.driftCombo = Math.min(10, (racePlayer.driftCombo || 1) + 1);
+                            racePlayer.driftComboTimer = 4.0;
+                            showRacePopup(`🎯 АПЕКС ЗАНОСА! +${pts.toLocaleString('ru-RU')} PTS`, '#c084fc');
+                            if (typeof playCashSound === 'function') playCashSound();
+                            if (typeof sound?.haptic === 'function') sound.haptic('medium');
+                        }
+                    }
+                    if (cz.y > 650) raceClippingZones.splice(i, 1);
+                }
+            }
+
+            // ---------------------------------------------------------
+            // РЕЖИМ ШОССЕ: СЛУЧАЙНЫЕ ДОРОЖНЫЕ СОБЫТИЯ
+            // ---------------------------------------------------------
+            if (raceCurrentMode === 'highway') {
+                raceHighwayEventCooldown -= dt;
+                if (raceHighwayEventCooldown <= 0 && !raceHighwayEvent) {
+                    raceHighwayEventCooldown = 28 + Math.random() * 24;
+                    const roll = Math.random();
+                    if (roll < 0.35) {
+                        raceHighwayEvent = { type: 'speed_trap', timer: 7.0, limit: 140, checked: false };
+                        showRacePopup("🚨 КАМЕРА СКОРОСТИ! СБРОСЬТЕ ДО 140 КМ/Ч ЧЕРЕЗ 5 СЕК!", "#f59e0b");
+                    } else if (roll < 0.70) {
+                        raceHighwayEvent = { type: 'road_works', timer: 8.0 };
+                        showRacePopup("🚧 ДОРОЖНЫЕ РАБОТЫ! СУЖЕНИЕ В ПРАВЫЙ РЯД ➔➔", "#f97316");
+                        for (let k = 0; k < 4; k++) {
+                            raceTraffic.push({
+                                x: 95,
+                                y: -90 - k * 70,
+                                laneIdx: 0,
+                                targetX: 95,
+                                speed: 0,
+                                targetSpeed: 0,
+                                name: "Дорожный конус",
+                                isTruck: false,
+                                isPolice: false,
+                                isCone: true,
+                                tilt: 0,
+                                blinker: null,
+                                blinkerTimer: 0,
+                                changeLaneCooldown: 999,
+                                overtaken: false
+                            });
+                        }
+                    } else {
+                        const rivalCarName = Math.random() < 0.5 ? "BMW M5 CS «Турбо»" : "Porsche 911 GT3 RS";
+                        raceHighwayEvent = { type: 'rival', timer: 14.0, name: rivalCarName, overtaken: false };
+                        showRacePopup(`🏎️ СОПЕРНИК: ${rivalCarName}! ОБОЙДИ ЕГО!`, "#a855f7");
+                        raceTraffic.push({
+                            x: 165,
+                            y: -140,
+                            laneIdx: 1,
+                            targetX: 165,
+                            speed: Math.max(160, racePlayer.speed * 0.9),
+                            targetSpeed: 235,
+                            name: rivalCarName,
+                            isTruck: false,
+                            isPolice: false,
+                            isRival: true,
+                            isCone: false,
+                            tilt: 0,
+                            blinker: null,
+                            blinkerTimer: 0,
+                            changeLaneCooldown: 2.2,
+                            overtaken: false
+                        });
+                    }
+                }
+
+                if (raceHighwayEvent) {
+                    raceHighwayEvent.timer -= dt;
+                    if (raceHighwayEvent.type === 'speed_trap' && raceHighwayEvent.timer <= 0.1 && !raceHighwayEvent.checked) {
+                        raceHighwayEvent.checked = true;
+                        if (racePlayer.speed <= raceHighwayEvent.limit) {
+                            showRacePopup("✅ КАМЕРА ПРОЙДЕНА ЧИСТО! +15 000 ₽", "#10b981");
+                            racePlayer.earnedCash += 15000;
+                            if (typeof playCashSound === 'function') playCashSound();
+                        } else {
+                            showRacePopup("📸 ШТРАФ ЗА ПРЕВЫШЕНИЕ! −8 000 ₽", "#ef4444");
+                            racePlayer.earnedCash = Math.max(0, racePlayer.earnedCash - 8000);
+                        }
+                    }
+                    if (raceHighwayEvent.timer <= 0) {
+                        raceHighwayEvent = null;
+                    }
+                }
+            }
+
             // 10. Физика трафика, динамический ИИ (перестроения, поворотники) и столкновения
             const lanes = [95, 165, 235, 305];
             for (let i = raceTraffic.length - 1; i >= 0; i--) {
@@ -8506,6 +8649,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/20
         }
 
         function spawnTrafficCar() {
+            // В режиме Дрифта обычный трафик отключен для чистой траектории скольжения
+            if (raceCurrentMode === 'drift') return;
+
             const lanes = [95, 165, 235, 305];
             const laneIdx = Math.floor(Math.random() * lanes.length);
             const laneX = lanes[laneIdx];
@@ -8514,13 +8660,17 @@ const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/20
                 if (Math.abs(t.x - laneX) < 32 && t.y < 35) return;
             }
 
+            // На высокой скорости спавним машины дальше по трассе (-100..-200 вместо -60), давая нормальное окно реакции
+            const curSpd = racePlayer ? (racePlayer.speed || 70) : 70;
+            const spawnY = curSpd > 175 ? -95 - Math.min(105, (curSpd - 175) * 0.45) : -60;
+
             const roll = Math.random();
             if (roll < 0.12) {
                 // Длинномер КАМАЗ: медленный (65-80 км/ч), держится в правых рядах
                 const truckLane = Math.random() < 0.7 ? (Math.random() < 0.5 ? 2 : 3) : laneIdx;
                 raceTraffic.push({
                     x: lanes[truckLane],
-                    y: -90,
+                    y: spawnY - 35,
                     laneIdx: truckLane,
                     targetX: lanes[truckLane],
                     speed: 65 + Math.random() * 15,
@@ -8539,7 +8689,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/20
                 // Патруль ДПС с мигалками
                 raceTraffic.push({
                     x: laneX,
-                    y: -60,
+                    y: spawnY,
                     laneIdx: laneIdx,
                     targetX: laneX,
                     speed: 85 + Math.random() * 20,
@@ -8558,7 +8708,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/20
                 // Дорожные работы (конус)
                 raceTraffic.push({
                     x: laneX,
-                    y: -50,
+                    y: spawnY + 10,
                     laneIdx: laneIdx,
                     targetX: laneX,
                     speed: 0,
@@ -8579,7 +8729,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/20
                 const baseSpeed = 120 - laneIdx * 15 + (Math.random() - 0.5) * 20;
                 raceTraffic.push({
                     x: laneX,
-                    y: -60,
+                    y: spawnY,
                     laneIdx: laneIdx,
                     targetX: laneX,
                     speed: baseSpeed,
@@ -9179,6 +9329,44 @@ const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/20
                 ctx.lineTo(pScreenX + 8, racePlayer.y - 70);
                 ctx.stroke();
                 ctx.setLineDash([]);
+            }
+
+            // Отрисовка клиппинг-зон (Апексов) в режиме Дрифта
+            if (raceCurrentMode === 'drift') {
+                for (let cz of raceClippingZones) {
+                    const cx = cz.x + getCurveX(cz.y);
+                    ctx.save();
+                    ctx.translate(cx, cz.y);
+                    ctx.fillStyle = cz.hit ? '#10b981' : '#c084fc';
+                    ctx.beginPath();
+                    ctx.arc(0, 0, 14, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                    ctx.fillStyle = '#ffffff';
+                    ctx.font = 'bold 11px sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText('🎯', 0, 0);
+                    ctx.restore();
+                }
+            }
+
+            // HUD Радар опасности на высоких скоростях (> 190 км/ч)
+            if (racePlayer && racePlayer.speed > 190 && raceCurrentMode !== 'drift') {
+                for (let t of raceTraffic) {
+                    const distAhead = (racePlayer.y || 470) - t.y;
+                    if (distAhead > 90 && distAhead < 500) {
+                        const markerX = t.x + getCurveX(t.y);
+                        const isTruck = t.isTruck;
+                        const isDangerClose = distAhead < 230;
+                        ctx.fillStyle = isTruck ? '#ef4444' : (isDangerClose ? '#f97316' : '#fbbf24');
+                        ctx.font = 'bold 10px sans-serif';
+                        ctx.textAlign = 'center';
+                        ctx.fillText(isTruck ? '▼ 🚛 ФУРА' : (t.isCone ? '▼ 🚧 КОНУС' : '▼ 🚗 АВТО'), markerX, 44);
+                    }
+                }
             }
 
             // 9. Автомобиль игрока (с учетом угла крена кузова и мигания неуязвимости)
