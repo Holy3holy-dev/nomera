@@ -256,16 +256,21 @@ function mutate(state, action, key, data, now=Date.now()) {
     if(roll.num!==null){draft.num=roll.num;draft.hasNumbers=true;draft.changedNumbers=true;}
     if(roll.letters!==null){draft.letters=roll.letters;draft.hasLetters=true;draft.changedLetters=true;}
     accounts[key]={...a,balance:a.balance-cost,draft,updatedAt:now};
+  } else if(action==='setRegion') {
+    if(!data?.region || !/^\d{2,3}$/.test(data.region)) throw Error('Неверный регион');
+    const draft={...draftOf(a), reg:data.region};
+    accounts[key]={...a, draft, updatedAt:now};
   } else if(action==='claim') {
     const draft=draftOf(a);
     if(!draft.hasNumbers||!draft.hasLetters||!draft.changedNumbers||!draft.changedLetters)throw Error('Сначала прокрутите цифры и буквы');
     if((a.inventory||[]).length>=1000)throw Error('Инвентарь заполнен');
     if(!/^[0-9]{3}$/.test(draft.num)||!Array.isArray(draft.letters)||draft.letters.length!==3||draft.letters.some(l=>!LETTERS.includes(l)))throw Error('Неверный номер');
     const [l1,l2,l3]=draft.letters;
-    const text=`${l1} ${draft.num} ${l2}${l3} | ${draft.reg} RUS`;
-    const price=priceOfPlate(l1,l2,l3,draft.num,draft.reg);
+    const reg=(typeof data?.region==='string'&&/^\d{2,3}$/.test(data.region))?data.region:(draft.reg||'777');
+    const text=`${l1} ${draft.num} ${l2}${l3} | ${reg} RUS`;
+    const price=priceOfPlate(l1,l2,l3,draft.num,reg);
     const plate=safePlate({text,price,rarity:{text:rarityOfPrice(price)}},data.plateId);
-    accounts[key]={...a,inventory:[plate,...(a.inventory||[])],draft:{...draft,changedNumbers:false,changedLetters:false},updatedAt:now};
+    accounts[key]={...a,inventory:[plate,...(a.inventory||[])],draft:{...draft,reg,changedNumbers:false,changedLetters:false},updatedAt:now};
   } else if (action==='sell') {
     const price=money(data.price);
     if (price<1000) throw Error('Минимальная цена 1 000 ₽');

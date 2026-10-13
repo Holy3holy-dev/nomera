@@ -77,17 +77,44 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
             const label = document.getElementById('gen-rarity');
             if (!plate || !label) return;
             plate.classList.remove('h3h-plate-drop');
+            plate.classList.remove('has-rarity-drop');
             label.classList.remove('h3h-rarity-pop');
             void plate.offsetWidth;
             plate.classList.add('h3h-plate-drop');
+            plate.classList.add('has-rarity-drop');
             label.classList.add('h3h-rarity-pop');
-            if (/Легендарный|БЛАТНОЙ|Крутой/i.test(rarityText)) {
+            setTimeout(() => {
+                plate.classList.remove('has-rarity-drop');
+            }, 1200);
+
+            const isRare = /Редкий|Супер редкий|Эпический|Легендарный|БЛАТНОЙ|Крутой|Мифический/i.test(rarityText);
+            if (isRare) {
                 const stage = document.querySelector('.plate-stage');
                 if (stage && !window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
-                    for (let i = 0; i < 12; i++) {
+                    let sparkColor = '#10b981';
+                    let sparkCount = 8;
+                    if (/Супер редкий/i.test(rarityText)) {
+                        sparkColor = '#ef4444';
+                        sparkCount = 10;
+                    } else if (/Эпический/i.test(rarityText)) {
+                        sparkColor = '#a855f7';
+                        sparkCount = 12;
+                    } else if (/Легендарный/i.test(rarityText)) {
+                        sparkColor = '#fbbf24';
+                        sparkCount = 14;
+                    } else if (/БЛАТНОЙ|Крутой|Мифический/i.test(rarityText)) {
+                        sparkColor = '#ff2e4c';
+                        sparkCount = 16;
+                    }
+                    for (let i = 0; i < sparkCount; i++) {
                         const spark = document.createElement('i');
                         spark.className = 'h3h-reward-spark';
-                        spark.style.setProperty('--angle', `${i * 30}deg`);
+                        const angle = (360 / sparkCount) * i;
+                        spark.style.setProperty('--angle', `${angle}deg`);
+                        spark.style.setProperty('--spark-color', sparkColor);
+                        if (/БЛАТНОЙ|Крутой|Мифический/i.test(rarityText) && i % 2 === 1) {
+                            spark.style.setProperty('--spark-color', '#ffd700');
+                        }
                         stage.appendChild(spark);
                         setTimeout(() => spark.remove(), 900);
                     }
@@ -1949,6 +1976,17 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                 return { ok: true, profile: onlineProfile, draft };
             }
 
+            if (action === 'setRegion') {
+                if (!onlineProfile) throw Error('Требуется вход');
+                const userKey = sanitizeKey(onlineProfile.nickname);
+                const reg = String(params.region || '').trim();
+                if (!/^\d{2,3}$/.test(reg)) throw Error('Неверный регион');
+                const draft = { ...((onlineProfile.draft && typeof onlineProfile.draft === 'object') ? onlineProfile.draft : {}), reg };
+                onlineProfile.draft = draft;
+                await db.ref('onlineV4/accounts/' + userKey + '/draft').update({ reg, updatedAt: Date.now() }).catch(() => {});
+                return { ok: true, profile: onlineProfile, draft };
+            }
+
             if (action === 'claim') {
                 if (!onlineProfile) throw Error('Требуется вход');
                 const userKey = sanitizeKey(onlineProfile.nickname);
@@ -1964,9 +2002,10 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                 if (!draft.hasNumbers || !draft.hasLetters || !draft.changedNumbers || !draft.changedLetters) {
                     throw Error('Сначала прокрутите цифры и буквы');
                 }
+                const reg = (typeof params.region === 'string' && /^\d{2,3}$/.test(params.region)) ? params.region : (draft.reg || currentReg || '777');
                 const [l1, l2, l3] = draft.letters;
-                const plateText = `${l1} ${draft.num} ${l2}${l3} | ${draft.reg} RUS`;
-                const price = typeof getCalculatedPrice === 'function' ? getCalculatedPrice(l1, l2, l3, draft.num, draft.reg) : (typeof calculatePrice === 'function' ? calculatePrice() : 2500);
+                const plateText = `${l1} ${draft.num} ${l2}${l3} | ${reg} RUS`;
+                const price = typeof getCalculatedPrice === 'function' ? getCalculatedPrice(l1, l2, l3, draft.num, reg) : (typeof calculatePrice === 'function' ? calculatePrice() : 2500);
                 const r = typeof getRarity === 'function' ? getRarity(price) : { text: 'Обычный' };
                 const plate = {
                     id: 'plate_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
@@ -1977,6 +2016,7 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
                 const inv = [plate, ...(onlineProfile.inventory || [])];
                 const updatedDraft = {
                     ...draft,
+                    reg,
                     changedNumbers: false,
                     changedLetters: false
                 };
@@ -2505,22 +2545,26 @@ const DEFAULT_AVATAR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA
             if (!input || !editor) return;
             input.value = currentReg;
             editor.classList.remove('hidden');
-            input.focus(); input.select();
+            if (typeof input.focus === 'function') input.focus();
+            if (typeof input.select === 'function') input.select();
         }
-        function saveRegionEdit() {
+        function saveRegionEdit(customVal) {
             const input = document.getElementById('region-edit-input');
             const editor = document.getElementById('region-editor');
-            const next = String(input.value).trim();
+            const next = String(customVal !== undefined ? customVal : (input ? input.value : '')).trim();
             if (!/^\d{2,3}$/.test(next)) { notifyUser('Регион должен содержать 2 или 3 цифры', 'error'); return; }
-            if(onlineProfile && (boardHasLetters||boardHasNumbers)) {
-                notifyUser('Регион серверного номера фиксируется при спине. Сначала сохраните номер или выполните полный спин с новым регионом.','error');
-                editor.classList.add('hidden');
-                return;
-            }
             currentReg = next;
-            document.getElementById('region').innerText = currentReg;
-            editor.classList.add('hidden');
+            const regEl = document.getElementById('region');
+            if (regEl) regEl.innerText = currentReg;
+            if (editor) editor.classList.add('hidden');
+            if (onlineProfile) {
+                if (onlineProfile.draft && typeof onlineProfile.draft === 'object') {
+                    onlineProfile.draft.reg = next;
+                }
+                onlineRequest('setRegion', { region: currentReg }).catch(() => {});
+            }
             checkCanSaveButton();
+            notifyUser(`Регион изменён: ${currentReg}`, 'success');
         }
         function cancelRegionEdit() {
             document.getElementById('region-editor')?.classList.add('hidden');

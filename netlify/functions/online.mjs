@@ -92,7 +92,7 @@ async function handle(request,context={}){
       if(!a)return output(401,{ok:false,error:'Сессия устарела или аккаунт удалён. Войдите заново'},sessionCookie('',0));
       return output(200,{ok:true,profile:profileOf(a),key});
     }
-    if(request.method!=='POST'||!['sell','buy','cancel','chat','roll','claim','syncGarage'].includes(action))return output(400,{ok:false,error:'Неизвестное действие'});
+    if(request.method!=='POST'||!['sell','buy','cancel','chat','roll','claim','syncGarage','setRegion'].includes(action))return output(400,{ok:false,error:'Неизвестное действие'});
     const txnInput={...data,lotId:action==='sell'?'lot_'+uniqueId():data.lotId,
       plateId:action==='claim'?'plate_'+uniqueId():data.plateId,
       roll:action==='roll'?core.secureRoll(data.mode):undefined,
@@ -107,7 +107,7 @@ async function handle(request,context={}){
     const tx=await stateRef.transaction(update.update,undefined,false);
     if(!tx.committed)return output(409,{ok:false,error:update.getReason()||'Операция не выполнена, повторите попытку'});
     const state=tx.snapshot.val(), a=state.accounts[key];
-    return output(200,{ok:true,profile:profileOf(a),market:state.market||{},draft:action==='roll'?core.draftOf(a):undefined,plate:action==='claim'?(a.inventory||[])[0]:undefined});
+    return output(200,{ok:true,profile:profileOf(a),market:state.market||{},draft:(action==='roll'||action==='setRegion')?core.draftOf(a):undefined,plate:action==='claim'?(a.inventory||[])[0]:undefined});
   }catch(e){console.error('online V4.4',action,e.message);return output(400,{ok:false,error:errorMessage(e)});}
 }
 export default async function online(request,context={}){
