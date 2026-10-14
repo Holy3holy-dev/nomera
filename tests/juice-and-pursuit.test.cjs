@@ -321,8 +321,9 @@ test('drawPixelCarSide and view switcher support side profile with custom wheels
     const app = createApp();
     const cars = app.run('carsData.map(c => c.name)');
 
-    // 1. Verify drawPixelCarSide executes cleanly for all 25 car models in canvas
-    for (const carName of cars) {
+    // 1. Verify drawPixelCarSide executes cleanly for all car models including traffic models in canvas
+    const allModelsToTest = [...cars, "ДПС / Полиция", "КАМАЗ / Фура"];
+    for (const carName of allModelsToTest) {
         app.run(`
             (() => {
                 const cvs = document.getElementById('race-canvas');

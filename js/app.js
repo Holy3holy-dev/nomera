@@ -7230,7 +7230,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 // Неоновая трубка вдоль порога
                 ctx.fillStyle = '#ffffff';
                 ctx.globalAlpha = 0.9;
-                ctx.fillRect(Math.round(cx - 18 * s), Math.round(cy + (8.5 + bodyYOffset) * s), Math.round(36 * s), Math.max(1, Math.round(1.2 * s)));
+                ctx.fillRect(Math.round(cx - 18 * s), Math.round(cy + (6.8 + bodyYOffset) * s), Math.round(36 * s), Math.max(1, Math.round(1.2 * s)));
                 ctx.restore();
             }
 
@@ -7240,14 +7240,14 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 fWx: 24,
                 rearBumperX: -42,
                 frontBumperX: 42,
-                hoodFrontY: 1.5,
+                hoodFrontY: -3.8,
                 hoodBackX: 16,
-                hoodBackY: 0.5,
+                hoodBackY: -4.8,
                 roofFrontX: 6,
                 roofRearX: -16,
-                roofY: -12,
+                roofY: -13.5,
                 rearGlassEndX: -28,
-                trunkY: 1.5,
+                trunkY: -4.0,
                 chinDrop: 0,
                 noseDrop: 0,
                 bPillars: [0],
@@ -7259,243 +7259,243 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 case "ВАЗ-2107 «Жигули»":
                     cfg = {
                         rWx: -24, fWx: 24, rearBumperX: -42, frontBumperX: 42,
-                        hoodFrontY: 1.0, hoodBackX: 18, hoodBackY: 1.0,
-                        roofFrontX: 8, roofRearX: -16, roofY: -11.5,
-                        rearGlassEndX: -26, trunkY: 1.2, chinDrop: 0, noseDrop: 0,
+                        hoodFrontY: -4.0, hoodBackX: 18, hoodBackY: -4.5,
+                        roofFrontX: 8, roofRearX: -16, roofY: -13.5,
+                        rearGlassEndX: -26, trunkY: -4.0, chinDrop: 0, noseDrop: 0,
                         bPillars: [0], model: 'vaz2107', defaultColor: '#991b1b'
                     };
                     break;
                 case "ВАЗ-2109 «Девятка»":
                     cfg = {
                         rWx: -24, fWx: 24, rearBumperX: -40, frontBumperX: 42,
-                        hoodFrontY: 3.0, hoodBackX: 16, hoodBackY: 0.5,
-                        roofFrontX: 8, roofRearX: -18, roofY: -11.5,
-                        rearGlassEndX: -40, trunkY: 3.2, chinDrop: 0, noseDrop: 0,
+                        hoodFrontY: -3.5, hoodBackX: 16, hoodBackY: -4.5,
+                        roofFrontX: 8, roofRearX: -20, roofY: -13.5,
+                        rearGlassEndX: -38, trunkY: -3.8, chinDrop: 0, noseDrop: 0,
                         bPillars: [-3], model: 'vaz2109', defaultColor: '#475569'
                     };
                     break;
                 case "ГАЗ-24 «Волга»":
                     cfg = {
                         rWx: -26, fWx: 26, rearBumperX: -46, frontBumperX: 46,
-                        hoodFrontY: 0.5, hoodBackX: 17, hoodBackY: 0.5,
-                        roofFrontX: 7, roofRearX: -17, roofY: -12.0,
-                        rearGlassEndX: -27, trunkY: 0.8, chinDrop: 0, noseDrop: 0,
+                        hoodFrontY: -4.5, hoodBackX: 17, hoodBackY: -4.8,
+                        roofFrontX: 7, roofRearX: -18, roofY: -14.0,
+                        rearGlassEndX: -28, trunkY: -4.5, chinDrop: 0, noseDrop: 0,
                         bPillars: [0], model: 'gaz24', defaultColor: '#0f172a'
                     };
                     break;
                 case "Lada Priora БПАН":
                     cfg = {
                         rWx: -24, fWx: 24, rearBumperX: -41, frontBumperX: 42,
-                        hoodFrontY: 2.0, hoodBackX: 16, hoodBackY: 0.5,
-                        roofFrontX: 6, roofRearX: -16, roofY: -12.0,
-                        rearGlassEndX: -28, trunkY: 1.8, chinDrop: 0, noseDrop: 0,
+                        hoodFrontY: -3.8, hoodBackX: 16, hoodBackY: -4.8,
+                        roofFrontX: 6, roofRearX: -16, roofY: -13.5,
+                        rearGlassEndX: -28, trunkY: -4.0, chinDrop: 0, noseDrop: 0,
                         bPillars: [0], model: 'priora', defaultColor: '#18181b'
                     };
                     break;
                 case "Hyundai Solaris":
                     cfg = {
                         rWx: -24, fWx: 24, rearBumperX: -41, frontBumperX: 42,
-                        hoodFrontY: 2.5, hoodBackX: 15, hoodBackY: 0.5,
-                        roofFrontX: 5, roofRearX: -15, roofY: -12.5,
-                        rearGlassEndX: -30, trunkY: 1.5, chinDrop: 0, noseDrop: 0,
+                        hoodFrontY: -3.6, hoodBackX: 15, hoodBackY: -5.0,
+                        roofFrontX: 5, roofRearX: -16, roofY: -13.8,
+                        rearGlassEndX: -29, trunkY: -3.8, chinDrop: 0, noseDrop: 0,
                         bPillars: [0], model: 'solaris', defaultColor: '#f8fafc'
                     };
                     break;
                 case "Lada Vesta Sport":
                     cfg = {
                         rWx: -24, fWx: 24, rearBumperX: -42, frontBumperX: 43,
-                        hoodFrontY: 2.0, hoodBackX: 16, hoodBackY: 0.5,
-                        roofFrontX: 5, roofRearX: -16, roofY: -12.0,
-                        rearGlassEndX: -29, trunkY: 1.8, chinDrop: 0, noseDrop: 0,
+                        hoodFrontY: -3.8, hoodBackX: 16, hoodBackY: -5.0,
+                        roofFrontX: 5, roofRearX: -16, roofY: -13.8,
+                        rearGlassEndX: -29, trunkY: -4.0, chinDrop: 0, noseDrop: 0,
                         bPillars: [0], model: 'vesta', defaultColor: '#dc2626'
                     };
                     break;
                 case "Volkswagen Polo":
                     cfg = {
                         rWx: -24, fWx: 24, rearBumperX: -41, frontBumperX: 42,
-                        hoodFrontY: 2.2, hoodBackX: 16, hoodBackY: 0.5,
-                        roofFrontX: 6, roofRearX: -16, roofY: -12.2,
-                        rearGlassEndX: -29, trunkY: 1.6, chinDrop: 0, noseDrop: 0,
+                        hoodFrontY: -3.6, hoodBackX: 15, hoodBackY: -5.0,
+                        roofFrontX: 6, roofRearX: -16, roofY: -13.8,
+                        rearGlassEndX: -29, trunkY: -3.8, chinDrop: 0, noseDrop: 0,
                         bPillars: [0], model: 'polo', defaultColor: '#64748b'
                     };
                     break;
                 case "Toyota Mark II Tourer V":
                     cfg = {
-                        rWx: -24, fWx: 24, rearBumperX: -43, frontBumperX: 44,
-                        hoodFrontY: 1.5, hoodBackX: 14, hoodBackY: 0.0,
-                        roofFrontX: 6, roofRearX: -16, roofY: -11.0,
-                        rearGlassEndX: -28, trunkY: 1.2, chinDrop: 0.5, noseDrop: 0,
+                        rWx: -25, fWx: 25, rearBumperX: -44, frontBumperX: 44,
+                        hoodFrontY: -3.8, hoodBackX: 15, hoodBackY: -4.8,
+                        roofFrontX: 6, roofRearX: -16, roofY: -13.0,
+                        rearGlassEndX: -29, trunkY: -4.0, chinDrop: 0.5, noseDrop: 0,
                         bPillars: [], model: 'mark2', defaultColor: '#f8fafc'
                     };
                     break;
                 case "Subaru Impreza WRX STI":
                     cfg = {
                         rWx: -24, fWx: 24, rearBumperX: -42, frontBumperX: 43,
-                        hoodFrontY: 2.0, hoodBackX: 15, hoodBackY: 0.5,
-                        roofFrontX: 6, roofRearX: -16, roofY: -12.0,
-                        rearGlassEndX: -28, trunkY: 1.5, chinDrop: 0.5, noseDrop: 0,
+                        hoodFrontY: -3.8, hoodBackX: 15, hoodBackY: -5.0,
+                        roofFrontX: 6, roofRearX: -16, roofY: -13.5,
+                        rearGlassEndX: -28, trunkY: -4.0, chinDrop: 0.5, noseDrop: 0,
                         bPillars: [0], model: 'wrx', defaultColor: '#1d4ed8'
                     };
                     break;
                 case "BMW M5 E60 V10":
                     cfg = {
-                        rWx: -25, fWx: 25, rearBumperX: -43, frontBumperX: 44,
-                        hoodFrontY: 1.8, hoodBackX: 16, hoodBackY: 0.5,
-                        roofFrontX: 6, roofRearX: -16, roofY: -12.5,
-                        rearGlassEndX: -29, trunkY: 1.5, chinDrop: 0, noseDrop: 0,
+                        rWx: -25, fWx: 25, rearBumperX: -44, frontBumperX: 44,
+                        hoodFrontY: -3.8, hoodBackX: 16, hoodBackY: -5.0,
+                        roofFrontX: 6, roofRearX: -17, roofY: -13.8,
+                        rearGlassEndX: -30, trunkY: -4.0, chinDrop: 0, noseDrop: 0,
                         bPillars: [0], model: 'e60', defaultColor: '#334155'
                     };
                     break;
                 case "Nissan Silvia S15 Spec-R":
                     cfg = {
-                        rWx: -24, fWx: 24, rearBumperX: -40, frontBumperX: 42,
-                        hoodFrontY: 3.0, hoodBackX: 12, hoodBackY: 0.2,
-                        roofFrontX: 4, roofRearX: -12, roofY: -10.5,
-                        rearGlassEndX: -26, trunkY: 1.5, chinDrop: 0.5, noseDrop: 0,
+                        rWx: -24, fWx: 24, rearBumperX: -41, frontBumperX: 42,
+                        hoodFrontY: -3.2, hoodBackX: 13, hoodBackY: -4.5,
+                        roofFrontX: 4, roofRearX: -13, roofY: -12.0,
+                        rearGlassEndX: -27, trunkY: -3.6, chinDrop: 0.5, noseDrop: 0,
                         bPillars: [], model: 's15', defaultColor: '#0ea5e9'
                     };
                     break;
                 case "Toyota Camry 3.5":
                     cfg = {
                         rWx: -25, fWx: 25, rearBumperX: -44, frontBumperX: 44,
-                        hoodFrontY: 2.0, hoodBackX: 16, hoodBackY: 0.5,
-                        roofFrontX: 6, roofRearX: -17, roofY: -12.5,
-                        rearGlassEndX: -30, trunkY: 1.5, chinDrop: 0, noseDrop: 0,
+                        hoodFrontY: -3.8, hoodBackX: 16, hoodBackY: -5.0,
+                        roofFrontX: 6, roofRearX: -17, roofY: -13.8,
+                        rearGlassEndX: -30, trunkY: -4.0, chinDrop: 0, noseDrop: 0,
                         bPillars: [0], model: 'camry', defaultColor: '#0f172a'
                     };
                     break;
                 case "Toyota Land Cruiser 300":
                     cfg = {
-                        rWx: -25, fWx: 25, rearBumperX: -43, frontBumperX: 44,
-                        hoodFrontY: -1.5, hoodBackX: 16, hoodBackY: -2.5,
-                        roofFrontX: 8, roofRearX: -28, roofY: -16.5,
-                        rearGlassEndX: -42, trunkY: 0.0, chinDrop: 0, noseDrop: 0,
+                        rWx: -25, fWx: 25, rearBumperX: -44, frontBumperX: 44,
+                        hoodFrontY: -5.2, hoodBackX: 16, hoodBackY: -5.5,
+                        roofFrontX: 8, roofRearX: -28, roofY: -18.0,
+                        rearGlassEndX: -42, trunkY: -5.2, chinDrop: 0, noseDrop: 0,
                         bPillars: [-10, 4], model: 'lc300', defaultColor: '#f8fafc'
                     };
                     break;
                 case "Nissan GT-R R35 Nismo":
                     cfg = {
                         rWx: -25, fWx: 25, rearBumperX: -43, frontBumperX: 44,
-                        hoodFrontY: 2.5, hoodBackX: 14, hoodBackY: 0.5,
-                        roofFrontX: 5, roofRearX: -14, roofY: -11.0,
-                        rearGlassEndX: -28, trunkY: 1.5, chinDrop: 0.8, noseDrop: 0,
+                        hoodFrontY: -3.5, hoodBackX: 14, hoodBackY: -4.8,
+                        roofFrontX: 5, roofRearX: -14, roofY: -12.5,
+                        rearGlassEndX: -29, trunkY: -3.8, chinDrop: 0.8, noseDrop: 0,
                         bPillars: [], model: 'gtr', defaultColor: '#f8fafc'
                     };
                     break;
                 case "Mercedes-Benz E63s AMG":
                     cfg = {
-                        rWx: -25, fWx: 25, rearBumperX: -43, frontBumperX: 44,
-                        hoodFrontY: 2.0, hoodBackX: 16, hoodBackY: 0.5,
-                        roofFrontX: 6, roofRearX: -17, roofY: -12.0,
-                        rearGlassEndX: -30, trunkY: 1.5, chinDrop: 0, noseDrop: 0,
+                        rWx: -25, fWx: 25, rearBumperX: -44, frontBumperX: 44,
+                        hoodFrontY: -3.8, hoodBackX: 16, hoodBackY: -5.0,
+                        roofFrontX: 6, roofRearX: -17, roofY: -13.5,
+                        rearGlassEndX: -30, trunkY: -4.0, chinDrop: 0, noseDrop: 0,
                         bPillars: [0], model: 'e63s', defaultColor: '#1e293b'
                     };
                     break;
                 case "Audi RS6 Avant":
                     cfg = {
-                        rWx: -25, fWx: 25, rearBumperX: -43, frontBumperX: 44,
-                        hoodFrontY: 2.0, hoodBackX: 16, hoodBackY: 0.5,
-                        roofFrontX: 6, roofRearX: -26, roofY: -12.5,
-                        rearGlassEndX: -42, trunkY: 1.0, chinDrop: 0, noseDrop: 0,
+                        rWx: -25, fWx: 25, rearBumperX: -44, frontBumperX: 44,
+                        hoodFrontY: -3.8, hoodBackX: 16, hoodBackY: -5.0,
+                        roofFrontX: 6, roofRearX: -28, roofY: -13.5,
+                        rearGlassEndX: -42, trunkY: -4.0, chinDrop: 0, noseDrop: 0,
                         bPillars: [-12, 3], model: 'rs6', defaultColor: '#475569'
                     };
                     break;
                 case "BMW M5 F90 Competition":
                     cfg = {
-                        rWx: -25, fWx: 25, rearBumperX: -43, frontBumperX: 44,
-                        hoodFrontY: 2.0, hoodBackX: 16, hoodBackY: 0.5,
-                        roofFrontX: 6, roofRearX: -17, roofY: -12.5,
-                        rearGlassEndX: -30, trunkY: 1.5, chinDrop: 0.5, noseDrop: 0,
+                        rWx: -25, fWx: 25, rearBumperX: -44, frontBumperX: 44,
+                        hoodFrontY: -3.8, hoodBackX: 16, hoodBackY: -5.0,
+                        roofFrontX: 6, roofRearX: -17, roofY: -13.8,
+                        rearGlassEndX: -30, trunkY: -4.0, chinDrop: 0.5, noseDrop: 0,
                         bPillars: [0], model: 'f90', defaultColor: '#0284c7'
                     };
                     break;
                 case "BMW M8 Gran Coupe":
                     cfg = {
                         rWx: -26, fWx: 26, rearBumperX: -45, frontBumperX: 45,
-                        hoodFrontY: 2.5, hoodBackX: 15, hoodBackY: 0.5,
-                        roofFrontX: 5, roofRearX: -18, roofY: -10.5,
-                        rearGlassEndX: -32, trunkY: 1.5, chinDrop: 0.5, noseDrop: 0,
+                        hoodFrontY: -3.5, hoodBackX: 15, hoodBackY: -4.8,
+                        roofFrontX: 5, roofRearX: -18, roofY: -12.5,
+                        rearGlassEndX: -32, trunkY: -3.8, chinDrop: 0.5, noseDrop: 0,
                         bPillars: [0], model: 'm8', defaultColor: '#1e1b4b'
                     };
                     break;
                 case "Mercedes-Benz G63 AMG «Гелик»":
                     cfg = {
                         rWx: -24, fWx: 24, rearBumperX: -40, frontBumperX: 42,
-                        hoodFrontY: -2.0, hoodBackX: 15, hoodBackY: -2.0,
-                        roofFrontX: 10, roofRearX: -32, roofY: -18.0,
-                        rearGlassEndX: -40, trunkY: -2.0, chinDrop: 0, noseDrop: 0,
+                        hoodFrontY: -5.5, hoodBackX: 16, hoodBackY: -5.5,
+                        roofFrontX: 12, roofRearX: -32, roofY: -18.5,
+                        rearGlassEndX: -40, trunkY: -5.5, chinDrop: 0, noseDrop: 0,
                         bPillars: [-18, -4], model: 'gelik', defaultColor: '#09090b'
                     };
                     break;
                 case "Porsche 911 Turbo S":
                     cfg = {
                         rWx: -24, fWx: 24, rearBumperX: -42, frontBumperX: 42,
-                        hoodFrontY: 3.5, hoodBackX: 12, hoodBackY: 1.5,
-                        roofFrontX: 3, roofRearX: -12, roofY: -10.0,
-                        rearGlassEndX: -34, trunkY: 2.0, chinDrop: 0.5, noseDrop: 0,
+                        hoodFrontY: -3.2, hoodBackX: 14, hoodBackY: -4.8,
+                        roofFrontX: 3, roofRearX: -11, roofY: -12.2,
+                        rearGlassEndX: -32, trunkY: -3.5, chinDrop: 0.5, noseDrop: 0,
                         bPillars: [], model: 'porsche911', defaultColor: '#eab308'
                     };
                     break;
                 case "Lamborghini Huracan Performante":
                     cfg = {
                         rWx: -24, fWx: 24, rearBumperX: -42, frontBumperX: 43,
-                        hoodFrontY: 4.0, hoodBackX: 10, hoodBackY: 1.5,
-                        roofFrontX: 0, roofRearX: -12, roofY: -8.5,
-                        rearGlassEndX: -32, trunkY: 2.0, chinDrop: 0.8, noseDrop: 0,
+                        hoodFrontY: -2.8, hoodBackX: 11, hoodBackY: -4.2,
+                        roofFrontX: 1, roofRearX: -12, roofY: -11.0,
+                        rearGlassEndX: -32, trunkY: -3.2, chinDrop: 0.8, noseDrop: 0,
                         bPillars: [], model: 'huracan', defaultColor: '#22c55e'
                     };
                     break;
                 case "Rolls-Royce Cullinan":
                     cfg = {
                         rWx: -26, fWx: 26, rearBumperX: -45, frontBumperX: 45,
-                        hoodFrontY: -3.0, hoodBackX: 17, hoodBackY: -3.0,
-                        roofFrontX: 10, roofRearX: -30, roofY: -18.0,
-                        rearGlassEndX: -44, trunkY: -1.0, chinDrop: 0, noseDrop: 0,
+                        hoodFrontY: -5.5, hoodBackX: 17, hoodBackY: -5.5,
+                        roofFrontX: 10, roofRearX: -28, roofY: -18.0,
+                        rearGlassEndX: -42, trunkY: -5.5, chinDrop: 0, noseDrop: 0,
                         bPillars: [-10, 4], model: 'cullinan', defaultColor: '#111827'
                     };
                     break;
                 case "Ferrari SF90 Stradale":
                     cfg = {
                         rWx: -24, fWx: 24, rearBumperX: -43, frontBumperX: 43,
-                        hoodFrontY: 3.5, hoodBackX: 10, hoodBackY: 1.0,
-                        roofFrontX: 0, roofRearX: -13, roofY: -8.5,
-                        rearGlassEndX: -32, trunkY: 2.0, chinDrop: 0.8, noseDrop: 0,
+                        hoodFrontY: -2.8, hoodBackX: 11, hoodBackY: -4.2,
+                        roofFrontX: 1, roofRearX: -13, roofY: -11.0,
+                        rearGlassEndX: -32, trunkY: -3.2, chinDrop: 0.8, noseDrop: 0,
                         bPillars: [], model: 'sf90', defaultColor: '#ef4444'
                     };
                     break;
                 case "Bugatti Chiron Super Sport":
                     cfg = {
                         rWx: -25, fWx: 25, rearBumperX: -45, frontBumperX: 44,
-                        hoodFrontY: 3.0, hoodBackX: 12, hoodBackY: 1.0,
-                        roofFrontX: 2, roofRearX: -14, roofY: -9.0,
-                        rearGlassEndX: -35, trunkY: 2.0, chinDrop: 0.8, noseDrop: 0,
+                        hoodFrontY: -3.0, hoodBackX: 12, hoodBackY: -4.5,
+                        roofFrontX: 2, roofRearX: -14, roofY: -11.5,
+                        rearGlassEndX: -35, trunkY: -3.5, chinDrop: 0.8, noseDrop: 0,
                         bPillars: [], model: 'chiron', defaultColor: '#1e3a8a'
                     };
                     break;
                 case "Koenigsegg Jesko Attack":
                     cfg = {
                         rWx: -25, fWx: 25, rearBumperX: -44, frontBumperX: 44,
-                        hoodFrontY: 3.5, hoodBackX: 11, hoodBackY: 1.0,
-                        roofFrontX: 0, roofRearX: -14, roofY: -8.5,
-                        rearGlassEndX: -32, trunkY: 2.0, chinDrop: 1.0, noseDrop: 0,
+                        hoodFrontY: -2.8, hoodBackX: 11, hoodBackY: -4.2,
+                        roofFrontX: 1, roofRearX: -14, roofY: -11.0,
+                        rearGlassEndX: -32, trunkY: -3.2, chinDrop: 1.0, noseDrop: 0,
                         bPillars: [], model: 'jesko', defaultColor: '#e2e8f0'
                     };
                     break;
                 case "ДПС / Полиция":
                     cfg = {
                         rWx: -24, fWx: 24, rearBumperX: -42, frontBumperX: 42,
-                        hoodFrontY: 2.0, hoodBackX: 16, hoodBackY: 0.5,
-                        roofFrontX: 6, roofRearX: -16, roofY: -12.0,
-                        rearGlassEndX: -28, trunkY: 1.5, chinDrop: 0, noseDrop: 0,
+                        hoodFrontY: -3.8, hoodBackX: 16, hoodBackY: -4.8,
+                        roofFrontX: 6, roofRearX: -16, roofY: -13.5,
+                        rearGlassEndX: -28, trunkY: -4.0, chinDrop: 0, noseDrop: 0,
                         bPillars: [0], model: 'police', defaultColor: '#ffffff'
                     };
                     break;
                 case "КАМАЗ / Фура":
                     cfg = {
                         rWx: -26, fWx: 24, rearBumperX: -44, frontBumperX: 38,
-                        hoodFrontY: -4.0, hoodBackX: 36, hoodBackY: -4.0,
+                        hoodFrontY: -5.0, hoodBackX: 36, hoodBackY: -5.0,
                         roofFrontX: 36, roofRearX: 14, roofY: -22.0,
-                        rearGlassEndX: 16, trunkY: -7.0, chinDrop: 0, noseDrop: 0,
+                        rearGlassEndX: 16, trunkY: -8.0, chinDrop: 0, noseDrop: 0,
                         bPillars: [], model: 'kamaz', defaultColor: '#f59e0b'
                     };
                     break;
@@ -7509,9 +7509,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 default:
                     cfg = {
                         rWx: -24, fWx: 24, rearBumperX: -42, frontBumperX: 42,
-                        hoodFrontY: 2.0, hoodBackX: 16, hoodBackY: 0.5,
-                        roofFrontX: 6, roofRearX: -16, roofY: -12.0,
-                        rearGlassEndX: -28, trunkY: 1.5, chinDrop: 0, noseDrop: 0,
+                        hoodFrontY: -3.8, hoodBackX: 16, hoodBackY: -4.8,
+                        roofFrontX: 6, roofRearX: -16, roofY: -13.5,
+                        rearGlassEndX: -28, trunkY: -4.0, chinDrop: 0, noseDrop: 0,
                         bPillars: [0], model: 'default', defaultColor: '#3b82f6'
                     };
                     break;
@@ -7519,28 +7519,37 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
             const bt = getBodyTones(cfg.defaultColor);
             const { rWx, fWx, rearBumperX, frontBumperX, hoodFrontY, hoodBackX, hoodBackY, roofFrontX, roofRearX, roofY, rearGlassEndX, trunkY, chinDrop, noseDrop, bPillars, model } = cfg;
-            const sillY = 7.2 + bodyYOffset;
-            const archCenterY = 6.5 + bodyYOffset;
+            const sillY = 6.0 + bodyYOffset;
+            const archR = (model === 'kamaz' ? 6.2 : 8.2);
+            const archCenterY = 6.0 + bodyYOffset;
+            const chinY = 6.0 + bodyYOffset + 0.5 + (chinDrop || 0);
+            const rearBottomY = 6.0 + bodyYOffset - 0.5;
 
             // 5. Внутренние ниши колесных арок и пружины подвески (LIFT)
             ctx.save();
             ctx.fillStyle = '#09090b';
             ctx.beginPath();
-            ctx.arc(Math.round(cx + rWx * s), Math.round(cy + archCenterY * s), 9.2 * s, Math.PI, 0, false);
+            ctx.arc(Math.round(cx + rWx * s), Math.round(cy + archCenterY * s), archR * s, Math.PI, 0, false);
             ctx.fill();
+            if (model === 'kamaz') {
+                ctx.beginPath();
+                ctx.arc(Math.round(cx + -13 * s), Math.round(cy + archCenterY * s), archR * s, Math.PI, 0, false);
+                ctx.fill();
+            }
             ctx.beginPath();
-            ctx.arc(Math.round(cx + fWx * s), Math.round(cy + archCenterY * s), 9.2 * s, Math.PI, 0, false);
+            ctx.arc(Math.round(cx + fWx * s), Math.round(cy + archCenterY * s), archR * s, Math.PI, 0, false);
             ctx.fill();
 
             if (options.suspension === 'lift') {
-                for (const wx of [rWx, fWx]) {
+                const liftWheels = model === 'kamaz' ? [rWx, -13, fWx] : [rWx, fWx];
+                for (const wx of liftWheels) {
                     const archCx = Math.round(cx + wx * s);
-                    const archTop = Math.round(cy + (archCenterY - 8.5) * s);
+                    const archTop = Math.round(cy + (archCenterY - 7.5) * s);
                     ctx.fillStyle = '#64748b';
-                    ctx.fillRect(archCx - 1 * s, archTop, 2 * s, 6 * s);
+                    ctx.fillRect(archCx - 1 * s, archTop, 2 * s, 5 * s);
                     ctx.fillStyle = '#ef4444';
                     for (let k = 0; k < 4; k++) {
-                        ctx.fillRect(archCx - 3.2 * s, archTop + (1.2 + k * 1.3) * s, 6.4 * s, 0.9 * s);
+                        ctx.fillRect(archCx - 3.2 * s, archTop + (1.0 + k * 1.1) * s, 6.4 * s, 0.9 * s);
                     }
                 }
             }
@@ -7548,8 +7557,8 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
             // Круглые колеса в профиль
             const drawSideWheel = (wx, wy, isFront = false) => {
-                const rad = 7.5;
-                const rimR = 4.8;
+                const rad = (model === 'kamaz' ? 6.0 : 7.0);
+                const rimR = (model === 'kamaz' ? 3.8 : 4.4);
                 const wpx = Math.round(cx + wx * s);
                 const wpy = Math.round(cy + wy * s);
 
@@ -7757,21 +7766,25 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
             // 6. Отрисовка колес (диски, тормоза, резина)
             // Положение колес строго фиксировано на уровне земли
-            drawSideWheel(rWx, 6.5, false);
+            drawSideWheel(rWx, 6.0, false);
             if (model === 'kamaz') {
-                drawSideWheel(-13, 6.5, false);
+                drawSideWheel(-13, 6.0, false);
             }
-            drawSideWheel(fWx, 6.5, true);
+            drawSideWheel(fWx, 6.0, true);
 
             // 7. Основной силуэт кузова с анатомическими вырезами под колеса
             ctx.save();
             ctx.beginPath();
-            ctx.moveTo(Math.round(cx + rearBumperX * s), Math.round(cy + sillY * s));
-            ctx.lineTo(Math.round(cx + (rWx - 9.2) * s), Math.round(cy + sillY * s));
-            ctx.arc(Math.round(cx + rWx * s), Math.round(cy + archCenterY * s), 9.2 * s, Math.PI, 0, false);
-            ctx.lineTo(Math.round(cx + (fWx - 9.2) * s), Math.round(cy + sillY * s));
-            ctx.arc(Math.round(cx + fWx * s), Math.round(cy + archCenterY * s), 9.2 * s, Math.PI, 0, false);
-            ctx.lineTo(Math.round(cx + frontBumperX * s), Math.round(cy + (sillY + chinDrop) * s));
+            ctx.moveTo(Math.round(cx + rearBumperX * s), Math.round(cy + rearBottomY * s));
+            ctx.lineTo(Math.round(cx + (rWx - archR) * s), Math.round(cy + sillY * s));
+            ctx.arc(Math.round(cx + rWx * s), Math.round(cy + archCenterY * s), archR * s, Math.PI, 0, false);
+            if (model === 'kamaz') {
+                ctx.lineTo(Math.round(cx + (-13 - archR) * s), Math.round(cy + sillY * s));
+                ctx.arc(Math.round(cx + -13 * s), Math.round(cy + archCenterY * s), archR * s, Math.PI, 0, false);
+            }
+            ctx.lineTo(Math.round(cx + (fWx - archR) * s), Math.round(cy + sillY * s));
+            ctx.arc(Math.round(cx + fWx * s), Math.round(cy + archCenterY * s), archR * s, Math.PI, 0, false);
+            ctx.lineTo(Math.round(cx + frontBumperX * s), Math.round(cy + chinY * s));
             ctx.lineTo(Math.round(cx + frontBumperX * s), Math.round(cy + (hoodFrontY + bodyYOffset + noseDrop) * s));
             ctx.lineTo(Math.round(cx + hoodBackX * s), Math.round(cy + (hoodBackY + bodyYOffset) * s));
             ctx.lineTo(Math.round(cx + roofFrontX * s), Math.round(cy + (roofY + bodyYOffset) * s));
@@ -7802,10 +7815,15 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             ctx.strokeStyle = bt.light;
             ctx.lineWidth = 0.8 * s;
             ctx.beginPath();
-            ctx.arc(Math.round(cx + rWx * s), Math.round(cy + archCenterY * s), 9.6 * s, Math.PI, 0, false);
+            ctx.arc(Math.round(cx + rWx * s), Math.round(cy + archCenterY * s), (archR + 0.3) * s, Math.PI, 0, false);
             ctx.stroke();
+            if (model === 'kamaz') {
+                ctx.beginPath();
+                ctx.arc(Math.round(cx + -13 * s), Math.round(cy + archCenterY * s), (archR + 0.3) * s, Math.PI, 0, false);
+                ctx.stroke();
+            }
             ctx.beginPath();
-            ctx.arc(Math.round(cx + fWx * s), Math.round(cy + archCenterY * s), 9.6 * s, Math.PI, 0, false);
+            ctx.arc(Math.round(cx + fWx * s), Math.round(cy + archCenterY * s), (archR + 0.3) * s, Math.PI, 0, false);
             ctx.stroke();
             ctx.restore();
 
@@ -7825,7 +7843,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 if (bPillars && bPillars.length > 0 && bPillars[0] !== undefined) {
                     const bx = bPillars[0];
                     ctx.beginPath();
-                    ctx.moveTo(Math.round(cx + bx * s), Math.round(cy + (roofY + bodyYOffset + 11.5) * s));
+                    ctx.moveTo(Math.round(cx + bx * s), Math.round(cy + (hoodBackY + bodyYOffset + 0.5) * s));
                     ctx.lineTo(Math.round(cx + bx * s), Math.round(cy + (sillY - 0.5) * s));
                     ctx.stroke();
                 }
@@ -7834,14 +7852,6 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 ctx.beginPath();
                 ctx.moveTo(Math.round(cx + (roofRearX - 1.5) * s), Math.round(cy + (trunkY + bodyYOffset) * s));
                 ctx.lineTo(Math.round(cx + (rWx + 6.5) * s), Math.round(cy + (sillY - 0.5) * s));
-                ctx.stroke();
-
-                // Горизонтальное ребро жесткости кузова (shoulder line)
-                ctx.strokeStyle = bt.bright;
-                ctx.lineWidth = 0.6 * s;
-                ctx.beginPath();
-                ctx.moveTo(Math.round(cx + (rearBumperX + 4) * s), Math.round(cy + (trunkY + bodyYOffset + 2) * s));
-                ctx.lineTo(Math.round(cx + (frontBumperX - 3) * s), Math.round(cy + (hoodFrontY + bodyYOffset + 2) * s));
                 ctx.stroke();
 
                 // Дверные ручки
