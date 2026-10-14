@@ -4366,23 +4366,75 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             return `<span class="chat-title-pill" style="border-color:${entry.color};color:${entry.color};">${entry.label}</span>`;
         }
 
+        let car3DShowroom = null;
+
         function setStylingViewMode(mode) {
-            stylingViewMode = (mode === 'top') ? 'top' : 'side';
+            stylingViewMode = (mode === '3d') ? '3d' : (mode === 'top' ? 'top' : 'side');
             const btnSide = document.getElementById('btn-view-side');
             const btnTop = document.getElementById('btn-view-top');
+            const btn3D = document.getElementById('btn-view-3d');
             if (btnSide) btnSide.classList.toggle('active', stylingViewMode === 'side');
             if (btnTop) btnTop.classList.toggle('active', stylingViewMode === 'top');
-            updateStylingModalPreview();
+            if (btn3D) btn3D.classList.toggle('active', stylingViewMode === '3d');
+
+            const cvs = document.getElementById('styling-preview-canvas');
+            const wrap3D = document.getElementById('styling-preview-3d-wrap');
+            const hint3D = document.getElementById('styling-3d-hint');
+
+            if (stylingViewMode === '3d') {
+                if (cvs) cvs.style.display = 'none';
+                if (wrap3D) wrap3D.style.display = 'block';
+                if (hint3D) hint3D.style.display = 'block';
+
+                if (typeof Car3DManager !== 'undefined' && Car3DManager.isWebGLAvailable()) {
+                    if (!car3DShowroom) {
+                        car3DShowroom = new Car3DManager.Car3DShowroom('styling-preview-3d-wrap', {
+                            autoRotate: true,
+                            autoRotateSpeed: 0.007,
+                            showPodium: true
+                        });
+                    } else {
+                        car3DShowroom.resize();
+                        car3DShowroom.start();
+                    }
+                    const car = (stylingActiveCarIndex >= 0 && myCars[stylingActiveCarIndex]) ? myCars[stylingActiveCarIndex] : null;
+                    if (car && car3DShowroom) {
+                        car3DShowroom.setCar(car.name, {
+                            color: stylingTempColor,
+                            tint: stylingTempTint,
+                            neon: stylingTempNeon,
+                            spoiler: stylingTempSpoiler,
+                            vinyl: stylingTempVinyl,
+                            wheels: stylingTempWheels,
+                            suspension: stylingTempSuspension,
+                            sgu: stylingTempSgu
+                        });
+                    }
+                } else {
+                    notifyUser('3D режим не поддерживается вашим браузером, переключаем на 2D', 'info');
+                    setStylingViewMode('side');
+                    return;
+                }
+            } else {
+                if (cvs) cvs.style.display = 'block';
+                if (wrap3D) wrap3D.style.display = 'none';
+                if (hint3D) hint3D.style.display = 'none';
+                if (car3DShowroom) {
+                    car3DShowroom.stop();
+                }
+                updateStylingModalPreview();
+            }
         }
 
         // --- 2. СТАЙЛИНГ АВТОМОБИЛЕЙ (ПОКРАСКА, ТОНИРОВКА, ДИСКИ, КЛИРЕНС, СГУ, НЕОН) ---
         function openStylingModal(carIndex) {
             stylingActiveCarIndex = carIndex;
-            stylingViewMode = 'side';
             const btnSide = document.getElementById('btn-view-side');
             const btnTop = document.getElementById('btn-view-top');
-            if (btnSide) btnSide.classList.add('active');
-            if (btnTop) btnTop.classList.remove('active');
+            const btn3D = document.getElementById('btn-view-3d');
+            if (btnSide) btnSide.classList.toggle('active', stylingViewMode === 'side');
+            if (btnTop) btnTop.classList.toggle('active', stylingViewMode === 'top');
+            if (btn3D) btn3D.classList.toggle('active', stylingViewMode === '3d');
             const car = myCars[carIndex];
             if (!car) return;
             car.styling = car.styling || { color: '#ffffff', tint: 0, neon: 'none', spoiler: 'none', vinyl: 'none', wheels: 'stock', suspension: 'stock', sgu: 'none' };
@@ -4431,6 +4483,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
             const modal = document.getElementById('styling-modal');
             if (modal) modal.classList.add('show');
+            setStylingViewMode(stylingViewMode);
             updateStylingModalPreview();
         }
 
@@ -4438,6 +4491,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             const modal = document.getElementById('styling-modal');
             if (modal) modal.classList.remove('show');
             stylingActiveCarIndex = -1;
+            if (car3DShowroom) {
+                car3DShowroom.stop();
+            }
         }
 
         function selectStylingColor(col) {
@@ -8333,10 +8389,24 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         }
 
         function updateStylingModalPreview() {
-            const canvas = document.getElementById('styling-preview-canvas');
-            if (!canvas || typeof canvas.getContext !== 'function') return;
             const car = (stylingActiveCarIndex >= 0 && myCars[stylingActiveCarIndex]) ? myCars[stylingActiveCarIndex] : null;
             if (!car) return;
+
+            if (stylingViewMode === '3d' && car3DShowroom) {
+                car3DShowroom.updateStyling({
+                    color: stylingTempColor,
+                    tint: stylingTempTint,
+                    neon: stylingTempNeon,
+                    spoiler: stylingTempSpoiler,
+                    vinyl: stylingTempVinyl,
+                    wheels: stylingTempWheels,
+                    suspension: stylingTempSuspension,
+                    sgu: stylingTempSgu
+                });
+            }
+
+            const canvas = document.getElementById('styling-preview-canvas');
+            if (!canvas || typeof canvas.getContext !== 'function') return;
             const ctx = canvas.getContext('2d');
             if (!ctx || typeof ctx.fillRect !== 'function') return;
             renderCarSpriteToContext(ctx, canvas.width, canvas.height, car.name, {
@@ -8348,7 +8418,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 wheels: stylingTempWheels,
                 suspension: stylingTempSuspension,
                 sgu: stylingTempSgu
-            }, { view: stylingViewMode });
+            }, { view: stylingViewMode === '3d' ? 'side' : stylingViewMode });
         }
 
 
