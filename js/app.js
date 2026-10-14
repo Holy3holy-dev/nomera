@@ -362,6 +362,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         let stylingTempNeon = 'none';
         let stylingTempSpoiler = 'none';
         let stylingTempVinyl = 'none';
+        let stylingTempWheels = 'stock';
+        let stylingTempSuspension = 'stock';
+        let stylingTempSgu = 'none';
 
         const TITLES_CATALOG = {
             none: { id: 'none', label: 'Без титула', color: '#94a3b8' },
@@ -4054,9 +4057,12 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                         <button type="button" class="btn btn-blue tuning-buy" ${price === null ? 'disabled' : ''} onclick="upgradeGarageCar(${index}, '${type}')">${price === null ? '✓ MAX' : `${price.toLocaleString('ru-RU')} ₽`}</button>
                     </div>`;
                 }).join('');
-                const stylingBadge = car.styling?.neon && car.styling.neon !== 'none'
-                    ? `<span style="font-size: 10px; color: ${car.styling.neon}; font-weight: 800; margin-left: 6px;">💡 НЕОН</span>`
-                    : '';
+                const stylingBadge = [
+                    car.styling?.neon && car.styling.neon !== 'none' ? `<span style="font-size: 10px; color: ${car.styling.neon}; font-weight: 800; margin-left: 6px;">💡 НЕОН</span>` : '',
+                    car.styling?.sgu === 'installed' ? `<span style="font-size: 10px; color: #38bdf8; font-weight: 800; margin-left: 4px;">🚨 СГУ</span>` : '',
+                    car.styling?.suspension && car.styling.suspension !== 'stock' ? `<span style="font-size: 10px; color: #f59e0b; font-weight: 800; margin-left: 4px;">⚡ ${car.styling.suspension === 'bpan' ? 'БПАН' : car.styling.suspension === 'lift' ? 'ЛИФТ' : 'СПОРТ'}</span>` : '',
+                    car.styling?.wheels && car.styling.wheels !== 'stock' ? `<span style="font-size: 10px; color: #cbd5e1; font-weight: 800; margin-left: 4px;">🛞</span>` : ''
+                ].filter(Boolean).join(' ');
                 const colorDot = car.styling?.color
                     ? `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${car.styling.color};border:1px solid #fff;margin-right:4px;"></span>`
                     : '';
@@ -4285,17 +4291,20 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             return `<span class="chat-title-pill" style="border-color:${entry.color};color:${entry.color};">${entry.label}</span>`;
         }
 
-        // --- 2. СТАЙЛИНГ АВТОМОБИЛЕЙ (ПОКРАСКА, ТОНИРОВКА, НЕОН) ---
+        // --- 2. СТАЙЛИНГ АВТОМОБИЛЕЙ (ПОКРАСКА, ТОНИРОВКА, ДИСКИ, КЛИРЕНС, СГУ, НЕОН) ---
         function openStylingModal(carIndex) {
             stylingActiveCarIndex = carIndex;
             const car = myCars[carIndex];
             if (!car) return;
-            car.styling = car.styling || { color: '#ffffff', tint: 0, neon: 'none', spoiler: 'none', vinyl: 'none' };
+            car.styling = car.styling || { color: '#ffffff', tint: 0, neon: 'none', spoiler: 'none', vinyl: 'none', wheels: 'stock', suspension: 'stock', sgu: 'none' };
             stylingTempColor = car.styling.color || '#ffffff';
-            stylingTempTint = Number(car.styling.tint || 0);
+            stylingTempTint = car.styling.tint ?? 0;
             stylingTempNeon = car.styling.neon || 'none';
             stylingTempSpoiler = car.styling.spoiler || 'none';
             stylingTempVinyl = car.styling.vinyl || 'none';
+            stylingTempWheels = car.styling.wheels || 'stock';
+            stylingTempSuspension = car.styling.suspension || 'stock';
+            stylingTempSgu = car.styling.sgu || 'none';
 
             const titleEl = document.getElementById('styling-car-title');
             if (titleEl) titleEl.innerText = `Настройка для: ${car.name}`;
@@ -4310,7 +4319,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             }
 
             document.querySelectorAll('#styling-tint-chips .styling-chip').forEach(btn => {
-                btn.classList.toggle('active', Number(btn.dataset.tint) === stylingTempTint);
+                btn.classList.toggle('active', String(btn.dataset.tint) === String(stylingTempTint));
             });
             document.querySelectorAll('#styling-neon-chips .styling-chip').forEach(btn => {
                 btn.classList.toggle('active', btn.dataset.neon === stylingTempNeon);
@@ -4320,6 +4329,15 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             });
             document.querySelectorAll('#styling-vinyl-chips .styling-chip').forEach(btn => {
                 btn.classList.toggle('active', btn.dataset.vinyl === stylingTempVinyl);
+            });
+            document.querySelectorAll('#styling-wheels-chips .styling-chip').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.wheels === stylingTempWheels);
+            });
+            document.querySelectorAll('#styling-suspension-chips .styling-chip').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.suspension === stylingTempSuspension);
+            });
+            document.querySelectorAll('#styling-sgu-chips .styling-chip').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.sgu === stylingTempSgu);
             });
 
             const modal = document.getElementById('styling-modal');
@@ -4342,9 +4360,33 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         }
 
         function selectStylingTint(tint) {
-            stylingTempTint = Number(tint);
+            stylingTempTint = tint;
             document.querySelectorAll('#styling-tint-chips .styling-chip').forEach(btn => {
-                btn.classList.toggle('active', Number(btn.dataset.tint) === stylingTempTint);
+                btn.classList.toggle('active', String(btn.dataset.tint) === String(stylingTempTint));
+            });
+            updateStylingModalPreview();
+        }
+
+        function selectStylingWheels(wheels) {
+            stylingTempWheels = wheels;
+            document.querySelectorAll('#styling-wheels-chips .styling-chip').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.wheels === stylingTempWheels);
+            });
+            updateStylingModalPreview();
+        }
+
+        function selectStylingSuspension(suspension) {
+            stylingTempSuspension = suspension;
+            document.querySelectorAll('#styling-suspension-chips .styling-chip').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.suspension === stylingTempSuspension);
+            });
+            updateStylingModalPreview();
+        }
+
+        function selectStylingSgu(sgu) {
+            stylingTempSgu = sgu;
+            document.querySelectorAll('#styling-sgu-chips .styling-chip').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.sgu === stylingTempSgu);
             });
             updateStylingModalPreview();
         }
@@ -4376,13 +4418,15 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         async function confirmApplyStyling() {
             const car = myCars[stylingActiveCarIndex];
             if (!car) return;
-            car.styling = car.styling || { color: '#ffffff', tint: 0, neon: 'none', spoiler: 'none', vinyl: 'none' };
+            car.styling = car.styling || { color: '#ffffff', tint: 0, neon: 'none', spoiler: 'none', vinyl: 'none', wheels: 'stock', suspension: 'stock', sgu: 'none' };
 
             let cost = 0;
             if (stylingTempColor !== car.styling.color) cost += 15000;
-            if (stylingTempTint !== car.styling.tint) {
-                if (stylingTempTint === 50) cost += 10000;
-                else if (stylingTempTint === 95) cost += 25000;
+            if (String(stylingTempTint) !== String(car.styling.tint ?? 0)) {
+                if (Number(stylingTempTint) === 50) cost += 10000;
+                else if (Number(stylingTempTint) === 95) cost += 25000;
+                else if (stylingTempTint === 'chameleon') cost += 35000;
+                else if (stylingTempTint === 'dubai') cost += 40000;
             }
             if (stylingTempNeon !== car.styling.neon && stylingTempNeon !== 'none') cost += 35000;
             if (stylingTempSpoiler !== (car.styling.spoiler || 'none')) {
@@ -4392,6 +4436,19 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             if (stylingTempVinyl !== (car.styling.vinyl || 'none')) {
                 if (stylingTempVinyl === 'stripes') cost += 30000;
                 else if (stylingTempVinyl === 'drift') cost += 60000;
+            }
+            if (stylingTempWheels !== (car.styling.wheels || 'stock')) {
+                if (stylingTempWheels === 'stamps') cost += 15000;
+                else if (stylingTempWheels === 'deepdish') cost += 45000;
+                else if (stylingTempWheels === 'forged') cost += 75000;
+            }
+            if (stylingTempSuspension !== (car.styling.suspension || 'stock')) {
+                if (stylingTempSuspension === 'lowered') cost += 25000;
+                else if (stylingTempSuspension === 'bpan') cost += 50000;
+                else if (stylingTempSuspension === 'lift') cost += 35000;
+            }
+            if (stylingTempSgu !== (car.styling.sgu || 'none')) {
+                if (stylingTempSgu === 'installed') cost += 80000;
             }
 
             if (cost > 0) {
@@ -4407,7 +4464,10 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 tint: stylingTempTint,
                 neon: stylingTempNeon,
                 spoiler: stylingTempSpoiler,
-                vinyl: stylingTempVinyl
+                vinyl: stylingTempVinyl,
+                wheels: stylingTempWheels,
+                suspension: stylingTempSuspension,
+                sgu: stylingTempSgu
             };
             carSpriteCache.clear();
             recordQuestProgress('tune', 1);
@@ -5409,58 +5469,148 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 ctx.restore();
             }
 
-            // Мягкая анатомическая тень под автомобилем с закругленными краями
+            // Мягкая анатомическая тень под автомобилем с закругленными краями (с учетом клиренса/подвески)
             function drawShadow(w, l) {
-                const hw = Math.round((w / 2 + 1) * s);
-                const hl = Math.round((l / 2 + 2) * s);
+                let hw = Math.round((w / 2 + 1) * s);
+                let hl = Math.round((l / 2 + 2) * s);
+                let shadowAlpha = 0.48;
+
+                if (options.suspension === 'bpan') {
+                    // БПАН в пол: машина на брюхе, тень максимально плотная и сжатая
+                    shadowAlpha = 0.72;
+                    hw = Math.round((w / 2 + 0.5) * s);
+                    hl = Math.round((l / 2 + 1) * s);
+                } else if (options.suspension === 'lowered') {
+                    // Спортивное занижение -30мм
+                    shadowAlpha = 0.58;
+                    hw = Math.round((w / 2 + 0.8) * s);
+                    hl = Math.round((l / 2 + 1.5) * s);
+                } else if (options.suspension === 'lift') {
+                    // Offroad лифт +50мм: кузов высоко над землей, тень рассеянная
+                    shadowAlpha = 0.30;
+                    hw = Math.round((w / 2 + 3.2) * s);
+                    hl = Math.round((l / 2 + 4.5) * s);
+                }
+
                 ctx.save();
-                ctx.fillStyle = "rgba(0,0,0,0.48)";
+                ctx.fillStyle = `rgba(0,0,0,${shadowAlpha})`;
                 ctx.beginPath();
                 ctx.ellipse(Math.round(cx), Math.round(cy + 1 * s), hw, hl, 0, 0, Math.PI * 2);
                 ctx.fill();
                 ctx.restore();
             }
 
-            // Высокодетализированные колеса с легкосплавными дисками и суппортами
+            // Высокодетализированные колеса с поддержкой тюнинг-дисков и стенса
             function drawWheels(w, l, rimCol = "#94a3b8", caliperCol = null, discCol = "#334155", isWide = false) {
-                const wx = Math.round(w / 2);
+                let customRimCol = rimCol;
+                let customCaliperCol = caliperCol;
+                let customDiscCol = discCol;
+                let customWide = isWide;
+                let wheelOffset = 0;
+                let isStamps = false;
+                let isDeepdish = false;
+                let isForged = false;
+
+                if (options.wheels === 'stamps') {
+                    // Штампы: классические черные стальные диски с серебристым колпачком
+                    customRimCol = "#1e293b";
+                    customCaliperCol = "#334155";
+                    customDiscCol = "#1e293b";
+                    isStamps = true;
+                } else if (options.wheels === 'deepdish') {
+                    // Японские «полки» / разварки: широкий хромированный обод + золотая ступица
+                    customRimCol = "#f8fafc";
+                    customCaliperCol = caliperCol || "#ef4444";
+                    customDiscCol = "#475569";
+                    customWide = true;
+                    isDeepdish = true;
+                } else if (options.wheels === 'forged') {
+                    // Кованые легкосплавные диски: платина/титан + красные спортивные суппорты
+                    customRimCol = "#cbd5e1";
+                    customCaliperCol = "#dc2626";
+                    customDiscCol = "#64748b";
+                    isForged = true;
+                }
+
+                if (options.suspension === 'bpan') {
+                    // Отрицательный развал колес (negative camber) — колеса выступают шире наружу
+                    wheelOffset += 1.2;
+                    customWide = true;
+                } else if (options.suspension === 'lowered') {
+                    wheelOffset -= 0.3;
+                } else if (options.suspension === 'lift') {
+                    // Массивные оффроад шины
+                    wheelOffset += 0.8;
+                    customWide = true;
+                }
+
+                const wx = Math.round(w / 2) + wheelOffset;
                 const frontL = -l + 8;
                 const rearL = l - 16;
-                const fw = isWide ? 4.2 : 3.6;
-                const rw = isWide ? 5.2 : 4.0;
+                const fw = customWide ? (options.suspension === 'lift' ? 5.0 : 4.5) : 3.6;
+                const rw = customWide ? (options.suspension === 'lift' ? 5.8 : 5.4) : 4.0;
+                const tireH = options.suspension === 'lift' ? 10.5 : 8.5;
+
                 // Передние шины
-                fillRound(-wx - 2.5, frontL, fw, 8.5, 2, "#09090b");
-                fillRound(wx - (isWide ? 1.8 : 1.2), frontL, fw, 8.5, 2, "#09090b");
+                fillRound(-wx - 2.5, frontL, fw, tireH, 2, "#09090b");
+                fillRound(wx - (customWide ? 2.0 : 1.2), frontL, fw, tireH, 2, "#09090b");
                 // Задние шины
-                fillRound(-wx - (isWide ? 2.8 : 1.8), rearL, rw, 9, 2, "#09090b");
-                fillRound(wx - (isWide ? 2.2 : 1.8), rearL, rw, 9, 2, "#09090b");
+                fillRound(-wx - (customWide ? 3.0 : 1.8), rearL, rw, tireH + 0.5, 2, "#09090b");
+                fillRound(wx - (customWide ? 2.4 : 1.8), rearL, rw, tireH + 0.5, 2, "#09090b");
 
                 // Тормозные диски
-                if (discCol) {
-                    px(-wx - 1, frontL + 2, 2, 4.5, discCol);
-                    px(wx - 1, frontL + 2, 2, 4.5, discCol);
-                    px(-wx - 1, rearL + 2, 2.2, 5, discCol);
-                    px(wx - 1, rearL + 2, 2.2, 5, discCol);
+                if (customDiscCol) {
+                    px(-wx - 1, frontL + 2, 2, 4.5, customDiscCol);
+                    px(wx - 1, frontL + 2, 2, 4.5, customDiscCol);
+                    px(-wx - 1, rearL + 2, 2.2, 5, customDiscCol);
+                    px(wx - 1, rearL + 2, 2.2, 5, customDiscCol);
                 }
                 // Фирменные суппорты (Brembo, M-Sport, AMG, PCCB)
-                if (caliperCol) {
-                    px(-wx - 1.2, frontL + 1, 2, 2.5, caliperCol);
-                    px(wx - 1, frontL + 1, 2, 2.5, caliperCol);
-                    px(-wx - 1.2, rearL + 5, 2, 2.5, caliperCol);
-                    px(wx - 1, rearL + 5, 2, 2.5, caliperCol);
+                if (customCaliperCol) {
+                    px(-wx - 1.2, frontL + 1, 2, 2.5, customCaliperCol);
+                    px(wx - 1, frontL + 1, 2, 2.5, customCaliperCol);
+                    px(-wx - 1.2, rearL + 5, 2, 2.5, customCaliperCol);
+                    px(wx - 1, rearL + 5, 2, 2.5, customCaliperCol);
                 }
                 // Диски
-                px(-wx, frontL + 2, 2, 4.5, rimCol);
-                px(wx - 2, frontL + 2, 2, 4.5, rimCol);
-                px(-wx, rearL + 2, 2.2, 5, rimCol);
-                px(wx - 2, rearL + 2, 2.2, 5, rimCol);
+                px(-wx, frontL + 2, 2, 4.5, customRimCol);
+                px(wx - 2, frontL + 2, 2, 4.5, customRimCol);
+                px(-wx, rearL + 2, 2.2, 5, customRimCol);
+                px(wx - 2, rearL + 2, 2.2, 5, customRimCol);
+
+                // Детализация штампов: серебристые центральные колпачки
+                if (isStamps) {
+                    px(-wx + 0.6, frontL + 3.8, 0.8, 1.0, "#94a3b8");
+                    px(wx - 1.4, frontL + 3.8, 0.8, 1.0, "#94a3b8");
+                    px(-wx + 0.6, rearL + 4.0, 0.8, 1.0, "#94a3b8");
+                    px(wx - 1.4, rearL + 4.0, 0.8, 1.0, "#94a3b8");
+                } else if (isDeepdish) {
+                    // Золотая ступица внутри хромированной глубокой полки
+                    px(-wx + 0.4, frontL + 3, 1.2, 2.5, "#d97706");
+                    px(wx - 1.6, frontL + 3, 1.2, 2.5, "#d97706");
+                    px(-wx + 0.4, rearL + 3.2, 1.2, 2.6, "#d97706");
+                    px(wx - 1.6, rearL + 3.2, 1.2, 2.6, "#d97706");
+                } else if (isForged) {
+                    // Спортивные тонкие спицы и вентиляция диска
+                    px(-wx + 0.2, frontL + 3.2, 0.6, 2.0, "#09090b");
+                    px(wx - 1.2, frontL + 3.2, 0.6, 2.0, "#09090b");
+                    px(-wx + 0.2, rearL + 3.2, 0.6, 2.2, "#09090b");
+                    px(wx - 1.2, rearL + 3.2, 0.6, 2.2, "#09090b");
+                }
             }
 
-            // Остекление с реалистичными бликами, анатомическим изгибом и тонировкой
+            // Остекление с реалистичными бликами, анатомическим изгибом и премиум-тонировкой
             function drawGlass(gx, gy, gw, gh, glassCol = "#0b1329", glare = true) {
                 let col = glassCol;
-                if (options.tint >= 95) col = "#020408";
-                else if (options.tint >= 50) col = "#080c18";
+                if (options.tint === 'chameleon') {
+                    col = "#1e1035"; // глубокая фиолетовая основа хамелеона
+                } else if (options.tint === 'dubai') {
+                    col = "#334155"; // металлическая основа зеркальной дубайки
+                } else if (Number(options.tint) >= 95) {
+                    col = "#020408";
+                } else if (Number(options.tint) >= 50) {
+                    col = "#080c18";
+                }
                 const isFront = gy < 0;
                 const topW = isFront ? (gw - 3) : gw;
                 const btmW = isFront ? gw : (gw - 3);
@@ -5471,13 +5621,43 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     [-btmW/2, gy + gh]
                 ], col);
 
-                if (glare && (!options.tint || options.tint < 95)) {
-                    fillPoly([
-                        [-topW/2 + 2, gy + 1],
-                        [-topW/2 + 5, gy + 1],
-                        [-btmW/2 + 7, gy + gh - 1],
-                        [-btmW/2 + 4, gy + gh - 1]
-                    ], "rgba(255,255,255,0.35)");
+                if (glare) {
+                    if (options.tint === 'chameleon') {
+                        // Переливающийся бирюзово-фиолетовый перелив Mystique Chameleon
+                        fillPoly([
+                            [-topW/2 + 2, gy + 1],
+                            [-topW/2 + 5, gy + 1],
+                            [-btmW/2 + 7, gy + gh - 1],
+                            [-btmW/2 + 4, gy + gh - 1]
+                        ], "rgba(6, 182, 212, 0.65)");
+                        fillPoly([
+                            [-topW/2 + 4, gy + 1],
+                            [-topW/2 + 6, gy + 1],
+                            [-btmW/2 + 8, gy + gh - 1],
+                            [-btmW/2 + 6, gy + gh - 1]
+                        ], "rgba(168, 85, 247, 0.60)");
+                    } else if (options.tint === 'dubai') {
+                        // Зеркальный хромированный металлик Dubai
+                        fillPoly([
+                            [-topW/2 + 2, gy + 1],
+                            [-topW/2 + 6, gy + 1],
+                            [-btmW/2 + 8, gy + gh - 1],
+                            [-btmW/2 + 4, gy + gh - 1]
+                        ], "rgba(248, 250, 252, 0.85)");
+                        fillPoly([
+                            [-topW/2 + 3, gy + 1],
+                            [-topW/2 + 4.5, gy + 1],
+                            [-btmW/2 + 6.5, gy + gh - 1],
+                            [-btmW/2 + 5, gy + gh - 1]
+                        ], "rgba(255, 255, 255, 0.95)");
+                    } else if (!options.tint || Number(options.tint) < 95) {
+                        fillPoly([
+                            [-topW/2 + 2, gy + 1],
+                            [-topW/2 + 5, gy + 1],
+                            [-btmW/2 + 7, gy + gh - 1],
+                            [-btmW/2 + 4, gy + gh - 1]
+                        ], "rgba(255,255,255,0.35)");
+                    }
                 }
             }
 
@@ -6793,6 +6973,35 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 }
             }
 
+            // 🚨 СПЕЦСИГНАЛ СГУ И СТРОБОСКОПЫ В РЕШЁТКЕ РАДИАТОРА
+            if (options.sgu === 'installed') {
+                const grillY = name === "КАМАЗ / Фура" ? -33 : -23.5;
+                const isStrobing = !!options.sguStrobe;
+                const phase = Math.floor(Date.now() / 85) % 4; // 4-фазный строб: Синий-Синий-Красный-Красный
+                const blueActive = isStrobing ? (phase === 0 || phase === 1) : false;
+                const redActive = isStrobing ? (phase === 2 || phase === 3) : false;
+
+                ctx.save();
+                // Левый стробоскоп (Синий)
+                if (blueActive) {
+                    ctx.shadowBlur = 14 * s;
+                    ctx.shadowColor = '#00f0ff';
+                    fillRound(-4.2, grillY, 2.8, 1.8, 0.6, '#00f0ff');
+                } else {
+                    fillRound(-4.2, grillY, 2.8, 1.8, 0.6, '#1e3a8a');
+                }
+
+                // Правый стробоскоп (Красный)
+                if (redActive) {
+                    ctx.shadowBlur = 14 * s;
+                    ctx.shadowColor = '#ff0033';
+                    fillRound(1.4, grillY, 2.8, 1.8, 0.6, '#ff0033');
+                } else {
+                    fillRound(1.4, grillY, 2.8, 1.8, 0.6, '#7f1d1d');
+                }
+                ctx.restore();
+            }
+
             if (options.tilt) {
                 ctx.restore();
             }
@@ -6834,6 +7043,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 neon: styling?.neon,
                 spoiler: styling?.spoiler,
                 vinyl: styling?.vinyl,
+                wheels: styling?.wheels,
+                suspension: styling?.suspension,
+                sgu: styling?.sgu,
                 tilt: tilt,
                 lightsOn: true
             });
@@ -6843,14 +7055,17 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
         function getCarSpriteDataUrl(name, styling = {}, options = {}) {
             const color = styling?.color || '';
-            const tint = Number(styling?.tint || 0);
+            const tint = styling?.tint ?? 0;
             const neon = styling?.neon || 'none';
             const spoiler = styling?.spoiler || 'none';
             const vinyl = styling?.vinyl || 'none';
+            const wheels = styling?.wheels || 'stock';
+            const suspension = styling?.suspension || 'stock';
+            const sgu = styling?.sgu || 'none';
             const tilt = (options.tilt !== undefined) ? options.tilt : (Math.PI / 2);
             const width = options.width || 260;
             const height = options.height || 150;
-            const cacheKey = `${name}_${color}_${tint}_${neon}_${spoiler}_${vinyl}_${tilt}_${width}_${height}`;
+            const cacheKey = `${name}_${color}_${tint}_${neon}_${spoiler}_${vinyl}_${wheels}_${suspension}_${sgu}_${tilt}_${width}_${height}`;
             if (carSpriteCache.has(cacheKey)) {
                 return carSpriteCache.get(cacheKey);
             }
@@ -6871,7 +7086,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     return DEFAULT_CAR_IMG;
                 }
 
-                renderCarSpriteToContext(ctx, width, height, name, { color, tint, neon, spoiler, vinyl }, { tilt });
+                renderCarSpriteToContext(ctx, width, height, name, { color, tint, neon, spoiler, vinyl, wheels, suspension, sgu }, { tilt });
                 const dataUrl = canvas.toDataURL('image/png');
                 if (dataUrl && dataUrl.startsWith('data:image')) {
                     if (carSpriteCache.size > 250) carSpriteCache.clear();
@@ -6894,7 +7109,10 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 tint: stylingTempTint,
                 neon: stylingTempNeon,
                 spoiler: stylingTempSpoiler,
-                vinyl: stylingTempVinyl
+                vinyl: stylingTempVinyl,
+                wheels: stylingTempWheels,
+                suspension: stylingTempSuspension,
+                sgu: stylingTempSgu
             });
         }
 
@@ -6965,7 +7183,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             }
         }
 
-        let raceKeys = { left: false, right: false, gas: false, brake: false, nitro: false, drift: false };
+        let raceKeys = { left: false, right: false, gas: false, brake: false, nitro: false, drift: false, horn: false };
         let raceTraffic = [];
         let raceCollectibles = [];
         let raceSkidmarks = [];
@@ -7425,7 +7643,12 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     lightsOn: true,
                     color: ownedCarObj?.styling?.color,
                     tint: ownedCarObj?.styling?.tint,
-                    neon: ownedCarObj?.styling?.neon
+                    neon: ownedCarObj?.styling?.neon,
+                    spoiler: ownedCarObj?.styling?.spoiler,
+                    vinyl: ownedCarObj?.styling?.vinyl,
+                    wheels: ownedCarObj?.styling?.wheels,
+                    suspension: ownedCarObj?.styling?.suspension,
+                    sgu: ownedCarObj?.styling?.sgu
                 });
             }
         }
@@ -7516,9 +7739,13 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 } else if (key === 'brake') {
                     if (typeof sound?.brake === 'function') sound.brake();
                     if (typeof sound?.haptic === 'function') sound.haptic('medium');
+                } else if (key === 'horn') {
+                    triggerRaceHorn(true);
                 } else {
                     if (typeof sound?.haptic === 'function') sound.haptic('light');
                 }
+            } else if (key === 'horn') {
+                triggerRaceHorn(false);
             }
         }
 
@@ -7621,6 +7848,15 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             if (code === 'ShiftLeft' || code === 'ShiftRight' || key === 'shift' || code === 'KeyN' || key === 'n' || key === 'т' || code === 'KeyF' || key === 'f' || key === 'а' || code === 'KeyE' || key === 'e' || key === 'у') {
                 raceKeys.nitro = true; e.preventDefault();
             }
+
+            // 4. КЛАКСОН / СГУ («Крякалка»): Клавиша H (Р на русской раскладке)
+            if (code === 'KeyH' || key === 'h' || key === 'р') {
+                if (!raceKeys.horn) {
+                    raceKeys.horn = true;
+                    triggerRaceHorn(true);
+                }
+                e.preventDefault();
+            }
         });
 
         window.addEventListener('keyup', (e) => {
@@ -7639,7 +7875,33 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             if (code === 'ShiftLeft' || code === 'ShiftRight' || key === 'shift' || code === 'KeyN' || key === 'n' || key === 'т' || code === 'KeyF' || key === 'f' || key === 'а' || code === 'KeyE' || key === 'e' || key === 'у') {
                 raceKeys.nitro = false;
             }
+
+            if (code === 'KeyH' || key === 'h' || key === 'р') {
+                raceKeys.horn = false;
+                triggerRaceHorn(false);
+            }
         });
+
+        function triggerRaceHorn(active) {
+            if (!isRaceRunning) return;
+            setRaceKey('horn', active);
+            if (!active) return;
+
+            const carIndex = getSelectedRaceCarIndex();
+            const activeCar = carIndex >= 0 ? myCars[carIndex] : myCars.find(c => c.name === selectedRaceCarName);
+            const hasSgu = activeCar?.styling?.sgu === 'installed';
+
+            if (hasSgu) {
+                if (typeof sound?.sgu === 'function') sound.sgu();
+                if (typeof sound?.haptic === 'function') sound.haptic('medium');
+                racePlayer.sguStrobeTimer = 0.6;
+                showRacePopup('🚨 СГУ: ДОРОГУ VIP!', '#38bdf8');
+            } else {
+                if (typeof sound?.horn === 'function') sound.horn();
+                if (typeof sound?.haptic === 'function') sound.haptic('light');
+                showRacePopup('📢 БИ-БИП!', '#fbbf24');
+            }
+        }
 
         function showRacePopup(text, color = '#fbbf24') {
             const el = document.getElementById('race-popup-msg');
@@ -7732,11 +7994,22 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 tunedStats: stats,
                 wantedStars: 0,
                 escapeTimer: 0,
+                sguStrobeTimer: 0,
                 wasGasActive: false,
                 wasNitroActive: false,
                 backfireCooldown: 0,
                 blowOffCooldown: 0
             };
+
+            if (activeRaceCar?.styling?.suspension === 'bpan') {
+                racePlayer.handling = Number((racePlayer.handling + 0.4).toFixed(2));
+            } else if (activeRaceCar?.styling?.suspension === 'lowered') {
+                racePlayer.handling = Number((racePlayer.handling + 0.2).toFixed(2));
+            }
+            if (activeRaceCar?.styling?.wheels === 'forged') {
+                racePlayer.accel = Number((racePlayer.accel + 0.2).toFixed(2));
+                racePlayer.handling = Number((racePlayer.handling + 0.1).toFixed(2));
+            }
 
             raceTraffic = [];
             raceCollectibles = [];
@@ -7761,6 +8034,12 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             document.getElementById('race-menu-container').classList.add('hidden');
             document.getElementById('race-play-container').classList.remove('hidden');
             initRaceTouchControls();
+
+            const hasSgu = activeRaceCar?.styling?.sgu === 'installed';
+            const touchHornIcon = document.getElementById('touch-horn-icon');
+            const touchHornLabel = document.getElementById('touch-horn-label');
+            if (touchHornIcon) touchHornIcon.textContent = hasSgu ? '🚨' : '📢';
+            if (touchHornLabel) touchHornLabel.textContent = hasSgu ? 'СГУ [H]' : 'СИГНАЛ [H]';
 
             isRaceRunning = true;
             document.body.classList.add("race-active");
@@ -7873,6 +8152,10 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                         racePlayer.nitroDepleted = false;
                     }
                 }
+            }
+
+            if ((racePlayer.sguStrobeTimer || 0) > 0) {
+                racePlayer.sguStrobeTimer -= dt;
             }
 
             // 3. Слипстрим (аэродинамический мешок за машинами впереди)
@@ -8571,6 +8854,36 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
                 // ДИНАМИЧЕСКИЙ ТРАФИК: Машины двигаются между рядами, обгоняют и тормозят
                 if (!t.isCone) {
+                    // Влияние СГУ («Крякалка»): попутный гражданский трафик впереди в панике уступает дорогу VIP
+                    if ((racePlayer.sguStrobeTimer || 0) > 0 && !t.isTruck && !t.isPolice && t.type !== 'heli' && t.type !== 'block' && t.type !== 'spike') {
+                        const dy = racePlayer.y - t.y; // положительно, если машина впереди игрока
+                        if (dy > 10 && dy < 280 && Math.abs(t.x - racePlayer.x) < 45) {
+                            if (!t.yieldedSgu) {
+                                t.yieldedSgu = true;
+                                const canGoRight = t.laneIdx < 3;
+                                const newLane = canGoRight ? t.laneIdx + 1 : Math.max(0, t.laneIdx - 1);
+                                t.laneIdx = newLane;
+                                t.targetX = lanes[newLane];
+                                t.blinker = canGoRight ? 'right' : 'left';
+                                t.blinkerTimer = 0.12; // молниеносная реакция на стробоскопы
+                                t.changeLaneCooldown = 6.0;
+                                t.speed = Math.max(35, t.speed * 0.85);
+                            }
+                        }
+                    }
+
+                    // Сигнал прямо перед полицией ДПС: привлекает внимание патруля
+                    if (raceKeys.horn && (t.name === 'ДПС' || t.isPolice)) {
+                        const dy = racePlayer.y - t.y;
+                        if (dy > 10 && dy < 130 && Math.abs(t.x - racePlayer.x) < 38) {
+                            if (!t.honkReported) {
+                                t.honkReported = true;
+                                addWantedStars(1, 'НЕЗАКОННЫЙ СИГНАЛ');
+                                showRacePopup('🚔 ДПС: КТО СИГНАЛИТ?! +⭐', '#ef4444');
+                            }
+                        }
+                    }
+
                     t.changeLaneCooldown = (Number.isFinite(t.changeLaneCooldown) ? t.changeLaneCooldown : 3.0) - dt;
 
                     // Проверка препятствия прямо впереди в своей полосе
@@ -9679,8 +9992,8 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
             // 9. Автомобиль игрока (с учетом угла крена кузова и мигания неуязвимости)
             const shouldBlink = racePlayer.invulnerableTimer > 0 && racePlayer.damageBlink > 2;
+            const activeCar = myCars[selectedRaceCarIndex] || myCars.find(c => c.name === selectedRaceCarName);
             if (!shouldBlink) {
-                const activeCar = myCars[selectedRaceCarIndex] || myCars.find(c => c.name === selectedRaceCarName);
                 drawPixelCar(ctx, px, racePlayer.y, selectedRaceCarName, 1.0, {
                     lightsOn: true,
                     nitro: racePlayer.isNitroActive,
@@ -9690,7 +10003,23 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     neon: activeCar?.styling?.neon,
                     tint: activeCar?.styling?.tint,
                     spoiler: activeCar?.styling?.spoiler,
-                    vinyl: activeCar?.styling?.vinyl
+                    vinyl: activeCar?.styling?.vinyl,
+                    wheels: activeCar?.styling?.wheels,
+                    suspension: activeCar?.styling?.suspension,
+                    sgu: activeCar?.styling?.sgu,
+                    sguStrobe: (racePlayer.sguStrobeTimer > 0)
+                });
+            }
+
+            // Искры БПАН от заниженного брюха при резких маневрах на асфальте
+            if (activeCar?.styling?.suspension === 'bpan' && Math.abs(racePlayer.vx) > 14 && Math.random() < 0.28) {
+                raceSparks.push({
+                    x: racePlayer.x + (Math.random() - 0.5) * 16,
+                    y: (racePlayer.y || 470) + 18,
+                    vx: (Math.random() - 0.5) * 60,
+                    vy: 30 + Math.random() * 50,
+                    life: 0.25,
+                    color: '#f97316'
                 });
             }
 

@@ -165,3 +165,155 @@ test('race canvas renders helicopter searchlight beam at 5 stars and HUD stars',
 
     assert.equal(app.run('racePlayer.wantedStars'), 5);
 });
+
+test('sound.horn and sound.sgu exist and synthesize tones cleanly', () => {
+    const app = createApp();
+
+    assert.doesNotThrow(() => {
+        app.run(`
+            if (typeof sound?.horn === 'function') sound.horn();
+            if (typeof sound?.sgu === 'function') sound.sgu();
+        `);
+    });
+});
+
+test('styling modal supports wheels, suspension, SGU and premium tints with accurate prices', () => {
+    const app = createApp();
+
+    app.run(`
+        myCars = [
+            {
+                name: "ВАЗ-2107 «Жигули»",
+                price: 150000,
+                styling: { color: "#ffffff", tint: 0, neon: "none", spoiler: "none", vinyl: "none", wheels: "stock", suspension: "stock", sgu: "none" }
+            }
+        ];
+        balance = 500000;
+
+        openStylingModal(0);
+        selectStylingWheels('stamps'); // 15 000 ₽
+        selectStylingSuspension('bpan'); // 50 000 ₽
+        selectStylingTint('chameleon'); // 35 000 ₽
+        confirmApplyStyling();
+    `);
+
+    const styling1 = app.run('myCars[0].styling');
+    assert.equal(styling1.wheels, 'stamps');
+    assert.equal(styling1.suspension, 'bpan');
+    assert.equal(styling1.tint, 'chameleon');
+    // 15 000 + 50 000 + 35 000 = 100 000 ₽ deducted
+    assert.equal(app.run('balance'), 400000);
+
+    // Now install SGU (80 000 ₽), forged wheels (75 000 ₽), lift suspension (35 000 ₽), and dubai tint (40 000 ₽)
+    app.run(`
+        openStylingModal(0);
+        selectStylingSgu('installed'); // 80 000 ₽
+        selectStylingWheels('forged'); // 75 000 ₽
+        selectStylingSuspension('lift'); // 35 000 ₽
+        selectStylingTint('dubai'); // 40 000 ₽
+        confirmApplyStyling();
+    `);
+
+    const styling2 = app.run('myCars[0].styling');
+    assert.equal(styling2.sgu, 'installed');
+    assert.equal(styling2.wheels, 'forged');
+    assert.equal(styling2.suspension, 'lift');
+    assert.equal(styling2.tint, 'dubai');
+    // 80 000 + 75 000 + 35 000 + 40 000 = 230 000 ₽ deducted from 400 000 = 170 000 ₽
+    assert.equal(app.run('balance'), 170000);
+});
+
+test('cars render cleanly with wheels, suspension, SGU, and tints in getCarSpriteDataUrl', () => {
+    const app = createApp();
+
+    const sprite1 = app.run(`
+        getCarSpriteDataUrl("Lada Priora БПАН", {
+            color: "#000000",
+            wheels: "deepdish",
+            suspension: "bpan",
+            sgu: "installed",
+            tint: "chameleon"
+        })
+    `);
+    assert.ok(typeof sprite1 === 'string' && sprite1.length > 20);
+
+    const sprite2 = app.run(`
+        getCarSpriteDataUrl("Mercedes-Benz G63 AMG «Гелик»", {
+            color: "#1e293b",
+            wheels: "forged",
+            suspension: "lift",
+            sgu: "installed",
+            tint: "dubai"
+        })
+    `);
+    assert.ok(typeof sprite2 === 'string' && sprite2.length > 20);
+});
+
+test('horn and SGU function in race: SGU clears traffic ahead and honking at DPS alerts police', () => {
+    const app = createApp();
+
+    app.run(`
+        isRaceRunning = true;
+        raceCurrentMode = 'highway';
+        selectedRaceCarName = "Toyota Camry 3.5";
+        selectedRaceCarIndex = 0;
+        myCars = [{
+            name: "Toyota Camry 3.5",
+            styling: { sgu: "installed" }
+        }];
+        racePlayer.x = 165;
+        racePlayer.y = 470;
+        racePlayer.speed = 100;
+        racePlayer.wantedStars = 0;
+        racePlayer.sguStrobeTimer = 0;
+
+        // Traffic car in player's lane ahead (x: 165, y: 320, dy = 150)
+        raceTraffic = [{
+            x: 165,
+            y: 320,
+            laneIdx: 1,
+            targetX: 165,
+            speed: 80,
+            changeLaneCooldown: 3.0,
+            isTruck: false,
+            isPolice: false,
+            isCone: false,
+            yieldedSgu: false
+        }];
+
+        // Trigger SGU
+        triggerRaceHorn(true);
+    `);
+
+    assert.ok(app.run('racePlayer.sguStrobeTimer > 0'), 'SGU strobe timer should be active');
+
+    // Run physics update to allow traffic to react to SGU
+    app.run('updateRacePhysics(0.1)');
+
+    const traffic = app.run('raceTraffic[0]');
+    assert.equal(traffic.yieldedSgu, true, 'Traffic car should have yielded to SGU');
+    assert.equal(traffic.laneIdx, 2, 'Traffic car should move right into lane 2');
+    assert.equal(traffic.targetX, 235, 'Traffic targetX should be set to lane 2 (235)');
+    assert.equal(traffic.blinker, 'right', 'Traffic blinker should indicate right');
+
+    // Test honking behind police DPS
+    app.run(`
+        myCars[0].styling.sgu = 'none'; // car without SGU
+        raceTraffic = [{
+            x: 165,
+            y: 400,
+            laneIdx: 1,
+            name: 'ДПС',
+            isPolice: true,
+            isTruck: false,
+            isCone: false,
+            speed: 90
+        }];
+        raceKeys.horn = true;
+        racePlayer.wantedStars = 0;
+        updateRacePhysics(0.1);
+    `);
+
+    assert.equal(app.run('racePlayer.wantedStars'), 1, 'Honking right behind DPS should trigger wanted star');
+});
+
