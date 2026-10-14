@@ -68,7 +68,7 @@
         const distance = clamp(finite(speed), 0, 1000) / 3600 * clamp(finite(seconds), 0, 0.1);
         const litersPer100Km = clamp(finite(consumption, 12), 1, 100);
         const drivingFactor = (gas ? 1.35 : 1) * (nitro ? 1.85 : 1) * (drafting ? 0.88 : 1);
-        const arcadeBurn = 3.2;
+        const arcadeBurn = 4.2;
         return distance * litersPer100Km / 100 * drivingFactor * arcadeBurn;
     }
     function settle(gross, usedLiters, availableBalance) {

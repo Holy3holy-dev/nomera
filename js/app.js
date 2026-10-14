@@ -6817,6 +6817,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             accel: 2.5,
             handling: 5.5,
             nitro: 100,
+            nitroDepleted: false,
             isNitroActive: false,
             isDrafting: false,
             invulnerableTimer: 0,
@@ -7363,8 +7364,12 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             setRaceKey(key, state);
             if (state) {
                 if (key === 'nitro') {
-                    if (typeof sound?.nitro === 'function') sound.nitro();
-                    if (typeof sound?.haptic === 'function') sound.haptic('nitro');
+                    if (racePlayer && (racePlayer.nitroDepleted || racePlayer.nitro <= 0.05)) {
+                        // Нитро истощено — не воспроизводим звук и хаптик
+                    } else {
+                        if (typeof sound?.nitro === 'function') sound.nitro();
+                        if (typeof sound?.haptic === 'function') sound.haptic('nitro');
+                    }
                 } else if (key === 'drift') {
                     if (typeof sound?.drift === 'function') sound.drift();
                     if (typeof sound?.haptic === 'function') sound.haptic('medium');
@@ -7524,6 +7529,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 accel: stats.accel,
                 handling: stats.handling,
                 nitro: 100,
+                nitroDepleted: false,
                 isNitroActive: false,
                 isDrafting: false,
                 invulnerableTimer: 0,
@@ -7658,13 +7664,32 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 racePlayer.vx += centrifugalPush;
             }
 
-            // 2. Нитро логика
-            if (raceKeys.nitro && racePlayer.nitro > 0) {
+            // 2. Нитро логика: надёжная защита от бесконечного буста и спама при 0%
+            if (racePlayer.nitro <= 0.05) {
+                racePlayer.nitro = 0;
+                racePlayer.nitroDepleted = true;
+                racePlayer.isNitroActive = false;
+            }
+
+            if (raceKeys.nitro && !racePlayer.nitroDepleted && racePlayer.nitro > 0) {
                 racePlayer.isNitroActive = true;
                 racePlayer.nitro = Math.max(0, racePlayer.nitro - dt * (stats.nitroDrain || 28));
+                if (racePlayer.nitro <= 0.05) {
+                    racePlayer.nitro = 0;
+                    racePlayer.nitroDepleted = true;
+                    racePlayer.isNitroActive = false;
+                    showRacePopup("⚠️ НИТРО ЗАКОНЧИЛОСЬ!", "#ef4444");
+                }
             } else {
                 racePlayer.isNitroActive = false;
-                racePlayer.nitro = Math.min(100, racePlayer.nitro + dt * (stats.nitroRecharge || 4)); // пассивная зарядка
+                // Пассивная зарядка работает ТОЛЬКО если кнопка нитро НЕ зажата
+                if (!raceKeys.nitro) {
+                    racePlayer.nitro = Math.min(100, racePlayer.nitro + dt * (stats.nitroRecharge || 4));
+                    // Снимаем блокировку истощения только когда накопилось хотя бы 20%
+                    if (racePlayer.nitroDepleted && racePlayer.nitro >= 20) {
+                        racePlayer.nitroDepleted = false;
+                    }
+                }
             }
 
             // 3. Слипстрим (аэродинамический мешок за машинами впереди)
@@ -7679,8 +7704,8 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             }
             racePlayer.isDrafting = !!draftingCar;
             if (racePlayer.isDrafting) {
-                // Бонус за слипстрим
-                racePlayer.earnedCash += 420 * stats.rewardMult * dt;
+                // Бонус за слипстрим (сбалансированный)
+                racePlayer.earnedCash += 120 * stats.rewardMult * dt;
             }
 
             // 4. Управление продольной скоростью
@@ -8227,12 +8252,12 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             if (raceCurrentMode === 'highway') {
                 raceHighwayEventCooldown -= dt;
                 if (raceHighwayEventCooldown <= 0 && !raceHighwayEvent) {
-                    raceHighwayEventCooldown = 28 + Math.random() * 24;
+                    raceHighwayEventCooldown = 22 + Math.random() * 18;
                     const roll = Math.random();
-                    if (roll < 0.35) {
+                    if (roll < 0.28) {
                         raceHighwayEvent = { type: 'speed_trap', timer: 7.0, limit: 140, checked: false };
                         showRacePopup("🚨 КАМЕРА СКОРОСТИ! СБРОСЬТЕ ДО 140 КМ/Ч ЧЕРЕЗ 5 СЕК!", "#f59e0b");
-                    } else if (roll < 0.70) {
+                    } else if (roll < 0.52) {
                         raceHighwayEvent = { type: 'road_works', timer: 8.0 };
                         showRacePopup("🚧 ДОРОЖНЫЕ РАБОТЫ! СУЖЕНИЕ В ПРАВЫЙ РЯД ➔➔", "#f97316");
                         for (let k = 0; k < 4; k++) {
@@ -8254,17 +8279,38 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                                 overtaken: false
                             });
                         }
+                    } else if (roll < 0.76) {
+                        // Скорая помощь спешит по левому ряду
+                        raceHighwayEvent = { type: 'ambulance', timer: 9.0, passed: false };
+                        showRacePopup("🚑 СПЕЦТРАНСПОРТ! ОСВОБОДИТЕ ЛЕВУЮ ПОЛОСУ ➔➔", "#38bdf8");
+                        raceTraffic.push({
+                            x: 95,
+                            y: -220,
+                            laneIdx: 0,
+                            targetX: 95,
+                            speed: Math.max(140, racePlayer.speed * 0.95),
+                            targetSpeed: 210,
+                            name: "Скорая помощь (03)",
+                            isTruck: false,
+                            isPolice: true,
+                            isCone: false,
+                            tilt: 0,
+                            blinker: 'left',
+                            blinkerTimer: 0.3,
+                            changeLaneCooldown: 999,
+                            overtaken: false
+                        });
                     } else {
                         const rivalCarName = Math.random() < 0.5 ? "BMW M5 CS «Турбо»" : "Porsche 911 GT3 RS";
                         raceHighwayEvent = { type: 'rival', timer: 14.0, name: rivalCarName, overtaken: false };
                         showRacePopup(`🏎️ СОПЕРНИК: ${rivalCarName}! ОБОЙДИ ЕГО!`, "#a855f7");
                         raceTraffic.push({
                             x: 165,
-                            y: -140,
+                            y: -150,
                             laneIdx: 1,
                             targetX: 165,
-                            speed: Math.max(160, racePlayer.speed * 0.9),
-                            targetSpeed: 235,
+                            speed: Math.max(150, racePlayer.speed * 0.9),
+                            targetSpeed: 230,
                             name: rivalCarName,
                             isTruck: false,
                             isPolice: false,
@@ -8284,12 +8330,12 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     if (raceHighwayEvent.type === 'speed_trap' && raceHighwayEvent.timer <= 0.1 && !raceHighwayEvent.checked) {
                         raceHighwayEvent.checked = true;
                         if (racePlayer.speed <= raceHighwayEvent.limit) {
-                            showRacePopup("✅ КАМЕРА ПРОЙДЕНА ЧИСТО! +15 000 ₽", "#10b981");
-                            racePlayer.earnedCash += 15000;
+                            showRacePopup("✅ КАМЕРА ПРОЙДЕНА ЧИСТО! +5 000 ₽", "#10b981");
+                            racePlayer.earnedCash += 5000;
                             if (typeof playCashSound === 'function') playCashSound();
                         } else {
-                            showRacePopup("📸 ШТРАФ ЗА ПРЕВЫШЕНИЕ! −8 000 ₽", "#ef4444");
-                            racePlayer.earnedCash = Math.max(0, racePlayer.earnedCash - 8000);
+                            showRacePopup("📸 ШТРАФ ЗА ПРЕВЫШЕНИЕ! −5 000 ₽", "#ef4444");
+                            racePlayer.earnedCash = Math.max(0, racePlayer.earnedCash - 5000);
                         }
                     }
                     if (raceHighwayEvent.timer <= 0) {
@@ -8436,12 +8482,19 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     if (dx > 20 && dx < 46) {
                         t.overtaken = true;
                         racePlayer.overtakesCount++;
-                        racePlayer.combo = Math.min(8, racePlayer.combo + 1);
+                        racePlayer.combo = Math.min(5, racePlayer.combo + 1);
                         racePlayer.comboTimer = 3.5;
-                        const bonus = Math.round(1800 * stats.rewardMult * racePlayer.combo);
-                        racePlayer.earnedCash += bonus;
-                        showRacePopup(`🔥 ОБГОН! +${bonus.toLocaleString('ru-RU')} ₽ (x${racePlayer.combo})`, '#fbbf24');
-                        playCashSound();
+                        if (t.isRival) {
+                            const rivalBonus = Math.round(7500 * stats.rewardMult);
+                            racePlayer.earnedCash += rivalBonus;
+                            showRacePopup(`🏎️ СОПЕРНИК ОБОЙДЕН! +${rivalBonus.toLocaleString('ru-RU')} ₽!`, '#c084fc');
+                            playCashSound();
+                        } else {
+                            const bonus = Math.round(450 * stats.rewardMult * racePlayer.combo);
+                            racePlayer.earnedCash += bonus;
+                            showRacePopup(`🔥 ОБГОН! +${bonus.toLocaleString('ru-RU')} ₽ (x${racePlayer.combo})`, '#fbbf24');
+                            playCashSound();
+                        }
                     }
                 }
 
@@ -8540,6 +8593,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                         playCashSound();
                     } else if (c.type === 'nitro') {
                         racePlayer.nitro = Math.min(100, racePlayer.nitro + 50);
+                        racePlayer.nitroDepleted = false;
                         showRacePopup("🚀 НИТРО ПОПОЛНЕНО!", "#38bdf8");
                         playLockSound(1.6);
                     } else if (c.type === 'shield') {
@@ -8577,9 +8631,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 if (Math.abs(t.x - laneX) < 32 && t.y < 35) return;
             }
 
-            // На высокой скорости спавним машины дальше по трассе (-100..-200 вместо -60), давая нормальное окно реакции
+            // На высокой скорости спавним машины дальше по трассе, давая нормальное окно реакции
             const curSpd = racePlayer ? (racePlayer.speed || 70) : 70;
-            const spawnY = curSpd > 175 ? -95 - Math.min(105, (curSpd - 175) * 0.45) : -60;
+            const spawnY = curSpd > 160 ? -110 - Math.min(220, (curSpd - 160) * 0.95) : -60;
 
             const roll = Math.random();
             if (roll < 0.12) {
@@ -8670,13 +8724,13 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
             const roll = Math.random();
             let type = 'cash';
-            let amount = 3000;
+            let amount = 2500;
             if (roll < 0.35) {
                 type = 'cash';
-                amount = Math.random() < 0.2 ? 10000 : 3000;
+                amount = Math.random() < 0.2 ? 6000 : 2500;
             } else if (roll < 0.65) {
                 type = 'fuel';
-                amount = 5.0;
+                amount = 4.0;
             } else if (roll < 0.85) {
                 type = 'nitro';
             } else {
@@ -9271,18 +9325,24 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 }
             }
 
-            // HUD Радар опасности на высоких скоростях (> 190 км/ч)
-            if (racePlayer && racePlayer.speed > 190 && raceCurrentMode !== 'drift') {
+            // HUD Радар опасности на высоких скоростях (> 160 км/ч)
+            if (racePlayer && racePlayer.speed > 160 && raceCurrentMode !== 'drift') {
                 for (let t of raceTraffic) {
                     const distAhead = (racePlayer.y || 470) - t.y;
-                    if (distAhead > 90 && distAhead < 500) {
+                    if (distAhead > 80 && distAhead < 650) {
                         const markerX = t.x + getCurveX(t.y);
                         const isTruck = t.isTruck;
-                        const isDangerClose = distAhead < 230;
+                        const isDangerClose = distAhead < 220;
+                        const meters = Math.round(distAhead * 0.4);
                         ctx.fillStyle = isTruck ? '#ef4444' : (isDangerClose ? '#f97316' : '#fbbf24');
                         ctx.font = 'bold 10px sans-serif';
                         ctx.textAlign = 'center';
-                        ctx.fillText(isTruck ? '▼ 🚛 ФУРА' : (t.isCone ? '▼ 🚧 КОНУС' : '▼ 🚗 АВТО'), markerX, 44);
+                        let tag = '🚗';
+                        if (isTruck) tag = '🚛 ФУРА';
+                        else if (t.isPolice) tag = '🚨 ДПС';
+                        else if (t.isCone) tag = '🚧 КОНУС';
+                        else if (t.isRival) tag = '🏎️ СОПЕРНИК';
+                        ctx.fillText(`▼ ${tag} ${meters}м`, markerX, 44);
                     }
                 }
             }
@@ -9359,8 +9419,14 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
             // Обновление индикатора нитро на мобильной панели
             const touchNitroVal = document.getElementById('hud-touch-nitro-val');
+            const touchNitroBtn = document.getElementById('btn-touch-nitro');
+            const isNitroEmpty = racePlayer.nitroDepleted || racePlayer.nitro <= 0.05;
             if (touchNitroVal) {
-                touchNitroVal.textContent = Math.round(racePlayer.nitro) + '%';
+                touchNitroVal.textContent = isNitroEmpty ? '0% ПУСТО' : `${Math.round(racePlayer.nitro)}%`;
+            }
+            if (touchNitroBtn) {
+                touchNitroBtn.classList.toggle('nitro-empty', isNitroEmpty);
+                touchNitroBtn.classList.toggle('nitro-active', !!racePlayer.isNitroActive);
             }
 
             // Обновление плашки дрифта в мобильном заголовке
@@ -9498,7 +9564,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
             ctx.fillStyle = "rgba(255, 255, 255, 0.6)";
             ctx.font = "700 9px sans-serif";
-            ctx.fillText(raceCurrentMode === 'drift' ? '🏁 Дрифт' : '🏁 Трафик', W - 16, 46);
+            ctx.fillText(raceCurrentMode === 'drift' ? '🏁 Дрифт' : '🏁 Шоссе', W - 16, 46);
 
             // Индикатор слипстрима
             if (racePlayer.isDrafting) {
@@ -9517,17 +9583,17 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             }
 
             // Шкала Нитро
-            ctx.fillStyle = "rgba(0, 0, 0, 0.65)";
+            ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
             ctx.fillRect(10, H - 24, W - 20, 14);
-            ctx.fillStyle = "rgba(59, 130, 246, 0.2)";
+            ctx.fillStyle = isNitroEmpty ? "rgba(239, 68, 68, 0.25)" : "rgba(59, 130, 246, 0.2)";
             ctx.fillRect(12, H - 22, W - 24, 10);
-            ctx.fillStyle = "#38bdf8";
+            ctx.fillStyle = isNitroEmpty ? "#ef4444" : (racePlayer.isNitroActive ? "#60a5fa" : "#38bdf8");
             ctx.fillRect(12, H - 22, (W - 24) * (racePlayer.nitro / 100), 10);
 
             ctx.fillStyle = "#fff";
             ctx.font = "bold 9px sans-serif";
             ctx.textAlign = "center";
-            ctx.fillText("🚀 ЗАКИСЬ АЗОТА (НИТРО)", W / 2, H - 14);
+            ctx.fillText(isNitroEmpty ? "⚠️ НИТРО ПУСТО (ЗАРЯДКА ОТ 20%)" : (racePlayer.isNitroActive ? "🔥 НИТРО АКТИВНО!" : "🚀 ЗАКИСЬ АЗОТА (НИТРО)"), W / 2, H - 14);
         }
 
         function closePlayerViewModal() {
