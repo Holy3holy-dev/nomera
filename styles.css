@@ -2847,6 +2847,37 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
     color: #fff;
     box-shadow: 0 0 10px rgba(255, 46, 76, 0.35);
 }
+.styling-view-switch {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin: 4px 0 12px;
+}
+.styling-view-btn {
+    padding: 7px 16px;
+    border-radius: 99px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+.styling-view-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    transform: translateY(-1px);
+}
+.styling-view-btn.active {
+    border-color: #38bdf8;
+    background: rgba(56, 189, 248, 0.18);
+    color: #fff;
+    box-shadow: 0 0 12px rgba(56, 189, 248, 0.4);
+}
 
 /* 4. Daily bonus calendar & quests modal */
 .daily-grid {

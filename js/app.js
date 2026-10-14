@@ -365,6 +365,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         let stylingTempWheels = 'stock';
         let stylingTempSuspension = 'stock';
         let stylingTempSgu = 'none';
+        let stylingViewMode = 'side';
 
         const TITLES_CATALOG = {
             none: { id: 'none', label: 'Без титула', color: '#94a3b8' },
@@ -4291,9 +4292,23 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             return `<span class="chat-title-pill" style="border-color:${entry.color};color:${entry.color};">${entry.label}</span>`;
         }
 
+        function setStylingViewMode(mode) {
+            stylingViewMode = (mode === 'top') ? 'top' : 'side';
+            const btnSide = document.getElementById('btn-view-side');
+            const btnTop = document.getElementById('btn-view-top');
+            if (btnSide) btnSide.classList.toggle('active', stylingViewMode === 'side');
+            if (btnTop) btnTop.classList.toggle('active', stylingViewMode === 'top');
+            updateStylingModalPreview();
+        }
+
         // --- 2. СТАЙЛИНГ АВТОМОБИЛЕЙ (ПОКРАСКА, ТОНИРОВКА, ДИСКИ, КЛИРЕНС, СГУ, НЕОН) ---
         function openStylingModal(carIndex) {
             stylingActiveCarIndex = carIndex;
+            stylingViewMode = 'side';
+            const btnSide = document.getElementById('btn-view-side');
+            const btnTop = document.getElementById('btn-view-top');
+            if (btnSide) btnSide.classList.add('active');
+            if (btnTop) btnTop.classList.remove('active');
             const car = myCars[carIndex];
             if (!car) return;
             car.styling = car.styling || { color: '#ffffff', tint: 0, neon: 'none', spoiler: 'none', vinyl: 'none', wheels: 'stock', suspension: 'stock', sgu: 'none' };
@@ -7007,6 +7022,1047 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             }
         }
 
+        // 🚘 ВЫСОКОДЕТАЛИЗИРОВАННЫЙ РЕНДЕРЕР АВТОМОБИЛЕЙ В ПРОФИЛЬ (ВИД СБОКУ, 25 МОДЕЛЕЙ)
+        function drawPixelCarSide(ctx, cx, cy, name, scale = 1, options = {}) {
+            const s = scale;
+            if (options.tilt) {
+                ctx.save();
+                ctx.translate(cx, cy);
+                ctx.rotate(options.tilt);
+                ctx.translate(-cx, -cy);
+            }
+
+            const px = (ox, oy, w, h, col) => {
+                ctx.fillStyle = col;
+                ctx.fillRect(Math.round(cx + ox * s), Math.round(cy + oy * s), Math.round(w * s), Math.round(h * s));
+            };
+
+            const fillPoly = (pts, fillCol, strokeCol = null, strokeW = 1) => {
+                if (!pts || pts.length < 3) return;
+                ctx.save();
+                ctx.beginPath();
+                ctx.moveTo(Math.round(cx + pts[0][0] * s), Math.round(cy + pts[0][1] * s));
+                for (let i = 1; i < pts.length; i++) {
+                    ctx.lineTo(Math.round(cx + pts[i][0] * s), Math.round(cy + pts[i][1] * s));
+                }
+                ctx.closePath();
+                ctx.fillStyle = fillCol;
+                ctx.fill();
+                if (strokeCol) {
+                    ctx.strokeStyle = strokeCol;
+                    ctx.lineWidth = strokeW * s;
+                    ctx.stroke();
+                }
+                ctx.restore();
+            };
+
+            const fillRound = (ox, oy, w, h, rad, fillCol, strokeCol = null, strokeW = 1) => {
+                ctx.save();
+                const rx = Math.round(cx + ox * s);
+                const ry = Math.round(cy + oy * s);
+                const rw = Math.round(w * s);
+                const rh = Math.round(h * s);
+                const r = Math.min(Math.min(rw, rh) / 2, Math.max(0, rad * s));
+                ctx.beginPath();
+                if (typeof ctx.roundRect === 'function') {
+                    ctx.roundRect(rx, ry, rw, rh, r);
+                } else {
+                    ctx.moveTo(rx + r, ry);
+                    ctx.lineTo(rx + rw - r, ry);
+                    ctx.quadraticCurveTo(rx + rw, ry, rx + rw, ry + r);
+                    ctx.lineTo(rx + rw, ry + rh - r);
+                    ctx.quadraticCurveTo(rx + rw, ry + rh, rx + rw - r, ry + rh);
+                    ctx.lineTo(rx + r, ry + rh);
+                    ctx.quadraticCurveTo(rx, ry + rh, rx, ry + rh - r);
+                    ctx.lineTo(rx, ry + r);
+                    ctx.quadraticCurveTo(rx, ry, rx + r, ry);
+                    ctx.closePath();
+                }
+                ctx.fillStyle = fillCol;
+                ctx.fill();
+                if (strokeCol) {
+                    ctx.strokeStyle = strokeCol;
+                    ctx.lineWidth = strokeW * s;
+                    ctx.stroke();
+                }
+                ctx.restore();
+            };
+
+            const getBodyTones = (baseCol) => {
+                const hex = (options.color && typeof options.color === 'string') ? options.color : baseCol;
+                let clean = String(hex || '#94a3b8').replace('#', '');
+                if (clean.length === 3) clean = clean.split('').map(c => c + c).join('');
+                if (clean.length !== 6) clean = '94a3b8';
+                const r = parseInt(clean.substring(0, 2), 16) || 0;
+                const g = parseInt(clean.substring(2, 4), 16) || 0;
+                const b = parseInt(clean.substring(4, 6), 16) || 0;
+
+                const adj = (factor, off = 0) => {
+                    const nr = Math.min(255, Math.max(0, Math.round(r * factor + off)));
+                    const ng = Math.min(255, Math.max(0, Math.round(g * factor + off)));
+                    const nb = Math.min(255, Math.max(0, Math.round(b * factor + off)));
+                    return '#' + [nr, ng, nb].map(x => x.toString(16).padStart(2, '0')).join('');
+                };
+
+                return {
+                    darkest: adj(0.38, -35),
+                    shadow: adj(0.55, -20),
+                    dark: adj(0.72, -10),
+                    mid: '#' + clean,
+                    light: adj(1.18, 22),
+                    bright: adj(1.36, 48)
+                };
+            };
+
+            // 1. Клиренс и подвеска (смещение кузова вверх/вниз относительно оси колес)
+            let bodyYOffset = 0;
+            if (options.suspension === 'bpan') {
+                bodyYOffset = 3.6; // БПАН: кузов на брюхе, арки ложатся на резину
+            } else if (options.suspension === 'lowered') {
+                bodyYOffset = 1.8; // Спортивное занижение: арки вровень с шиной
+            } else if (options.suspension === 'lift') {
+                bodyYOffset = -4.0; // Offroad-лифт: кузов задран, огромный просвет
+            }
+
+            // 2. Анатомическая тень на асфальте под машиной
+            let shadowAlpha = 0.52;
+            let shadowH = 3.2;
+            if (options.suspension === 'bpan') {
+                shadowAlpha = 0.85;
+                shadowH = 2.2;
+            } else if (options.suspension === 'lift') {
+                shadowAlpha = 0.28;
+                shadowH = 4.2;
+            }
+            ctx.save();
+            ctx.fillStyle = `rgba(0,0,0,${shadowAlpha})`;
+            ctx.beginPath();
+            ctx.ellipse(Math.round(cx), Math.round(cy + 14 * s), Math.round(44 * s), Math.round(shadowH * s), 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+
+            // 3. Неоновая подсветка днища
+            if (options.neon && options.neon !== 'none') {
+                ctx.save();
+                ctx.shadowBlur = 18 * s;
+                ctx.shadowColor = options.neon;
+                ctx.fillStyle = options.neon;
+                ctx.globalAlpha = 0.75;
+                ctx.beginPath();
+                ctx.ellipse(Math.round(cx), Math.round(cy + 13.5 * s), Math.round(36 * s), Math.round(4.5 * s), 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Неоновая трубка вдоль порога
+                ctx.fillStyle = '#ffffff';
+                ctx.globalAlpha = 0.9;
+                ctx.fillRect(Math.round(cx - 18 * s), Math.round(cy + (8.5 + bodyYOffset) * s), Math.round(36 * s), Math.max(1, Math.round(1.2 * s)));
+                ctx.restore();
+            }
+
+            // 4. Определение геометрии и пропорций модели
+            let cfg = {
+                rWx: -24,
+                fWx: 24,
+                rearBumperX: -42,
+                frontBumperX: 42,
+                hoodFrontY: 1.5,
+                hoodBackX: 16,
+                hoodBackY: 0.5,
+                roofFrontX: 6,
+                roofRearX: -16,
+                roofY: -12,
+                rearGlassEndX: -28,
+                trunkY: 1.5,
+                chinDrop: 0,
+                noseDrop: 0,
+                bPillars: [0],
+                model: 'default',
+                defaultColor: '#3b82f6'
+            };
+
+            switch(name) {
+                case "ВАЗ-2107 «Жигули»":
+                    cfg = {
+                        rWx: -24, fWx: 24, rearBumperX: -42, frontBumperX: 42,
+                        hoodFrontY: 1.0, hoodBackX: 18, hoodBackY: 1.0,
+                        roofFrontX: 8, roofRearX: -16, roofY: -11.5,
+                        rearGlassEndX: -26, trunkY: 1.2, chinDrop: 0, noseDrop: 0,
+                        bPillars: [0], model: 'vaz2107', defaultColor: '#991b1b'
+                    };
+                    break;
+                case "ВАЗ-2109 «Девятка»":
+                    cfg = {
+                        rWx: -24, fWx: 24, rearBumperX: -40, frontBumperX: 42,
+                        hoodFrontY: 3.0, hoodBackX: 16, hoodBackY: 0.5,
+                        roofFrontX: 8, roofRearX: -18, roofY: -11.5,
+                        rearGlassEndX: -40, trunkY: 3.2, chinDrop: 0, noseDrop: 0,
+                        bPillars: [-3], model: 'vaz2109', defaultColor: '#475569'
+                    };
+                    break;
+                case "ГАЗ-24 «Волга»":
+                    cfg = {
+                        rWx: -26, fWx: 26, rearBumperX: -46, frontBumperX: 46,
+                        hoodFrontY: 0.5, hoodBackX: 17, hoodBackY: 0.5,
+                        roofFrontX: 7, roofRearX: -17, roofY: -12.0,
+                        rearGlassEndX: -27, trunkY: 0.8, chinDrop: 0, noseDrop: 0,
+                        bPillars: [0], model: 'gaz24', defaultColor: '#0f172a'
+                    };
+                    break;
+                case "Lada Priora БПАН":
+                    cfg = {
+                        rWx: -24, fWx: 24, rearBumperX: -41, frontBumperX: 42,
+                        hoodFrontY: 2.0, hoodBackX: 16, hoodBackY: 0.5,
+                        roofFrontX: 6, roofRearX: -16, roofY: -12.0,
+                        rearGlassEndX: -28, trunkY: 1.8, chinDrop: 0, noseDrop: 0,
+                        bPillars: [0], model: 'priora', defaultColor: '#18181b'
+                    };
+                    break;
+                case "Hyundai Solaris":
+                    cfg = {
+                        rWx: -24, fWx: 24, rearBumperX: -41, frontBumperX: 42,
+                        hoodFrontY: 2.5, hoodBackX: 15, hoodBackY: 0.5,
+                        roofFrontX: 5, roofRearX: -15, roofY: -12.5,
+                        rearGlassEndX: -30, trunkY: 1.5, chinDrop: 0, noseDrop: 0,
+                        bPillars: [0], model: 'solaris', defaultColor: '#f8fafc'
+                    };
+                    break;
+                case "Lada Vesta Sport":
+                    cfg = {
+                        rWx: -24, fWx: 24, rearBumperX: -42, frontBumperX: 43,
+                        hoodFrontY: 2.0, hoodBackX: 16, hoodBackY: 0.5,
+                        roofFrontX: 5, roofRearX: -16, roofY: -12.0,
+                        rearGlassEndX: -29, trunkY: 1.8, chinDrop: 0, noseDrop: 0,
+                        bPillars: [0], model: 'vesta', defaultColor: '#dc2626'
+                    };
+                    break;
+                case "Volkswagen Polo":
+                    cfg = {
+                        rWx: -24, fWx: 24, rearBumperX: -41, frontBumperX: 42,
+                        hoodFrontY: 2.2, hoodBackX: 16, hoodBackY: 0.5,
+                        roofFrontX: 6, roofRearX: -16, roofY: -12.2,
+                        rearGlassEndX: -29, trunkY: 1.6, chinDrop: 0, noseDrop: 0,
+                        bPillars: [0], model: 'polo', defaultColor: '#64748b'
+                    };
+                    break;
+                case "Toyota Mark II Tourer V":
+                    cfg = {
+                        rWx: -24, fWx: 24, rearBumperX: -43, frontBumperX: 44,
+                        hoodFrontY: 1.5, hoodBackX: 14, hoodBackY: 0.0,
+                        roofFrontX: 6, roofRearX: -16, roofY: -11.0,
+                        rearGlassEndX: -28, trunkY: 1.2, chinDrop: 0.5, noseDrop: 0,
+                        bPillars: [], model: 'mark2', defaultColor: '#f8fafc'
+                    };
+                    break;
+                case "Subaru Impreza WRX STI":
+                    cfg = {
+                        rWx: -24, fWx: 24, rearBumperX: -42, frontBumperX: 43,
+                        hoodFrontY: 2.0, hoodBackX: 15, hoodBackY: 0.5,
+                        roofFrontX: 6, roofRearX: -16, roofY: -12.0,
+                        rearGlassEndX: -28, trunkY: 1.5, chinDrop: 0.5, noseDrop: 0,
+                        bPillars: [0], model: 'wrx', defaultColor: '#1d4ed8'
+                    };
+                    break;
+                case "BMW M5 E60 V10":
+                    cfg = {
+                        rWx: -25, fWx: 25, rearBumperX: -43, frontBumperX: 44,
+                        hoodFrontY: 1.8, hoodBackX: 16, hoodBackY: 0.5,
+                        roofFrontX: 6, roofRearX: -16, roofY: -12.5,
+                        rearGlassEndX: -29, trunkY: 1.5, chinDrop: 0, noseDrop: 0,
+                        bPillars: [0], model: 'e60', defaultColor: '#334155'
+                    };
+                    break;
+                case "Nissan Silvia S15 Spec-R":
+                    cfg = {
+                        rWx: -24, fWx: 24, rearBumperX: -40, frontBumperX: 42,
+                        hoodFrontY: 3.0, hoodBackX: 12, hoodBackY: 0.2,
+                        roofFrontX: 4, roofRearX: -12, roofY: -10.5,
+                        rearGlassEndX: -26, trunkY: 1.5, chinDrop: 0.5, noseDrop: 0,
+                        bPillars: [], model: 's15', defaultColor: '#0ea5e9'
+                    };
+                    break;
+                case "Toyota Camry 3.5":
+                    cfg = {
+                        rWx: -25, fWx: 25, rearBumperX: -44, frontBumperX: 44,
+                        hoodFrontY: 2.0, hoodBackX: 16, hoodBackY: 0.5,
+                        roofFrontX: 6, roofRearX: -17, roofY: -12.5,
+                        rearGlassEndX: -30, trunkY: 1.5, chinDrop: 0, noseDrop: 0,
+                        bPillars: [0], model: 'camry', defaultColor: '#0f172a'
+                    };
+                    break;
+                case "Toyota Land Cruiser 300":
+                    cfg = {
+                        rWx: -25, fWx: 25, rearBumperX: -43, frontBumperX: 44,
+                        hoodFrontY: -1.5, hoodBackX: 16, hoodBackY: -2.5,
+                        roofFrontX: 8, roofRearX: -28, roofY: -16.5,
+                        rearGlassEndX: -42, trunkY: 0.0, chinDrop: 0, noseDrop: 0,
+                        bPillars: [-10, 4], model: 'lc300', defaultColor: '#f8fafc'
+                    };
+                    break;
+                case "Nissan GT-R R35 Nismo":
+                    cfg = {
+                        rWx: -25, fWx: 25, rearBumperX: -43, frontBumperX: 44,
+                        hoodFrontY: 2.5, hoodBackX: 14, hoodBackY: 0.5,
+                        roofFrontX: 5, roofRearX: -14, roofY: -11.0,
+                        rearGlassEndX: -28, trunkY: 1.5, chinDrop: 0.8, noseDrop: 0,
+                        bPillars: [], model: 'gtr', defaultColor: '#f8fafc'
+                    };
+                    break;
+                case "Mercedes-Benz E63s AMG":
+                    cfg = {
+                        rWx: -25, fWx: 25, rearBumperX: -43, frontBumperX: 44,
+                        hoodFrontY: 2.0, hoodBackX: 16, hoodBackY: 0.5,
+                        roofFrontX: 6, roofRearX: -17, roofY: -12.0,
+                        rearGlassEndX: -30, trunkY: 1.5, chinDrop: 0, noseDrop: 0,
+                        bPillars: [0], model: 'e63s', defaultColor: '#1e293b'
+                    };
+                    break;
+                case "Audi RS6 Avant":
+                    cfg = {
+                        rWx: -25, fWx: 25, rearBumperX: -43, frontBumperX: 44,
+                        hoodFrontY: 2.0, hoodBackX: 16, hoodBackY: 0.5,
+                        roofFrontX: 6, roofRearX: -26, roofY: -12.5,
+                        rearGlassEndX: -42, trunkY: 1.0, chinDrop: 0, noseDrop: 0,
+                        bPillars: [-12, 3], model: 'rs6', defaultColor: '#475569'
+                    };
+                    break;
+                case "BMW M5 F90 Competition":
+                    cfg = {
+                        rWx: -25, fWx: 25, rearBumperX: -43, frontBumperX: 44,
+                        hoodFrontY: 2.0, hoodBackX: 16, hoodBackY: 0.5,
+                        roofFrontX: 6, roofRearX: -17, roofY: -12.5,
+                        rearGlassEndX: -30, trunkY: 1.5, chinDrop: 0.5, noseDrop: 0,
+                        bPillars: [0], model: 'f90', defaultColor: '#0284c7'
+                    };
+                    break;
+                case "BMW M8 Gran Coupe":
+                    cfg = {
+                        rWx: -26, fWx: 26, rearBumperX: -45, frontBumperX: 45,
+                        hoodFrontY: 2.5, hoodBackX: 15, hoodBackY: 0.5,
+                        roofFrontX: 5, roofRearX: -18, roofY: -10.5,
+                        rearGlassEndX: -32, trunkY: 1.5, chinDrop: 0.5, noseDrop: 0,
+                        bPillars: [0], model: 'm8', defaultColor: '#1e1b4b'
+                    };
+                    break;
+                case "Mercedes-Benz G63 AMG «Гелик»":
+                    cfg = {
+                        rWx: -24, fWx: 24, rearBumperX: -40, frontBumperX: 42,
+                        hoodFrontY: -2.0, hoodBackX: 15, hoodBackY: -2.0,
+                        roofFrontX: 10, roofRearX: -32, roofY: -18.0,
+                        rearGlassEndX: -40, trunkY: -2.0, chinDrop: 0, noseDrop: 0,
+                        bPillars: [-18, -4], model: 'gelik', defaultColor: '#09090b'
+                    };
+                    break;
+                case "Porsche 911 Turbo S":
+                    cfg = {
+                        rWx: -24, fWx: 24, rearBumperX: -42, frontBumperX: 42,
+                        hoodFrontY: 3.5, hoodBackX: 12, hoodBackY: 1.5,
+                        roofFrontX: 3, roofRearX: -12, roofY: -10.0,
+                        rearGlassEndX: -34, trunkY: 2.0, chinDrop: 0.5, noseDrop: 0,
+                        bPillars: [], model: 'porsche911', defaultColor: '#eab308'
+                    };
+                    break;
+                case "Lamborghini Huracan Performante":
+                    cfg = {
+                        rWx: -24, fWx: 24, rearBumperX: -42, frontBumperX: 43,
+                        hoodFrontY: 4.0, hoodBackX: 10, hoodBackY: 1.5,
+                        roofFrontX: 0, roofRearX: -12, roofY: -8.5,
+                        rearGlassEndX: -32, trunkY: 2.0, chinDrop: 0.8, noseDrop: 0,
+                        bPillars: [], model: 'huracan', defaultColor: '#22c55e'
+                    };
+                    break;
+                case "Rolls-Royce Cullinan":
+                    cfg = {
+                        rWx: -26, fWx: 26, rearBumperX: -45, frontBumperX: 45,
+                        hoodFrontY: -3.0, hoodBackX: 17, hoodBackY: -3.0,
+                        roofFrontX: 10, roofRearX: -30, roofY: -18.0,
+                        rearGlassEndX: -44, trunkY: -1.0, chinDrop: 0, noseDrop: 0,
+                        bPillars: [-10, 4], model: 'cullinan', defaultColor: '#111827'
+                    };
+                    break;
+                case "Ferrari SF90 Stradale":
+                    cfg = {
+                        rWx: -24, fWx: 24, rearBumperX: -43, frontBumperX: 43,
+                        hoodFrontY: 3.5, hoodBackX: 10, hoodBackY: 1.0,
+                        roofFrontX: 0, roofRearX: -13, roofY: -8.5,
+                        rearGlassEndX: -32, trunkY: 2.0, chinDrop: 0.8, noseDrop: 0,
+                        bPillars: [], model: 'sf90', defaultColor: '#ef4444'
+                    };
+                    break;
+                case "Bugatti Chiron Super Sport":
+                    cfg = {
+                        rWx: -25, fWx: 25, rearBumperX: -45, frontBumperX: 44,
+                        hoodFrontY: 3.0, hoodBackX: 12, hoodBackY: 1.0,
+                        roofFrontX: 2, roofRearX: -14, roofY: -9.0,
+                        rearGlassEndX: -35, trunkY: 2.0, chinDrop: 0.8, noseDrop: 0,
+                        bPillars: [], model: 'chiron', defaultColor: '#1e3a8a'
+                    };
+                    break;
+                case "Koenigsegg Jesko Attack":
+                    cfg = {
+                        rWx: -25, fWx: 25, rearBumperX: -44, frontBumperX: 44,
+                        hoodFrontY: 3.5, hoodBackX: 11, hoodBackY: 1.0,
+                        roofFrontX: 0, roofRearX: -14, roofY: -8.5,
+                        rearGlassEndX: -32, trunkY: 2.0, chinDrop: 1.0, noseDrop: 0,
+                        bPillars: [], model: 'jesko', defaultColor: '#e2e8f0'
+                    };
+                    break;
+                case "ДПС / Полиция":
+                    cfg = {
+                        rWx: -24, fWx: 24, rearBumperX: -42, frontBumperX: 42,
+                        hoodFrontY: 2.0, hoodBackX: 16, hoodBackY: 0.5,
+                        roofFrontX: 6, roofRearX: -16, roofY: -12.0,
+                        rearGlassEndX: -28, trunkY: 1.5, chinDrop: 0, noseDrop: 0,
+                        bPillars: [0], model: 'police', defaultColor: '#ffffff'
+                    };
+                    break;
+                case "КАМАЗ / Фура":
+                    cfg = {
+                        rWx: -24, fWx: 24, rearBumperX: -44, frontBumperX: 36,
+                        hoodFrontY: -18.0, hoodBackX: 18, hoodBackY: -18.0,
+                        roofFrontX: 18, roofRearX: -44, roofY: -24.0,
+                        rearGlassEndX: -44, trunkY: -4.0, chinDrop: 0, noseDrop: 0,
+                        bPillars: [], model: 'kamaz', defaultColor: '#f59e0b'
+                    };
+                    break;
+                case "Дорожный конус":
+                    fillRound(-6, 11, 12, 3, 1, '#18181b');
+                    fillPoly([[-5, 11], [5, 11], [1.5, -6], [-1.5, -6]], '#ea580c');
+                    fillPoly([[-3, 4], [3, 4], [2, -1], [-2, -1]], '#ffffff');
+                    fillPoly([[-1.5, -6], [1.5, -6], [0.8, -9], [-0.8, -9]], '#f97316');
+                    if (options.tilt) ctx.restore();
+                    return;
+                default:
+                    cfg = {
+                        rWx: -24, fWx: 24, rearBumperX: -42, frontBumperX: 42,
+                        hoodFrontY: 2.0, hoodBackX: 16, hoodBackY: 0.5,
+                        roofFrontX: 6, roofRearX: -16, roofY: -12.0,
+                        rearGlassEndX: -28, trunkY: 1.5, chinDrop: 0, noseDrop: 0,
+                        bPillars: [0], model: 'default', defaultColor: '#3b82f6'
+                    };
+                    break;
+            }
+
+            const bt = getBodyTones(cfg.defaultColor);
+            const { rWx, fWx, rearBumperX, frontBumperX, hoodFrontY, hoodBackX, hoodBackY, roofFrontX, roofRearX, roofY, rearGlassEndX, trunkY, chinDrop, noseDrop, bPillars, model } = cfg;
+            const sillY = 7.2 + bodyYOffset;
+            const archCenterY = 6.5 + bodyYOffset;
+
+            // 5. Внутренние ниши колесных арок и пружины подвески (LIFT)
+            ctx.save();
+            ctx.fillStyle = '#09090b';
+            ctx.beginPath();
+            ctx.arc(Math.round(cx + rWx * s), Math.round(cy + archCenterY * s), 9.2 * s, Math.PI, 0, false);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(Math.round(cx + fWx * s), Math.round(cy + archCenterY * s), 9.2 * s, Math.PI, 0, false);
+            ctx.fill();
+
+            if (options.suspension === 'lift') {
+                for (const wx of [rWx, fWx]) {
+                    const archCx = Math.round(cx + wx * s);
+                    const archTop = Math.round(cy + (archCenterY - 8.5) * s);
+                    ctx.fillStyle = '#64748b';
+                    ctx.fillRect(archCx - 1 * s, archTop, 2 * s, 6 * s);
+                    ctx.fillStyle = '#ef4444';
+                    for (let k = 0; k < 4; k++) {
+                        ctx.fillRect(archCx - 3.2 * s, archTop + (1.2 + k * 1.3) * s, 6.4 * s, 0.9 * s);
+                    }
+                }
+            }
+            ctx.restore();
+
+            // Круглые колеса в профиль
+            const drawSideWheel = (wx, wy, isFront = false) => {
+                const rad = 7.5;
+                const rimR = 4.8;
+                const wpx = Math.round(cx + wx * s);
+                const wpy = Math.round(cy + wy * s);
+
+                ctx.save();
+
+                // 1. Шина (резина)
+                ctx.fillStyle = '#111318';
+                ctx.beginPath();
+                ctx.arc(wpx, wpy, rad * s, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = '#1e222d';
+                ctx.lineWidth = 1 * s;
+                ctx.stroke();
+
+                // Внедорожные грунтозацепы на протекторе при подвеске LIFT
+                if (options.suspension === 'lift') {
+                    ctx.fillStyle = '#09090b';
+                    for (let a = 0; a < Math.PI * 2; a += Math.PI / 6) {
+                        const tx = wpx + Math.cos(a) * (rad + 0.6) * s;
+                        const ty = wpy + Math.sin(a) * (rad + 0.6) * s;
+                        ctx.fillRect(tx - 0.9 * s, ty - 0.9 * s, 1.8 * s, 1.8 * s);
+                    }
+                }
+
+                // 2. Тормозная система за диском
+                if (options.wheels !== 'stamps') {
+                    const discR = rimR * 0.82;
+                    ctx.fillStyle = '#94a3b8';
+                    ctx.beginPath();
+                    ctx.arc(wpx, wpy, discR * s, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Перфорация на диске
+                    ctx.fillStyle = '#334155';
+                    for (let a = 0; a < Math.PI * 2; a += Math.PI / 3) {
+                        const hx = wpx + Math.cos(a) * (discR * 0.65) * s;
+                        const hy = wpy + Math.sin(a) * (discR * 0.65) * s;
+                        ctx.fillRect(hx - 0.4 * s, hy - 0.4 * s, 0.8 * s, 0.8 * s);
+                    }
+
+                    // Суппорт
+                    const calAngle = isFront ? (Math.PI * 1.25) : (Math.PI * 1.75);
+                    let calCol = '#475569';
+                    if (options.wheels === 'forged') calCol = '#dc2626';
+                    else if (options.wheels === 'deepdish') calCol = '#f59e0b';
+
+                    ctx.fillStyle = calCol;
+                    ctx.beginPath();
+                    ctx.arc(wpx, wpy, discR * s, calAngle - 0.35, calAngle + 0.35);
+                    ctx.arc(wpx, wpy, (discR * 0.5) * s, calAngle + 0.35, calAngle - 0.35, true);
+                    ctx.closePath();
+                    ctx.fill();
+
+                    if (options.wheels === 'forged') {
+                        ctx.fillStyle = '#ffffff';
+                        const calMidX = wpx + Math.cos(calAngle) * (discR * 0.75) * s;
+                        const calMidY = wpy + Math.sin(calAngle) * (discR * 0.75) * s;
+                        ctx.fillRect(calMidX - 1 * s, calMidY - 0.4 * s, 2 * s, 0.8 * s);
+                    }
+                }
+
+                // 3. Диски
+                if (options.wheels === 'stamps') {
+                    // Штампы: глубокие черные стальные диски с перфорацией и хромированным колпачком
+                    ctx.fillStyle = '#18181b';
+                    ctx.beginPath();
+                    ctx.arc(wpx, wpy, rimR * s, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.strokeStyle = '#27272a';
+                    ctx.lineWidth = 1 * s;
+                    ctx.stroke();
+
+                    ctx.fillStyle = '#09090b';
+                    const stampHoleR = rimR * 0.62;
+                    for (let a = 0; a < Math.PI * 2; a += Math.PI / 4) {
+                        const shx = wpx + Math.cos(a) * stampHoleR * s;
+                        const shy = wpy + Math.sin(a) * stampHoleR * s;
+                        ctx.beginPath();
+                        ctx.arc(shx, shy, 0.85 * s, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.strokeStyle = '#3f3f46';
+                        ctx.lineWidth = 0.5 * s;
+                        ctx.stroke();
+                    }
+
+                    ctx.fillStyle = '#f1f5f9';
+                    ctx.beginPath();
+                    ctx.arc(wpx, wpy, 1.7 * s, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.fillStyle = '#cbd5e1';
+                    ctx.beginPath();
+                    ctx.arc(wpx - 0.3 * s, wpy - 0.3 * s, 1.1 * s, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.fillStyle = '#09090b';
+                    for (let a = 0; a < Math.PI * 2; a += Math.PI / 2) {
+                        ctx.fillRect(wpx + Math.cos(a) * 1.1 * s - 0.3 * s, wpy + Math.sin(a) * 1.1 * s - 0.3 * s, 0.6 * s, 0.6 * s);
+                    }
+                } else if (options.wheels === 'deepdish') {
+                    // Полки / Разварки: ступенчатый хром + золотая сетка + заклепки
+                    ctx.fillStyle = '#f8fafc';
+                    ctx.beginPath();
+                    ctx.arc(wpx, wpy, rimR * s, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    ctx.fillStyle = '#cbd5e1';
+                    ctx.beginPath();
+                    ctx.arc(wpx, wpy, (rimR * 0.88) * s, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    ctx.fillStyle = '#f1f5f9';
+                    ctx.beginPath();
+                    ctx.arc(wpx, wpy, (rimR * 0.78) * s, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    ctx.fillStyle = '#0f172a';
+                    ctx.beginPath();
+                    ctx.arc(wpx, wpy, (rimR * 0.66) * s, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    ctx.fillStyle = '#ffffff';
+                    for (let a = 0; a < Math.PI * 2; a += Math.PI / 6) {
+                        const rx = wpx + Math.cos(a) * (rimR * 0.72) * s;
+                        const ry = wpy + Math.sin(a) * (rimR * 0.72) * s;
+                        ctx.fillRect(rx - 0.35 * s, ry - 0.35 * s, 0.7 * s, 0.7 * s);
+                    }
+
+                    ctx.strokeStyle = '#eab308';
+                    ctx.lineWidth = 1.1 * s;
+                    for (let a = 0; a < Math.PI; a += Math.PI / 5) {
+                        ctx.beginPath();
+                        ctx.moveTo(wpx + Math.cos(a) * (rimR * 0.58) * s, wpy + Math.sin(a) * (rimR * 0.58) * s);
+                        ctx.lineTo(wpx - Math.cos(a) * (rimR * 0.58) * s, wpy - Math.sin(a) * (rimR * 0.58) * s);
+                        ctx.stroke();
+                    }
+
+                    ctx.fillStyle = '#ca8a04';
+                    ctx.beginPath();
+                    ctx.arc(wpx, wpy, 1.4 * s, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.fillStyle = '#fef08a';
+                    ctx.beginPath();
+                    ctx.arc(wpx, wpy, 0.7 * s, 0, Math.PI * 2);
+                    ctx.fill();
+                } else if (options.wheels === 'forged') {
+                    // Кованые спорт: титан, тонкие сдвоенные спицы
+                    ctx.strokeStyle = '#e2e8f0';
+                    ctx.lineWidth = 0.8 * s;
+                    ctx.beginPath();
+                    ctx.arc(wpx, wpy, rimR * s, 0, Math.PI * 2);
+                    ctx.stroke();
+
+                    ctx.strokeStyle = '#94a3b8';
+                    ctx.lineWidth = 0.9 * s;
+                    for (let a = 0; a < Math.PI * 2; a += (Math.PI * 2) / 5) {
+                        const a1 = a - 0.14;
+                        const a2 = a + 0.14;
+                        ctx.beginPath();
+                        ctx.moveTo(wpx + Math.cos(a1) * (rimR * 0.92) * s, wpy + Math.sin(a1) * (rimR * 0.92) * s);
+                        ctx.lineTo(wpx + Math.cos(a) * 1.2 * s, wpy + Math.sin(a) * 1.2 * s);
+                        ctx.lineTo(wpx + Math.cos(a2) * (rimR * 0.92) * s, wpy + Math.sin(a2) * (rimR * 0.92) * s);
+                        ctx.stroke();
+                    }
+
+                    ctx.fillStyle = '#0f172a';
+                    ctx.beginPath();
+                    ctx.arc(wpx, wpy, 1.3 * s, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.strokeStyle = '#e2e8f0';
+                    ctx.lineWidth = 0.5 * s;
+                    ctx.stroke();
+
+                    ctx.fillStyle = '#64748b';
+                    for (let a = 0; a < Math.PI * 2; a += (Math.PI * 2) / 5) {
+                        ctx.fillRect(wpx + Math.cos(a) * 0.9 * s - 0.25 * s, wpy + Math.sin(a) * 0.9 * s - 0.25 * s, 0.5 * s, 0.5 * s);
+                    }
+                } else {
+                    // Заводские диски
+                    ctx.strokeStyle = '#cbd5e1';
+                    ctx.lineWidth = 0.9 * s;
+                    ctx.beginPath();
+                    ctx.arc(wpx, wpy, rimR * s, 0, Math.PI * 2);
+                    ctx.stroke();
+
+                    ctx.strokeStyle = '#94a3b8';
+                    ctx.lineWidth = 1.6 * s;
+                    for (let a = 0; a < Math.PI * 2; a += (Math.PI * 2) / 5) {
+                        ctx.beginPath();
+                        ctx.moveTo(wpx, wpy);
+                        ctx.lineTo(wpx + Math.cos(a) * (rimR * 0.9) * s, wpy + Math.sin(a) * (rimR * 0.9) * s);
+                        ctx.stroke();
+                    }
+
+                    ctx.fillStyle = '#e2e8f0';
+                    ctx.beginPath();
+                    ctx.arc(wpx, wpy, 1.4 * s, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.fillStyle = '#0f172a';
+                    ctx.beginPath();
+                    ctx.arc(wpx, wpy, 0.5 * s, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                ctx.restore();
+            };
+
+            // 6. Отрисовка колес (диски, тормоза, резина)
+            // Положение колес строго фиксировано на уровне земли
+            drawSideWheel(rWx, 6.5, false);
+            drawSideWheel(fWx, 6.5, true);
+
+            // 7. Основной силуэт кузова с анатомическими вырезами под колеса
+            ctx.save();
+            ctx.beginPath();
+            ctx.moveTo(Math.round(cx + rearBumperX * s), Math.round(cy + sillY * s));
+            ctx.lineTo(Math.round(cx + (rWx - 9.2) * s), Math.round(cy + sillY * s));
+            ctx.arc(Math.round(cx + rWx * s), Math.round(cy + archCenterY * s), 9.2 * s, Math.PI, 0, false);
+            ctx.lineTo(Math.round(cx + (fWx - 9.2) * s), Math.round(cy + sillY * s));
+            ctx.arc(Math.round(cx + fWx * s), Math.round(cy + archCenterY * s), 9.2 * s, Math.PI, 0, false);
+            ctx.lineTo(Math.round(cx + frontBumperX * s), Math.round(cy + (sillY + chinDrop) * s));
+            ctx.lineTo(Math.round(cx + frontBumperX * s), Math.round(cy + (hoodFrontY + bodyYOffset + noseDrop) * s));
+            ctx.lineTo(Math.round(cx + hoodBackX * s), Math.round(cy + (hoodBackY + bodyYOffset) * s));
+            ctx.lineTo(Math.round(cx + roofFrontX * s), Math.round(cy + (roofY + bodyYOffset) * s));
+            ctx.lineTo(Math.round(cx + roofRearX * s), Math.round(cy + (roofY + bodyYOffset) * s));
+            ctx.lineTo(Math.round(cx + rearGlassEndX * s), Math.round(cy + (trunkY + bodyYOffset) * s));
+            ctx.lineTo(Math.round(cx + rearBumperX * s), Math.round(cy + (trunkY + bodyYOffset) * s));
+            ctx.closePath();
+
+            const bodyGrad = (ctx && typeof ctx.createLinearGradient === 'function')
+                ? ctx.createLinearGradient(0, Math.round(cy + (roofY + bodyYOffset) * s), 0, Math.round(cy + sillY * s))
+                : null;
+            if (bodyGrad && typeof bodyGrad.addColorStop === 'function') {
+                bodyGrad.addColorStop(0, bt.light);
+                bodyGrad.addColorStop(0.25, bt.mid);
+                bodyGrad.addColorStop(0.85, bt.mid);
+                bodyGrad.addColorStop(1, bt.dark);
+                ctx.fillStyle = bodyGrad;
+            } else {
+                ctx.fillStyle = bt.mid;
+            }
+            ctx.fill();
+
+            // Тонкая окантовка кузова и колесных арок
+            ctx.strokeStyle = bt.darkest;
+            ctx.lineWidth = 1 * s;
+            ctx.stroke();
+
+            ctx.strokeStyle = bt.light;
+            ctx.lineWidth = 0.8 * s;
+            ctx.beginPath();
+            ctx.arc(Math.round(cx + rWx * s), Math.round(cy + archCenterY * s), 9.6 * s, Math.PI, 0, false);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.arc(Math.round(cx + fWx * s), Math.round(cy + archCenterY * s), 9.6 * s, Math.PI, 0, false);
+            ctx.stroke();
+            ctx.restore();
+
+            // 8. Фирменные элементы моделей
+            if (model === 'vaz2107') {
+                // Хромированные бамперы с черной резиновой вставкой
+                fillRound(rearBumperX - 2.5, sillY - 2, 4.5, 3.0, 1, '#f1f5f9', '#94a3b8', 0.5);
+                px(rearBumperX - 2.5, sillY - 1, 4.5, 1.2, '#0f172a');
+                fillRound(frontBumperX - 1.5, sillY - 2, 4.5, 3.0, 1, '#f1f5f9', '#94a3b8', 0.5);
+                px(frontBumperX - 1.5, sillY - 1, 4.5, 1.2, '#0f172a');
+                // Высокая хромированная решетка-утюг спереди
+                fillRound(frontBumperX - 1.5, hoodFrontY + bodyYOffset - 0.5, 2.5, 4.5, 0.5, '#f8fafc', '#64748b', 0.5);
+                // Хромированные дверные ручки
+                px(1, hoodBackY + bodyYOffset + 2.5, 3.5, 1.0, '#f8fafc');
+                px(-12, hoodBackY + bodyYOffset + 2.5, 3.5, 1.0, '#f8fafc');
+            } else if (model === 'vaz2109') {
+                // Массивные черные пластиковые бамперы и молдинги «Девятки»
+                fillRound(rearBumperX - 2.0, sillY - 3.5, 5.0, 4.5, 1, '#18181b', '#27272a', 0.5);
+                fillRound(frontBumperX - 2.5, sillY - 3.5, 5.5, 4.5, 1, '#18181b', '#27272a', 0.5);
+                px(-14, sillY - 3.5, 28, 2.0, '#18181b');
+                // Черные ручки
+                px(1, hoodBackY + bodyYOffset + 2.5, 3.2, 1.2, '#09090b');
+                px(-12, hoodBackY + bodyYOffset + 2.5, 3.2, 1.2, '#09090b');
+            } else if (model === 'gaz24') {
+                // Массивные хромированные бамперы с клыками
+                fillRound(rearBumperX - 3.0, sillY - 2.5, 5.0, 3.5, 1, '#f8fafc', '#94a3b8', 0.6);
+                fillRound(frontBumperX - 1.5, sillY - 2.5, 5.0, 3.5, 1, '#f8fafc', '#94a3b8', 0.6);
+                // Хромированный молдинг по всей длине борта
+                px(rearBumperX + 2, hoodBackY + bodyYOffset + 2.5, (frontBumperX - rearBumperX - 4), 1.2, '#f8fafc');
+                // Хромированные ручки и эмблема на задней стойке
+                px(2, hoodBackY + bodyYOffset + 3.8, 3.5, 1.0, '#f8fafc');
+                px(-12, hoodBackY + bodyYOffset + 3.8, 3.5, 1.0, '#f8fafc');
+                fillRound(roofRearX - 3.5, roofY + bodyYOffset + 5, 2.0, 2.0, 0.5, '#f8fafc');
+            } else if (model === 'vesta') {
+                // Фирменные X-выштамповки на боковинах Vesta Sport
+                ctx.save();
+                ctx.strokeStyle = bt.dark;
+                ctx.lineWidth = 1.2 * s;
+                ctx.beginPath();
+                ctx.moveTo(Math.round(cx + 8 * s), Math.round(cy + (hoodBackY + bodyYOffset + 2) * s));
+                ctx.lineTo(Math.round(cx + 18 * s), Math.round(cy + (sillY - 2) * s));
+                ctx.moveTo(Math.round(cx + 18 * s), Math.round(cy + (hoodBackY + bodyYOffset + 2) * s));
+                ctx.lineTo(Math.round(cx + 8 * s), Math.round(cy + (sillY - 2) * s));
+                ctx.stroke();
+                // Красная спортивная линия на пороге
+                px(rWx + 10, sillY - 1.2, (fWx - rWx - 20), 1.0, '#ef4444');
+                ctx.restore();
+            } else if (model === 'wrx') {
+                // Воздухозаборник STI на капоте
+                fillRound(hoodBackX + 2, hoodBackY + bodyYOffset - 2.2, 5.5, 2.2, 0.6, '#0f172a', '#1e293b', 0.5);
+                px(hoodBackX + 2.5, hoodBackY + bodyYOffset - 1.6, 4.5, 0.8, '#f8fafc');
+            } else if (model === 'gelik') {
+                // Культовые черные молдинги и дверные петли Гелика
+                px(rearBumperX + 1, hoodFrontY + bodyYOffset + 1.5, (frontBumperX - rearBumperX - 2), 1.5, '#09090b');
+                // Петли дверей
+                px(4, hoodBackY + bodyYOffset + 4, 1.2, 2.0, '#09090b');
+                px(-10, hoodBackY + bodyYOffset + 4, 1.2, 2.0, '#09090b');
+                // Боковые поворотники на крыльях
+                fillRound(frontBumperX - 6, hoodFrontY + bodyYOffset - 2.0, 2.5, 1.5, 0.5, '#f59e0b');
+                // Двойной выхлоп AMG сбоку перед задним колесом
+                fillRound(rWx + 9.5, sillY - 1.5, 3.8, 1.8, 0.5, '#cbd5e1', '#334155', 0.5);
+                px(rWx + 9.5, sillY - 1.0, 1.5, 0.8, '#09090b');
+                px(rWx + 11.5, sillY - 1.0, 1.5, 0.8, '#09090b');
+            } else if (model === 'lc300' || model === 'cullinan') {
+                // Подножка внедорожника
+                fillRound(rWx + 9.5, sillY - 0.5, (fWx - rWx - 19), 2.2, 0.5, '#18181b', '#334155', 0.5);
+                px(rWx + 10.5, sillY, (fWx - rWx - 21), 0.8, '#94a3b8');
+            } else if (model === 'huracan') {
+                // Итальянский триколор на пороге Huracan
+                const flagW = 14;
+                px(-7, sillY - 1.2, flagW / 3, 1.0, '#22c55e');
+                px(-7 + flagW / 3, sillY - 1.2, flagW / 3, 1.0, '#ffffff');
+                px(-7 + (flagW / 3) * 2, sillY - 1.2, flagW / 3, 1.0, '#ef4444');
+                // Воздухозаборник за дверью
+                fillPoly([[-12, hoodBackY + bodyYOffset + 2], [-6, hoodBackY + bodyYOffset + 1], [-7, sillY - 2], [-14, sillY - 2]], '#09090b');
+            } else if (model === 'porsche911') {
+                // Воздухозаборник Turbo на заднем крыле
+                fillRound(rWx - 2, hoodBackY + bodyYOffset + 1, 4.0, 3.0, 0.8, '#09090b', '#1e293b', 0.5);
+            } else if (model === 'chiron') {
+                // Легендарная подкова Bugatti C-Line вокруг кабины
+                ctx.save();
+                ctx.strokeStyle = '#f8fafc';
+                ctx.lineWidth = 1.8 * s;
+                ctx.beginPath();
+                ctx.moveTo(Math.round(cx + (roofFrontX + 4) * s), Math.round(cy + (hoodBackY + bodyYOffset + 1) * s));
+                ctx.lineTo(Math.round(cx + (roofFrontX - 2) * s), Math.round(cy + (roofY + bodyYOffset - 0.5) * s));
+                ctx.lineTo(Math.round(cx + (roofRearX - 2) * s), Math.round(cy + (roofY + bodyYOffset - 0.5) * s));
+                ctx.arc(Math.round(cx + (roofRearX - 2) * s), Math.round(cy + (hoodBackY + bodyYOffset + 2) * s), 6 * s, -Math.PI / 2, Math.PI / 2, true);
+                ctx.lineTo(Math.round(cx + (roofFrontX + 2) * s), Math.round(cy + (sillY - 1.5) * s));
+                ctx.stroke();
+                ctx.restore();
+            } else if (model === 'police') {
+                // Синяя полоса ДПС и надпись
+                px(-22, hoodBackY + bodyYOffset + 2, 44, 3.5, '#1d4ed8');
+                px(-12, hoodBackY + bodyYOffset + 3, 24, 1.5, '#ffffff');
+            }
+
+            // 9. Боковые стекла и тонировка
+            const drawSideWindows = (poly, pillars = [0]) => {
+                if (!poly || poly.length < 3) return;
+
+                // Салон внутри автомобиля
+                const salPoly = poly.map(pt => [pt[0], pt[1] + bodyYOffset]);
+                fillPoly(salPoly, '#090d16');
+
+                // Подголовник кресла и контур руля
+                ctx.save();
+                ctx.fillStyle = '#1e293b';
+                const headX = Math.round(cx + 2 * s);
+                const headY = Math.round(cy + (poly[1][1] + 3 + bodyYOffset) * s);
+                ctx.beginPath();
+                ctx.arc(headX, headY, 1.8 * s, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.strokeStyle = '#334155';
+                ctx.lineWidth = 1.0 * s;
+                ctx.beginPath();
+                ctx.arc(Math.round(cx + 12 * s), headY + 1 * s, 2.0 * s, Math.PI * 0.4, Math.PI * 1.6);
+                ctx.stroke();
+                ctx.restore();
+
+                // Нанесение тонировки
+                ctx.save();
+                ctx.beginPath();
+                ctx.moveTo(Math.round(cx + poly[0][0] * s), Math.round(cy + (poly[0][1] + bodyYOffset) * s));
+                for (let i = 1; i < poly.length; i++) {
+                    ctx.lineTo(Math.round(cx + poly[i][0] * s), Math.round(cy + (poly[i][1] + bodyYOffset) * s));
+                }
+                ctx.closePath();
+                ctx.clip();
+
+                if (options.tint === 'chameleon') {
+                    // Хамелеон: переливающийся градиент
+                    const topY = cy + (poly[1][1] + bodyYOffset) * s;
+                    const botY = cy + (poly[0][1] + bodyYOffset) * s;
+                    const chamGrad = (ctx && typeof ctx.createLinearGradient === 'function')
+                        ? ctx.createLinearGradient(cx - 20 * s, topY, cx + 25 * s, botY)
+                        : null;
+                    if (chamGrad && typeof chamGrad.addColorStop === 'function') {
+                        chamGrad.addColorStop(0, 'rgba(124, 58, 237, 0.78)');
+                        chamGrad.addColorStop(0.35, 'rgba(37, 99, 235, 0.72)');
+                        chamGrad.addColorStop(0.70, 'rgba(6, 182, 212, 0.76)');
+                        chamGrad.addColorStop(1, 'rgba(217, 70, 239, 0.78)');
+                        ctx.fillStyle = chamGrad;
+                    } else {
+                        ctx.fillStyle = 'rgba(6, 182, 212, 0.75)';
+                    }
+                    ctx.fill();
+
+                    // Белый глянцевый блик
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
+                    ctx.beginPath();
+                    ctx.moveTo(cx - 8 * s, topY);
+                    ctx.lineTo(cx - 1 * s, topY);
+                    ctx.lineTo(cx + 9 * s, botY);
+                    ctx.lineTo(cx + 2 * s, botY);
+                    ctx.closePath();
+                    ctx.fill();
+                } else if (options.tint === 'dubai') {
+                    // Дубайка: зеркальный хром с линией горизонта
+                    const topY = cy + (poly[1][1] + bodyYOffset) * s;
+                    const botY = cy + (poly[0][1] + bodyYOffset) * s;
+                    const dubaiGrad = (ctx && typeof ctx.createLinearGradient === 'function')
+                        ? ctx.createLinearGradient(cx, topY, cx, botY)
+                        : null;
+                    if (dubaiGrad && typeof dubaiGrad.addColorStop === 'function') {
+                        dubaiGrad.addColorStop(0, 'rgba(56, 189, 248, 0.92)');
+                        dubaiGrad.addColorStop(0.48, 'rgba(248, 250, 252, 0.98)');
+                        dubaiGrad.addColorStop(0.52, 'rgba(226, 232, 240, 0.98)');
+                        dubaiGrad.addColorStop(1, 'rgba(30, 41, 59, 0.92)');
+                        ctx.fillStyle = dubaiGrad;
+                    } else {
+                        ctx.fillStyle = 'rgba(226, 232, 240, 0.92)';
+                    }
+                    ctx.fill();
+
+                    // Зеркальный диагональный блик
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.65)';
+                    ctx.beginPath();
+                    ctx.moveTo(cx + 2 * s, topY);
+                    ctx.lineTo(cx + 6 * s, topY);
+                    ctx.lineTo(cx + 15 * s, botY);
+                    ctx.lineTo(cx + 11 * s, botY);
+                    ctx.closePath();
+                    ctx.fill();
+                } else if (Number(options.tint) >= 95) {
+                    ctx.fillStyle = 'rgba(10, 10, 16, 0.96)';
+                    ctx.fill();
+                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.25)';
+                    ctx.lineWidth = 0.8 * s;
+                    ctx.stroke();
+                } else if (Number(options.tint) >= 50) {
+                    ctx.fillStyle = 'rgba(24, 30, 44, 0.62)';
+                    ctx.fill();
+                } else {
+                    ctx.fillStyle = 'rgba(186, 230, 253, 0.22)';
+                    ctx.fill();
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
+                    ctx.fillRect(Math.round(cx - 6 * s), Math.round(cy + (poly[1][1] + bodyYOffset) * s), Math.round(16 * s), Math.round(1.5 * s));
+                }
+                ctx.restore();
+
+                // Стойки крыши B-Pillar
+                for (const bx of pillars) {
+                    fillRound(bx - 1.2, poly[1][1] + bodyYOffset - 0.5, 2.4, (poly[0][1] - poly[1][1]) + 1, 0.5, '#0f172a');
+                }
+            };
+
+            const winPoly = [
+                [rearGlassEndX + 1.5, trunkY + 0.5],
+                [roofRearX + 0.8, roofY + 1.2],
+                [roofFrontX - 0.8, roofY + 1.2],
+                [hoodBackX - 0.5, hoodBackY + 0.5]
+            ];
+            drawSideWindows(winPoly, bPillars);
+
+            // 10. Боковые зеркала заднего вида
+            fillRound(hoodBackX - 1.5, hoodBackY + bodyYOffset - 1.5, 3.2, 2.2, 0.8, bt.dark, '#09090b', 0.5);
+            px(hoodBackX - 1.0, hoodBackY + bodyYOffset - 1.0, 1.2, 1.2, '#38bdf8');
+
+            // 11. Фара головного света (спереди справа)
+            fillRound(frontBumperX - 3.2, hoodFrontY + bodyYOffset, 3.2, 3.0, 1, '#f8fafc', '#94a3b8', 0.5);
+            px(frontBumperX - 1.5, hoodFrontY + bodyYOffset + 0.6, 1.5, 1.6, '#38bdf8');
+
+            if (options.lightsOn) {
+                ctx.save();
+                const beamGrad = (ctx && typeof ctx.createLinearGradient === 'function')
+                    ? ctx.createLinearGradient(cx + frontBumperX * s, cy + (hoodFrontY + bodyYOffset + 1.5) * s, cx + (frontBumperX + 45) * s, cy + (hoodFrontY + bodyYOffset + 1.5) * s)
+                    : null;
+                if (beamGrad && typeof beamGrad.addColorStop === 'function') {
+                    beamGrad.addColorStop(0, 'rgba(254, 240, 138, 0.45)');
+                    beamGrad.addColorStop(0.3, 'rgba(254, 240, 138, 0.18)');
+                    beamGrad.addColorStop(1, 'rgba(254, 240, 138, 0)');
+                    ctx.fillStyle = beamGrad;
+                    ctx.beginPath();
+                    ctx.moveTo(cx + frontBumperX * s, cy + (hoodFrontY + bodyYOffset + 1.5) * s);
+                    ctx.lineTo(cx + (frontBumperX + 45) * s, cy + (hoodFrontY + bodyYOffset - 8) * s);
+                    ctx.lineTo(cx + (frontBumperX + 45) * s, cy + (hoodFrontY + bodyYOffset + 14) * s);
+                    ctx.closePath();
+                    ctx.fill();
+                }
+                ctx.restore();
+            }
+
+            // 12. Задний фонарь (сзади слева)
+            fillRound(rearBumperX, trunkY + bodyYOffset, 3.5, 2.8, 0.8, '#dc2626', '#7f1d1d', 0.5);
+            px(rearBumperX + 0.5, trunkY + bodyYOffset + 0.6, 2.5, 1.2, '#ef4444');
+
+            // 13. Выхлопные патрубки (кроме Гелика с боковым выхлопом)
+            if (model !== 'gelik') {
+                fillRound(rearBumperX - 1.5, sillY - 2.0, 3.2, 1.8, 0.5, '#cbd5e1', '#334155', 0.5);
+                px(rearBumperX - 1.5, sillY - 1.6, 0.8, 1.0, '#09090b');
+            }
+
+            // 14. Спойлер / антикрыло
+            if (options.spoiler && options.spoiler !== 'none') {
+                const spTrunkTop = trunkY + bodyYOffset;
+                if (options.spoiler === 'ducktail') {
+                    ctx.save();
+                    ctx.fillStyle = '#18181b';
+                    ctx.beginPath();
+                    ctx.moveTo(Math.round(cx + (rearBumperX + 8) * s), Math.round(cy + spTrunkTop * s));
+                    ctx.lineTo(Math.round(cx + (rearBumperX - 1) * s), Math.round(cy + (spTrunkTop - 3.5) * s));
+                    ctx.lineTo(Math.round(cx + (rearBumperX - 2.5) * s), Math.round(cy + (spTrunkTop - 1.5) * s));
+                    ctx.lineTo(Math.round(cx + (rearBumperX + 4) * s), Math.round(cy + (spTrunkTop + 1.2) * s));
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.fillStyle = '#52525b';
+                    ctx.fillRect(Math.round(cx + (rearBumperX - 1) * s), Math.round(cy + (spTrunkTop - 3.5) * s), Math.round(4 * s), Math.round(0.8 * s));
+                    ctx.restore();
+                } else if (options.spoiler === 'gt') {
+                    ctx.save();
+                    const wTop = spTrunkTop - 8.5;
+                    ctx.fillStyle = '#09090b';
+                    ctx.fillRect(Math.round(cx + (rearBumperX + 1.5) * s), Math.round(cy + wTop * s), Math.round(1.5 * s), Math.round(8.5 * s));
+                    ctx.fillRect(Math.round(cx + (rearBumperX + 6.5) * s), Math.round(cy + wTop * s), Math.round(1.5 * s), Math.round(8.5 * s));
+                    fillRound(rearBumperX - 3, wTop - 1, 14, 2.2, 0.8, '#18181b', '#3f3f46', 0.6);
+                    px(rearBumperX - 2, wTop - 0.8, 12, 0.7, '#71717a');
+                    fillRound(rearBumperX - 3.5, wTop - 3, 2.2, 5.5, 0.5, '#09090b', '#ef4444', 0.5);
+                    ctx.restore();
+                }
+            }
+
+            // 15. Винилография на боковине
+            if (options.vinyl && options.vinyl !== 'none') {
+                if (options.vinyl === 'stripes') {
+                    const isLight = options.color && (options.color.toLowerCase().startsWith('#ff') || options.color.toLowerCase().startsWith('#fff') || options.color.toLowerCase().startsWith('#e2'));
+                    const stripeCol = isLight ? '#0f172a' : '#ffffff';
+                    ctx.save();
+                    ctx.globalAlpha = 0.88;
+                    px(rWx + 10, sillY - 2.8, (fWx - rWx - 20), 2.2, stripeCol);
+                    px(rWx + 10, sillY - 4.2, (fWx - rWx - 20), 0.7, stripeCol);
+                    ctx.restore();
+                } else if (options.vinyl === 'drift') {
+                    ctx.save();
+                    ctx.globalAlpha = 0.85;
+                    fillPoly([[-12, sillY - 2], [-4, sillY - 9], [2, sillY - 8], [-6, sillY - 1]], '#00f0ff');
+                    fillPoly([[4, sillY - 3], [12, sillY - 9], [15, sillY - 8], [7, sillY - 2]], '#ec4899');
+                    fillPoly([[-20, sillY - 4], [-14, sillY - 8], [-11, sillY - 7], [-17, sillY - 3]], '#facc15');
+                    ctx.restore();
+                }
+            }
+
+            // 16. Спецсигнал СГУ на крыше со стробоскопами
+            if (options.sgu === 'installed') {
+                const roofBarY = roofY + bodyYOffset - 3.2;
+                const phase = Math.floor(Date.now() / 85) % 4;
+                const isStrobing = !!options.sguStrobe;
+                const blueActive = isStrobing ? (phase === 0 || phase === 1) : false;
+                const redActive = isStrobing ? (phase === 2 || phase === 3) : false;
+
+                ctx.save();
+                fillRound(-5, roofBarY + 1.2, 10, 2.0, 0.5, '#09090b');
+                if (blueActive) {
+                    ctx.shadowBlur = 12 * s;
+                    ctx.shadowColor = '#00f0ff';
+                    fillRound(-4.5, roofBarY, 4, 1.8, 0.4, '#00f0ff');
+                } else {
+                    fillRound(-4.5, roofBarY, 4, 1.8, 0.4, '#1e3a8a');
+                }
+                if (redActive) {
+                    ctx.shadowBlur = 12 * s;
+                    ctx.shadowColor = '#ff0033';
+                    fillRound(0.5, roofBarY, 4, 1.8, 0.4, '#ff0033');
+                } else {
+                    fillRound(0.5, roofBarY, 4, 1.8, 0.4, '#7f1d1d');
+                }
+                ctx.restore();
+            }
+
+            if (options.tilt) {
+                ctx.restore();
+            }
+        }
+
         // 🎨 ГЕНЕРАТОР ПИКСЕЛЬНЫХ СПРАЙТОВ АВТОМОБИЛЕЙ СО СТАЙЛИНГОМ И ПОДИУМОМ
         function renderCarSpriteToContext(ctx, width, height, name, styling = {}, options = {}) {
             ctx.clearRect(0, 0, width, height);
@@ -7034,26 +8090,44 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
             const cx = width / 2;
             const cy = height / 2;
-            const tilt = (options.tilt !== undefined) ? options.tilt : (Math.PI / 2);
-            const scale = options.scale || (width <= 140 ? 1.3 : 2.4);
+            const view = options.view || 'side';
 
-            drawPixelCar(ctx, cx, cy, name, scale, {
-                color: styling?.color,
-                tint: styling?.tint,
-                neon: styling?.neon,
-                spoiler: styling?.spoiler,
-                vinyl: styling?.vinyl,
-                wheels: styling?.wheels,
-                suspension: styling?.suspension,
-                sgu: styling?.sgu,
-                tilt: tilt,
-                lightsOn: true
-            });
+            if (view === 'side') {
+                const scale = options.scale || (width <= 140 ? 1.4 : 2.1);
+                drawPixelCarSide(ctx, cx, cy, name, scale, {
+                    color: styling?.color,
+                    tint: styling?.tint,
+                    neon: styling?.neon,
+                    spoiler: styling?.spoiler,
+                    vinyl: styling?.vinyl,
+                    wheels: styling?.wheels,
+                    suspension: styling?.suspension,
+                    sgu: styling?.sgu,
+                    lightsOn: true
+                });
+            } else {
+                const tilt = (options.tilt !== undefined) ? options.tilt : (Math.PI / 2);
+                const scale = options.scale || (width <= 140 ? 1.3 : 2.4);
+
+                drawPixelCar(ctx, cx, cy, name, scale, {
+                    color: styling?.color,
+                    tint: styling?.tint,
+                    neon: styling?.neon,
+                    spoiler: styling?.spoiler,
+                    vinyl: styling?.vinyl,
+                    wheels: styling?.wheels,
+                    suspension: styling?.suspension,
+                    sgu: styling?.sgu,
+                    tilt: tilt,
+                    lightsOn: true
+                });
+            }
         }
 
         const carSpriteCache = new Map();
 
         function getCarSpriteDataUrl(name, styling = {}, options = {}) {
+            const view = options.view || 'side';
             const color = styling?.color || '';
             const tint = styling?.tint ?? 0;
             const neon = styling?.neon || 'none';
@@ -7065,7 +8139,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             const tilt = (options.tilt !== undefined) ? options.tilt : (Math.PI / 2);
             const width = options.width || 260;
             const height = options.height || 150;
-            const cacheKey = `${name}_${color}_${tint}_${neon}_${spoiler}_${vinyl}_${wheels}_${suspension}_${sgu}_${tilt}_${width}_${height}`;
+            const cacheKey = `${name}_${color}_${tint}_${neon}_${spoiler}_${vinyl}_${wheels}_${suspension}_${sgu}_${tilt}_${width}_${height}_${view}`;
             if (carSpriteCache.has(cacheKey)) {
                 return carSpriteCache.get(cacheKey);
             }
@@ -7086,7 +8160,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     return DEFAULT_CAR_IMG;
                 }
 
-                renderCarSpriteToContext(ctx, width, height, name, { color, tint, neon, spoiler, vinyl, wheels, suspension, sgu }, { tilt });
+                renderCarSpriteToContext(ctx, width, height, name, { color, tint, neon, spoiler, vinyl, wheels, suspension, sgu }, { tilt, view });
                 const dataUrl = canvas.toDataURL('image/png');
                 if (dataUrl && dataUrl.startsWith('data:image')) {
                     if (carSpriteCache.size > 250) carSpriteCache.clear();
@@ -7113,7 +8187,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 wheels: stylingTempWheels,
                 suspension: stylingTempSuspension,
                 sgu: stylingTempSgu
-            });
+            }, { view: stylingViewMode });
         }
 
 

@@ -317,3 +317,68 @@ test('horn and SGU function in race: SGU clears traffic ahead and honking at DPS
     assert.equal(app.run('racePlayer.wantedStars'), 1, 'Honking right behind DPS should trigger wanted star');
 });
 
+test('drawPixelCarSide and view switcher support side profile with custom wheels, stance and tints for all 25 models', () => {
+    const app = createApp();
+    const cars = app.run('carsData.map(c => c.name)');
+
+    // 1. Verify drawPixelCarSide executes cleanly for all 25 car models in canvas
+    for (const carName of cars) {
+        app.run(`
+            (() => {
+                const cvs = document.getElementById('race-canvas');
+                const c = cvs.getContext('2d');
+                drawPixelCarSide(c, 140, 75, ${JSON.stringify(carName)}, 2.0, {
+                    color: '#eab308',
+                    wheels: 'deepdish',
+                    suspension: 'bpan',
+                    tint: 'chameleon',
+                    spoiler: 'gt',
+                    vinyl: 'drift',
+                    neon: '#00f0ff',
+                    sgu: 'installed',
+                    lightsOn: true
+                });
+            })();
+        `);
+    }
+
+    // 2. Test view mode switching in styling modal
+    app.run(`
+        myCars = [{
+            name: "Lada Priora БПАН",
+            styling: { color: "#ffffff", wheels: "stamps", suspension: "bpan", tint: 95 }
+        }];
+        openStylingModal(0);
+    `);
+    assert.equal(app.run('stylingViewMode'), 'side', 'Default view mode in styling modal should be side');
+
+    app.run(`setStylingViewMode('top')`);
+    assert.equal(app.run('stylingViewMode'), 'top', 'View mode should switch to top');
+
+    app.run(`setStylingViewMode('side')`);
+    assert.equal(app.run('stylingViewMode'), 'side', 'View mode should switch back to side');
+
+    // 3. Verify getCarSpriteDataUrl with explicit and default view modes
+    const sideSprite = app.run(`
+        getCarSpriteDataUrl("Nissan Silvia S15 Spec-R", {
+            color: "#dc2626",
+            wheels: "forged",
+            suspension: "lowered",
+            tint: "dubai",
+            spoiler: "ducktail",
+            vinyl: "stripes"
+        }, { view: "side" })
+    `);
+    assert.ok(typeof sideSprite === 'string' && sideSprite.length > 20);
+
+    const topSprite = app.run(`
+        getCarSpriteDataUrl("Nissan Silvia S15 Spec-R", {
+            color: "#dc2626",
+            wheels: "forged",
+            suspension: "lowered",
+            tint: "dubai"
+        }, { view: "top" })
+    `);
+    assert.ok(typeof topSprite === 'string' && topSprite.length > 20);
+});
+
