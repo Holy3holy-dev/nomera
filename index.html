@@ -420,21 +420,19 @@
                     </div>
 
                     <div class="race-tariff-note">⛽ Бензин: <b>82 ₽/л</b> (игровой тариф). После заезда стоимость сожжённого топлива вычитается из заработка. Тюнинг экономичности снижает расход, ремонт возвращает характеристики.</div>
-                    <!-- Трасса: Федеральное шоссе -->
+                    <!-- Выбор режима гонки (Шоссе / Дрифт) -->
                     <div class="race-weather-card" style="margin-bottom: 8px;">
                         <div class="race-weather-header">
-                            <span class="race-weather-title">🛣️ Трасса: Федеральное шоссе</span>
-                            <span class="race-weather-label" style="color: #38bdf8; font-weight: 800;">Плотный трафик</span>
+                            <span class="race-weather-title">🏁 Режим заезда:</span>
+                            <span id="race-mode-label" class="race-weather-label">Шоссе (Трафик)</span>
                         </div>
-                        <p style="font-size: 11px; color: var(--text-dim); margin: 4px 0 0 0; line-height: 1.4;">
-                            Динамичный поток, скоростные обгоны, радары скорости, дорожные работы и патрули ДПС.
+                        <div class="race-weather-buttons">
+                            <button type="button" class="race-weather-btn active" id="btn-mode-highway" onclick="setRaceMode('highway')">🛣️ Шоссе (Трафик)</button>
+                            <button type="button" class="race-weather-btn" id="btn-mode-drift" onclick="setRaceMode('drift')">🌪️ Дрифт (Серпантин)</button>
+                        </div>
+                        <p id="race-mode-desc" style="font-size: 11px; color: var(--text-dim); margin: 6px 0 0 0; line-height: 1.4;">
+                            Скоростные прямые, плотный трафик, обгоны, радары скорости и патрули ДПС.
                         </p>
-                        <!-- Служебные элементы для совместимости с API и тестами -->
-                        <div style="display: none;">
-                            <span id="race-mode-label">Шоссе (Трафик)</span>
-                            <button type="button" class="active" id="btn-mode-highway" onclick="setRaceMode('highway')"></button>
-                            <button type="button" id="btn-mode-drift" onclick="setRaceMode('drift')"></button>
-                        </div>
                     </div>
 
                     <!-- Атмосфера и погода заезда -->
@@ -460,7 +458,7 @@
                     </button>
 
                     <div class="race-controls-hint">
-                        <b>Управление:</b> ◀ ▶ / A, D — руль &bull; ▲ / W — газ &bull; ▼ / S — тормоз &bull; Shift / X — дрифт &bull; Пробел — нитро
+                        <b>Управление на ПК:</b> <b>W A S D</b> / ◀ ▶ ▲ ▼ &bull; <b>ПРОБЕЛ</b> — Ручник (занос) &bull; <b>SHIFT</b> — Нитро
                     </div>
                 </div>
 
@@ -514,9 +512,9 @@
 
                         <!-- Нижняя панель действий (Ручник + Нитро + Авто-Газ) -->
                         <div class="touch-actions-bar">
-                            <button type="button" class="touch-btn touch-drift" id="btn-touch-drift" aria-label="Ручник" onpointerdown="handleTouchControl(event, 'drift', true)" onpointerup="handleTouchControl(event, 'drift', false)" onpointercancel="handleTouchControl(event, 'drift', false)">
-                                <span class="touch-icon">🛑</span>
-                                <span class="touch-action-label">РУЧНИК</span>
+                            <button type="button" class="touch-btn touch-drift" id="btn-touch-drift" aria-label="Ручник / Дрифт" onpointerdown="handleTouchControl(event, 'drift', true)" onpointerup="handleTouchControl(event, 'drift', false)" onpointercancel="handleTouchControl(event, 'drift', false)">
+                                <span class="touch-icon">🌪️</span>
+                                <span class="touch-action-label">РУЧНИК / ДРИФТ</span>
                             </button>
                             <button type="button" class="touch-btn touch-nitro" id="btn-touch-nitro" aria-label="Нитро ускорение" onpointerdown="handleTouchControl(event, 'nitro', true)" onpointerup="handleTouchControl(event, 'nitro', false)" onpointercancel="handleTouchControl(event, 'nitro', false)">
                                 <span class="nitro-fire-icon">🚀</span>
@@ -1169,6 +1167,6 @@
     <script src="./js/race-records.js?v=9c07941a09a1"></script>
     <script src="./js/race-economy.js?v=2cbfd8e11f42"></script>
     <script src="./js/audio.js?v=201e625de396"></script>
-    <script src="./js/app.js?v=381da40181dd"></script>
+    <script src="./js/app.js?v=dba7ad6f9f4e"></script>
 </body>
 </html>

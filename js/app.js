@@ -6876,6 +6876,12 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             if (lbl) {
                 lbl.textContent = raceCurrentMode === 'drift' ? 'Дрифт (Заносы)' : 'Шоссе (Трафик)';
             }
+            const desc = typeof document !== 'undefined' ? document.getElementById('race-mode-desc') : null;
+            if (desc) {
+                desc.textContent = raceCurrentMode === 'drift'
+                    ? 'Резкие повороты горного серпантина, глубокие заносы на ручнике, дым из-под колес и апексы!'
+                    : 'Скоростные прямые, плотный трафик, обгоны, радары скорости и патрули ДПС.';
+            }
             if (typeof document !== 'undefined') {
                 const btnHighway = document.getElementById('btn-mode-highway');
                 const btnDrift = document.getElementById('btn-mode-drift');
@@ -7455,21 +7461,50 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
         window.addEventListener('keydown', (e) => {
             if (!isRaceRunning) return;
-            if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') { raceKeys.left = true; e.preventDefault(); }
-            if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') { raceKeys.right = true; e.preventDefault(); }
-            if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') { raceKeys.gas = true; e.preventDefault(); }
-            if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') { raceKeys.brake = true; e.preventDefault(); }
-            if (e.key === 'Shift' || e.key === 'x' || e.key === 'X' || e.key === 'c' || e.key === 'C') { raceKeys.drift = true; e.preventDefault(); }
-            if (e.key === ' ' || e.code === 'Space') { raceKeys.nitro = true; e.preventDefault(); }
+            const code = e.code || '';
+            const key = (e.key || '').toLowerCase();
+
+            // 1. Привычные кнопки WASD и Стрелки (с поддержкой русской раскладки: W/Ц, A/Ф, S/Ы, D/В)
+            if (code === 'KeyW' || code === 'ArrowUp' || key === 'w' || key === 'arrowup' || key === 'ц') {
+                raceKeys.gas = true; e.preventDefault();
+            }
+            if (code === 'KeyS' || code === 'ArrowDown' || key === 's' || key === 'arrowdown' || key === 'ы') {
+                raceKeys.brake = true; e.preventDefault();
+            }
+            if (code === 'KeyA' || code === 'ArrowLeft' || key === 'a' || key === 'arrowleft' || key === 'ф') {
+                raceKeys.left = true; e.preventDefault();
+            }
+            if (code === 'KeyD' || code === 'ArrowRight' || key === 'd' || key === 'arrowright' || key === 'в') {
+                raceKeys.right = true; e.preventDefault();
+            }
+
+            // 2. РУЧНИК НА ОТДЕЛЬНУЮ КЛАВИШУ: Пробел (Space) — привычный стандарт ПК-гонок, а также X, C, Ctrl
+            if (code === 'Space' || key === ' ' || key === 'space' || code === 'KeyX' || key === 'x' || key === 'ч' || code === 'KeyC' || key === 'c' || key === 'с' || code === 'ControlLeft' || code === 'ControlRight' || key === 'control') {
+                raceKeys.drift = true; e.preventDefault();
+            }
+
+            // 3. НИТРО: Left/Right Shift, а также N (Т), F (А), E (У)
+            if (code === 'ShiftLeft' || code === 'ShiftRight' || key === 'shift' || code === 'KeyN' || key === 'n' || key === 'т' || code === 'KeyF' || key === 'f' || key === 'а' || code === 'KeyE' || key === 'e' || key === 'у') {
+                raceKeys.nitro = true; e.preventDefault();
+            }
         });
 
         window.addEventListener('keyup', (e) => {
-            if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') raceKeys.left = false;
-            if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') raceKeys.right = false;
-            if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') raceKeys.gas = false;
-            if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') raceKeys.brake = false;
-            if (e.key === 'Shift' || e.key === 'x' || e.key === 'X' || e.key === 'c' || e.key === 'C') raceKeys.drift = false;
-            if (e.key === ' ' || e.code === 'Space') raceKeys.nitro = false;
+            const code = e.code || '';
+            const key = (e.key || '').toLowerCase();
+
+            if (code === 'KeyW' || code === 'ArrowUp' || key === 'w' || key === 'arrowup' || key === 'ц') raceKeys.gas = false;
+            if (code === 'KeyS' || code === 'ArrowDown' || key === 's' || key === 'arrowdown' || key === 'ы') raceKeys.brake = false;
+            if (code === 'KeyA' || code === 'ArrowLeft' || key === 'a' || key === 'arrowleft' || key === 'ф') raceKeys.left = false;
+            if (code === 'KeyD' || code === 'ArrowRight' || key === 'd' || key === 'arrowright' || key === 'в') raceKeys.right = false;
+
+            if (code === 'Space' || key === ' ' || key === 'space' || code === 'KeyX' || key === 'x' || key === 'ч' || code === 'KeyC' || key === 'c' || key === 'с' || code === 'ControlLeft' || code === 'ControlRight' || key === 'control') {
+                raceKeys.drift = false;
+            }
+
+            if (code === 'ShiftLeft' || code === 'ShiftRight' || key === 'shift' || code === 'KeyN' || key === 'n' || key === 'т' || code === 'KeyF' || key === 'f' || key === 'а' || code === 'KeyE' || key === 'e' || key === 'у') {
+                raceKeys.nitro = false;
+            }
         });
 
         function showRacePopup(text, color = '#fbbf24') {
@@ -7641,11 +7676,16 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             curveTimer -= dt;
             if (curveTimer <= 0) {
                 if (raceCurrentMode === 'drift') {
-                    curveTimer = 1.6 + Math.random() * 2.2;
+                    // Резкие повороты горного серпантина (Touge): частая сменяемость крутых шпилек
+                    curveTimer = 1.0 + Math.random() * 1.5;
                     const r = Math.random();
-                    if (r < 0.18) targetRoadCurve = 0;
-                    else if (r < 0.59) targetRoadCurve = 55 + Math.random() * 60;
-                    else targetRoadCurve = -(55 + Math.random() * 60);
+                    if (r < 0.12) {
+                        targetRoadCurve = 0; // короткий прямой прострел
+                    } else if (r < 0.56) {
+                        targetRoadCurve = 80 + Math.random() * 60; // крутой вираж вправо (80..140)
+                    } else {
+                        targetRoadCurve = -(80 + Math.random() * 60); // крутой вираж влево (-80..-140)
+                    }
                 } else {
                     curveTimer = 4.0 + Math.random() * 3.5;
                     const r = Math.random();
@@ -7654,12 +7694,12 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     else targetRoadCurve = -(45 + Math.random() * 50);
                 }
             }
-            const curveTransitionRate = raceCurrentMode === 'drift' ? 2.8 : 1.5;
+            const curveTransitionRate = raceCurrentMode === 'drift' ? 4.0 : 1.5;
             roadCurve += (targetRoadCurve - roadCurve) * curveTransitionRate * dt;
 
             // Центробежная сила при прохождении поворота
             if (Math.abs(roadCurve) > 8) {
-                const centrifugalFactor = raceCurrentMode === 'drift' ? 65 : 45;
+                const centrifugalFactor = raceCurrentMode === 'drift' ? 88 : 45;
                 const centrifugalPush = -(roadCurve / 75) * (racePlayer.speed / 130) * centrifugalFactor * dt;
                 racePlayer.vx += centrifugalPush;
             }
@@ -9565,6 +9605,14 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             ctx.fillStyle = "rgba(255, 255, 255, 0.6)";
             ctx.font = "700 9px sans-serif";
             ctx.fillText(raceCurrentMode === 'drift' ? '🏁 Дрифт' : '🏁 Шоссе', W - 16, 46);
+
+            // В режиме Дрифта: предупреждение о крутых шпильках серпантина
+            if (raceCurrentMode === 'drift' && Math.abs(roadCurve) > 38) {
+                ctx.fillStyle = "#fbbf24";
+                ctx.font = "900 11px sans-serif";
+                ctx.textAlign = "center";
+                ctx.fillText(roadCurve > 0 ? "◀◀ КРУТАЯ ШПИЛЬКА (ВЛЕВО)" : "КРУТАЯ ШПИЛЬКА (ВПРАВО) ▶▶", W / 2, 74);
+            }
 
             // Индикатор слипстрима
             if (racePlayer.isDrafting) {

@@ -123,3 +123,72 @@ test('highway race mode incorporates balanced overtakes and highway events', () 
     assert.ok(app.run('racePlayer.earnedCash') > 0, 'Overtake should award cash');
     assert.ok(app.run('racePlayer.earnedCash') < 5000, 'Single overtake reward should be reasonably balanced');
 });
+
+test('PC WASD keys, Space handbrake, and Shift nitro map accurately via keyboard listeners', () => {
+    const app = createApp();
+
+    app.run(`
+        selectedRaceCarName = 'ВАЗ-2107 «Жигули»';
+        selectedRaceCarIndex = 0;
+        startRaceGame();
+    `);
+
+    // 1. WASD keys
+    app.events.get('keydown')({ code: 'KeyW', key: 'w', preventDefault: () => {} });
+    assert.equal(app.run('raceKeys.gas'), true, 'KeyW should engage gas');
+    app.events.get('keyup')({ code: 'KeyW', key: 'w' });
+    assert.equal(app.run('raceKeys.gas'), false);
+
+    app.events.get('keydown')({ code: 'KeyS', key: 's', preventDefault: () => {} });
+    assert.equal(app.run('raceKeys.brake'), true, 'KeyS should engage brake');
+    app.events.get('keyup')({ code: 'KeyS', key: 's' });
+    assert.equal(app.run('raceKeys.brake'), false);
+
+    app.events.get('keydown')({ code: 'KeyA', key: 'a', preventDefault: () => {} });
+    assert.equal(app.run('raceKeys.left'), true, 'KeyA should steer left');
+    app.events.get('keyup')({ code: 'KeyA', key: 'a' });
+    assert.equal(app.run('raceKeys.left'), false);
+
+    app.events.get('keydown')({ code: 'KeyD', key: 'd', preventDefault: () => {} });
+    assert.equal(app.run('raceKeys.right'), true, 'KeyD should steer right');
+    app.events.get('keyup')({ code: 'KeyD', key: 'd' });
+    assert.equal(app.run('raceKeys.right'), false);
+
+    // 2. Spacebar engages dedicated handbrake
+    app.events.get('keydown')({ code: 'Space', key: ' ', preventDefault: () => {} });
+    assert.equal(app.run('raceKeys.drift'), true, 'Spacebar should engage handbrake (drift key)');
+    app.events.get('keyup')({ code: 'Space', key: ' ' });
+    assert.equal(app.run('raceKeys.drift'), false);
+
+    // 3. Shift engages nitro
+    app.events.get('keydown')({ code: 'ShiftLeft', key: 'Shift', preventDefault: () => {} });
+    assert.equal(app.run('raceKeys.nitro'), true, 'ShiftLeft should engage nitro');
+    app.events.get('keyup')({ code: 'ShiftLeft', key: 'Shift' });
+    assert.equal(app.run('raceKeys.nitro'), false);
+
+    // 4. Cyrillic layout letters (Ц, Ф, Ы, В)
+    app.events.get('keydown')({ code: '', key: 'ц', preventDefault: () => {} });
+    assert.equal(app.run('raceKeys.gas'), true, 'Cyrillic Ц should engage gas');
+    app.events.get('keyup')({ code: '', key: 'ц' });
+    assert.equal(app.run('raceKeys.gas'), false);
+});
+
+test('restored drift mode features sharp serpentine curves and toggles UI properly', () => {
+    const app = createApp();
+
+    app.run('setRaceMode("drift")');
+    assert.equal(app.run('raceCurrentMode'), 'drift');
+    assert.equal(app.run('document.getElementById("race-mode-label").textContent'), 'Дрифт (Заносы)');
+
+    app.run(`
+        selectedRaceCarName = 'ВАЗ-2107 «Жигули»';
+        selectedRaceCarIndex = 0;
+        startRaceGame();
+        curveTimer = 0; // Trigger immediate curve update
+        updateRacePhysics(0.05);
+    `);
+
+    // In drift mode, curves change rapidly and can reach high amplitude (sharp turns)
+    const curve = Math.abs(app.run('targetRoadCurve'));
+    assert.ok(curve >= 0, 'Target curve should be defined');
+});

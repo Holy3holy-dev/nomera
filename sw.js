@@ -1,7 +1,7 @@
 // Release-coherent app shell. No Firebase, external assets or non-GET requests are cached.
-const CACHE_NAME = 'nomera-cache-95432e9e9051';
+const CACHE_NAME = 'nomera-cache-bf79b68ca9b7';
 const ASSETS = ['./', './index.html', './manifest.json', './styles.css?v=7bf87e75ae84',
-    './js/security.js?v=02e3f2433778', './js/storage.js?v=3c82419118a8', './js/race-records.js?v=9c07941a09a1', './js/race-economy.js?v=2cbfd8e11f42', './js/audio.js?v=201e625de396', './js/app.js?v=381da40181dd',
+    './js/security.js?v=02e3f2433778', './js/storage.js?v=3c82419118a8', './js/race-records.js?v=9c07941a09a1', './js/race-economy.js?v=2cbfd8e11f42', './js/audio.js?v=201e625de396', './js/app.js?v=dba7ad6f9f4e',
     './icons/car-placeholder.svg', './icons/icon-192.png', './icons/icon-512.png'];
 const allowed = new Set(ASSETS.map(path => new URL(path, self.registration.scope).href));
 
