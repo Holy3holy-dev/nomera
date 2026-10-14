@@ -2,7 +2,7 @@
     'use strict';
     const clamp = (value, fallback) => Number.isFinite(value) ? Math.max(0, Math.min(1, value)) : fallback;
     function createAudio({contextFactory, onUnavailable = () => {}} = {}) {
-        let context = null, master = null, engine = null;
+        let context = null, master = null, engine = null, siren = null;
         let unlocked = false, unavailable = false, lastTick = -Infinity;
         let prefs = {volume: 0.45, muted: false, engine: true};
         const voices = new Set();
@@ -55,7 +55,48 @@
             try { engine.gain.disconnect(); engine.filter.disconnect(); } catch (_) {}
             engine = null;
         }
-        function updateEngine({speed = 0, gas = false, nitro = false, running = false} = {}) {
+        function stopSiren() {
+            if (!siren) return;
+            try {
+                siren.nodes.forEach(node => { try { node.stop(); node.disconnect(); } catch (_) {} });
+                siren.gain.disconnect();
+                if (siren.filter?.disconnect) siren.filter.disconnect();
+            } catch (_) {}
+            siren = null;
+        }
+        function setSiren(active = false) {
+            if (!active || prefs.muted || level() <= 0 || !unlocked || !context || context.state === 'suspended') {
+                stopSiren();
+                return;
+            }
+            if (siren) return;
+            try {
+                const gain = context.createGain(), filter = context.createBiquadFilter();
+                filter.type = 'bandpass';
+                filter.frequency.setValueAtTime(820, context.currentTime);
+                gain.gain.setValueAtTime(0.04, context.currentTime);
+                filter.connect(gain);
+                gain.connect(master);
+
+                const osc = context.createOscillator();
+                const lfo = context.createOscillator();
+                const lfoGain = context.createGain();
+
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(750, context.currentTime);
+
+                lfo.type = 'triangle';
+                lfo.frequency.setValueAtTime(1.6, context.currentTime);
+                lfoGain.gain.setValueAtTime(260, context.currentTime);
+
+                try { lfo.connect(lfoGain); lfoGain.connect(osc.frequency); } catch (_) {}
+                osc.connect(filter);
+                osc.start();
+                lfo.start();
+                siren = { gain, filter, nodes: [osc, lfo, lfoGain] };
+            } catch (_) { stopSiren(); }
+        }
+        function updateEngine({speed = 0, gas = false, nitro = false, running = false, carClass = 'standard'} = {}) {
             if (!running || !prefs.engine || level() <= 0 || !unlocked || !context || context.state === 'suspended') { stopEngine(); return; }
             try {
                 if (!engine) {
@@ -67,10 +108,18 @@
                     engine = {gain, filter, nodes};
                 }
                 const velocity = Number.isFinite(speed) ? Math.max(0, Math.min(650, speed)) : 0;
-                const revs = 34 + (velocity % 65) * 1.7 + (gas ? 12 : 0) + (nitro ? 28 : 0);
+                let basePitch = 34, mult = 1.7, filterBase = 480;
+                if (carClass === 'v8') {
+                    basePitch = 26; mult = 1.35; filterBase = 560;
+                } else if (carClass === 'sport' || carClass === 'supercar') {
+                    basePitch = 44; mult = 2.05; filterBase = 640;
+                } else if (carClass === 'classic') {
+                    basePitch = 30; mult = 1.45; filterBase = 420;
+                }
+                const revs = basePitch + (velocity % 65) * mult + (gas ? 12 : 0) + (nitro ? 28 : 0);
                 param(engine.nodes[0].frequency, revs, context.currentTime);
-                param(engine.nodes[1].frequency, revs * 2.01, context.currentTime);
-                param(engine.filter.frequency, nitro ? 1400 : 480 + velocity, context.currentTime);
+                param(engine.nodes[1].frequency, revs * (carClass === 'v8' ? 1.5 : 2.01), context.currentTime);
+                param(engine.filter.frequency, nitro ? 1400 : filterBase + velocity, context.currentTime);
                 param(engine.gain.gain, nitro ? 0.055 : gas ? 0.04 : 0.025, context.currentTime);
             } catch (_) { stopEngine(); }
         }
@@ -81,7 +130,7 @@
                     muted:typeof next.muted === 'boolean' ? next.muted : prefs.muted,
                     engine:typeof next.engine === 'boolean' ? next.engine : prefs.engine};
                 if (master) param(master.gain, level() * 0.7, context.currentTime);
-                if (!prefs.engine || !level()) stopEngine();
+                if (!prefs.engine || !level()) { stopEngine(); stopSiren(); }
                 return {...prefs};
             },
             preferences: () => ({...prefs}),
@@ -120,6 +169,26 @@
                 tone(820, 0.16, 0.08, 0, 'sawtooth', 380);
                 tone(1150, 0.10, 0.05, 0.02, 'triangle', 520);
             },
+            blowOff() {
+                // Turbo blow-off valve flutter (pshhh-t-t-t)
+                tone(2200, 0.22, 0.09, 0, 'triangle', 520);
+                tone(3200, 0.16, 0.06, 0.01, 'sine', 750);
+                tone(1100, 0.12, 0.07, 0.07, 'sawtooth', 340);
+                tone(1350, 0.09, 0.05, 0.13, 'triangle', 380);
+                tone(1500, 0.07, 0.04, 0.18, 'triangle', 420);
+            },
+            backfire() {
+                // Explosive exhaust pop ("попкорн")
+                const pitch = 0.85 + Math.random() * 0.3;
+                tone(140 * pitch, 0.08, 0.16, 0, 'triangle', 28);
+                tone(880 * pitch, 0.035, 0.12, 0, 'sawtooth', 75);
+                if (Math.random() > 0.45) {
+                    tone(170 * pitch, 0.06, 0.10, 0.045, 'triangle', 32);
+                    tone(720 * pitch, 0.03, 0.08, 0.045, 'sawtooth', 80);
+                }
+            },
+            setSiren,
+            stopSiren,
             whoosh() { tone(640, 0.18, 0.07, 0, 'sine', 280); },
             error() {
                 tone(220, 0.12, 0.12, 0, 'triangle', 160);
@@ -133,10 +202,11 @@
                 });
             },
             start() { [220,330,440].forEach((freq,i) => tone(freq, 0.12, 0.11, i * 0.10)); },
-            crash() { stopEngine(); tone(95, 0.28, 0.23, 0, 'triangle', 24); tone(900, 0.09, 0.09, 0, 'sawtooth', 80); },
+            crash() { stopEngine(); stopSiren(); tone(95, 0.28, 0.23, 0, 'triangle', 24); tone(900, 0.09, 0.09, 0, 'sawtooth', 80); },
             stopEngine, updateEngine,
             suspend() {
                 stopEngine();
+                stopSiren();
                 voices.forEach(node => { try { node.stop(); } catch (_) {} });
                 if (context?.suspend) Promise.resolve(context.suspend()).catch(() => {});
             }
