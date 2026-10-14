@@ -8398,9 +8398,10 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             if (!car) return 'standard';
             const name = String(car.name || '').toLowerCase();
             const cat = String(car.category || '').toLowerCase();
+            if (name.includes('камаз') || name.includes('фура')) return 'kamaz';
             if (cat.includes('классик') || cat.includes('ретро') || name.includes('ваз') || name.includes('газ')) return 'classic';
-            if (cat.includes('гиперкар') || cat.includes('суперкар') || name.includes('911') || name.includes('huracan') || name.includes('gt-r') || name.includes('ferrari') || name.includes('bugatti') || name.includes('jesko')) return 'sport';
-            if (cat.includes('внедорожник') || cat.includes('люкс') || cat.includes('спорт') || name.includes('m5') || name.includes('m8') || name.includes('amg') || name.includes('rs6') || name.includes('v8') || name.includes('v10')) return 'v8';
+            if (cat.includes('гиперкар') || cat.includes('суперкар') || name.includes('911') || name.includes('huracan') || name.includes('gt-r') || name.includes('ferrari') || name.includes('bugatti') || name.includes('jesko') || name.includes('silvia') || name.includes('wrx')) return 'sport';
+            if (cat.includes('внедорожник') || cat.includes('люкс') || cat.includes('спорт') || name.includes('m5') || name.includes('m8') || name.includes('amg') || name.includes('rs6') || name.includes('v8') || name.includes('v10') || name.includes('cullinan') || name.includes('гелик') || name.includes('land cruiser')) return 'v8';
             return 'standard';
         }
 
@@ -9124,13 +9125,20 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
             const carIndex = getSelectedRaceCarIndex();
             const activeCar = carIndex >= 0 ? myCars[carIndex] : myCars.find(c => c.name === selectedRaceCarName);
-            const hasSgu = activeCar?.styling?.sgu === 'installed';
+            const carName = String(activeCar?.name || selectedRaceCarName || '');
+            const hasSgu = activeCar?.styling?.sgu === 'installed' || carName.includes('Полиция') || carName.includes('ДПС');
+            const isTruck = carName.includes('КАМАЗ') || carName.includes('Фура');
 
             if (hasSgu) {
                 if (typeof sound?.sgu === 'function') sound.sgu();
                 if (typeof sound?.haptic === 'function') sound.haptic('medium');
                 racePlayer.sguStrobeTimer = 0.6;
                 showRacePopup('🚨 СГУ: ДОРОГУ VIP!', '#38bdf8');
+            } else if (isTruck) {
+                if (typeof sound?.airBrake === 'function') sound.airBrake();
+                else if (typeof sound?.horn === 'function') sound.horn();
+                if (typeof sound?.haptic === 'function') sound.haptic('heavy');
+                showRacePopup('🚛 ПНЕВМО-СИГНАЛ!', '#f59e0b');
             } else {
                 if (typeof sound?.horn === 'function') sound.horn();
                 if (typeof sound?.haptic === 'function') sound.haptic('light');
@@ -9429,6 +9437,14 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 racePlayer.blowOffCooldown = 0.8;
             }
             if (racePlayer.blowOffCooldown > 0) racePlayer.blowOffCooldown -= dt;
+
+            // Звук пневматического сброса тормозов КАМАЗа при торможении
+            const isTruckActive = String(selectedRaceCarName || '').includes('КАМАЗ') || String(selectedRaceCarName || '').includes('Фура');
+            if (raceKeys.brake && isTruckActive && racePlayer.speed > 40 && (racePlayer.airBrakeCooldown || 0) <= 0) {
+                if (typeof sound?.airBrake === 'function') sound.airBrake();
+                racePlayer.airBrakeCooldown = 2.4;
+            }
+            if (racePlayer.airBrakeCooldown > 0) racePlayer.airBrakeCooldown -= dt;
 
             // Звук прострелов выхлопа («Попкорн» / Backfire) при отсечке нитро или сбросе оборотов
             const nitroJustCut = racePlayer.wasNitroActive && !racePlayer.isNitroActive;

@@ -87,6 +87,20 @@ test('blowOff, backfire, siren, and engine profiles trigger cleanly', () => {
     sound2.updateEngine({ running: true, speed: 100, gas: true, carClass: 'sport' });
     const sportPitch = ctx2.created[0].frequency.values.at(-1);
     assert(sportPitch > v8Pitch, 'Sport engine profile should rev higher than V8 profile');
+    sound2.updateEngine({ running: true, speed: 100, gas: true, carClass: 'kamaz' });
+    const kamazPitch = ctx2.created[0].frequency.values.at(-1);
+    assert(kamazPitch < v8Pitch, 'KAMAZ diesel engine should have low, heavy rumble');
     sound2.stopEngine();
+});
+
+test('airBrake and sgu produce authentic procedural effects', () => {
+    const context = fakeContext();
+    const sound = createAudio({ contextFactory: () => context });
+    sound.unlock();
+    const beforeCount = context.created.length;
+    sound.airBrake();
+    assert(context.created.length >= beforeCount + 3, 'airBrake creates multi-layer pneumatic burst');
+    sound.sgu();
+    assert(context.created.length >= beforeCount + 6, 'sgu creates multi-harmonic VIP horn burst');
 });
 

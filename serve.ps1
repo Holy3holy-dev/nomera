@@ -39,6 +39,9 @@ try {
                     ".svg"  { $contentType = "image/svg+xml" }
                     ".jpg"  { $contentType = "image/jpeg" }
                     ".ico"  { $contentType = "image/x-icon" }
+                    ".glb"  { $contentType = "model/gltf-binary" }
+                    ".gltf" { $contentType = "model/gltf+json" }
+                    ".bin"  { $contentType = "application/octet-stream" }
                 }
                 $response.ContentType = $contentType
                 $response.ContentLength64 = $bytes.Length

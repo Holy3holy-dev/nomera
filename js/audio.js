@@ -108,19 +108,42 @@
                     engine = {gain, filter, nodes};
                 }
                 const velocity = Number.isFinite(speed) ? Math.max(0, Math.min(650, speed)) : 0;
-                let basePitch = 34, mult = 1.7, filterBase = 480;
+                let minRPM = 28, maxRPM = 84, mult2 = 2.01, filterBase = 460;
                 if (carClass === 'v8') {
-                    basePitch = 26; mult = 1.35; filterBase = 560;
+                    minRPM = 22; maxRPM = 68; mult2 = 1.5; filterBase = 540;
                 } else if (carClass === 'sport' || carClass === 'supercar') {
-                    basePitch = 44; mult = 2.05; filterBase = 640;
+                    minRPM = 36; maxRPM = 105; mult2 = 2.02; filterBase = 620;
                 } else if (carClass === 'classic') {
-                    basePitch = 30; mult = 1.45; filterBase = 420;
+                    minRPM = 26; maxRPM = 74; mult2 = 1.33; filterBase = 400;
+                } else if (carClass === 'kamaz') {
+                    minRPM = 18; maxRPM = 48; mult2 = 0.75; filterBase = 320;
                 }
-                const revs = basePitch + (velocity % 65) * mult + (gas ? 12 : 0) + (nitro ? 28 : 0);
+
+                // Реалистичная ступенчатая коробка передач (7 передач с плавной тягой)
+                let gearMin = 0, gearMax = 44, gearBase = minRPM;
+                if (velocity < 44) {
+                    gearMin = 0; gearMax = 44; gearBase = minRPM;
+                } else if (velocity < 86) {
+                    gearMin = 40; gearMax = 86; gearBase = minRPM + 4;
+                } else if (velocity < 140) {
+                    gearMin = 80; gearMax = 140; gearBase = minRPM + 8;
+                } else if (velocity < 205) {
+                    gearMin = 132; gearMax = 205; gearBase = minRPM + 12;
+                } else if (velocity < 285) {
+                    gearMin = 195; gearMax = 285; gearBase = minRPM + 16;
+                } else if (velocity < 380) {
+                    gearMin = 270; gearMax = 380; gearBase = minRPM + 20;
+                } else {
+                    gearMin = 360; gearMax = 520; gearBase = minRPM + 24;
+                }
+
+                const progress = Math.min(1, Math.max(0, (velocity - gearMin) / (gearMax - gearMin || 1)));
+                const revs = gearBase + progress * (maxRPM - gearBase) + (gas ? 8 : 0) + (nitro ? 22 : 0);
+
                 param(engine.nodes[0].frequency, revs, context.currentTime);
-                param(engine.nodes[1].frequency, revs * (carClass === 'v8' ? 1.5 : 2.01), context.currentTime);
-                param(engine.filter.frequency, nitro ? 1400 : filterBase + velocity, context.currentTime);
-                param(engine.gain.gain, nitro ? 0.055 : gas ? 0.04 : 0.025, context.currentTime);
+                param(engine.nodes[1].frequency, revs * mult2, context.currentTime);
+                param(engine.filter.frequency, nitro ? 1600 : (gas ? filterBase + velocity * 1.6 + 200 : filterBase + velocity * 0.7), context.currentTime);
+                param(engine.gain.gain, nitro ? 0.058 : (gas ? 0.042 : 0.024), context.currentTime);
             } catch (_) { stopEngine(); }
         }
         return {
@@ -166,36 +189,50 @@
                 tone(680, 0.08, 0.06, 0.02, 'triangle', 260);
             },
             drift() {
-                tone(820, 0.16, 0.08, 0, 'sawtooth', 380);
-                tone(1150, 0.10, 0.05, 0.02, 'triangle', 520);
+                // Аутентичный визг шин по асфальту (многотональный скользящий резонанс)
+                const rnd = (Math.random() - 0.5) * 45;
+                tone(880 + rnd, 0.24, 0.10, 0, 'sawtooth', 760 + rnd);
+                tone(1520 + rnd, 0.20, 0.07, 0.01, 'triangle', 1380 + rnd);
+                tone(2250 + rnd, 0.14, 0.05, 0.02, 'triangle', 1950 + rnd);
+                tone(410 + rnd * 0.5, 0.22, 0.08, 0, 'sawtooth', 360 + rnd * 0.5);
             },
             horn() {
-                // Стандартный автомобильный клаксон (двухтональный созвучный гудок A4 + C#5)
-                tone(440, 0.22, 0.12, 0, 'triangle', 430);
-                tone(554, 0.22, 0.10, 0, 'sawtooth', 540);
+                // Стандартный автомобильный двухтональный клаксон (A4 440Гц + C#5 554Гц)
+                tone(440, 0.24, 0.14, 0, 'triangle', 432);
+                tone(554, 0.24, 0.12, 0, 'sawtooth', 544);
             },
             sgu() {
-                // Спецсигнал VIP / СГУ «Крякалка» (агрессивный резкий электронный кряк)
-                tone(185, 0.20, 0.22, 0, 'sawtooth', 175);
-                tone(370, 0.20, 0.14, 0, 'triangle', 350);
-                tone(95, 0.22, 0.16, 0, 'triangle', 90);
+                // Спецсигнал VIP / СГУ «Крякалка» (агрессивный резкий электронный кряк спецсерии)
+                tone(175, 0.22, 0.26, 0, 'sawtooth', 170);
+                tone(350, 0.22, 0.18, 0, 'triangle', 340);
+                tone(525, 0.20, 0.12, 0, 'sawtooth', 510);
+                tone(88, 0.24, 0.18, 0, 'triangle', 82);
+            },
+            airBrake() {
+                // Пневматический сброс воздуха тормозной системы грузовика (КАМАЗ / Фура)
+                tone(1800, 0.28, 0.14, 0, 'triangle', 400);
+                tone(950, 0.22, 0.10, 0.04, 'sawtooth', 220);
+                tone(220, 0.26, 0.16, 0, 'triangle', 75);
             },
             blowOff() {
-                // Turbo blow-off valve flutter (pshhh-t-t-t)
-                tone(2200, 0.22, 0.09, 0, 'triangle', 520);
-                tone(3200, 0.16, 0.06, 0.01, 'sine', 750);
-                tone(1100, 0.12, 0.07, 0.07, 'sawtooth', 340);
-                tone(1350, 0.09, 0.05, 0.13, 'triangle', 380);
-                tone(1500, 0.07, 0.04, 0.18, 'triangle', 420);
+                // Turbo blow-off valve flutter (pshhh-tsu-tsu-tsu)
+                tone(2600, 0.24, 0.11, 0, 'triangle', 650);
+                tone(3400, 0.18, 0.07, 0.01, 'sine', 950);
+                // Серия затухающих пульсаций сброса избыточного давления турбины
+                tone(1450, 0.08, 0.08, 0.05, 'sawtooth', 420);
+                tone(1250, 0.07, 0.06, 0.10, 'triangle', 380);
+                tone(1100, 0.06, 0.05, 0.15, 'triangle', 340);
+                tone(950, 0.05, 0.04, 0.20, 'triangle', 300);
             },
             backfire() {
-                // Explosive exhaust pop ("попкорн")
-                const pitch = 0.85 + Math.random() * 0.3;
-                tone(140 * pitch, 0.08, 0.16, 0, 'triangle', 28);
-                tone(880 * pitch, 0.035, 0.12, 0, 'sawtooth', 75);
-                if (Math.random() > 0.45) {
-                    tone(170 * pitch, 0.06, 0.10, 0.045, 'triangle', 32);
-                    tone(720 * pitch, 0.03, 0.08, 0.045, 'sawtooth', 80);
+                // Взрывной отстрел в выхлопную трубу («попкорн» с низкочастотным хлопком)
+                const pitch = 0.88 + Math.random() * 0.25;
+                tone(65 * pitch, 0.14, 0.26, 0, 'triangle', 20);
+                tone(1150 * pitch, 0.035, 0.18, 0, 'sawtooth', 60);
+                tone(280 * pitch, 0.08, 0.12, 0.015, 'triangle', 35);
+                if (Math.random() > 0.4) {
+                    tone(140 * pitch, 0.07, 0.14, 0.04, 'triangle', 25);
+                    tone(820 * pitch, 0.03, 0.10, 0.04, 'sawtooth', 70);
                 }
             },
             setSiren,

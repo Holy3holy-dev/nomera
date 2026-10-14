@@ -84,6 +84,7 @@ test('wanted level increases on violations, caps at 5, and awards bounty upon es
         racePlayer.escapeTimer = 0;
         racePlayer.earnedCash = 0;
         raceTraffic = [];
+        trafficSpawnTimer = 999;
 
         // 1st violation: radar
         addWantedStars(1, 'РАДАР');
@@ -462,4 +463,48 @@ test('repair and styling persist seamlessly across page refresh and online profi
     assert.equal(reloadedCar.styling.suspension, 'bpan', 'Suspension must remain bpan after loadProgress reload');
     assert.equal(reloadedCar.styling.sgu, 'installed', 'SGU must remain installed after loadProgress reload');
 });
+
+test('car audio profiles and horn effects trigger SGU, truck air-brake and dual-tone horn accurately', () => {
+    const app = createApp();
+
+    // Verify audio profile classification
+    assert.equal(app.run('getCarAudioProfile({ name: "КАМАЗ / Фура" })'), 'kamaz');
+    assert.equal(app.run('getCarAudioProfile({ name: "ВАЗ-2107 «Жигули»", category: "Классика" })'), 'classic');
+    assert.equal(app.run('getCarAudioProfile({ name: "Porsche 911 Turbo S", category: "Спорткар" })'), 'sport');
+    assert.equal(app.run('getCarAudioProfile({ name: "Mercedes-Benz G63 AMG «Гелик»", category: "Внедорожник" })'), 'v8');
+
+    // Setup race running state
+    app.run(`
+        isRaceRunning = true;
+        racePlayer = { sguStrobeTimer: 0 };
+    `);
+
+    // 1. Regular car horn
+    app.run(`
+        selectedRaceCarName = "ВАЗ-2107 «Жигули»";
+        triggerRaceHorn(true);
+    `);
+    const popupText1 = app.run('document.getElementById("race-popup-msg").innerText');
+    assert.match(popupText1, /БИ-БИП/);
+
+    // 2. SGU Police VIP horn
+    app.run(`
+        selectedRaceCarName = "ДПС / Полиция";
+        triggerRaceHorn(true);
+    `);
+    const popupText2 = app.run('document.getElementById("race-popup-msg").innerText');
+    assert.match(popupText2, /СГУ: ДОРОГУ VIP/);
+    assert.equal(app.run('racePlayer.sguStrobeTimer'), 0.6);
+
+    // 3. KAMAZ truck air-brake horn
+    app.run(`
+        selectedRaceCarName = "КАМАЗ / Фура";
+        triggerRaceHorn(true);
+    `);
+    const popupText3 = app.run('document.getElementById("race-popup-msg").innerText');
+    assert.match(popupText3, /ПНЕВМО-СИГНАЛ/);
+
+    app.run(`isRaceRunning = false;`);
+});
+
 
