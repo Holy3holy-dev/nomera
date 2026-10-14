@@ -382,3 +382,83 @@ test('drawPixelCarSide and view switcher support side profile with custom wheels
     assert.ok(typeof topSprite === 'string' && topSprite.length > 20);
 });
 
+test('repair and styling persist seamlessly across page refresh and online profile sync', () => {
+    const app = createApp();
+
+    // 1. Setup garage with damaged car and apply repair
+    app.run(`
+        balance = 1000000;
+        myCars = [{
+            name: "Lada Priora БПАН",
+            basePrice: 250000,
+            condition: 42,
+            upgrades: { engine: 2, handling: 1, economy: 0, nitro: 0 },
+            styling: { color: "#ffffff", tint: 0, neon: "none", wheels: "stock", suspension: "stock", spoiler: "none", vinyl: "none", sgu: "none" }
+        }];
+        saveProgress();
+    `);
+
+    // Verify initial condition
+    assert.equal(app.run('myCars[0].condition'), 42);
+
+    // Repair the car
+    app.run(`repairGarageCar(0)`);
+    assert.equal(app.run('myCars[0].condition'), 100, 'Car condition should be 100% after repair');
+
+    // Apply custom styling
+    app.run(`
+        openStylingModal(0);
+        selectStylingColor('#ef4444');
+        selectStylingTint('chameleon');
+        selectStylingWheels('forged');
+        selectStylingSuspension('bpan');
+        selectStylingSpoiler('gt');
+        selectStylingVinyl('drift');
+        selectStylingSgu('installed');
+        confirmApplyStyling();
+    `);
+
+    const styledCar = app.run('myCars[0]');
+    assert.equal(styledCar.condition, 100);
+    assert.equal(styledCar.styling.wheels, 'forged');
+    assert.equal(styledCar.styling.suspension, 'bpan');
+    assert.equal(styledCar.styling.spoiler, 'gt');
+    assert.equal(styledCar.styling.vinyl, 'drift');
+    assert.equal(styledCar.styling.sgu, 'installed');
+    assert.equal(styledCar.styling.tint, 'chameleon');
+
+    // 2. Simulate server sending an older / stripped snapshot upon page reload
+    app.run(`
+        const staleServerProfile = {
+            nickname: nickname,
+            balance: balance,
+            inventory: [],
+            myCars: [{
+                name: "Lada Priora БПАН",
+                basePrice: 250000,
+                condition: 42, // Stale condition from server
+                upgrades: { engine: 2, handling: 1, economy: 0, nitro: 0 },
+                styling: { color: "#ef4444" } // Missing wheels, suspension, spoiler, vinyl, sgu
+            }]
+        };
+        setOnlineProfile(staleServerProfile, true);
+    `);
+
+    const mergedCar = app.run('myCars[0]');
+    assert.equal(mergedCar.condition, 100, 'Smart merge must preserve 100% repaired condition over stale server condition');
+    assert.equal(mergedCar.styling.wheels, 'forged', 'Smart merge must preserve forged wheels');
+    assert.equal(mergedCar.styling.suspension, 'bpan', 'Smart merge must preserve bpan suspension');
+    assert.equal(mergedCar.styling.spoiler, 'gt', 'Smart merge must preserve gt spoiler');
+    assert.equal(mergedCar.styling.vinyl, 'drift', 'Smart merge must preserve drift vinyl');
+    assert.equal(mergedCar.styling.sgu, 'installed', 'Smart merge must preserve installed SGU');
+    assert.equal(mergedCar.styling.tint, 'chameleon', 'Smart merge must preserve chameleon tint');
+
+    // 3. Simulate full page reload (loadProgress)
+    app.run(`loadProgress()`);
+    const reloadedCar = app.run('myCars[0]');
+    assert.equal(reloadedCar.condition, 100, 'Condition must remain 100% after loadProgress reload');
+    assert.equal(reloadedCar.styling.wheels, 'forged', 'Wheels must remain forged after loadProgress reload');
+    assert.equal(reloadedCar.styling.suspension, 'bpan', 'Suspension must remain bpan after loadProgress reload');
+    assert.equal(reloadedCar.styling.sgu, 'installed', 'SGU must remain installed after loadProgress reload');
+});
+

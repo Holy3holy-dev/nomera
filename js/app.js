@@ -2304,17 +2304,31 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 : '🔒 Нет активного аккаунта · войдите или зарегистрируйтесь один раз';
         }
         let syncGarageTimer = null;
-        function syncCloudGarage() {
-            if (!onlineProfile) return;
+        function syncCloudGarage(immediate = false) {
+            if (!onlineProfile) return Promise.resolve();
             clearTimeout(syncGarageTimer);
-            syncGarageTimer = setTimeout(async () => {
+            const doSync = async () => {
                 try {
                     await onlineRequest('syncGarage', { myCars });
-                    if (onlineProfile) onlineProfile.myCars = [...myCars];
+                    if (onlineProfile) onlineProfile.myCars = JSON.parse(JSON.stringify(myCars));
                 } catch (e) {
                     console.warn('Не удалось синхронизировать гараж с сервером:', e.message);
                 }
-            }, 500);
+            };
+            if (immediate) {
+                return doSync();
+            }
+            syncGarageTimer = setTimeout(doSync, 200);
+            return Promise.resolve();
+        }
+
+        if (typeof window !== 'undefined' && window.addEventListener) {
+            window.addEventListener('beforeunload', () => {
+                if (syncGarageTimer) {
+                    clearTimeout(syncGarageTimer);
+                    if (typeof syncCloudGarage === 'function') syncCloudGarage(true);
+                }
+            });
         }
 
         function setOnlineProfile(profile,applyInventory=false) {
@@ -2342,15 +2356,73 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 const unconfirmed=inventory.filter(p=>!p.id&&!owned.has(p.text));
                 inventory=[...(profile.inventory||[]),...unconfirmed];
                 if (Array.isArray(profile.myCars) && profile.myCars.length > 0) {
-                    myCars = profile.myCars.map(c => {
+                    const serverCars = profile.myCars;
+                    const prevCars = Array.isArray(myCars) ? [...myCars] : [];
+                    let hasLocalAdvancement = false;
+
+                    myCars = serverCars.map((c, i) => {
                         if (!c || typeof c !== 'object') return null;
                         const template = (typeof carsData !== 'undefined' && Array.isArray(carsData)) ? (carsData.find(t => t && t.name === c.name) || {}) : {};
+                        const localCar = prevCars.find(lc => lc && ((lc.plate?.id && c.plate?.id && lc.plate.id === c.plate.id) || (lc.plate?.text && c.plate?.text && lc.plate.text === c.plate.text)))
+                            || prevCars[i]
+                            || null;
+
+                        // Preserve local 100% or higher repair condition
+                        let condition = (typeof c.condition === 'number') ? c.condition : 100;
+                        if (localCar && typeof localCar.condition === 'number') {
+                            if (localCar.condition > condition || localCar.condition === 100) {
+                                condition = localCar.condition;
+                                if (condition !== c.condition) hasLocalAdvancement = true;
+                            }
+                        }
+
+                        // Upgrades: preserve whichever is higher
+                        const upgrades = { ...(c.upgrades || {}) };
+                        if (localCar && localCar.upgrades) {
+                            for (const u of ['engine', 'handling', 'economy', 'nitro']) {
+                                const locVal = Number(localCar.upgrades[u]) || 0;
+                                const srvVal = Number(upgrades[u]) || 0;
+                                if (locVal > srvVal) {
+                                    upgrades[u] = locVal;
+                                    hasLocalAdvancement = true;
+                                }
+                            }
+                        }
+
+                        // Styling: merge and preserve custom wheels, suspension, spoiler, vinyl, sgu, tint, neon, color
+                        let styling = undefined;
+                        if (c.styling || localCar?.styling) {
+                            styling = {
+                                ...(localCar?.styling || {}),
+                                ...(c.styling || {})
+                            };
+                            if (localCar && localCar.styling) {
+                                for (const k of ['wheels', 'suspension', 'spoiler', 'vinyl', 'sgu', 'tint', 'neon', 'color']) {
+                                    const locSt = localCar.styling[k];
+                                    const srvSt = c.styling ? c.styling[k] : undefined;
+                                    if (locSt !== undefined && locSt !== 'none' && locSt !== 'stock' && locSt !== 0) {
+                                        if (srvSt === undefined || srvSt === 'none' || srvSt === 'stock' || srvSt === 0) {
+                                            styling[k] = locSt;
+                                            hasLocalAdvancement = true;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
                         return {
                             ...c,
-                            basePrice: Number(c.basePrice || template.price || 80000)
+                            basePrice: Number(c.basePrice || template.price || 80000),
+                            condition,
+                            upgrades,
+                            ...(styling ? { styling } : {})
                         };
                     }).filter(Boolean);
+
                     renderCars();
+                    if (hasLocalAdvancement) {
+                        syncCloudGarage();
+                    }
                 } else if (myCars && myCars.length > 0) {
                     syncCloudGarage();
                 }
@@ -4123,6 +4195,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             playCashSound();
             renderCars();
             saveProgress();
+            if (typeof syncCloudGarage === 'function') syncCloudGarage(true);
             notifyUser(`Тюнинг установлен! Уровень ${car.upgrades[type]}/${NomeraRaceEconomy.MAX_LEVEL}.`, 'success');
         }
 
@@ -4139,6 +4212,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             car.condition = 100;
             renderCars();
             saveProgress();
+            if (typeof syncCloudGarage === 'function') syncCloudGarage(true);
             notifyUser('🔧 Машина отремонтирована! Состояние 100%.', 'success');
         }
 
@@ -4490,6 +4564,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             playCashSound();
             renderCars();
             saveProgress();
+            if (typeof syncCloudGarage === 'function') syncCloudGarage(true);
             closeStylingModal();
             notifyUser(`Стайлинг применён! Списано ${cost.toLocaleString('ru-RU')} ₽.`, 'success');
         }
@@ -7417,10 +7492,10 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     break;
                 case "КАМАЗ / Фура":
                     cfg = {
-                        rWx: -24, fWx: 24, rearBumperX: -44, frontBumperX: 36,
-                        hoodFrontY: -18.0, hoodBackX: 18, hoodBackY: -18.0,
-                        roofFrontX: 18, roofRearX: -44, roofY: -24.0,
-                        rearGlassEndX: -44, trunkY: -4.0, chinDrop: 0, noseDrop: 0,
+                        rWx: -26, fWx: 24, rearBumperX: -44, frontBumperX: 38,
+                        hoodFrontY: -4.0, hoodBackX: 36, hoodBackY: -4.0,
+                        roofFrontX: 36, roofRearX: 14, roofY: -22.0,
+                        rearGlassEndX: 16, trunkY: -7.0, chinDrop: 0, noseDrop: 0,
                         bPillars: [], model: 'kamaz', defaultColor: '#f59e0b'
                     };
                     break;
@@ -7683,6 +7758,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             // 6. Отрисовка колес (диски, тормоза, резина)
             // Положение колес строго фиксировано на уровне земли
             drawSideWheel(rWx, 6.5, false);
+            if (model === 'kamaz') {
+                drawSideWheel(-13, 6.5, false);
+            }
             drawSideWheel(fWx, 6.5, true);
 
             // 7. Основной силуэт кузова с анатомическими вырезами под колеса
@@ -7730,6 +7808,54 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             ctx.arc(Math.round(cx + fWx * s), Math.round(cy + archCenterY * s), 9.6 * s, Math.PI, 0, false);
             ctx.stroke();
             ctx.restore();
+
+            // 7.5 Стыки дверей, крыльев, капота и боковые ручки (Panel gaps & handles)
+            if (model !== 'cone' && model !== 'kamaz') {
+                ctx.save();
+                ctx.strokeStyle = bt.darkest;
+                ctx.lineWidth = 0.8 * s;
+
+                // Стык переднего крыла и передней двери
+                ctx.beginPath();
+                ctx.moveTo(Math.round(cx + hoodBackX * s), Math.round(cy + (hoodBackY + bodyYOffset) * s));
+                ctx.lineTo(Math.round(cx + (hoodBackX - 1.5) * s), Math.round(cy + (sillY - 0.5) * s));
+                ctx.stroke();
+
+                // Стык передней и задней двери (для авто со стойкой)
+                if (bPillars && bPillars.length > 0 && bPillars[0] !== undefined) {
+                    const bx = bPillars[0];
+                    ctx.beginPath();
+                    ctx.moveTo(Math.round(cx + bx * s), Math.round(cy + (roofY + bodyYOffset + 11.5) * s));
+                    ctx.lineTo(Math.round(cx + bx * s), Math.round(cy + (sillY - 0.5) * s));
+                    ctx.stroke();
+                }
+
+                // Задний стык двери и заднего крыла
+                ctx.beginPath();
+                ctx.moveTo(Math.round(cx + (roofRearX - 1.5) * s), Math.round(cy + (trunkY + bodyYOffset) * s));
+                ctx.lineTo(Math.round(cx + (rWx + 6.5) * s), Math.round(cy + (sillY - 0.5) * s));
+                ctx.stroke();
+
+                // Горизонтальное ребро жесткости кузова (shoulder line)
+                ctx.strokeStyle = bt.bright;
+                ctx.lineWidth = 0.6 * s;
+                ctx.beginPath();
+                ctx.moveTo(Math.round(cx + (rearBumperX + 4) * s), Math.round(cy + (trunkY + bodyYOffset + 2) * s));
+                ctx.lineTo(Math.round(cx + (frontBumperX - 3) * s), Math.round(cy + (hoodFrontY + bodyYOffset + 2) * s));
+                ctx.stroke();
+
+                // Дверные ручки
+                if (model !== 'vaz2107' && model !== 'vaz2109' && model !== 'gaz24' && model !== 'gelik') {
+                    const handleCol = (options.color && options.color.startsWith('#ff')) ? '#0f172a' : bt.darkest;
+                    px(hoodBackX - 6.5, hoodBackY + bodyYOffset + 2.4, 3.2, 0.9, handleCol);
+                    px(hoodBackX - 6.0, hoodBackY + bodyYOffset + 2.7, 2.2, 0.5, '#cbd5e1');
+                    if (bPillars && bPillars.length > 0 && bPillars[0] !== undefined) {
+                        px(bPillars[0] - 6.5, hoodBackY + bodyYOffset + 2.4, 3.2, 0.9, handleCol);
+                        px(bPillars[0] - 6.0, hoodBackY + bodyYOffset + 2.7, 2.2, 0.5, '#cbd5e1');
+                    }
+                }
+                ctx.restore();
+            }
 
             // 8. Фирменные элементы моделей
             if (model === 'vaz2107') {
@@ -7823,6 +7949,22 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 // Синяя полоса ДПС и надпись
                 px(-22, hoodBackY + bodyYOffset + 2, 44, 3.5, '#1d4ed8');
                 px(-12, hoodBackY + bodyYOffset + 3, 24, 1.5, '#ffffff');
+            } else if (model === 'kamaz') {
+                // Большой грузовой фургон / полуприцеп за кабиной КАМАЗа
+                fillRound(-44, -23 + bodyYOffset, 55, (sillY - (-23)), 2, '#334155', '#1e293b', 1);
+                // Гофрированные ребра жесткости фургона
+                for (let k = -40; k <= 6; k += 8) {
+                    px(k, -21 + bodyYOffset, 1.4, (sillY - (-23) - 4), '#1e293b');
+                }
+                // Красно-белая светоотражающая полоса по низу борта фургона
+                for (let k = -42; k <= 7; k += 6) {
+                    px(k, sillY - 2.8, 3, 1.6, '#ef4444');
+                    px(k + 3, sillY - 2.8, 3, 1.6, '#ffffff');
+                }
+                // Решетка радиатора КАМАЗа и массивный черный бампер с подножкой
+                fillRound(34, hoodFrontY + bodyYOffset - 1, 4.5, 6, 1, '#18181b', '#09090b', 0.5);
+                px(35, hoodFrontY + bodyYOffset + 0.5, 3.0, 1.0, '#f8fafc');
+                px(28, sillY - 0.5, 6, 1.5, '#475569');
             }
 
             // 9. Боковые стекла и тонировка
@@ -7833,11 +7975,12 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 const salPoly = poly.map(pt => [pt[0], pt[1] + bodyYOffset]);
                 fillPoly(salPoly, '#090d16');
 
-                // Подголовник кресла и контур руля
+                // Подголовник кресла и контур руля (динамически позиционируется по центру окна)
                 ctx.save();
                 ctx.fillStyle = '#1e293b';
-                const headX = Math.round(cx + 2 * s);
-                const headY = Math.round(cy + (poly[1][1] + 3 + bodyYOffset) * s);
+                const midWinX = (poly[0][0] + poly[3][0]) / 2;
+                const headX = Math.round(cx + (midWinX - 2) * s);
+                const headY = Math.round(cy + (poly[1][1] + 3.2 + bodyYOffset) * s);
                 ctx.beginPath();
                 ctx.arc(headX, headY, 1.8 * s, 0, Math.PI * 2);
                 ctx.fill();
@@ -7845,7 +7988,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 ctx.strokeStyle = '#334155';
                 ctx.lineWidth = 1.0 * s;
                 ctx.beginPath();
-                ctx.arc(Math.round(cx + 12 * s), headY + 1 * s, 2.0 * s, Math.PI * 0.4, Math.PI * 1.6);
+                ctx.arc(Math.round(cx + (midWinX + 8) * s), headY + 1 * s, 2.0 * s, Math.PI * 0.4, Math.PI * 1.6);
                 ctx.stroke();
                 ctx.restore();
 
@@ -7954,18 +8097,22 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
             if (options.lightsOn) {
                 ctx.save();
+                const totalW = options.width || 260;
+                const maxAvailable = Math.max(10, Math.floor((totalW - 8 - (cx + frontBumperX * s)) / (s || 1)));
+                const beamReach = Math.min(24, Math.max(10, maxAvailable));
+                const beamEnd = cx + (frontBumperX + beamReach) * s;
                 const beamGrad = (ctx && typeof ctx.createLinearGradient === 'function')
-                    ? ctx.createLinearGradient(cx + frontBumperX * s, cy + (hoodFrontY + bodyYOffset + 1.5) * s, cx + (frontBumperX + 45) * s, cy + (hoodFrontY + bodyYOffset + 1.5) * s)
+                    ? ctx.createLinearGradient(cx + frontBumperX * s, cy + (hoodFrontY + bodyYOffset + 1.5) * s, beamEnd, cy + (hoodFrontY + bodyYOffset + 1.5) * s)
                     : null;
                 if (beamGrad && typeof beamGrad.addColorStop === 'function') {
-                    beamGrad.addColorStop(0, 'rgba(254, 240, 138, 0.45)');
-                    beamGrad.addColorStop(0.3, 'rgba(254, 240, 138, 0.18)');
+                    beamGrad.addColorStop(0, 'rgba(254, 240, 138, 0.40)');
+                    beamGrad.addColorStop(0.35, 'rgba(254, 240, 138, 0.15)');
                     beamGrad.addColorStop(1, 'rgba(254, 240, 138, 0)');
                     ctx.fillStyle = beamGrad;
                     ctx.beginPath();
                     ctx.moveTo(cx + frontBumperX * s, cy + (hoodFrontY + bodyYOffset + 1.5) * s);
-                    ctx.lineTo(cx + (frontBumperX + 45) * s, cy + (hoodFrontY + bodyYOffset - 8) * s);
-                    ctx.lineTo(cx + (frontBumperX + 45) * s, cy + (hoodFrontY + bodyYOffset + 14) * s);
+                    ctx.lineTo(beamEnd, cy + (hoodFrontY + bodyYOffset - 6) * s);
+                    ctx.lineTo(beamEnd, cy + (hoodFrontY + bodyYOffset + 10) * s);
                     ctx.closePath();
                     ctx.fill();
                 }
@@ -8093,7 +8240,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             const view = options.view || 'side';
 
             if (view === 'side') {
-                const scale = options.scale || (width <= 140 ? 1.4 : 2.1);
+                const scale = options.scale || (width <= 140 ? 1.4 : 1.92);
                 drawPixelCarSide(ctx, cx, cy, name, scale, {
                     color: styling?.color,
                     tint: styling?.tint,
@@ -8103,11 +8250,13 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     wheels: styling?.wheels,
                     suspension: styling?.suspension,
                     sgu: styling?.sgu,
-                    lightsOn: true
+                    lightsOn: true,
+                    width,
+                    height
                 });
             } else {
                 const tilt = (options.tilt !== undefined) ? options.tilt : (Math.PI / 2);
-                const scale = options.scale || (width <= 140 ? 1.3 : 2.4);
+                const scale = options.scale || (width <= 140 ? 1.3 : 2.2);
 
                 drawPixelCar(ctx, cx, cy, name, scale, {
                     color: styling?.color,
@@ -8119,7 +8268,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     suspension: styling?.suspension,
                     sgu: styling?.sgu,
                     tilt: tilt,
-                    lightsOn: true
+                    lightsOn: true,
+                    width,
+                    height
                 });
             }
         }

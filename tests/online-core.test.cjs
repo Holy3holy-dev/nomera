@@ -127,11 +127,32 @@ test('syncGarage validates cars and updates player garage', () => {
     chat: {}
   };
   const validCars = [
-    { name: 'Lada Priora БПАН', basePrice: 250000, condition: 98, styling: { color: '#ef4444', neon: '#00f0ff' } }
+    {
+      name: 'Lada Priora БПАН',
+      basePrice: 250000,
+      condition: 100,
+      styling: {
+        color: '#ef4444',
+        neon: '#00f0ff',
+        tint: 'chameleon',
+        wheels: 'deepdish',
+        suspension: 'bpan',
+        spoiler: 'gt',
+        vinyl: 'drift',
+        sgu: 'installed'
+      }
+    }
   ];
   const synced = c.mutate(s, 'syncGarage', 'player1', { myCars: validCars });
   assert.equal(synced.accounts.player1.myCars.length, 1);
   assert.equal(synced.accounts.player1.myCars[0].name, 'Lada Priora БПАН');
+  assert.equal(synced.accounts.player1.myCars[0].condition, 100);
   assert.equal(synced.accounts.player1.myCars[0].styling.neon, '#00f0ff');
+  assert.equal(synced.accounts.player1.myCars[0].styling.tint, 'chameleon');
+  assert.equal(synced.accounts.player1.myCars[0].styling.wheels, 'deepdish');
+  assert.equal(synced.accounts.player1.myCars[0].styling.suspension, 'bpan');
+  assert.equal(synced.accounts.player1.myCars[0].styling.spoiler, 'gt');
+  assert.equal(synced.accounts.player1.myCars[0].styling.vinyl, 'drift');
+  assert.equal(synced.accounts.player1.myCars[0].styling.sgu, 'installed');
   assert.throws(() => c.mutate(s, 'syncGarage', 'player1', { myCars: [] }), /пустым/);
 });
