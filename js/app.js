@@ -353,7 +353,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         let achievements = {};
         let selectedDragBet = 0;
         let isDragRaceRunning = false;
-        let activeRaceMode = 'circuit';
+        let activeRaceMode = '3d';
         let currentMarketFilter = 'all';
         let activeCollectionTab = 'plates';
         let stylingActiveCarIndex = -1;
@@ -4195,8 +4195,8 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                                     🏷️ На рынок
                                 </button>
                             </div>
-                            <button class="btn btn-green" style="font-size: 12px; padding: 8px 12px; margin-top: 8px; width: 100%; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);" onclick="startRaceWithCar(${jsArg(car.name)}, ${index})">
-                                🏁 Выехать на трассу (Гонка)
+                            <button class="btn btn-green" style="font-size: 12px; padding: 8px 12px; margin-top: 8px; width: 100%; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);" onclick="start3DRaceWithCar(${jsArg(car.name)}, ${index})">
+                                🏎️ Выехать на 3D трассу (Гонка)
                             </button>
                         </div>
                     </div>
@@ -9511,12 +9511,23 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             }
         }
 
+        function start3DRaceWithCar(name, index = -1) {
+            switchRaceMode('3d');
+            startRaceWithCar(name, index);
+        }
+
         // ==========================================
         // 3D ГОНКА: УПРАВЛЕНИЕ И ИНТЕГРАЦИЯ THREE.JS
         // ==========================================
         let car3DRacingEngine = null;
 
         function start3DRaceGame() {
+            if (typeof Car3DManager === 'undefined' || typeof window.THREE === 'undefined' || !Car3DManager.Car3DRacingEngine) {
+                notifyUser('3D режим недоступен или ещё загружается Three.js. Переключаем на 2D...', 'info');
+                switchRaceMode('circuit');
+                startRaceGame();
+                return;
+            }
             if (isRaceRunning) return;
             resetRaceKeys();
             const carIndex = getSelectedRaceCarIndex();

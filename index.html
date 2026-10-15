@@ -309,9 +309,9 @@
             <div class="section-box" style="padding: 16px;">
                 <!-- Переключатель режима заездов: Трасса / Дрэг / 3D -->
                 <div class="market-type-nav" style="margin-bottom: 14px;">
-                    <button class="market-type-btn active" id="btn-race-mode-circuit" onclick="switchRaceMode('circuit')">Шоссе (2D)</button>
+                    <button class="market-type-btn" id="btn-race-mode-circuit" onclick="switchRaceMode('circuit')">Шоссе (2D)</button>
                     <button class="market-type-btn" id="btn-race-mode-drag" onclick="switchRaceMode('drag')">Дрэг (402 м)</button>
-                    <button class="market-type-btn" id="btn-race-mode-3d" onclick="switchRaceMode('3d')" style="position: relative; border-color: rgba(255, 46, 76, 0.45); font-weight: 800;">
+                    <button class="market-type-btn active" id="btn-race-mode-3d" onclick="switchRaceMode('3d')" style="position: relative; border-color: rgba(255, 46, 76, 0.45); font-weight: 800;">
                         🏎️ 3D Шоссе (Вид сзади) <span style="background: linear-gradient(135deg, #ef4444, #f59e0b); color: #fff; font-size: 8px; padding: 2px 6px; border-radius: 999px; margin-left: 4px; vertical-align: middle;">HOT</span>
                     </button>
                 </div>
@@ -1376,10 +1376,20 @@
     <script src="./js/race-economy.js?v=2cbfd8e11f42"></script>
     <script src="./js/audio.js?v=dc6d5b04e3ce"></script>
     <script src="./js/vendor/three.min.js"></script>
+    <script>
+        if (typeof THREE === 'undefined') {
+            document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/script>');
+        }
+    </script>
     <script src="./js/vendor/DRACOLoader.js"></script>
     <script src="./js/vendor/meshopt_decoder.js"></script>
     <script src="./js/vendor/GLTFLoader.js"></script>
+    <script>
+        if (typeof THREE !== 'undefined' && !THREE.GLTFLoader) {
+            document.write('<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"><\/script>');
+        }
+    </script>
     <script src="./js/car-3d.js?v=8a19238dfb4e"></script>
-    <script src="./js/app.js?v=de840d5a0777"></script>
+    <script src="./js/app.js?v=49588f440801"></script>
 </body>
 </html>
