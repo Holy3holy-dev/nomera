@@ -8,7 +8,8 @@
     "assets": "node scripts/release-assets.cjs",
     "test:browser": "node scripts/browser-smoke.cjs",
     "admin:hash": "node scripts/hash-admin-password.cjs",
-    "build": "node scripts/build.cjs"
+    "build": "node scripts/build.cjs",
+    "serve": "node scripts/serve.cjs"
   },
   "engines": {
     "node": ">=22"
