@@ -366,6 +366,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         let stylingTempSuspension = 'stock';
         let stylingTempSgu = 'none';
         let stylingTempPlate = 'none';
+        let stylingTempCamber = 0;
+        let stylingTempOffset = 0;
+        let stylingTempNeonMode = 'solid';
         let stylingViewMode = 'side';
 
         const TITLES_CATALOG = {
@@ -4431,11 +4434,13 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             const cvs = document.getElementById('styling-preview-canvas');
             const wrap3D = document.getElementById('styling-preview-3d-wrap');
             const hint3D = document.getElementById('styling-3d-hint');
+            const toolbar3D = document.getElementById('showroom-toolbar');
 
             if (stylingViewMode === '3d') {
                 if (cvs) cvs.style.display = 'none';
                 if (wrap3D) wrap3D.style.display = 'block';
                 if (hint3D) hint3D.style.display = 'block';
+                if (toolbar3D) toolbar3D.style.display = 'flex';
 
                 if (typeof Car3DManager !== 'undefined' && Car3DManager.isWebGLAvailable()) {
                     if (!car3DShowroom) {
@@ -4459,7 +4464,10 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                             wheels: stylingTempWheels,
                             suspension: stylingTempSuspension,
                             sgu: stylingTempSgu,
-                            plate: stylingTempPlate
+                            plate: stylingTempPlate,
+                            camber: stylingTempCamber,
+                            wheelOffset: stylingTempOffset,
+                            neonMode: stylingTempNeonMode
                         });
                     }
                 } else {
@@ -4471,6 +4479,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 if (cvs) cvs.style.display = 'block';
                 if (wrap3D) wrap3D.style.display = 'none';
                 if (hint3D) hint3D.style.display = 'none';
+                if (toolbar3D) toolbar3D.style.display = 'none';
                 if (car3DShowroom) {
                     car3DShowroom.stop();
                 }
@@ -4489,7 +4498,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             if (btn3D) btn3D.classList.toggle('active', stylingViewMode === '3d');
             const car = myCars[carIndex];
             if (!car) return;
-            car.styling = car.styling || { color: '#ffffff', tint: 0, neon: 'none', spoiler: 'none', vinyl: 'none', wheels: 'stock', suspension: 'stock', sgu: 'none' };
+            car.styling = car.styling || { color: '#ffffff', tint: 0, neon: 'none', spoiler: 'none', vinyl: 'none', wheels: 'stock', suspension: 'stock', sgu: 'none', camber: 0, wheelOffset: 0, neonMode: 'solid' };
             stylingTempColor = car.styling.color || '#ffffff';
             stylingTempTint = car.styling.tint ?? 0;
             stylingTempNeon = car.styling.neon || 'none';
@@ -4499,6 +4508,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             stylingTempSuspension = car.styling.suspension || 'stock';
             stylingTempSgu = car.styling.sgu || 'none';
             stylingTempPlate = car.plate ? (car.plate.text || car.plate) : 'none';
+            stylingTempCamber = car.styling.camber ?? 0;
+            stylingTempOffset = car.styling.wheelOffset ?? 0;
+            stylingTempNeonMode = car.styling.neonMode || 'solid';
 
             const titleEl = document.getElementById('styling-car-title');
             if (titleEl) titleEl.innerText = `Настройка для: ${car.name}`;
@@ -4530,9 +4542,23 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             document.querySelectorAll('#styling-suspension-chips .styling-chip').forEach(btn => {
                 btn.classList.toggle('active', btn.dataset.suspension === stylingTempSuspension);
             });
+            document.querySelectorAll('#styling-camber-chips .styling-chip').forEach(btn => {
+                btn.classList.toggle('active', Number(btn.dataset.camber) === Number(stylingTempCamber));
+            });
+            document.querySelectorAll('#styling-offset-chips .styling-chip').forEach(btn => {
+                btn.classList.toggle('active', Number(btn.dataset.offset) === Number(stylingTempOffset));
+            });
             document.querySelectorAll('#styling-sgu-chips .styling-chip').forEach(btn => {
                 btn.classList.toggle('active', btn.dataset.sgu === stylingTempSgu);
             });
+            document.querySelectorAll('#styling-neon-mode-chips .styling-chip').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.neonmode === stylingTempNeonMode);
+            });
+
+            document.getElementById('btn-show-doors')?.classList.remove('active');
+            document.getElementById('btn-show-hood')?.classList.remove('active');
+            document.getElementById('btn-show-trunk')?.classList.remove('active');
+            document.getElementById('btn-show-lights')?.classList.remove('active');
 
             renderStylingPlateChips();
 
@@ -4615,6 +4641,65 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             updateStylingModalPreview();
         }
 
+        function selectStylingCamber(camber) {
+            stylingTempCamber = Number(camber);
+            document.querySelectorAll('#styling-camber-chips .styling-chip').forEach(btn => {
+                btn.classList.toggle('active', Number(btn.dataset.camber) === Number(stylingTempCamber));
+            });
+            playTick();
+            updateStylingModalPreview();
+        }
+
+        function selectStylingOffset(offset) {
+            stylingTempOffset = Number(offset);
+            document.querySelectorAll('#styling-offset-chips .styling-chip').forEach(btn => {
+                btn.classList.toggle('active', Number(btn.dataset.offset) === Number(stylingTempOffset));
+            });
+            playTick();
+            updateStylingModalPreview();
+        }
+
+        function selectStylingNeonMode(mode) {
+            stylingTempNeonMode = mode;
+            document.querySelectorAll('#styling-neon-mode-chips .styling-chip').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.neonmode === stylingTempNeonMode);
+            });
+            playTick();
+            updateStylingModalPreview();
+        }
+
+        function toggleShowroomDoors() {
+            if (stylingViewMode !== '3d' || !car3DShowroom) return;
+            const isOpen = car3DShowroom.toggleDoors();
+            const btn = document.getElementById('btn-show-doors');
+            if (btn) btn.classList.toggle('active', isOpen);
+            playTick();
+        }
+
+        function toggleShowroomHood() {
+            if (stylingViewMode !== '3d' || !car3DShowroom) return;
+            const isOpen = car3DShowroom.toggleHood();
+            const btn = document.getElementById('btn-show-hood');
+            if (btn) btn.classList.toggle('active', isOpen);
+            playTick();
+        }
+
+        function toggleShowroomTrunk() {
+            if (stylingViewMode !== '3d' || !car3DShowroom) return;
+            const isOpen = car3DShowroom.toggleTrunk();
+            const btn = document.getElementById('btn-show-trunk');
+            if (btn) btn.classList.toggle('active', isOpen);
+            playTick();
+        }
+
+        function toggleShowroomHeadlights() {
+            if (stylingViewMode !== '3d' || !car3DShowroom) return;
+            const isOn = car3DShowroom.toggleHeadlights();
+            const btn = document.getElementById('btn-show-lights');
+            if (btn) btn.classList.toggle('active', isOn);
+            playTick();
+        }
+
         function renderStylingPlateChips() {
             const container = document.getElementById('styling-plate-chips');
             const badge = document.getElementById('styling-plate-current-badge');
@@ -4684,7 +4769,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         async function confirmApplyStyling() {
             const car = myCars[stylingActiveCarIndex];
             if (!car) return;
-            car.styling = car.styling || { color: '#ffffff', tint: 0, neon: 'none', spoiler: 'none', vinyl: 'none', wheels: 'stock', suspension: 'stock', sgu: 'none' };
+            car.styling = car.styling || { color: '#ffffff', tint: 0, neon: 'none', spoiler: 'none', vinyl: 'none', wheels: 'stock', suspension: 'stock', sgu: 'none', camber: 0, wheelOffset: 0, neonMode: 'solid' };
 
             let cost = 0;
             if (stylingTempColor !== car.styling.color) cost += 15000;
@@ -4712,6 +4797,18 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 if (stylingTempSuspension === 'lowered') cost += 25000;
                 else if (stylingTempSuspension === 'bpan') cost += 50000;
                 else if (stylingTempSuspension === 'lift') cost += 35000;
+            }
+            if (Number(stylingTempCamber) !== Number(car.styling.camber ?? 0)) {
+                if (stylingTempCamber === -3) cost += 20000;
+                else if (stylingTempCamber === -6) cost += 35000;
+                else if (stylingTempCamber === -9) cost += 50000;
+            }
+            if (Number(stylingTempOffset) !== Number(car.styling.wheelOffset ?? 0)) {
+                if (stylingTempOffset === 0.015) cost += 15000;
+                else if (stylingTempOffset === 0.03) cost += 30000;
+            }
+            if (stylingTempNeonMode !== (car.styling.neonMode || 'solid')) {
+                if (stylingTempNeonMode === 'rainbow') cost += 25000;
             }
             if (stylingTempSgu !== (car.styling.sgu || 'none')) {
                 if (stylingTempSgu === 'installed') cost += 80000;
@@ -4752,7 +4849,10 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 wheels: stylingTempWheels,
                 suspension: stylingTempSuspension,
                 sgu: stylingTempSgu,
-                plate: car.plate ? (car.plate.text || car.plate) : 'none'
+                plate: car.plate ? (car.plate.text || car.plate) : 'none',
+                camber: stylingTempCamber,
+                wheelOffset: stylingTempOffset,
+                neonMode: stylingTempNeonMode
             };
             renderInventory();
             carSpriteCache.clear();
@@ -8575,7 +8675,10 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     wheels: stylingTempWheels,
                     suspension: stylingTempSuspension,
                     sgu: stylingTempSgu,
-                    plate: stylingTempPlate
+                    plate: stylingTempPlate,
+                    camber: stylingTempCamber,
+                    wheelOffset: stylingTempOffset,
+                    neonMode: stylingTempNeonMode
                 });
             }
 

@@ -31,7 +31,7 @@
     <!-- Подключение Firebase SDK для базы данных, аккаунтов и мультиплеера -->
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
-    <link rel="stylesheet" href="./styles.css?v=a31592704a3d">
+    <link rel="stylesheet" href="./styles.css?v=79979e0bc094">
 </head>
 <body>
     <svg class="icon-sprite" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><defs><symbol id="icon-plate" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M7 10h5m-5 4h5m4-4v4"/></symbol><symbol id="icon-collection" viewBox="0 0 24 24"><rect x="4" y="7" width="16" height="13" rx="2"/><path d="M8 7V4h8v3m-8 5h8m-8 4h5"/></symbol><symbol id="icon-garage" viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v10H3zM7 21V12h10v9m-10-5h10"/></symbol><symbol id="icon-race" viewBox="0 0 24 24"><path d="M5 21V3m0 1h6l2 2h7v10h-7l-2-2H5m6-10v10m2-8v10"/></symbol><symbol id="icon-case" viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="14" rx="2"/><path d="M12 7v14M3 12h18m-9-5C4 7 5 1 8 3l4 4m0 0c8 0 7-6 4-4z"/></symbol><symbol id="icon-rating" viewBox="0 0 24 24"><path d="M7 3h10v5a5 5 0 01-10 0zm10 2h4v3a4 4 0 01-4 4M7 5H3v3a4 4 0 004 4m5 1v5m-4 3h8m-6-3h4"/></symbol><symbol id="icon-online" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><ellipse cx="12" cy="12" rx="4" ry="9"/><path d="M3 12h18"/></symbol><symbol id="icon-profile" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M5 21v-2a7 7 0 0114 0v2"/></symbol><symbol id="icon-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3M5 5l2 2m10 10l2 2M5 19l2-2M17 7l2-2"/></symbol></defs></svg>
@@ -1225,6 +1225,15 @@
             <div id="styling-preview-stage" style="background: radial-gradient(circle at center, rgba(30,41,59,0.7) 0%, rgba(15,23,42,0.95) 100%); border-radius: var(--radius-md); padding: 8px; margin-bottom: 14px; text-align: center; border: 1px solid var(--border-subtle); display:flex; justify-content:center; align-items:center; min-height: 180px; position: relative;">
                 <canvas id="styling-preview-canvas" width="280" height="150" style="max-width: 100%; height: auto;"></canvas>
                 <div id="styling-preview-3d-wrap" style="width: 100%; height: 210px; display: none; position: relative; border-radius: 8px; overflow: hidden; cursor: grab;"></div>
+                
+                <!-- 🚪 Интерактивный тулбар 3D осмотра (Двери, Капот, Багажник, Фары) -->
+                <div class="showroom-interact-toolbar" id="showroom-toolbar" style="display: none;">
+                    <button type="button" class="showroom-interact-btn" id="btn-show-doors" onclick="toggleShowroomDoors()" title="Распахнуть двери">🚪 Двери</button>
+                    <button type="button" class="showroom-interact-btn" id="btn-show-hood" onclick="toggleShowroomHood()" title="Открыть капот (двигатель)">⚙️ Капот</button>
+                    <button type="button" class="showroom-interact-btn" id="btn-show-trunk" onclick="toggleShowroomTrunk()" title="Открыть багажник (музыка)">🔊 Багажник</button>
+                    <button type="button" class="showroom-interact-btn" id="btn-show-lights" onclick="toggleShowroomHeadlights()" title="Включить фары">💡 Фары</button>
+                </div>
+
                 <div id="styling-3d-hint" style="display: none; position: absolute; bottom: 8px; left: 0; right: 0; font-size: 10px; color: #94a3b8; pointer-events: none; text-shadow: 0 1px 3px rgba(0,0,0,0.8);">
                     🔄 Тяни пальцем/мышью для вращения · Колесо/щипок для зума
                 </div>
@@ -1267,6 +1276,25 @@
             </div>
 
             <div style="margin-bottom:14px;">
+                <div style="font-size:12px; color:#fff; font-weight:800; margin-bottom:6px;">📐 Stance: Развал колёс (Camber):</div>
+                <div class="styling-options-row" id="styling-camber-chips">
+                    <button type="button" class="styling-chip" data-camber="0" onclick="selectStylingCamber(0)">0° Сток (0 ₽)</button>
+                    <button type="button" class="styling-chip" data-camber="-3" onclick="selectStylingCamber(-3)">-3° Спорт (20 000 ₽)</button>
+                    <button type="button" class="styling-chip" data-camber="-6" onclick="selectStylingCamber(-6)">-6° Дрифт (35 000 ₽)</button>
+                    <button type="button" class="styling-chip" data-camber="-9" onclick="selectStylingCamber(-9)">-9° Стенс (50 000 ₽)</button>
+                </div>
+            </div>
+
+            <div style="margin-bottom:14px;">
+                <div style="font-size:12px; color:#fff; font-weight:800; margin-bottom:6px;">🚗 Вылет колёс (Проставки / Spacers):</div>
+                <div class="styling-options-row" id="styling-offset-chips">
+                    <button type="button" class="styling-chip" data-offset="0" onclick="selectStylingOffset(0)">Сток вылет (0 ₽)</button>
+                    <button type="button" class="styling-chip" data-offset="0.015" onclick="selectStylingOffset(0.015)">+15 мм (15 000 ₽)</button>
+                    <button type="button" class="styling-chip" data-offset="0.03" onclick="selectStylingOffset(0.03)">+30 мм Flush (30 000 ₽)</button>
+                </div>
+            </div>
+
+            <div style="margin-bottom:14px;">
                 <div style="font-size:12px; color:#fff; font-weight:800; margin-bottom:6px;">Спецсигнал СГУ («Крякалка»):</div>
                 <div class="styling-options-row" id="styling-sgu-chips">
                     <button type="button" class="styling-chip" data-sgu="none" onclick="selectStylingSgu('none')">Без спецсигнала (0 ₽)</button>
@@ -1283,6 +1311,13 @@
                     <button type="button" class="styling-chip" data-neon="#ff0055" onclick="selectStylingNeon('#ff0055')">Неон-красный</button>
                     <button type="button" class="styling-chip" data-neon="#a855f7" onclick="selectStylingNeon('#a855f7')">Фиолетовый</button>
                     <button type="button" class="styling-chip" data-neon="#eab308" onclick="selectStylingNeon('#eab308')">Золото</button>
+                    <button type="button" class="styling-chip" data-neon="#f472b6" onclick="selectStylingNeon('#f472b6')">Сакура</button>
+                </div>
+                <div style="font-size:11px; color:#94a3b8; font-weight:700; margin: 8px 0 4px;">Режим неона:</div>
+                <div class="styling-options-row" id="styling-neon-mode-chips">
+                    <button type="button" class="styling-chip" data-neonmode="solid" onclick="selectStylingNeonMode('solid')">Статичный</button>
+                    <button type="button" class="styling-chip" data-neonmode="pulse" onclick="selectStylingNeonMode('pulse')">Пульсация</button>
+                    <button type="button" class="styling-chip" data-neonmode="rainbow" onclick="selectStylingNeonMode('rainbow')">🌈 RGB Радуга (25 000 ₽)</button>
                 </div>
             </div>
 
@@ -1400,7 +1435,7 @@
             document.write('<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"><\/script>');
         }
     </script>
-    <script src="./js/car-3d.js?v=47686c6abcb3"></script>
-    <script src="./js/app.js?v=5596344f548b"></script>
+    <script src="./js/car-3d.js?v=ce3b1d0c0d08"></script>
+    <script src="./js/app.js?v=a857aa9a5f20"></script>
 </body>
 </html>

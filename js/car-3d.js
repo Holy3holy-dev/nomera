@@ -3782,9 +3782,11 @@
         const mats = createCarMaterials(THREE, styling);
         const carId = identifyCarModel(carName);
 
-        // Suspension ride height offset
+        // Suspension ride height offset & Stance tuning
         let suspensionOffsetY = 0;
-        if (styling.suspension === 'bpan') {
+        if (typeof styling.rideHeight === 'number') {
+            suspensionOffsetY = styling.rideHeight;
+        } else if (styling.suspension === 'bpan') {
             suspensionOffsetY = -0.095; // Slammed БПАН
         } else if (styling.suspension === 'lowered') {
             suspensionOffsetY = -0.048; // -30mm sport drop
@@ -3892,7 +3894,7 @@
             const neonMat = new THREE.MeshStandardMaterial({
                 color: neonCol,
                 emissive: neonCol,
-                emissiveIntensity: 1.2,
+                emissiveIntensity: 1.4,
                 roughness: 0.1
             });
 
@@ -3905,7 +3907,154 @@
             });
         }
 
-        // 4 Wheels Assembly (Fixed to ground height, not affected by chassis drop)
+        // ---------------------------------------------------------------------
+        // Interactive Body Elements (Doors, Hood, Trunk, Engine Bay, Subwoofer)
+        // ---------------------------------------------------------------------
+        const doorLength = spec.bodyLength * 0.24;
+        const doorHeight = 0.50;
+        const doorThick = 0.04;
+
+        // Front Left Door (Driver) with Hinge Pivot
+        const doorFLPivot = new THREE.Group();
+        doorFLPivot.name = 'Door_FL_Pivot';
+        doorFLPivot.position.set(-spec.bodyWidth * 0.49, 0.58, spec.wheelBase * 0.42);
+
+        const doorFLMesh = new THREE.Mesh(new THREE.BoxGeometry(doorThick, doorHeight, doorLength), mats.paint);
+        doorFLMesh.position.set(0, 0, -doorLength * 0.5);
+        doorFLPivot.add(doorFLMesh);
+
+        const doorFLGlass = new THREE.Mesh(new THREE.BoxGeometry(doorThick * 0.6, doorHeight * 0.68, doorLength * 0.90), mats.glass);
+        doorFLGlass.position.set(0, doorHeight * 0.66, -doorLength * 0.5);
+        doorFLPivot.add(doorFLGlass);
+
+        const handleFL = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.03, 0.09), mats.chrome || mats.trim);
+        handleFL.position.set(-doorThick * 0.6, 0.05, -doorLength * 0.80);
+        doorFLPivot.add(handleFL);
+
+        const mirrorFL = new THREE.Mesh(new THREE.BoxGeometry(0.10, 0.07, 0.12), mats.trim);
+        mirrorFL.position.set(-0.07, doorHeight * 0.44, -0.05);
+        doorFLPivot.add(mirrorFL);
+
+        chassisGroup.add(doorFLPivot);
+
+        // Front Right Door (Passenger) with Hinge Pivot
+        const doorFRPivot = new THREE.Group();
+        doorFRPivot.name = 'Door_FR_Pivot';
+        doorFRPivot.position.set(spec.bodyWidth * 0.49, 0.58, spec.wheelBase * 0.42);
+
+        const doorFRMesh = new THREE.Mesh(new THREE.BoxGeometry(doorThick, doorHeight, doorLength), mats.paint);
+        doorFRMesh.position.set(0, 0, -doorLength * 0.5);
+        doorFRPivot.add(doorFRMesh);
+
+        const doorFRGlass = new THREE.Mesh(new THREE.BoxGeometry(doorThick * 0.6, doorHeight * 0.68, doorLength * 0.90), mats.glass);
+        doorFRGlass.position.set(0, doorHeight * 0.66, -doorLength * 0.5);
+        doorFRPivot.add(doorFRGlass);
+
+        const handleFR = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.03, 0.09), mats.chrome || mats.trim);
+        handleFR.position.set(doorThick * 0.6, 0.05, -doorLength * 0.80);
+        doorFRPivot.add(handleFR);
+
+        const mirrorFR = new THREE.Mesh(new THREE.BoxGeometry(0.10, 0.07, 0.12), mats.trim);
+        mirrorFR.position.set(0.07, doorHeight * 0.44, -0.05);
+        doorFRPivot.add(mirrorFR);
+
+        chassisGroup.add(doorFRPivot);
+
+        // Hood / Bonnet with Hinge Pivot
+        const hoodLength = spec.bodyLength * 0.30;
+        const hoodWidth = spec.bodyWidth * 0.88;
+        const hoodPivot = new THREE.Group();
+        hoodPivot.name = 'Hood_Pivot';
+        hoodPivot.position.set(0, 0.78, spec.wheelBase * 0.44);
+
+        const hoodMesh = new THREE.Mesh(new THREE.BoxGeometry(hoodWidth, 0.025, hoodLength), mats.paint);
+        hoodMesh.position.set(0, 0, hoodLength * 0.5);
+        hoodPivot.add(hoodMesh);
+        chassisGroup.add(hoodPivot);
+
+        // Engine Bay Details (revealed when hood opens)
+        const engineBayGroup = new THREE.Group();
+        engineBayGroup.name = 'EngineBayGroup';
+        engineBayGroup.position.set(0, 0.55, spec.wheelBase * 0.58);
+
+        const engBlock = new THREE.Mesh(new THREE.BoxGeometry(spec.bodyWidth * 0.40, 0.26, 0.40), mats.trim);
+        engBlock.name = 'Engine_Block';
+        engineBayGroup.add(engBlock);
+
+        const valveCover = new THREE.Mesh(new THREE.BoxGeometry(spec.bodyWidth * 0.36, 0.07, 0.36), mats.brakeCaliper || mats.paint);
+        valveCover.name = 'Engine_ValveCover';
+        valveCover.position.y = 0.15;
+        engineBayGroup.add(valveCover);
+
+        const intakeManifold = new THREE.Mesh(new THREE.BoxGeometry(spec.bodyWidth * 0.24, 0.05, 0.20), mats.chrome);
+        intakeManifold.name = 'Engine_IntakePipe';
+        intakeManifold.position.set(-0.10, 0.17, 0.04);
+        engineBayGroup.add(intakeManifold);
+
+        const airFilter = new THREE.Mesh(new THREE.ConeGeometry(0.07, 0.16, 12), mats.brakeCaliper || mats.trim);
+        airFilter.name = 'Engine_AirFilter';
+        airFilter.rotation.z = Math.PI / 2;
+        airFilter.position.set(-spec.bodyWidth * 0.26, 0.13, 0.10);
+        engineBayGroup.add(airFilter);
+
+        const strutBrace = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, spec.bodyWidth * 0.72, 8), mats.chrome);
+        strutBrace.name = 'Engine_StrutBar';
+        strutBrace.rotation.z = Math.PI / 2;
+        strutBrace.position.set(0, 0.23, -0.04);
+        engineBayGroup.add(strutBrace);
+
+        chassisGroup.add(engineBayGroup);
+
+        // Trunk Lid with Hinge Pivot
+        const trunkLength = spec.bodyLength * 0.24;
+        const trunkWidth = spec.bodyWidth * 0.85;
+        const trunkPivot = new THREE.Group();
+        trunkPivot.name = 'Trunk_Pivot';
+        trunkPivot.position.set(0, 0.77, -spec.wheelBase * 0.36);
+
+        const trunkMesh = new THREE.Mesh(new THREE.BoxGeometry(trunkWidth, 0.025, trunkLength), mats.paint);
+        trunkMesh.position.set(0, 0, -trunkLength * 0.5);
+        trunkPivot.add(trunkMesh);
+        chassisGroup.add(trunkPivot);
+
+        // Subwoofer / Audio System in Trunk (revealed when trunk opens)
+        const subwooferGroup = new THREE.Group();
+        subwooferGroup.name = 'SubwooferGroup';
+        subwooferGroup.position.set(0, 0.52, -spec.wheelBase * 0.50);
+
+        const subBox = new THREE.Mesh(new THREE.BoxGeometry(spec.bodyWidth * 0.62, 0.24, 0.32), mats.darkPlastic || mats.trim);
+        subBox.name = 'Subwoofer_Box';
+        subwooferGroup.add(subBox);
+
+        [-0.16, 0.16].forEach((sx, idx) => {
+            const cone = new THREE.Mesh(new THREE.CylinderGeometry(0.10, 0.03, 0.05, 16), mats.interior || mats.trim);
+            cone.name = idx === 0 ? 'Subwoofer_Cone_L' : 'Subwoofer_Cone_R';
+            cone.rotation.x = Math.PI / 2;
+            cone.position.set(sx * (spec.bodyWidth * 0.44), 0.03, 0.15);
+            subwooferGroup.add(cone);
+
+            const subRing = new THREE.Mesh(new THREE.TorusGeometry(0.105, 0.010, 8, 24), new THREE.MeshStandardMaterial({
+                color: 0x38bdf8,
+                emissive: 0x0284c7,
+                emissiveIntensity: 1.2
+            }));
+            subRing.position.set(sx * (spec.bodyWidth * 0.44), 0.03, 0.17);
+            subwooferGroup.add(subRing);
+        });
+
+        chassisGroup.add(subwooferGroup);
+
+        // Headlights & Taillights Groups for Showroom Interactive Lighting
+        const headlightsGroup = new THREE.Group();
+        headlightsGroup.name = 'HeadlightsGroup';
+        [-spec.wheelTrack * 0.74, spec.wheelTrack * 0.74].forEach(hx => {
+            const hlLight = new THREE.PointLight(0xf8fafc, 0, 16, 1.8);
+            hlLight.position.set(hx, 0.65, spec.bodyLength * 0.51);
+            headlightsGroup.add(hlLight);
+        });
+        chassisGroup.add(headlightsGroup);
+
+        // 4 Wheels Assembly (Fixed to ground height, with Stance Camber & Spacers)
         const wheelsRig = new THREE.Group();
         wheelsRig.name = 'WheelsRig';
         root.add(wheelsRig);
@@ -3922,36 +4071,54 @@
         const wRadius = spec.wheelR || 0.33;
         const wCenterY = wRadius;
 
+        // Stance: Camber and Spacers / Offset
+        const camberDeg = Number(styling.camber) || 0;
+        const camberRad = (camberDeg * Math.PI) / 180;
+        const spacerOffset = Number(styling.wheelOffset) || 0;
+        const trackW = spec.wheelTrack + spacerOffset;
+
         // Front Left
         const wFL = createDetailedWheel(THREE, mats, wheelStyle, wRadius / 0.33);
-        wFL.position.set(-spec.wheelTrack, wCenterY, spec.wheelBase);
+        wFL.name = 'Wheel_FL';
+        wFL.position.set(-trackW, wCenterY, spec.wheelBase);
         wFL.rotation.y = Math.PI;
+        wFL.rotation.z = -camberRad;
         wFL.userData.isSteerable = true;
         wFL.userData.side = -1;
         wFL.userData.baseRotY = Math.PI;
+        wFL.userData.camber = camberDeg;
         wheelsRig.add(wFL);
 
         // Front Right
         const wFR = createDetailedWheel(THREE, mats, wheelStyle, wRadius / 0.33);
-        wFR.position.set(spec.wheelTrack, wCenterY, spec.wheelBase);
+        wFR.name = 'Wheel_FR';
+        wFR.position.set(trackW, wCenterY, spec.wheelBase);
+        wFR.rotation.z = camberRad;
         wFR.userData.isSteerable = true;
         wFR.userData.side = 1;
         wFR.userData.baseRotY = 0;
+        wFR.userData.camber = camberDeg;
         wheelsRig.add(wFR);
 
         // Rear Left
         const wRL = createDetailedWheel(THREE, mats, wheelStyle, wRadius / 0.33);
-        wRL.position.set(-spec.wheelTrack, wCenterY, -spec.wheelBase);
+        wRL.name = 'Wheel_RL';
+        wRL.position.set(-trackW, wCenterY, -spec.wheelBase);
         wRL.rotation.y = Math.PI;
+        wRL.rotation.z = -camberRad;
         wRL.userData.side = -1;
         wRL.userData.baseRotY = Math.PI;
+        wRL.userData.camber = camberDeg;
         wheelsRig.add(wRL);
 
         // Rear Right
         const wRR = createDetailedWheel(THREE, mats, wheelStyle, wRadius / 0.33);
-        wRR.position.set(spec.wheelTrack, wCenterY, -spec.wheelBase);
+        wRR.name = 'Wheel_RR';
+        wRR.position.set(trackW, wCenterY, -spec.wheelBase);
+        wRR.rotation.z = camberRad;
         wRR.userData.side = 1;
         wRR.userData.baseRotY = 0;
+        wRR.userData.camber = camberDeg;
         wheelsRig.add(wRR);
 
         return root;
@@ -4026,7 +4193,8 @@
         const mats = createCarMaterials(THREE, styling);
 
         let suspensionOffsetY = 0;
-        if (styling.suspension === 'bpan' || (!styling.suspension && carId === 'priora')) suspensionOffsetY = -0.06;
+        if (typeof styling.rideHeight === 'number') suspensionOffsetY = styling.rideHeight;
+        else if (styling.suspension === 'bpan' || (!styling.suspension && carId === 'priora')) suspensionOffsetY = -0.06;
         else if (styling.suspension === 'lowered') suspensionOffsetY = -0.03;
         else if (styling.suspension === 'lift') suspensionOffsetY = 0.06;
 
@@ -4949,6 +5117,21 @@
             this.currentStyling = {};
             this.carGroup = null;
 
+            // Interactive Body & Lighting State
+            this.doorsOpen = false;
+            this.doorAngle = 0;
+            this.targetDoorAngle = 0;
+
+            this.hoodOpen = false;
+            this.hoodAngle = 0;
+            this.targetHoodAngle = 0;
+
+            this.trunkOpen = false;
+            this.trunkAngle = 0;
+            this.targetTrunkAngle = 0;
+
+            this.headlightsOn = false;
+
             this.initScene();
             this.bindEvents();
             this.start();
@@ -5109,6 +5292,10 @@
             this.setCar(this.currentCarName, this.currentStyling);
         }
 
+        get styling() {
+            return this.currentStyling;
+        }
+
         updateNeonLight() {
             const neonVal = this.currentStyling.neon;
             if (!neonVal || neonVal === 'none') {
@@ -5121,6 +5308,53 @@
                     this.podiumRingMat.color.setHex(col);
                 }
             }
+        }
+
+        toggleDoors() {
+            this.doorsOpen = !this.doorsOpen;
+            this.targetDoorAngle = this.doorsOpen ? 1.05 : 0;
+            return this.doorsOpen;
+        }
+
+        toggleHood() {
+            this.hoodOpen = !this.hoodOpen;
+            this.targetHoodAngle = this.hoodOpen ? 0.85 : 0;
+            return this.hoodOpen;
+        }
+
+        toggleTrunk() {
+            this.trunkOpen = !this.trunkOpen;
+            this.targetTrunkAngle = this.trunkOpen ? 0.90 : 0;
+            return this.trunkOpen;
+        }
+
+        toggleHeadlights() {
+            this.headlightsOn = !this.headlightsOn;
+            if (this.carGroup) {
+                const hlGroup = this.carGroup.getObjectByName('HeadlightsGroup');
+                if (hlGroup) {
+                    hlGroup.traverse(obj => {
+                        if (obj.isPointLight) {
+                            obj.intensity = this.headlightsOn ? 3.0 : 0;
+                        }
+                    });
+                }
+                this.carGroup.traverse(obj => {
+                    if (obj.material && (obj.material.name === 'HeadlightLED' || obj.material.name === 'HeadlightGlass')) {
+                        obj.material.emissiveIntensity = this.headlightsOn ? 2.5 : 0.8;
+                    }
+                });
+            }
+            return this.headlightsOn;
+        }
+
+        getInteractiveState() {
+            return {
+                doorsOpen: this.doorsOpen,
+                hoodOpen: this.hoodOpen,
+                trunkOpen: this.trunkOpen,
+                headlightsOn: this.headlightsOn
+            };
         }
 
         bindEvents() {
@@ -5218,6 +5452,22 @@
                     this.updateCameraPosition();
                 }
 
+                // Smooth interpolation for interactive doors, hood, and trunk
+                this.doorAngle += (this.targetDoorAngle - this.doorAngle) * 0.14;
+                this.hoodAngle += (this.targetHoodAngle - this.hoodAngle) * 0.14;
+                this.trunkAngle += (this.targetTrunkAngle - this.trunkAngle) * 0.14;
+
+                if (this.carGroup) {
+                    const dFL = this.carGroup.getObjectByName('Door_FL_Pivot');
+                    const dFR = this.carGroup.getObjectByName('Door_FR_Pivot');
+                    const hood = this.carGroup.getObjectByName('Hood_Pivot');
+                    const trunk = this.carGroup.getObjectByName('Trunk_Pivot');
+                    if (dFL) dFL.rotation.y = this.doorAngle;
+                    if (dFR) dFR.rotation.y = -this.doorAngle;
+                    if (hood) hood.rotation.x = -this.hoodAngle;
+                    if (trunk) trunk.rotation.x = this.trunkAngle;
+                }
+
                 // SGU Strobe Lights Live Flashing Animation
                 if (this.currentStyling.sgu && this.currentStyling.sgu !== 'none' && this.carGroup) {
                     const sgu = this.carGroup.getObjectByName('SGUGroup');
@@ -5230,11 +5480,40 @@
                     }
                 }
 
+                // Dynamic Neon Modes: Rainbow / Pulse
+                if (this.currentStyling.neonMode === 'rainbow') {
+                    const hue = (time * 0.0006) % 1.0;
+                    const rCol = new this.THREE.Color().setHSL(hue, 1.0, 0.55);
+                    if (this.neonLight) {
+                        this.neonLight.color = rCol;
+                        this.neonLight.intensity = 1.8;
+                    }
+                    if (this.podiumRingMat) {
+                        this.podiumRingMat.color = rCol;
+                    }
+                    if (this.carGroup) {
+                        const nGroup = this.carGroup.getObjectByName('NeonGroup');
+                        if (nGroup) {
+                            nGroup.traverse(m => {
+                                if (m.material) {
+                                    m.material.color = rCol;
+                                    if (m.material.emissive) m.material.emissive = rCol;
+                                }
+                            });
+                        }
+                    }
+                } else if (this.currentStyling.neonMode === 'pulse') {
+                    const pulse = (Math.sin(time * 0.005) + 1) * 0.5;
+                    if (this.neonLight && this.neonLight.intensity > 0) {
+                        this.neonLight.intensity = 0.6 + pulse * 2.0;
+                    }
+                }
+
                 // Breathing showroom turntable idle animation
                 if (this.carGroup) {
                     this.carGroup.position.y = Math.sin(time * 0.002) * 0.004;
                 }
-                if (this.neonLight && this.neonLight.intensity > 0) {
+                if (this.neonLight && this.neonLight.intensity > 0 && !this.currentStyling.neonMode) {
                     this.neonLight.intensity = 1.6 + Math.sin(time * 0.004) * 0.25;
                 }
 
@@ -6876,6 +7155,8 @@
                     // Authentic ground bounce illumination
                     const neonPointLight = new THREE.PointLight(col, 1.6, 4.5, 1.8);
                     neonPointLight.position.set(0, 0.20, 0);
+                    this.playerNeonLight = neonPointLight;
+                    this.playerNeonMesh = neonMesh;
                     this.playerCar.add(neonPointLight);
                 }
 
@@ -7096,6 +7377,21 @@
             });
             if (this.playerBrakeLight) {
                 this.playerBrakeLight.intensity = isBraking ? 2.8 : 0.2;
+            }
+
+            // Dynamic Player Neon Modes (Rainbow / Pulse) during 3D race
+            if (this.playerNeonLight && this.styling) {
+                if (this.styling.neonMode === 'rainbow') {
+                    const hue = ((this.lastTime || 0) * 0.0006) % 1.0;
+                    const rCol = new this.THREE.Color().setHSL(hue, 1.0, 0.55);
+                    this.playerNeonLight.color = rCol;
+                    if (this.playerNeonMesh && this.playerNeonMesh.material) {
+                        this.playerNeonMesh.material.color = rCol;
+                    }
+                } else if (this.styling.neonMode === 'pulse') {
+                    const pulse = (Math.sin((this.lastTime || 0) * 0.006) + 1) * 0.5;
+                    this.playerNeonLight.intensity = 0.6 + pulse * 2.2;
+                }
             }
 
             // Peak speed tracking
