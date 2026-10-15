@@ -2461,9 +2461,18 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .btn-purple { background:#261226; color:#ffd8f5; border:1px solid #4a1e4a; box-shadow:none; }
 .btn-close { background:#1e0e12; color:#fca5a5; border:1px solid #481a22; }
 .btn-spin-full,.btn-numbers,.btn-letters { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:14px 12px; margin:0; }
-.btn-grid-spins small { font-size:10px; opacity:.70; font-weight:500; white-space:nowrap; }
+.generator-action-row { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:12px 0 0; }
+.generator-action-row .btn-save { margin:0; width:100%; }
 .btn-save { background:#250d12; border:1px dashed #7a222f; color:#ff4763; margin:12px 0 0; min-height:44px; }
-.btn-save:disabled { color:#754a50; background:transparent; border-color:#3a181e; opacity:.7; }
+.btn-save:disabled { color:#754a50; background:transparent; border-color:#3a181e; opacity:.7; cursor:not-allowed; }
+.btn-sell-direct { background:#25150d; border:1px dashed #8a451a; color:#f59e0b; margin:0; min-height:44px; width:100%; display:flex; align-items:center; justify-content:center; gap:6px; font-weight:700; transition:background .15s,border-color .15s,transform .15s; }
+.btn-sell-direct:disabled { color:#6b4421; background:transparent; border-color:#381d11; opacity:.7; cursor:not-allowed; }
+.btn-sell-direct.can-sell { background:linear-gradient(135deg, #b45309, #f59e0b); color:#000; font-weight:800; border:1px solid rgba(255,255,255,0.35); box-shadow:0 0 20px rgba(245,158,11,0.4); animation:pulseSell 1.2s infinite alternate; cursor:pointer; }
+.btn-sell-direct small { font-size:10px; font-weight:700; opacity:.90; white-space:nowrap; }
+@keyframes pulseSell {
+    from { box-shadow: 0 0 10px rgba(245, 158, 11, 0.4); transform: scale(1); }
+    to { box-shadow: 0 0 25px rgba(245, 158, 11, 0.8); transform: scale(1.02); }
+}
 .generator-footnote { text-align:center; font-size:10px; color:#a3858a; margin-top:12px; line-height:1.6; }
 .generator-aside { display:grid; gap:16px; }
 .collection-summary { border:1px solid #3a151b; border-radius:18px; background:#150c0f; padding:20px; }

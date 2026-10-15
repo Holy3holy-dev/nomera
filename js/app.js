@@ -3023,9 +3023,24 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             }
 
             const btnSave = document.getElementById('btn-save');
-            btnSave.disabled = !canSaveNow;
-            if (canSaveNow) btnSave.classList.add('can-save');
-            else btnSave.classList.remove('can-save');
+            if (btnSave) {
+                btnSave.disabled = !canSaveNow;
+                if (canSaveNow) btnSave.classList.add('can-save');
+                else btnSave.classList.remove('can-save');
+            }
+
+            const btnSell = document.getElementById('btn-sell-direct');
+            if (btnSell) {
+                btnSell.disabled = !canSaveNow;
+                if (canSaveNow) {
+                    btnSell.classList.add('can-sell');
+                    let price = calculatePrice();
+                    btnSell.innerHTML = `<span>💰 Продать</span><small>+${price.toLocaleString('ru-RU')} ₽</small>`;
+                } else {
+                    btnSell.classList.remove('can-sell');
+                    btnSell.innerHTML = `<span>💰 Продать</span>`;
+                }
+            }
 
             if (boardHasLetters && boardHasNumbers) {
                 let price = calculatePrice();
@@ -3500,6 +3515,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
         async function savePlate() {
             if (!boardHasLetters || !boardHasNumbers || isSpinning) return;
+            if (!onlineProfile && mustSpinBothForNextSave && (!hasSpunLetSinceSave || !hasSpunNumSinceSave)) return;
             if(onlineProfile) {
                 if(serverSpinBusy)return;
                 serverSpinBusy=true;
@@ -3533,6 +3549,62 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             logPlayerActivity('Сохранил номер', `Сохранил в инвентарь госномер «${pText}» (${escapeHtml(r.text)}, ${price.toLocaleString('ru-RU')} ₽)`);
             saveProgress();
             notifyUser(`Номер "${pText}" сохранен в инвентарь!`);
+        }
+
+        async function sellCurrentPlate() {
+            if (!boardHasLetters || !boardHasNumbers || isSpinning) return;
+            if (!onlineProfile && mustSpinBothForNextSave && (!hasSpunLetSinceSave || !hasSpunNumSinceSave)) return;
+            const btnSave = document.getElementById('btn-save');
+            if (btnSave && btnSave.disabled) return;
+
+            if (onlineProfile) {
+                if (serverSpinBusy) return;
+                serverSpinBusy = true;
+                try {
+                    const data = await onlineRequest('claim');
+                    setOnlineProfile(data.profile, true);
+                    const rarity = data.plate?.rarity?.text || 'Обычный';
+                    addExp(rarity);
+                    hasSpunLetSinceSave = false;
+                    hasSpunNumSinceSave = false;
+                    mustSpinBothForNextSave = true;
+                    const idx = inventory.findIndex(p => p && (p.id === data.plate?.id || p.text === data.plate?.text));
+                    if (idx >= 0) {
+                        sellPlate(idx);
+                    } else if (inventory.length > 0) {
+                        sellPlate(0);
+                    } else if (data.plate) {
+                        creditPlayerBalance(data.plate.price, `Продажа госномера «${data.plate.text}»`);
+                        playCashSound();
+                        saveProgress();
+                        notifyUser(`Номер «${data.plate.text}» продан за ${Number(data.plate.price).toLocaleString('ru-RU')} ₽!`, 'success');
+                    }
+                    checkCanSaveButton();
+                } catch(e) {
+                    notifyUser('Не удалось продать номер: ' + e.message, 'error');
+                } finally {
+                    serverSpinBusy = false;
+                }
+                return;
+            }
+
+            let pText = `${currentL1} ${currentNum} ${currentL2}${currentL3} | ${currentReg} RUS`;
+            let price = calculatePrice();
+            let r = getRarity(price);
+
+            creditPlayerBalance(price, `Продажа госномера «${pText}»`);
+            addExp(r.text);
+
+            hasSpunLetSinceSave = false;
+            hasSpunNumSinceSave = false;
+            mustSpinBothForNextSave = true;
+
+            playCashSound();
+            renderInventory();
+            checkCanSaveButton();
+            logPlayerActivity('Продал номер', `Продал госномер «${pText}» (${escapeHtml(r.text)}, +${price.toLocaleString('ru-RU')} ₽)`);
+            saveProgress();
+            notifyUser(`Номер «${pText}» продан за ${price.toLocaleString('ru-RU')} ₽!`);
         }
 
         // --- КЕЙСЫ (CS:GO HORIZONTAL ROULETTE) ---
