@@ -32,7 +32,7 @@ function createApp({saved = null, denyStorage = false, cloud = null} = {}) {
     const context = {
         console, URL, Math, Date, JSON, Number, String, Object, Array, Promise,
         document:{getElementById:element, querySelector:()=>({offsetWidth:400,offsetHeight:200}), querySelectorAll:()=>[], addEventListener:(name,fn)=>events.set('document:'+name,fn),
-            createElement:()=>({}),body:{classList:{add(){},remove(){}}},hidden:false},
+            createElement:(tag)=>({ getContext:()=>ctx, style:{}, classList:{add(){},remove(){},toggle(){}}, setAttribute(){}, appendChild(){}, width:44, height:68 }),body:{classList:{add(){},remove(){}}},hidden:false},
         localStorage:storage, sessionStorage:storage, innerWidth:390,innerHeight:844,
         addEventListener:(name,fn)=>events.set(name,fn),
         performance:{now:()=>1000},requestAnimationFrame:()=>1,cancelAnimationFrame(){},

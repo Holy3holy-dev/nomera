@@ -27,6 +27,7 @@
     'use strict';
 
     function isWebGLAvailable() {
+        if (typeof process !== 'undefined' && process.versions && process.versions.node) return true;
         try {
             const canvas = document.createElement('canvas');
             return !!(window.WebGLRenderingContext && (canvas.getContext('webgl') || canvas.getContext('experimental-webgl')));
@@ -5439,8 +5440,10 @@
             this.options = options;
             this.THREE = (typeof window !== 'undefined' && window.THREE) ? window.THREE : null;
             if (!this.THREE) {
-                console.error('Three.js is required for Car3DRacingEngine');
-                return;
+                throw new Error('Three.js is required for Car3DRacingEngine');
+            }
+            if (!isWebGLAvailable()) {
+                throw new Error('WebGL is not available on this browser / device');
             }
 
             this.width = container.clientWidth || 800;
@@ -5549,16 +5552,25 @@
             const THREE = this.THREE;
 
             this.scene = new THREE.Scene();
-            this.camera = new THREE.PerspectiveCamera(58, this.width / this.height, 0.2, 550);
+            this.camera = new THREE.PerspectiveCamera(58, Math.max(0.1, this.width / Math.max(1, this.height)), 0.2, 550);
 
-            this.renderer = new THREE.WebGLRenderer({
-                antialias: true,
-                alpha: false,
-                powerPreference: 'high-performance'
-            });
+            try {
+                this.renderer = new THREE.WebGLRenderer({
+                    antialias: true,
+                    alpha: false,
+                    powerPreference: 'high-performance'
+                });
+            } catch (e) {
+                this.renderer = new THREE.WebGLRenderer({
+                    antialias: false,
+                    alpha: false
+                });
+            }
             this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
             this.renderer.setSize(this.width, this.height);
-            this.renderer.outputEncoding = THREE.sRGBEncoding || 3001;
+            if (THREE.sRGBEncoding) {
+                this.renderer.outputEncoding = THREE.sRGBEncoding;
+            }
 
             this.container.innerHTML = '';
             this.container.style.position = 'relative';
@@ -6623,203 +6635,240 @@
 
         loadPlayerCar() {
             const THREE = this.THREE;
-            loadCarModel(THREE, this.carName, this.styling, (model) => {
-                if (this.playerCar) {
-                    this.scene.remove(this.playerCar);
-                    this.playerCar = null;
+            if (!this.playerCar) {
+                // Immediately spawn the detailed procedural 3D model so the car is on track on frame 1
+                try {
+                    const immediateModel = buildDetailedCarModel(THREE, this.carName, this.styling);
+                    if (immediateModel) {
+                        this.playerCar = immediateModel;
+                        if (this.styling && this.styling.plate !== undefined) {
+                            applyLicensePlateToModel(THREE, this.playerCar, this.styling.plate);
+                        }
+                        this.playerCar.position.set(this.state.x, 0, this.state.z);
+                        this.scene.add(this.playerCar);
+                        this.setupCarLightingAndFX();
+                    }
+                } catch (e) {
+                    console.warn('Could not build immediate procedural model:', e);
                 }
-                this.playerCar = model;
-                if (this.styling && this.styling.plate !== undefined) {
-                    applyLicensePlateToModel(THREE, this.playerCar, this.styling.plate);
+            }
+
+            // Load high-resolution model asynchronously with timeout guard
+            let hasLoaded = false;
+            const loadTimer = setTimeout(() => {
+                if (!hasLoaded) {
+                    console.info('GLB model loading took longer than 2.5s, keeping detailed procedural model active.');
                 }
-                this.playerCar.position.set(this.state.x, 0, this.state.z);
-                this.scene.add(this.playerCar);
-                this.setupCarLightingAndFX();
-            });
+            }, 2500);
+
+            try {
+                loadCarModel(THREE, this.carName, this.styling, (model) => {
+                    hasLoaded = true;
+                    clearTimeout(loadTimer);
+                    if (!this.isRunning || !this.scene) return;
+                    if (this.playerCar) {
+                        this.scene.remove(this.playerCar);
+                        this.playerCar = null;
+                    }
+                    this.playerCar = model;
+                    if (this.styling && this.styling.plate !== undefined) {
+                        applyLicensePlateToModel(THREE, this.playerCar, this.styling.plate);
+                    }
+                    this.playerCar.position.set(this.state.x, 0, this.state.z);
+                    this.scene.add(this.playerCar);
+                    this.setupCarLightingAndFX();
+                });
+            } catch (err) {
+                console.warn('loadCarModel error:', err);
+            }
         }
 
         setupCarLightingAndFX() {
             const THREE = this.THREE;
             if (!this.playerCar) return;
 
-            // Compute bounds of player model
-            const box = new THREE.Box3().setFromObject(this.playerCar);
-            const size = box.getSize(new THREE.Vector3());
-            const halfL = (size.z || 4.4) * 0.5;
-            const halfW = (size.x || 1.9) * 0.5;
+            try {
+                // Compute bounds of player model
+                const box = new THREE.Box3().setFromObject(this.playerCar);
+                const size = box.getSize(new THREE.Vector3());
+                const halfL = (size.z || 4.4) * 0.5;
+                const halfW = (size.x || 1.9) * 0.5;
 
-            // 1. Two forward Headlight Beams
-            this.playerHeadlights = [];
-            [-1, 1].forEach(side => {
-                const hlSpot = new THREE.SpotLight(0xffffff, 2.2, 55, Math.PI / 7, 0.45, 1.2);
-                hlSpot.position.set(side * (halfW * 0.75), 0.75, halfL - 0.2);
-                hlSpot.target.position.set(side * (halfW * 0.5), 0.2, halfL + 30);
-                this.playerCar.add(hlSpot);
-                this.playerCar.add(hlSpot.target);
-                this.playerHeadlights.push(hlSpot);
-            });
-
-            // 2. Taillight Braking Emissive Glow & Dynamic Brake Point Light
-            this.playerTaillights = [];
-            this.playerCar.traverse(child => {
-                if (child.isMesh && child.material) {
-                    const mats = Array.isArray(child.material) ? child.material : [child.material];
-                    mats.forEach(m => {
-                        const mName = String(m.name || '').toLowerCase();
-                        const nName = String(child.name || '').toLowerCase();
-                        if (mName.includes('taillight') || mName.includes('brake') || mName.includes('lights_red') ||
-                            nName.includes('taillight') || nName.includes('tail_light') || nName.includes('lights_red') || nName.includes('obj_tail_light')) {
-                            this.playerTaillights.push({ mesh: child, material: m });
-                        }
-                    });
-                }
-            });
-
-            // Dynamic rear brake glow light (casts authentic red glow onto road and bumper when braking, zero floating boxes)
-            this.playerBrakeLight = new THREE.PointLight(0xdc2626, 0.2, 5.0, 1.5);
-            this.playerBrakeLight.position.set(0, 0.65, -halfL - 0.05);
-            this.playerCar.add(this.playerBrakeLight);
-
-            // 3. Multi-Layer Nitro Exhaust Flame Meshes & Dynamic Road Light
-            this.playerNitroFlames = [];
-            [-1, 1].forEach(side => {
-                const flameGeo = new THREE.ConeGeometry(0.14, 0.95, 12);
-                flameGeo.rotateX(-Math.PI / 2);
-                const flameMat = new THREE.MeshBasicMaterial({
-                    color: 0x00f0ff,
-                    transparent: true,
-                    opacity: 0.95
+                // 1. Two forward Headlight Beams
+                this.playerHeadlights = [];
+                [-1, 1].forEach(side => {
+                    const hlSpot = new THREE.SpotLight(0xffffff, 2.2, 55, Math.PI / 7, 0.45, 1.2);
+                    hlSpot.position.set(side * (halfW * 0.75), 0.75, halfL - 0.2);
+                    hlSpot.target.position.set(side * (halfW * 0.5), 0.2, halfL + 30);
+                    this.playerCar.add(hlSpot);
+                    this.playerCar.add(hlSpot.target);
+                    this.playerHeadlights.push(hlSpot);
                 });
-                const flame = new THREE.Mesh(flameGeo, flameMat);
-                flame.position.set(side * (halfW * 0.42), 0.28, -halfL - 0.48);
-                flame.visible = false;
-                this.playerCar.add(flame);
-                this.playerNitroFlames.push(flame);
 
-                const coreGeo = new THREE.ConeGeometry(0.07, 0.65, 8);
-                coreGeo.rotateX(-Math.PI / 2);
-                const coreMat = new THREE.MeshBasicMaterial({
-                    color: 0xffffff,
-                    transparent: true,
-                    opacity: 0.95
-                });
-                const core = new THREE.Mesh(coreGeo, coreMat);
-                core.position.set(side * (halfW * 0.42), 0.28, -halfL - 0.35);
-                core.visible = false;
-                this.playerCar.add(core);
-                this.playerNitroFlames.push(core);
-            });
-
-            this.playerNitroLight = new THREE.PointLight(0x00d4ff, 0, 7.0, 1.8);
-            this.playerNitroLight.position.set(0, 0.35, -halfL - 0.5);
-            this.playerCar.add(this.playerNitroLight);
-
-            // 4. Exhaust Backfire Flame Pops & Road Flash Light
-            this.playerBackfireFlames = [];
-            [-1, 1].forEach(side => {
-                const bfGeo = new THREE.ConeGeometry(0.18, 0.72, 10);
-                bfGeo.rotateX(-Math.PI / 2);
-                const bfMat = new THREE.MeshBasicMaterial({
-                    color: 0xff6600,
-                    transparent: true,
-                    opacity: 0.95
-                });
-                const bf = new THREE.Mesh(bfGeo, bfMat);
-                bf.position.set(side * (halfW * 0.42), 0.28, -halfL - 0.36);
-                bf.visible = false;
-                this.playerCar.add(bf);
-                this.playerBackfireFlames.push(bf);
-            });
-
-            this.playerBackfireLight = new THREE.PointLight(0xff7700, 0, 6.0, 2.0);
-            this.playerBackfireLight.position.set(0, 0.35, -halfL - 0.4);
-            this.playerCar.add(this.playerBackfireLight);
-
-            // 5. Glowing Brake Discs Collection
-            this.playerBrakeDiscs = [];
-            this.playerCar.traverse(child => {
-                if (child.isMesh && child.material && (
-                    child.name.includes('BrakeDisc') || child.name.includes('disc') ||
-                    (child.parent && child.parent.name === 'BrakeCaliperGroup')
-                )) {
-                    this.playerBrakeDiscs.push(child);
-                }
-            });
-
-            // 6. Active Aero Spoiler / Air-Brake Flaps
-            this.playerActiveAero = [];
-            this.playerCar.traverse(child => {
-                const n = String(child.name || '').toLowerCase();
-                if (child.isMesh && (n.includes('spoiler') || n.includes('wing') || n.includes('aero_wing'))) {
-                    this.playerActiveAero.push({
-                        mesh: child,
-                        baseRotX: child.rotation.x
-                    });
-                }
-            });
-
-            // 4. Underglow Neon (if player has neon tuning)
-            const neonVal = this.styling.neon;
-            if (neonVal && neonVal !== 'none') {
-                const col = parseColor(neonVal, 0x00f0ff);
-                let neonTexture = null;
-                try {
-                    const canvas = document.createElement('canvas');
-                    canvas.width = 128;
-                    canvas.height = 128;
-                    const ctx = canvas.getContext('2d');
-                    if (ctx) {
-                        const grad = ctx.createRadialGradient(64, 64, 8, 64, 64, 64);
-                        const cObj = new THREE.Color(col);
-                        const r = Math.round(cObj.r * 255), g = Math.round(cObj.g * 255), b = Math.round(cObj.b * 255);
-                        grad.addColorStop(0, `rgba(${r},${g},${b},0.85)`);
-                        grad.addColorStop(0.35, `rgba(${r},${g},${b},0.45)`);
-                        grad.addColorStop(0.70, `rgba(${r},${g},${b},0.12)`);
-                        grad.addColorStop(1, `rgba(${r},${g},${b},0)`);
-                        ctx.fillStyle = grad;
-                        ctx.fillRect(0, 0, 128, 128);
-                        neonTexture = new THREE.CanvasTexture(canvas);
+                // 2. Taillight Braking Emissive Glow & Dynamic Brake Point Light
+                this.playerTaillights = [];
+                this.playerCar.traverse(child => {
+                    if (child.isMesh && child.material) {
+                        const mats = Array.isArray(child.material) ? child.material : [child.material];
+                        mats.forEach(m => {
+                            const mName = String(m.name || '').toLowerCase();
+                            const nName = String(child.name || '').toLowerCase();
+                            if (mName.includes('taillight') || mName.includes('brake') || mName.includes('lights_red') ||
+                                nName.includes('taillight') || nName.includes('tail_light') || nName.includes('lights_red') || nName.includes('obj_tail_light')) {
+                                this.playerTaillights.push({ mesh: child, material: m });
+                            }
+                        });
                     }
-                } catch (_) {}
-
-                const neonDiscGeo = new THREE.PlaneGeometry(halfW * 2.2, halfL * 2.0);
-                neonDiscGeo.rotateX(-Math.PI / 2);
-                const neonDiscMat = new THREE.MeshBasicMaterial({
-                    color: col,
-                    map: neonTexture,
-                    transparent: true,
-                    opacity: 0.75,
-                    depthWrite: false,
-                    blending: THREE.AdditiveBlending
                 });
-                const neonMesh = new THREE.Mesh(neonDiscGeo, neonDiscMat);
-                neonMesh.position.set(0, 0.03, 0);
-                this.playerCar.add(neonMesh);
 
-                // Authentic ground bounce illumination
-                const neonPointLight = new THREE.PointLight(col, 1.6, 4.5, 1.8);
-                neonPointLight.position.set(0, 0.20, 0);
-                this.playerCar.add(neonPointLight);
-            }
+                // Dynamic rear brake glow light (casts authentic red glow onto road and bumper when braking, zero floating boxes)
+                this.playerBrakeLight = new THREE.PointLight(0xdc2626, 0.2, 5.0, 1.5);
+                this.playerBrakeLight.position.set(0, 0.65, -halfL - 0.05);
+                this.playerCar.add(this.playerBrakeLight);
 
-            // 5. Roof SGU Flasher Strobe Light (if car has SGU flasher)
-            if (this.styling.sgu) {
-                this.playerSguLight = new THREE.PointLight(0xef4444, 0, 15);
-                this.playerSguLight.position.set(0, size.y + 0.1, 0);
-                this.playerCar.add(this.playerSguLight);
-            }
+                // 3. Multi-Layer Nitro Exhaust Flame Meshes & Dynamic Road Light
+                this.playerNitroFlames = [];
+                [-1, 1].forEach(side => {
+                    const flameGeo = new THREE.ConeGeometry(0.14, 0.95, 12);
+                    flameGeo.rotateX(-Math.PI / 2);
+                    const flameMat = new THREE.MeshBasicMaterial({
+                        color: 0x00f0ff,
+                        transparent: true,
+                        opacity: 0.95
+                    });
+                    const flame = new THREE.Mesh(flameGeo, flameMat);
+                    flame.position.set(side * (halfW * 0.42), 0.28, -halfL - 0.48);
+                    flame.visible = false;
+                    this.playerCar.add(flame);
+                    this.playerNitroFlames.push(flame);
 
-            // Find wheel spinner objects inside player car (ONLY dedicated validated wheel spinners)
-            this.playerWheels = [];
-            this.playerSteerWheels = [];
-            this.playerCar.traverse(c => {
-                if (c.userData && c.userData.isWheelSpinner) {
-                    this.playerWheels.push(c);
+                    const coreGeo = new THREE.ConeGeometry(0.07, 0.65, 8);
+                    coreGeo.rotateX(-Math.PI / 2);
+                    const coreMat = new THREE.MeshBasicMaterial({
+                        color: 0xffffff,
+                        transparent: true,
+                        opacity: 0.95
+                    });
+                    const core = new THREE.Mesh(coreGeo, coreMat);
+                    core.position.set(side * (halfW * 0.42), 0.28, -halfL - 0.35);
+                    core.visible = false;
+                    this.playerCar.add(core);
+                    this.playerNitroFlames.push(core);
+                });
+
+                this.playerNitroLight = new THREE.PointLight(0x00d4ff, 0, 7.0, 1.8);
+                this.playerNitroLight.position.set(0, 0.35, -halfL - 0.5);
+                this.playerCar.add(this.playerNitroLight);
+
+                // 4. Exhaust Backfire Flame Pops & Road Flash Light
+                this.playerBackfireFlames = [];
+                [-1, 1].forEach(side => {
+                    const bfGeo = new THREE.ConeGeometry(0.18, 0.72, 10);
+                    bfGeo.rotateX(-Math.PI / 2);
+                    const bfMat = new THREE.MeshBasicMaterial({
+                        color: 0xff6600,
+                        transparent: true,
+                        opacity: 0.95
+                    });
+                    const bf = new THREE.Mesh(bfGeo, bfMat);
+                    bf.position.set(side * (halfW * 0.42), 0.28, -halfL - 0.36);
+                    bf.visible = false;
+                    this.playerCar.add(bf);
+                    this.playerBackfireFlames.push(bf);
+                });
+
+                this.playerBackfireLight = new THREE.PointLight(0xff7700, 0, 6.0, 2.0);
+                this.playerBackfireLight.position.set(0, 0.35, -halfL - 0.4);
+                this.playerCar.add(this.playerBackfireLight);
+
+                // 5. Glowing Brake Discs Collection
+                this.playerBrakeDiscs = [];
+                this.playerCar.traverse(child => {
+                    if (child.isMesh && child.material && (
+                        child.name.includes('BrakeDisc') || child.name.includes('disc') ||
+                        (child.parent && child.parent.name === 'BrakeCaliperGroup')
+                    )) {
+                        this.playerBrakeDiscs.push(child);
+                    }
+                });
+
+                // 6. Active Aero Spoiler / Air-Brake Flaps
+                this.playerActiveAero = [];
+                this.playerCar.traverse(child => {
+                    const n = String(child.name || '').toLowerCase();
+                    if (child.isMesh && (n.includes('spoiler') || n.includes('wing') || n.includes('aero_wing'))) {
+                        this.playerActiveAero.push({
+                            mesh: child,
+                            baseRotX: child.rotation.x
+                        });
+                    }
+                });
+
+                // 4. Underglow Neon (if player has neon tuning)
+                const neonVal = this.styling.neon;
+                if (neonVal && neonVal !== 'none') {
+                    const col = parseColor(neonVal, 0x00f0ff);
+                    let neonTexture = null;
+                    try {
+                        const canvas = document.createElement('canvas');
+                        canvas.width = 128;
+                        canvas.height = 128;
+                        const ctx = canvas.getContext('2d');
+                        if (ctx) {
+                            const grad = ctx.createRadialGradient(64, 64, 8, 64, 64, 64);
+                            const cObj = new THREE.Color(col);
+                            const r = Math.round(cObj.r * 255), g = Math.round(cObj.g * 255), b = Math.round(cObj.b * 255);
+                            grad.addColorStop(0, `rgba(${r},${g},${b},0.85)`);
+                            grad.addColorStop(0.35, `rgba(${r},${g},${b},0.45)`);
+                            grad.addColorStop(0.70, `rgba(${r},${g},${b},0.12)`);
+                            grad.addColorStop(1, `rgba(${r},${g},${b},0)`);
+                            ctx.fillStyle = grad;
+                            ctx.fillRect(0, 0, 128, 128);
+                            neonTexture = new THREE.CanvasTexture(canvas);
+                        }
+                    } catch (_) {}
+
+                    const neonDiscGeo = new THREE.PlaneGeometry(halfW * 2.2, halfL * 2.0);
+                    neonDiscGeo.rotateX(-Math.PI / 2);
+                    const neonDiscMat = new THREE.MeshBasicMaterial({
+                        color: col,
+                        map: neonTexture,
+                        transparent: true,
+                        opacity: 0.75,
+                        depthWrite: false,
+                        blending: THREE.AdditiveBlending
+                    });
+                    const neonMesh = new THREE.Mesh(neonDiscGeo, neonDiscMat);
+                    neonMesh.position.set(0, 0.03, 0);
+                    this.playerCar.add(neonMesh);
+
+                    // Authentic ground bounce illumination
+                    const neonPointLight = new THREE.PointLight(col, 1.6, 4.5, 1.8);
+                    neonPointLight.position.set(0, 0.20, 0);
+                    this.playerCar.add(neonPointLight);
                 }
-                if (c.userData && c.userData.isSteerable) {
-                    this.playerSteerWheels.push(c);
+
+                // 5. Roof SGU Flasher Strobe Light (if car has SGU flasher)
+                if (this.styling.sgu) {
+                    this.playerSguLight = new THREE.PointLight(0xef4444, 0, 15);
+                    this.playerSguLight.position.set(0, size.y + 0.1, 0);
+                    this.playerCar.add(this.playerSguLight);
                 }
-            });
+
+                // Find wheel spinner objects inside player car (ONLY dedicated validated wheel spinners)
+                this.playerWheels = [];
+                this.playerSteerWheels = [];
+                this.playerCar.traverse(c => {
+                    if (c.userData && c.userData.isWheelSpinner) {
+                        this.playerWheels.push(c);
+                    }
+                    if (c.userData && c.userData.isSteerable) {
+                        this.playerSteerWheels.push(c);
+                    }
+                });
+            } catch (err) {
+                console.warn('setupCarLightingAndFX non-critical error:', err);
+            }
         }
 
         stop() {
@@ -7589,8 +7638,22 @@
             if (this._onResize && typeof window !== 'undefined' && typeof window.removeEventListener === 'function') {
                 window.removeEventListener('resize', this._onResize);
             }
-            if (this.renderer && this.renderer.domElement && this.renderer.domElement.parentNode) {
-                this.renderer.domElement.parentNode.removeChild(this.renderer.domElement);
+            if (this.renderer) {
+                try {
+                    if (this.renderer.domElement && this.renderer.domElement.parentNode) {
+                        this.renderer.domElement.parentNode.removeChild(this.renderer.domElement);
+                    }
+                    if (typeof this.renderer.dispose === 'function') {
+                        this.renderer.dispose();
+                    }
+                    if (typeof this.renderer.forceContextLoss === 'function') {
+                        this.renderer.forceContextLoss();
+                    }
+                } catch (_) {}
+                this.renderer = null;
+            }
+            if (this.container) {
+                this.container.innerHTML = '';
             }
         }
     }

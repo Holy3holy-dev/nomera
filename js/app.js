@@ -9493,14 +9493,19 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         }
 
         function startRaceWithCar(name, index = -1) {
+            if (isRaceRunning) {
+                if (activeRaceMode === '3d') {
+                    exit3DRaceGame();
+                } else {
+                    exitRaceGame();
+                }
+            }
             selectedRaceCarName = name;
             selectedRaceCarIndex = index;
-            const tabs = document.querySelectorAll('.nav-tab');
-            let raceTab = null;
-            tabs.forEach(t => {
-                if (t.innerText.includes('Гонка')) raceTab = t;
-            });
-            if (raceTab) switchTab('racegame', raceTab);
+            const raceTab = activeRaceMode === '3d'
+                ? (document.getElementById('nav-tab-3d-race') || document.getElementById('nav-tab-racegame'))
+                : (document.getElementById('nav-tab-racegame') || document.getElementById('nav-tab-3d-race'));
+            if (raceTab) switchTab('racegame', raceTab, activeRaceMode);
 
             const isOwned = myCars.some(c => c.name === name);
             if (isOwned) {
@@ -9522,13 +9527,16 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         let car3DRacingEngine = null;
 
         function start3DRaceGame() {
-            if (typeof Car3DManager === 'undefined' || typeof window.THREE === 'undefined' || !Car3DManager.Car3DRacingEngine) {
-                notifyUser('3D режим недоступен или ещё загружается Three.js. Переключаем на 2D...', 'info');
+            if (typeof Car3DManager === 'undefined' || typeof window.THREE === 'undefined' || !Car3DManager.Car3DRacingEngine || (typeof Car3DManager.isWebGLAvailable === 'function' && !Car3DManager.isWebGLAvailable())) {
+                notifyUser('3D режим недоступен на этом устройстве. Переключаем на 2D...', 'info');
                 switchRaceMode('circuit');
                 startRaceGame();
                 return;
             }
-            if (isRaceRunning) return;
+            if (isRaceRunning) {
+                exitRaceGame();
+                exit3DRaceGame();
+            }
             resetRaceKeys();
             const carIndex = getSelectedRaceCarIndex();
             if (carIndex < 0) {
@@ -9561,128 +9569,152 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 tunedStats: stats
             };
 
-            isRaceRunning = true;
-            document.body.classList.add('race-active');
-            document.getElementById('race-menu-container').classList.add('hidden');
-            document.getElementById('race-play-container').classList.add('hidden');
-            const play3D = document.getElementById('race-3d-play-container');
-            if (play3D) play3D.classList.remove('hidden');
-
             const container = document.getElementById('race-3d-canvas-container');
-            if (!container) return;
+            if (!container) {
+                notifyUser('Контейнер 3D гонки не найден. Переключаем на 2D заезд...', 'info');
+                switchRaceMode('circuit');
+                startRaceGame();
+                return;
+            }
 
             if (car3DRacingEngine) {
-                car3DRacingEngine.destroy();
+                try { car3DRacingEngine.destroy(); } catch (_) {}
                 car3DRacingEngine = null;
             }
 
-            car3DRacingEngine = new Car3DManager.Car3DRacingEngine(container, {
-                onUpdateHUD: (hud) => {
-                    const speedNum = document.getElementById('hud-3d-speed-num');
-                    const gearBadge = document.getElementById('hud-3d-gear');
-                    const tachFill = document.getElementById('hud-3d-tach-fill');
-                    const nitroFill = document.getElementById('hud-3d-nitro-fill');
-                    const nitroText = document.getElementById('hud-3d-nitro-text');
-                    const nitroTouch = document.getElementById('hud-3d-touch-nitro-val');
-                    const distEl = document.getElementById('hud-3d-dist');
-                    const cashEl = document.getElementById('hud-3d-cash');
-                    const fuelEl = document.getElementById('hud-3d-fuel');
-                    const driftBadge = document.getElementById('game-3d-drift-badge');
-                    const comboBadge = document.getElementById('game-3d-combo-badge');
-                    const weatherText = document.getElementById('hud-3d-weather-text');
+            try {
+                isRaceRunning = true;
+                document.body.classList.add('race-active');
+                document.getElementById('race-menu-container').classList.add('hidden');
+                document.getElementById('race-play-container').classList.add('hidden');
+                const play3D = document.getElementById('race-3d-play-container');
+                if (play3D) play3D.classList.remove('hidden');
 
-                    if (speedNum) speedNum.textContent = hud.speed;
-                    if (gearBadge) gearBadge.textContent = hud.gear;
-                    if (tachFill) tachFill.style.width = hud.rpmPercent + '%';
-                    if (nitroFill) nitroFill.style.width = hud.nitroLevel + '%';
-                    if (nitroText) nitroText.textContent = hud.nitroLevel + '%';
-                    if (nitroTouch) nitroTouch.textContent = hud.nitroLevel + '%';
-                    if (distEl) distEl.textContent = hud.distanceKm.toFixed(2) + ' км';
-                    if (cashEl) cashEl.textContent = '+' + hud.earnedCash.toLocaleString('ru-RU') + ' ₽';
-                    if (fuelEl) fuelEl.textContent = hud.fuelCurrent.toFixed(1) + ' л';
-                    if (weatherText && hud.weatherTitle) {
-                        const icon = hud.weatherIcon || '🌦️';
-                        const firstWord = hud.weatherTitle.split(' ')[0];
-                        weatherText.textContent = `${icon} ${firstWord} [T]`;
-                    }
+                car3DRacingEngine = new Car3DManager.Car3DRacingEngine(container, {
+                    onUpdateHUD: (hud) => {
+                        const speedNum = document.getElementById('hud-3d-speed-num');
+                        const gearBadge = document.getElementById('hud-3d-gear');
+                        const tachFill = document.getElementById('hud-3d-tach-fill');
+                        const nitroFill = document.getElementById('hud-3d-nitro-fill');
+                        const nitroText = document.getElementById('hud-3d-nitro-text');
+                        const nitroTouch = document.getElementById('hud-3d-touch-nitro-val');
+                        const distEl = document.getElementById('hud-3d-dist');
+                        const cashEl = document.getElementById('hud-3d-cash');
+                        const fuelEl = document.getElementById('hud-3d-fuel');
+                        const driftBadge = document.getElementById('game-3d-drift-badge');
+                        const comboBadge = document.getElementById('game-3d-combo-badge');
+                        const weatherText = document.getElementById('hud-3d-weather-text');
 
-                    if (driftBadge) {
-                        driftBadge.classList.toggle('hidden', !hud.isDrifting && hud.driftScore === 0);
-                        if (hud.isDrifting) {
-                            driftBadge.textContent = `🌪️ ДРИФТ x${hud.driftCombo}`;
+                        if (speedNum) speedNum.textContent = hud.speed;
+                        if (gearBadge) gearBadge.textContent = hud.gear;
+                        if (tachFill) tachFill.style.width = hud.rpmPercent + '%';
+                        if (nitroFill) nitroFill.style.width = hud.nitroLevel + '%';
+                        if (nitroText) nitroText.textContent = hud.nitroLevel + '%';
+                        if (nitroTouch) nitroTouch.textContent = hud.nitroLevel + '%';
+                        if (distEl) distEl.textContent = hud.distanceKm.toFixed(2) + ' км';
+                        if (cashEl) cashEl.textContent = '+' + hud.earnedCash.toLocaleString('ru-RU') + ' ₽';
+                        if (fuelEl) fuelEl.textContent = hud.fuelCurrent.toFixed(1) + ' л';
+                        if (weatherText && hud.weatherTitle) {
+                            const icon = hud.weatherIcon || '🌦️';
+                            const firstWord = hud.weatherTitle.split(' ')[0];
+                            weatherText.textContent = `${icon} ${firstWord} [T]`;
                         }
-                    }
-                    if (comboBadge) {
-                        comboBadge.classList.toggle('hidden', hud.overtakeCombo <= 1);
-                        if (hud.overtakeCombo > 1) {
-                            comboBadge.textContent = `🔥 x${hud.overtakeCombo} ОБГОН`;
+
+                        if (driftBadge) {
+                            driftBadge.classList.toggle('hidden', !hud.isDrifting && hud.driftScore === 0);
+                            if (hud.isDrifting) {
+                                driftBadge.textContent = `🌪️ ДРИФТ x${hud.driftCombo}`;
+                            }
                         }
-                    }
+                        if (comboBadge) {
+                            comboBadge.classList.toggle('hidden', hud.overtakeCombo <= 1);
+                            if (hud.overtakeCombo > 1) {
+                                comboBadge.textContent = `🔥 x${hud.overtakeCombo} ОБГОН`;
+                            }
+                        }
 
-                    // Sync values into global racePlayer
-                    racePlayer.speed = hud.speed;
-                    if (hud.speed > racePlayer.peakSpeed) racePlayer.peakSpeed = hud.speed;
-                    racePlayer.distanceKm = hud.distanceKm;
-                    racePlayer.earnedCash = hud.earnedCash;
-                    racePlayer.fuelCurrent = hud.fuelCurrent;
-                    racePlayer.overtakesCount = hud.overtakesCount;
-                    racePlayer.driftScore = hud.driftScore;
-                    if (hud.driftCombo > racePlayer.maxDriftCombo) racePlayer.maxDriftCombo = hud.driftCombo;
+                        // Sync values into global racePlayer
+                        racePlayer.speed = hud.speed;
+                        if (hud.speed > racePlayer.peakSpeed) racePlayer.peakSpeed = hud.speed;
+                        racePlayer.distanceKm = hud.distanceKm;
+                        racePlayer.earnedCash = hud.earnedCash;
+                        racePlayer.fuelCurrent = hud.fuelCurrent;
+                        racePlayer.overtakesCount = hud.overtakesCount;
+                        racePlayer.driftScore = hud.driftScore;
+                        if (hud.driftCombo > racePlayer.maxDriftCombo) racePlayer.maxDriftCombo = hud.driftCombo;
 
-                    // Engine audio sync
-                    const audioProfile = getCarAudioProfile(activeRaceCar);
-                    sound.updateEngine({
-                        speed: hud.speed,
-                        rpm: hud.rpm,
-                        gas: car3DRacingEngine.keys.gas,
-                        nitro: hud.isNitroActive,
-                        running: isRaceRunning,
-                        carClass: audioProfile
-                    });
-                },
-                onPopup: (text, color) => {
-                    show3DRacePopup(text, color);
-                },
-                onGameOver: (crashed, engineState) => {
-                    if (engineState) {
-                        racePlayer.speed = engineState.speed;
-                        racePlayer.peakSpeed = engineState.peakSpeed;
-                        racePlayer.distanceKm = engineState.distanceKm;
-                        racePlayer.earnedCash = engineState.earnedCash;
-                        racePlayer.fuelLiters = engineState.fuelLiters;
-                        racePlayer.overtakesCount = engineState.overtakesCount;
-                        racePlayer.driftScore = engineState.driftScore;
-                        racePlayer.damageTaken = engineState.damageTaken;
+                        // Engine audio sync
+                        const audioProfile = getCarAudioProfile(activeRaceCar);
+                        sound.updateEngine({
+                            speed: hud.speed,
+                            rpm: hud.rpm,
+                            gas: car3DRacingEngine ? car3DRacingEngine.keys.gas : false,
+                            nitro: hud.isNitroActive,
+                            running: isRaceRunning,
+                            carClass: audioProfile
+                        });
+                    },
+                    onPopup: (text, color) => {
+                        show3DRacePopup(text, color);
+                    },
+                    onGameOver: (crashed, engineState) => {
+                        if (engineState) {
+                            racePlayer.speed = engineState.speed;
+                            racePlayer.peakSpeed = engineState.peakSpeed;
+                            racePlayer.distanceKm = engineState.distanceKm;
+                            racePlayer.earnedCash = engineState.earnedCash;
+                            racePlayer.fuelLiters = engineState.fuelLiters;
+                            racePlayer.overtakesCount = engineState.overtakesCount;
+                            racePlayer.driftScore = engineState.driftScore;
+                            racePlayer.damageTaken = engineState.damageTaken;
+                        }
+                        settleRaceRun(crashed);
+                    },
+                    onSound: (name) => {
+                        if (name === 'drift' && typeof sound?.drift === 'function') sound.drift();
+                        if (name === 'nitro' && typeof sound?.nitro === 'function') sound.nitro();
+                        if (name === 'nearMiss' && typeof sound?.nearMiss === 'function') sound.nearMiss();
+                        if (name === 'crash' && typeof sound?.crash === 'function') sound.crash();
+                        if (name === 'cash' && typeof sound?.cash === 'function') sound.cash();
+                        if (name === 'backfire' && typeof sound?.backfire === 'function') sound.backfire();
+                        if (name === 'blowOff' && typeof sound?.blowOff === 'function') sound.blowOff();
+                        if (name === 'brake' && typeof sound?.brake === 'function') sound.brake();
+                        if (name === 'scrape' && typeof sound?.scrape === 'function') sound.scrape();
+                        if (name === 'horn' && typeof sound?.horn === 'function') sound.horn();
+                    },
+                    onHaptic: (pattern) => {
+                        if (typeof sound?.haptic === 'function') sound.haptic(pattern);
                     }
-                    settleRaceRun(crashed);
-                },
-                onSound: (name) => {
-                    if (name === 'drift' && typeof sound?.drift === 'function') sound.drift();
-                    if (name === 'nitro' && typeof sound?.nitro === 'function') sound.nitro();
-                    if (name === 'nearMiss' && typeof sound?.nearMiss === 'function') sound.nearMiss();
-                    if (name === 'crash' && typeof sound?.crash === 'function') sound.crash();
-                    if (name === 'cash' && typeof sound?.cash === 'function') sound.cash();
-                    if (name === 'backfire' && typeof sound?.backfire === 'function') sound.backfire();
-                    if (name === 'blowOff' && typeof sound?.blowOff === 'function') sound.blowOff();
-                    if (name === 'brake' && typeof sound?.brake === 'function') sound.brake();
-                    if (name === 'scrape' && typeof sound?.scrape === 'function') sound.scrape();
-                    if (name === 'horn' && typeof sound?.horn === 'function') sound.horn();
-                },
-                onHaptic: (pattern) => {
-                    if (typeof sound?.haptic === 'function') sound.haptic(pattern);
+                });
+
+                const raceStyling = Object.assign({}, activeRaceCar.styling || {}, {
+                    plate: activeRaceCar.plate ? (activeRaceCar.plate.text || activeRaceCar.plate) : 'none'
+                });
+                car3DRacingEngine.start({
+                    carName: selectedRaceCarName,
+                    styling: raceStyling,
+                    performance: stats,
+                    weather: (typeof raceSelectedWeather !== 'undefined' ? raceSelectedWeather : 'night')
+                });
+                init3DRaceTouchControls();
+            } catch (err) {
+                console.error('Failed to initialize 3D race engine:', err);
+                isRaceRunning = false;
+                document.body.classList.remove('race-active');
+                const play3D = document.getElementById('race-3d-play-container');
+                if (play3D) play3D.classList.add('hidden');
+                const racePlay = document.getElementById('race-play-container');
+                if (racePlay) racePlay.classList.add('hidden');
+                const menuCont = document.getElementById('race-menu-container');
+                if (menuCont) menuCont.classList.remove('hidden');
+                if (car3DRacingEngine) {
+                    try { car3DRacingEngine.destroy(); } catch (_) {}
+                    car3DRacingEngine = null;
                 }
-            });
-
-            const raceStyling = Object.assign({}, activeRaceCar.styling || {}, {
-                plate: activeRaceCar.plate ? (activeRaceCar.plate.text || activeRaceCar.plate) : 'none'
-            });
-            car3DRacingEngine.start({
-                carName: selectedRaceCarName,
-                styling: raceStyling,
-                performance: stats,
-                weather: (typeof raceSelectedWeather !== 'undefined' ? raceSelectedWeather : 'night')
-            });
-            init3DRaceTouchControls();
+                notifyUser('3D режим временно недоступен. Переключаем на 2D заезд...', 'info');
+                switchRaceMode('circuit');
+                startRaceGame();
+            }
         }
 
         function show3DRacePopup(text, color = '#f59e0b') {
