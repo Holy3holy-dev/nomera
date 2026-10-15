@@ -4223,7 +4223,10 @@
         else if (styling.suspension === 'lowered') suspensionOffsetY = -0.03;
         else if (styling.suspension === 'lift') suspensionOffsetY = 0.06;
 
-        modelRoot.position.y += suspensionOffsetY;
+        if (modelRoot.userData._basePosY === undefined) {
+            modelRoot.userData._basePosY = modelRoot.position.y;
+        }
+        modelRoot.position.y = modelRoot.userData._basePosY + suspensionOffsetY;
 
         function isTireMaterial(matName, meshName) {
             const mn = String(matName || '').toLowerCase();
@@ -4764,6 +4767,16 @@
             }
         });
 
+        // Clean up previous accessories before attaching new ones
+        const oldSpoiler = modelRoot.getObjectByName('GLB_SpoilerGroup');
+        if (oldSpoiler) modelRoot.remove(oldSpoiler);
+        const oldSgu = modelRoot.getObjectByName('SGUGroup');
+        if (oldSgu) modelRoot.remove(oldSgu);
+        const oldNeon = modelRoot.getObjectByName('GLB_NeonTubes');
+        if (oldNeon) modelRoot.remove(oldNeon);
+        const oldUndertray = modelRoot.getObjectByName('ChassisUndertray');
+        if (oldUndertray) modelRoot.remove(oldUndertray);
+
         // Compute world bounding box for accessories placement
         modelRoot.updateMatrixWorld(true);
         const box = new THREE.Box3().setFromObject(modelRoot);
@@ -4869,6 +4882,8 @@
 
         // Underglow Neon Tubes
         if (styling.neon && styling.neon !== 'none') {
+            const neonGroup = new THREE.Group();
+            neonGroup.name = 'GLB_NeonTubes';
             const neonCol = parseColor(styling.neon, 0x00f0ff);
             const neonMat = new THREE.MeshStandardMaterial({ color: neonCol, emissive: neonCol, emissiveIntensity: 1.2, roughness: 0.1 });
             [-1, 1].forEach(side => {
@@ -4876,8 +4891,9 @@
                 tubeGeo.rotateX(Math.PI / 2);
                 const tube = new THREE.Mesh(tubeGeo, neonMat);
                 tube.position.set(side * (size.x * 0.44), 0.10 + suspensionOffsetY, center.z);
-                modelRoot.add(tube);
+                neonGroup.add(tube);
             });
+            modelRoot.add(neonGroup);
         }
 
         // Russian License Plates
@@ -5367,66 +5383,85 @@
             this.currentStyling = Object.assign({}, styling);
 
             const THREE = this.THREE;
+            const carId = identifyCarModel(this.currentCarName);
+            const hasGlb = !!GLB_MODEL_MAP[carId];
+            const loader = getGLTFLoader(THREE);
 
-            if (this.proceduralCar) {
-                this.scene.remove(this.proceduralCar);
-                this.proceduralCar = null;
-            }
-            if (this.glbCar) {
-                this.scene.remove(this.glbCar);
-                this.glbCar = null;
-            }
-            if (this.carGroup) {
-                this.scene.remove(this.carGroup);
-                this.carGroup = null;
-            }
-
-            try {
-                this.proceduralCar = buildDetailedCarModel(THREE, this.currentCarName, this.currentStyling);
-                if (this.proceduralCar) {
-                    if (this.currentStyling && this.currentStyling.plate !== undefined) {
-                        applyLicensePlateToModel(THREE, this.proceduralCar, this.currentStyling.plate);
-                    }
-                    this.scene.add(this.proceduralCar);
-                    this.carGroup = this.proceduralCar;
-                }
-            } catch (_) {}
-
-            this.updateActiveCarVisibility();
-            this.updateNeonLight();
-            this.updateHeadlightsState();
-
-            loadCarModel(THREE, this.currentCarName, this.currentStyling, loadedModel => {
-                if (!loadedModel) return;
-                if (this.glbCar) {
-                    this.scene.remove(this.glbCar);
-                }
-                this.glbCar = loadedModel;
-                let hasInteractiveGlbNode = false;
-                if (this.glbCar && typeof this.glbCar.traverse === 'function') {
-                    this.glbCar.traverse(c => {
-                        if (!hasInteractiveGlbNode && c.name && /(?:door|dver|hood|kapot|trunk|bagaj)/i.test(c.name)) {
-                            hasInteractiveGlbNode = true;
-                        }
-                    });
-                }
-                this.glbHasPivots = hasInteractiveGlbNode || !!(
-                    this.glbCar.getObjectByName('Door_FL_Pivot') ||
-                    this.glbCar.getObjectByName('door_left') ||
-                    this.glbCar.getObjectByName('door_fl')
-                );
-                if (this.glbHasPivots) {
-                    if (this.proceduralCar && this.proceduralCar !== this.glbCar) {
-                        this.scene.remove(this.proceduralCar);
-                    }
-                    this.proceduralCar = this.glbCar;
-                } else {
-                    this.scene.add(this.glbCar);
-                }
+            // If the same GLB model is already loaded and active, just re-apply styling in place
+            if (hasGlb && loader && this.glbCar && this.glbCar.userData && this.glbCar.userData.carId === carId) {
+                applyStylingToGLTF(THREE, this.glbCar, this.currentStyling, carId);
                 this.updateActiveCarVisibility();
                 this.updateNeonLight();
                 this.updateHeadlightsState();
-            });
+                return;
+            }
+
+            this._loadRequestId = (this._loadRequestId || 0) + 1;
+            const reqId = this._loadRequestId;
+
+            if (hasGlb && loader) {
+                // In browser environment with GLTFLoader: load external 3D model.
+                // Never show or flash a procedural box car.
+                if (this.proceduralCar) {
+                    this.scene.remove(this.proceduralCar);
+                    this.proceduralCar = null;
+                }
+
+                loadCarModel(THREE, this.currentCarName, this.currentStyling, loadedModel => {
+                    if (this._loadRequestId !== reqId || !loadedModel) return;
+
+                    if (this.glbCar) {
+                        this.scene.remove(this.glbCar);
+                        this.glbCar = null;
+                    }
+                    if (this.proceduralCar) {
+                        this.scene.remove(this.proceduralCar);
+                        this.proceduralCar = null;
+                    }
+                    if (this.carGroup) {
+                        this.scene.remove(this.carGroup);
+                        this.carGroup = null;
+                    }
+
+                    loadedModel.userData.carId = carId;
+                    this.glbCar = loadedModel;
+                    this.carGroup = loadedModel;
+                    this.scene.add(loadedModel);
+
+                    this.updateActiveCarVisibility();
+                    this.updateNeonLight();
+                    this.updateHeadlightsState();
+                });
+            } else {
+                // Fallback (or in test environments without GLTFLoader): build detailed procedural model
+                if (this.glbCar) {
+                    this.scene.remove(this.glbCar);
+                    this.glbCar = null;
+                }
+                if (this.proceduralCar) {
+                    this.scene.remove(this.proceduralCar);
+                    this.proceduralCar = null;
+                }
+                if (this.carGroup) {
+                    this.scene.remove(this.carGroup);
+                    this.carGroup = null;
+                }
+
+                try {
+                    this.proceduralCar = buildDetailedCarModel(THREE, this.currentCarName, this.currentStyling);
+                    if (this.proceduralCar) {
+                        if (this.currentStyling && this.currentStyling.plate !== undefined) {
+                            applyLicensePlateToModel(THREE, this.proceduralCar, this.currentStyling.plate);
+                        }
+                        this.scene.add(this.proceduralCar);
+                        this.carGroup = this.proceduralCar;
+                    }
+                } catch (_) {}
+
+                this.updateActiveCarVisibility();
+                this.updateNeonLight();
+                this.updateHeadlightsState();
+            }
         }
 
         updateActiveCarVisibility() {
@@ -5459,6 +5494,14 @@
             Object.assign(this.currentStyling, styling);
             if (styling.plate !== undefined && this.THREE) {
                 this.updatePlate(styling.plate);
+            }
+            const carId = identifyCarModel(this.currentCarName);
+            if (this.glbCar && GLB_MODEL_MAP[carId]) {
+                applyStylingToGLTF(this.THREE, this.glbCar, this.currentStyling, carId);
+                this.updateNeonLight();
+                this.updateHeadlightsState();
+                this.updateActiveCarVisibility();
+                return;
             }
             this.setCar(this.currentCarName, this.currentStyling);
         }
@@ -5710,6 +5753,15 @@
                         }
                         return res;
                     };
+                    const findAllNodes = (regex) => {
+                        const res = [];
+                        if (typeof model.traverse === 'function') {
+                            model.traverse(c => {
+                                if (c.name && regex.test(c.name)) res.push(c);
+                            });
+                        }
+                        return res;
+                    };
 
                     const rotateWithBase = (node, rotAxis, delta, offAxis = null, offDelta = 0) => {
                         if (!node) return;
@@ -5741,30 +5793,30 @@
 
                     // GLB Nodes animation with base preservation
                     if (!pFL && !pFR) {
-                        const dFL = model.getObjectByName('door_left') || findNode(/(?:door.*(?:fl|l|left)|f_door\.l|doorglass_fl)/i);
-                        const dFR = model.getObjectByName('door_right') || findNode(/(?:door.*(?:fr|r|right)|f_door\.r|doorglass_fr)/i);
-                        if (dFL) rotateWithBase(dFL, 'y', this.doorAngle);
-                        if (dFR) rotateWithBase(dFR, '-y', this.doorAngle);
+                        const leftDoors = findAllNodes(/(?:door.*(?:fl|l|left|01|zl|pl)|f_door\.l|doorglass_fl)/i);
+                        const rightDoors = findAllNodes(/(?:door.*(?:fr|r|right|02|zp|pp)|f_door\.r|doorglass_fr)/i);
+                        leftDoors.forEach(d => rotateWithBase(d, 'y', this.doorAngle));
+                        rightDoors.forEach(d => rotateWithBase(d, '-y', this.doorAngle));
 
-                        const sideDoors = findNode(/(?:side_doors|doors_upperframe)/i);
-                        if (sideDoors && !dFL) {
-                            rotateWithBase(sideDoors, '-x', this.doorAngle * 0.25, 'y', this.doorAngle * 0.35);
+                        if (leftDoors.length === 0 && rightDoors.length === 0) {
+                            const sideDoors = findAllNodes(/(?:side_doors|doors_upperframe)/i);
+                            sideDoors.forEach(d => rotateWithBase(d, '-x', this.doorAngle * 0.25, 'y', this.doorAngle * 0.35));
                         }
                     }
 
                     if (!pHood) {
-                        const hood = model.getObjectByName('hood') || findNode(/(?:hood|kapot|bonnet)/i);
-                        if (hood) rotateWithBase(hood, '-x', this.hoodAngle * 0.45, 'y', this.hoodAngle * 0.30);
+                        const hoods = findAllNodes(/(?:hood|kapot|bonnet)/i);
+                        hoods.forEach(h => rotateWithBase(h, '-x', this.hoodAngle * 0.45, 'y', this.hoodAngle * 0.30));
                     }
 
                     if (!pTrunk) {
-                        const trunk = model.getObjectByName('trunk') || findNode(/(?:trunk|bagaj|boot|boot_lid)/i);
-                        if (trunk) rotateWithBase(trunk, 'x', this.trunkAngle * 0.45, 'y', this.trunkAngle * 0.30);
+                        const trunks = findAllNodes(/(?:boot_lid|trunk_lid|trunk|bagaj|boot)/i);
+                        trunks.forEach(t => rotateWithBase(t, 'x', this.trunkAngle * 0.45, 'y', this.trunkAngle * 0.30));
                     }
                 };
 
-                animateModel(this.proceduralCar);
                 if (this.glbCar) animateModel(this.glbCar);
+                if (this.proceduralCar && this.proceduralCar !== this.glbCar) animateModel(this.proceduralCar);
                 if (this.carGroup && this.carGroup !== this.proceduralCar && this.carGroup !== this.glbCar) animateModel(this.carGroup);
 
                 // SGU Strobe Lights Live Flashing Animation
