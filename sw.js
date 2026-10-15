@@ -1,11 +1,14 @@
 // Release-coherent app shell. No Firebase, external assets or non-GET requests are cached.
-const CACHE_NAME = 'nomera-cache-1031cc8528bf';
-const ASSETS = ['./', './index.html', './manifest.json', './styles.css?v=861946790e8d',
-    './js/security.js?v=ed845ef69db6', './js/storage.js?v=327dc7592b84', './js/race-records.js?v=eaeaf8e59fc2', './js/race-economy.js?v=117874dbbaf3', './js/audio.js?v=5f37266c63a4', './js/app.js?v=1167a4fb2810',
+const CACHE_NAME = 'nomera-cache-795ed120595c';
+const ASSETS = ['./', './index.html', './manifest.json', './styles.css?v=cd7966819478',
+    './js/security.js?v=ed845ef69db6', './js/storage.js?v=327dc7592b84', './js/race-records.js?v=eaeaf8e59fc2', './js/race-economy.js?v=117874dbbaf3', './js/audio.js?v=5f37266c63a4', './js/app.js?v=de0769089d4b',
     './icons/car-placeholder.svg', './icons/icon-192.png', './icons/icon-512.png'];
 const allowed = new Set(ASSETS.map(path => new URL(path, self.registration.scope).href));
 
 self.addEventListener('install', event => {
+    if (typeof self.skipWaiting === 'function') {
+        self.skipWaiting();
+    }
     event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS)));
     // Wait for existing tabs to close; don't replace their worker mid-race.
 });

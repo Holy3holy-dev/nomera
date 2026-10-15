@@ -4145,6 +4145,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         }
 
         function renderCars() {
+            try { preloadUserGarageModels(); } catch (_) {}
             renderShopCars();
             let myCarsDiv = document.getElementById('my-cars');
 
@@ -4563,6 +4564,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         function openStylingModal(carIndex) {
             try { preloadUserGarageModels(); } catch (_) {}
             stylingActiveCarIndex = carIndex;
+            if (typeof window !== 'undefined' && window.innerWidth >= 860) {
+                stylingViewMode = '3d';
+            }
             const btnSide = document.getElementById('btn-view-side');
             const btnTop = document.getElementById('btn-view-top');
             const btn3D = document.getElementById('btn-view-3d');
@@ -4745,45 +4749,85 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             if (stylingViewMode !== '3d') {
                 setStylingViewMode('3d');
             }
-            if (!car3DShowroom) return;
+            if (!car3DShowroom) {
+                setTimeout(() => {
+                    if (car3DShowroom) {
+                        const isOpen = car3DShowroom.toggleDoors();
+                        const btn = document.getElementById('btn-show-doors');
+                        if (btn) btn.classList.toggle('active', isOpen);
+                    }
+                }, 90);
+                return;
+            }
             const isOpen = car3DShowroom.toggleDoors();
             const btn = document.getElementById('btn-show-doors');
             if (btn) btn.classList.toggle('active', isOpen);
             playTick();
         }
+        window.toggleShowroomDoors = toggleShowroomDoors;
 
         function toggleShowroomHood() {
             if (stylingViewMode !== '3d') {
                 setStylingViewMode('3d');
             }
-            if (!car3DShowroom) return;
+            if (!car3DShowroom) {
+                setTimeout(() => {
+                    if (car3DShowroom) {
+                        const isOpen = car3DShowroom.toggleHood();
+                        const btn = document.getElementById('btn-show-hood');
+                        if (btn) btn.classList.toggle('active', isOpen);
+                    }
+                }, 90);
+                return;
+            }
             const isOpen = car3DShowroom.toggleHood();
             const btn = document.getElementById('btn-show-hood');
             if (btn) btn.classList.toggle('active', isOpen);
             playTick();
         }
+        window.toggleShowroomHood = toggleShowroomHood;
 
         function toggleShowroomTrunk() {
             if (stylingViewMode !== '3d') {
                 setStylingViewMode('3d');
             }
-            if (!car3DShowroom) return;
+            if (!car3DShowroom) {
+                setTimeout(() => {
+                    if (car3DShowroom) {
+                        const isOpen = car3DShowroom.toggleTrunk();
+                        const btn = document.getElementById('btn-show-trunk');
+                        if (btn) btn.classList.toggle('active', isOpen);
+                    }
+                }, 90);
+                return;
+            }
             const isOpen = car3DShowroom.toggleTrunk();
             const btn = document.getElementById('btn-show-trunk');
             if (btn) btn.classList.toggle('active', isOpen);
             playTick();
         }
+        window.toggleShowroomTrunk = toggleShowroomTrunk;
 
         function toggleShowroomHeadlights() {
             if (stylingViewMode !== '3d') {
                 setStylingViewMode('3d');
             }
-            if (!car3DShowroom) return;
+            if (!car3DShowroom) {
+                setTimeout(() => {
+                    if (car3DShowroom) {
+                        const isOn = car3DShowroom.toggleHeadlights();
+                        const btn = document.getElementById('btn-show-lights');
+                        if (btn) btn.classList.toggle('active', isOn);
+                    }
+                }, 90);
+                return;
+            }
             const isOn = car3DShowroom.toggleHeadlights();
             const btn = document.getElementById('btn-show-lights');
             if (btn) btn.classList.toggle('active', isOn);
             playTick();
         }
+        window.toggleShowroomHeadlights = toggleShowroomHeadlights;
 
         function renderStylingPlateChips() {
             const container = document.getElementById('styling-plate-chips');
@@ -9705,6 +9749,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         }
 
         function start3DRaceWithCar(name, index = -1) {
+            if (typeof Car3DManager !== 'undefined' && Car3DManager.preloadCarModel && window.THREE) {
+                try { Car3DManager.preloadCarModel(window.THREE, name); } catch (_) {}
+            }
             switchRaceMode('3d');
             startRaceWithCar(name, index);
         }

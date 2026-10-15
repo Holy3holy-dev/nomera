@@ -1580,6 +1580,15 @@
             justify-content: space-between;
             align-items: center;
         }
+        #race-3d-play-container .race-header-hud {
+            max-width: 100% !important;
+            width: 100% !important;
+            margin: 0 0 10px 0 !important;
+            display: flex !important;
+            justify-content: space-between !important;
+            align-items: center !important;
+            gap: 12px;
+        }
         .race-badge-shield {
             background: #3b82f6;
             color: #fff;
@@ -3520,46 +3529,49 @@ body.race-active .main-container {
     transition: width 0.08s ease-out;
 }
 
-/* Fullscreen Immersion in race-active mode */
+/* Fullscreen / Cinematic Immersion in race-active mode */
+body.race-active #racegame > .section-box {
+    padding: 0 !important;
+    margin: 0 auto !important;
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    width: 100% !important;
+    max-width: 100% !important;
+}
+
 body.race-active #race-3d-play-container {
-    height: 100%;
-    min-height: 0;
-    max-height: 100dvh;
+    max-width: 1320px;
+    width: 100%;
+    margin: 0 auto;
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
-    overflow: hidden;
+    justify-content: flex-start;
 }
 
 body.race-active .race-3d-viewport-wrapper {
-    flex: 1 1 auto;
-    height: auto;
-    min-height: 220px;
-    max-height: calc(100dvh - 165px);
     width: 100%;
+    height: clamp(440px, calc(100vh - 110px), 680px);
+    min-height: 400px;
+    max-height: calc(100vh - 85px);
+    aspect-ratio: 16 / 9;
     margin: 0 auto;
     position: relative;
     border-radius: var(--radius-md, 16px);
     overflow: hidden;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.08);
 }
 
-/* PC Desktop Adaptation (>= 860px) - Widescreen & Keyboard Controls */
-@media screen and (min-width: 860px) {
+/* PC Desktop Adaptation (>= 768px) - Widescreen & Keyboard Controls */
+@media screen and (min-width: 768px) {
     body.race-active .main-container {
-        max-width: 1320px;
-        padding: 10px 16px;
+        max-width: 1360px;
+        padding: 8px 16px;
     }
     body.race-active #race-3d-play-container {
-        max-width: 1280px;
+        max-width: 1320px;
         height: auto;
         justify-content: flex-start;
-    }
-    body.race-active .race-3d-viewport-wrapper {
-        height: 640px;
-        min-height: 520px;
-        max-height: calc(100dvh - 110px);
-        aspect-ratio: 16 / 9;
-        flex: 0 0 auto;
     }
     #race-3d-touch-controls:not(.touch-enabled) {
         display: none !important;

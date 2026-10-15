@@ -5402,7 +5402,15 @@
                     this.scene.remove(this.glbCar);
                 }
                 this.glbCar = loadedModel;
-                this.glbHasPivots = !!(
+                let hasInteractiveGlbNode = false;
+                if (this.glbCar && typeof this.glbCar.traverse === 'function') {
+                    this.glbCar.traverse(c => {
+                        if (!hasInteractiveGlbNode && c.name && /(?:door|dver|hood|kapot|trunk|bagaj)/i.test(c.name)) {
+                            hasInteractiveGlbNode = true;
+                        }
+                    });
+                }
+                this.glbHasPivots = hasInteractiveGlbNode || !!(
                     this.glbCar.getObjectByName('Door_FL_Pivot') ||
                     this.glbCar.getObjectByName('door_left') ||
                     this.glbCar.getObjectByName('door_fl')
@@ -5514,31 +5522,74 @@
         }
 
         updateHeadlightsState() {
-            if (this.headlightSpotL) this.headlightSpotL.intensity = this.headlightsOn ? 3.5 : 0;
-            if (this.headlightSpotR) this.headlightSpotR.intensity = this.headlightsOn ? 3.5 : 0;
+            const THREE = this.THREE;
+            if (this.headlightSpotL) this.headlightSpotL.intensity = this.headlightsOn ? 3.8 : 0;
+            if (this.headlightSpotR) this.headlightSpotR.intensity = this.headlightsOn ? 3.8 : 0;
+
+            // Forward Showroom PointLights for realistic bumper & ground illumination
+            if (!this.frontLightL && THREE) {
+                this.frontLightL = new THREE.PointLight(0xfffae8, 0, 7, 1.6);
+                this.frontLightL.position.set(-0.65, 0.65, 2.15);
+                this.scene.add(this.frontLightL);
+            }
+            if (!this.frontLightR && THREE) {
+                this.frontLightR = new THREE.PointLight(0xfffae8, 0, 7, 1.6);
+                this.frontLightR.position.set(0.65, 0.65, 2.15);
+                this.scene.add(this.frontLightR);
+            }
+            if (this.frontLightL) this.frontLightL.intensity = this.headlightsOn ? 3.5 : 0;
+            if (this.frontLightR) this.frontLightR.intensity = this.headlightsOn ? 3.5 : 0;
+
+            // Visible glowing headlight lens flares on the car front
+            if (!this.headlightFlares && THREE) {
+                this.headlightFlares = new THREE.Group();
+                this.headlightFlares.name = 'ShowroomHeadlightFlares';
+                const flareMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.92 });
+                const flareGeo = new THREE.SphereGeometry(0.065, 12, 12);
+                const flareL = new THREE.Mesh(flareGeo, flareMat);
+                flareL.position.set(-0.65, 0.62, 2.15);
+                const flareR = new THREE.Mesh(flareGeo, flareMat);
+                flareR.position.set(0.65, 0.62, 2.15);
+                this.headlightFlares.add(flareL);
+                this.headlightFlares.add(flareR);
+                this.scene.add(this.headlightFlares);
+            }
+            if (this.headlightFlares) {
+                this.headlightFlares.visible = !!this.headlightsOn;
+            }
 
             const updateModelLights = (model) => {
                 if (!model) return;
                 const hlGroup = model.getObjectByName('HeadlightsGroup');
                 if (hlGroup) {
                     hlGroup.traverse(obj => {
-                        if (obj.isPointLight) obj.intensity = this.headlightsOn ? 3.0 : 0;
+                        if (obj.isPointLight) obj.intensity = this.headlightsOn ? 3.5 : 0;
                     });
                 }
                 model.traverse(obj => {
                     if (obj.isMesh && obj.material) {
                         const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
                         mats.forEach(mat => {
-                            const name = String(mat.name || '').toLowerCase();
-                            if (name === 'headlightled' || name === 'headlightglass' || name.includes('headlight') || name.includes('lamp') || name.includes('lens')) {
+                            const matName = String(mat.name || '').toLowerCase();
+                            const meshName = String(obj.name || '').toLowerCase();
+                            const isHeadlightMat = /headlight|lamp|lens|front.*light|fara|fary|glass.*light/i.test(matName) ||
+                                                   /headlight|fara|fary/i.test(meshName);
+                            if (isHeadlightMat) {
                                 if (mat.emissive) {
                                     if (this.headlightsOn) {
                                         if (!mat.userData._origEmissive) mat.userData._origEmissive = mat.emissive.clone();
                                         mat.emissive.setHex(0xffffff);
-                                        mat.emissiveIntensity = 2.8;
+                                        mat.emissiveIntensity = 3.0;
                                     } else {
                                         if (mat.userData._origEmissive) mat.emissive.copy(mat.userData._origEmissive);
-                                        mat.emissiveIntensity = 0.5;
+                                        mat.emissiveIntensity = 0.4;
+                                    }
+                                } else if (mat.color && typeof mat.color.setHex === 'function') {
+                                    if (this.headlightsOn) {
+                                        if (!mat.userData._origColor) mat.userData._origColor = mat.color.getHex();
+                                        mat.color.setHex(0xffffff);
+                                    } else if (mat.userData._origColor) {
+                                        mat.color.setHex(mat.userData._origColor);
                                     }
                                 }
                             }
@@ -5663,10 +5714,19 @@
 
                 const animateModel = (model) => {
                     if (!model) return;
-                    const dFL = model.getObjectByName('Door_FL_Pivot') || model.getObjectByName('door_left');
-                    const dFR = model.getObjectByName('Door_FR_Pivot') || model.getObjectByName('door_right');
-                    const hood = model.getObjectByName('Hood_Pivot') || model.getObjectByName('hood');
-                    const trunk = model.getObjectByName('Trunk_Pivot') || model.getObjectByName('trunk');
+                    const findNode = (regex) => {
+                        let res = null;
+                        if (typeof model.traverse === 'function') {
+                            model.traverse(c => {
+                                if (!res && c.name && regex.test(c.name)) res = c;
+                            });
+                        }
+                        return res;
+                    };
+                    const dFL = model.getObjectByName('Door_FL_Pivot') || model.getObjectByName('door_left') || findNode(/(?:door.*(?:fl|l|left)|f_door\.l|doorglass_fl)/i);
+                    const dFR = model.getObjectByName('Door_FR_Pivot') || model.getObjectByName('door_right') || findNode(/(?:door.*(?:fr|r|right)|f_door\.r|doorglass_fr)/i);
+                    const hood = model.getObjectByName('Hood_Pivot') || model.getObjectByName('hood') || findNode(/(?:hood|kapot|bonnet)/i);
+                    const trunk = model.getObjectByName('Trunk_Pivot') || model.getObjectByName('trunk') || findNode(/(?:trunk|bagaj|boot)/i);
                     if (dFL) dFL.rotation.y = this.doorAngle;
                     if (dFR) dFR.rotation.y = -this.doorAngle;
                     if (hood) hood.rotation.x = -this.hoodAngle;
