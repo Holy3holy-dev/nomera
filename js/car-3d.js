@@ -5430,28 +5430,15 @@
         }
 
         updateActiveCarVisibility() {
-            const isAnyOpen = this.doorsOpen || this.hoodOpen || this.trunkOpen;
-            if (this.glbHasPivots) {
-                if (this.glbCar) this.glbCar.visible = true;
-                if (this.proceduralCar) this.proceduralCar.visible = true;
-                this.carGroup = this.glbCar || this.proceduralCar;
-            } else if (isAnyOpen) {
-                if (this.proceduralCar) {
-                    this.proceduralCar.visible = true;
-                    this.carGroup = this.proceduralCar;
+            if (this.glbCar) {
+                this.glbCar.visible = true;
+                this.carGroup = this.glbCar;
+                if (this.proceduralCar && this.proceduralCar !== this.glbCar) {
+                    this.proceduralCar.visible = false;
                 }
-                if (this.glbCar) {
-                    this.glbCar.visible = false;
-                }
-            } else {
-                if (this.glbCar) {
-                    this.glbCar.visible = true;
-                    this.carGroup = this.glbCar;
-                    if (this.proceduralCar) this.proceduralCar.visible = false;
-                } else if (this.proceduralCar) {
-                    this.proceduralCar.visible = true;
-                    this.carGroup = this.proceduralCar;
-                }
+            } else if (this.proceduralCar) {
+                this.proceduralCar.visible = true;
+                this.carGroup = this.proceduralCar;
             }
         }
 
@@ -5723,19 +5710,62 @@
                         }
                         return res;
                     };
-                    const dFL = model.getObjectByName('Door_FL_Pivot') || model.getObjectByName('door_left') || findNode(/(?:door.*(?:fl|l|left)|f_door\.l|doorglass_fl)/i);
-                    const dFR = model.getObjectByName('Door_FR_Pivot') || model.getObjectByName('door_right') || findNode(/(?:door.*(?:fr|r|right)|f_door\.r|doorglass_fr)/i);
-                    const hood = model.getObjectByName('Hood_Pivot') || model.getObjectByName('hood') || findNode(/(?:hood|kapot|bonnet)/i);
-                    const trunk = model.getObjectByName('Trunk_Pivot') || model.getObjectByName('trunk') || findNode(/(?:trunk|bagaj|boot)/i);
-                    if (dFL) dFL.rotation.y = this.doorAngle;
-                    if (dFR) dFR.rotation.y = -this.doorAngle;
-                    if (hood) hood.rotation.x = -this.hoodAngle;
-                    if (trunk) trunk.rotation.x = this.trunkAngle;
+
+                    const rotateWithBase = (node, rotAxis, delta, offAxis = null, offDelta = 0) => {
+                        if (!node) return;
+                        if (node.userData._baseRotX === undefined) {
+                            node.userData._baseRotX = node.rotation.x;
+                            node.userData._baseRotY = node.rotation.y;
+                            node.userData._baseRotZ = node.rotation.z;
+                            node.userData._basePosY = node.position.y;
+                            node.userData._basePosZ = node.position.z;
+                        }
+                        if (rotAxis === 'y') node.rotation.y = node.userData._baseRotY + delta;
+                        else if (rotAxis === '-y') node.rotation.y = node.userData._baseRotY - delta;
+                        else if (rotAxis === 'x') node.rotation.x = node.userData._baseRotX + delta;
+                        else if (rotAxis === '-x') node.rotation.x = node.userData._baseRotX - delta;
+                        else if (rotAxis === 'z') node.rotation.z = node.userData._baseRotZ + delta;
+                        if (offAxis === 'y') node.position.y = node.userData._basePosY + offDelta;
+                    };
+
+                    // Procedural hinge pivots
+                    const pFL = model.getObjectByName('Door_FL_Pivot');
+                    const pFR = model.getObjectByName('Door_FR_Pivot');
+                    const pHood = model.getObjectByName('Hood_Pivot');
+                    const pTrunk = model.getObjectByName('Trunk_Pivot');
+
+                    if (pFL) pFL.rotation.y = this.doorAngle;
+                    if (pFR) pFR.rotation.y = -this.doorAngle;
+                    if (pHood) pHood.rotation.x = -this.hoodAngle;
+                    if (pTrunk) pTrunk.rotation.x = this.trunkAngle;
+
+                    // GLB Nodes animation with base preservation
+                    if (!pFL && !pFR) {
+                        const dFL = model.getObjectByName('door_left') || findNode(/(?:door.*(?:fl|l|left)|f_door\.l|doorglass_fl)/i);
+                        const dFR = model.getObjectByName('door_right') || findNode(/(?:door.*(?:fr|r|right)|f_door\.r|doorglass_fr)/i);
+                        if (dFL) rotateWithBase(dFL, 'y', this.doorAngle);
+                        if (dFR) rotateWithBase(dFR, '-y', this.doorAngle);
+
+                        const sideDoors = findNode(/(?:side_doors|doors_upperframe)/i);
+                        if (sideDoors && !dFL) {
+                            rotateWithBase(sideDoors, '-x', this.doorAngle * 0.25, 'y', this.doorAngle * 0.35);
+                        }
+                    }
+
+                    if (!pHood) {
+                        const hood = model.getObjectByName('hood') || findNode(/(?:hood|kapot|bonnet)/i);
+                        if (hood) rotateWithBase(hood, '-x', this.hoodAngle * 0.45, 'y', this.hoodAngle * 0.30);
+                    }
+
+                    if (!pTrunk) {
+                        const trunk = model.getObjectByName('trunk') || findNode(/(?:trunk|bagaj|boot|boot_lid)/i);
+                        if (trunk) rotateWithBase(trunk, 'x', this.trunkAngle * 0.45, 'y', this.trunkAngle * 0.30);
+                    }
                 };
 
                 animateModel(this.proceduralCar);
-                if (this.glbHasPivots) animateModel(this.glbCar);
-                animateModel(this.carGroup);
+                if (this.glbCar) animateModel(this.glbCar);
+                if (this.carGroup && this.carGroup !== this.proceduralCar && this.carGroup !== this.glbCar) animateModel(this.carGroup);
 
                 // SGU Strobe Lights Live Flashing Animation
                 if (this.currentStyling.sgu && this.currentStyling.sgu !== 'none' && this.carGroup) {
