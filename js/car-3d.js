@@ -6524,11 +6524,30 @@
                 state.peakSpeed = state.speed;
             }
 
-            // 3. FORWARD DISPLACEMENT (DISTANCE)
+            // 3. FORWARD DISPLACEMENT (DISTANCE) & RACE INCOME
             const forwardSpeedMps = state.speed / 3.6;
             const dz = forwardSpeedMps * dt;
             state.z += dz;
             state.distanceKm = state.z / 1000;
+
+            // Continuous speed earnings on the highway
+            if (state.speed > 25) {
+                const cashRatePerSec = (state.speed * 4.0) * (state.rewardMult || 1.0);
+                state.earnedCash += cashRatePerSec * dt;
+            }
+
+            // Milestone distance bonus for every full 1 km driven
+            const currentKm = Math.floor(state.distanceKm);
+            if (!state.lastMilestoneKm) state.lastMilestoneKm = 0;
+            if (currentKm > state.lastMilestoneKm) {
+                state.lastMilestoneKm = currentKm;
+                const kmBonus = Math.round(10000 * (state.rewardMult || 1.0));
+                state.earnedCash += kmBonus;
+                if (this.options.onPopup) {
+                    this.options.onPopup(`🏁 ДИСТАНЦИЯ ${currentKm} КМ! +${kmBonus.toLocaleString('ru-RU')} ₽`, '#10b981');
+                }
+                if (this.options.onSound) this.options.onSound('cash');
+            }
 
             // 4. REAL FUEL CONSUMPTION
             const fuelNomera = (typeof window !== 'undefined' && window.NomeraRaceEconomy) ? window.NomeraRaceEconomy : null;
@@ -6603,7 +6622,7 @@
                 const normalTurnYaw = steerInput * Math.min(0.20, (Math.abs(state.vx) / lateralMax) * 0.18);
                 state.yawAngle += (normalTurnYaw - state.yawAngle) * Math.min(1, 8 * dt);
                 if (state.driftCurrentScore > 30) {
-                    const bankedCash = Math.round(state.driftCurrentScore * 1.5 * state.rewardMult);
+                    const bankedCash = Math.round(state.driftCurrentScore * 4.0 * state.rewardMult);
                     state.earnedCash += bankedCash;
                     if (this.options.onPopup) {
                         this.options.onPopup(`🌪️ ЗАНОС: +${Math.round(state.driftCurrentScore)} PTS (+${bankedCash.toLocaleString('ru-RU')} ₽)`, '#fbbf24');
@@ -6837,8 +6856,8 @@
                     state.overtakeCombo++;
                     state.overtakeComboTimer = 3.5;
 
-                    const pts = 100 * Math.min(state.overtakeCombo, 10);
-                    const cash = Math.round(pts * 1.5 * state.rewardMult);
+                    const pts = 250 * Math.min(state.overtakeCombo, 10);
+                    const cash = Math.round(pts * 4.0 * state.rewardMult);
                     state.earnedCash += cash;
 
                     if (this.options.onPopup) {
@@ -6861,7 +6880,7 @@
                     if (isRearEndHit && speedDiff > 35) {
                         // High-speed direct rear-end collision -> CRASH
                         this.stop();
-                        state.damageTaken += 25;
+                        state.damageTaken += 12;
                         this.spawnSparks(state.x, 0.8, state.z + 1.0, 45);
                         if (this.options.onSound) this.options.onSound('crash');
                         if (this.options.onGameOver) this.options.onGameOver(true, this.getState());

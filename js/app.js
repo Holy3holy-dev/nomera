@@ -10092,7 +10092,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             racePlayer.isDrafting = !!draftingCar;
             if (racePlayer.isDrafting) {
                 // Бонус за слипстрим (сбалансированный)
-                racePlayer.earnedCash += 120 * stats.rewardMult * dt;
+                racePlayer.earnedCash += 350 * stats.rewardMult * dt;
             }
 
             // 4. Управление продольной скоростью
@@ -10599,11 +10599,22 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             if (!racePlayer.isOnWall && racePlayer.speed > 10) {
                 const distDelta = (racePlayer.speed / 3600) * dt;
                 racePlayer.distanceKm += distDelta;
+
+                // Бонус за каждый пройденный километр дистанции
+                const currentKm = Math.floor(racePlayer.distanceKm);
+                if (!racePlayer.lastMilestoneKm) racePlayer.lastMilestoneKm = 0;
+                if (currentKm > racePlayer.lastMilestoneKm) {
+                    racePlayer.lastMilestoneKm = currentKm;
+                    const kmBonus = Math.round(10000 * stats.rewardMult);
+                    racePlayer.earnedCash += kmBonus;
+                    showRacePopup(`🏁 ДИСТАНЦИЯ ${currentKm} КМ! +${kmBonus.toLocaleString('ru-RU')} ₽`, '#10b981');
+                    if (typeof playCashSound === 'function') playCashSound();
+                }
             }
 
             // Заработок денег (СТРОГО 0 ₽ ПРИ КАСАНИИ СТЕНЫ + ШТРАФ ЗА РЕМОНТ КУЗОВА!)
             if (!racePlayer.isOnWall && racePlayer.speed > 25) {
-                const cashRatePerSec = (racePlayer.speed * 1.6) * stats.rewardMult;
+                const cashRatePerSec = (racePlayer.speed * 4.0) * stats.rewardMult;
                 racePlayer.earnedCash += cashRatePerSec * dt;
             } else if (racePlayer.isOnWall && racePlayer.speed > 5) {
                 // Штраф за трение об отбойник
@@ -10757,8 +10768,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     if (raceHighwayEvent.type === 'speed_trap' && raceHighwayEvent.timer <= 0.1 && !raceHighwayEvent.checked) {
                         raceHighwayEvent.checked = true;
                         if (racePlayer.speed <= raceHighwayEvent.limit) {
-                            showRacePopup("✅ КАМЕРА ПРОЙДЕНА ЧИСТО! +5 000 ₽", "#10b981");
-                            racePlayer.earnedCash += 5000;
+                            const trapReward = Math.round(15000 * Math.max(1, (stats.rewardMult || 1) * 0.5));
+                            showRacePopup(`✅ КАМЕРА ПРОЙДЕНА ЧИСТО! +${trapReward.toLocaleString('ru-RU')} ₽`, "#10b981");
+                            racePlayer.earnedCash += trapReward;
                             if (typeof playCashSound === 'function') playCashSound();
                         } else {
                             showRacePopup("📸 ШТРАФ ЗА ПРЕВЫШЕНИЕ! −5 000 ₽", "#ef4444");
@@ -10951,12 +10963,12 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                             addWantedStars(1, 'ОПАСНЫЙ ОБГОН ДПС');
                         }
                         if (t.isRival) {
-                            const rivalBonus = Math.round(7500 * stats.rewardMult);
+                            const rivalBonus = Math.round(25000 * stats.rewardMult);
                             racePlayer.earnedCash += rivalBonus;
                             showRacePopup(`🏎️ СОПЕРНИК ОБОЙДЕН! +${rivalBonus.toLocaleString('ru-RU')} ₽!`, '#c084fc');
                             playCashSound();
                         } else {
-                            const bonus = Math.round(450 * stats.rewardMult * racePlayer.combo);
+                            const bonus = Math.round(1500 * stats.rewardMult * racePlayer.combo);
                             racePlayer.earnedCash += bonus;
                             showRacePopup(`🔥 ОБГОН! +${bonus.toLocaleString('ru-RU')} ₽ (x${racePlayer.combo})`, '#fbbf24');
                             playCashSound();
@@ -11249,10 +11261,11 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
             const roll = Math.random();
             let type = 'cash';
-            let amount = 2500;
+            const mult = (racePlayer && racePlayer.tunedStats?.rewardMult) || 1.0;
+            let amount = Math.round(8000 * Math.max(1, Math.sqrt(mult)));
             if (roll < 0.35) {
                 type = 'cash';
-                amount = Math.random() < 0.2 ? 6000 : 2500;
+                amount = Math.round((Math.random() < 0.25 ? 20000 : 8000) * Math.max(1, Math.sqrt(mult)));
             } else if (roll < 0.65) {
                 type = 'fuel';
                 amount = 4.0;
@@ -11294,7 +11307,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             const gross = racePlayer.earnedCash + driftBonus;
             const receipt = NomeraRaceEconomy.settle(gross, racePlayer.fuelLiters || 0, balance);
             const finalXp = Math.max(5, Math.round(racePlayer.distanceKm * 8 + racePlayer.overtakesCount * 3 + (racePlayer.driftScore || 0) * 0.05));
-            const wear = Math.min(75, (racePlayer.damageTaken || 0) + racePlayer.distanceKm * 0.3 + (crashed ? 18 + Math.min(15, racePlayer.speed / 25) : 0));
+            const wear = Math.min(60, (racePlayer.damageTaken || 0) * 0.8 + racePlayer.distanceKm * 0.1 + (crashed ? 8 + Math.min(7, racePlayer.speed / 50) : 0));
             if (activeRaceCar && myCars.includes(activeRaceCar)) {
                 NomeraRaceEconomy.ensureCar(activeRaceCar);
                 activeRaceCar.condition = Math.max(0, Number((activeRaceCar.condition - wear).toFixed(2)));

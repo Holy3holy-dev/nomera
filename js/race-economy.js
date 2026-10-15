@@ -36,7 +36,9 @@
     function repairCost(basePrice, condition) {
         const damage = 100 - normalizeCar({condition}).condition;
         if (damage < 0.01) return 0;
-        return Math.ceil(Math.max(400, clamp(finite(basePrice, 80000), 10000, 200000000) * 0.07 * damage / 100));
+        const base = clamp(finite(basePrice, 80000), 10000, 200000000);
+        const carFactor = Math.pow(base, 0.42);
+        return Math.max(150, Math.round(carFactor * 18 * damage / 100));
     }
     function performance(baseStats, car) {
         const {condition, upgrades} = normalizeCar(car);
