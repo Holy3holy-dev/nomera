@@ -15,6 +15,8 @@ test('PC Adaptation: CSS defines widescreen desktop race container, touch-contro
     assert.ok(cssCode.includes('.race-3d-pursuit-box {'), 'CSS must define .race-3d-pursuit-box');
     assert.ok(cssCode.includes('position: absolute;'), 'Pursuit box must use position: absolute');
     assert.ok(cssCode.includes('top: 68px;'), 'Pursuit box must be placed at top: 68px safely below top stats row');
+    assert.ok(cssCode.includes('flex-wrap: nowrap;'), 'Race top stats must use flex-wrap: nowrap to prevent wrapping over pursuit box');
+    assert.ok(cssCode.includes('.showroom-interact-btn.disabled'), 'CSS must define .showroom-interact-btn.disabled');
 
     // 3. Styling & Tuning Modal PC 2-Column Layout
     assert.ok(cssCode.includes('.styling-modal-box {'), 'CSS must define .styling-modal-box');
@@ -115,9 +117,15 @@ test('Showroom Interactivity: Procedural and GLB coordination, doors/hood/trunk/
     assert.ok(showroom.proceduralCar.getObjectByName('Hood_Pivot'), 'Procedural car must have Hood_Pivot');
     assert.ok(showroom.proceduralCar.getObjectByName('Trunk_Pivot'), 'Procedural car must have Trunk_Pivot');
 
-    // Verify headlights spotlights were created
+    // Verify headlights and taillights rigs were created
     assert.ok(showroom.headlightSpotL, 'Showroom must have left headlight spotlight');
     assert.ok(showroom.headlightSpotR, 'Showroom must have right headlight spotlight');
+
+    // Capabilities check
+    assert.strictEqual(showroom.hasCapability('doors'), true, 'Procedural car must support doors');
+    assert.strictEqual(showroom.hasCapability('hood'), true, 'Procedural car must support hood');
+    assert.strictEqual(showroom.hasCapability('trunk'), true, 'Procedural car must support trunk');
+    assert.strictEqual(showroom.hasCapability('headlights'), true, 'Procedural car must support headlights');
 
     // Toggle doors
     assert.strictEqual(showroom.doorsOpen, false);
@@ -125,24 +133,37 @@ test('Showroom Interactivity: Procedural and GLB coordination, doors/hood/trunk/
     assert.strictEqual(showroom.doorsOpen, true);
     assert.strictEqual(showroom.proceduralCar.visible, true, 'Procedural car must be visible when doors open');
 
-    // Toggle headlights
+    // Toggle headlights: check both front and rear illumination
     assert.strictEqual(showroom.headlightsOn, false);
     showroom.toggleHeadlights();
     assert.strictEqual(showroom.headlightsOn, true);
     assert.ok(showroom.headlightSpotL.intensity > 0, 'Spotlight must be lit when headlights are on');
+    assert.ok(showroom.headlightFlares, 'Showroom must have headlight flares');
+    assert.ok(showroom.taillightFlares, 'Showroom must have taillight flares');
+    assert.strictEqual(showroom.headlightFlares.visible, true);
+    assert.strictEqual(showroom.taillightFlares.visible, true);
 
     showroom.toggleHeadlights();
     assert.strictEqual(showroom.headlightsOn, false);
     assert.strictEqual(showroom.headlightSpotL.intensity, 0, 'Spotlight must turn off when headlights are off');
+    assert.strictEqual(showroom.headlightFlares.visible, false);
+    assert.strictEqual(showroom.taillightFlares.visible, false);
+
+    // Monolithic capability suppression check
+    showroom.capabilities = { doors: false, hood: false, trunk: false, headlights: true };
+    const doorsResult = showroom.toggleDoors();
+    assert.strictEqual(doorsResult, false, 'toggleDoors must return false on monolithic models');
+    assert.strictEqual(showroom.doorsOpen, false, 'doorsOpen must remain false when unsupported');
 
     showroom.stop();
 });
 
-test('App.js: toggleShowroom buttons auto-switch to 3D mode if in 2D view', () => {
+test('App.js: toggleShowroom buttons auto-switch to 3D mode if in 2D view and manage button states', () => {
     const appCode = fs.readFileSync(path.join(__dirname, '../js/app.js'), 'utf8');
 
     // Check that toggleShowroom functions switch to 3D mode
     assert.ok(appCode.includes("if (stylingViewMode !== '3d') {\n                setStylingViewMode('3d');"), 'toggleShowroomDoors must switch to 3D if in 2D mode');
     assert.ok(appCode.includes('toggle3DTouchControls'), 'app.js must define toggle3DTouchControls');
     assert.ok(appCode.includes('preloadUserGarageModels'), 'app.js must define preloadUserGarageModels');
+    assert.ok(appCode.includes('updateShowroomButtonsState'), 'app.js must define updateShowroomButtonsState');
 });

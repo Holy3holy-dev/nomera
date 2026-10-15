@@ -3306,8 +3306,9 @@ body.race-active .main-container {
 .race-3d-hud-top {
     display: flex;
     justify-content: space-between;
+    align-items: center;
     gap: 8px;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
 }
 
 .race-3d-hud-stat {
@@ -3320,6 +3321,8 @@ body.race-active .main-container {
     align-items: center;
     gap: 8px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    min-width: 0;
+    flex: 1 1 0;
 }
 
 .race-3d-stat-icon {
@@ -4038,6 +4041,24 @@ body.race-active .race-3d-viewport-wrapper {
     border-color: #38bdf8;
     color: #38bdf8;
     box-shadow: 0 0 12px rgba(56, 189, 248, 0.45);
+}
+
+.showroom-interact-btn.disabled,
+.showroom-interact-btn[disabled] {
+    opacity: 0.42;
+    cursor: not-allowed;
+    pointer-events: auto;
+    filter: grayscale(0.6);
+    border-color: rgba(255, 255, 255, 0.08);
+    box-shadow: none;
+}
+
+.showroom-interact-btn.disabled:hover,
+.showroom-interact-btn[disabled]:hover {
+    background: rgba(15, 23, 42, 0.78);
+    color: #94a3b8;
+    transform: none;
+    border-color: rgba(255, 255, 255, 0.08);
 }
 
 /* =========================================================================

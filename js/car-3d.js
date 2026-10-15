@@ -5166,6 +5166,92 @@
     }
 
     // =========================================================================
+    // 🛠️ HINGE ROTATION UTILITIES FOR ACCURATE 3D DOORS, HOOD & TRUNK MECHANICS
+    // =========================================================================
+    function findTopNodes(root, regex) {
+        const list = [];
+        if (!root || typeof root.traverse !== 'function') return list;
+        root.traverse(c => {
+            if (c.name && regex.test(c.name)) list.push(c);
+        });
+        if (list.length <= 1) return list;
+        return list.filter(node => {
+            let p = node.parent;
+            while (p && p !== root) {
+                if (list.includes(p)) return false;
+                p = p.parent;
+            }
+            return true;
+        });
+    }
+
+    function setupNodeHinge(node, partType, THREE) {
+        if (!node || !THREE) return;
+        if (!node.userData) node.userData = {};
+        if (node.userData._hingeInitialized) return;
+        node.userData._hingeInitialized = true;
+        node.userData._basePos = node.position.clone();
+        node.userData._baseQuat = node.quaternion.clone();
+
+        node.updateMatrixWorld(true);
+        const box = new THREE.Box3();
+        node.traverse(child => {
+            if (child.isMesh && child.geometry) {
+                if (!child.geometry.boundingBox) child.geometry.computeBoundingBox();
+                const cb = child.geometry.boundingBox.clone();
+                child.updateMatrixWorld(true);
+                const m = new THREE.Matrix4();
+                if (node.parent) {
+                    m.copy(node.parent.matrixWorld).invert().multiply(child.matrixWorld);
+                } else {
+                    m.copy(child.matrixWorld);
+                }
+                cb.applyMatrix4(m);
+                box.union(cb);
+            }
+        });
+
+        if (box.isEmpty()) {
+            box.setFromCenterAndSize(node.position, new THREE.Vector3(0.6, 0.4, 0.6));
+        }
+
+        const center = box.getCenter(new THREE.Vector3());
+        const hingePoint = new THREE.Vector3();
+        const hingeAxis = new THREE.Vector3();
+
+        if (partType === 'hood') {
+            hingePoint.set(center.x, box.max.y, box.min.z);
+            hingeAxis.set(-1, 0, 0);
+        } else if (partType === 'trunk') {
+            hingePoint.set(center.x, box.max.y, box.max.z);
+            hingeAxis.set(1, 0, 0);
+        } else if (partType === 'door_l') {
+            hingePoint.set(box.min.x, center.y, box.max.z);
+            hingeAxis.set(0, 1, 0);
+        } else if (partType === 'door_r') {
+            hingePoint.set(box.max.x, center.y, box.max.z);
+            hingeAxis.set(0, -1, 0);
+        }
+
+        node.userData._hingePoint = hingePoint;
+        node.userData._hingeAxis = hingeAxis;
+    }
+
+    function applyHingeRotation(node, angle, THREE) {
+        if (!node || !node.userData || !node.userData._hingePoint || !node.userData._basePos) return;
+        if (Math.abs(angle) < 0.001) {
+            node.position.copy(node.userData._basePos);
+            node.quaternion.copy(node.userData._baseQuat);
+            return;
+        }
+        const qDelta = new THREE.Quaternion().setFromAxisAngle(node.userData._hingeAxis, angle);
+        node.quaternion.copy(qDelta).multiply(node.userData._baseQuat);
+        const rel = node.userData._basePos.clone().sub(node.userData._hingePoint);
+        rel.applyQuaternion(qDelta);
+        node.position.copy(node.userData._hingePoint).add(rel);
+    }
+
+    // =========================================================================
     // 🌟 MAIN CAR 3D SHOWROOM CLASS
     // =========================================================================
     class Car3DShowroom {
@@ -5230,6 +5316,16 @@
             this.targetTrunkAngle = 0;
 
             this.headlightsOn = false;
+
+            // Interactive capabilities (doors, hood, trunk, headlights)
+            this.capabilities = {
+                doors: true,
+                hood: true,
+                trunk: true,
+                headlights: true
+            };
+            this.onCapabilitiesChange = null;
+            this._resizeObserver = null;
 
             this.initScene();
             this.bindEvents();
@@ -5430,6 +5526,8 @@
 
                     this.updateActiveCarVisibility();
                     this.updateNeonLight();
+                    this.updateCapabilities();
+                    this.updateLightsRigPositions();
                     this.updateHeadlightsState();
                 });
             } else {
@@ -5460,6 +5558,8 @@
 
                 this.updateActiveCarVisibility();
                 this.updateNeonLight();
+                this.updateCapabilities();
+                this.updateLightsRigPositions();
                 this.updateHeadlightsState();
             }
         }
@@ -5499,6 +5599,8 @@
             if (this.glbCar && GLB_MODEL_MAP[carId]) {
                 applyStylingToGLTF(this.THREE, this.glbCar, this.currentStyling, carId);
                 this.updateNeonLight();
+                this.updateCapabilities();
+                this.updateLightsRigPositions();
                 this.updateHeadlightsState();
                 this.updateActiveCarVisibility();
                 return;
@@ -5524,7 +5626,59 @@
             }
         }
 
+        updateCapabilities() {
+            const activeModel = this.glbCar || this.proceduralCar || this.carGroup;
+            if (!activeModel) {
+                this.capabilities = { doors: true, hood: true, trunk: true, headlights: true };
+                return;
+            }
+            const hasDoorPivots = !!activeModel.getObjectByName('Door_FL_Pivot');
+            const hasHoodPivots = !!activeModel.getObjectByName('Hood_Pivot');
+            const hasTrunkPivots = !!activeModel.getObjectByName('Trunk_Pivot');
+
+            const hasDoorNodes = hasDoorPivots || findTopNodes(activeModel, /(?:door.*(?:fl|fr|l|r|left|right|zl|pl|zp|pp|01|02|03|04)|f_door\.[lr]|b_door\.[lr])/i).length > 0;
+            const hasHoodNodes = hasHoodPivots || findTopNodes(activeModel, /(?:hood|kapot|bonnet)/i).length > 0;
+            const hasTrunkNodes = hasTrunkPivots || findTopNodes(activeModel, /(?:boot_lid|trunk_lid|trunk|bagaj|boot)/i).length > 0;
+
+            this.capabilities = {
+                doors: hasDoorNodes,
+                hood: hasHoodNodes,
+                trunk: hasTrunkNodes,
+                headlights: true
+            };
+
+            if (!hasDoorNodes) {
+                this.doorsOpen = false;
+                this.targetDoorAngle = 0;
+                this.doorAngle = 0;
+            }
+            if (!hasHoodNodes) {
+                this.hoodOpen = false;
+                this.targetHoodAngle = 0;
+                this.hoodAngle = 0;
+            }
+            if (!hasTrunkNodes) {
+                this.trunkOpen = false;
+                this.targetTrunkAngle = 0;
+                this.trunkAngle = 0;
+            }
+
+            if (typeof this.onCapabilitiesChange === 'function') {
+                this.onCapabilitiesChange(this.capabilities);
+            }
+        }
+
+        hasCapability(feature) {
+            if (!this.capabilities) return true;
+            return this.capabilities[feature] !== false;
+        }
+
         toggleDoors() {
+            if (!this.hasCapability('doors')) {
+                this.doorsOpen = false;
+                this.targetDoorAngle = 0;
+                return false;
+            }
             this.doorsOpen = !this.doorsOpen;
             this.targetDoorAngle = this.doorsOpen ? 1.05 : 0;
             this.updateActiveCarVisibility();
@@ -5532,6 +5686,11 @@
         }
 
         toggleHood() {
+            if (!this.hasCapability('hood')) {
+                this.hoodOpen = false;
+                this.targetHoodAngle = 0;
+                return false;
+            }
             this.hoodOpen = !this.hoodOpen;
             this.targetHoodAngle = this.hoodOpen ? 0.85 : 0;
             this.updateActiveCarVisibility();
@@ -5539,6 +5698,11 @@
         }
 
         toggleTrunk() {
+            if (!this.hasCapability('trunk')) {
+                this.trunkOpen = false;
+                this.targetTrunkAngle = 0;
+                return false;
+            }
             this.trunkOpen = !this.trunkOpen;
             this.targetTrunkAngle = this.trunkOpen ? 0.90 : 0;
             this.updateActiveCarVisibility();
@@ -5549,6 +5713,48 @@
             this.headlightsOn = !this.headlightsOn;
             this.updateHeadlightsState();
             return this.headlightsOn;
+        }
+
+        updateLightsRigPositions() {
+            const activeModel = this.glbCar || this.proceduralCar || this.carGroup;
+            if (!activeModel || !this.THREE) return;
+            const THREE = this.THREE;
+
+            try {
+                const box = new THREE.Box3().setFromObject(activeModel);
+                if (box.isEmpty()) return;
+                const size = box.getSize(new THREE.Vector3());
+
+                const halfW = (size.x > 0 ? size.x : 1.9) * 0.5;
+                const carH = (size.y > 0 ? size.y : 1.45);
+
+                const frontZ = box.max.z - 0.02;
+                const rearZ = box.min.z + 0.02;
+                const hlY = box.min.y + carH * 0.44;
+                const tlY = box.min.y + carH * 0.50;
+                const hlX = halfW * 0.72;
+                const tlX = halfW * 0.74;
+
+                if (this.headlightSpotL && this.headlightSpotR) {
+                    this.headlightSpotL.position.set(-hlX, hlY, frontZ);
+                    this.headlightSpotR.position.set(hlX, hlY, frontZ);
+                }
+                if (this.headlightTargetL && this.headlightTargetR) {
+                    this.headlightTargetL.position.set(-hlX * 1.05, 0, frontZ + 5.5);
+                    this.headlightTargetR.position.set(hlX * 1.05, 0, frontZ + 5.5);
+                }
+                if (this.frontLightL) this.frontLightL.position.set(-hlX, hlY, frontZ + 0.08);
+                if (this.frontLightR) this.frontLightR.position.set(hlX, hlY, frontZ + 0.08);
+
+                if (this.flareMeshL) this.flareMeshL.position.set(-hlX, hlY, frontZ + 0.02);
+                if (this.flareMeshR) this.flareMeshR.position.set(hlX, hlY, frontZ + 0.02);
+
+                if (this.taillightFlareL) this.taillightFlareL.position.set(-tlX, tlY, rearZ - 0.02);
+                if (this.taillightFlareR) this.taillightFlareR.position.set(tlX, tlY, rearZ - 0.02);
+
+                if (this.rearLightL) this.rearLightL.position.set(-tlX, tlY, rearZ - 0.15);
+                if (this.rearLightR) this.rearLightR.position.set(tlX, tlY, rearZ - 0.15);
+            } catch (_) {}
         }
 
         updateHeadlightsState() {
@@ -5570,23 +5776,57 @@
             if (this.frontLightL) this.frontLightL.intensity = this.headlightsOn ? 3.5 : 0;
             if (this.frontLightR) this.frontLightR.intensity = this.headlightsOn ? 3.5 : 0;
 
+            // Rear Taillight Soft Red PointLights
+            if (!this.rearLightL && THREE) {
+                this.rearLightL = new THREE.PointLight(0xff1122, 0, 5, 1.8);
+                this.rearLightL.position.set(-0.65, 0.70, -2.15);
+                this.scene.add(this.rearLightL);
+            }
+            if (!this.rearLightR && THREE) {
+                this.rearLightR = new THREE.PointLight(0xff1122, 0, 5, 1.8);
+                this.rearLightR.position.set(0.65, 0.70, -2.15);
+                this.scene.add(this.rearLightR);
+            }
+            if (this.rearLightL) this.rearLightL.intensity = this.headlightsOn ? 2.0 : 0;
+            if (this.rearLightR) this.rearLightR.intensity = this.headlightsOn ? 2.0 : 0;
+
             // Visible glowing headlight lens flares on the car front
             if (!this.headlightFlares && THREE) {
                 this.headlightFlares = new THREE.Group();
                 this.headlightFlares.name = 'ShowroomHeadlightFlares';
                 const flareMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.92 });
                 const flareGeo = new THREE.SphereGeometry(0.065, 12, 12);
-                const flareL = new THREE.Mesh(flareGeo, flareMat);
-                flareL.position.set(-0.65, 0.62, 2.15);
-                const flareR = new THREE.Mesh(flareGeo, flareMat);
-                flareR.position.set(0.65, 0.62, 2.15);
-                this.headlightFlares.add(flareL);
-                this.headlightFlares.add(flareR);
+                this.flareMeshL = new THREE.Mesh(flareGeo, flareMat);
+                this.flareMeshL.position.set(-0.65, 0.62, 2.15);
+                this.flareMeshR = new THREE.Mesh(flareGeo, flareMat);
+                this.flareMeshR.position.set(0.65, 0.62, 2.15);
+                this.headlightFlares.add(this.flareMeshL);
+                this.headlightFlares.add(this.flareMeshR);
                 this.scene.add(this.headlightFlares);
             }
             if (this.headlightFlares) {
                 this.headlightFlares.visible = !!this.headlightsOn;
             }
+
+            // Visible glowing taillight lens flares on the car rear
+            if (!this.taillightFlares && THREE) {
+                this.taillightFlares = new THREE.Group();
+                this.taillightFlares.name = 'ShowroomTaillightFlares';
+                const tailMat = new THREE.MeshBasicMaterial({ color: 0xff0820, transparent: true, opacity: 0.92 });
+                const tailGeo = new THREE.SphereGeometry(0.06, 12, 12);
+                this.taillightFlareL = new THREE.Mesh(tailGeo, tailMat);
+                this.taillightFlareL.position.set(-0.65, 0.70, -2.15);
+                this.taillightFlareR = new THREE.Mesh(tailGeo, tailMat);
+                this.taillightFlareR.position.set(0.65, 0.70, -2.15);
+                this.taillightFlares.add(this.taillightFlareL);
+                this.taillightFlares.add(this.taillightFlareR);
+                this.scene.add(this.taillightFlares);
+            }
+            if (this.taillightFlares) {
+                this.taillightFlares.visible = !!this.headlightsOn;
+            }
+
+            this.updateLightsRigPositions();
 
             const updateModelLights = (model) => {
                 if (!model) return;
@@ -5604,12 +5844,14 @@
                             const meshName = String(obj.name || '').toLowerCase();
                             const isHeadlightMat = /headlight|lamp|lens|front.*light|fara|fary|glass.*light/i.test(matName) ||
                                                    /headlight|fara|fary/i.test(meshName);
+                            const isTaillightMat = /taillight|tail.*lamp|brake.*light|rear.*light|stop.*light|zadn.*fara/i.test(matName) ||
+                                                   /taillight|brake.*light|zadn.*fara/i.test(meshName);
                             if (isHeadlightMat) {
                                 if (mat.emissive) {
                                     if (this.headlightsOn) {
                                         if (!mat.userData._origEmissive) mat.userData._origEmissive = mat.emissive.clone();
                                         mat.emissive.setHex(0xffffff);
-                                        mat.emissiveIntensity = 3.0;
+                                        mat.emissiveIntensity = 3.2;
                                     } else {
                                         if (mat.userData._origEmissive) mat.emissive.copy(mat.userData._origEmissive);
                                         mat.emissiveIntensity = 0.4;
@@ -5622,15 +5864,28 @@
                                         mat.color.setHex(mat.userData._origColor);
                                     }
                                 }
+                            } else if (isTaillightMat) {
+                                if (mat.emissive) {
+                                    if (this.headlightsOn) {
+                                        if (!mat.userData._origEmissive) mat.userData._origEmissive = mat.emissive.clone();
+                                        mat.emissive.setHex(0xff0820);
+                                        mat.emissiveIntensity = 2.4;
+                                    } else {
+                                        if (mat.userData._origEmissive) mat.emissive.copy(mat.userData._origEmissive);
+                                        mat.emissiveIntensity = 0.3;
+                                    }
+                                }
                             }
                         });
                     }
                 });
             };
 
-            updateModelLights(this.proceduralCar);
-            updateModelLights(this.glbCar);
-            updateModelLights(this.carGroup);
+            if (this.glbCar) updateModelLights(this.glbCar);
+            if (this.proceduralCar) updateModelLights(this.proceduralCar);
+            if (this.carGroup && this.carGroup !== this.glbCar && this.carGroup !== this.proceduralCar) {
+                updateModelLights(this.carGroup);
+            }
         }
 
         getInteractiveState() {
@@ -5709,18 +5964,28 @@
 
             dom.addEventListener('wheel', onWheel, { passive: false });
             window.addEventListener('resize', () => this.resize());
+
+            if (typeof ResizeObserver !== 'undefined' && this.container) {
+                try {
+                    this._resizeObserver = new ResizeObserver(() => {
+                        this.resize();
+                    });
+                    this._resizeObserver.observe(this.container);
+                } catch (_) {}
+            }
         }
 
         resize() {
-            if (!this.container || !this.renderer) return;
-            const w = this.container.clientWidth;
-            const h = this.container.clientHeight;
+            if (!this.container || !this.renderer || !this.camera) return;
+            const rect = (typeof this.container.getBoundingClientRect === 'function') ? this.container.getBoundingClientRect() : null;
+            const w = Math.floor(rect && rect.width ? rect.width : (this.container.clientWidth || 0));
+            const h = Math.floor(rect && rect.height ? rect.height : (this.container.clientHeight || 0));
             if (w <= 0 || h <= 0) return;
             this.width = w;
             this.height = h;
             this.camera.aspect = w / h;
             this.camera.updateProjectionMatrix();
-            this.renderer.setSize(w, h);
+            this.renderer.setSize(w, h, false);
         }
 
         start() {
@@ -5744,43 +6009,8 @@
 
                 const animateModel = (model) => {
                     if (!model) return;
-                    const findNode = (regex) => {
-                        let res = null;
-                        if (typeof model.traverse === 'function') {
-                            model.traverse(c => {
-                                if (!res && c.name && regex.test(c.name)) res = c;
-                            });
-                        }
-                        return res;
-                    };
-                    const findAllNodes = (regex) => {
-                        const res = [];
-                        if (typeof model.traverse === 'function') {
-                            model.traverse(c => {
-                                if (c.name && regex.test(c.name)) res.push(c);
-                            });
-                        }
-                        return res;
-                    };
 
-                    const rotateWithBase = (node, rotAxis, delta, offAxis = null, offDelta = 0) => {
-                        if (!node) return;
-                        if (node.userData._baseRotX === undefined) {
-                            node.userData._baseRotX = node.rotation.x;
-                            node.userData._baseRotY = node.rotation.y;
-                            node.userData._baseRotZ = node.rotation.z;
-                            node.userData._basePosY = node.position.y;
-                            node.userData._basePosZ = node.position.z;
-                        }
-                        if (rotAxis === 'y') node.rotation.y = node.userData._baseRotY + delta;
-                        else if (rotAxis === '-y') node.rotation.y = node.userData._baseRotY - delta;
-                        else if (rotAxis === 'x') node.rotation.x = node.userData._baseRotX + delta;
-                        else if (rotAxis === '-x') node.rotation.x = node.userData._baseRotX - delta;
-                        else if (rotAxis === 'z') node.rotation.z = node.userData._baseRotZ + delta;
-                        if (offAxis === 'y') node.position.y = node.userData._basePosY + offDelta;
-                    };
-
-                    // Procedural hinge pivots
+                    // Procedural hinge pivots (if present)
                     const pFL = model.getObjectByName('Door_FL_Pivot');
                     const pFR = model.getObjectByName('Door_FR_Pivot');
                     const pHood = model.getObjectByName('Hood_Pivot');
@@ -5791,27 +6021,35 @@
                     if (pHood) pHood.rotation.x = -this.hoodAngle;
                     if (pTrunk) pTrunk.rotation.x = this.trunkAngle;
 
-                    // GLB Nodes animation with base preservation
-                    if (!pFL && !pFR) {
-                        const leftDoors = findAllNodes(/(?:door.*(?:fl|l|left|01|zl|pl)|f_door\.l|doorglass_fl)/i);
-                        const rightDoors = findAllNodes(/(?:door.*(?:fr|r|right|02|zp|pp)|f_door\.r|doorglass_fr)/i);
-                        leftDoors.forEach(d => rotateWithBase(d, 'y', this.doorAngle));
-                        rightDoors.forEach(d => rotateWithBase(d, '-y', this.doorAngle));
+                    // GLB Nodes animation with true physical hinge rotation
+                    if (!pFL && !pFR && this.THREE) {
+                        const leftDoors = findTopNodes(model, /(?:door.*(?:fl|l|left|zl|pl|01|03)|f_door\.l|b_door\.l)/i);
+                        const rightDoors = findTopNodes(model, /(?:door.*(?:fr|r|right|zp|pp|02|04)|f_door\.r|b_door\.r)/i);
 
-                        if (leftDoors.length === 0 && rightDoors.length === 0) {
-                            const sideDoors = findAllNodes(/(?:side_doors|doors_upperframe)/i);
-                            sideDoors.forEach(d => rotateWithBase(d, '-x', this.doorAngle * 0.25, 'y', this.doorAngle * 0.35));
-                        }
+                        leftDoors.forEach(d => {
+                            setupNodeHinge(d, 'door_l', this.THREE);
+                            applyHingeRotation(d, this.doorAngle, this.THREE);
+                        });
+                        rightDoors.forEach(d => {
+                            setupNodeHinge(d, 'door_r', this.THREE);
+                            applyHingeRotation(d, this.doorAngle, this.THREE);
+                        });
                     }
 
-                    if (!pHood) {
-                        const hoods = findAllNodes(/(?:hood|kapot|bonnet)/i);
-                        hoods.forEach(h => rotateWithBase(h, '-x', this.hoodAngle * 0.45, 'y', this.hoodAngle * 0.30));
+                    if (!pHood && this.THREE) {
+                        const hoods = findTopNodes(model, /(?:hood|kapot|bonnet)/i);
+                        hoods.forEach(h => {
+                            setupNodeHinge(h, 'hood', this.THREE);
+                            applyHingeRotation(h, this.hoodAngle, this.THREE);
+                        });
                     }
 
-                    if (!pTrunk) {
-                        const trunks = findAllNodes(/(?:boot_lid|trunk_lid|trunk|bagaj|boot)/i);
-                        trunks.forEach(t => rotateWithBase(t, 'x', this.trunkAngle * 0.45, 'y', this.trunkAngle * 0.30));
+                    if (!pTrunk && this.THREE) {
+                        const trunks = findTopNodes(model, /(?:boot_lid|trunk_lid|trunk|bagaj|boot)/i);
+                        trunks.forEach(t => {
+                            setupNodeHinge(t, 'trunk', this.THREE);
+                            applyHingeRotation(t, this.trunkAngle, this.THREE);
+                        });
                     }
                 };
 
@@ -5885,6 +6123,10 @@
 
         destroy() {
             this.stop();
+            if (this._resizeObserver) {
+                try { this._resizeObserver.disconnect(); } catch (_) {}
+                this._resizeObserver = null;
+            }
             if (this.renderer && this.renderer.domElement && this.renderer.domElement.parentNode) {
                 this.renderer.domElement.parentNode.removeChild(this.renderer.domElement);
                 this.renderer.dispose();

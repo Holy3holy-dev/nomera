@@ -4522,7 +4522,13 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                             autoRotateSpeed: 0.007,
                             showPodium: true
                         });
+                        car3DShowroom.onCapabilitiesChange = () => {
+                            updateShowroomButtonsState();
+                        };
                     } else {
+                        car3DShowroom.onCapabilitiesChange = () => {
+                            updateShowroomButtonsState();
+                        };
                         car3DShowroom.resize();
                         car3DShowroom.start();
                     }
@@ -4542,6 +4548,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                             wheelOffset: stylingTempOffset,
                             neonMode: stylingTempNeonMode
                         });
+                        updateShowroomButtonsState();
                     }
                 } else {
                     notifyUser('3D режим не поддерживается вашим браузером, переключаем на 2D', 'info');
@@ -4643,6 +4650,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             if (modal) modal.classList.add('show');
             setStylingViewMode(stylingViewMode);
             updateStylingModalPreview();
+            updateShowroomButtonsState();
         }
 
         function closeStylingModal() {
@@ -4745,6 +4753,40 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             updateStylingModalPreview();
         }
 
+        function updateShowroomButtonsState() {
+            if (!car3DShowroom) return;
+            const btnDoors = document.getElementById('btn-show-doors');
+            const btnHood = document.getElementById('btn-show-hood');
+            const btnTrunk = document.getElementById('btn-show-trunk');
+            const btnLights = document.getElementById('btn-show-lights');
+
+            if (btnDoors) {
+                const canDoors = car3DShowroom.hasCapability('doors');
+                btnDoors.classList.toggle('disabled', !canDoors);
+                btnDoors.title = canDoors ? 'Распахнуть двери' : 'Кузов монолит (двери зафиксированы)';
+                if (!canDoors) btnDoors.classList.remove('active');
+                else btnDoors.classList.toggle('active', !!car3DShowroom.doorsOpen);
+            }
+            if (btnHood) {
+                const canHood = car3DShowroom.hasCapability('hood');
+                btnHood.classList.toggle('disabled', !canHood);
+                btnHood.title = canHood ? 'Открыть капот' : 'Монокок (капот зафиксирован)';
+                if (!canHood) btnHood.classList.remove('active');
+                else btnHood.classList.toggle('active', !!car3DShowroom.hoodOpen);
+            }
+            if (btnTrunk) {
+                const canTrunk = car3DShowroom.hasCapability('trunk');
+                btnTrunk.classList.toggle('disabled', !canTrunk);
+                btnTrunk.title = canTrunk ? 'Открыть багажник' : 'Без отдельного багажника';
+                if (!canTrunk) btnTrunk.classList.remove('active');
+                else btnTrunk.classList.toggle('active', !!car3DShowroom.trunkOpen);
+            }
+            if (btnLights) {
+                btnLights.classList.toggle('active', !!car3DShowroom.headlightsOn);
+            }
+        }
+        window.updateShowroomButtonsState = updateShowroomButtonsState;
+
         function toggleShowroomDoors() {
             if (stylingViewMode !== '3d') {
                 setStylingViewMode('3d');
@@ -4752,11 +4794,23 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             if (!car3DShowroom) {
                 setTimeout(() => {
                     if (car3DShowroom) {
+                        if (!car3DShowroom.hasCapability('doors')) {
+                            notifyUser('У данной 3D модели гоночный монолитный кузов (двери зафиксированы)', 'info');
+                            const btn = document.getElementById('btn-show-doors');
+                            if (btn) btn.classList.remove('active');
+                            return;
+                        }
                         const isOpen = car3DShowroom.toggleDoors();
                         const btn = document.getElementById('btn-show-doors');
                         if (btn) btn.classList.toggle('active', isOpen);
                     }
                 }, 90);
+                return;
+            }
+            if (!car3DShowroom.hasCapability('doors')) {
+                notifyUser('У данной 3D модели гоночный монолитный кузов (двери зафиксированы)', 'info');
+                const btn = document.getElementById('btn-show-doors');
+                if (btn) btn.classList.remove('active');
                 return;
             }
             const isOpen = car3DShowroom.toggleDoors();
@@ -4773,11 +4827,23 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             if (!car3DShowroom) {
                 setTimeout(() => {
                     if (car3DShowroom) {
+                        if (!car3DShowroom.hasCapability('hood')) {
+                            notifyUser('У данной 3D модели гоночный монокок (капот зафиксирован)', 'info');
+                            const btn = document.getElementById('btn-show-hood');
+                            if (btn) btn.classList.remove('active');
+                            return;
+                        }
                         const isOpen = car3DShowroom.toggleHood();
                         const btn = document.getElementById('btn-show-hood');
                         if (btn) btn.classList.toggle('active', isOpen);
                     }
                 }, 90);
+                return;
+            }
+            if (!car3DShowroom.hasCapability('hood')) {
+                notifyUser('У данной 3D модели гоночный монокок (капот зафиксирован)', 'info');
+                const btn = document.getElementById('btn-show-hood');
+                if (btn) btn.classList.remove('active');
                 return;
             }
             const isOpen = car3DShowroom.toggleHood();
@@ -4794,11 +4860,23 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             if (!car3DShowroom) {
                 setTimeout(() => {
                     if (car3DShowroom) {
+                        if (!car3DShowroom.hasCapability('trunk')) {
+                            notifyUser('У данной 3D модели спорт-купе нет отдельного багажного отсека', 'info');
+                            const btn = document.getElementById('btn-show-trunk');
+                            if (btn) btn.classList.remove('active');
+                            return;
+                        }
                         const isOpen = car3DShowroom.toggleTrunk();
                         const btn = document.getElementById('btn-show-trunk');
                         if (btn) btn.classList.toggle('active', isOpen);
                     }
                 }, 90);
+                return;
+            }
+            if (!car3DShowroom.hasCapability('trunk')) {
+                notifyUser('У данной 3D модели спорт-купе нет отдельного багажного отсека', 'info');
+                const btn = document.getElementById('btn-show-trunk');
+                if (btn) btn.classList.remove('active');
                 return;
             }
             const isOpen = car3DShowroom.toggleTrunk();
