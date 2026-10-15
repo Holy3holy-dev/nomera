@@ -4606,6 +4606,14 @@
                     }
                 }
 
+                // Breathing showroom turntable idle animation
+                if (this.carGroup) {
+                    this.carGroup.position.y = Math.sin(time * 0.002) * 0.004;
+                }
+                if (this.neonLight && this.neonLight.intensity > 0) {
+                    this.neonLight.intensity = 1.6 + Math.sin(time * 0.004) * 0.25;
+                }
+
                 this.renderer.render(this.scene, this.camera);
                 this.animFrameId = requestAnimationFrame(loop);
             };
@@ -5299,7 +5307,7 @@
                 const spawnZ = 55 + i * 34 + Math.random() * 12;
 
                 const trafficCar = this.createTrafficVehicle(type);
-                trafficCar.userData = {
+                Object.assign(trafficCar.userData, {
                     type: type,
                     laneIndex: laneIdx,
                     targetX: laneX,
@@ -5308,7 +5316,7 @@
                     overtaken: false,
                     laneChangeTimer: 4 + Math.random() * 8,
                     blinkTimer: 0
-                };
+                });
                 trafficCar.userData.speed = trafficCar.userData.baseSpeed;
                 trafficCar.position.set(laneX, 0, spawnZ);
 
@@ -5439,10 +5447,12 @@
                     const sguRed = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.10, 0.16), new THREE.MeshBasicMaterial({ color: 0xef4444 }));
                     sguRed.position.set(-0.25, H + 0.37, -L * 0.05);
                     group.add(sguRed);
+                    group.userData.policeRed = sguRed;
 
                     const sguBlue = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.10, 0.16), new THREE.MeshBasicMaterial({ color: 0x3b82f6 }));
                     sguBlue.position.set(0.25, H + 0.37, -L * 0.05);
                     group.add(sguBlue);
+                    group.userData.policeBlue = sguBlue;
                 }
 
                 // Taillights
@@ -5468,6 +5478,7 @@
             const wheelWidth = 0.24;
             const halfW = group.userData.halfWidth * 0.95;
             const halfL = group.userData.halfLength * 0.65;
+            group.userData.wheels = [];
 
             [-halfW, halfW].forEach(wx => {
                 [-halfL, halfL].forEach(wz => {
@@ -5476,12 +5487,14 @@
                     const wheel = new THREE.Mesh(wheelGeo, wheelMat);
                     wheel.position.set(wx, wheelRadius, wz);
                     group.add(wheel);
+                    group.userData.wheels.push(wheel);
 
                     // Hubcap
                     const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.14, wheelWidth * 1.05, 12), chromeMat);
                     cap.rotateZ(Math.PI / 2);
                     cap.position.set(wx, wheelRadius, wz);
                     group.add(cap);
+                    group.userData.wheels.push(cap);
                 });
             });
 
@@ -5542,6 +5555,15 @@
             this.state.gasHoldTime = 0;
             this.state.prevGas = false;
             this.state.wasBraking = false;
+            this.state.backfireTimer = 0;
+            this.state.backfireColor = 'orange';
+            this.state.brakeHeat = 0;
+            this.state.time = 0;
+            this.playerBackfireFlames = [];
+            this.playerBrakeDiscs = [];
+            this.playerActiveAero = [];
+            this.playerNitroLight = null;
+            this.playerBackfireLight = null;
             if (this.camera && typeof this.camera.fov === 'number') {
                 this.baseFov = this.camera.fov;
             } else {
@@ -5620,7 +5642,7 @@
             this.playerBrakeLight.position.set(0, 0.65, -halfL - 0.05);
             this.playerCar.add(this.playerBrakeLight);
 
-            // 3. Dual Nitro Exhaust Flame Meshes
+            // 3. Multi-Layer Nitro Exhaust Flame Meshes & Dynamic Road Light
             this.playerNitroFlames = [];
             [-1, 1].forEach(side => {
                 const flameGeo = new THREE.ConeGeometry(0.14, 0.95, 12);
@@ -5635,6 +5657,67 @@
                 flame.visible = false;
                 this.playerCar.add(flame);
                 this.playerNitroFlames.push(flame);
+
+                const coreGeo = new THREE.ConeGeometry(0.07, 0.65, 8);
+                coreGeo.rotateX(-Math.PI / 2);
+                const coreMat = new THREE.MeshBasicMaterial({
+                    color: 0xffffff,
+                    transparent: true,
+                    opacity: 0.95
+                });
+                const core = new THREE.Mesh(coreGeo, coreMat);
+                core.position.set(side * (halfW * 0.42), 0.28, -halfL - 0.35);
+                core.visible = false;
+                this.playerCar.add(core);
+                this.playerNitroFlames.push(core);
+            });
+
+            this.playerNitroLight = new THREE.PointLight(0x00d4ff, 0, 7.0, 1.8);
+            this.playerNitroLight.position.set(0, 0.35, -halfL - 0.5);
+            this.playerCar.add(this.playerNitroLight);
+
+            // 4. Exhaust Backfire Flame Pops & Road Flash Light
+            this.playerBackfireFlames = [];
+            [-1, 1].forEach(side => {
+                const bfGeo = new THREE.ConeGeometry(0.18, 0.72, 10);
+                bfGeo.rotateX(-Math.PI / 2);
+                const bfMat = new THREE.MeshBasicMaterial({
+                    color: 0xff6600,
+                    transparent: true,
+                    opacity: 0.95
+                });
+                const bf = new THREE.Mesh(bfGeo, bfMat);
+                bf.position.set(side * (halfW * 0.42), 0.28, -halfL - 0.36);
+                bf.visible = false;
+                this.playerCar.add(bf);
+                this.playerBackfireFlames.push(bf);
+            });
+
+            this.playerBackfireLight = new THREE.PointLight(0xff7700, 0, 6.0, 2.0);
+            this.playerBackfireLight.position.set(0, 0.35, -halfL - 0.4);
+            this.playerCar.add(this.playerBackfireLight);
+
+            // 5. Glowing Brake Discs Collection
+            this.playerBrakeDiscs = [];
+            this.playerCar.traverse(child => {
+                if (child.isMesh && child.material && (
+                    child.name.includes('BrakeDisc') || child.name.includes('disc') ||
+                    (child.parent && child.parent.name === 'BrakeCaliperGroup')
+                )) {
+                    this.playerBrakeDiscs.push(child);
+                }
+            });
+
+            // 6. Active Aero Spoiler / Air-Brake Flaps
+            this.playerActiveAero = [];
+            this.playerCar.traverse(child => {
+                const n = String(child.name || '').toLowerCase();
+                if (child.isMesh && (n.includes('spoiler') || n.includes('wing') || n.includes('aero_wing'))) {
+                    this.playerActiveAero.push({
+                        mesh: child,
+                        baseRotX: child.rotation.x
+                    });
+                }
             });
 
             // 4. Underglow Neon (if player has neon tuning)
@@ -5748,16 +5831,26 @@
             if (keys.nitro && state.nitroLevel > 0) {
                 state.isNitroActive = true;
                 state.nitroLevel = Math.max(0, state.nitroLevel - 30 * dt);
+                const nScale = 0.9 + Math.random() * 0.45;
                 this.playerNitroFlames.forEach(flame => {
                     flame.visible = true;
-                    flame.scale.set(0.85 + Math.random() * 0.35, 0.85 + Math.random() * 0.35, 1.0 + Math.random() * 0.5);
+                    flame.scale.set(nScale, nScale, nScale * (1.1 + Math.random() * 0.35));
                 });
+                if (this.playerNitroLight) {
+                    this.playerNitroLight.intensity = 2.8 + Math.random() * 0.8;
+                }
+                if (Math.random() < 0.35) {
+                    this.spawnSparks(state.x + (Math.random() - 0.5) * 0.8, 0.28, state.z - 2.3, 2);
+                }
                 if (this.options.onSound && Math.random() < 0.2) {
                     this.options.onSound('nitro');
                 }
             } else {
                 state.isNitroActive = false;
                 this.playerNitroFlames.forEach(flame => { flame.visible = false; });
+                if (this.playerNitroLight) {
+                    this.playerNitroLight.intensity = 0;
+                }
                 // Slow passive nitro recharge when driving fast or drifting
                 if (!keys.nitro && state.speed > 60) {
                     state.nitroLevel = Math.min(100, state.nitroLevel + (state.isDrifting ? 12 : 5) * dt);
@@ -5785,6 +5878,8 @@
                 state.gear++;
                 state.shiftShock = 0.12; // brief clutch shift delay
                 state.pitchVelocity += 0.38; // punchy forward impulse
+                state.backfireTimer = 0.18; // backfire exhaust pop animation
+                state.backfireColor = Math.random() < 0.6 ? 'blue' : 'orange';
                 if (this.options.onSound) this.options.onSound('backfire');
                 if (this.options.onHaptic) this.options.onHaptic('medium');
             } else if (state.speed < curGw.down && state.gear > 1) {
@@ -5821,6 +5916,8 @@
             } else {
                 // Natural engine braking & aerodynamic coasting drag
                 if (state.prevGas && state.speed > 80 && state.gasHoldTime > 0.6) {
+                    state.backfireTimer = 0.15;
+                    state.backfireColor = 'orange';
                     if (this.options.onSound) this.options.onSound('blowOff');
                 }
                 const coastingDrag = 9.0 + Math.pow(state.speed / 100, 2) * 4.2;
@@ -5972,10 +6069,79 @@
             const targetBodyRoll = Math.max(-0.065, Math.min(0.065, state.vx * 0.0045));
             state.bodyRoll = (state.bodyRoll || 0) + (targetBodyRoll - (state.bodyRoll || 0)) * Math.min(1.0, 9.0 * dt);
 
+            state.time = (state.time || 0) + dt;
+
+            // Engine tremor calculation (idle rumble & rev-limiter mechanical shudder)
+            const idleTremor = (1.0 - Math.min(1.0, state.speed / 25)) * 0.0018 * Math.sin(state.time * 24);
+            const redlineProg = Math.max(0, (state.rpm - (state.maxRpm * 0.90)) / (state.maxRpm * 0.10 || 1));
+            const redlineTremor = redlineProg * 0.0032 * Math.sin(state.time * 72);
+            const engineTremorY = idleTremor + redlineTremor;
+            const engineTremorRoll = (idleTremor + redlineTremor) * 0.75;
+
+            // Subtle asphalt expansion joint and road heave
+            const roadHeave = (Math.sin(state.z * 0.14) * 0.005 + Math.sin(state.z * 0.36) * 0.003) * Math.min(1.0, state.speed / 35);
+
+            // Glowing hot brake discs under heavy deceleration
+            if (keys.brake && state.speed > 70) {
+                state.brakeHeat = Math.min(1.0, (state.brakeHeat || 0) + dt * 0.55);
+            } else {
+                state.brakeHeat = Math.max(0, (state.brakeHeat || 0) - dt * 0.22);
+            }
+            if (this.playerBrakeDiscs && this.playerBrakeDiscs.length > 0) {
+                const heat = state.brakeHeat || 0;
+                this.playerBrakeDiscs.forEach(disc => {
+                    if (disc.material) {
+                        if (heat > 0.08) {
+                            if (!disc.material.emissive) disc.material.emissive = new THREE.Color(0xff3300);
+                            disc.material.emissive.setHex(0xff3300);
+                            disc.material.emissiveIntensity = heat * 2.5;
+                        } else {
+                            disc.material.emissiveIntensity = 0;
+                        }
+                    }
+                });
+            }
+
+            // Active aerodynamics: air-brake rear wing tilt on hard braking
+            if (this.playerActiveAero && this.playerActiveAero.length > 0) {
+                const isAirBraking = keys.brake && state.speed > 100;
+                const targetWingTilt = isAirBraking ? 0.32 : 0;
+                this.playerActiveAero.forEach(aero => {
+                    const cur = aero.mesh.rotation.x;
+                    aero.mesh.rotation.x = cur + (aero.baseRotX + targetWingTilt - cur) * Math.min(1.0, 9.0 * dt);
+                });
+            }
+
+            // Exhaust backfire animation update
+            if (state.backfireTimer > 0) {
+                state.backfireTimer -= dt;
+                const bfScale = 0.85 + Math.random() * 0.65;
+                const isBlue = state.backfireColor === 'blue';
+                this.playerBackfireFlames.forEach(bf => {
+                    bf.visible = true;
+                    bf.scale.set(bfScale, bfScale, bfScale * 1.25);
+                    if (bf.material) {
+                        bf.material.color.setHex(isBlue ? 0x38bdf8 : (Math.random() < 0.5 ? 0xff5500 : 0xffaa00));
+                    }
+                });
+                if (this.playerBackfireLight) {
+                    this.playerBackfireLight.color.setHex(isBlue ? 0x38bdf8 : 0xff7700);
+                    this.playerBackfireLight.intensity = 3.6;
+                }
+                if (Math.random() < 0.4) {
+                    this.spawnSparks(state.x + (Math.random() - 0.5) * 0.6, 0.3, state.z - 2.2, 3);
+                }
+            } else {
+                this.playerBackfireFlames.forEach(bf => { bf.visible = false; });
+                if (this.playerBackfireLight) {
+                    this.playerBackfireLight.intensity = 0;
+                }
+            }
+
             // 6. UPDATE PLAYER CAR 3D MESH
             if (this.playerCar) {
-                this.playerCar.position.set(state.x, state.downforceY || 0, state.z);
-                this.playerCar.rotation.set(state.pitchSquat, state.yawAngle, state.bodyRoll);
+                this.playerCar.position.set(state.x, (state.downforceY || 0) + engineTremorY + roadHeave, state.z);
+                this.playerCar.rotation.set(state.pitchSquat, state.yawAngle, state.bodyRoll + engineTremorRoll);
 
                 // Rotate dedicated procedural wheel spinners around local hub axis
                 if (this.playerWheels && this.playerWheels.length > 0) {
@@ -6044,6 +6210,25 @@
                 const tSpeedMps = u.speed / 3.6;
                 car.position.z += tSpeedMps * dt;
 
+                // Animate traffic wheels rotation
+                if (u.wheels && u.wheels.length > 0) {
+                    const rotSpeed = (tSpeedMps / 0.32) * dt;
+                    u.wheels.forEach(w => {
+                        w.rotation.x += rotSpeed;
+                    });
+                }
+
+                // Traffic suspension micro-bounce
+                car.position.y = Math.sin(car.position.z * 0.16 + (u.laneIndex || 0)) * 0.005;
+
+                // Police strobe flashing animation
+                if (u.type === 'police' && u.policeRed && u.policeBlue) {
+                    u.sguStrobeTimer = (u.sguStrobeTimer || 0) + dt * 14;
+                    const isRed = Math.floor(u.sguStrobeTimer) % 2 === 0;
+                    u.policeRed.material.color.setHex(isRed ? 0xef4444 : 0x450a0a);
+                    u.policeBlue.material.color.setHex(isRed ? 0x1e3a8a : 0x3b82f6);
+                }
+
                 // 2. Periodic lane changing behavior
                 u.laneChangeTimer -= dt;
                 if (u.laneChangeTimer <= 0) {
@@ -6055,14 +6240,17 @@
                     u.targetX = this.trafficLanes[newLane];
                 }
 
-                // Smoothly steer towards target lane
+                // Smoothly steer towards target lane with body roll lean
                 if (Math.abs(car.position.x - u.targetX) > 0.05) {
-                    const step = (u.targetX > car.position.x ? 1 : -1) * 2.2 * dt;
+                    const dir = u.targetX > car.position.x ? 1 : -1;
+                    const step = dir * 2.2 * dt;
                     car.position.x += step;
-                    car.rotation.y = (step > 0 ? 0.08 : -0.08);
+                    car.rotation.y = (dir > 0 ? 0.08 : -0.08);
+                    car.rotation.z = (dir > 0 ? -0.04 : 0.04);
                 } else {
                     car.position.x = u.targetX;
                     car.rotation.y = 0;
+                    car.rotation.z = 0;
                 }
 
                 // 3. Near-Miss Overtake Detection

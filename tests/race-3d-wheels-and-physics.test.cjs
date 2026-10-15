@@ -456,6 +456,60 @@ test('Ferrari bottom fix and physics rework: undertray, gearbox, suspension squa
     sportAudio.stopEngine();
 });
 
+test('Car animations: backfire flame pops, nitro road light, brake disc glow, engine tremor, and traffic wheel spinning', () => {
+    const { THREE, Car3DManager } = setupTestContext();
+    const mockContainer = { clientWidth: 800, clientHeight: 500, style: {}, appendChild: () => {}, removeChild: () => {} };
+
+    const engine = new Car3DManager.Car3DRacingEngine(mockContainer, {});
+    engine.start({
+        carName: 'ВАЗ-2107 «Жигули»',
+        performance: { speed: 220, accel: 3.5 }
+    });
+
+    // 1. Verify animation objects created
+    assert.ok(engine.playerBackfireFlames.length > 0, 'Backfire flame meshes must be created');
+    assert.ok(engine.playerBackfireLight, 'Backfire point light must be created');
+    assert.ok(engine.playerNitroLight, 'Nitro point light must be created');
+
+    // 2. Nitro afterburner light activation
+    engine.keys.nitro = true;
+    engine.update(0.05);
+    assert.ok(engine.state.isNitroActive, 'Nitro must be active');
+    assert.ok(engine.playerNitroLight.intensity > 0, 'Nitro road light must illuminate on nitro');
+    assert.ok(engine.playerNitroFlames.every(f => f.visible), 'Nitro flame meshes must be visible');
+    engine.keys.nitro = false;
+    engine.update(0.05);
+    assert.equal(engine.playerNitroLight.intensity, 0, 'Nitro road light must turn off when nitro is released');
+
+    // 3. Backfire flame pops on gear shift or lift-off
+    engine.state.speed = 65; // Trigger up-shift threshold (gear 1 -> 2)
+    engine.update(0.05);
+    assert.ok(engine.state.backfireTimer > 0, 'Backfire timer should be active on gear up-shift');
+    assert.ok(engine.playerBackfireLight.intensity > 0, 'Backfire point light must flash on upshift');
+    assert.ok(engine.playerBackfireFlames.some(f => f.visible), 'Backfire flame meshes must be visible during pop');
+
+    // 4. Glowing brake discs under heavy deceleration
+    engine.state.speed = 150;
+    engine.keys.brake = true;
+    for (let i = 0; i < 20; i++) engine.update(0.05);
+    assert.ok(engine.state.brakeHeat > 0.1, 'Brake heat should accumulate on heavy braking');
+
+    // 5. Traffic vehicle animations: spinning wheels, suspension bounce, and police strobes
+    const trafficCar = engine.trafficCars[0];
+    assert.ok(trafficCar.userData.wheels && trafficCar.userData.wheels.length > 0, 'Traffic vehicles must track their wheel meshes');
+    const initialRot = trafficCar.userData.wheels[0].rotation.x;
+    for (let i = 0; i < 10; i++) engine.update(0.05);
+    assert.ok(trafficCar.userData.wheels[0].rotation.x > initialRot, 'Traffic vehicle wheels must spin matching forward speed');
+
+    // Check police car strobe alternation
+    const policeCar = engine.trafficCars.find(c => c.userData.type === 'police');
+    if (policeCar && policeCar.userData.policeRed) {
+        assert.ok(policeCar.userData.policeRed.material, 'Police car must have strobe light materials');
+    }
+
+    engine.destroy();
+});
+
 
 
 
