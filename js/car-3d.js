@@ -4134,16 +4134,16 @@
         gaz24: './assets/models/gaz24.glb',           // Authentic GAZ-24 «Волга» (6.28 MB)
         priora: './assets/models/priora.glb',         // Authentic Lada Priora (6.33 MB)
         vesta: './assets/models/vesta.glb',           // Authentic Lada Vesta Sport (7.15 MB)
-        solaris: './assets/models/sonata.glb',        // Authentic Hyundai 4-door sedan (36.16 MB)
+        solaris: './assets/models/hyundai.glb',       // Authentic Hyundai sedan (1.15 MB, fast load)
         polo: './assets/models/golf7.glb',            // Real 2014 Volkswagen Golf GTI (2.4 MB, 98k polygons)
 
         // JDM & Sport Legends
         mark2: './assets/models/mark2.glb',          // Authentic Toyota Mark II JZX100 (599 KB)
         subaru: './assets/models/subaru_wrx.glb',     // Authentic Subaru Impreza WRX STI sports sedan (3.79 MB)
-        m5e60: './assets/models/bmw_m3_sedan.glb',   // Real BMW M Sport Sedan with quad exhausts (47.63 MB)
+        m5e60: './assets/models/bmw.glb',            // Real BMW Sport Sedan (2.97 MB, fast load)
         silvia: './assets/models/nissan_370z.glb',    // Real Nissan Z34 JDM Drift Sport Coupe (3.54 MB)
         camry: './assets/models/arrizo8.glb',         // Real Executive Business Sedan (3.69 MB)
-        lc300: './assets/models/lc300.glb',           // Real 2022 Toyota Land Cruiser 300 VX.R (16.89 MB)
+        lc300: './assets/models/landcruiser.glb',     // Real Toyota Land Cruiser (1.41 MB, fast load)
         gtr: './assets/models/gtr.glb',               // Real Nissan GT-R R35 Nismo (10.22 MB)
 
         // Premium & Luxury
@@ -4587,6 +4587,17 @@
             );
         }
 
+        const styledPaint = mats.paint.clone();
+        styledPaint.color.setHex(bodyColorHex);
+        styledPaint.roughness = 0.14;
+        styledPaint.metalness = 0.70;
+        if (styledPaint.clearcoat !== undefined) {
+            styledPaint.clearcoat = 1.0;
+            styledPaint.clearcoatRoughness = 0.05;
+        }
+        styledPaint.name = 'StyledPaint_' + bodyColorHex.toString(16);
+        styledPaint.needsUpdate = true;
+
         modelRoot.traverse(child => {
             const mName = String(child.name || '').toLowerCase();
             // Automatically hide any stray manufacturer badge/logo planes on base models
@@ -4693,16 +4704,6 @@
 
                     // 9. Car Body Paint
                     if (isBodyMaterial(matName, mName)) {
-                        const styledPaint = mats.paint.clone();
-                        styledPaint.color.setHex(bodyColorHex);
-                        styledPaint.roughness = 0.14;
-                        styledPaint.metalness = 0.70;
-                        if (styledPaint.clearcoat !== undefined) {
-                            styledPaint.clearcoat = 1.0;
-                            styledPaint.clearcoatRoughness = 0.05;
-                        }
-                        styledPaint.name = 'StyledPaint_' + bodyColorHex.toString(16);
-                        styledPaint.needsUpdate = true;
                         return styledPaint;
                     }
 
@@ -4738,20 +4739,9 @@
             }
         });
 
-        // Compute world bounding box for accessories placement from visible meshes
+        // Compute world bounding box for accessories placement
         modelRoot.updateMatrixWorld(true);
-        const box = new THREE.Box3();
-        modelRoot.traverse(child => {
-            if (child.isMesh && child.visible && child.geometry) {
-                const mb = new THREE.Box3().setFromObject(child);
-                if (mb.max.y - mb.min.y > 0.05) {
-                    box.union(mb);
-                }
-            }
-        });
-        if (box.isEmpty()) {
-            box.setFromObject(modelRoot);
-        }
+        const box = new THREE.Box3().setFromObject(modelRoot);
         const size = box.getSize(new THREE.Vector3());
         const center = box.getCenter(new THREE.Vector3());
 
@@ -5019,6 +5009,26 @@
         );
     }
 
+    function preloadCarModel(THREE, carName) {
+        if (!THREE) return;
+        const carId = identifyCarModel(carName);
+        const modelUrl = GLB_MODEL_MAP[carId];
+        const loader = getGLTFLoader(THREE);
+        if (!loader || !modelUrl || rawGLBCache.has(modelUrl)) return;
+        try {
+            loader.load(
+                modelUrl,
+                gltf => {
+                    if (gltf && gltf.scene) {
+                        rawGLBCache.set(modelUrl, gltf.scene);
+                    }
+                },
+                undefined,
+                () => {}
+            );
+        } catch (_) {}
+    }
+
     // Automotive Studio HDRI Environment Generator
     function createStudioEnvironment(THREE, renderer) {
         if (!THREE.PMREMGenerator || !renderer) return null;
@@ -5265,6 +5275,26 @@
             this.currentStyling = Object.assign({}, styling);
 
             const THREE = this.THREE;
+
+            const carId = identifyCarModel(this.currentCarName);
+            const modelUrl = GLB_MODEL_MAP[carId];
+            if (!rawGLBCache.has(modelUrl)) {
+                try {
+                    const immediateModel = buildDetailedCarModel(THREE, this.currentCarName, this.currentStyling);
+                    if (immediateModel) {
+                        if (this.carGroup) {
+                            this.scene.remove(this.carGroup);
+                            this.carGroup = null;
+                        }
+                        this.carGroup = immediateModel;
+                        if (this.currentStyling && this.currentStyling.plate !== undefined) {
+                            applyLicensePlateToModel(THREE, this.carGroup, this.currentStyling.plate);
+                        }
+                        this.scene.add(this.carGroup);
+                        this.updateNeonLight();
+                    }
+                } catch (_) {}
+            }
 
             loadCarModel(THREE, this.currentCarName, this.currentStyling, loadedModel => {
                 if (this.carGroup) {
@@ -7257,6 +7287,10 @@
             const state = this.state;
             const keys = this.keys;
 
+            if (state.invulnerableTimer > 0) {
+                state.invulnerableTimer = Math.max(0, state.invulnerableTimer - dt);
+            }
+
             // 1. NITRO BOOST HANDLING
             if (keys.nitro && state.nitroLevel > 0) {
                 state.isNitroActive = true;
@@ -7693,6 +7727,38 @@
                     return;
                 }
 
+                if (car.position.y < -500) return;
+
+                // 0b. Realistic traffic interaction: Police does NOT pass through other cars like a ghost!
+                if (u.type === 'police' && !u.isWrecked) {
+                    for (let j = 0; j < this.trafficCars.length; j++) {
+                        const otherCar = this.trafficCars[j];
+                        if (otherCar === car || otherCar.position.y < -500) continue;
+                        const ou = otherCar.userData;
+                        if (ou.isWrecked) continue;
+
+                        const cdx = Math.abs(otherCar.position.x - car.position.x);
+                        const cdz = otherCar.position.z - car.position.z;
+
+                        // Traffic car ahead of police on roughly the same lane
+                        if (cdz > 0.1 && cdz < 16 && cdx < 2.2) {
+                            // Police AI tries to overtake / swerve around civilian car
+                            const steerOffset = (car.position.x <= otherCar.position.x) ? -3.8 : 3.8;
+                            u.targetX = Math.max(-7.5, Math.min(7.5, otherCar.position.x + steerOffset));
+
+                            // Physical collision if police contacts civilian vehicle at speed
+                            if (cdz < 3.2 && cdx < 1.8) {
+                                const push = (car.position.x < otherCar.position.x ? 1 : -1);
+                                otherCar.position.x += push * 3.5 * dt;
+                                otherCar.rotation.y = push * 0.18;
+                                this.spawnSparks((car.position.x + otherCar.position.x) * 0.5, 0.6, car.position.z + 1.5, 12);
+                                if (this.options.onSound) this.options.onSound('scrape');
+                                u.speed = Math.max(45, u.speed - 25 * dt);
+                            }
+                        }
+                    }
+                }
+
                 // 1. Move traffic car forward along Z
                 const tSpeedMps = u.speed / 3.6;
                 car.position.z += tSpeedMps * dt;
@@ -7745,21 +7811,20 @@
 
                     // Hot pursuit AI: tiered top speeds so high-speed players CAN outrun DPS
                     if (state.wantedStars > 0) {
-                        u.targetX = Math.max(-7.5, Math.min(7.5, state.x));
-                        u.laneChangeTimer = 999;
-                        
-                        // Tiered max pursuit speed: player with sports car / nitro can pull away!
                         const maxPoliceSpeedByStars = [130, 155, 185, 210, 235, 255];
                         const maxTgtSpeed = maxPoliceSpeedByStars[Math.min(5, state.wantedStars)] || 185;
 
                         if (car.position.z < state.z) {
-                            // Chasing from behind - accelerate towards target speed, but capped at tier max
-                            const targetSpeed = Math.min(maxTgtSpeed, Math.max(140, state.speed + 6));
-                            u.speed += (targetSpeed - u.speed) * Math.min(1.0, 2.2 * dt);
+                            // Chasing from behind - follow towards player's lane with dynamic catch-up
+                            u.targetX = Math.max(-7.5, Math.min(7.5, state.x));
+                            const targetSpeed = Math.min(maxTgtSpeed, Math.max(130, state.speed + 4));
+                            u.speed += (targetSpeed - u.speed) * Math.min(1.0, 2.0 * dt);
                         } else {
-                            // Ahead of player - maintain blocking, player can dodge or blast past
-                            const blockSpeed = Math.max(80, Math.min(maxTgtSpeed * 0.92, state.speed * 0.92));
-                            u.speed += (blockSpeed - u.speed) * Math.min(1.0, 2.0 * dt);
+                            // Ahead of player - pace slightly to the side to box in rather than instant brake-check
+                            const sideOffset = (car.position.x >= state.x ? 1.5 : -1.5);
+                            u.targetX = Math.max(-7.5, Math.min(7.5, state.x + sideOffset));
+                            const blockSpeed = Math.max(80, Math.min(maxTgtSpeed, state.speed));
+                            u.speed += (blockSpeed - u.speed) * Math.min(1.0, 1.4 * dt);
                         }
                     }
                 }
@@ -7814,27 +7879,28 @@
                 // 4. Collision Detection with Player Car & Takedown
                 const trafficHalfW = car.userData.halfWidth || 1.0;
                 const trafficHalfL = car.userData.halfLength || 2.2;
-                const lateralClearance = trafficHalfW + 0.55;
-                const longitudinalClearance = trafficHalfL + 1.2;
+                const lateralClearance = trafficHalfW + 0.65;
+                const longitudinalClearance = trafficHalfL + 1.6;
 
-                if (dx < lateralClearance && dz > -0.6 && dz < longitudinalClearance) {
+                if (dx < lateralClearance && Math.abs(dz) < longitudinalClearance) {
                     // 💥 TAKEDOWN MECHANIC FOR POLICE: Player CAN ram & knock out pursuit cars!
                     if (u.type === 'police' && !u.isWrecked) {
                         const isNitroActive = !!(this.keys && this.keys.nitro);
-                        const isFastRam = state.speed > 120;
-                        const isHardSideHit = Math.abs(state.vx) > 0.6;
-                        const isOvertakeRam = (state.speed - u.speed) > 15;
+                        const isFastRam = state.speed > 80;
+                        const isHardSideHit = Math.abs(state.vx) > 0.35 || (this.keys && (this.keys.left || this.keys.right));
+                        const isOvertakeRam = (state.speed - u.speed) > 5;
+                        const isDirectRam = dz > -1.0 && state.speed > 60;
 
-                        if (isNitroActive || isFastRam || isHardSideHit || isOvertakeRam) {
+                        if (isNitroActive || isFastRam || isHardSideHit || isOvertakeRam || isDirectRam) {
                             // TAKEDOWN! СБИТ ЭКИПАЖ ДПС!
                             u.isWrecked = true;
-                            u.wreckTimer = 2.4;
-                            u.wreckSpinVx = (car.position.x >= state.x ? 8.5 : -8.5);
-                            u.speed = Math.max(0, u.speed - 90);
+                            u.wreckTimer = 2.8;
+                            u.wreckSpinVx = (car.position.x >= state.x ? 9.5 : -9.5);
+                            u.speed = Math.max(0, u.speed - 120);
 
                             // Player takes minimal impact damage instead of instant crash
-                            state.speed = Math.max(50, state.speed - 12);
-                            state.damageTaken += 1.2;
+                            state.speed = Math.max(50, state.speed - 10);
+                            state.damageTaken += 1.0;
                             state.shakeAmount = 0.65;
 
                             // Huge sparks and sound
@@ -7859,23 +7925,43 @@
                         }
                     }
 
-                    const isRearEndHit = dz > 0.4 && dx < (trafficHalfW * 0.65);
-                    if (isRearEndHit && speedDiff > 35 && u.type !== 'police') {
-                        // High-speed direct rear-end collision into civilian or truck -> CRASH
-                        this.stop();
-                        state.damageTaken += 12;
-                        this.spawnSparks(state.x, 0.8, state.z + 1.0, 45);
-                        if (this.options.onSound) this.options.onSound('crash');
-                        if (this.options.onGameOver) this.options.onGameOver(true, this.getState());
+                    if ((state.invulnerableTimer || 0) > 0) {
                         return;
+                    }
+
+                    const isRearEndHit = dz > -1.5;
+                    if (isRearEndHit && speedDiff > 35 && u.type !== 'police') {
+                        // High-speed direct rear-end collision: DAMAGE BUFFER instead of instant death!
+                        state.damageTaken = (state.damageTaken || 0) + 25;
+                        state.shakeAmount = 1.0;
+                        state.invulnerableTimer = 1.2;
+                        state.speed = Math.max(45, state.speed * 0.45);
+                        this.spawnSparks(state.x, 0.8, state.z + 1.0, 45);
+
+                        if (this.options.onSound) this.options.onSound('crash');
+
+                        if (state.damageTaken >= 100) {
+                            // Totaled after multiple severe crashes
+                            this.stop();
+                            if (this.options.onPopup) this.options.onPopup('💥 АВТОМОБИЛЬ РАЗБИТ В ТОТАЛ!', '#ef4444');
+                            if (this.options.onGameOver) this.options.onGameOver(true, this.getState());
+                            return;
+                        } else {
+                            if (this.options.onPopup) {
+                                this.options.onPopup(`💥 СИЛЬНЫЙ УДАР! ПРОЧНОСТЬ ${(100 - Math.round(state.damageTaken))}%`, '#ef4444');
+                            }
+                            u.speed += 30;
+                            car.position.z += 2.0;
+                            return;
+                        }
                     } else {
                         // Glancing sideswipe / low-speed bumper nudge
-                        state.speed = Math.max(15, state.speed * 0.82);
-                        state.damageTaken += 3.0;
-                        state.shakeAmount = 0.45;
-                        car.position.x += (car.position.x > state.x ? 0.8 : -0.8);
+                        state.speed = state.speed > 0 ? Math.max(15, state.speed * 0.82) : 0;
+                        state.damageTaken += 2.5;
+                        state.shakeAmount = 0.40;
+                        car.position.x += (car.position.x > state.x ? 0.9 : -0.9);
                         this.spawnSparks(state.x, 0.5, state.z + 0.5, 20);
-                        if (this.options.onPopup) this.options.onPopup('💥 КАСАТЕЛЬНЫЙ УДАР!', '#ef4444');
+                        if (this.options.onPopup) this.options.onPopup('💥 КАСАТЕЛЬНЫЙ УДАР!', '#f59e0b');
                         if (this.options.onSound) this.options.onSound('scrape');
                     }
                 }
@@ -8181,11 +8267,16 @@
         bindResize() {
             this._onResize = () => {
                 if (!this.container || !this.renderer || !this.camera) return;
-                this.width = this.container.clientWidth || 800;
-                this.height = this.container.clientHeight || 500;
-                this.camera.aspect = this.width / this.height;
-                this.camera.updateProjectionMatrix();
-                this.renderer.setSize(this.width, this.height);
+                const rect = (typeof this.container.getBoundingClientRect === 'function') ? this.container.getBoundingClientRect() : null;
+                const w = Math.floor(rect && rect.width ? rect.width : (this.container.clientWidth || 800));
+                const h = Math.floor(rect && rect.height ? rect.height : (this.container.clientHeight || 500));
+                if (w > 0 && h > 0) {
+                    this.width = w;
+                    this.height = h;
+                    this.camera.aspect = w / h;
+                    this.camera.updateProjectionMatrix();
+                    this.renderer.setSize(w, h, false);
+                }
             };
             if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
                 window.addEventListener('resize', this._onResize);
@@ -8193,10 +8284,26 @@
                     setTimeout(() => { if (this._onResize) this._onResize(); }, 120);
                 });
             }
+            if (typeof ResizeObserver !== 'undefined' && this.container) {
+                try {
+                    this._resizeObserver = new ResizeObserver(() => {
+                        if (this._onResize) this._onResize();
+                    });
+                    this._resizeObserver.observe(this.container);
+                } catch (_) {}
+            }
+        }
+
+        onResize() {
+            if (this._onResize) this._onResize();
         }
 
         destroy() {
             this.stop();
+            if (this._resizeObserver) {
+                try { this._resizeObserver.disconnect(); } catch (_) {}
+                this._resizeObserver = null;
+            }
             if (this.helicopterLight) {
                 try {
                     if (this.helicopterLight.target && this.helicopterLight.target.parent) this.helicopterLight.target.parent.remove(this.helicopterLight.target);
@@ -8236,6 +8343,7 @@
         renderSideThumbnail,
         getSideThumbnail,
         loadCarModel,
+        preloadCarModel,
         applyStylingToGLTF,
         createCarMaterials,
         createStudioEnvironment,

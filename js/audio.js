@@ -73,8 +73,9 @@
             try {
                 const gain = context.createGain(), filter = context.createBiquadFilter();
                 filter.type = 'bandpass';
-                filter.frequency.setValueAtTime(820, context.currentTime);
-                gain.gain.setValueAtTime(0.04, context.currentTime);
+                filter.frequency.setValueAtTime(780, context.currentTime);
+                if (filter.Q) filter.Q.setValueAtTime(1.2, context.currentTime);
+                gain.gain.setValueAtTime(0.011, context.currentTime);
                 filter.connect(gain);
                 gain.connect(master);
 
@@ -82,12 +83,12 @@
                 const lfo = context.createOscillator();
                 const lfoGain = context.createGain();
 
-                osc.type = 'sawtooth';
-                osc.frequency.setValueAtTime(750, context.currentTime);
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(720, context.currentTime);
 
                 lfo.type = 'triangle';
-                lfo.frequency.setValueAtTime(1.6, context.currentTime);
-                lfoGain.gain.setValueAtTime(260, context.currentTime);
+                lfo.frequency.setValueAtTime(1.5, context.currentTime);
+                lfoGain.gain.setValueAtTime(220, context.currentTime);
 
                 try { lfo.connect(lfoGain); lfoGain.connect(osc.frequency); } catch (_) {}
                 osc.connect(filter);

@@ -9833,6 +9833,18 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     performance: stats,
                     weather: (typeof raceSelectedWeather !== 'undefined' ? raceSelectedWeather : 'night')
                 });
+                if (typeof requestAnimationFrame === 'function') {
+                    requestAnimationFrame(() => {
+                        if (car3DRacingEngine && typeof car3DRacingEngine.onResize === 'function') {
+                            car3DRacingEngine.onResize();
+                        }
+                    });
+                }
+                setTimeout(() => {
+                    if (car3DRacingEngine && typeof car3DRacingEngine.onResize === 'function') {
+                        car3DRacingEngine.onResize();
+                    }
+                }, 80);
                 init3DRaceTouchControls();
             } catch (err) {
                 console.error('Failed to initialize 3D race engine:', err);
@@ -11130,6 +11142,30 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                             addWantedStars(1, 'ПРЕВЫШЕНИЕ');
                         }
                     }
+
+                    // ДПС взаимодействует с трафиком: не проходит сквозь другие машины
+                    if (t.isPolice && !t.spinning) {
+                        for (let j = 0; j < raceTraffic.length; j++) {
+                            const ot = raceTraffic[j];
+                            if (ot === t || ot.spinning) continue;
+                            const odx = Math.abs(ot.x - t.x);
+                            const ody = ot.y - t.y;
+                            if (Math.abs(ody) < 40 && odx < 24) {
+                                ot.x += (t.x <= ot.x ? 20 : -20);
+                                t.speed = Math.max(50, t.speed - 25);
+                                for (let s = 0; s < 6; s++) {
+                                    raceSparks.push({
+                                        x: (t.x + ot.x) / 2,
+                                        y: (t.y + ot.y) / 2,
+                                        vx: (Math.random() - 0.5) * 80,
+                                        vy: (Math.random() - 0.5) * 60,
+                                        life: 0.35,
+                                        color: '#ea580c'
+                                    });
+                                }
+                            }
+                        }
+                    }
                 }
 
                 // Проверка опасного обгона (near-miss)
@@ -11193,7 +11229,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                         showRacePopup("🛡️ ЩИТ ОТРАЗИЛ УДАР!", "#38bdf8");
                         playLockSound(1.8);
                         triggerScreenShake();
-                    } else if (t.isPolice && (racePlayer.isNitroActive || racePlayer.speed > 120 || dx >= 10)) {
+                    } else if (t.isPolice && (racePlayer.isNitroActive || racePlayer.speed > 80 || dx >= 6)) {
                         // 💥 СБИТ ЭКИПАЖ ДПС (2D Police Takedown)!
                         t.spinning = true;
                         t.spinVx = (racePlayer.x < t.x ? 210 : -210);
@@ -11244,6 +11280,24 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                                 vy: (Math.random() - 0.5) * 60 - 30,
                                 life: 0.45,
                                 color: Math.random() < 0.6 ? '#fbbf24' : '#ffffff'
+                            });
+                        }
+                    } else if (!t.isTruck && (racePlayer.damageTaken || 0) < 75) {
+                        // ТЯЖЕЛЫЙ УДАР С ПОВРЕЖДЕНИЕМ КАРКАСА (вместо мгновенного завершения заезда)
+                        racePlayer.speed = Math.max(40, racePlayer.speed * 0.45);
+                        racePlayer.damageTaken = (racePlayer.damageTaken || 0) + 25;
+                        racePlayer.invulnerableTimer = 1.0;
+                        triggerScreenShake();
+                        showRacePopup(`⚠️ АВАРИЯ! КАРКАС -25%! [${Math.round(racePlayer.damageTaken)}%]`, "#ef4444");
+                        playTick();
+                        for (let s = 0; s < 20; s++) {
+                            raceSparks.push({
+                                x: (racePlayer.x + t.x) / 2,
+                                y: racePlayer.y + (Math.random() - 0.5) * 20,
+                                vx: (Math.random() - 0.5) * 160,
+                                vy: (Math.random() - 0.5) * 100,
+                                life: 0.5,
+                                color: '#ef4444'
                             });
                         }
                     } else {

@@ -3270,7 +3270,6 @@ body.race-active .main-container {
     display: block;
     width: 100% !important;
     height: 100% !important;
-    object-fit: cover;
 }
 
 /* 3D Modern Sci-Fi / Street HUD Overlay */
@@ -3328,30 +3327,34 @@ body.race-active .main-container {
 
 /* 🚨 3D Police Pursuit & Wanted Level Box (Top Screen Placement) */
 .race-3d-pursuit-box {
-    margin: 0 auto 10px auto;
-    background: rgba(10, 15, 29, 0.94);
-    backdrop-filter: blur(10px);
-    border: 2px solid rgba(239, 68, 68, 0.8);
-    border-radius: 14px;
-    padding: 7px 16px;
-    width: fit-content;
-    min-width: 260px;
-    max-width: 380px;
-    box-shadow: 0 4px 25px rgba(239, 68, 68, 0.45), 0 0 18px rgba(59, 130, 246, 0.35);
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    margin: 0;
+    background: rgba(10, 15, 29, 0.92);
+    backdrop-filter: blur(8px);
+    border: 1.5px solid rgba(239, 68, 68, 0.85);
+    border-radius: 12px;
+    padding: 4px 14px;
+    width: auto;
+    min-width: 170px;
+    max-width: 260px;
+    box-shadow: 0 4px 18px rgba(239, 68, 68, 0.4), 0 0 12px rgba(59, 130, 246, 0.3);
     animation: pursuitPulse 1.2s infinite alternate;
     pointer-events: none;
-    transition: opacity 0.3s ease, transform 0.3s ease;
-    z-index: 30;
+    transition: opacity 0.25s ease, transform 0.25s ease;
+    z-index: 35;
 }
 
 @keyframes pursuitPulse {
     0% {
         border-color: rgba(239, 68, 68, 0.95);
-        box-shadow: 0 4px 25px rgba(239, 68, 68, 0.55), 0 0 16px rgba(59, 130, 246, 0.3);
+        box-shadow: 0 4px 20px rgba(239, 68, 68, 0.5), 0 0 12px rgba(59, 130, 246, 0.3);
     }
     100% {
         border-color: rgba(59, 130, 246, 0.95);
-        box-shadow: 0 4px 25px rgba(59, 130, 246, 0.55), 0 0 16px rgba(239, 68, 68, 0.3);
+        box-shadow: 0 4px 20px rgba(59, 130, 246, 0.5), 0 0 12px rgba(239, 68, 68, 0.3);
     }
 }
 
@@ -3359,18 +3362,18 @@ body.race-active .main-container {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
 }
 
 .race-3d-wanted-stars {
-    font-size: 18px;
-    letter-spacing: 3px;
-    text-shadow: 0 0 10px rgba(251, 191, 36, 0.95);
+    font-size: 13px;
+    letter-spacing: 2px;
+    text-shadow: 0 0 6px rgba(251, 191, 36, 0.95);
     line-height: 1;
 }
 
 .race-3d-pursuit-status {
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 800;
     color: #ef4444;
     text-transform: uppercase;
@@ -3380,11 +3383,11 @@ body.race-active .main-container {
 
 .race-3d-escape-wrap {
     width: 100%;
-    height: 4px;
+    height: 3px;
     background: rgba(255, 255, 255, 0.15);
     border-radius: 999px;
     overflow: hidden;
-    margin-top: 5px;
+    margin-top: 3px;
 }
 
 .race-3d-escape-bar {
@@ -3773,6 +3776,20 @@ body.race-active .race-3d-viewport-wrapper {
     body.race-active .race-3d-stat-val {
         font-size: 10.5px;
         margin-top: 1px;
+    }
+    body.race-active .race-3d-pursuit-box {
+        top: max(38px, calc(env(safe-area-inset-top) + 32px));
+        padding: 3px 10px;
+        min-width: 150px;
+        max-width: 210px;
+        z-index: 35;
+    }
+    body.race-active .race-3d-wanted-stars {
+        font-size: 11px;
+        letter-spacing: 1px;
+    }
+    body.race-active .race-3d-pursuit-status {
+        font-size: 8.5px;
     }
 
     /* 3. Speedometer & Nitro HUD: Floated safely above steer & pedals with guaranteed clearance */
