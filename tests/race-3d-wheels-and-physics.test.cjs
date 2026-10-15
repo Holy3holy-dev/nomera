@@ -228,3 +228,41 @@ test('3D steering direction: right key turns car and wheels to screen right, lef
     engine.destroy();
 });
 
+test('3D mobile controls: resetKeys clears all keys, cycleCamera cycles modes, and setKey updates input state', () => {
+    const { THREE, Car3DManager } = setupTestContext();
+    const mockContainer = { clientWidth: 800, clientHeight: 500, style: {}, appendChild: () => {}, removeChild: () => {} };
+    const engine = new Car3DManager.Car3DRacingEngine(mockContainer, {});
+
+    engine.start({
+        carName: 'ВАЗ-2107 «Жигули»',
+        styling: {},
+        performance: { speed: 180 }
+    });
+
+    engine.setKey('gas', true);
+    engine.setKey('left', true);
+    engine.setKey('drift', true);
+    engine.setKey('nitro', true);
+
+    assert.equal(engine.keys.gas, true);
+    assert.equal(engine.keys.left, true);
+    assert.equal(engine.keys.drift, true);
+    assert.equal(engine.keys.nitro, true);
+
+    // Call resetKeys (triggered on blur or mobile sleep)
+    engine.resetKeys();
+
+    assert.equal(engine.keys.gas, false);
+    assert.equal(engine.keys.left, false);
+    assert.equal(engine.keys.drift, false);
+    assert.equal(engine.keys.nitro, false);
+
+    // Camera cycling
+    const initialCam = engine.cameraMode;
+    engine.cycleCamera();
+    assert.equal(engine.cameraMode, (initialCam + 1) % engine.cameraModes.length);
+
+    engine.destroy();
+});
+
+

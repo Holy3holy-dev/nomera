@@ -9057,6 +9057,10 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             if (btn && btn.classList && typeof btn.classList.toggle === 'function') {
                 btn.classList.toggle('pressed', !!active);
             }
+            const btn3d = document.getElementById('btn-3d-touch-' + key);
+            if (btn3d && btn3d.classList && typeof btn3d.classList.toggle === 'function') {
+                btn3d.classList.toggle('pressed', !!active);
+            }
         }
 
         function resetRaceKeys() {
@@ -9065,6 +9069,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 raceKeys[key] = false;
                 updateTouchBtnUI(key, false);
             });
+            if (car3DRacingEngine && typeof car3DRacingEngine.resetKeys === 'function') {
+                car3DRacingEngine.resetKeys();
+            }
         }
         window.addEventListener('blur', resetRaceKeys);
         document.addEventListener('visibilitychange', () => {
@@ -9491,6 +9498,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 performance: stats,
                 weather: (typeof raceSelectedWeather !== 'undefined' ? raceSelectedWeather : 'night')
             });
+            init3DRaceTouchControls();
         }
 
         function show3DRacePopup(text, color = '#f59e0b') {
@@ -9531,7 +9539,24 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         }
 
         function handle3DTouchControl(event, action, isDown) {
-            if (event && event.cancelable) event.preventDefault();
+            if (event) {
+                if (event.target && event.pointerId !== undefined) {
+                    if (isDown && typeof event.target.setPointerCapture === 'function') {
+                        try { event.target.setPointerCapture(event.pointerId); } catch (_) {}
+                    }
+                    if (!isDown && typeof event.target.releasePointerCapture === 'function') {
+                        try { event.target.releasePointerCapture(event.pointerId); } catch (_) {}
+                    }
+                }
+                if (event.cancelable) event.preventDefault();
+                if (event.pointerId !== undefined) {
+                    if (isDown) {
+                        activeRacePointers.set(event.pointerId, '3d-' + action);
+                    } else if (activeRacePointers.get(event.pointerId) === '3d-' + action) {
+                        activeRacePointers.delete(event.pointerId);
+                    }
+                }
+            }
             if (action === 'horn') {
                 triggerRaceHorn(isDown);
                 return;
@@ -9543,6 +9568,65 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 if (action === 'drift' && typeof sound?.drift === 'function') sound.drift();
                 if (action === 'brake' && typeof sound?.brake === 'function') sound.brake();
                 if (typeof sound?.haptic === 'function') sound.haptic(action === 'nitro' ? 'nitro' : 'light');
+            }
+        }
+
+        function init3DRaceTouchControls() {
+            if (typeof document === 'undefined') return;
+            const steerZone = document.getElementById('touch-3d-steer-zone');
+            if (steerZone && !steerZone._boundSteer) {
+                steerZone._boundSteer = true;
+                let steerPointerId = null;
+
+                const updateSteerFromPoint = (clientX) => {
+                    if (!steerZone.getBoundingClientRect) return;
+                    const rect = steerZone.getBoundingClientRect();
+                    if (!rect || !rect.width) return;
+                    const relX = (clientX - rect.left) / rect.width;
+                    if (relX < 0.46) {
+                        setRaceKey('left', true);
+                        setRaceKey('right', false);
+                    } else if (relX > 0.54) {
+                        setRaceKey('right', true);
+                        setRaceKey('left', false);
+                    } else {
+                        setRaceKey('left', false);
+                        setRaceKey('right', false);
+                    }
+                };
+
+                steerZone.addEventListener('pointerdown', (e) => {
+                    if (e && e.cancelable) e.preventDefault();
+                    steerPointerId = e.pointerId;
+                    if (typeof steerZone.setPointerCapture === 'function') {
+                        try { steerZone.setPointerCapture(e.pointerId); } catch (_) {}
+                    }
+                    activeRacePointers.set(e.pointerId, '3d-steer');
+                    updateSteerFromPoint(e.clientX);
+                    if (typeof sound?.haptic === 'function') sound.haptic('light');
+                });
+
+                steerZone.addEventListener('pointermove', (e) => {
+                    if (steerPointerId !== e.pointerId) return;
+                    if (e && e.cancelable) e.preventDefault();
+                    updateSteerFromPoint(e.clientX);
+                });
+
+                const clearSteer = (e) => {
+                    if (steerPointerId === e.pointerId) {
+                        if (e && e.cancelable) e.preventDefault();
+                        if (typeof steerZone.releasePointerCapture === 'function') {
+                            try { steerZone.releasePointerCapture(e.pointerId); } catch (_) {}
+                        }
+                        steerPointerId = null;
+                        activeRacePointers.delete(e.pointerId);
+                        setRaceKey('left', false);
+                        setRaceKey('right', false);
+                    }
+                };
+                steerZone.addEventListener('pointerup', clearSteer);
+                steerZone.addEventListener('pointercancel', clearSteer);
+                steerZone.addEventListener('lostpointercapture', clearSteer);
             }
         }
 

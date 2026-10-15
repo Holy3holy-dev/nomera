@@ -5633,6 +5633,10 @@
             }
         }
 
+        resetKeys() {
+            Object.keys(this.keys).forEach(k => { this.keys[k] = false; });
+        }
+
         cycleCamera() {
             this.cameraMode = (this.cameraMode + 1) % this.cameraModes.length;
             if (this.options.onSound) this.options.onSound('camera');
@@ -6154,6 +6158,9 @@
             };
             if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
                 window.addEventListener('resize', this._onResize);
+                window.addEventListener('orientationchange', () => {
+                    setTimeout(() => { if (this._onResize) this._onResize(); }, 120);
+                });
             }
         }
 

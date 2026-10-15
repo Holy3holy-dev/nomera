@@ -325,6 +325,11 @@
             box-shadow: 0 4px 15px rgba(0,0,0,0.3);
             overflow-x: auto;
             -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+        .nav-tabs::-webkit-scrollbar {
+            display: none;
         }
 
         .nav-tab {
@@ -3412,7 +3417,8 @@ body.race-active .main-container {
 /* Fullscreen Immersion in race-active mode */
 body.race-active #race-3d-play-container {
     height: 100%;
-    min-height: 480px;
+    min-height: 0;
+    max-height: 100dvh;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
@@ -3420,12 +3426,220 @@ body.race-active #race-3d-play-container {
 }
 
 body.race-active .race-3d-viewport-wrapper {
-    flex: 1 1 500px;
-    height: 500px;
-    min-height: 380px;
-    max-height: calc(100dvh - 170px);
+    flex: 1 1 auto;
+    height: auto;
+    min-height: 220px;
+    max-height: calc(100dvh - 165px);
     width: 100%;
     margin: 0 auto;
+    position: relative;
+    border-radius: var(--radius-md, 16px);
+    overflow: hidden;
+}
+
+/* Mobile Portrait Adaptation (<= 600px) */
+@media screen and (max-width: 600px) {
+    body.race-active .main-container {
+        padding: 4px 6px;
+        height: 100dvh;
+        max-height: 100dvh;
+        overflow: hidden;
+    }
+    body.race-active #racegame > .section-box {
+        padding: 0;
+        margin: 0;
+        border: none;
+        background: transparent;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+    body.race-active #race-3d-play-container {
+        height: 100%;
+        min-height: 0;
+    }
+    body.race-active .race-header-hud {
+        padding: 4px 6px;
+        margin-bottom: 4px;
+    }
+    body.race-active .race-3d-viewport-wrapper {
+        min-height: 180px;
+        max-height: calc(100dvh - 155px);
+        border-radius: 12px;
+    }
+    .race-3d-hud-overlay {
+        padding: 8px 10px;
+    }
+    .race-3d-hud-top {
+        gap: 6px;
+    }
+    .race-3d-hud-stat {
+        padding: 4px 8px;
+        gap: 6px;
+        border-radius: 8px;
+    }
+    .race-3d-stat-icon {
+        font-size: 13px;
+    }
+    .race-3d-stat-lbl {
+        font-size: 8px;
+    }
+    .race-3d-stat-val {
+        font-size: 11px;
+    }
+    .race-3d-speedo-box,
+    .race-3d-nitro-box {
+        min-width: 105px;
+        padding: 6px 10px;
+        border-radius: 12px;
+    }
+    .race-3d-speed-num {
+        font-size: 26px;
+    }
+    .race-3d-gear-badge {
+        font-size: 9px;
+        padding: 1px 5px;
+    }
+    .race-3d-speed-unit {
+        font-size: 9px;
+    }
+    .race-touch-controls {
+        margin: 6px auto 0 auto;
+        gap: 6px;
+        padding-bottom: max(6px, env(safe-area-inset-bottom));
+    }
+    .touch-btn {
+        min-height: 50px;
+        padding: 8px 4px;
+        font-size: 12px;
+    }
+    .touch-steer {
+        min-height: 50px;
+    }
+    .touch-steer .touch-arrow {
+        font-size: 18px;
+    }
+    .touch-actions-bar {
+        gap: 5px;
+        margin-bottom: max(4px, env(safe-area-inset-bottom));
+    }
+    .touch-actions-bar .touch-btn {
+        min-height: 42px;
+        padding: 6px 2px;
+        font-size: 10px;
+    }
+}
+
+/* Mobile Landscape Mode (Phone in Horizontal Gaming Orientation) */
+@media screen and (orientation: landscape) and (max-height: 550px) {
+    body.race-active {
+        padding: 0 !important;
+        overflow: hidden !important;
+    }
+    body.race-active .main-container {
+        padding: 0 !important;
+        max-width: 100vw !important;
+        height: 100dvh !important;
+        max-height: 100dvh !important;
+        overflow: hidden !important;
+    }
+    body.race-active #racegame,
+    body.race-active #racegame > .section-box {
+        padding: 0 !important;
+        margin: 0 !important;
+        border: none !important;
+        background: transparent !important;
+        height: 100% !important;
+    }
+    body.race-active #race-3d-play-container {
+        height: 100dvh !important;
+        max-height: 100dvh !important;
+        width: 100vw !important;
+        max-width: 100vw !important;
+        position: relative !important;
+        margin: 0 !important;
+    }
+    body.race-active .race-header-hud {
+        position: absolute;
+        top: max(8px, env(safe-area-inset-top));
+        left: max(14px, env(safe-area-inset-left));
+        right: max(14px, env(safe-area-inset-right));
+        z-index: 30;
+        background: transparent;
+        border: none;
+        padding: 0;
+    }
+    body.race-active .race-3d-viewport-wrapper {
+        position: absolute !important;
+        inset: 0 !important;
+        width: 100vw !important;
+        height: 100dvh !important;
+        max-height: 100dvh !important;
+        border-radius: 0 !important;
+        border: none !important;
+        box-shadow: none !important;
+    }
+    body.race-active .race-3d-hud-overlay {
+        padding: max(38px, calc(env(safe-area-inset-top) + 34px)) max(16px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+    }
+    body.race-active .race-3d-hud-bottom {
+        position: absolute;
+        bottom: max(76px, calc(env(safe-area-inset-bottom) + 70px));
+        left: max(16px, env(safe-area-inset-left));
+        right: max(16px, env(safe-area-inset-right));
+        pointer-events: none;
+    }
+    body.race-active .race-touch-controls {
+        position: absolute !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+        padding: 0 max(16px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)) !important;
+        z-index: 25;
+        pointer-events: none;
+    }
+    body.race-active .touch-main-gamepad {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        pointer-events: auto;
+    }
+    body.race-active .touch-cluster-steer {
+        width: 180px;
+        flex: none;
+        background: rgba(10, 15, 29, 0.78);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    body.race-active .touch-cluster-pedals {
+        width: 180px;
+        flex: none;
+        background: rgba(10, 15, 29, 0.78);
+        backdrop-filter: blur(10px);
+        border-radius: 16px;
+        padding: 4px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    body.race-active .touch-actions-bar {
+        position: absolute;
+        bottom: max(8px, env(safe-area-inset-bottom));
+        left: 50%;
+        transform: translateX(-50%);
+        width: 290px;
+        pointer-events: auto;
+        gap: 6px;
+        margin: 0;
+    }
+    body.race-active .touch-actions-bar .touch-btn {
+        min-height: 42px;
+        font-size: 10px;
+        background: rgba(10, 15, 29, 0.82);
+        backdrop-filter: blur(10px);
+    }
 }
 
 
