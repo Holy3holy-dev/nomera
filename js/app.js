@@ -8634,7 +8634,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 'day': '☀️ Ясный день (высокая видимость)',
                 'sunset': '🌅 Закат (золотые и сиреневые тона)',
                 'night': '🌃 Ночной город (яркие фонари)',
-                'rain': '🌧️ Грозовой ливень (мокрый асфальт, молнии)'
+                'rain': '🌧️ Грозовой ливень (мокрый асфальт, молнии)',
+                'fog': '🌫️ Густой туман (утренняя мгла, фары)',
+                'snow': '❄️ Зимняя метель (снегопад, белый покров)'
             };
             const lbl = typeof document !== 'undefined' ? document.getElementById('race-weather-label') : null;
             if (lbl) {
@@ -8649,6 +8651,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                         btn.classList.remove('active');
                     }
                 });
+            }
+            if (car3DRacingEngine && typeof car3DRacingEngine.setWeather === 'function') {
+                car3DRacingEngine.setWeather(raceSelectedWeather, true);
             }
         }
 
@@ -8744,6 +8749,46 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     isRain: true,
                     isNight: true,
                     isSunset: false,
+                    hasLamps: true
+                };
+            }
+            if (raceSelectedWeather === 'fog') {
+                return {
+                    id: 'fog',
+                    name: 'Трасса в тумане: Утренняя мгла',
+                    icon: '🌫️',
+                    tag: 'РЕЖИМ: ТУМАН',
+                    sky: '#78909c',
+                    asphalt: '#263238',
+                    border: '#1b382b',
+                    curb1: '#94a3b8',
+                    curb2: '#ffffff',
+                    lineCol: '#f1f5f9',
+                    themeCol: '#94a3b8',
+                    isRain: false,
+                    isNight: false,
+                    isSunset: false,
+                    isFog: true,
+                    hasLamps: true
+                };
+            }
+            if (raceSelectedWeather === 'snow') {
+                return {
+                    id: 'snow',
+                    name: 'Зимняя трасса: Снегопад',
+                    icon: '❄️',
+                    tag: 'РЕЖИМ: СНЕГ',
+                    sky: '#334155',
+                    asphalt: '#1e293b',
+                    border: '#e2e8f0',
+                    curb1: '#38bdf8',
+                    curb2: '#ffffff',
+                    lineCol: '#f8fafc',
+                    themeCol: '#38bdf8',
+                    isRain: false,
+                    isNight: false,
+                    isSunset: false,
+                    isSnow: true,
                     hasLamps: true
                 };
             }
@@ -9261,6 +9306,12 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 }
                 e.preventDefault();
             }
+
+            // 6. СМЕНА ПОГОДЫ В 3D ГОНКЕ: Клавиша T (Е на русской раскладке)
+            if ((code === 'KeyT' || key === 't' || key === 'е') && activeRaceMode === '3d') {
+                cycle3DWeather();
+                e.preventDefault();
+            }
         });
 
         window.addEventListener('keyup', (e) => {
@@ -9423,6 +9474,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     const fuelEl = document.getElementById('hud-3d-fuel');
                     const driftBadge = document.getElementById('game-3d-drift-badge');
                     const comboBadge = document.getElementById('game-3d-combo-badge');
+                    const weatherText = document.getElementById('hud-3d-weather-text');
 
                     if (speedNum) speedNum.textContent = hud.speed;
                     if (gearBadge) gearBadge.textContent = hud.gear;
@@ -9433,6 +9485,11 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     if (distEl) distEl.textContent = hud.distanceKm.toFixed(2) + ' км';
                     if (cashEl) cashEl.textContent = '+' + hud.earnedCash.toLocaleString('ru-RU') + ' ₽';
                     if (fuelEl) fuelEl.textContent = hud.fuelCurrent.toFixed(1) + ' л';
+                    if (weatherText && hud.weatherTitle) {
+                        const icon = hud.weatherIcon || '🌦️';
+                        const firstWord = hud.weatherTitle.split(' ')[0];
+                        weatherText.textContent = `${icon} ${firstWord} [T]`;
+                    }
 
                     if (driftBadge) {
                         driftBadge.classList.toggle('hidden', !hud.isDrifting && hud.driftScore === 0);
@@ -9546,6 +9603,29 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 car3DRacingEngine.cycleCamera();
             }
         }
+
+        function cycle3DWeather() {
+            if (car3DRacingEngine) {
+                const nextWeather = car3DRacingEngine.cycleWeather();
+                const labels = {
+                    'auto': '⛅ Динамика',
+                    'day': '☀️ Ясный день',
+                    'sunset': '🌅 Закат',
+                    'night': '🌃 Ночной город',
+                    'rain': '🌧️ Грозовой ливень',
+                    'fog': '🌫️ Густой туман',
+                    'snow': '❄️ Зимняя метель'
+                };
+                const lbl = labels[nextWeather] || nextWeather;
+                show3DRacePopup(`🌦️ ПОГОДА: ${lbl.toUpperCase()}`, '#38bdf8');
+                const weatherText = document.getElementById('hud-3d-weather-text');
+                if (weatherText) {
+                    const firstWord = lbl.split(' ')[0] + ' ' + (lbl.split(' ')[1] || '');
+                    weatherText.textContent = `${firstWord} [T]`;
+                }
+            }
+        }
+        window.cycle3DWeather = cycle3DWeather;
 
         function handle3DTouchControl(event, action, isDown) {
             if (event) {

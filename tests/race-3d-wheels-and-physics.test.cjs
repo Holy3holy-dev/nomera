@@ -510,6 +510,118 @@ test('Car animations: backfire flame pops, nitro road light, brake disc glow, en
     engine.destroy();
 });
 
+test('Weather & time-of-day system: presets, mirror wet asphalt, snow verges, particle systems, cycleWeather, and dynamic auto transition', () => {
+    const { THREE, Car3DManager } = setupTestContext();
+    const mockContainer = { clientWidth: 800, clientHeight: 500, style: {}, appendChild: () => {}, removeChild: () => {} };
+
+    let lastHud = null;
+    const engine = new Car3DManager.Car3DRacingEngine(mockContainer, {
+        onUpdateHUD: (hud) => { lastHud = hud; }
+    });
+
+    // 1. Initial start with auto weather
+    engine.start({
+        carName: 'ВАЗ-2107 «Жигули»',
+        weather: 'auto',
+        performance: { speed: 200, accel: 3.5 }
+    });
+
+    assert.equal(engine.weatherMode, 'auto', 'Weather mode should be auto');
+    assert.equal(engine.currentActiveWeather, 'night', 'Auto weather at 0 km should start at night');
+    assert.ok(engine.rainSystem, 'Rain particle system must be instantiated');
+    assert.ok(engine.snowSystem, 'Snow particle system must be instantiated');
+    assert.equal(engine.rainSystem.visible, false, 'Rain system should be hidden at night');
+    assert.equal(engine.snowSystem.visible, false, 'Snow system should be hidden at night');
+    assert.equal(engine.starfield.visible, true, 'Starfield must be visible at night');
+
+    // 2. Switch to Rain (Грозовой ливень)
+    engine.setWeather('rain', true);
+    assert.equal(engine.weatherMode, 'manual');
+    assert.equal(engine.currentActiveWeather, 'rain');
+    assert.equal(engine.rainSystem.visible, true, 'Rain particle system must be visible in rain');
+    assert.equal(engine.snowSystem.visible, false, 'Snow system must be hidden in rain');
+    assert.equal(engine.starfield.visible, false, 'Starfield must be hidden during storm');
+    assert.ok(engine.asphaltMat.roughness < 0.20, 'Wet asphalt roughness must be < 0.20 for glossy puddle reflections');
+    assert.ok(engine.asphaltMat.metalness > 0.70, 'Wet asphalt metalness must be > 0.70 for surface reflection');
+
+    // Update frame in rain (simulate falling drops and spray)
+    engine.state.speed = 120;
+    const initialDropY = engine.rainSystem.geometry.attributes.position.array[1];
+    engine.update(0.05);
+    const updatedDropY = engine.rainSystem.geometry.attributes.position.array[1];
+    assert.ok(updatedDropY < initialDropY, 'Rain drops must move downwards on update');
+
+    // 3. Switch to Snow (Зимняя метель)
+    engine.setWeather('snow', true);
+    assert.equal(engine.currentActiveWeather, 'snow');
+    assert.equal(engine.rainSystem.visible, false, 'Rain system must be hidden in snow');
+    assert.equal(engine.snowSystem.visible, true, 'Snow particle system must be visible in snow');
+    assert.equal(engine.grassMat.color.getHex(), 0xe2e8f0, 'Verge grass must turn snow-white (0xe2e8f0) in snow mode');
+    assert.equal(engine.treeFoliageMat.color.getHex(), 0xcfd8dc, 'Tree foliage must be frosted (0xcfd8dc) in snow mode');
+
+    // 4. Switch to Day (Ясный день)
+    engine.setWeather('day', true);
+    assert.equal(engine.currentActiveWeather, 'day');
+    assert.equal(engine.rainSystem.visible, false);
+    assert.equal(engine.snowSystem.visible, false);
+    assert.equal(engine.starfield.visible, false);
+    assert.equal(engine.lampLightMat.emissiveIntensity, 0.20, 'Lampposts must be dimmed in daytime');
+    assert.ok(engine.sunLight.intensity >= 1.20, 'Sunlight intensity must be strong in daytime');
+
+    // 5. Test cycleWeather() sequence
+    // Order: auto -> day -> sunset -> night -> rain -> fog -> snow -> auto
+    engine.selectedWeather = 'snow';
+    assert.equal(engine.cycleWeather(), 'auto');
+    assert.equal(engine.cycleWeather(), 'day');
+    assert.equal(engine.cycleWeather(), 'sunset');
+    assert.equal(engine.cycleWeather(), 'night');
+    assert.equal(engine.cycleWeather(), 'rain');
+    assert.equal(engine.cycleWeather(), 'fog');
+    assert.equal(engine.cycleWeather(), 'snow');
+
+    // 6. Test dynamic auto-weather progression across distance milestones
+    engine.setWeather('auto', true);
+    assert.equal(engine.weatherMode, 'auto');
+
+    // 0 - 2.5 km -> night
+    engine.state.z = 1000;
+    engine.update(0.05);
+    assert.equal(engine.currentActiveWeather, 'night');
+
+    // 2.5 - 5.0 km -> fog
+    engine.state.z = 3000;
+    engine.update(0.05);
+    assert.equal(engine.currentActiveWeather, 'fog');
+
+    // 5.0 - 8.0 km -> day
+    engine.state.z = 6000;
+    engine.update(0.05);
+    assert.equal(engine.currentActiveWeather, 'day');
+
+    // 8.0 - 11.0 km -> sunset
+    engine.state.z = 9500;
+    engine.update(0.05);
+    assert.equal(engine.currentActiveWeather, 'sunset');
+
+    // 11.0 - 13.5 km -> rain
+    engine.state.z = 12000;
+    engine.update(0.05);
+    assert.equal(engine.currentActiveWeather, 'rain');
+
+    // 13.5+ km -> snow
+    engine.state.z = 14500;
+    engine.update(0.05);
+    assert.equal(engine.currentActiveWeather, 'snow');
+
+    // 7. Check HUD payload
+    assert.ok(lastHud, 'HUD must receive update callback');
+    assert.equal(lastHud.weather, 'snow');
+    assert.equal(lastHud.weatherMode, 'auto');
+    assert.ok(lastHud.weatherTitle.includes('Зимняя') || lastHud.weatherTitle.includes('снег') || lastHud.weatherTitle.includes('метель'), 'Weather title must describe blizzard');
+
+    engine.destroy();
+});
+
 
 
 

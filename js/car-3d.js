@@ -4947,57 +4947,197 @@
             this.initTraffic();
         }
 
+        getWeatherPreset(key) {
+            const presets = {
+                day: {
+                    id: 'day',
+                    name: 'Ясный день',
+                    icon: '☀️',
+                    bgColor: 0x38bdf8,
+                    fogDensity: 0.0035,
+                    ambientColor: 0xfff7ed,
+                    ambientIntensity: 0.85,
+                    sunColor: 0xfffaed,
+                    sunIntensity: 1.25,
+                    sunPos: [16, 28, 20],
+                    asphaltColor: 0x1e2024,
+                    asphaltRoughness: 0.88,
+                    asphaltMetalness: 0.12,
+                    grassColor: 0x15803d,
+                    treeColor: 0x064e3b,
+                    lampEmissive: 0.20,
+                    hasStars: false,
+                    starOpacity: 0.0,
+                    hasRain: false,
+                    hasSnow: false
+                },
+                sunset: {
+                    id: 'sunset',
+                    name: 'Золотой закат',
+                    icon: '🌅',
+                    bgColor: 0x2d0b28,
+                    fogDensity: 0.0055,
+                    ambientColor: 0xfbcfe8,
+                    ambientIntensity: 0.60,
+                    sunColor: 0xf97316,
+                    sunIntensity: 0.95,
+                    sunPos: [25, 12, 35],
+                    asphaltColor: 0x1f1624,
+                    asphaltRoughness: 0.82,
+                    asphaltMetalness: 0.18,
+                    grassColor: 0x3b1d28,
+                    treeColor: 0x1c1917,
+                    lampEmissive: 1.6,
+                    hasStars: true,
+                    starOpacity: 0.45,
+                    hasRain: false,
+                    hasSnow: false
+                },
+                night: {
+                    id: 'night',
+                    name: 'Ночной мегаполис',
+                    icon: '🌃',
+                    bgColor: 0x030712,
+                    fogDensity: 0.0075,
+                    ambientColor: 0x1e293b,
+                    ambientIntensity: 0.40,
+                    sunColor: 0x94a3b8,
+                    sunIntensity: 0.45,
+                    sunPos: [12, 24, 20],
+                    asphaltColor: 0x111622,
+                    asphaltRoughness: 0.85,
+                    asphaltMetalness: 0.15,
+                    grassColor: 0x091410,
+                    treeColor: 0x064e3b,
+                    lampEmissive: 2.2,
+                    hasStars: true,
+                    starOpacity: 0.90,
+                    hasRain: false,
+                    hasSnow: false
+                },
+                rain: {
+                    id: 'rain',
+                    name: 'Грозовой ливень',
+                    icon: '🌧️',
+                    bgColor: 0x080f19,
+                    fogDensity: 0.012,
+                    ambientColor: 0x384959,
+                    ambientIntensity: 0.40,
+                    sunColor: 0x64748b,
+                    sunIntensity: 0.35,
+                    sunPos: [10, 22, 15],
+                    asphaltColor: 0x0c121c,
+                    asphaltRoughness: 0.16, // Mirror wet asphalt
+                    asphaltMetalness: 0.75, // High surface reflection
+                    grassColor: 0x071e16,
+                    treeColor: 0x042f2e,
+                    lampEmissive: 1.9,
+                    hasStars: false,
+                    starOpacity: 0.0,
+                    hasRain: true,
+                    hasSnow: false
+                },
+                fog: {
+                    id: 'fog',
+                    name: 'Густой туман',
+                    icon: '🌫️',
+                    bgColor: 0x78909c,
+                    fogDensity: 0.022,
+                    ambientColor: 0x94a3b8,
+                    ambientIntensity: 0.65,
+                    sunColor: 0xcfd8dc,
+                    sunIntensity: 0.50,
+                    sunPos: [8, 18, 12],
+                    asphaltColor: 0x263238,
+                    asphaltRoughness: 0.75,
+                    asphaltMetalness: 0.25,
+                    grassColor: 0x1b382b,
+                    treeColor: 0x14342b,
+                    lampEmissive: 2.0,
+                    hasStars: false,
+                    starOpacity: 0.0,
+                    hasRain: false,
+                    hasSnow: false
+                },
+                snow: {
+                    id: 'snow',
+                    name: 'Зимняя метель',
+                    icon: '❄️',
+                    bgColor: 0x334155,
+                    fogDensity: 0.010,
+                    ambientColor: 0x94a3b8,
+                    ambientIntensity: 0.60,
+                    sunColor: 0xe2e8f0,
+                    sunIntensity: 0.65,
+                    sunPos: [14, 20, 18],
+                    asphaltColor: 0x1e293b,
+                    asphaltRoughness: 0.65,
+                    asphaltMetalness: 0.22,
+                    grassColor: 0xe2e8f0, // Frosted white verge
+                    treeColor: 0xcfd8dc, // Frosted pines
+                    lampEmissive: 1.8,
+                    hasStars: false,
+                    starOpacity: 0.0,
+                    hasRain: false,
+                    hasSnow: true
+                }
+            };
+            return presets[key] || presets.night;
+        }
+
+        getAutoWeatherKey(distKm = 0) {
+            if (distKm < 2.5) return 'night';
+            if (distKm < 5.0) return 'fog';
+            if (distKm < 8.0) return 'day';
+            if (distKm < 11.0) return 'sunset';
+            if (distKm < 13.5) return 'rain';
+            return 'snow';
+        }
+
         setupEnvironment(weather = 'night') {
             const THREE = this.THREE;
-            this.weather = weather;
+            this.weatherMode = (weather === 'auto') ? 'auto' : 'manual';
+            this.selectedWeather = weather || 'auto';
+            const activeKey = (this.weatherMode === 'auto')
+                ? this.getAutoWeatherKey(this.state ? this.state.distanceKm : 0)
+                : weather;
+            this.currentActiveWeather = activeKey;
+            this.weather = activeKey;
+            const preset = this.getWeatherPreset(activeKey);
 
-            let bgColor = 0x060913;
-            let fogDensity = 0.0075;
-            let ambientIntensity = 0.55;
-            let sunColor = 0xa5c4d4;
-            let sunIntensity = 0.65;
-
-            if (weather === 'sunset') {
-                bgColor = 0x1f0e1c;
-                fogDensity = 0.0068;
-                ambientIntensity = 0.60;
-                sunColor = 0xf59e0b;
-                sunIntensity = 0.85;
-            } else if (weather === 'day') {
-                bgColor = 0x182c42;
-                fogDensity = 0.0055;
-                ambientIntensity = 0.80;
-                sunColor = 0xffffff;
-                sunIntensity = 1.10;
-            } else if (weather === 'rain') {
-                bgColor = 0x080c14;
-                fogDensity = 0.011;
-                ambientIntensity = 0.45;
-                sunColor = 0x7dd3fc;
-                sunIntensity = 0.45;
+            if (!this.scene.background) {
+                this.scene.background = new THREE.Color(preset.bgColor);
+            } else {
+                this.scene.background.setHex(preset.bgColor);
             }
 
-            this.scene.background = new THREE.Color(bgColor);
-            this.scene.fog = new THREE.FogExp2(bgColor, fogDensity);
+            if (!this.scene.fog) {
+                this.scene.fog = new THREE.FogExp2(preset.bgColor, preset.fogDensity);
+            } else {
+                this.scene.fog.color.setHex(preset.bgColor);
+                this.scene.fog.density = preset.fogDensity;
+            }
 
             if (!this.ambientLight) {
-                this.ambientLight = new THREE.AmbientLight(0xffffff, ambientIntensity);
+                this.ambientLight = new THREE.AmbientLight(preset.ambientColor, preset.ambientIntensity);
                 this.scene.add(this.ambientLight);
             } else {
-                this.ambientLight.intensity = ambientIntensity;
+                this.ambientLight.color.setHex(preset.ambientColor);
+                this.ambientLight.intensity = preset.ambientIntensity;
             }
 
             if (!this.sunLight) {
-                this.sunLight = new THREE.DirectionalLight(sunColor, sunIntensity);
-                this.sunLight.position.set(12, 24, 20);
+                this.sunLight = new THREE.DirectionalLight(preset.sunColor, preset.sunIntensity);
+                this.sunLight.position.set(preset.sunPos[0], preset.sunPos[1], preset.sunPos[2]);
                 this.scene.add(this.sunLight);
             } else {
-                this.sunLight.color.setHex(sunColor);
-                this.sunLight.intensity = sunIntensity;
+                this.sunLight.color.setHex(preset.sunColor);
+                this.sunLight.intensity = preset.sunIntensity;
+                this.sunLight.position.set(preset.sunPos[0], preset.sunPos[1], preset.sunPos[2]);
             }
 
             // Starfield dome for night / sunset
-            if (!this.starfield && (weather === 'night' || weather === 'sunset')) {
+            if (!this.starfield) {
                 const starGeo = new THREE.BufferGeometry();
                 const starCoords = [];
                 for (let i = 0; i < 450; i++) {
@@ -5011,10 +5151,265 @@
                     color: 0xffffff,
                     size: 1.2,
                     transparent: true,
-                    opacity: 0.85
+                    opacity: preset.starOpacity
                 });
                 this.starfield = new THREE.Points(starGeo, starMat);
                 this.scene.add(this.starfield);
+            }
+            if (this.starfield) {
+                this.starfield.visible = preset.hasStars;
+                if (this.starfield.material) {
+                    this.starfield.material.opacity = preset.starOpacity;
+                }
+            }
+
+            this.initRainSystem();
+            this.initSnowSystem();
+            if (this.rainSystem) this.rainSystem.visible = !!preset.hasRain;
+            if (this.snowSystem) this.snowSystem.visible = !!preset.hasSnow;
+
+            this.applyWeatherMaterials(preset);
+        }
+
+        applyWeatherMaterials(preset) {
+            if (!preset) return;
+            if (this.asphaltMat) {
+                if (this.asphaltMat.color) this.asphaltMat.color.setHex(preset.asphaltColor);
+                this.asphaltMat.roughness = preset.asphaltRoughness;
+                this.asphaltMat.metalness = preset.asphaltMetalness;
+                this.asphaltMat.needsUpdate = true;
+            }
+            if (this.grassMat) {
+                if (this.grassMat.color) this.grassMat.color.setHex(preset.grassColor);
+                this.grassMat.roughness = preset.grassRoughness || 0.95;
+                this.grassMat.needsUpdate = true;
+            }
+            if (this.treeFoliageMat) {
+                if (this.treeFoliageMat.color) this.treeFoliageMat.color.setHex(preset.treeColor);
+                this.treeFoliageMat.needsUpdate = true;
+            }
+            if (this.lampLightMat) {
+                this.lampLightMat.emissiveIntensity = preset.lampEmissive;
+                this.lampLightMat.needsUpdate = true;
+            }
+        }
+
+        setWeather(weatherName, isManual = false) {
+            if (isManual) {
+                this.weatherMode = (weatherName === 'auto') ? 'auto' : 'manual';
+                this.selectedWeather = weatherName;
+            }
+            const activeKey = (this.weatherMode === 'auto')
+                ? this.getAutoWeatherKey(this.state ? this.state.distanceKm : 0)
+                : (weatherName || 'night');
+
+            this.currentActiveWeather = activeKey;
+            this.weather = activeKey;
+            const preset = this.getWeatherPreset(activeKey);
+
+            if (this.scene && this.scene.background) {
+                this.scene.background.setHex(preset.bgColor);
+            }
+            if (this.scene && this.scene.fog) {
+                this.scene.fog.color.setHex(preset.bgColor);
+                this.scene.fog.density = preset.fogDensity;
+            }
+            if (this.ambientLight) {
+                this.ambientLight.color.setHex(preset.ambientColor);
+                this.ambientLight.intensity = preset.ambientIntensity;
+            }
+            if (this.sunLight) {
+                this.sunLight.color.setHex(preset.sunColor);
+                this.sunLight.intensity = preset.sunIntensity;
+                this.sunLight.position.set(preset.sunPos[0], preset.sunPos[1], preset.sunPos[2]);
+            }
+            if (this.starfield) {
+                this.starfield.visible = preset.hasStars;
+                if (this.starfield.material) {
+                    this.starfield.material.opacity = preset.starOpacity;
+                }
+            }
+            if (this.rainSystem) {
+                this.rainSystem.visible = !!preset.hasRain;
+            }
+            if (this.snowSystem) {
+                this.snowSystem.visible = !!preset.hasSnow;
+            }
+
+            this.applyWeatherMaterials(preset);
+            return activeKey;
+        }
+
+        cycleWeather() {
+            const order = ['auto', 'day', 'sunset', 'night', 'rain', 'fog', 'snow'];
+            let cur = this.selectedWeather || this.weather || 'auto';
+            let idx = order.indexOf(cur);
+            if (idx < 0) idx = 0;
+            const next = order[(idx + 1) % order.length];
+            this.setWeather(next, true);
+            return next;
+        }
+
+        initRainSystem() {
+            const THREE = this.THREE;
+            if (this.rainSystem || !this.scene) return;
+            const count = 1200;
+            const positions = new Float32Array(count * 3);
+            const velocities = new Float32Array(count);
+            for (let i = 0; i < count; i++) {
+                positions[i * 3 + 0] = (Math.random() - 0.5) * 65;
+                positions[i * 3 + 1] = Math.random() * 26;
+                positions[i * 3 + 2] = (Math.random() - 0.5) * 85;
+                velocities[i] = 38 + Math.random() * 25;
+            }
+            const geo = new THREE.BufferGeometry();
+            geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            const mat = new THREE.PointsMaterial({
+                color: 0x93c5fd,
+                size: 0.28,
+                transparent: true,
+                opacity: 0.65,
+                depthWrite: false
+            });
+            this.rainSystem = new THREE.Points(geo, mat);
+            this.rainSystem.userData = { velocities };
+            this.rainSystem.visible = false;
+            this.scene.add(this.rainSystem);
+        }
+
+        initSnowSystem() {
+            const THREE = this.THREE;
+            if (this.snowSystem || !this.scene) return;
+            const count = 800;
+            const positions = new Float32Array(count * 3);
+            const speeds = new Float32Array(count);
+            const driftPhases = new Float32Array(count);
+            for (let i = 0; i < count; i++) {
+                positions[i * 3 + 0] = (Math.random() - 0.5) * 55;
+                positions[i * 3 + 1] = Math.random() * 24;
+                positions[i * 3 + 2] = (Math.random() - 0.5) * 75;
+                speeds[i] = 5.0 + Math.random() * 4.0;
+                driftPhases[i] = Math.random() * Math.PI * 2;
+            }
+            const geo = new THREE.BufferGeometry();
+            geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            const mat = new THREE.PointsMaterial({
+                color: 0xffffff,
+                size: 0.42,
+                transparent: true,
+                opacity: 0.85,
+                depthWrite: false
+            });
+            this.snowSystem = new THREE.Points(geo, mat);
+            this.snowSystem.userData = { speeds, driftPhases };
+            this.snowSystem.visible = false;
+            this.scene.add(this.snowSystem);
+        }
+
+        spawnWaterSpray(x, y, z) {
+            const THREE = this.THREE;
+            const mat = new THREE.MeshBasicMaterial({
+                color: 0x94a3b8,
+                transparent: true,
+                opacity: 0.35,
+                depthWrite: false
+            });
+            const mesh = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.18, 0.18), mat);
+            mesh.position.set(x, y, z);
+            mesh.userData = {
+                life: 0.25,
+                maxLife: 0.25,
+                vy: 0.4 + Math.random() * 0.8
+            };
+            this.scene.add(mesh);
+            this.smokeParticles.push(mesh);
+        }
+
+        updateWeatherParticles(dt) {
+            const state = this.state;
+            if (!state) return;
+            const forwardSpeedMps = (state.speed || 0) / 3.6;
+
+            // 1. Rain streaks
+            if (this.rainSystem && this.rainSystem.visible) {
+                const posAttr = this.rainSystem.geometry.attributes.position;
+                const pos = posAttr.array;
+                const vels = this.rainSystem.userData.velocities;
+                const count = vels.length;
+                for (let i = 0; i < count; i++) {
+                    const i3 = i * 3;
+                    pos[i3 + 1] -= (vels[i] + forwardSpeedMps * 0.25) * dt;
+                    pos[i3 + 2] -= forwardSpeedMps * 0.15 * dt;
+
+                    if (pos[i3 + 1] <= 0 || pos[i3 + 2] < state.z - 35) {
+                        pos[i3 + 0] = state.x + (Math.random() - 0.5) * 65;
+                        pos[i3 + 1] = 20 + Math.random() * 8;
+                        pos[i3 + 2] = state.z + (Math.random() - 0.5) * 85;
+                    }
+                }
+                posAttr.needsUpdate = true;
+
+                // Wet road spray behind player car
+                if (state.speed > 35 && Math.random() < 0.45) {
+                    this.spawnWaterSpray(state.x + (Math.random() - 0.5) * 1.6, 0.15, state.z - 2.1);
+                }
+            }
+
+            // 2. Snow swirling flakes
+            if (this.snowSystem && this.snowSystem.visible) {
+                const posAttr = this.snowSystem.geometry.attributes.position;
+                const pos = posAttr.array;
+                const speeds = this.snowSystem.userData.speeds;
+                const phases = this.snowSystem.userData.driftPhases;
+                const time = state.time || 0;
+                const count = speeds.length;
+                for (let i = 0; i < count; i++) {
+                    const i3 = i * 3;
+                    pos[i3 + 1] -= (speeds[i] + forwardSpeedMps * 0.08) * dt;
+                    pos[i3 + 0] += Math.sin(time * 2.2 + phases[i]) * 3.0 * dt;
+
+                    if (pos[i3 + 1] <= 0 || pos[i3 + 2] < state.z - 30) {
+                        pos[i3 + 0] = state.x + (Math.random() - 0.5) * 55;
+                        pos[i3 + 1] = 18 + Math.random() * 6;
+                        pos[i3 + 2] = state.z + (Math.random() - 0.5) * 75;
+                    }
+                }
+                posAttr.needsUpdate = true;
+            }
+
+            // 3. Lightning flash in rain
+            if (this.currentActiveWeather === 'rain') {
+                const preset = this.getWeatherPreset('rain');
+                this.lightningTimer = (this.lightningTimer !== undefined ? this.lightningTimer : 5.0) - dt;
+                if (this.lightningTimer <= 0) {
+                    this.lightningFlash = 0.14;
+                    this.lightningTimer = 4.5 + Math.random() * 7.0;
+                    if (this.ambientLight) this.ambientLight.intensity = 1.9;
+                    if (this.sunLight) this.sunLight.intensity = 2.4;
+                    if (this.scene.background) this.scene.background.setHex(0xdbeafe);
+                    if (this.scene.fog) this.scene.fog.color.setHex(0xdbeafe);
+                }
+                if (this.lightningFlash > 0) {
+                    this.lightningFlash -= dt;
+                    if (this.lightningFlash <= 0) {
+                        if (this.ambientLight) this.ambientLight.intensity = preset.ambientIntensity;
+                        if (this.sunLight) this.sunLight.intensity = preset.sunIntensity;
+                        if (this.scene.background) this.scene.background.setHex(preset.bgColor);
+                        if (this.scene.fog) this.scene.fog.color.setHex(preset.bgColor);
+                    }
+                }
+            }
+
+            // 4. Dynamic Auto-Weather Progression
+            if (this.weatherMode === 'auto') {
+                const targetWeather = this.getAutoWeatherKey(state.distanceKm);
+                if (targetWeather !== this.currentActiveWeather) {
+                    this.setWeather(targetWeather, false);
+                    const p = this.getWeatherPreset(targetWeather);
+                    if (this.options.onPopup && p) {
+                        this.options.onPopup(`🌦️ ПОГОДА: ${p.icon} ${p.name.toUpperCase()}`, '#38bdf8');
+                    }
+                }
             }
         }
 
@@ -5069,6 +5464,10 @@
 
             this.treeTrunkMat = new THREE.MeshStandardMaterial({ color: 0x452311, roughness: 0.9 });
             this.treeFoliageMat = new THREE.MeshStandardMaterial({ color: 0x064e3b, roughness: 0.85 });
+
+            if (this.currentActiveWeather) {
+                this.applyWeatherMaterials(this.getWeatherPreset(this.currentActiveWeather));
+            }
 
             // Create initial chunks from Z = -chunkLength to (numChunks - 1) * chunkLength
             this.roadChunks = [];
@@ -6196,7 +6595,10 @@
             // 9. CHASE CAMERA UPDATE (3RD-PERSON VIEW)
             this.updateChaseCamera(dt);
 
-            // 10. NOTIFY HUD CALLBACK
+            // 10. WEATHER PARTICLES & DYNAMIC CYCLE UPDATE
+            this.updateWeatherParticles(dt);
+
+            // 11. NOTIFY HUD CALLBACK
             this.notifyHUD();
         }
 
@@ -6471,6 +6873,8 @@
             const rpmRange = maxRpm - idleRpm || 1;
             const rpmPercent = Math.min(100, Math.max(0, Math.round(((rpm - idleRpm) / rpmRange) * 100)));
 
+            const curPreset = this.getWeatherPreset(this.currentActiveWeather);
+
             this.options.onUpdateHUD({
                 speed: Math.round(state.speed),
                 gear: gear,
@@ -6487,7 +6891,11 @@
                 isDrifting: state.isDrifting,
                 overtakesCount: state.overtakesCount,
                 overtakeCombo: state.overtakeCombo,
-                cameraMode: this.cameraMode
+                cameraMode: this.cameraMode,
+                weather: this.currentActiveWeather,
+                weatherIcon: curPreset ? curPreset.icon : '🌃',
+                weatherTitle: curPreset ? curPreset.name : 'Ночь',
+                weatherMode: this.weatherMode
             });
         }
 

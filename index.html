@@ -459,6 +459,8 @@
                             <button type="button" class="race-weather-btn" data-weather="sunset" onclick="setRaceWeather('sunset')">🌅 Закат</button>
                             <button type="button" class="race-weather-btn" data-weather="night" onclick="setRaceWeather('night')">🌃 Ночь</button>
                             <button type="button" class="race-weather-btn" data-weather="rain" onclick="setRaceWeather('rain')">🌧️ Ливень</button>
+                            <button type="button" class="race-weather-btn" data-weather="fog" onclick="setRaceWeather('fog')">🌫️ Туман</button>
+                            <button type="button" class="race-weather-btn" data-weather="snow" onclick="setRaceWeather('snow')">❄️ Снег</button>
                         </div>
                     </div>
 
@@ -551,6 +553,7 @@
                         <button class="btn btn-close" style="padding: 6px 12px; font-size: 12px; width: auto; margin: 0;" onclick="exit3DRaceGame()">✕ Выход в меню</button>
                         <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
                             <button type="button" class="btn" id="btn-camera-view-3d" style="padding: 5px 12px; font-size: 11px; background: rgba(255,255,255,0.08); border: 1px solid var(--border-subtle); border-radius: 8px; color: #fff; cursor: pointer;" onclick="toggle3DCameraView()">📷 Камера [C]</button>
+                            <button type="button" class="btn" id="btn-weather-cycle-3d" style="padding: 5px 12px; font-size: 11px; background: rgba(255,255,255,0.08); border: 1px solid var(--border-subtle); border-radius: 8px; color: #fff; cursor: pointer;" onclick="cycle3DWeather()">🌦️ <span id="hud-3d-weather-text">Погода [T]</span></button>
                             <span id="game-3d-drift-badge" class="race-badge-combo hidden" style="background: linear-gradient(135deg, #f59e0b, #ea580c); border-color: #fbbf24; color: #fff;">🌪️ ДРИФТ x1</span>
                             <span id="game-3d-combo-badge" class="race-badge-combo hidden">🔥 x2 ОБГОН</span>
                         </div>
@@ -1368,7 +1371,7 @@
     <script src="./js/vendor/DRACOLoader.js"></script>
     <script src="./js/vendor/meshopt_decoder.js"></script>
     <script src="./js/vendor/GLTFLoader.js"></script>
-    <script src="./js/car-3d.js?v=e05b857ed56c"></script>
-    <script src="./js/app.js?v=0aaf0f09664b"></script>
+    <script src="./js/car-3d.js?v=248c9f516c3d"></script>
+    <script src="./js/app.js?v=aaf5d472947f"></script>
 </body>
 </html>
