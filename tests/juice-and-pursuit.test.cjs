@@ -84,7 +84,7 @@ test('wanted level increases on violations, caps at 5, and awards bounty upon es
         racePlayer.escapeTimer = 0;
         racePlayer.earnedCash = 0;
         raceTraffic = [];
-        trafficSpawnTimer = 999;
+        trafficSpawnTimer = -9999;
 
         // 1st violation: radar
         addWantedStars(1, 'РАДАР');

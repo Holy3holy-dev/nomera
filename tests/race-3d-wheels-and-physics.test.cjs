@@ -139,7 +139,7 @@ test('3D drift physics: counter-steering gives score bonus without snapping yaw 
     // Simulate 5 frames of entering slide
     for (let i = 0; i < 5; i++) engine.update(0.05);
 
-    assert.ok(engine.state.vx > 0, 'Car should have positive lateral velocity (sliding right)');
+    assert.ok(engine.state.vx < 0, 'Car should have negative lateral velocity in world coords when steering right (sliding right on screen)');
     assert.ok(engine.state.isDrifting, 'Car should be in drift state');
     const yawInSlide = engine.state.yawAngle;
 
@@ -188,3 +188,43 @@ test('3D traffic collision: overtaking traffic does not cause false rear-end cra
 
     engine.destroy();
 });
+
+test('3D steering direction: right key turns car and wheels to screen right, left key turns to screen left', () => {
+    const { THREE, Car3DManager } = setupTestContext();
+    const mockContainer = { clientWidth: 800, clientHeight: 500, style: {}, appendChild: () => {}, removeChild: () => {} };
+    const engine = new Car3DManager.Car3DRacingEngine(mockContainer, {});
+
+    engine.start({
+        carName: 'ВАЗ-2107 «Жигули»',
+        styling: {},
+        performance: { speed: 180, handling: 5.0 }
+    });
+    engine.state.speed = 80;
+
+    // 1. Steering RIGHT:
+    // In Three.js with camera behind car facing +Z, world -X is screen RIGHT.
+    // Pressing right must produce negative vx, negative wheel steer angle, and negative yaw angle.
+    engine.keys.right = true;
+    engine.keys.left = false;
+    engine.update(0.1);
+
+    assert.ok(engine.state.vx < 0, 'Steering right must produce negative vx (towards screen right / world -X)');
+    assert.ok(engine.state.yawAngle < 0, 'Steering right must yaw vehicle nose towards screen right');
+    const rightSteerDelta = engine.playerSteerWheels[0].rotation.y - (engine.playerSteerWheels[0].userData.baseRotY || 0);
+    assert.ok(rightSteerDelta < 0, 'Front steer wheels must turn towards screen right (delta < 0)');
+
+    // 2. Steering LEFT:
+    // In Three.js with camera behind car facing +Z, world +X is screen LEFT.
+    // Pressing left must produce positive vx, positive wheel steer angle, and positive yaw angle.
+    engine.keys.right = false;
+    engine.keys.left = true;
+    for (let i = 0; i < 4; i++) engine.update(0.1);
+
+    assert.ok(engine.state.vx > 0, 'Steering left must produce positive vx (towards screen left / world +X)');
+    assert.ok(engine.state.yawAngle > 0, 'Steering left must yaw vehicle nose towards screen left');
+    const leftSteerDelta = engine.playerSteerWheels[0].rotation.y - (engine.playerSteerWheels[0].userData.baseRotY || 0);
+    assert.ok(leftSteerDelta > 0, 'Front steer wheels must turn towards screen left (delta > 0)');
+
+    engine.destroy();
+});
+

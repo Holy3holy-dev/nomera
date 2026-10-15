@@ -5738,8 +5738,8 @@
             const lateralMax = (state.handling * 2.8) * (isHandbrake ? (1 + (driftMult - 1) * 0.7) : 1.0);
 
             let steerInput = 0;
-            if (keys.left) steerInput -= 1;
-            if (keys.right) steerInput += 1;
+            if (keys.left) steerInput += 1;  // In Three.js with camera facing +Z: +X moves to screen LEFT
+            if (keys.right) steerInput -= 1; // -X moves to screen RIGHT
 
             if (steerInput !== 0) {
                 state.vx += steerInput * lateralMax * 4.2 * dt;
@@ -5759,7 +5759,7 @@
 
                 // Realistic slip-angle yaw: smoothly rotate body into drift direction
                 const slipRatio = Math.max(-1, Math.min(1, state.vx / (lateralMax || 1)));
-                const baseDriftAngle = -slipRatio * 0.52; // car angles into the slide
+                const baseDriftAngle = slipRatio * 0.52; // car angles into the slide (+X yaw > 0 points to screen left)
                 // Counter-steer adjustment: nose aligns slightly with counter-steer
                 const targetYaw = baseDriftAngle + (isCounterSteering ? steerInput * 0.12 : 0);
                 state.yawAngle += (targetYaw - state.yawAngle) * Math.min(1, 10 * dt);
@@ -5780,7 +5780,7 @@
             } else {
                 state.isDrifting = false;
                 // Return nose forward smoothly when exiting drift or steering normally
-                const normalTurnYaw = -steerInput * Math.min(0.20, (Math.abs(state.vx) / lateralMax) * 0.18);
+                const normalTurnYaw = steerInput * Math.min(0.20, (Math.abs(state.vx) / lateralMax) * 0.18);
                 state.yawAngle += (normalTurnYaw - state.yawAngle) * Math.min(1, 8 * dt);
                 if (state.driftCurrentScore > 30) {
                     const bankedCash = Math.round(state.driftCurrentScore * 1.5 * state.rewardMult);
@@ -5815,8 +5815,8 @@
                 if (this.options.onSound) this.options.onSound('scrape');
             }
 
-            // Body roll tilt
-            state.bodyRoll = -state.vx * 0.025;
+            // Body roll tilt (lean outwards towards outside of turn)
+            state.bodyRoll = state.vx * 0.025;
 
             // 6. UPDATE PLAYER CAR 3D MESH
             if (this.playerCar) {
@@ -5835,7 +5835,7 @@
 
                 // Smooth front-wheel steering angle
                 if (this.playerSteerWheels && this.playerSteerWheels.length > 0) {
-                    const targetSteerAngle = -steerInput * 0.32;
+                    const targetSteerAngle = steerInput * 0.32;
                     this.playerSteerWheels.forEach(w => {
                         const baseY = w.userData.baseRotY || 0;
                         w.rotation.y = baseY + targetSteerAngle;
@@ -6036,7 +6036,7 @@
             this.camera.lookAt(this.camLook);
 
             // 5. Camera banking roll into sharp turns
-            this.camera.rotateZ(-state.vx * 0.028);
+            this.camera.rotateZ(state.vx * 0.028);
 
             // 6. Dynamic FOV warp with speed & nitro
             const speedRatio = Math.min(1.0, state.speed / state.maxSpeed);
