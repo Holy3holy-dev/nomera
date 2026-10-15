@@ -9077,6 +9077,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 raceKeys[key] = !!state;
                 updateTouchBtnUI(key, !!state);
             }
+            if (car3DRacingEngine && activeRaceMode === '3d') {
+                car3DRacingEngine.setKey(key, !!state);
+            }
         }
 
         function handleTouchControl(e, key, state) {
@@ -9529,15 +9532,17 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
         function handle3DTouchControl(event, action, isDown) {
             if (event && event.cancelable) event.preventDefault();
-            if (!car3DRacingEngine) return;
-            if (action === 'left') car3DRacingEngine.setKey('left', isDown);
-            if (action === 'right') car3DRacingEngine.setKey('right', isDown);
-            if (action === 'gas') car3DRacingEngine.setKey('gas', isDown);
-            if (action === 'brake') car3DRacingEngine.setKey('brake', isDown);
-            if (action === 'drift') car3DRacingEngine.setKey('drift', isDown);
-            if (action === 'nitro') car3DRacingEngine.setKey('nitro', isDown);
-            if (action === 'horn' && isDown) {
-                if (typeof sound?.horn === 'function') sound.horn();
+            if (action === 'horn') {
+                triggerRaceHorn(isDown);
+                return;
+            }
+            setRaceKey(action, isDown);
+            if (car3DRacingEngine) car3DRacingEngine.setKey(action, isDown);
+            if (isDown) {
+                if (action === 'nitro' && typeof sound?.nitro === 'function') sound.nitro();
+                if (action === 'drift' && typeof sound?.drift === 'function') sound.drift();
+                if (action === 'brake' && typeof sound?.brake === 'function') sound.brake();
+                if (typeof sound?.haptic === 'function') sound.haptic(action === 'nitro' ? 'nitro' : 'light');
             }
         }
 

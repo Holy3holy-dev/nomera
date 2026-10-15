@@ -242,6 +242,12 @@
         const group = new THREE.Group();
         group.name = 'WheelAssembly';
 
+        // Dedicated rotating spinner group: holds only the parts that spin with the rolling wheel
+        const spinner = new THREE.Group();
+        spinner.name = 'WheelSpinner';
+        spinner.userData.isWheelSpinner = true;
+        group.add(spinner);
+
         const R = 0.33 * scale;
         const W = 0.23 * scale;
 
@@ -254,7 +260,7 @@
             metalness: 0.05
         });
         const tire = new THREE.Mesh(tireGeo, tireMat);
-        group.add(tire);
+        spinner.add(tire);
 
         // Tire sidewall bevels (both sides for full 3D volume)
         [-1, 1].forEach(side => {
@@ -263,7 +269,7 @@
             bevelGeo.scale(0.8, 1, 1);
             const bevel = new THREE.Mesh(bevelGeo, tireMat);
             bevel.position.x = side * (W * 0.36);
-            group.add(bevel);
+            spinner.add(bevel);
         });
 
         // 2. Rim Barrel & Solid Dark Interior Wall
@@ -283,7 +289,7 @@
         }
 
         const barrel = new THREE.Mesh(barrelGeo, rimMat);
-        group.add(barrel);
+        spinner.add(barrel);
 
         // Solid dark metallic inner rim backing disc (prevents hollow see-through look)
         const faceX = W * 0.44;
@@ -291,25 +297,25 @@
         backingGeo.rotateZ(Math.PI / 2);
         backingGeo.translate(faceX - 0.045 * scale, 0, 0);
         const backingMat = new THREE.MeshStandardMaterial({ color: 0x141820, roughness: 0.8, metalness: 0.5 });
-        group.add(new THREE.Mesh(backingGeo, backingMat));
+        spinner.add(new THREE.Mesh(backingGeo, backingMat));
         if (style === 'volga_caps') {
             // Authentic GAZ-24 full-cover polished chrome domed hubcaps with concentric rings
             const capDiscGeo = new THREE.CylinderGeometry(rimR * 0.95, rimR * 0.95, 0.025 * scale, 24);
             capDiscGeo.rotateZ(Math.PI / 2);
             capDiscGeo.translate(faceX - 0.01 * scale, 0, 0);
-            group.add(new THREE.Mesh(capDiscGeo, mats.chrome));
+            spinner.add(new THREE.Mesh(capDiscGeo, mats.chrome));
 
             const domeGeo = new THREE.SphereGeometry(rimR * 0.52, 16, 16);
             domeGeo.scale(0.32, 1, 1);
             const dome = new THREE.Mesh(domeGeo, mats.chrome);
             dome.position.set(faceX + 0.02 * scale, 0, 0);
-            group.add(dome);
+            spinner.add(dome);
 
             const ringGeo = new THREE.TorusGeometry(rimR * 0.72, 0.016 * scale, 8, 24);
             ringGeo.rotateY(Math.PI / 2);
             const ring = new THREE.Mesh(ringGeo, mats.chrome);
             ring.position.set(faceX + 0.006 * scale, 0, 0);
-            group.add(ring);
+            spinner.add(ring);
         } else if (style === 'torus') {
             // Legendary BPAN 16" Torus (Торусы) 5-spoke alloy wheels
             const torusMat = new THREE.MeshStandardMaterial({ color: 0xd8dde6, roughness: 0.22, metalness: 0.85 });
@@ -319,18 +325,18 @@
                 spokeGeo.rotateX(ang);
                 const spoke = new THREE.Mesh(spokeGeo, torusMat);
                 spoke.position.set(faceX - 0.008 * scale, 0, 0);
-                group.add(spoke);
+                spinner.add(spoke);
             }
             const centerCap = new THREE.Mesh(new THREE.CylinderGeometry(0.065 * scale, 0.065 * scale, 0.03 * scale, 16), mats.chrome);
             centerCap.rotateZ(Math.PI / 2);
             centerCap.position.set(faceX + 0.01 * scale, 0, 0);
-            group.add(centerCap);
+            spinner.add(centerCap);
         } else if (style === 'stamps') {
             // Russian stamped steel wheel with ventilation circle cutouts
             const discGeo = new THREE.CylinderGeometry(rimR * 0.96, rimR * 0.96, 0.02 * scale, 24);
             discGeo.rotateZ(Math.PI / 2);
             discGeo.translate(faceX - 0.02 * scale, 0, 0);
-            group.add(new THREE.Mesh(discGeo, rimMat));
+            spinner.add(new THREE.Mesh(discGeo, rimMat));
 
             // Small circle vent holes simulation (black dots)
             for (let i = 0; i < 8; i++) {
@@ -339,26 +345,26 @@
                 holeGeo.rotateZ(Math.PI / 2);
                 const hole = new THREE.Mesh(holeGeo, mats.trim);
                 hole.position.set(faceX - 0.015 * scale, Math.sin(ang) * (rimR * 0.6), Math.cos(ang) * (rimR * 0.6));
-                group.add(hole);
+                spinner.add(hole);
             }
             // Chrome center cap for classic VAZ
             const capGeo = new THREE.CylinderGeometry(0.07 * scale, 0.07 * scale, 0.04 * scale, 16);
             capGeo.rotateZ(Math.PI / 2);
             capGeo.translate(faceX, 0, 0);
-            group.add(new THREE.Mesh(capGeo, mats.chrome));
+            spinner.add(new THREE.Mesh(capGeo, mats.chrome));
         } else if (style === 'deepdish') {
             // Deep dish stepped barrel + recessed star
             const deepX = faceX - 0.06 * scale;
             const starGeo = new THREE.CylinderGeometry(rimR * 0.82, rimR * 0.82, 0.02 * scale, 5);
             starGeo.rotateZ(Math.PI / 2);
             starGeo.translate(deepX, 0, 0);
-            group.add(new THREE.Mesh(starGeo, mats.chrome));
+            spinner.add(new THREE.Mesh(starGeo, mats.chrome));
 
             // Polished outer stepped lip
             const lipGeo = new THREE.TorusGeometry(rimR * 0.95, 0.02 * scale, 8, 24);
             lipGeo.rotateY(Math.PI / 2);
             lipGeo.translate(faceX, 0, 0);
-            group.add(new THREE.Mesh(lipGeo, mats.chrome));
+            spinner.add(new THREE.Mesh(lipGeo, mats.chrome));
         } else if (style === 'forged') {
             // 10-spoke lightweight racing forged wheel
             for (let i = 0; i < 10; i++) {
@@ -367,7 +373,7 @@
                 spokeGeo.rotateX(ang);
                 const spoke = new THREE.Mesh(spokeGeo, rimMat);
                 spoke.position.set(faceX - 0.01 * scale, 0, 0);
-                group.add(spoke);
+                spinner.add(spoke);
             }
         } else {
             // Modern 5-split twin-spoke alloy
@@ -377,7 +383,7 @@
                 spokeGeo.rotateX(ang);
                 const spoke = new THREE.Mesh(spokeGeo, rimMat);
                 spoke.position.set(faceX - 0.01 * scale, 0, 0);
-                group.add(spoke);
+                spinner.add(spoke);
             }
         }
 
@@ -385,7 +391,7 @@
         const hubGeo = new THREE.CylinderGeometry(0.065 * scale, 0.065 * scale, 0.03 * scale, 14);
         hubGeo.rotateZ(Math.PI / 2);
         hubGeo.translate(faceX + 0.005 * scale, 0, 0);
-        group.add(new THREE.Mesh(hubGeo, mats.darkPlastic));
+        spinner.add(new THREE.Mesh(hubGeo, mats.darkPlastic));
 
         // 4. Brake Disc & Red Brembo-style Caliper (inside wheel)
         const discR = rimR * 0.78;
@@ -393,7 +399,7 @@
         discGeo.rotateZ(Math.PI / 2);
         discGeo.translate(0, 0, 0);
         const discMat = new THREE.MeshStandardMaterial({ color: 0x9ca3af, roughness: 0.3, metalness: 0.95 });
-        group.add(new THREE.Mesh(discGeo, discMat));
+        spinner.add(new THREE.Mesh(discGeo, discMat));
 
         const caliperGeo = new THREE.BoxGeometry(0.04 * scale, 0.12 * scale, 0.08 * scale);
         const caliperMat = new THREE.MeshStandardMaterial({ color: 0xdc2626, roughness: 0.3, metalness: 0.6 });
@@ -3687,9 +3693,9 @@
         }
 
         // 4 Wheels Assembly (Fixed to ground height, not affected by chassis drop)
-        const wheelsGroup = new THREE.Group();
-        wheelsGroup.name = 'WheelsGroup';
-        root.add(wheelsGroup);
+        const wheelsRig = new THREE.Group();
+        wheelsRig.name = 'WheelsRig';
+        root.add(wheelsRig);
 
         let defaultWheel = spec.defaultWheels || 'stock';
         if (carId === 'gaz24') defaultWheel = 'volga_caps';
@@ -3707,23 +3713,33 @@
         const wFL = createDetailedWheel(THREE, mats, wheelStyle, wRadius / 0.33);
         wFL.position.set(-spec.wheelTrack, wCenterY, spec.wheelBase);
         wFL.rotation.y = Math.PI;
-        wheelsGroup.add(wFL);
+        wFL.userData.isSteerable = true;
+        wFL.userData.side = -1;
+        wFL.userData.baseRotY = Math.PI;
+        wheelsRig.add(wFL);
 
         // Front Right
         const wFR = createDetailedWheel(THREE, mats, wheelStyle, wRadius / 0.33);
         wFR.position.set(spec.wheelTrack, wCenterY, spec.wheelBase);
-        wheelsGroup.add(wFR);
+        wFR.userData.isSteerable = true;
+        wFR.userData.side = 1;
+        wFR.userData.baseRotY = 0;
+        wheelsRig.add(wFR);
 
         // Rear Left
         const wRL = createDetailedWheel(THREE, mats, wheelStyle, wRadius / 0.33);
         wRL.position.set(-spec.wheelTrack, wCenterY, -spec.wheelBase);
         wRL.rotation.y = Math.PI;
-        wheelsGroup.add(wRL);
+        wRL.userData.side = -1;
+        wRL.userData.baseRotY = Math.PI;
+        wheelsRig.add(wRL);
 
         // Rear Right
         const wRR = createDetailedWheel(THREE, mats, wheelStyle, wRadius / 0.33);
         wRR.position.set(spec.wheelTrack, wCenterY, -spec.wheelBase);
-        wheelsGroup.add(wRR);
+        wRR.userData.side = 1;
+        wRR.userData.baseRotY = 0;
+        wheelsRig.add(wRR);
 
         return root;
     }
@@ -3906,6 +3922,10 @@
         function isRimMaterial(matName, meshName) {
             const mn = String(matName || '').toLowerCase();
             const ms = String(meshName || '').toLowerCase();
+
+            if (mn.includes('primary') || ms.includes('primary') || mn.includes('perimeter') || ms.includes('perimeter') || ms.includes('trim') || ms.includes('fender') || ms.includes('door') || ms.includes('hood') || ms.includes('body')) {
+                return false;
+            }
 
             if (carId === 'subaru' && (ms.includes('object_15') || mn === 'material_12')) return true;
             if (carId === 'mark2' && (mn.includes('chrome') || mn.includes('metallic') || mn.includes('rim'))) return true;
@@ -4800,6 +4820,7 @@
             this.playerNeonLight = null;
             this.playerSguLight = null;
             this.playerWheels = [];
+            this.playerSteerWheels = [];
 
             this.carName = '';
             this.styling = {};
@@ -5585,12 +5606,15 @@
                 this.playerCar.add(this.playerSguLight);
             }
 
-            // Find wheel objects inside player car
+            // Find wheel spinner objects inside player car (ONLY dedicated validated wheel spinners)
             this.playerWheels = [];
+            this.playerSteerWheels = [];
             this.playerCar.traverse(c => {
-                const name = String(c.name || '').toLowerCase();
-                if (name.includes('wheel') || name.includes('rim') || name.includes('tire') || name.includes('koleso')) {
+                if (c.userData && c.userData.isWheelSpinner) {
                     this.playerWheels.push(c);
+                }
+                if (c.userData && c.userData.isSteerable) {
+                    this.playerSteerWheels.push(c);
                 }
             });
         }
@@ -5724,13 +5748,26 @@
                 state.vx *= Math.max(0, 1 - 7.5 * dt);
             }
 
-            // Drift detection
-            const isDriftingNow = isHandbrake && Math.abs(steerInput) > 0 && state.speed > 35;
+            // Drift detection: initiated with handbrake, maintained while sliding
+            const hasLateralSlide = Math.abs(state.vx) > 1.2 && state.speed > 30;
+            const isCounterSteering = state.vx * steerInput < 0; // steering opposite to slide
+            const isDriftingNow = (isHandbrake && (Math.abs(steerInput) > 0 || hasLateralSlide)) || (state.isDrifting && hasLateralSlide);
+
             if (isDriftingNow) {
                 state.isDrifting = true;
                 state.driftDuration += dt;
-                state.yawAngle = (steerInput > 0 ? 1 : -1) * Math.min(0.42, 0.15 + (Math.abs(state.vx) / lateralMax) * 0.27);
-                const driftRate = Math.round((state.speed * 0.32) * (Math.abs(state.vx) / lateralMax) * 22 * state.driftCombo * dt);
+
+                // Realistic slip-angle yaw: smoothly rotate body into drift direction
+                const slipRatio = Math.max(-1, Math.min(1, state.vx / (lateralMax || 1)));
+                const baseDriftAngle = -slipRatio * 0.52; // car angles into the slide
+                // Counter-steer adjustment: nose aligns slightly with counter-steer
+                const targetYaw = baseDriftAngle + (isCounterSteering ? steerInput * 0.12 : 0);
+                state.yawAngle += (targetYaw - state.yawAngle) * Math.min(1, 10 * dt);
+
+                let driftMultiplier = state.driftCombo;
+                if (isCounterSteering) driftMultiplier *= 1.5;
+
+                const driftRate = Math.round((state.speed * 0.32) * (Math.abs(state.vx) / lateralMax) * 22 * driftMultiplier * dt);
                 state.driftCurrentScore += driftRate;
                 state.driftScore += driftRate;
 
@@ -5742,7 +5779,9 @@
                 }
             } else {
                 state.isDrifting = false;
-                state.yawAngle *= Math.max(0, 1 - 8 * dt);
+                // Return nose forward smoothly when exiting drift or steering normally
+                const normalTurnYaw = -steerInput * Math.min(0.20, (Math.abs(state.vx) / lateralMax) * 0.18);
+                state.yawAngle += (normalTurnYaw - state.yawAngle) * Math.min(1, 8 * dt);
                 if (state.driftCurrentScore > 30) {
                     const bankedCash = Math.round(state.driftCurrentScore * 1.5 * state.rewardMult);
                     state.earnedCash += bankedCash;
@@ -5777,18 +5816,31 @@
             }
 
             // Body roll tilt
-            state.bodyRoll = -state.vx * 0.038;
+            state.bodyRoll = -state.vx * 0.025;
 
             // 6. UPDATE PLAYER CAR 3D MESH
             if (this.playerCar) {
                 this.playerCar.position.set(state.x, 0, state.z);
                 this.playerCar.rotation.set(state.pitchSquat, state.yawAngle, state.bodyRoll);
 
-                // Rotate wheels with forward motion
-                const wheelRotSpeed = (forwardSpeedMps / 0.32) * dt;
-                this.playerWheels.forEach(w => {
-                    w.rotation.x += wheelRotSpeed;
-                });
+                // Rotate dedicated procedural wheel spinners around local hub axis
+                if (this.playerWheels && this.playerWheels.length > 0) {
+                    const wheelRotSpeed = (forwardSpeedMps / 0.33) * dt;
+                    this.playerWheels.forEach(spinner => {
+                        const parent = spinner.parent;
+                        const side = (parent && parent.userData && parent.userData.side) ? parent.userData.side : 1;
+                        spinner.rotation.x += (side === -1 ? -wheelRotSpeed : wheelRotSpeed);
+                    });
+                }
+
+                // Smooth front-wheel steering angle
+                if (this.playerSteerWheels && this.playerSteerWheels.length > 0) {
+                    const targetSteerAngle = -steerInput * 0.32;
+                    this.playerSteerWheels.forEach(w => {
+                        const baseY = w.userData.baseRotY || 0;
+                        w.rotation.y = baseY + targetSteerAngle;
+                    });
+                }
 
                 // SGU Flasher strobe oscillation
                 if (this.playerSguLight) {
@@ -5804,6 +5856,9 @@
 
             // 8. HIGHWAY ROAD CHUNKS RECYCLING
             this.updateRoadChunks();
+
+            // 9. SMOKE & SPARK PARTICLES UPDATE
+            this.updateSmokeParticles(dt);
 
             // Spark particles update
             for (let i = this.sparkParticles.length - 1; i >= 0; i--) {
@@ -5880,27 +5935,31 @@
                 }
 
                 // 4. Collision Detection with Player Car
-                const colHalfW = (car.userData.halfWidth || 1.0) + 0.85;
-                const colHalfL = (car.userData.halfLength || 2.2) + 1.8;
+                const trafficHalfW = car.userData.halfWidth || 1.0;
+                const trafficHalfL = car.userData.halfLength || 2.2;
+                const lateralClearance = trafficHalfW + 0.55;
+                const longitudinalClearance = trafficHalfL + 1.2;
 
-                if (dx < colHalfW && Math.abs(dz) < colHalfL) {
-                    if (speedDiff < 25 && dx > (colHalfW * 0.75)) {
-                        // Glancing sideswipe
-                        state.speed = Math.max(15, state.speed * 0.70);
-                        state.damageTaken += 4.5;
-                        state.shakeAmount = 0.6;
-                        car.position.x += (car.position.x > state.x ? 0.8 : -0.8);
-                        this.spawnSparks(state.x, 0.5, state.z + 1.0, 20);
-                        if (this.options.onPopup) this.options.onPopup('💥 КАСАТЕЛЬНЫЙ УДАР!', '#ef4444');
-                        if (this.options.onSound) this.options.onSound('scrape');
-                    } else {
-                        // High-speed direct collision -> CRASH
+                // Contact occurs only when overlapping in front or sides (not behind)
+                if (dx < lateralClearance && dz > -0.6 && dz < longitudinalClearance) {
+                    const isRearEndHit = dz > 0.4 && dx < (trafficHalfW * 0.65);
+                    if (isRearEndHit && speedDiff > 35) {
+                        // High-speed direct rear-end collision -> CRASH
                         this.stop();
                         state.damageTaken += 25;
-                        this.spawnSparks(state.x, 0.8, state.z, 45);
+                        this.spawnSparks(state.x, 0.8, state.z + 1.0, 45);
                         if (this.options.onSound) this.options.onSound('crash');
                         if (this.options.onGameOver) this.options.onGameOver(true, this.getState());
                         return;
+                    } else {
+                        // Glancing sideswipe / low-speed bumper nudge
+                        state.speed = Math.max(15, state.speed * 0.80);
+                        state.damageTaken += 3.5;
+                        state.shakeAmount = 0.5;
+                        car.position.x += (car.position.x > state.x ? 0.7 : -0.7);
+                        this.spawnSparks(state.x, 0.5, state.z + 0.5, 20);
+                        if (this.options.onPopup) this.options.onPopup('💥 КАСАТЕЛЬНЫЙ УДАР!', '#ef4444');
+                        if (this.options.onSound) this.options.onSound('scrape');
                     }
                 }
 
@@ -6006,14 +6065,15 @@
                 this.scene.add(smoke);
                 this.smokeParticles.push(smoke);
             }
+        }
 
-            // Update existing smoke
+        updateSmokeParticles(dt) {
             for (let i = this.smokeParticles.length - 1; i >= 0; i--) {
                 const p = this.smokeParticles[i];
                 p.userData.life -= dt;
                 p.scale.addScalar(dt * 3.5);
                 p.position.y += dt * 0.6;
-                p.material.opacity = (p.userData.life / p.userData.maxLife) * 0.45;
+                p.material.opacity = Math.max(0, (p.userData.life / p.userData.maxLife) * 0.45);
                 if (p.userData.life <= 0) {
                     this.scene.remove(p);
                     this.smokeParticles.splice(i, 1);
@@ -6092,12 +6152,14 @@
                 this.camera.updateProjectionMatrix();
                 this.renderer.setSize(this.width, this.height);
             };
-            window.addEventListener('resize', this._onResize);
+            if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+                window.addEventListener('resize', this._onResize);
+            }
         }
 
         destroy() {
             this.stop();
-            if (this._onResize) {
+            if (this._onResize && typeof window !== 'undefined' && typeof window.removeEventListener === 'function') {
                 window.removeEventListener('resize', this._onResize);
             }
             if (this.renderer && this.renderer.domElement && this.renderer.domElement.parentNode) {
