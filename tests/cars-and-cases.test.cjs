@@ -492,7 +492,67 @@ test('detachPlate sanitizes cost and never produces NaN balance or negative fund
     assert.equal(Number.isFinite(app.run('balance')), true, 'Balance must stay a finite number');
 });
 
+test('openPlayerViewModal populates player profile, sets safe avatar and attaches onerror handler', () => {
+    const app = createApp({
+        saved: {
+            nickname: 'ModalViewer',
+            balance: 150000
+        }
+    });
+    app.run('loadProgress()');
+    app.run(`
+        cloudLeaderboardList = [
+            { nickname: 'RivalOne', balance: 5000000, playerLevel: 42, bestPlate: 'М 777 ММ | 77 RUS', carsCount: 3, bestSpeed: 280, updatedAt: Date.now() - 60000 }
+        ];
+        renderLeaderboard();
+        openPlayerViewModal('rivalone');
+    `);
 
+    const pvAvatar = app.elements.get('pv-avatar');
+    const pvName = app.elements.get('pv-name');
+    const pvLevel = app.elements.get('pv-level');
+    const pvBalance = app.elements.get('pv-balance');
+    const pvCars = app.elements.get('pv-cars');
+    const pvBestPlate = app.elements.get('pv-best-plate');
 
+    assert.ok(pvAvatar, '#pv-avatar must exist');
+    assert.ok(pvAvatar.src && pvAvatar.src.startsWith('data:image/svg+xml'), 'Avatar src must be a valid SVG URI');
+    assert.ok(!pvAvatar.src.includes('<svg'), 'Avatar src must not contain unencoded XML tags');
+    assert.equal(pvName.innerText, 'RivalOne');
+    assert.ok(pvLevel.innerText.includes('42'));
+    assert.ok(pvBalance.innerText.includes('5\u00A0000\u00A0000') || pvBalance.innerText.includes('5 000 000'));
+    assert.equal(pvCars.innerText, 3);
+    assert.equal(pvBestPlate.innerText, 'М 777 ММ | 77 RUS');
 
+    // Test handleAvatarError recovery
+    const mockImg = { src: 'broken.png', onerror: () => {} };
+    app.context.handleAvatarError(mockImg, 0);
+    assert.equal(mockImg.onerror, null);
+    assert.ok(mockImg.src.startsWith('data:image/svg+xml;base64,'));
+});
 
+test('syncMyLeaderboardEntry synchronizes player stats, level and avatarData to Firebase leaderboard', () => {
+    const dbWrites = [];
+    const app = createApp({
+        cloud: {
+            ref: (path) => ({
+                update: async (val) => { dbWrites.push({ path, val }); },
+                set: async (val) => { dbWrites.push({ path, val }); },
+                once: async () => ({ exists: () => true, val: () => ({}) })
+            })
+        },
+        saved: {
+            nickname: 'SyncTester',
+            balance: 80000
+        }
+    });
+    app.run('loadProgress()');
+    app.run('selectPresetAvatar(AVATAR_PRESETS[3])');
+
+    // Verify sync written to leaderboard
+    const lbWrite = dbWrites.find(w => w.path === 'leaderboard/synctester');
+    assert.ok(lbWrite, 'Must write entry to leaderboard/synctester');
+    assert.equal(lbWrite.val.nickname, 'SyncTester');
+    assert.ok(lbWrite.val.avatarData.startsWith('data:image/svg+xml;base64,'));
+    assert.equal(app.run('avatarData'), app.run('AVATAR_PRESETS[3]'));
+});

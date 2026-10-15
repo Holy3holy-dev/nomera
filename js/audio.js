@@ -2,7 +2,7 @@
     'use strict';
     const clamp = (value, fallback) => Number.isFinite(value) ? Math.max(0, Math.min(1, value)) : fallback;
     function createAudio({contextFactory, onUnavailable = () => {}} = {}) {
-        let context = null, master = null, engine = null;
+        let context = null, master = null, engine = null, siren = null;
         let unlocked = false, unavailable = false, lastTick = -Infinity;
         let prefs = {volume: 0.45, muted: false, engine: true};
         const voices = new Set();
@@ -55,7 +55,48 @@
             try { engine.gain.disconnect(); engine.filter.disconnect(); } catch (_) {}
             engine = null;
         }
-        function updateEngine({speed = 0, gas = false, nitro = false, running = false} = {}) {
+        function stopSiren() {
+            if (!siren) return;
+            try {
+                siren.nodes.forEach(node => { try { node.stop(); node.disconnect(); } catch (_) {} });
+                siren.gain.disconnect();
+                if (siren.filter?.disconnect) siren.filter.disconnect();
+            } catch (_) {}
+            siren = null;
+        }
+        function setSiren(active = false) {
+            if (!active || prefs.muted || level() <= 0 || !unlocked || !context || context.state === 'suspended') {
+                stopSiren();
+                return;
+            }
+            if (siren) return;
+            try {
+                const gain = context.createGain(), filter = context.createBiquadFilter();
+                filter.type = 'bandpass';
+                filter.frequency.setValueAtTime(820, context.currentTime);
+                gain.gain.setValueAtTime(0.04, context.currentTime);
+                filter.connect(gain);
+                gain.connect(master);
+
+                const osc = context.createOscillator();
+                const lfo = context.createOscillator();
+                const lfoGain = context.createGain();
+
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(750, context.currentTime);
+
+                lfo.type = 'triangle';
+                lfo.frequency.setValueAtTime(1.6, context.currentTime);
+                lfoGain.gain.setValueAtTime(260, context.currentTime);
+
+                try { lfo.connect(lfoGain); lfoGain.connect(osc.frequency); } catch (_) {}
+                osc.connect(filter);
+                osc.start();
+                lfo.start();
+                siren = { gain, filter, nodes: [osc, lfo, lfoGain] };
+            } catch (_) { stopSiren(); }
+        }
+        function updateEngine({speed = 0, gas = false, nitro = false, running = false, carClass = 'standard'} = {}) {
             if (!running || !prefs.engine || level() <= 0 || !unlocked || !context || context.state === 'suspended') { stopEngine(); return; }
             try {
                 if (!engine) {
@@ -67,11 +108,42 @@
                     engine = {gain, filter, nodes};
                 }
                 const velocity = Number.isFinite(speed) ? Math.max(0, Math.min(650, speed)) : 0;
-                const revs = 34 + (velocity % 65) * 1.7 + (gas ? 12 : 0) + (nitro ? 28 : 0);
+                let minRPM = 28, maxRPM = 84, mult2 = 2.01, filterBase = 460;
+                if (carClass === 'v8') {
+                    minRPM = 22; maxRPM = 68; mult2 = 1.5; filterBase = 540;
+                } else if (carClass === 'sport' || carClass === 'supercar') {
+                    minRPM = 36; maxRPM = 105; mult2 = 2.02; filterBase = 620;
+                } else if (carClass === 'classic') {
+                    minRPM = 26; maxRPM = 74; mult2 = 1.33; filterBase = 400;
+                } else if (carClass === 'kamaz') {
+                    minRPM = 18; maxRPM = 48; mult2 = 0.75; filterBase = 320;
+                }
+
+                // Реалистичная ступенчатая коробка передач (7 передач с плавной тягой)
+                let gearMin = 0, gearMax = 44, gearBase = minRPM;
+                if (velocity < 44) {
+                    gearMin = 0; gearMax = 44; gearBase = minRPM;
+                } else if (velocity < 86) {
+                    gearMin = 40; gearMax = 86; gearBase = minRPM + 4;
+                } else if (velocity < 140) {
+                    gearMin = 80; gearMax = 140; gearBase = minRPM + 8;
+                } else if (velocity < 205) {
+                    gearMin = 132; gearMax = 205; gearBase = minRPM + 12;
+                } else if (velocity < 285) {
+                    gearMin = 195; gearMax = 285; gearBase = minRPM + 16;
+                } else if (velocity < 380) {
+                    gearMin = 270; gearMax = 380; gearBase = minRPM + 20;
+                } else {
+                    gearMin = 360; gearMax = 520; gearBase = minRPM + 24;
+                }
+
+                const progress = Math.min(1, Math.max(0, (velocity - gearMin) / (gearMax - gearMin || 1)));
+                const revs = gearBase + progress * (maxRPM - gearBase) + (gas ? 8 : 0) + (nitro ? 22 : 0);
+
                 param(engine.nodes[0].frequency, revs, context.currentTime);
-                param(engine.nodes[1].frequency, revs * 2.01, context.currentTime);
-                param(engine.filter.frequency, nitro ? 1400 : 480 + velocity, context.currentTime);
-                param(engine.gain.gain, nitro ? 0.055 : gas ? 0.04 : 0.025, context.currentTime);
+                param(engine.nodes[1].frequency, revs * mult2, context.currentTime);
+                param(engine.filter.frequency, nitro ? 1600 : (gas ? filterBase + velocity * 1.6 + 200 : filterBase + velocity * 0.7), context.currentTime);
+                param(engine.gain.gain, nitro ? 0.058 : (gas ? 0.042 : 0.024), context.currentTime);
             } catch (_) { stopEngine(); }
         }
         return {
@@ -81,7 +153,7 @@
                     muted:typeof next.muted === 'boolean' ? next.muted : prefs.muted,
                     engine:typeof next.engine === 'boolean' ? next.engine : prefs.engine};
                 if (master) param(master.gain, level() * 0.7, context.currentTime);
-                if (!prefs.engine || !level()) stopEngine();
+                if (!prefs.engine || !level()) { stopEngine(); stopSiren(); }
                 return {...prefs};
             },
             preferences: () => ({...prefs}),
@@ -117,9 +189,54 @@
                 tone(680, 0.08, 0.06, 0.02, 'triangle', 260);
             },
             drift() {
-                tone(820, 0.16, 0.08, 0, 'sawtooth', 380);
-                tone(1150, 0.10, 0.05, 0.02, 'triangle', 520);
+                // Аутентичный визг шин по асфальту (многотональный скользящий резонанс)
+                const rnd = (Math.random() - 0.5) * 45;
+                tone(880 + rnd, 0.24, 0.10, 0, 'sawtooth', 760 + rnd);
+                tone(1520 + rnd, 0.20, 0.07, 0.01, 'triangle', 1380 + rnd);
+                tone(2250 + rnd, 0.14, 0.05, 0.02, 'triangle', 1950 + rnd);
+                tone(410 + rnd * 0.5, 0.22, 0.08, 0, 'sawtooth', 360 + rnd * 0.5);
             },
+            horn() {
+                // Стандартный автомобильный двухтональный клаксон (A4 440Гц + C#5 554Гц)
+                tone(440, 0.24, 0.14, 0, 'triangle', 432);
+                tone(554, 0.24, 0.12, 0, 'sawtooth', 544);
+            },
+            sgu() {
+                // Спецсигнал VIP / СГУ «Крякалка» (агрессивный резкий электронный кряк спецсерии)
+                tone(175, 0.22, 0.26, 0, 'sawtooth', 170);
+                tone(350, 0.22, 0.18, 0, 'triangle', 340);
+                tone(525, 0.20, 0.12, 0, 'sawtooth', 510);
+                tone(88, 0.24, 0.18, 0, 'triangle', 82);
+            },
+            airBrake() {
+                // Пневматический сброс воздуха тормозной системы грузовика (КАМАЗ / Фура)
+                tone(1800, 0.28, 0.14, 0, 'triangle', 400);
+                tone(950, 0.22, 0.10, 0.04, 'sawtooth', 220);
+                tone(220, 0.26, 0.16, 0, 'triangle', 75);
+            },
+            blowOff() {
+                // Turbo blow-off valve flutter (pshhh-tsu-tsu-tsu)
+                tone(2600, 0.24, 0.11, 0, 'triangle', 650);
+                tone(3400, 0.18, 0.07, 0.01, 'sine', 950);
+                // Серия затухающих пульсаций сброса избыточного давления турбины
+                tone(1450, 0.08, 0.08, 0.05, 'sawtooth', 420);
+                tone(1250, 0.07, 0.06, 0.10, 'triangle', 380);
+                tone(1100, 0.06, 0.05, 0.15, 'triangle', 340);
+                tone(950, 0.05, 0.04, 0.20, 'triangle', 300);
+            },
+            backfire() {
+                // Взрывной отстрел в выхлопную трубу («попкорн» с низкочастотным хлопком)
+                const pitch = 0.88 + Math.random() * 0.25;
+                tone(65 * pitch, 0.14, 0.26, 0, 'triangle', 20);
+                tone(1150 * pitch, 0.035, 0.18, 0, 'sawtooth', 60);
+                tone(280 * pitch, 0.08, 0.12, 0.015, 'triangle', 35);
+                if (Math.random() > 0.4) {
+                    tone(140 * pitch, 0.07, 0.14, 0.04, 'triangle', 25);
+                    tone(820 * pitch, 0.03, 0.10, 0.04, 'sawtooth', 70);
+                }
+            },
+            setSiren,
+            stopSiren,
             whoosh() { tone(640, 0.18, 0.07, 0, 'sine', 280); },
             error() {
                 tone(220, 0.12, 0.12, 0, 'triangle', 160);
@@ -133,10 +250,11 @@
                 });
             },
             start() { [220,330,440].forEach((freq,i) => tone(freq, 0.12, 0.11, i * 0.10)); },
-            crash() { stopEngine(); tone(95, 0.28, 0.23, 0, 'triangle', 24); tone(900, 0.09, 0.09, 0, 'sawtooth', 80); },
+            crash() { stopEngine(); stopSiren(); tone(95, 0.28, 0.23, 0, 'triangle', 24); tone(900, 0.09, 0.09, 0, 'sawtooth', 80); },
             stopEngine, updateEngine,
             suspend() {
                 stopEngine();
+                stopSiren();
                 voices.forEach(node => { try { node.stop(); } catch (_) {} });
                 if (context?.suspend) Promise.resolve(context.suspend()).catch(() => {});
             }

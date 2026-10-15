@@ -3,7 +3,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const {createHash} = require('node:crypto');
 const root = path.join(__dirname, '..');
-const files = ['styles.css', 'js/security.js', 'js/storage.js', 'js/race-records.js', 'js/race-economy.js', 'js/audio.js', 'js/app.js'];
+const files = ['styles.css', 'js/security.js', 'js/storage.js', 'js/race-records.js', 'js/race-economy.js', 'js/audio.js', 'js/car-3d.js', 'js/app.js'];
 const hash = value => createHash('sha256').update(value).digest('hex').slice(0,12);
 let html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 let worker = fs.readFileSync(path.join(root, 'sw.js'), 'utf8');

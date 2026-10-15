@@ -39,9 +39,15 @@ try {
                     ".svg"  { $contentType = "image/svg+xml" }
                     ".jpg"  { $contentType = "image/jpeg" }
                     ".ico"  { $contentType = "image/x-icon" }
+                    ".glb"  { $contentType = "model/gltf-binary" }
+                    ".gltf" { $contentType = "model/gltf+json" }
+                    ".bin"  { $contentType = "application/octet-stream" }
+                    ".wasm" { $contentType = "application/wasm" }
                 }
                 $response.ContentType = $contentType
                 $response.ContentLength64 = $bytes.Length
+                $response.Headers.Add("Cache-Control", "no-cache, no-store, must-revalidate")
+                $response.Headers.Add("Access-Control-Allow-Origin", "*")
 
                 if ($request.HttpMethod -ne "HEAD") {
                     $response.OutputStream.Write($bytes, 0, $bytes.Length)

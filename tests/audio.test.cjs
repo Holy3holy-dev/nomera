@@ -63,3 +63,44 @@ test('new audio tones and haptics trigger gracefully and create expected nodes',
     else delete globalThis.navigator;
 });
 
+test('blowOff, backfire, siren, and engine profiles trigger cleanly', () => {
+    const context = fakeContext();
+    const sound = createAudio({ contextFactory: () => context });
+    sound.unlock();
+    const beforeCount = context.created.length;
+    sound.blowOff();
+    sound.backfire();
+    assert(context.created.length > beforeCount, 'blowOff and backfire should create audio nodes');
+
+    // Siren
+    sound.setSiren(true);
+    const sirenNodeCount = context.created.length;
+    assert(sirenNodeCount > beforeCount);
+    sound.setSiren(false);
+
+    // Engine profiles on clean context
+    const ctx2 = fakeContext();
+    const sound2 = createAudio({ contextFactory: () => ctx2 });
+    sound2.unlock();
+    sound2.updateEngine({ running: true, speed: 100, gas: true, carClass: 'v8' });
+    const v8Pitch = ctx2.created[0].frequency.values.at(-1);
+    sound2.updateEngine({ running: true, speed: 100, gas: true, carClass: 'sport' });
+    const sportPitch = ctx2.created[0].frequency.values.at(-1);
+    assert(sportPitch > v8Pitch, 'Sport engine profile should rev higher than V8 profile');
+    sound2.updateEngine({ running: true, speed: 100, gas: true, carClass: 'kamaz' });
+    const kamazPitch = ctx2.created[0].frequency.values.at(-1);
+    assert(kamazPitch < v8Pitch, 'KAMAZ diesel engine should have low, heavy rumble');
+    sound2.stopEngine();
+});
+
+test('airBrake and sgu produce authentic procedural effects', () => {
+    const context = fakeContext();
+    const sound = createAudio({ contextFactory: () => context });
+    sound.unlock();
+    const beforeCount = context.created.length;
+    sound.airBrake();
+    assert(context.created.length >= beforeCount + 3, 'airBrake creates multi-layer pneumatic burst');
+    sound.sgu();
+    assert(context.created.length >= beforeCount + 6, 'sgu creates multi-harmonic VIP horn burst');
+});
+

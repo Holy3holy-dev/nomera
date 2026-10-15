@@ -3,7 +3,7 @@ const path = require('node:path');
 const vm = require('node:vm');
 const assert = require('node:assert/strict');
 const root = path.join(__dirname, '..');
-const files = fs.readdirSync(path.join(root, 'js')).map(name => 'js/' + name).concat('sw.js');
+const files = fs.readdirSync(path.join(root, 'js'), {withFileTypes: true}).filter(d => d.isFile()).map(d => 'js/' + d.name).concat('sw.js');
 for (const file of files) {
     const source = fs.readFileSync(path.join(root, file), 'utf8');
     new vm.Script(source, {filename: file});

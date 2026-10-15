@@ -14,7 +14,16 @@
         if (/^data:image\/(png|jpe?g|gif|webp|svg\+xml|pjpeg);base64,[A-Za-z0-9+/=\s]+$/i.test(clean)) {
             return clean.replace(/\s+/g, '');
         }
-        if (/^data:image\/svg\+xml;(?:utf8|charset=utf-8),[A-Za-z0-9%_\-.<>/='\"#;:& ]+$/i.test(clean) && !/[<"'](?:script|object|embed)/i.test(clean)) return clean;
+        if (/^data:image\/svg\+xml;(?:utf8|charset=utf-8),[A-Za-z0-9%_\-.<>/='\"#;:& ]+$/i.test(clean) && !/[<"'](?:script|object|embed)/i.test(clean)) {
+            try {
+                const body = clean.replace(/^data:image\/svg\+xml;(?:utf8|charset=utf-8),/i, '');
+                const decoded = decodeURIComponent(body);
+                const b64 = (typeof Buffer !== 'undefined') ? Buffer.from(decoded, 'utf8').toString('base64') : btoa(unescape(encodeURIComponent(decoded)));
+                return 'data:image/svg+xml;base64,' + b64;
+            } catch (_) {
+                return clean;
+            }
+        }
         try {
             const url = new URL(clean);
             if (url.protocol === 'https:' && !url.username && !url.password) return url.href;

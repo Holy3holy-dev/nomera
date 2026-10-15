@@ -13,10 +13,16 @@
     <link rel="manifest" href="manifest.json">
     <script>
         if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js')
-                    .catch(error => console.warn('Service Worker registration failed:', error));
-            });
+            if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
+                navigator.serviceWorker.getRegistrations().then(regs => {
+                    for (let reg of regs) reg.unregister();
+                });
+            } else {
+                window.addEventListener('load', () => {
+                    navigator.serviceWorker.register('./sw.js')
+                        .catch(error => console.warn('Service Worker registration failed:', error));
+                });
+            }
         }
     </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -25,7 +31,7 @@
     <!-- Подключение Firebase SDK для базы данных, аккаунтов и мультиплеера -->
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
-    <link rel="stylesheet" href="./styles.css?v=6a7b10bd6d73">
+    <link rel="stylesheet" href="./styles.css?v=9cbb05b6acae">
 </head>
 <body>
     <svg class="icon-sprite" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><defs><symbol id="icon-plate" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M7 10h5m-5 4h5m4-4v4"/></symbol><symbol id="icon-collection" viewBox="0 0 24 24"><rect x="4" y="7" width="16" height="13" rx="2"/><path d="M8 7V4h8v3m-8 5h8m-8 4h5"/></symbol><symbol id="icon-garage" viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v10H3zM7 21V12h10v9m-10-5h10"/></symbol><symbol id="icon-race" viewBox="0 0 24 24"><path d="M5 21V3m0 1h6l2 2h7v10h-7l-2-2H5m6-10v10m2-8v10"/></symbol><symbol id="icon-case" viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="14" rx="2"/><path d="M12 7v14M3 12h18m-9-5C4 7 5 1 8 3l4 4m0 0c8 0 7-6 4-4z"/></symbol><symbol id="icon-rating" viewBox="0 0 24 24"><path d="M7 3h10v5a5 5 0 01-10 0zm10 2h4v3a4 4 0 01-4 4M7 5H3v3a4 4 0 004 4m5 1v5m-4 3h8m-6-3h4"/></symbol><symbol id="icon-online" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><ellipse cx="12" cy="12" rx="4" ry="9"/><path d="M3 12h18"/></symbol><symbol id="icon-profile" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M5 21v-2a7 7 0 0114 0v2"/></symbol><symbol id="icon-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3M5 5l2 2m10 10l2 2M5 19l2-2M17 7l2-2"/></symbol></defs></svg>
@@ -60,7 +66,7 @@
         <div class="header-hud">
             <div class="hud-player" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openProfileModal();}" onclick="openProfileModal()" title="Нажмите для настройки профиля и синхронизации">
                 <div class="avatar-wrap">
-                    <img id="header-avatar" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='50' fill='%23232c1c'/><g fill='none' stroke='%23d2f465' stroke-width='3'><path d='M20 57l9-17 15-4h20l11 13 7 4v15H20z'/><path d='M34 40h27l9 12H27'/><circle cx='34' cy='67' r='7' fill='%23232c1c'/><circle cx='68' cy='67' r='7' fill='%23232c1c'/></g></svg>" class="avatar" alt="Аватар игрока">
+                    <img id="header-avatar" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAxMDAgMTAwJz48cmVjdCB3aWR0aD0nMTAwJyBoZWlnaHQ9JzEwMCcgcng9JzUwJyBmaWxsPScjMjMyYzFjJy8+PGcgZmlsbD0nbm9uZScgc3Ryb2tlPScjZDJmNDY1JyBzdHJva2Utd2lkdGg9JzMnPjxwYXRoIGQ9J00yMCA1N2w5LTE3IDE1LTRoMjBsMTEgMTMgNyA0djE1SDIweicvPjxwYXRoIGQ9J00zNCA0MGgyN2w5IDEySDI3Jy8+PGNpcmNsZSBjeD0nMzQnIGN5PSc2Nycgcj0nNycgZmlsbD0nIzIzMmMxYycvPjxjaXJjbGUgY3g9JzY4JyBjeT0nNjcnIHI9JzcnIGZpbGw9JyMyMzJjMWMnLz48L2c+PC9zdmc+" class="avatar" alt="Аватар игрока" onerror="handleAvatarError(this, 0)">
                     <div class="avatar-badge"></div>
                 </div>
                 <div class="hud-player-info">
@@ -104,8 +110,11 @@
             <button type="button" role="tab" class="nav-tab" onclick="switchTab('garage', this)" data-tab="garage" aria-controls="garage" aria-selected="false">
                 <svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24"><use href="#icon-garage"/></svg> Гараж <span class="nav-tab-badge" id="garage-count-badge">1</span>
             </button>
-            <button type="button" role="tab" class="nav-tab" onclick="switchTab('racegame', this)" data-tab="racegame" aria-controls="racegame" aria-selected="false">
-                <svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24"><use href="#icon-race"/></svg> Гонка
+            <button type="button" role="tab" class="nav-tab" id="nav-tab-racegame" onclick="switchTab('racegame', this, 'circuit')" data-tab="racegame" aria-controls="racegame" aria-selected="false">
+                <svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24"><use href="#icon-race"/></svg> <span class="nav-label-long">Гонка 2D</span><span class="nav-label-short">2D</span>
+            </button>
+            <button type="button" role="tab" class="nav-tab nav-tab-3d" id="nav-tab-3d-race" onclick="switchTab('racegame', this, '3d')" data-tab="racegame-3d" aria-controls="racegame" aria-selected="false">
+                <span class="nav-tab-3d-icon">🏎️</span> <span class="nav-label-long">3D Гонка</span><span class="nav-label-short">3D</span> <span class="nav-tab-badge" style="background: linear-gradient(135deg, #ef4444, #f59e0b); color: #fff; font-size: 8px !important; font-weight: 800; padding: 1px 4px; border-radius: 999px;">HOT</span>
             </button>
             <button type="button" role="tab" class="nav-tab" onclick="switchTab('cases', this)" data-tab="cases" aria-controls="cases" aria-selected="false">
                 <svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24"><use href="#icon-case"/></svg> Кейсы
@@ -298,10 +307,13 @@
         <!-- 4. ВКЛАДКА: УЛИЧНЫЕ ГОНКИ (МИНИ-ИГРА) -->
         <div id="racegame" class="tab-content hidden">
             <div class="section-box" style="padding: 16px;">
-                <!-- Переключатель режима заездов: Трасса / Дрэг -->
+                <!-- Переключатель режима заездов: Трасса / Дрэг / 3D -->
                 <div class="market-type-nav" style="margin-bottom: 14px;">
-                    <button class="market-type-btn active" id="btn-race-mode-circuit" onclick="switchRaceMode('circuit')">Шоссе</button>
+                    <button class="market-type-btn active" id="btn-race-mode-circuit" onclick="switchRaceMode('circuit')">Шоссе (2D)</button>
                     <button class="market-type-btn" id="btn-race-mode-drag" onclick="switchRaceMode('drag')">Дрэг (402 м)</button>
+                    <button class="market-type-btn" id="btn-race-mode-3d" onclick="switchRaceMode('3d')" style="position: relative; border-color: rgba(255, 46, 76, 0.45); font-weight: 800;">
+                        🏎️ 3D Шоссе (Вид сзади) <span style="background: linear-gradient(135deg, #ef4444, #f59e0b); color: #fff; font-size: 8px; padding: 2px 6px; border-radius: 999px; margin-left: 4px; vertical-align: middle;">HOT</span>
+                    </button>
                 </div>
 
                 <!-- Меню Дрэг-рейсинга -->
@@ -428,8 +440,11 @@
                         </div>
                         <div class="race-weather-buttons">
                             <button type="button" class="race-weather-btn active" id="btn-mode-highway" onclick="setRaceMode('highway')">🛣️ Шоссе (Трафик)</button>
-                            <button type="button" class="race-weather-btn" id="btn-mode-drift" onclick="setRaceMode('drift')">🌪️ Дрифт (Заносы)</button>
+                            <button type="button" class="race-weather-btn" id="btn-mode-drift" onclick="setRaceMode('drift')">🌪️ Дрифт (Серпантин)</button>
                         </div>
+                        <p id="race-mode-desc" style="font-size: 11px; color: var(--text-dim); margin: 6px 0 0 0; line-height: 1.4;">
+                            Скоростные прямые, плотный трафик, обгоны, радары скорости и патрули ДПС.
+                        </p>
                     </div>
 
                     <!-- Атмосфера и погода заезда -->
@@ -455,7 +470,7 @@
                     </button>
 
                     <div class="race-controls-hint">
-                        <b>Управление:</b> ◀ ▶ / A, D — руль &bull; ▲ / W — газ &bull; ▼ / S — тормоз &bull; Shift / X — дрифт &bull; Пробел — нитро
+                        <b>Управление на ПК:</b> <b>W A S D</b> / ◀ ▶ ▲ ▼ &bull; <b>ПРОБЕЛ</b> — Ручник (занос) &bull; <b>SHIFT</b> — Нитро
                     </div>
                 </div>
 
@@ -507,16 +522,151 @@
                             </div>
                         </div>
 
-                        <!-- Нижняя панель действий (Ручник / Дрифт + Нитро) -->
+                        <!-- Нижняя панель действий (Ручник + Нитро + Сигнал/СГУ + Авто-Газ) -->
                         <div class="touch-actions-bar">
                             <button type="button" class="touch-btn touch-drift" id="btn-touch-drift" aria-label="Ручник / Дрифт" onpointerdown="handleTouchControl(event, 'drift', true)" onpointerup="handleTouchControl(event, 'drift', false)" onpointercancel="handleTouchControl(event, 'drift', false)">
                                 <span class="touch-icon">🌪️</span>
-                                <span class="touch-action-label">РУЧНИК / ДРИФТ</span>
+                                <span class="touch-action-label">РУЧНИК</span>
                             </button>
                             <button type="button" class="touch-btn touch-nitro" id="btn-touch-nitro" aria-label="Нитро ускорение" onpointerdown="handleTouchControl(event, 'nitro', true)" onpointerup="handleTouchControl(event, 'nitro', false)" onpointercancel="handleTouchControl(event, 'nitro', false)">
                                 <span class="nitro-fire-icon">🚀</span>
                                 <span class="touch-action-label">НИТРО</span>
                                 <span class="nitro-badge" id="hud-touch-nitro-val">100%</span>
+                            </button>
+                            <button type="button" class="touch-btn touch-horn" id="btn-touch-horn" aria-label="Клаксон / СГУ" onpointerdown="handleTouchControl(event, 'horn', true)" onpointerup="handleTouchControl(event, 'horn', false)" onpointercancel="handleTouchControl(event, 'horn', false)">
+                                <span class="touch-icon" id="touch-horn-icon">📢</span>
+                                <span class="touch-action-label" id="touch-horn-label">СИГНАЛ [H]</span>
+                            </button>
+                            <button type="button" class="touch-btn touch-autogas" id="btn-touch-autogas" aria-label="Авто-газ" onclick="toggleRaceAutoGas()">
+                                <span class="touch-icon" id="touch-autogas-icon">⚡</span>
+                                <span class="touch-action-label" id="touch-autogas-label">АВТО: ВЫКЛ</span>
+                            </button>
+                    </div>
+                </div>
+            </div>
+
+                <!-- 3D ГОНКА: Игровой экран Three.js (Вид сзади) -->
+                <div id="race-3d-play-container" class="hidden">
+                    <div class="race-header-hud">
+                        <button class="btn btn-close" style="padding: 6px 12px; font-size: 12px; width: auto; margin: 0;" onclick="exit3DRaceGame()">✕ Выход в меню</button>
+                        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                            <button type="button" class="btn" id="btn-camera-view-3d" style="padding: 5px 12px; font-size: 11px; background: rgba(255,255,255,0.08); border: 1px solid var(--border-subtle); border-radius: 8px; color: #fff; cursor: pointer;" onclick="toggle3DCameraView()">📷 Камера [C]</button>
+                            <span id="game-3d-drift-badge" class="race-badge-combo hidden" style="background: linear-gradient(135deg, #f59e0b, #ea580c); border-color: #fbbf24; color: #fff;">🌪️ ДРИФТ x1</span>
+                            <span id="game-3d-combo-badge" class="race-badge-combo hidden">🔥 x2 ОБГОН</span>
+                        </div>
+                    </div>
+
+                    <div class="race-3d-viewport-wrapper" id="race-3d-viewport-wrapper">
+                        <!-- Canvas 3D контейнер -->
+                        <div id="race-3d-canvas-container" class="race-3d-canvas-container"></div>
+
+                        <!-- 3D HUD Индикаторы и Приборы -->
+                        <div class="race-3d-hud-overlay">
+                            <!-- Верхняя строка: Дистанция, Доход, Топливо -->
+                            <div class="race-3d-hud-top">
+                                <div class="race-3d-hud-stat">
+                                    <span class="race-3d-stat-icon">🛣️</span>
+                                    <div>
+                                        <div class="race-3d-stat-lbl">ДИСТАНЦИЯ</div>
+                                        <div class="race-3d-stat-val" id="hud-3d-dist">0.00 км</div>
+                                    </div>
+                                </div>
+                                <div class="race-3d-hud-stat">
+                                    <span class="race-3d-stat-icon">💰</span>
+                                    <div>
+                                        <div class="race-3d-stat-lbl">ЗАРАБОТОК</div>
+                                        <div class="race-3d-stat-val" id="hud-3d-cash" style="color: #10b981;">0 ₽</div>
+                                    </div>
+                                </div>
+                                <div class="race-3d-hud-stat">
+                                    <span class="race-3d-stat-icon">⛽</span>
+                                    <div>
+                                        <div class="race-3d-stat-lbl">ТОПЛИВО</div>
+                                        <div class="race-3d-stat-val" id="hud-3d-fuel">45.0 л</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Всплывающие уведомления (Обгон, Дрифт, Камера ДПС) -->
+                            <div id="race-3d-popup-msg" class="race-popup-msg"></div>
+
+                            <!-- Нижняя строка: Спидометр и Нитро -->
+                            <div class="race-3d-hud-bottom">
+                                <!-- Спидометр слева -->
+                                <div class="race-3d-speedo-box">
+                                    <div class="race-3d-speedo-digital">
+                                        <span id="hud-3d-speed-num" class="race-3d-speed-num">0</span>
+                                        <span class="race-3d-speed-unit">КМ/Ч</span>
+                                    </div>
+                                    <div class="race-3d-gear-box">
+                                        <span id="hud-3d-gear" class="race-3d-gear-badge">D1</span>
+                                        <div class="race-3d-tach-bar-wrap">
+                                            <div id="hud-3d-tach-fill" class="race-3d-tach-fill" style="width: 15%;"></div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Нитро полоса справа -->
+                                <div class="race-3d-nitro-box">
+                                    <div class="race-3d-nitro-header">
+                                        <span style="font-size: 11px; font-weight: 800; color: #00f0ff; letter-spacing: 0.5px;">🚀 НИТРО [SHIFT]</span>
+                                        <span id="hud-3d-nitro-text" style="font-size: 12px; font-weight: 800; color: #fff;">100%</span>
+                                    </div>
+                                    <div class="race-3d-nitro-bar-wrap">
+                                        <div id="hud-3d-nitro-fill" class="race-3d-nitro-fill" style="width: 100%;"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Мобильные эргономичные сенсорные контроллеры (Two-Thumb Gamepad для 3D) -->
+                    <div class="race-touch-controls" id="race-3d-touch-controls">
+                        <div class="touch-main-gamepad">
+                            <!-- Левый кластер руления -->
+                            <div class="touch-cluster touch-cluster-steer">
+                                <button type="button" class="touch-btn touch-steer touch-steer-left" id="btn-3d-touch-left" aria-label="Руль влево" onpointerdown="handle3DTouchControl(event, 'left', true)" onpointerup="handle3DTouchControl(event, 'left', false)" onpointercancel="handle3DTouchControl(event, 'left', false)">
+                                    <span class="touch-arrow">◀</span>
+                                    <span class="touch-sublabel">ВЛЕВО</span>
+                                </button>
+                                <div class="touch-steer-divider"></div>
+                                <button type="button" class="touch-btn touch-steer touch-steer-right" id="btn-3d-touch-right" aria-label="Руль вправо" onpointerdown="handle3DTouchControl(event, 'right', true)" onpointerup="handle3DTouchControl(event, 'right', false)" onpointercancel="handle3DTouchControl(event, 'right', false)">
+                                    <span class="touch-arrow">▶</span>
+                                    <span class="touch-sublabel">ВПРАВО</span>
+                                </button>
+                            </div>
+
+                            <!-- Правый педальный блок -->
+                            <div class="touch-cluster touch-cluster-pedals">
+                                <button type="button" class="touch-btn touch-brake" id="btn-3d-touch-brake" aria-label="Тормоз" onpointerdown="handle3DTouchControl(event, 'brake', true)" onpointerup="handle3DTouchControl(event, 'brake', false)" onpointercancel="handle3DTouchControl(event, 'brake', false)">
+                                    <span class="touch-icon">🛑</span>
+                                    <span class="touch-pedal-label">ТОРМОЗ</span>
+                                </button>
+                                <button type="button" class="touch-btn touch-gas" id="btn-3d-touch-gas" aria-label="Газ" onpointerdown="handle3DTouchControl(event, 'gas', true)" onpointerup="handle3DTouchControl(event, 'gas', false)" onpointercancel="handle3DTouchControl(event, 'gas', false)">
+                                    <span class="touch-icon">⚡</span>
+                                    <span class="touch-pedal-label">ГАЗ</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Нижняя панель действий (Ручник + Нитро + Сигнал/СГУ + Камера) -->
+                        <div class="touch-actions-bar">
+                            <button type="button" class="touch-btn touch-drift" id="btn-3d-touch-drift" aria-label="Ручник / Дрифт" onpointerdown="handle3DTouchControl(event, 'drift', true)" onpointerup="handle3DTouchControl(event, 'drift', false)" onpointercancel="handle3DTouchControl(event, 'drift', false)">
+                                <span class="touch-icon">🌪️</span>
+                                <span class="touch-action-label">РУЧНИК</span>
+                            </button>
+                            <button type="button" class="touch-btn touch-nitro" id="btn-3d-touch-nitro" aria-label="Нитро ускорение" onpointerdown="handle3DTouchControl(event, 'nitro', true)" onpointerup="handle3DTouchControl(event, 'nitro', false)" onpointercancel="handle3DTouchControl(event, 'nitro', false)">
+                                <span class="nitro-fire-icon">🚀</span>
+                                <span class="touch-action-label">НИТРО</span>
+                                <span class="nitro-badge" id="hud-3d-touch-nitro-val">100%</span>
+                            </button>
+                            <button type="button" class="touch-btn touch-horn" id="btn-3d-touch-horn" aria-label="Клаксон / СГУ" onpointerdown="handle3DTouchControl(event, 'horn', true)" onpointerup="handle3DTouchControl(event, 'horn', false)" onpointercancel="handle3DTouchControl(event, 'horn', false)">
+                                <span class="touch-icon" id="touch-3d-horn-icon">📢</span>
+                                <span class="touch-action-label">СИГНАЛ [H]</span>
+                            </button>
+                            <button type="button" class="touch-btn touch-autogas" id="btn-3d-touch-cam" aria-label="Смена камеры" onclick="toggle3DCameraView()">
+                                <span class="touch-icon">📷</span>
+                                <span class="touch-action-label">КАМЕРА [C]</span>
                             </button>
                         </div>
                     </div>
@@ -645,7 +795,7 @@
                 <div id="my-rank-banner" class="lead-row is-me" style="margin-bottom: 14px;">
                     <div class="lead-left">
                         <div class="lead-rank" id="my-rank-pos" style="color: var(--accent-green);">#—</div>
-                        <img id="my-rank-avatar" src="" class="lead-avatar" onerror="handleAvatarError(this, 0)">
+                        <img id="my-rank-avatar" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAxMDAgMTAwJz48cmVjdCB3aWR0aD0nMTAwJyBoZWlnaHQ9JzEwMCcgcng9JzUwJyBmaWxsPScjMjMyYzFjJy8+PGcgZmlsbD0nbm9uZScgc3Ryb2tlPScjZDJmNDY1JyBzdHJva2Utd2lkdGg9JzMnPjxwYXRoIGQ9J00yMCA1N2w5LTE3IDE1LTRoMjBsMTEgMTMgNyA0djE1SDIweicvPjxwYXRoIGQ9J00zNCA0MGgyN2w5IDEySDI3Jy8+PGNpcmNsZSBjeD0nMzQnIGN5PSc2Nycgcj0nNycgZmlsbD0nIzIzMmMxYycvPjxjaXJjbGUgY3g9JzY4JyBjeT0nNjcnIHI9JzcnIGZpbGw9JyMyMzJjMWMnLz48L2c+PC9zdmc=" class="lead-avatar" alt="Ваш аватар" onerror="handleAvatarError(this, 0)">
                         <div>
                             <div class="lead-info-name" id="my-rank-name">Ваша позиция</div>
                             <div class="lead-sub" id="my-rank-stat">Загрузка данных...</div>
@@ -841,7 +991,7 @@
             <!-- Вкладка: Профиль игрока -->
             <div id="auth-panel-profile">
                 <div style="text-align: center; margin-bottom: 14px;">
-                    <img id="auth-profile-avatar-preview" src="" class="avatar" style="width: 68px; height: 68px; margin: 0 auto 8px auto; border-width: 3px;">
+                    <img id="auth-profile-avatar-preview" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAxMDAgMTAwJz48cmVjdCB3aWR0aD0nMTAwJyBoZWlnaHQ9JzEwMCcgcng9JzUwJyBmaWxsPScjMjMyYzFjJy8+PGcgZmlsbD0nbm9uZScgc3Ryb2tlPScjZDJmNDY1JyBzdHJva2Utd2lkdGg9JzMnPjxwYXRoIGQ9J00yMCA1N2w5LTE3IDE1LTRoMjBsMTEgMTMgNyA0djE1SDIweicvPjxwYXRoIGQ9J00zNCA0MGgyN2w5IDEySDI3Jy8+PGNpcmNsZSBjeD0nMzQnIGN5PSc2Nycgcj0nNycgZmlsbD0nIzIzMmMxYycvPjxjaXJjbGUgY3g9JzY4JyBjeT0nNjcnIHI9JzcnIGZpbGw9JyMyMzJjMWMnLz48L2c+PC9zdmc=" class="avatar" alt="Превью аватара" onerror="handleAvatarError(this, 0)" style="width: 68px; height: 68px; margin: 0 auto 8px auto; border-width: 3px;">
                     <div style="font-size: 16px; font-weight: 800; color: #fff;" id="auth-profile-display-name">Игрок</div>
                     <div style="font-size: 12px; color: var(--accent-green); margin-top: 4px;" id="auth-cloud-status-text">⚪ Войдите для доступа к онлайн-функциям</div>
                 </div>
@@ -952,9 +1102,9 @@
     </div>
 
     <!-- МОДАЛЬНОЕ ОКНО: ПРОСМОТР ИГРОКА ИЗ ТОПА -->
-    <div id="player-view-modal" class="modal-overlay">
+    <div id="player-view-modal" class="modal-overlay" onclick="if(event.target===this)closePlayerViewModal()">
         <div class="modal-box" style="text-align: center;">
-            <img id="pv-avatar" src="" class="avatar" style="width: 72px; height: 72px; margin: 0 auto 10px auto; border-width: 3px;">
+            <img id="pv-avatar" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAxMDAgMTAwJz48cmVjdCB3aWR0aD0nMTAwJyBoZWlnaHQ9JzEwMCcgcng9JzUwJyBmaWxsPScjMjMyYzFjJy8+PGcgZmlsbD0nbm9uZScgc3Ryb2tlPScjZDJmNDY1JyBzdHJva2Utd2lkdGg9JzMnPjxwYXRoIGQ9J00yMCA1N2w5LTE3IDE1LTRoMjBsMTEgMTMgNyA0djE1SDIweicvPjxwYXRoIGQ9J00zNCA0MGgyN2w5IDEySDI3Jy8+PGNpcmNsZSBjeD0nMzQnIGN5PSc2Nycgcj0nNycgZmlsbD0nIzIzMmMxYycvPjxjaXJjbGUgY3g9JzY4JyBjeT0nNjcnIHI9JzcnIGZpbGw9JyMyMzJjMWMnLz48L2c+PC9zdmc=" class="avatar" alt="Аватар игрока" onerror="handleAvatarError(this, 0)" style="width: 72px; height: 72px; margin: 0 auto 10px auto; border-width: 3px;">
             <h3 id="pv-name" style="margin: 4px 0; color: var(--accent-green); font-size: 18px;">Игрок</h3>
             <div style="font-size: 12px; color: #fbbf24; margin-bottom: 16px;" id="pv-level">Уровень: 1</div>
 
@@ -1056,8 +1206,18 @@
             <h3 style="margin-top:0; color: #fff;">🎨 Стайлинг и тюнинг внешности</h3>
             <p style="font-size:12px; color:var(--text-dim); margin-bottom:10px;" id="styling-car-title">Настройка авто</p>
 
-            <div style="background: radial-gradient(circle at center, rgba(30,41,59,0.7) 0%, rgba(15,23,42,0.95) 100%); border-radius: var(--radius-md); padding: 10px; margin-bottom: 14px; text-align: center; border: 1px solid var(--border-subtle); display:flex; justify-content:center; align-items:center;">
+            <div class="styling-view-switch">
+                <button type="button" class="styling-view-btn active" id="btn-view-side" onclick="setStylingViewMode('side')">🚘 Профиль (вид сбоку)</button>
+                <button type="button" class="styling-view-btn" id="btn-view-top" onclick="setStylingViewMode('top')">🏎️ Вид 3/4 (сверху)</button>
+                <button type="button" class="styling-view-btn" id="btn-view-3d" onclick="setStylingViewMode('3d')">🌟 3D Подиум (360°)</button>
+            </div>
+
+            <div id="styling-preview-stage" style="background: radial-gradient(circle at center, rgba(30,41,59,0.7) 0%, rgba(15,23,42,0.95) 100%); border-radius: var(--radius-md); padding: 8px; margin-bottom: 14px; text-align: center; border: 1px solid var(--border-subtle); display:flex; justify-content:center; align-items:center; min-height: 180px; position: relative;">
                 <canvas id="styling-preview-canvas" width="280" height="150" style="max-width: 100%; height: auto;"></canvas>
+                <div id="styling-preview-3d-wrap" style="width: 100%; height: 210px; display: none; position: relative; border-radius: 8px; overflow: hidden; cursor: grab;"></div>
+                <div id="styling-3d-hint" style="display: none; position: absolute; bottom: 8px; left: 0; right: 0; font-size: 10px; color: #94a3b8; pointer-events: none; text-shadow: 0 1px 3px rgba(0,0,0,0.8);">
+                    🔄 Тяни пальцем/мышью для вращения · Колесо/щипок для зума
+                </div>
             </div>
 
             <div style="margin-bottom:14px;">
@@ -1071,6 +1231,36 @@
                     <button type="button" class="styling-chip" data-tint="0" onclick="selectStylingTint(0)">0% Прозрачные (0 ₽)</button>
                     <button type="button" class="styling-chip" data-tint="50" onclick="selectStylingTint(50)">50% Евро (10 000 ₽)</button>
                     <button type="button" class="styling-chip" data-tint="95" onclick="selectStylingTint(95)">95% Глухая (25 000 ₽)</button>
+                    <button type="button" class="styling-chip" data-tint="chameleon" onclick="selectStylingTint('chameleon')">Хамелеон (35 000 ₽)</button>
+                    <button type="button" class="styling-chip" data-tint="dubai" onclick="selectStylingTint('dubai')">Дубайка (40 000 ₽)</button>
+                </div>
+            </div>
+
+            <div style="margin-bottom:14px;">
+                <div style="font-size:12px; color:#fff; font-weight:800; margin-bottom:6px;">Колёсные диски:</div>
+                <div class="styling-options-row" id="styling-wheels-chips">
+                    <button type="button" class="styling-chip" data-wheels="stock" onclick="selectStylingWheels('stock')">Заводские (0 ₽)</button>
+                    <button type="button" class="styling-chip" data-wheels="stamps" onclick="selectStylingWheels('stamps')">Штампы (15 000 ₽)</button>
+                    <button type="button" class="styling-chip" data-wheels="deepdish" onclick="selectStylingWheels('deepdish')">Полки / Разварки (45 000 ₽)</button>
+                    <button type="button" class="styling-chip" data-wheels="forged" onclick="selectStylingWheels('forged')">Кованые спорт (75 000 ₽)</button>
+                </div>
+            </div>
+
+            <div style="margin-bottom:14px;">
+                <div style="font-size:12px; color:#fff; font-weight:800; margin-bottom:6px;">Подвеска и клиренс:</div>
+                <div class="styling-options-row" id="styling-suspension-chips">
+                    <button type="button" class="styling-chip" data-suspension="stock" onclick="selectStylingSuspension('stock')">Заводской клиренс (0 ₽)</button>
+                    <button type="button" class="styling-chip" data-suspension="lowered" onclick="selectStylingSuspension('lowered')">Спорт -30мм (25 000 ₽)</button>
+                    <button type="button" class="styling-chip" data-suspension="bpan" onclick="selectStylingSuspension('bpan')">БПАН в пол (50 000 ₽)</button>
+                    <button type="button" class="styling-chip" data-suspension="lift" onclick="selectStylingSuspension('lift')">Лифт Offroad +50мм (35 000 ₽)</button>
+                </div>
+            </div>
+
+            <div style="margin-bottom:14px;">
+                <div style="font-size:12px; color:#fff; font-weight:800; margin-bottom:6px;">Спецсигнал СГУ («Крякалка»):</div>
+                <div class="styling-options-row" id="styling-sgu-chips">
+                    <button type="button" class="styling-chip" data-sgu="none" onclick="selectStylingSgu('none')">Без спецсигнала (0 ₽)</button>
+                    <button type="button" class="styling-chip" data-sgu="installed" onclick="selectStylingSgu('installed')">СГУ + Стробоскопы (80 000 ₽)</button>
                 </div>
             </div>
 
@@ -1083,6 +1273,24 @@
                     <button type="button" class="styling-chip" data-neon="#ff0055" onclick="selectStylingNeon('#ff0055')">Неон-красный</button>
                     <button type="button" class="styling-chip" data-neon="#a855f7" onclick="selectStylingNeon('#a855f7')">Фиолетовый</button>
                     <button type="button" class="styling-chip" data-neon="#eab308" onclick="selectStylingNeon('#eab308')">Золото</button>
+                </div>
+            </div>
+
+            <div style="margin-bottom:14px;">
+                <div style="font-size:12px; color:#fff; font-weight:800; margin-bottom:6px;">Спойлер / Антикрыло:</div>
+                <div class="styling-options-row" id="styling-spoiler-chips">
+                    <button type="button" class="styling-chip" data-spoiler="none" onclick="selectStylingSpoiler('none')">Без спойлера (0 ₽)</button>
+                    <button type="button" class="styling-chip" data-spoiler="ducktail" onclick="selectStylingSpoiler('ducktail')">Дактейл (20 000 ₽)</button>
+                    <button type="button" class="styling-chip" data-spoiler="gt" onclick="selectStylingSpoiler('gt')">GT-крыло (50 000 ₽)</button>
+                </div>
+            </div>
+
+            <div style="margin-bottom:18px;">
+                <div style="font-size:12px; color:#fff; font-weight:800; margin-bottom:6px;">Винилография / Ливрея:</div>
+                <div class="styling-options-row" id="styling-vinyl-chips">
+                    <button type="button" class="styling-chip" data-vinyl="none" onclick="selectStylingVinyl('none')">Без винила (0 ₽)</button>
+                    <button type="button" class="styling-chip" data-vinyl="stripes" onclick="selectStylingVinyl('stripes')">Две полосы (30 000 ₽)</button>
+                    <button type="button" class="styling-chip" data-vinyl="drift" onclick="selectStylingVinyl('drift')">Дрифт-арт (60 000 ₽)</button>
                 </div>
             </div>
 
@@ -1155,11 +1363,16 @@
         }
     </script>
     <script src="/.netlify/functions/firebase-web-config"></script>
-    <script src="./js/security.js?v=f328bd7802d3"></script>
-    <script src="./js/storage.js?v=327dc7592b84"></script>
-    <script src="./js/race-records.js?v=eaeaf8e59fc2"></script>
-    <script src="./js/race-economy.js?v=acc0cf0716a0"></script>
-    <script src="./js/audio.js?v=04e8a1d6ddb2"></script>
-    <script src="./js/app.js?v=696ca0fc60f6"></script>
+    <script src="./js/security.js?v=02e3f2433778"></script>
+    <script src="./js/storage.js?v=3c82419118a8"></script>
+    <script src="./js/race-records.js?v=9c07941a09a1"></script>
+    <script src="./js/race-economy.js?v=2cbfd8e11f42"></script>
+    <script src="./js/audio.js?v=72ff40b13141"></script>
+    <script src="./js/vendor/three.min.js"></script>
+    <script src="./js/vendor/DRACOLoader.js"></script>
+    <script src="./js/vendor/meshopt_decoder.js"></script>
+    <script src="./js/vendor/GLTFLoader.js"></script>
+    <script src="./js/car-3d.js?v=3e80e8c99070"></script>
+    <script src="./js/app.js?v=de1aca93ba6e"></script>
 </body>
 </html>

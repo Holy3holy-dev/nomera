@@ -87,8 +87,27 @@ function safeCar(raw){
     const styling={};
     if (typeof raw.styling.color==='string' && /^#[0-9a-fA-F]{6}$/.test(raw.styling.color)) styling.color=raw.styling.color;
     if (typeof raw.styling.neon==='string' && (/^#[0-9a-fA-F]{6}$/.test(raw.styling.neon) || raw.styling.neon==='none')) styling.neon=raw.styling.neon;
-    const tint=Number(raw.styling.tint);
-    if (Number.isSafeInteger(tint) && tint>=0 && tint<=100) styling.tint=tint;
+    if (raw.styling.tint==='chameleon' || raw.styling.tint==='dubai') {
+      styling.tint=raw.styling.tint;
+    } else {
+      const tint=Number(raw.styling.tint);
+      if (Number.isSafeInteger(tint) && tint>=0 && tint<=100) styling.tint=tint;
+    }
+    if (typeof raw.styling.spoiler==='string' && ['none','ducktail','gt'].includes(raw.styling.spoiler)) {
+      styling.spoiler=raw.styling.spoiler;
+    }
+    if (typeof raw.styling.vinyl==='string' && ['none','stripes','drift'].includes(raw.styling.vinyl)) {
+      styling.vinyl=raw.styling.vinyl;
+    }
+    if (typeof raw.styling.wheels==='string' && ['stock','stamps','deepdish','forged'].includes(raw.styling.wheels)) {
+      styling.wheels=raw.styling.wheels;
+    }
+    if (typeof raw.styling.suspension==='string' && ['stock','lowered','bpan','lift'].includes(raw.styling.suspension)) {
+      styling.suspension=raw.styling.suspension;
+    }
+    if (typeof raw.styling.sgu==='string' && ['none','installed'].includes(raw.styling.sgu)) {
+      styling.sgu=raw.styling.sgu;
+    }
     if (Object.keys(styling).length>0) result.styling=styling;
   }
   return result;
