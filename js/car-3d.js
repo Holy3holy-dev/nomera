@@ -4036,7 +4036,7 @@
             const ms = String(meshName || '').toLowerCase();
             if (carId === 'subaru' && (ms === 'object_24' || mn === 'material_21')) return true;
             if (carId === 'vaz2107' && (mn === 'tire' || (mn === 'black' && ms.includes('wheel')))) return true;
-            if (carId === 'vaz2109' && (mn === 'standardmater32' || ms.includes('tire') || ms.includes('wheel'))) return true;
+            if (carId === 'vaz2109' && (mn === 'standardmater50' || mn === 'standardmater52')) return true;
             if (carId === 'gaz24' && (mn === 'rubber' || ms.includes('rubber') || ms.includes('tire'))) return true;
             if (carId === 'priora' && (mn === 'priora_wheel2' || ms.includes('wheel2'))) return true;
             if (carId === 'vesta' && (ms.includes('tire') || ms.includes('rubber') || (mn === 'plastic' && ms.includes('wheel')) || (mn === 'chern' && ms.includes('koles')))) return true;
@@ -4074,6 +4074,7 @@
             const mn = String(matName || '').toLowerCase();
             const ms = String(meshName || '').toLowerCase();
             if (carId === 'subaru' && (ms === 'object_4' || ms === 'object_16' || mn === 'material_1' || mn === 'material_13')) return true;
+            if (carId === 'vaz2109' && mn === 'standardmater48') return true;
             if (carId === 'polo' && mn.includes('callipergloss')) return true;
             if (carId === 'm5e60' && mn === 'etriers') return true;
             if (carId === 'silvia' && (mn === 'caliper1mtl' || mn === 'rotor1mtl')) return true;
@@ -4110,6 +4111,7 @@
                 mn === 'material_16' || mn === 'material_17' || mn === 'material_18'
             )) return true;
             if (carId === 'vaz2107' && (mn.includes('orange light') || mn.includes('red light') || mn === 'white')) return true;
+            if (carId === 'vaz2109' && (mn === 'standardmater7' || mn === 'standardmater3' || mn === 'standardmater5')) return true;
             if (carId === 'gaz24' && (mn === 'orange_plastic' || mn === 'headlight' || mn === 'reverse_lights' || mn === 'tail_lights' || mn === 'reflector')) return true;
             if (carId === 'priora' && (mn === 'priora_optik_rear' || mn === 'priora_red')) return true;
             if (carId === 'vesta' && (mn === 'fari' || mn === 'peredfar' || mn === 'svetplas' || mn === 'stopar')) return true;
@@ -4157,6 +4159,7 @@
             const mn = String(matName || '').toLowerCase();
             const ms = String(meshName || '').toLowerCase();
             if (carId === 'subaru' && (ms === 'object_25' || mn === 'material_22')) return true;
+            if (carId === 'vaz2109' && mn === 'standardmater4') return true;
             if (carId === 'priora' && mn === 'priora_glush') return true;
             if (carId === 'm5e60' && mn === 'chrome_ok' && (ms.includes('exhaust') || ms.includes('pot'))) return true;
             if (carId === 'silvia' && mn.includes('lodaexhaust')) return true;
@@ -4178,6 +4181,16 @@
             const ms = String(meshName || '').toLowerCase();
             if (carId === 'subaru' && (ms === 'object_3' || ms === 'object_6' || mn === 'material_0' || mn === 'material_3')) return true;
             if (carId === 'vaz2107' && (mn === 'interior_01' || mn === 'interior_02' || ms.includes('interior_01') || ms.includes('interior_02'))) return true;
+            if (carId === 'vaz2109' && (
+                mn === 'standardmater32' || mn === 'standardmater34' || mn === 'standardmater35' ||
+                mn === 'standardmater36' || mn === 'standardmater37' || mn === 'standardmater10' ||
+                mn === 'standardmater12' || mn === 'standardmater13' || mn === 'standardmater14' ||
+                mn === 'standardmater15' || mn === 'standardmater16' || mn === 'standardmater17' ||
+                mn === 'standardmater8' || mn === 'standardmater9' || mn === 'standardmater18' ||
+                mn === 'standardmater39' || mn === 'standardmater41' || mn === 'standardmater43' ||
+                mn === 'standardmater44' || mn === 'standardmater54' || mn === 'standardmater57' ||
+                mn === 'standardmater59' || mn === 'standardmater62'
+            )) return true;
             if (carId === 'gaz24' && (mn.includes('interior') || mn === 'derma')) return true;
             if (carId === 'priora' && (mn.includes('priora_leather') || mn.includes('priora_salon') || mn.includes('priora_prib') || mn.includes('priora_bar') || mn.includes('priora_polik') || mn.includes('priora_pedals') || mn.includes('priora_obivka'))) return true;
             if (carId === 'vesta' && mn === 'kover') return true;
@@ -4300,7 +4313,7 @@
 
             if (carId === 'subaru' && (ms === 'object_15' || mn === 'material_12')) return true;
             if (carId === 'vaz2107' && (mn === 'silver' || (mn === 'chrome' && ms.includes('wheel')))) return true;
-            if (carId === 'vaz2109' && mn === 'standardmater39') return true;
+            if (carId === 'vaz2109' && (mn === 'standardmater46' || mn === 'standardmater47' || mn === 'standardmater49')) return true;
             if (carId === 'gaz24' && (mn === 'wheel' || mn === 'steel')) return true;
             if (carId === 'priora' && mn === 'priora_wheel5') return true;
             if (carId === 'vesta' && (mn === 'disk' || ms.includes('wheel_disk'))) return true;
@@ -4362,7 +4375,7 @@
                 );
             }
             if (carId === 'vaz2107') return mn === 'body' || ms.includes('object_128_body') || ms.includes('_body_');
-            if (carId === 'vaz2109') return mn === '2109' || mn === 'paint' || ms.includes('2109');
+            if (carId === 'vaz2109') return mn === '2109' || ms.endsWith('_2109_0');
             if (carId === 'gaz24') return mn === 'paint_new' || mn === 'paint' || mn === 'body' || mn === 'black_paint';
             if (carId === 'priora') return mn.includes('priora_skin') || mn.includes('priora_mirr') || mn === 'carpaint' || mn.includes('paint');
             if (carId === 'vesta') return mn === 'kuzov' || ms.includes('kuzov_kuzov_0');
@@ -4468,8 +4481,11 @@
 
                     // 4. Lights (Headlights, Taillights, Indicators)
                     if (isLightMaterial(matName, mName)) {
-                        if (mName.includes('taillight') || matName.includes('red') || matName.includes('ruby') || mName === 'object_20' || matName === 'material_17' || matName === 'stopar') {
+                        if (mName.includes('taillight') || matName.includes('red') || matName.includes('ruby') || mName === 'object_20' || matName === 'material_17' || matName === 'stopar' || (carId === 'vaz2109' && matName.toLowerCase() === 'standardmater5')) {
                             return mats.taillightRed;
+                        }
+                        if (carId === 'vaz2109' && matName.toLowerCase() === 'standardmater3') {
+                            return mats.chrome;
                         }
                         if (mName.includes('indicator') || matName.includes('amber') || matName.includes('orange') || mName === 'object_14' || mName === 'object_19') {
                             return mats.amberIndicator;
@@ -4537,7 +4553,12 @@
                     }
 
                     // 12. Black Trim, Diffusers, Moldings, Plastic, Underbody, Vents
-                    if (matName.includes('diffuser') || matName.includes('trim') || matName.includes('arch') || matName.includes('plastic') || matName.includes('underbody') || matName.includes('vent') || mName.includes('diffuser') || mName.includes('trim') || mName.includes('underbody')) {
+                    if (matName.includes('diffuser') || matName.includes('trim') || matName.includes('arch') || matName.includes('plastic') || matName.includes('underbody') || matName.includes('vent') || mName.includes('diffuser') || mName.includes('trim') || mName.includes('underbody') || (carId === 'vaz2109' && (
+                        matName.toLowerCase() === 'standardmater24' ||
+                        matName.toLowerCase() === 'standardmater27' ||
+                        matName.toLowerCase() === 'standardmater1' ||
+                        matName.toLowerCase() === 'standardmater2'
+                    ))) {
                         return mats.trim;
                     }
 
@@ -4679,19 +4700,21 @@
         const plateVal = (styling && styling.plate !== undefined) ? styling.plate : 'А 777 АА | 77 RUS';
         applyLicensePlateToModel(THREE, modelRoot, plateVal);
 
-        // Aerodynamic Undercarriage Undertray (matte dark chassis undertray, closes interior gaps under car)
-        const undertrayGeo = new THREE.PlaneGeometry(size.x * 0.82, size.z * 0.78);
-        undertrayGeo.rotateX(Math.PI / 2);
-        const undertrayMat = new THREE.MeshStandardMaterial({
-            color: 0x09090b,
-            roughness: 0.95,
-            metalness: 0.1,
-            side: THREE.DoubleSide,
-            name: 'ChassisUndertray'
-        });
-        const undertray = new THREE.Mesh(undertrayGeo, undertrayMat);
-        undertray.position.set(0, Math.max(0.04, box.min.y + 0.05), center.z);
-        modelRoot.add(undertray);
+        // Aerodynamic Undercarriage Undertray (for specific models requiring undercarriage sealing, e.g. SF90)
+        if (carId === 'sf90') {
+            const undertrayGeo = new THREE.PlaneGeometry(size.x * 0.70, size.z * 0.60);
+            undertrayGeo.rotateX(Math.PI / 2);
+            const undertrayMat = new THREE.MeshStandardMaterial({
+                color: 0x09090b,
+                roughness: 0.95,
+                metalness: 0.1,
+                side: THREE.DoubleSide,
+                name: 'ChassisUndertray'
+            });
+            const undertray = new THREE.Mesh(undertrayGeo, undertrayMat);
+            undertray.position.set(0, Math.max(0.04, box.min.y + 0.05), center.z);
+            modelRoot.add(undertray);
+        }
     }
 
     function loadCarModel(THREE, carName, styling = {}, onLoaded) {
