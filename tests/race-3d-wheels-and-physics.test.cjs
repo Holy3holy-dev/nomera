@@ -343,6 +343,43 @@ test('3D camera turn dynamics: banking roll is smoothly clamped under 0.06 rad a
     engine.destroy();
 });
 
+test('3D car visual fixes: Ferrari faces forward down the road, no floating red box taillights, and nitro button is compact', () => {
+    const { THREE, Car3DManager } = setupTestContext();
+    const fs = require('fs');
+    const path = require('path');
+    const car3dCode = fs.readFileSync(path.join(__dirname, '..', 'js', 'car-3d.js'), 'utf8');
+    const css = fs.readFileSync(path.join(__dirname, '..', 'styles.css'), 'utf8');
+
+    // 1. Ferrari sf90 model orientation: rotated Math.PI so headlights face forward (+Z) instead of backwards
+    assert.ok(car3dCode.includes("carId === 'sf90'"), 'Ferrari sf90 must have rotation alignment');
+    assert.ok(car3dCode.includes("clonedScene.rotation.y += Math.PI"), 'Orientation must rotate by Math.PI to face forward');
+
+    // 2. Floating red boxes (BoxGeometry taillights) eliminated in favor of real mesh traversal & dynamic PointLight
+    assert.ok(!car3dCode.includes('tlMesh.position.set'), 'Artificial floating tlMesh BoxGeometry must be eliminated');
+    assert.ok(car3dCode.includes('this.playerBrakeLight = new THREE.PointLight'), 'Authentic dynamic brake point light must be added');
+
+    // 3. Engine setupCarLightingAndFX initializes playerBrakeLight on start
+    const mockContainer = { clientWidth: 800, clientHeight: 500, style: {}, appendChild: () => {}, removeChild: () => {} };
+    const engine = new Car3DManager.Car3DRacingEngine(mockContainer, {});
+    engine.start({ carName: 'ВАЗ-2107 «Жигули»', performance: { speed: 180 } });
+    assert.ok(engine.playerBrakeLight, 'Engine must create playerBrakeLight');
+    assert.equal(engine.playerBrakeLight.isPointLight, true, 'playerBrakeLight must be a THREE.PointLight');
+
+    // On braking, brake light intensity increases
+    engine.keys.brake = true;
+    engine.update(0.05);
+    assert.ok(engine.playerBrakeLight.intensity > 1.0, 'Brake light must intensify on braking');
+    engine.keys.brake = false;
+    engine.update(0.05);
+    assert.ok(engine.playerBrakeLight.intensity < 1.0, 'Brake light must return to idle glow');
+    engine.destroy();
+
+    // 4. Styles: touch-nitro in styles.css must NOT truncate НИТРО into Н
+    assert.ok(css.includes('.touch-actions-bar .touch-nitro .touch-action-label'), 'Must have specific unclipped label rule for touch-actions-bar nitro');
+    assert.ok(css.includes('margin-left: 3px') || css.includes('margin-left: 2px'), 'Must not push nitro badge off with excessive margin-left');
+});
+
+
 
 
 

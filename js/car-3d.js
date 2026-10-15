@@ -4216,8 +4216,8 @@
             }
 
             // 3. Align car forward facing along +Z
-            if (carId === 'vaz2109') {
-                clonedScene.rotation.y = Math.PI;
+            if (carId === 'vaz2109' || carId === 'sf90') {
+                clonedScene.rotation.y += Math.PI;
                 clonedScene.updateMatrixWorld(true);
                 box = new THREE.Box3().setFromObject(clonedScene);
                 size = box.getSize(new THREE.Vector3());
@@ -4817,6 +4817,7 @@
             this.playerCar = null;
             this.playerHeadlights = [];
             this.playerTaillights = [];
+            this.playerBrakeLight = null;
             this.playerNitroFlames = [];
             this.playerNeonLight = null;
             this.playerSguLight = null;
@@ -5554,20 +5555,26 @@
                 this.playerHeadlights.push(hlSpot);
             });
 
-            // 2. Taillight Braking Emissive Glow
+            // 2. Taillight Braking Emissive Glow & Dynamic Brake Point Light
             this.playerTaillights = [];
-            const tlMat = new THREE.MeshStandardMaterial({
-                color: 0x991b1b,
-                emissive: 0xdc2626,
-                emissiveIntensity: 0.25,
-                roughness: 0.3
+            this.playerCar.traverse(child => {
+                if (child.isMesh && child.material) {
+                    const mats = Array.isArray(child.material) ? child.material : [child.material];
+                    mats.forEach(m => {
+                        const mName = String(m.name || '').toLowerCase();
+                        const nName = String(child.name || '').toLowerCase();
+                        if (mName.includes('taillight') || mName.includes('brake') || mName.includes('lights_red') ||
+                            nName.includes('taillight') || nName.includes('tail_light') || nName.includes('lights_red') || nName.includes('obj_tail_light')) {
+                            this.playerTaillights.push({ mesh: child, material: m });
+                        }
+                    });
+                }
             });
-            [-1, 1].forEach(side => {
-                const tlMesh = new THREE.Mesh(new THREE.BoxGeometry(halfW * 0.22, 0.10, 0.04), tlMat);
-                tlMesh.position.set(side * (halfW * 0.68), 0.62, -halfL + 0.02);
-                this.playerCar.add(tlMesh);
-                this.playerTaillights.push(tlMesh);
-            });
+
+            // Dynamic rear brake glow light (casts authentic red glow onto road and bumper when braking, zero floating boxes)
+            this.playerBrakeLight = new THREE.PointLight(0xdc2626, 0.2, 5.0, 1.5);
+            this.playerBrakeLight.position.set(0, 0.65, -halfL - 0.05);
+            this.playerCar.add(this.playerBrakeLight);
 
             // 3. Dual Nitro Exhaust Flame Meshes
             this.playerNitroFlames = [];
@@ -5702,11 +5709,15 @@
                 state.pitchSquat = 0;
             }
 
-            // Taillight emissive intensity on braking
-            const tlIntensity = keys.brake ? 3.0 : 0.25;
+            // Taillight emissive intensity & dynamic brake light on braking
+            const isBraking = !!keys.brake;
+            const tlIntensity = isBraking ? 2.8 : 0.35;
             this.playerTaillights.forEach(tl => {
                 if (tl.material) tl.material.emissiveIntensity = tlIntensity;
             });
+            if (this.playerBrakeLight) {
+                this.playerBrakeLight.intensity = isBraking ? 2.8 : 0.2;
+            }
 
             // Peak speed tracking
             if (state.speed > state.peakSpeed) {

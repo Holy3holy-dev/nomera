@@ -1851,30 +1851,41 @@
             width: 100%;
             min-height: 48px;
             flex-direction: row;
-            gap: 8px;
-            padding: 10px 14px;
+            gap: 4px;
+            padding: 8px 6px;
             background: linear-gradient(135deg, rgba(59, 130, 246, 0.35), rgba(37, 99, 235, 0.2));
             border: 1px solid rgba(59, 130, 246, 0.6);
             color: #bfdbfe;
-            font-size: 12px;
-            letter-spacing: 0.8px;
+            font-size: 11px;
+            letter-spacing: 0.5px;
             border-radius: 14px;
+            justify-content: center;
+            align-items: center;
         }
         .touch-nitro .nitro-fire-icon {
-            font-size: 18px;
+            font-size: 15px;
+            flex-shrink: 0;
         }
         .touch-nitro .touch-action-label, .touch-nitro-bar .nitro-text {
             font-weight: 900;
+            flex-shrink: 0;
+            overflow: visible;
+        }
+        .touch-actions-bar .touch-nitro .touch-action-label {
+            overflow: visible;
+            text-overflow: clip;
+            flex-shrink: 0;
         }
         .touch-nitro .nitro-badge, .touch-nitro-bar .nitro-badge {
             background: rgba(59, 130, 246, 0.45);
             border: 1px solid rgba(147, 197, 253, 0.4);
             border-radius: 20px;
-            padding: 2px 8px;
-            font-size: 11px;
+            padding: 2px 6px;
+            font-size: 10px;
             font-weight: 800;
             color: #fff;
-            margin-left: auto;
+            margin-left: 3px;
+            flex-shrink: 0;
         }
         .touch-nitro:active, .touch-nitro.pressed, .touch-nitro-bar:active, .touch-nitro-bar.pressed {
             background: linear-gradient(135deg, #2563eb, #1d4ed8);
@@ -3556,6 +3567,22 @@ body.race-active .race-3d-viewport-wrapper {
         padding: 6px 2px;
         font-size: 10px;
     }
+    .touch-actions-bar .touch-nitro {
+        padding: 6px 3px;
+        gap: 3px;
+    }
+    .touch-actions-bar .touch-nitro .nitro-fire-icon {
+        font-size: 13px;
+    }
+    .touch-actions-bar .touch-nitro .touch-action-label {
+        font-size: 10px;
+        letter-spacing: 0.2px;
+    }
+    .touch-actions-bar .touch-nitro .nitro-badge {
+        font-size: 9px;
+        padding: 1px 4px;
+        margin-left: 2px;
+    }
 }
 
 /* Mobile Landscape Mode (Phone in Horizontal Gaming Orientation) */
@@ -3818,9 +3845,21 @@ body.race-active .race-3d-viewport-wrapper {
     body.race-active .touch-actions-bar .touch-action-label {
         font-size: 9px;
     }
+    body.race-active .touch-nitro {
+        gap: 3px;
+        padding: 4px 2px;
+    }
+    body.race-active .touch-nitro .nitro-fire-icon {
+        font-size: 12px;
+    }
+    body.race-active .touch-nitro .touch-action-label {
+        font-size: 9px;
+        letter-spacing: 0.2px;
+    }
     body.race-active .touch-nitro .nitro-badge {
         font-size: 8.5px;
-        padding: 1px 4px;
+        padding: 1px 3px;
+        margin-left: 2px;
     }
 }
 
