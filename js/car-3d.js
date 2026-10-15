@@ -4163,9 +4163,34 @@
     };
 
     const rawGLBCache = new Map();
+    const NOMERA_MODEL_CACHE_NAME = 'nomera-glb-cache-v1';
+
+    async function fetchCachedGLBBuffer(modelUrl) {
+        if (!modelUrl) return null;
+        if (typeof window !== 'undefined' && window.caches && typeof window.fetch === 'function') {
+            try {
+                const cache = await window.caches.open(NOMERA_MODEL_CACHE_NAME);
+                const matched = await cache.match(modelUrl);
+                if (matched) {
+                    return await matched.arrayBuffer();
+                }
+                const response = await fetch(modelUrl);
+                if (response && response.ok) {
+                    try {
+                        cache.put(modelUrl, response.clone()).catch(() => {});
+                    } catch (_) {}
+                    return await response.arrayBuffer();
+                }
+            } catch (_) {}
+        }
+        return null;
+    }
 
     function getGLTFLoader(THREE) {
         if (!THREE.GLTFLoader) return null;
+        if (THREE.Cache) {
+            THREE.Cache.enabled = true;
+        }
         if (THREE._nomeraGLTFLoader) return THREE._nomeraGLTFLoader;
         const loader = new THREE.GLTFLoader();
         if (THREE.DRACOLoader) {
@@ -4993,20 +5018,57 @@
             return;
         }
 
-        loader.load(
-            modelUrl,
-            gltf => {
-                rawGLBCache.set(modelUrl, gltf.scene);
-                const finalModel = setupModel(gltf.scene);
-                if (onLoaded) onLoaded(finalModel);
-            },
-            undefined,
-            err => {
-                console.warn('Failed to load GLB model, falling back to procedural:', err);
+        const fallbackLoad = () => {
+            try {
+                loader.load(
+                    modelUrl,
+                    gltf => {
+                        rawGLBCache.set(modelUrl, gltf.scene);
+                        const finalModel = setupModel(gltf.scene);
+                        if (onLoaded) onLoaded(finalModel);
+                    },
+                    undefined,
+                    err => {
+                        console.warn('Failed to load GLB model, falling back to procedural:', err);
+                        const fallbackModel = buildDetailedCarModel(THREE, carName, styling);
+                        if (onLoaded) onLoaded(fallbackModel);
+                    }
+                );
+            } catch (err) {
                 const fallbackModel = buildDetailedCarModel(THREE, carName, styling);
                 if (onLoaded) onLoaded(fallbackModel);
             }
-        );
+        };
+
+        if (typeof window !== 'undefined' && window.caches && typeof loader.parse === 'function') {
+            fetchCachedGLBBuffer(modelUrl).then(buffer => {
+                if (buffer) {
+                    try {
+                        const baseUrl = modelUrl.substring(0, modelUrl.lastIndexOf('/') + 1);
+                        loader.parse(
+                            buffer,
+                            baseUrl,
+                            gltf => {
+                                if (gltf && gltf.scene) {
+                                    rawGLBCache.set(modelUrl, gltf.scene);
+                                    const finalModel = setupModel(gltf.scene);
+                                    if (onLoaded) onLoaded(finalModel);
+                                } else {
+                                    fallbackLoad();
+                                }
+                            },
+                            () => fallbackLoad()
+                        );
+                    } catch (_) {
+                        fallbackLoad();
+                    }
+                } else {
+                    fallbackLoad();
+                }
+            }).catch(() => fallbackLoad());
+        } else {
+            fallbackLoad();
+        }
     }
 
     function preloadCarModel(THREE, carName) {
@@ -5016,16 +5078,27 @@
         const loader = getGLTFLoader(THREE);
         if (!loader || !modelUrl || rawGLBCache.has(modelUrl)) return;
         try {
-            loader.load(
-                modelUrl,
-                gltf => {
-                    if (gltf && gltf.scene) {
-                        rawGLBCache.set(modelUrl, gltf.scene);
+            if (typeof window !== 'undefined' && window.caches && typeof loader.parse === 'function') {
+                fetchCachedGLBBuffer(modelUrl).then(buffer => {
+                    if (buffer && !rawGLBCache.has(modelUrl)) {
+                        const baseUrl = modelUrl.substring(0, modelUrl.lastIndexOf('/') + 1);
+                        loader.parse(buffer, baseUrl, gltf => {
+                            if (gltf && gltf.scene) rawGLBCache.set(modelUrl, gltf.scene);
+                        }, () => {});
                     }
-                },
-                undefined,
-                () => {}
-            );
+                }).catch(() => {});
+            } else {
+                loader.load(
+                    modelUrl,
+                    gltf => {
+                        if (gltf && gltf.scene) {
+                            rawGLBCache.set(modelUrl, gltf.scene);
+                        }
+                    },
+                    undefined,
+                    () => {}
+                );
+            }
         } catch (_) {}
     }
 
@@ -5201,6 +5274,25 @@
             this.neonLight.position.set(0, 0.14, 0);
             this.scene.add(this.neonLight);
 
+            // Forward Headlight Floor Beams in Showroom
+            this.headlightSpotL = new THREE.SpotLight(0xffffff, 0, 10, Math.PI / 4.5, 0.45, 1.2);
+            this.headlightSpotL.position.set(-0.65, 0.65, 1.8);
+            this.headlightSpotR = new THREE.SpotLight(0xffffff, 0, 10, Math.PI / 4.5, 0.45, 1.2);
+            this.headlightSpotR.position.set(0.65, 0.65, 1.8);
+
+            this.headlightTargetL = new THREE.Object3D();
+            this.headlightTargetL.position.set(-0.65, 0, 5.0);
+            this.scene.add(this.headlightTargetL);
+            this.headlightSpotL.target = this.headlightTargetL;
+
+            this.headlightTargetR = new THREE.Object3D();
+            this.headlightTargetR.position.set(0.65, 0, 5.0);
+            this.scene.add(this.headlightTargetR);
+            this.headlightSpotR.target = this.headlightTargetR;
+
+            this.scene.add(this.headlightSpotL);
+            this.scene.add(this.headlightSpotR);
+
             if (this.options.showPodium) {
                 this.createPodium();
             }
@@ -5276,49 +5368,103 @@
 
             const THREE = this.THREE;
 
-            const carId = identifyCarModel(this.currentCarName);
-            const modelUrl = GLB_MODEL_MAP[carId];
-            if (!rawGLBCache.has(modelUrl)) {
-                try {
-                    const immediateModel = buildDetailedCarModel(THREE, this.currentCarName, this.currentStyling);
-                    if (immediateModel) {
-                        if (this.carGroup) {
-                            this.scene.remove(this.carGroup);
-                            this.carGroup = null;
-                        }
-                        this.carGroup = immediateModel;
-                        if (this.currentStyling && this.currentStyling.plate !== undefined) {
-                            applyLicensePlateToModel(THREE, this.carGroup, this.currentStyling.plate);
-                        }
-                        this.scene.add(this.carGroup);
-                        this.updateNeonLight();
-                    }
-                } catch (_) {}
+            if (this.proceduralCar) {
+                this.scene.remove(this.proceduralCar);
+                this.proceduralCar = null;
+            }
+            if (this.glbCar) {
+                this.scene.remove(this.glbCar);
+                this.glbCar = null;
+            }
+            if (this.carGroup) {
+                this.scene.remove(this.carGroup);
+                this.carGroup = null;
             }
 
-            loadCarModel(THREE, this.currentCarName, this.currentStyling, loadedModel => {
-                if (this.carGroup) {
-                    this.scene.remove(this.carGroup);
-                    this.carGroup = null;
+            try {
+                this.proceduralCar = buildDetailedCarModel(THREE, this.currentCarName, this.currentStyling);
+                if (this.proceduralCar) {
+                    if (this.currentStyling && this.currentStyling.plate !== undefined) {
+                        applyLicensePlateToModel(THREE, this.proceduralCar, this.currentStyling.plate);
+                    }
+                    this.scene.add(this.proceduralCar);
+                    this.carGroup = this.proceduralCar;
                 }
-                this.carGroup = loadedModel;
-                this.scene.add(this.carGroup);
+            } catch (_) {}
+
+            this.updateActiveCarVisibility();
+            this.updateNeonLight();
+            this.updateHeadlightsState();
+
+            loadCarModel(THREE, this.currentCarName, this.currentStyling, loadedModel => {
+                if (!loadedModel) return;
+                if (this.glbCar) {
+                    this.scene.remove(this.glbCar);
+                }
+                this.glbCar = loadedModel;
+                this.glbHasPivots = !!(
+                    this.glbCar.getObjectByName('Door_FL_Pivot') ||
+                    this.glbCar.getObjectByName('door_left') ||
+                    this.glbCar.getObjectByName('door_fl')
+                );
+                if (this.glbHasPivots) {
+                    if (this.proceduralCar && this.proceduralCar !== this.glbCar) {
+                        this.scene.remove(this.proceduralCar);
+                    }
+                    this.proceduralCar = this.glbCar;
+                } else {
+                    this.scene.add(this.glbCar);
+                }
+                this.updateActiveCarVisibility();
                 this.updateNeonLight();
+                this.updateHeadlightsState();
             });
+        }
+
+        updateActiveCarVisibility() {
+            const isAnyOpen = this.doorsOpen || this.hoodOpen || this.trunkOpen;
+            if (this.glbHasPivots) {
+                if (this.glbCar) this.glbCar.visible = true;
+                if (this.proceduralCar) this.proceduralCar.visible = true;
+                this.carGroup = this.glbCar || this.proceduralCar;
+            } else if (isAnyOpen) {
+                if (this.proceduralCar) {
+                    this.proceduralCar.visible = true;
+                    this.carGroup = this.proceduralCar;
+                }
+                if (this.glbCar) {
+                    this.glbCar.visible = false;
+                }
+            } else {
+                if (this.glbCar) {
+                    this.glbCar.visible = true;
+                    this.carGroup = this.glbCar;
+                    if (this.proceduralCar) this.proceduralCar.visible = false;
+                } else if (this.proceduralCar) {
+                    this.proceduralCar.visible = true;
+                    this.carGroup = this.proceduralCar;
+                }
+            }
         }
 
         updatePlate(plateText) {
             this.currentStyling.plate = plateText;
+            if (this.proceduralCar && this.THREE) {
+                applyLicensePlateToModel(this.THREE, this.proceduralCar, plateText);
+            }
+            if (this.glbCar && this.THREE) {
+                applyLicensePlateToModel(this.THREE, this.glbCar, plateText);
+            }
             if (this.carGroup && this.THREE) {
                 applyLicensePlateToModel(this.THREE, this.carGroup, plateText);
             }
         }
 
         updateStyling(styling = {}) {
-            if (styling.plate !== undefined && this.carGroup && this.THREE) {
+            Object.assign(this.currentStyling, styling);
+            if (styling.plate !== undefined && this.THREE) {
                 this.updatePlate(styling.plate);
             }
-            Object.assign(this.currentStyling, styling);
             this.setCar(this.currentCarName, this.currentStyling);
         }
 
@@ -5343,39 +5489,67 @@
         toggleDoors() {
             this.doorsOpen = !this.doorsOpen;
             this.targetDoorAngle = this.doorsOpen ? 1.05 : 0;
+            this.updateActiveCarVisibility();
             return this.doorsOpen;
         }
 
         toggleHood() {
             this.hoodOpen = !this.hoodOpen;
             this.targetHoodAngle = this.hoodOpen ? 0.85 : 0;
+            this.updateActiveCarVisibility();
             return this.hoodOpen;
         }
 
         toggleTrunk() {
             this.trunkOpen = !this.trunkOpen;
             this.targetTrunkAngle = this.trunkOpen ? 0.90 : 0;
+            this.updateActiveCarVisibility();
             return this.trunkOpen;
         }
 
         toggleHeadlights() {
             this.headlightsOn = !this.headlightsOn;
-            if (this.carGroup) {
-                const hlGroup = this.carGroup.getObjectByName('HeadlightsGroup');
+            this.updateHeadlightsState();
+            return this.headlightsOn;
+        }
+
+        updateHeadlightsState() {
+            if (this.headlightSpotL) this.headlightSpotL.intensity = this.headlightsOn ? 3.5 : 0;
+            if (this.headlightSpotR) this.headlightSpotR.intensity = this.headlightsOn ? 3.5 : 0;
+
+            const updateModelLights = (model) => {
+                if (!model) return;
+                const hlGroup = model.getObjectByName('HeadlightsGroup');
                 if (hlGroup) {
                     hlGroup.traverse(obj => {
-                        if (obj.isPointLight) {
-                            obj.intensity = this.headlightsOn ? 3.0 : 0;
-                        }
+                        if (obj.isPointLight) obj.intensity = this.headlightsOn ? 3.0 : 0;
                     });
                 }
-                this.carGroup.traverse(obj => {
-                    if (obj.material && (obj.material.name === 'HeadlightLED' || obj.material.name === 'HeadlightGlass')) {
-                        obj.material.emissiveIntensity = this.headlightsOn ? 2.5 : 0.8;
+                model.traverse(obj => {
+                    if (obj.isMesh && obj.material) {
+                        const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
+                        mats.forEach(mat => {
+                            const name = String(mat.name || '').toLowerCase();
+                            if (name === 'headlightled' || name === 'headlightglass' || name.includes('headlight') || name.includes('lamp') || name.includes('lens')) {
+                                if (mat.emissive) {
+                                    if (this.headlightsOn) {
+                                        if (!mat.userData._origEmissive) mat.userData._origEmissive = mat.emissive.clone();
+                                        mat.emissive.setHex(0xffffff);
+                                        mat.emissiveIntensity = 2.8;
+                                    } else {
+                                        if (mat.userData._origEmissive) mat.emissive.copy(mat.userData._origEmissive);
+                                        mat.emissiveIntensity = 0.5;
+                                    }
+                                }
+                            }
+                        });
                     }
                 });
-            }
-            return this.headlightsOn;
+            };
+
+            updateModelLights(this.proceduralCar);
+            updateModelLights(this.glbCar);
+            updateModelLights(this.carGroup);
         }
 
         getInteractiveState() {
@@ -5487,16 +5661,21 @@
                 this.hoodAngle += (this.targetHoodAngle - this.hoodAngle) * 0.14;
                 this.trunkAngle += (this.targetTrunkAngle - this.trunkAngle) * 0.14;
 
-                if (this.carGroup) {
-                    const dFL = this.carGroup.getObjectByName('Door_FL_Pivot');
-                    const dFR = this.carGroup.getObjectByName('Door_FR_Pivot');
-                    const hood = this.carGroup.getObjectByName('Hood_Pivot');
-                    const trunk = this.carGroup.getObjectByName('Trunk_Pivot');
+                const animateModel = (model) => {
+                    if (!model) return;
+                    const dFL = model.getObjectByName('Door_FL_Pivot') || model.getObjectByName('door_left');
+                    const dFR = model.getObjectByName('Door_FR_Pivot') || model.getObjectByName('door_right');
+                    const hood = model.getObjectByName('Hood_Pivot') || model.getObjectByName('hood');
+                    const trunk = model.getObjectByName('Trunk_Pivot') || model.getObjectByName('trunk');
                     if (dFL) dFL.rotation.y = this.doorAngle;
                     if (dFR) dFR.rotation.y = -this.doorAngle;
                     if (hood) hood.rotation.x = -this.hoodAngle;
                     if (trunk) trunk.rotation.x = this.trunkAngle;
-                }
+                };
+
+                animateModel(this.proceduralCar);
+                if (this.glbHasPivots) animateModel(this.glbCar);
+                animateModel(this.carGroup);
 
                 // SGU Strobe Lights Live Flashing Animation
                 if (this.currentStyling.sgu && this.currentStyling.sgu !== 'none' && this.carGroup) {

@@ -3334,10 +3334,10 @@ body.race-active .main-container {
     margin-top: 2px;
 }
 
-/* 🚨 3D Police Pursuit & Wanted Level Box (Top Screen Placement) */
+/* 🚨 3D Police Pursuit & Wanted Level Box (Top Screen Placement - positioned safely under top stats) */
 .race-3d-pursuit-box {
     position: absolute;
-    top: 10px;
+    top: 68px;
     left: 50%;
     transform: translateX(-50%);
     margin: 0;
@@ -3541,6 +3541,29 @@ body.race-active .race-3d-viewport-wrapper {
     position: relative;
     border-radius: var(--radius-md, 16px);
     overflow: hidden;
+}
+
+/* PC Desktop Adaptation (>= 860px) - Widescreen & Keyboard Controls */
+@media screen and (min-width: 860px) {
+    body.race-active .main-container {
+        max-width: 1320px;
+        padding: 10px 16px;
+    }
+    body.race-active #race-3d-play-container {
+        max-width: 1280px;
+        height: auto;
+        justify-content: flex-start;
+    }
+    body.race-active .race-3d-viewport-wrapper {
+        height: 640px;
+        min-height: 520px;
+        max-height: calc(100dvh - 110px);
+        aspect-ratio: 16 / 9;
+        flex: 0 0 auto;
+    }
+    #race-3d-touch-controls:not(.touch-enabled) {
+        display: none !important;
+    }
 }
 
 /* Mobile Portrait Adaptation (<= 600px) */
@@ -3787,7 +3810,7 @@ body.race-active .race-3d-viewport-wrapper {
         margin-top: 1px;
     }
     body.race-active .race-3d-pursuit-box {
-        top: max(38px, calc(env(safe-area-inset-top) + 32px));
+        top: max(64px, calc(env(safe-area-inset-top) + 54px));
         padding: 3px 10px;
         min-width: 150px;
         max-width: 210px;
@@ -4004,6 +4027,69 @@ body.race-active .race-3d-viewport-wrapper {
     color: #38bdf8;
     box-shadow: 0 0 12px rgba(56, 189, 248, 0.45);
 }
+
+/* =========================================================================
+   Car Styling & Tuning Modal - PC Desktop & Responsive Adaptations
+   ========================================================================= */
+.styling-modal-box {
+    max-width: 480px;
+    width: 100%;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.styling-modal-body {
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    padding-right: 2px;
+}
+
+.styling-stage-column {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+.styling-options-column {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+@media screen and (min-width: 860px) {
+    .styling-modal-box {
+        max-width: 1120px !important;
+        width: 92vw;
+        max-height: 88vh;
+        padding: 20px 24px;
+    }
+    .styling-modal-body {
+        display: grid;
+        grid-template-columns: 460px 1fr;
+        gap: 24px;
+        align-items: start;
+        overflow: hidden;
+    }
+    .styling-stage-column {
+        position: sticky;
+        top: 0;
+    }
+    .styling-stage-column #styling-preview-stage {
+        min-height: 380px !important;
+        margin-bottom: 0;
+    }
+    .styling-stage-column #styling-preview-3d-wrap {
+        height: 350px !important;
+    }
+    .styling-options-column {
+        overflow-y: auto;
+        max-height: calc(88vh - 90px);
+        padding-right: 12px;
+    }
+}
+
 
 
 

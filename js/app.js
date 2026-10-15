@@ -4561,6 +4561,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
         // --- 2. СТАЙЛИНГ АВТОМОБИЛЕЙ (ПОКРАСКА, ТОНИРОВКА, ДИСКИ, КЛИРЕНС, СГУ, НЕОН) ---
         function openStylingModal(carIndex) {
+            try { preloadUserGarageModels(); } catch (_) {}
             stylingActiveCarIndex = carIndex;
             const btnSide = document.getElementById('btn-view-side');
             const btnTop = document.getElementById('btn-view-top');
@@ -4741,7 +4742,10 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         }
 
         function toggleShowroomDoors() {
-            if (stylingViewMode !== '3d' || !car3DShowroom) return;
+            if (stylingViewMode !== '3d') {
+                setStylingViewMode('3d');
+            }
+            if (!car3DShowroom) return;
             const isOpen = car3DShowroom.toggleDoors();
             const btn = document.getElementById('btn-show-doors');
             if (btn) btn.classList.toggle('active', isOpen);
@@ -4749,7 +4753,10 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         }
 
         function toggleShowroomHood() {
-            if (stylingViewMode !== '3d' || !car3DShowroom) return;
+            if (stylingViewMode !== '3d') {
+                setStylingViewMode('3d');
+            }
+            if (!car3DShowroom) return;
             const isOpen = car3DShowroom.toggleHood();
             const btn = document.getElementById('btn-show-hood');
             if (btn) btn.classList.toggle('active', isOpen);
@@ -4757,7 +4764,10 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         }
 
         function toggleShowroomTrunk() {
-            if (stylingViewMode !== '3d' || !car3DShowroom) return;
+            if (stylingViewMode !== '3d') {
+                setStylingViewMode('3d');
+            }
+            if (!car3DShowroom) return;
             const isOpen = car3DShowroom.toggleTrunk();
             const btn = document.getElementById('btn-show-trunk');
             if (btn) btn.classList.toggle('active', isOpen);
@@ -4765,7 +4775,10 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         }
 
         function toggleShowroomHeadlights() {
-            if (stylingViewMode !== '3d' || !car3DShowroom) return;
+            if (stylingViewMode !== '3d') {
+                setStylingViewMode('3d');
+            }
+            if (!car3DShowroom) return;
             const isOn = car3DShowroom.toggleHeadlights();
             const btn = document.getElementById('btn-show-lights');
             if (btn) btn.classList.toggle('active', isOn);
@@ -9997,6 +10010,40 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             }
         }
         window.cycle3DWeather = cycle3DWeather;
+
+        function toggle3DTouchControls() {
+            const touchEl = document.getElementById('race-3d-touch-controls');
+            const btnText = document.getElementById('btn-toggle-touch-text');
+            if (!touchEl) return;
+            const isEnabled = touchEl.classList.toggle('touch-enabled');
+            if (btnText) {
+                btnText.textContent = isEnabled ? 'Скрыть руль' : 'Экранный руль';
+            }
+            if (car3DRacingEngine && typeof car3DRacingEngine.onResize === 'function') {
+                setTimeout(() => car3DRacingEngine.onResize(), 60);
+            }
+        }
+        window.toggle3DTouchControls = toggle3DTouchControls;
+
+        function preloadUserGarageModels() {
+            if (typeof Car3DManager === 'undefined' || !Car3DManager.preloadCarModel) return;
+            const THREE = window.THREE;
+            if (!THREE) return;
+            const activeCar = (myCars && currentCarIndex >= 0 && myCars[currentCarIndex]) ? myCars[currentCarIndex] : null;
+            if (activeCar && activeCar.name) {
+                Car3DManager.preloadCarModel(THREE, activeCar.name);
+            }
+            if (Array.isArray(myCars)) {
+                myCars.slice(0, 6).forEach(c => {
+                    if (c && c.name && (!activeCar || c.name !== activeCar.name)) {
+                        setTimeout(() => {
+                            Car3DManager.preloadCarModel(THREE, c.name);
+                        }, 250);
+                    }
+                });
+            }
+        }
+        window.preloadUserGarageModels = preloadUserGarageModels;
 
         function handle3DTouchControl(event, action, isDown) {
             if (event) {
