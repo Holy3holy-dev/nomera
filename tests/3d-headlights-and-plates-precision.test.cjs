@@ -4,23 +4,28 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 function setupTestContext() {
-    const domElementMock = {
-        getContext: () => ({
-            fillRect: () => {},
-            clearRect: () => {},
-            fillText: () => {},
-            drawImage: () => {},
-            measureText: () => ({ width: 100 }),
-            createRadialGradient: () => ({ addColorStop: () => {} })
-        }),
-        width: 512,
-        height: 512,
-        style: {},
-        addEventListener: () => {},
-        removeEventListener: () => {},
-        appendChild: () => {},
-        innerHTML: ''
-    };
+    function makeMockElement() {
+        return {
+            getContext: () => ({
+                fillRect: () => {},
+                clearRect: () => {},
+                fillText: () => {},
+                drawImage: () => {},
+                measureText: () => ({ width: 100 }),
+                createRadialGradient: () => ({ addColorStop: () => {} })
+            }),
+            width: 512,
+            height: 512,
+            style: {},
+            addEventListener: (evt, cb) => {
+                if (evt === 'load') setTimeout(cb, 1);
+            },
+            removeEventListener: () => {},
+            appendChild: () => {},
+            innerHTML: ''
+        };
+    }
+    const domElementMock = makeMockElement();
 
     global.window = global;
     global.self = global;
@@ -30,14 +35,15 @@ function setupTestContext() {
     global.window.removeEventListener = () => {};
 
     global.document = {
-        createElement: () => domElementMock,
-        createElementNS: () => ({ style: {} }),
+        createElement: () => makeMockElement(),
+        createElementNS: () => makeMockElement(),
         getElementById: () => domElementMock,
         querySelectorAll: () => [],
         addEventListener: () => {},
-        removeEventListener: () => {}
+        removeEventListener: () => {},
+        head: { appendChild: () => {} }
     };
-    global.Image = function() { return domElementMock; };
+    global.Image = function() { return makeMockElement(); };
     global.navigator = { userAgent: 'NodeTest' };
     global.requestAnimationFrame = (cb) => setTimeout(cb, 16);
     global.cancelAnimationFrame = (id) => clearTimeout(id);
@@ -204,3 +210,81 @@ test('Car3DShowroom headlight flares and spotlights align flush with vehicle len
 
     showroom.stop();
 });
+
+test('detectVehicleLightPositions correctly splits symmetric combined meshes and aligns with physical lenses on GLB', async () => {
+    const { THREE, Car3DManager } = setupTestContext();
+    require('../js/vendor/GLTFLoader.js');
+
+    const GLTFLoader = THREE.GLTFLoader;
+    const loader = new GLTFLoader();
+    const lamboPath = path.join(__dirname, '..', 'assets', 'models', 'lamborghini.glb');
+    if (!fs.existsSync(lamboPath)) return;
+
+    const buf = fs.readFileSync(lamboPath);
+    await new Promise((resolve, reject) => {
+        loader.parse(buf.buffer, '', (gltf) => {
+            try {
+                const scene = gltf.scene;
+                // Strip shadow plane as setupModel does
+                const toRemove = [];
+                scene.traverse(c => {
+                    if (/shadow.*plane|ground.*shadow|floor.*shadow|shadow_plane|obj_shadow/i.test(c.name)) toRemove.push(c);
+                });
+                toRemove.forEach(c => { if (c.parent) c.parent.remove(c); });
+
+                scene.updateMatrixWorld(true);
+                let box = new THREE.Box3().setFromObject(scene);
+                let size = box.getSize(new THREE.Vector3());
+
+                if (size.x > size.z * 1.15) {
+                    scene.rotation.y = Math.PI / 2;
+                    scene.updateMatrixWorld(true);
+                    box = new THREE.Box3().setFromObject(scene);
+                    size = box.getSize(new THREE.Vector3());
+                }
+
+                const sf = 4.50 / size.z;
+                scene.scale.setScalar(sf);
+                scene.updateMatrixWorld(true);
+
+                const scaledBox = new THREE.Box3().setFromObject(scene);
+                const scaledCenter = scaledBox.getCenter(new THREE.Vector3());
+                scene.position.x = -scaledCenter.x;
+                scene.position.z = -scaledCenter.z;
+                scene.position.y = -scaledBox.min.y;
+                scene.updateMatrixWorld(true);
+
+                const modelGroup = new THREE.Group();
+                modelGroup.add(scene);
+                modelGroup.userData.carId = 'huracan';
+                modelGroup.updateMatrixWorld(true);
+
+                const lights = Car3DManager.detectVehicleLightPositions(modelGroup, 'huracan', THREE);
+
+                // Headlights must be placed on physical Huracan headlight lenses (~1.81m Z, ~±0.65m X, ~0.57m Y)
+                assert.ok(lights.hlL.z > 1.65 && lights.hlL.z < 1.95, `Headlights Z must be on physical lens (~1.81m, got ${lights.hlL.z.toFixed(2)})`);
+                assert.ok(Math.abs(lights.hlL.x) > 0.50 && Math.abs(lights.hlL.x) < 0.75, `Headlights X must match Huracan lens width (~±0.65m, got ${lights.hlL.x.toFixed(2)})`);
+                assert.ok(lights.hlL.y > 0.45 && lights.hlL.y < 0.70, `Headlights Y must match Huracan lens height (~0.57m, got ${lights.hlL.y.toFixed(2)})`);
+
+                // Taillights must be placed on physical Huracan taillight lenses (~ -2.00m Z, ~±0.65m X, ~0.76m Y)
+                assert.ok(lights.tlL.z < -1.85 && lights.tlL.z > -2.15, `Taillights Z must be on physical lens (~ -2.00m, got ${lights.tlL.z.toFixed(2)})`);
+                assert.ok(Math.abs(lights.tlL.x) > 0.50 && Math.abs(lights.tlL.x) < 0.75, `Taillights X must match Huracan lens width (~±0.65m, got ${lights.tlL.x.toFixed(2)})`);
+                assert.ok(lights.tlL.y > 0.60 && lights.tlL.y < 0.90, `Taillights Y must match Huracan lens height (~0.77m, got ${lights.tlL.y.toFixed(2)})`);
+
+                // Front and Rear plates must sit flush on true bumpers
+                Car3DManager.applyLicensePlateToModel(THREE, modelGroup, 'В 606 ОР | 777 RUS');
+                const fp = modelGroup.getObjectByName('GLB_FrontLicensePlate');
+                const rp = modelGroup.getObjectByName('GLB_RearLicensePlate');
+
+                assert.ok(fp, 'Front plate must exist on GLB');
+                assert.ok(rp, 'Rear plate must exist on GLB');
+                assert.ok(fp.position.z >= 2.20, `Front plate must be on front bumper tip (~2.25m, got ${fp.position.z.toFixed(2)})`);
+                assert.ok(rp.position.z <= -2.20, `Rear plate must be on rear bumper tip (~ -2.25m, got ${rp.position.z.toFixed(2)})`);
+                resolve();
+            } catch (err) {
+                reject(err);
+            }
+        }, reject);
+    });
+});
+

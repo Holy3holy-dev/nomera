@@ -714,37 +714,104 @@
             const halfW = (size.x || 1.8) * 0.5;
             const carH = size.y || 1.4;
 
-            const hlNodesL = [];
-            const hlNodesR = [];
-            const tlNodesL = [];
-            const tlNodesR = [];
+            // Front 38% Z threshold for headlights, Rear 38% Z threshold for taillights
+            const hlMinZ = center.z + size.z * 0.10;
+            const tlMaxZ = center.z - size.z * 0.10;
+
+            const hlCandidates = [];
+            const tlCandidates = [];
+
+            const badWords = /interior|seat|dash|mirror|wheel|tire|plate|bottom|chassis|under|roof|cabin|radiator|grille|intake|diffuser|disc|caliper|pad|rotor|exhaust/i;
 
             model.traverse(c => {
                 if (!c.name && (!c.material || !c.material.name)) return;
                 const mn = String((c.material && c.material.name) || '').toLowerCase();
                 const nn = String(c.name || '').toLowerCase();
 
-                const isHl = (/headlight|headlamp|fara|fary|f_light|lamp.*front/i.test(mn) ||
-                              /headlight|headlamp|fara|fary/i.test(nn)) &&
-                             !/taillight|rear|back|brake/i.test(mn) && !/taillight|rear|back|brake/i.test(nn);
+                if (badWords.test(nn) || badWords.test(mn)) return;
 
-                const isTl = /taillight|tail.*lamp|brake.*light|rear.*light|stop.*light|zadn.*fara/i.test(mn) ||
-                             /taillight|brake.*light|zadn.*fara|backlight/i.test(nn);
+                const isHl = (/headlight|head.*light|headlamp|head.*lamp|headglass|f_light|lamp.*front|fara|fary|mt_light_emissive/i.test(mn) ||
+                              /headlight|head.*light|headlamp|head.*lamp|headglass|f_light|fara|fary/i.test(nn)) &&
+                             !/taillight|tail|rear|back|brake/i.test(mn) && !/taillight|tail|rear|back|brake/i.test(nn);
 
-                if (isHl || isTl) {
-                    const b = new THREE.Box3().setFromObject(c);
-                    if (!b.isEmpty() && (b.max.y - b.min.y) > 0.02) {
-                        const cen = b.getCenter(new THREE.Vector3());
-                        if (isHl && cen.z > box.min.z + size.z * 0.45) {
-                            if (cen.x < center.x - 0.12) hlNodesL.push(cen);
-                            else if (cen.x > center.x + 0.12) hlNodesR.push(cen);
-                        } else if (isTl && cen.z < box.min.z + size.z * 0.55) {
-                            if (cen.x < center.x - 0.12) tlNodesL.push(cen);
-                            else if (cen.x > center.x + 0.12) tlNodesR.push(cen);
-                        }
-                    }
+                const isTl = /taillight|tail.*light|tail.*lamp|tailglass|tailpiece|reflector.*tl|reflector.*bl|brake.*light|rear.*light|stop.*light|zadn.*fara/i.test(mn) ||
+                             /taillight|tail.*light|tail.*lamp|tailglass|tailpiece|brake.*light|rear.*light|stop.*light|zadn.*fara|backlight/i.test(nn);
+
+                if (!isHl && !isTl) return;
+
+                const b = new THREE.Box3().setFromObject(c);
+                if (b.isEmpty() || (b.max.y - b.min.y) <= 0.01) return;
+                const bSize = b.getSize(new THREE.Vector3());
+                const bCen = b.getCenter(new THREE.Vector3());
+
+                if (isHl && bCen.z >= hlMinZ) {
+                    let priority = 1;
+                    if (/emissive|light_emissive|led/i.test(mn)) priority += 6;
+                    if (/headlight|headlamp|headglass/i.test(nn)) priority += 4;
+                    if (!/bumper/i.test(nn)) priority += 2;
+                    hlCandidates.push({ node: c, box: b, center: bCen, size: bSize, priority });
+                } else if (isTl && bCen.z <= tlMaxZ) {
+                    let priority = 1;
+                    if (/reflector|emissive|led/i.test(mn)) priority += 6;
+                    if (/tail_light|taillight|tailglass|tailpiece/i.test(nn)) priority += 4;
+                    tlCandidates.push({ node: c, box: b, center: bCen, size: bSize, priority });
                 }
             });
+
+            hlCandidates.sort((a, b) => b.priority - a.priority);
+            tlCandidates.sort((a, b) => b.priority - a.priority);
+
+            function extractLeftRight(candidates) {
+                let leftPos = null;
+                let rightPos = null;
+
+                for (const cand of candidates) {
+                    const node = cand.node;
+                    const b = cand.box;
+                    const bCen = cand.center;
+
+                    // Case A: Symmetrical combined mesh (spans both left and right sides)
+                    if (b.min.x < center.x - 0.20 && b.max.x > center.x + 0.20) {
+                        if (node.isMesh && node.geometry && node.geometry.attributes && node.geometry.attributes.position) {
+                            node.updateMatrixWorld(true);
+                            const pos = node.geometry.attributes.position;
+                            const v = new THREE.Vector3();
+                            const bL = new THREE.Box3();
+                            const bR = new THREE.Box3();
+                            const step = Math.max(1, Math.floor(pos.count / 2000));
+                            for (let i = 0; i < pos.count; i += step) {
+                                v.fromBufferAttribute(pos, i);
+                                v.applyMatrix4(node.matrixWorld);
+                                if (v.x < center.x - 0.12) bL.expandByPoint(v);
+                                else if (v.x > center.x + 0.12) bR.expandByPoint(v);
+                            }
+                            if (!bL.isEmpty() && !bR.isEmpty()) {
+                                leftPos = bL.getCenter(new THREE.Vector3());
+                                rightPos = bR.getCenter(new THREE.Vector3());
+                                break;
+                            }
+                        }
+                        const spanX = (b.max.x - center.x) * 0.78;
+                        leftPos = new THREE.Vector3(center.x - spanX, bCen.y, bCen.z);
+                        rightPos = new THREE.Vector3(center.x + spanX, bCen.y, bCen.z);
+                        break;
+                    }
+
+                    // Case B: Separate left / right mesh
+                    if (bCen.x < center.x - 0.12 && !leftPos) {
+                        leftPos = bCen.clone();
+                    } else if (bCen.x > center.x + 0.12 && !rightPos) {
+                        rightPos = bCen.clone();
+                    }
+
+                    if (leftPos && rightPos) break;
+                }
+
+                return { leftPos, rightPos };
+            }
+
+            const hlResult = extractLeftRight(hlCandidates);
+            const tlResult = extractLeftRight(tlCandidates);
 
             const cid = carId || (model.userData && model.userData.carId) || '';
             const isSUV = (cid === 'g63' || cid === 'lc300' || cid === 'cullinan') || size.y > 1.7;
@@ -752,9 +819,9 @@
 
             let hlL, hlR, tlL, tlR;
 
-            if (hlNodesL.length > 0 && hlNodesR.length > 0) {
-                hlL = hlNodesL[0].clone();
-                hlR = hlNodesR[0].clone();
+            if (hlResult.leftPos && hlResult.rightPos) {
+                hlL = hlResult.leftPos;
+                hlR = hlResult.rightPos;
             } else {
                 const hlY = isSUV ? (box.min.y + carH * 0.46) : (isSuper ? (box.min.y + carH * 0.50) : (box.min.y + carH * 0.46));
                 const hlX = halfW * 0.72;
@@ -763,9 +830,9 @@
                 hlR = new THREE.Vector3(center.x + hlX, hlY, hlZ);
             }
 
-            if (tlNodesL.length > 0 && tlNodesR.length > 0) {
-                tlL = tlNodesL[0].clone();
-                tlR = tlNodesR[0].clone();
+            if (tlResult.leftPos && tlResult.rightPos) {
+                tlL = tlResult.leftPos;
+                tlR = tlResult.rightPos;
             } else {
                 const tlY = isSUV ? (box.min.y + carH * 0.38) : (isSuper ? (box.min.y + carH * 0.50) : (box.min.y + carH * 0.48));
                 const tlX = halfW * 0.74;
@@ -840,7 +907,7 @@
             if ((n.includes('plate_01') || n.includes('reg plate (front)') || n.includes('plate_f') || n.includes('licenseplate_front')) && !existingFP) {
                 existingFP = child;
             }
-            if ((n.includes('plate_02') || n.includes('reg plate (back)') || n.includes('plate_r') || n.includes('licenseplate_rear') || n.includes('tail_led_plate')) && !existingRP) {
+            if ((n.includes('plate_02') || n.includes('reg plate (back)') || n.includes('plate_r') || n.includes('licenseplate_rear')) && !n.includes('tail_led') && !existingRP) {
                 existingRP = child;
             }
         });
@@ -858,7 +925,7 @@
             existingFP.visible = false;
         } else {
             frontY = isSUV ? (box.min.y + Math.max(0.58, Math.min(0.72, size.y * 0.31)))
-                           : (isSuper ? (box.min.y + Math.max(0.32, Math.min(0.42, size.y * 0.30)))
+                           : (isSuper ? (box.min.y + Math.max(0.36, Math.min(0.44, size.y * 0.36)))
                                       : (box.min.y + Math.max(0.40, Math.min(0.52, size.y * 0.31))));
 
             let bestFZ = -Infinity;
@@ -5139,18 +5206,21 @@
                 }
             }
             const clonedScene = rootToUse.clone(true);
-            if (carId === 'gaz24') {
-                const toRemove = [];
-                clonedScene.traverse(c => {
-                    const nm = String(c.name || '').toLowerCase();
+            const toRemove = [];
+            clonedScene.traverse(c => {
+                const nm = String(c.name || '').toLowerCase();
+                if (/shadow.*plane|ground.*shadow|floor.*shadow|shadow_plane|obj_shadow/i.test(nm)) {
+                    toRemove.push(c);
+                }
+                if (carId === 'gaz24') {
                     if (nm.includes('object_174') || nm.includes('reg plate') || nm.includes('2020') || nm.includes('plate')) {
                         toRemove.push(c);
                     }
-                });
-                toRemove.forEach(c => {
-                    if (c.parent) c.parent.remove(c);
-                });
-            }
+                }
+            });
+            toRemove.forEach(c => {
+                if (c.parent) c.parent.remove(c);
+            });
             clonedScene.updateMatrixWorld(true);
 
             let box = new THREE.Box3().setFromObject(clonedScene);
@@ -5927,14 +5997,14 @@
                 if (this.frontLightL) this.frontLightL.position.set(lightPos.hlL.x, lightPos.hlL.y, lightPos.hlL.z + 0.02);
                 if (this.frontLightR) this.frontLightR.position.set(lightPos.hlR.x, lightPos.hlR.y, lightPos.hlR.z + 0.02);
 
-                if (this.flareMeshL) this.flareMeshL.position.set(lightPos.hlL.x, lightPos.hlL.y, lightPos.hlL.z + 0.005);
-                if (this.flareMeshR) this.flareMeshR.position.set(lightPos.hlR.x, lightPos.hlR.y, lightPos.hlR.z + 0.005);
+                if (this.flareMeshL) this.flareMeshL.position.copy(lightPos.hlL);
+                if (this.flareMeshR) this.flareMeshR.position.copy(lightPos.hlR);
 
-                if (this.taillightFlareL) this.taillightFlareL.position.set(lightPos.tlL.x, lightPos.tlL.y, lightPos.tlL.z - 0.005);
-                if (this.taillightFlareR) this.taillightFlareR.position.set(lightPos.tlR.x, lightPos.tlR.y, lightPos.tlR.z - 0.005);
+                if (this.taillightFlareL) this.taillightFlareL.position.copy(lightPos.tlL);
+                if (this.taillightFlareR) this.taillightFlareR.position.copy(lightPos.tlR);
 
-                if (this.rearLightL) this.rearLightL.position.set(lightPos.tlL.x, lightPos.tlL.y, lightPos.tlL.z - 0.04);
-                if (this.rearLightR) this.rearLightR.position.set(lightPos.tlR.x, lightPos.tlR.y, lightPos.tlR.z - 0.04);
+                if (this.rearLightL) this.rearLightL.position.set(lightPos.tlL.x, lightPos.tlL.y, lightPos.tlL.z - 0.03);
+                if (this.rearLightR) this.rearLightR.position.set(lightPos.tlR.x, lightPos.tlR.y, lightPos.tlR.z - 0.03);
             } catch (_) {}
         }
 
@@ -5971,21 +6041,47 @@
             if (this.rearLightL) this.rearLightL.intensity = this.headlightsOn ? 2.0 : 0;
             if (this.rearLightR) this.rearLightR.intensity = this.headlightsOn ? 2.0 : 0;
 
+            const createSoftGlowTexture = (colorHex) => {
+                if (!THREE) return null;
+                try {
+                    if (typeof document !== 'undefined' && document.createElement) {
+                        const canvas = document.createElement('canvas');
+                        canvas.width = 64;
+                        canvas.height = 64;
+                        const ctx = canvas.getContext('2d');
+                        if (ctx && ctx.createRadialGradient) {
+                            const grad = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+                            grad.addColorStop(0, colorHex || '#ffffff');
+                            grad.addColorStop(0.2, colorHex || '#ffffff');
+                            grad.addColorStop(0.55, 'rgba(255, 255, 255, 0.35)');
+                            grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+                            ctx.fillStyle = grad;
+                            ctx.fillRect(0, 0, 64, 64);
+                            return new THREE.CanvasTexture(canvas);
+                        }
+                    }
+                } catch (_) {}
+                return null;
+            };
+
             // Visible glowing headlight lens flares flush on the car front lenses
             if (!this.headlightFlares && THREE) {
                 this.headlightFlares = new THREE.Group();
                 this.headlightFlares.name = 'ShowroomHeadlightFlares';
-                const flareMat = new THREE.MeshBasicMaterial({
+                const hlTex = createSoftGlowTexture('#ffffff');
+                const flareMat = new THREE.SpriteMaterial({
+                    map: hlTex,
                     color: 0xffffff,
                     transparent: true,
-                    opacity: 0.88,
-                    depthWrite: false,
-                    side: THREE.DoubleSide
+                    opacity: 0.85,
+                    blending: THREE.AdditiveBlending,
+                    depthWrite: false
                 });
-                const flareGeo = new THREE.CircleGeometry(0.04, 16);
-                this.flareMeshL = new THREE.Mesh(flareGeo, flareMat);
+                this.flareMeshL = new THREE.Sprite(flareMat);
+                this.flareMeshL.scale.set(0.18, 0.18, 1);
                 this.flareMeshL.position.set(-0.65, 0.62, 2.15);
-                this.flareMeshR = new THREE.Mesh(flareGeo, flareMat);
+                this.flareMeshR = new THREE.Sprite(flareMat);
+                this.flareMeshR.scale.set(0.18, 0.18, 1);
                 this.flareMeshR.position.set(0.65, 0.62, 2.15);
                 this.headlightFlares.add(this.flareMeshL);
                 this.headlightFlares.add(this.flareMeshR);
@@ -5999,17 +6095,20 @@
             if (!this.taillightFlares && THREE) {
                 this.taillightFlares = new THREE.Group();
                 this.taillightFlares.name = 'ShowroomTaillightFlares';
-                const tailMat = new THREE.MeshBasicMaterial({
-                    color: 0xff0820,
+                const tlTex = createSoftGlowTexture('#ff1a2a');
+                const tailMat = new THREE.SpriteMaterial({
+                    map: tlTex,
+                    color: 0xff1a2a,
                     transparent: true,
-                    opacity: 0.88,
-                    depthWrite: false,
-                    side: THREE.DoubleSide
+                    opacity: 0.85,
+                    blending: THREE.AdditiveBlending,
+                    depthWrite: false
                 });
-                const tailGeo = new THREE.CircleGeometry(0.032, 16);
-                this.taillightFlareL = new THREE.Mesh(tailGeo, tailMat);
+                this.taillightFlareL = new THREE.Sprite(tailMat);
+                this.taillightFlareL.scale.set(0.15, 0.15, 1);
                 this.taillightFlareL.position.set(-0.65, 0.70, -2.15);
-                this.taillightFlareR = new THREE.Mesh(tailGeo, tailMat);
+                this.taillightFlareR = new THREE.Sprite(tailMat);
+                this.taillightFlareR.scale.set(0.15, 0.15, 1);
                 this.taillightFlareR.position.set(0.65, 0.70, -2.15);
                 this.taillightFlares.add(this.taillightFlareL);
                 this.taillightFlares.add(this.taillightFlareR);
@@ -6029,16 +6128,22 @@
                         if (obj.isPointLight) obj.intensity = this.headlightsOn ? 3.5 : 0;
                     });
                 }
+                const badWords = /interior|seat|dash|mirror|cabin|roof|wheel|tire|caliper|disc|brake_disc|bumper|grille|radiator/i;
                 model.traverse(obj => {
                     if (obj.isMesh && obj.material) {
                         const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
                         mats.forEach(mat => {
                             const matName = String(mat.name || '').toLowerCase();
                             const meshName = String(obj.name || '').toLowerCase();
-                            const isHeadlightMat = /headlight|lamp|lens|front.*light|fara|fary|glass.*light/i.test(matName) ||
-                                                   /headlight|fara|fary/i.test(meshName);
-                            const isTaillightMat = /taillight|tail.*lamp|brake.*light|rear.*light|stop.*light|zadn.*fara/i.test(matName) ||
-                                                   /taillight|brake.*light|zadn.*fara/i.test(meshName);
+                            if (badWords.test(matName) || badWords.test(meshName)) return;
+
+                            const isHeadlightMat = (/headlight|head.*light|head.*lamp|headlamp|headglass|lens.*front|front.*light|fara|fary|glass.*light|mt_light_emissive/i.test(matName) ||
+                                                    /headlight|head.*light|head.*lamp|headlamp|headglass|fara|fary/i.test(meshName)) &&
+                                                   !/taillight|tail|rear|back|brake/i.test(matName) && !/taillight|tail|rear|back|brake/i.test(meshName);
+
+                            const isTaillightMat = /taillight|tail.*light|tail.*lamp|tailglass|tailpiece|reflector.*tl|reflector.*bl|brake.*light|rear.*light|stop.*light|zadn.*fara/i.test(matName) ||
+                                                   /taillight|tail.*light|tail.*lamp|tailglass|tailpiece|brake.*light|rear.*light|stop.*light|zadn.*fara|backlight/i.test(meshName);
+
                             if (isHeadlightMat) {
                                 if (mat.emissive) {
                                     if (this.headlightsOn) {
