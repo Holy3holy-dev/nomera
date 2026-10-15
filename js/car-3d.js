@@ -483,10 +483,61 @@
         return group;
     }
 
-    // Russian License Plate (A 777 AA | 77 RUS) with realistic canvas texture & tricolor flag
+    // Russian License Plate parser & formatter
+    function formatPlateComponents(rawText) {
+        if (!rawText || rawText === 'none' || rawText === 'null') {
+            return { main: 'А 777 АА', region: '77', isNone: true };
+        }
+        let str = String(rawText).trim();
+        if (str.includes('|')) {
+            const parts = str.split('|');
+            const main = parts[0].trim();
+            const regStr = parts[1].trim();
+            const regMatch = regStr.match(/\d+/);
+            const region = regMatch ? regMatch[0] : '77';
+            return { main: main || 'А 777 АА', region: region, isNone: false };
+        }
+        // Match plates with 1-2 letters, 1-4 digits, 1-2 letters, 2-3 digits region (e.g. А777АА77, В2109АЗ63)
+        const m = str.match(/^([А-ЯA-Z]{1,2})\s*(\d{1,4})\s*([А-ЯA-Z]{1,2})\s*(\d{2,3})$/i);
+        if (m) {
+            const l1 = m[1].toUpperCase();
+            const digits = m[2];
+            const l2 = m[3].toUpperCase();
+            const reg = m[4];
+            return { main: `${l1} ${digits} ${l2}`, region: reg, isNone: false };
+        }
+        // Match standard Russian plate prefix
+        const m2 = str.match(/^([А-ЯA-Z]?)\s*(\d{1,3})\s*([А-ЯA-Z]{0,2})\s*(\d{2,3})?/i);
+        if (m2 && m2[2]) {
+            const l1 = (m2[1] || 'А').toUpperCase();
+            const digits = m2[2].padStart(3, '0');
+            const l2 = (m2[3] || 'АА').toUpperCase();
+            const reg = m2[4] || '77';
+            return { main: `${l1} ${digits} ${l2}`, region: reg, isNone: false };
+        }
+        const spaceIdx = str.lastIndexOf(' ');
+        if (spaceIdx > 0 && /^\d{2,3}$/.test(str.slice(spaceIdx + 1))) {
+            return { main: str.slice(0, spaceIdx).toUpperCase(), region: str.slice(spaceIdx + 1), isNone: false };
+        }
+        return { main: str.slice(0, 9).toUpperCase(), region: '77', isNone: false };
+    }
+
+    // Russian License Plate (A 777 AA | 77 RUS) with high-res crisp canvas texture & tricolor flag
     function createLicensePlate(THREE, text = 'А 777 АА | 77 RUS', isFront = true) {
         const group = new THREE.Group();
         group.name = isFront ? 'FrontLicensePlate' : 'RearLicensePlate';
+        group.userData.isLicensePlate = true;
+
+        if (text === null || text === 'none' || text === false) {
+            group.visible = false;
+            return group;
+        }
+
+        const comp = formatPlateComponents(text);
+        if (comp.isNone) {
+            group.visible = false;
+            return group;
+        }
 
         const plateW = 0.54;
         const plateH = 0.12;
@@ -494,49 +545,57 @@
         if (typeof document !== 'undefined') {
             try {
                 const canvas = document.createElement('canvas');
-                canvas.width = 256;
-                canvas.height = 64;
+                canvas.width = 512;
+                canvas.height = 128;
                 const ctx = canvas.getContext('2d');
                 if (ctx) {
+                    // 1. White Crisp Background
                     ctx.fillStyle = '#f8fafc';
-                    ctx.fillRect(0, 0, 256, 64);
+                    ctx.fillRect(0, 0, 512, 128);
 
+                    // 2. Outer Embossed Black Border
                     ctx.strokeStyle = '#090d16';
-                    ctx.lineWidth = 5;
-                    ctx.strokeRect(3, 3, 250, 58);
+                    ctx.lineWidth = 8;
+                    ctx.strokeRect(6, 6, 500, 116);
 
+                    // 3. Region Divider
                     ctx.beginPath();
-                    ctx.moveTo(192, 4);
-                    ctx.lineTo(192, 60);
-                    ctx.lineWidth = 3;
+                    ctx.moveTo(384, 8);
+                    ctx.lineTo(384, 120);
+                    ctx.lineWidth = 5;
                     ctx.stroke();
 
+                    // 4. Main Plate Text
                     ctx.fillStyle = '#090d16';
-                    ctx.font = 'bold 36px "Inter", "Arial Black", sans-serif';
+                    const mainText = comp.main;
+                    const fontSize = mainText.length > 9 ? 56 : 68;
+                    ctx.font = `bold ${fontSize}px "Inter", "Arial Black", sans-serif`;
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'middle';
+                    ctx.fillText(mainText, 196, 68);
 
-                    const parts = String(text || '').split('|');
-                    const numPart = (parts[0] || 'А 777 АА').trim();
-                    const regPart = (parts[1] || '77 RUS').trim();
-                    ctx.fillText(numPart, 98, 34);
+                    // 5. Region Digits
+                    const regDigits = comp.region;
+                    const regFontSize = regDigits.length > 2 ? 40 : 48;
+                    ctx.font = `bold ${regFontSize}px "Inter", "Arial Black", sans-serif`;
+                    ctx.fillText(regDigits, 448, 46);
 
-                    const regDigits = (regPart.match(/\d+/) || ['77'])[0];
-                    ctx.font = 'bold 24px "Inter", "Arial Black", sans-serif';
-                    ctx.fillText(regDigits, 224, 23);
+                    // 6. RUS & Russian Flag
+                    ctx.font = '800 22px "Inter", sans-serif';
+                    ctx.fillText('RUS', 426, 98);
 
-                    ctx.font = '800 11px "Inter", sans-serif';
-                    ctx.fillText('RUS', 213, 49);
-
-                    const fx = 228, fy = 43, fw = 19, fh = 11;
+                    const fx = 456, fy = 86, fw = 38, fh = 22;
                     ctx.fillStyle = '#ffffff';
-                    ctx.fillRect(fx, fy, fw, 3.6);
+                    ctx.fillRect(fx, fy, fw, 7.2);
                     ctx.fillStyle = '#2563eb';
-                    ctx.fillRect(fx, fy + 3.6, fw, 3.6);
+                    ctx.fillRect(fx, fy + 7.2, fw, 7.2);
                     ctx.fillStyle = '#dc2626';
-                    ctx.fillRect(fx, fy + 7.2, fw, 3.8);
+                    ctx.fillRect(fx, fy + 14.4, fw, 7.6);
 
                     const tex = new THREE.CanvasTexture(canvas);
+                    tex.generateMipmaps = true;
+                    tex.minFilter = THREE.LinearMipmapLinearFilter;
+
                     const meshGeo = new THREE.PlaneGeometry(plateW, plateH);
                     if (!isFront) meshGeo.rotateY(Math.PI);
                     const meshMat = new THREE.MeshStandardMaterial({
@@ -545,6 +604,7 @@
                         metalness: 0.15
                     });
                     const plateMesh = new THREE.Mesh(meshGeo, meshMat);
+                    plateMesh.userData.isLicensePlate = true;
                     group.add(plateMesh);
 
                     const backGeo = new THREE.BoxGeometry(plateW + 0.02, plateH + 0.02, 0.012);
@@ -553,6 +613,7 @@
                     back.position.z = isFront ? -0.007 : 0.007;
                     group.add(back);
 
+                    group.userData.plateText = text;
                     return group;
                 }
             } catch (_) {}
@@ -560,7 +621,9 @@
 
         const plateGeo = new THREE.BoxGeometry(plateW, plateH, 0.015);
         const plateMat = new THREE.MeshStandardMaterial({ color: 0xfdfdfd, roughness: 0.2, metalness: 0.1 });
-        group.add(new THREE.Mesh(plateGeo, plateMat));
+        const mesh = new THREE.Mesh(plateGeo, plateMat);
+        mesh.userData.isLicensePlate = true;
+        group.add(mesh);
 
         const frameGeo = new THREE.BoxGeometry(plateW + 0.02, plateH + 0.02, 0.012);
         const frameMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.7 });
@@ -568,7 +631,93 @@
         frame.position.z = isFront ? -0.003 : 0.003;
         group.add(frame);
 
+        group.userData.plateText = text;
         return group;
+    }
+
+    // Universal License Plate attacher/updater for procedural & GLTF 3D models
+    function applyLicensePlateToModel(THREE, modelRoot, plateText) {
+        if (!modelRoot) return;
+
+        let text = (typeof plateText === 'object' && plateText) ? plateText.text : plateText;
+        const isNone = (text === null || text === 'none' || text === false || text === '');
+
+        // 1. Search for existing plates
+        let frontPlates = [];
+        let rearPlates = [];
+        modelRoot.traverse(child => {
+            if (child.name === 'FrontLicensePlate' || child.name === 'GLB_FrontLicensePlate') {
+                frontPlates.push(child);
+            }
+            if (child.name === 'RearLicensePlate' || child.name === 'GLB_RearLicensePlate') {
+                rearPlates.push(child);
+            }
+        });
+
+        if (isNone) {
+            frontPlates.forEach(p => { p.visible = false; });
+            rearPlates.forEach(p => { p.visible = false; });
+            return;
+        }
+
+        // 2. If plates already exist, update them with new text
+        if (frontPlates.length > 0 || rearPlates.length > 0) {
+            frontPlates.forEach(oldFP => {
+                oldFP.visible = true;
+                const newFP = createLicensePlate(THREE, text, true);
+                while (oldFP.children.length > 0) {
+                    oldFP.remove(oldFP.children[0]);
+                }
+                while (newFP.children.length > 0) {
+                    oldFP.add(newFP.children[0]);
+                }
+                oldFP.userData.plateText = text;
+            });
+
+            rearPlates.forEach(oldRP => {
+                oldRP.visible = true;
+                const newRP = createLicensePlate(THREE, text, false);
+                while (oldRP.children.length > 0) {
+                    oldRP.remove(oldRP.children[0]);
+                }
+                while (newRP.children.length > 0) {
+                    oldRP.add(newRP.children[0]);
+                }
+                oldRP.userData.plateText = text;
+            });
+            return;
+        }
+
+        // 3. If plates do NOT exist (e.g. fresh GLTF model like Ferrari, BMW, etc.)
+        modelRoot.updateMatrixWorld(true);
+        const box = new THREE.Box3();
+        modelRoot.traverse(child => {
+            if (child.isMesh && child.visible && child.geometry) {
+                const mb = new THREE.Box3().setFromObject(child);
+                if (mb.max.y - mb.min.y > 0.05) {
+                    box.union(mb);
+                }
+            }
+        });
+        if (box.isEmpty()) box.setFromObject(modelRoot);
+
+        const size = box.getSize(new THREE.Vector3());
+        const center = box.getCenter(new THREE.Vector3());
+
+        const frontY = box.min.y + Math.max(0.18, Math.min(0.55, size.y * 0.22));
+        const rearY = box.min.y + Math.max(0.24, Math.min(0.65, size.y * 0.28));
+        const frontZ = box.max.z + 0.015;
+        const rearZ = box.min.z - 0.015;
+
+        const fp = createLicensePlate(THREE, text, true);
+        fp.name = 'GLB_FrontLicensePlate';
+        fp.position.set(center.x, frontY, frontZ);
+        modelRoot.add(fp);
+
+        const rp = createLicensePlate(THREE, text, false);
+        rp.name = 'GLB_RearLicensePlate';
+        rp.position.set(center.x, rearY, rearZ);
+        modelRoot.add(rp);
     }
 
     // Side Mirrors (Left & Right) with mirror glass reflections
@@ -3594,6 +3743,11 @@
         const spec = buildVehicleChassis(THREE, mats, carId, carName);
         chassisGroup.add(spec.root);
 
+        // Apply license plate if specified in styling (or hide if 'none'/null)
+        if (styling && styling.plate !== undefined) {
+            applyLicensePlateToModel(THREE, spec.root, styling.plate);
+        }
+
         // Tuning: Spoilers
         const spoilerGroup = new THREE.Group();
         spoilerGroup.name = 'SpoilerGroup';
@@ -4150,13 +4304,8 @@
         }
 
         // Russian License Plates
-        const fp = createLicensePlate(THREE, 'А 777 АА | 77 RUS', true);
-        fp.position.set(0, box.min.y + size.y * 0.22, box.max.z + 0.02);
-        modelRoot.add(fp);
-
-        const rp = createLicensePlate(THREE, 'А 777 АА | 77 RUS', false);
-        rp.position.set(0, box.min.y + size.y * 0.28, box.min.z - 0.02);
-        modelRoot.add(rp);
+        const plateVal = (styling && styling.plate !== undefined) ? styling.plate : 'А 777 АА | 77 RUS';
+        applyLicensePlateToModel(THREE, modelRoot, plateVal);
 
         // Aerodynamic Undercarriage Undertray (matte dark chassis undertray, closes interior gaps under car)
         const undertrayGeo = new THREE.PlaneGeometry(size.x * 0.82, size.z * 0.78);
@@ -4480,7 +4629,17 @@
             });
         }
 
+        updatePlate(plateText) {
+            this.currentStyling.plate = plateText;
+            if (this.carGroup && this.THREE) {
+                applyLicensePlateToModel(this.THREE, this.carGroup, plateText);
+            }
+        }
+
         updateStyling(styling = {}) {
+            if (styling.plate !== undefined && this.carGroup && this.THREE) {
+                this.updatePlate(styling.plate);
+            }
             Object.assign(this.currentStyling, styling);
             this.setCar(this.currentCarName, this.currentStyling);
         }
@@ -4657,7 +4816,8 @@
         const n = styling.neon || 'none';
         const sp = styling.spoiler || 'none';
         const sg = styling.sgu || 'none';
-        return `${carName}__${c}_${t}_${w}_${s}_${n}_${sp}_${sg}`;
+        const pl = styling.plate || '';
+        return `${carName}__${c}_${t}_${w}_${s}_${n}_${sp}_${sg}_${pl}`;
     }
 
     function getSideThumbnail(carName, styling = {}) {
@@ -5985,6 +6145,14 @@
             }, 60);
         }
 
+        setPlayerPlate(plateText) {
+            if (!this.styling) this.styling = {};
+            this.styling.plate = plateText;
+            if (this.playerCar && this.THREE) {
+                applyLicensePlateToModel(this.THREE, this.playerCar, plateText);
+            }
+        }
+
         loadPlayerCar() {
             const THREE = this.THREE;
             loadCarModel(THREE, this.carName, this.styling, (model) => {
@@ -5993,6 +6161,9 @@
                     this.playerCar = null;
                 }
                 this.playerCar = model;
+                if (this.styling && this.styling.plate !== undefined) {
+                    applyLicensePlateToModel(THREE, this.playerCar, this.styling.plate);
+                }
                 this.playerCar.position.set(this.state.x, 0, this.state.z);
                 this.scene.add(this.playerCar);
                 this.setupCarLightingAndFX();
@@ -6945,7 +7116,10 @@
         identifyCarModel,
         renderSideThumbnail,
         getSideThumbnail,
-        loadCarModel
+        loadCarModel,
+        applyLicensePlateToModel,
+        createLicensePlate,
+        formatPlateComponents
     };
 }));
 

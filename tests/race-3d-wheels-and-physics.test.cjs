@@ -622,6 +622,114 @@ test('Weather & time-of-day system: presets, mirror wet asphalt, snow verges, pa
     engine.destroy();
 });
 
+test('3D license plate system: formatPlateComponents, createLicensePlate, applyLicensePlateToModel, showroom and racing engine', () => {
+    const { THREE, Car3DManager } = setupTestContext();
+
+    // 1. Test formatPlateComponents
+    const parsed1 = Car3DManager.formatPlateComponents('А 777 АА | 77 RUS');
+    assert.equal(parsed1.main, 'А 777 АА');
+    assert.equal(parsed1.region, '77');
+    assert.equal(parsed1.isNone, false);
+
+    const parsed2 = Car3DManager.formatPlateComponents('В2109АЗ63');
+    assert.equal(parsed2.main, 'В 2109 АЗ');
+    assert.equal(parsed2.region, '63');
+
+    const parsedNone = Car3DManager.formatPlateComponents('none');
+    assert.equal(parsedNone.isNone, true);
+
+    const parsedNull = Car3DManager.formatPlateComponents(null);
+    assert.equal(parsedNull.isNone, true);
+
+    // 2. Test createLicensePlate
+    const fp = Car3DManager.createLicensePlate(THREE, 'Е 001 КХ | 777 RUS', true);
+    assert.equal(fp.name, 'FrontLicensePlate');
+    assert.equal(fp.visible, true);
+    assert.equal(fp.userData.plateText, 'Е 001 КХ | 777 RUS');
+
+    const hiddenPlate = Car3DManager.createLicensePlate(THREE, 'none', false);
+    assert.equal(hiddenPlate.visible, false);
+
+    // 3. Test applyLicensePlateToModel on procedural car
+    const proceduralCar = Car3DManager.buildDetailedCarModel(THREE, 'ВАЗ-2107 «Жигули»', {
+        plate: 'О 999 ОО | 99 RUS'
+    });
+
+    let foundFront = null;
+    let foundRear = null;
+    proceduralCar.traverse(child => {
+        if (child.name === 'FrontLicensePlate') foundFront = child;
+        if (child.name === 'RearLicensePlate') foundRear = child;
+    });
+
+    assert.ok(foundFront, 'Procedural car must have FrontLicensePlate');
+    assert.ok(foundRear, 'Procedural car must have RearLicensePlate');
+    assert.equal(foundFront.visible, true);
+    assert.equal(foundFront.userData.plateText, 'О 999 ОО | 99 RUS');
+    assert.equal(foundRear.userData.plateText, 'О 999 ОО | 99 RUS');
+
+    // Test hiding plates on procedural car ('none')
+    Car3DManager.applyLicensePlateToModel(THREE, proceduralCar, 'none');
+    assert.equal(foundFront.visible, false);
+    assert.equal(foundRear.visible, false);
+
+    // Re-equipping another plate
+    Car3DManager.applyLicensePlateToModel(THREE, proceduralCar, 'А 001 АА | 77 RUS');
+    assert.equal(foundFront.visible, true);
+    assert.equal(foundFront.userData.plateText, 'А 001 АА | 77 RUS');
+
+    // 4. Test applyLicensePlateToModel on mock GLTF car root
+    const mockGltfRoot = new THREE.Group();
+    const mockBodyMesh = new THREE.Mesh(
+        new THREE.BoxGeometry(1.8, 1.2, 4.2),
+        new THREE.MeshStandardMaterial()
+    );
+    mockGltfRoot.add(mockBodyMesh);
+
+    Car3DManager.applyLicensePlateToModel(THREE, mockGltfRoot, 'Х 777 ХХ | 777 RUS');
+    let glbFront = mockGltfRoot.getObjectByName('GLB_FrontLicensePlate');
+    let glbRear = mockGltfRoot.getObjectByName('GLB_RearLicensePlate');
+    assert.ok(glbFront, 'GLTF model must have GLB_FrontLicensePlate attached');
+    assert.ok(glbRear, 'GLTF model must have GLB_RearLicensePlate attached');
+    assert.equal(glbFront.visible, true);
+    assert.equal(glbFront.userData.plateText, 'Х 777 ХХ | 777 RUS');
+
+    // Update plate on GLTF model
+    Car3DManager.applyLicensePlateToModel(THREE, mockGltfRoot, 'С 300 ТТ | 77 RUS');
+    assert.equal(glbFront.userData.plateText, 'С 300 ТТ | 77 RUS');
+    assert.equal(glbRear.userData.plateText, 'С 300 ТТ | 77 RUS');
+
+    // Hide plate on GLTF model
+    Car3DManager.applyLicensePlateToModel(THREE, mockGltfRoot, 'none');
+    assert.equal(glbFront.visible, false);
+    assert.equal(glbRear.visible, false);
+
+    // 5. Test Racing Engine player car plate & setPlayerPlate
+    const mockContainer = { clientWidth: 800, clientHeight: 500, style: {}, appendChild: () => {}, removeChild: () => {} };
+    const engine = new Car3DManager.Car3DRacingEngine(mockContainer, {});
+
+    engine.start({
+        carName: 'ВАЗ-2107 «Жигули»',
+        styling: { plate: 'Р 777 РР | 77 RUS' },
+        performance: { speed: 200 }
+    });
+
+    let engineRearPlate = null;
+    engine.playerCar.traverse(c => {
+        if (c.name === 'RearLicensePlate') engineRearPlate = c;
+    });
+    assert.ok(engineRearPlate, 'Racing engine player car must have RearLicensePlate visible to chase camera');
+    assert.equal(engineRearPlate.visible, true);
+    assert.equal(engineRearPlate.userData.plateText, 'Р 777 РР | 77 RUS');
+
+    // Dynamically change plate in racing engine
+    engine.setPlayerPlate('М 001 ММ | 99 RUS');
+    assert.equal(engineRearPlate.userData.plateText, 'М 001 ММ | 99 RUS');
+
+    engine.destroy();
+});
+
+
 
 
 

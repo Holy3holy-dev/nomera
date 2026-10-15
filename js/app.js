@@ -365,6 +365,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         let stylingTempWheels = 'stock';
         let stylingTempSuspension = 'stock';
         let stylingTempSgu = 'none';
+        let stylingTempPlate = 'none';
         let stylingViewMode = 'side';
 
         const TITLES_CATALOG = {
@@ -4160,8 +4161,11 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     : '';
 
                 const myImgId = 'my-car-img-' + index;
-                const cachedMy3D = (typeof Car3DManager !== 'undefined' && Car3DManager.getSideThumbnail) ? Car3DManager.getSideThumbnail(car.name, car.styling || {}) : null;
-                const myInitialSrc = cachedMy3D || getCarSpriteDataUrl(car.name, car.styling);
+                const carEffectiveStyling = Object.assign({}, car.styling || {}, {
+                    plate: car.plate ? (car.plate.text || car.plate) : 'none'
+                });
+                const cachedMy3D = (typeof Car3DManager !== 'undefined' && Car3DManager.getSideThumbnail) ? Car3DManager.getSideThumbnail(car.name, carEffectiveStyling) : null;
+                const myInitialSrc = cachedMy3D || getCarSpriteDataUrl(car.name, carEffectiveStyling);
 
                 html += `
                     <div class="my-car-card">
@@ -4203,9 +4207,12 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             // Asynchronously load 3D side profile for garage cars
             myCars.forEach((car, index) => {
                 const myImgId = 'my-car-img-' + index;
-                const cachedMy3D = (typeof Car3DManager !== 'undefined' && Car3DManager.getSideThumbnail) ? Car3DManager.getSideThumbnail(car.name, car.styling || {}) : null;
+                const carEffectiveStyling = Object.assign({}, car.styling || {}, {
+                    plate: car.plate ? (car.plate.text || car.plate) : 'none'
+                });
+                const cachedMy3D = (typeof Car3DManager !== 'undefined' && Car3DManager.getSideThumbnail) ? Car3DManager.getSideThumbnail(car.name, carEffectiveStyling) : null;
                 if (!cachedMy3D && typeof Car3DManager !== 'undefined' && typeof Car3DManager.renderSideThumbnail === 'function') {
-                    Car3DManager.renderSideThumbnail(car.name, car.styling || {}, (url) => {
+                    Car3DManager.renderSideThumbnail(car.name, carEffectiveStyling, (url) => {
                         if (url) {
                             const img = document.getElementById(myImgId);
                             if (img) img.src = url;
@@ -4339,6 +4346,8 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             playCashSound();
             inventory.unshift(car.plate);
             car.plate = null;
+            if (car.styling) car.styling.plate = 'none';
+            carSpriteCache.clear();
             renderCars();
             renderInventory();
             saveProgress();
@@ -4376,10 +4385,14 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             inventory.splice(invIndex, 1);
             if (car.plate) inventory.unshift(car.plate);
             car.plate = plate;
+            if (!car.styling) car.styling = {};
+            car.styling.plate = plate.text || plate;
+            carSpriteCache.clear();
             closeAttachModal();
             renderCars();
             renderInventory();
             saveProgress();
+            notifyUser(`Госномер «${plate.text || plate}» успешно установлен на ${car.name}!`, 'success');
         }
 
         // ============================================================
@@ -4445,7 +4458,8 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                             vinyl: stylingTempVinyl,
                             wheels: stylingTempWheels,
                             suspension: stylingTempSuspension,
-                            sgu: stylingTempSgu
+                            sgu: stylingTempSgu,
+                            plate: stylingTempPlate
                         });
                     }
                 } else {
@@ -4484,6 +4498,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             stylingTempWheels = car.styling.wheels || 'stock';
             stylingTempSuspension = car.styling.suspension || 'stock';
             stylingTempSgu = car.styling.sgu || 'none';
+            stylingTempPlate = car.plate ? (car.plate.text || car.plate) : 'none';
 
             const titleEl = document.getElementById('styling-car-title');
             if (titleEl) titleEl.innerText = `Настройка для: ${car.name}`;
@@ -4518,6 +4533,8 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             document.querySelectorAll('#styling-sgu-chips .styling-chip').forEach(btn => {
                 btn.classList.toggle('active', btn.dataset.sgu === stylingTempSgu);
             });
+
+            renderStylingPlateChips();
 
             const modal = document.getElementById('styling-modal');
             if (modal) modal.classList.add('show');
@@ -4598,6 +4615,72 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             updateStylingModalPreview();
         }
 
+        function renderStylingPlateChips() {
+            const container = document.getElementById('styling-plate-chips');
+            const badge = document.getElementById('styling-plate-current-badge');
+            if (!container) return;
+
+            const car = (stylingActiveCarIndex >= 0 && myCars[stylingActiveCarIndex]) ? myCars[stylingActiveCarIndex] : null;
+            if (!car) return;
+
+            if (badge) {
+                if (stylingTempPlate && stylingTempPlate !== 'none') {
+                    badge.textContent = `Выбран: ${stylingTempPlate}`;
+                    badge.style.color = '#38bdf8';
+                } else {
+                    badge.textContent = 'Без номера';
+                    badge.style.color = '#94a3b8';
+                }
+            }
+
+            let chipsHtml = `
+                <button type="button" class="styling-chip ${stylingTempPlate === 'none' ? 'active' : ''}" 
+                        onclick="selectStylingPlate('none')">
+                    🚫 Без номера
+                </button>
+            `;
+
+            const equippedPlateText = car.plate ? (car.plate.text || car.plate) : null;
+            if (equippedPlateText) {
+                const isActive = (stylingTempPlate === equippedPlateText);
+                chipsHtml += `
+                    <button type="button" class="styling-chip ${isActive ? 'active' : ''}" 
+                            style="border-color: ${isActive ? '#38bdf8' : 'rgba(56,189,248,0.4)'}; background: ${isActive ? 'rgba(56,189,248,0.2)' : 'transparent'}; font-weight: bold;" 
+                            onclick="selectStylingPlate(${jsArg(equippedPlateText)})">
+                        🏷️ ${escapeHtml(equippedPlateText)} (установлен)
+                    </button>
+                `;
+            }
+
+            if (Array.isArray(inventory) && inventory.length > 0) {
+                inventory.forEach((item) => {
+                    const text = item ? (item.text || item) : '';
+                    if (!text || text === equippedPlateText) return;
+                    const isActive = (stylingTempPlate === text);
+                    chipsHtml += `
+                        <button type="button" class="styling-chip ${isActive ? 'active' : ''}" 
+                                style="border-color: ${isActive ? '#22c55e' : 'rgba(255,255,255,0.15)'}; font-weight: bold;" 
+                                onclick="selectStylingPlate(${jsArg(text)})">
+                            🏷️ ${escapeHtml(text)}
+                        </button>
+                    `;
+                });
+            } else if (!equippedPlateText) {
+                chipsHtml += `<div style="font-size: 11px; color: var(--text-dim); padding: 4px 6px;">В инвентаре нет свободных госномеров</div>`;
+            }
+
+            container.innerHTML = chipsHtml;
+        }
+
+        function selectStylingPlate(plateText) {
+            stylingTempPlate = plateText || 'none';
+            renderStylingPlateChips();
+            if (stylingViewMode === '3d' && car3DShowroom && typeof car3DShowroom.updatePlate === 'function') {
+                car3DShowroom.updatePlate(stylingTempPlate);
+            }
+            updateStylingModalPreview();
+        }
+
         async function confirmApplyStyling() {
             const car = myCars[stylingActiveCarIndex];
             if (!car) return;
@@ -4642,6 +4725,24 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 deductPlayerBalance(cost, 'Стайлинг автомобиля');
             }
 
+            // License plate update from styling modal (inventory synced)
+            const prevPlateText = car.plate ? (car.plate.text || car.plate) : 'none';
+            if (stylingTempPlate !== prevPlateText) {
+                if (stylingTempPlate === 'none') {
+                    if (car.plate) {
+                        inventory.unshift(car.plate);
+                        car.plate = null;
+                    }
+                } else {
+                    const invIdx = inventory.findIndex(p => (p && (p.text || p) === stylingTempPlate));
+                    if (invIdx !== -1) {
+                        const newPlate = inventory.splice(invIdx, 1)[0];
+                        if (car.plate) inventory.unshift(car.plate);
+                        car.plate = newPlate;
+                    }
+                }
+            }
+
             car.styling = {
                 color: stylingTempColor,
                 tint: stylingTempTint,
@@ -4650,8 +4751,10 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 vinyl: stylingTempVinyl,
                 wheels: stylingTempWheels,
                 suspension: stylingTempSuspension,
-                sgu: stylingTempSgu
+                sgu: stylingTempSgu,
+                plate: car.plate ? (car.plate.text || car.plate) : 'none'
             };
+            renderInventory();
             carSpriteCache.clear();
             recordQuestProgress('tune', 1);
             checkAchievements();
@@ -8471,7 +8574,8 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     vinyl: stylingTempVinyl,
                     wheels: stylingTempWheels,
                     suspension: stylingTempSuspension,
-                    sgu: stylingTempSgu
+                    sgu: stylingTempSgu,
+                    plate: stylingTempPlate
                 });
             }
 
@@ -9558,9 +9662,12 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 }
             });
 
+            const raceStyling = Object.assign({}, activeRaceCar.styling || {}, {
+                plate: activeRaceCar.plate ? (activeRaceCar.plate.text || activeRaceCar.plate) : 'none'
+            });
             car3DRacingEngine.start({
                 carName: selectedRaceCarName,
-                styling: activeRaceCar.styling || {},
+                styling: raceStyling,
                 performance: stats,
                 weather: (typeof raceSelectedWeather !== 'undefined' ? raceSelectedWeather : 'night')
             });
