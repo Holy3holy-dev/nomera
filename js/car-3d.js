@@ -7674,6 +7674,25 @@
             this.trafficCars.forEach(car => {
                 const u = car.userData;
 
+                // 0. Handle wrecked / spinning police cars (after successful player takedown)
+                if (u.isWrecked) {
+                    u.wreckTimer = (u.wreckTimer || 2.5) - dt;
+                    car.position.x += (u.wreckSpinVx || 7.0) * dt;
+                    car.position.z += (u.speed / 3.6) * dt;
+                    u.speed = Math.max(0, u.speed - 140 * dt);
+                    car.rotation.y += 12 * dt;
+                    car.rotation.z = Math.sin((u.wreckTimer || 0) * 12) * 0.3;
+                    if (u.policeLight) {
+                        u.policeLight.intensity = Math.max(0, u.policeLight.intensity - 3 * dt);
+                    }
+                    if (car.position.z < state.z - 45 || u.wreckTimer <= 0) {
+                        car.position.set(0, -999, 0);
+                        u.isWrecked = false;
+                        u.speed = 0;
+                    }
+                    return;
+                }
+
                 // 1. Move traffic car forward along Z
                 const tSpeedMps = u.speed / 3.6;
                 car.position.z += tSpeedMps * dt;
@@ -7695,7 +7714,7 @@
                 const distToPlayer = Math.hypot(dx, dz);
 
                 // Police strobe flashing animation & AI
-                if (u.type === 'police') {
+                if (u.type === 'police' && !u.isWrecked) {
                     if (distToPlayer < minPoliceDist) {
                         minPoliceDist = distToPlayer;
                     }
@@ -7714,29 +7733,33 @@
 
                     // Speeding violation check (within 18m along Z and 6m along X)
                     if (Math.abs(dz) < 18 && dx < 6.0) {
-                        if (state.speed > 215 && state.wantedStars < 3) {
-                            this.addWantedStars(1, 'Опасное превышение > 215 км/ч');
-                        } else if (state.speed > 140 && state.wantedStars === 0) {
-                            this.addWantedStars(1, 'Превышение > 140 км/ч');
+                        if (state.speed > 220 && state.wantedStars < 3) {
+                            this.addWantedStars(1, 'Опасное превышение > 220 км/ч');
+                        } else if (state.speed > 150 && state.wantedStars === 0) {
+                            this.addWantedStars(1, 'Превышение > 150 км/ч');
                         }
                         if (this.keys && this.keys.horn && state.wantedStars < 2) {
                             this.addWantedStars(1, 'Провокация ДПС сигналом');
                         }
                     }
 
-                    // Hot pursuit AI
+                    // Hot pursuit AI: tiered top speeds so high-speed players CAN outrun DPS
                     if (state.wantedStars > 0) {
-                        // Steer directly towards player's lane to tail or box in
                         u.targetX = Math.max(-7.5, Math.min(7.5, state.x));
-                        u.laneChangeTimer = 999; // suspend random lane changes during active pursuit
+                        u.laneChangeTimer = 999;
+                        
+                        // Tiered max pursuit speed: player with sports car / nitro can pull away!
+                        const maxPoliceSpeedByStars = [130, 155, 185, 210, 235, 255];
+                        const maxTgtSpeed = maxPoliceSpeedByStars[Math.min(5, state.wantedStars)] || 185;
+
                         if (car.position.z < state.z) {
-                            // Chasing from behind - accelerate to catch up
-                            const targetSpeed = Math.min(240, Math.max(160 + state.wantedStars * 16, state.speed + 15));
-                            u.speed += (targetSpeed - u.speed) * Math.min(1.0, 4.0 * dt);
+                            // Chasing from behind - accelerate towards target speed, but capped at tier max
+                            const targetSpeed = Math.min(maxTgtSpeed, Math.max(140, state.speed + 6));
+                            u.speed += (targetSpeed - u.speed) * Math.min(1.0, 2.2 * dt);
                         } else {
-                            // Ahead of player - maintain blocking speed or intercept
-                            const blockSpeed = Math.max(85, Math.min(190, state.speed * 0.94));
-                            u.speed += (blockSpeed - u.speed) * Math.min(1.0, 3.0 * dt);
+                            // Ahead of player - maintain blocking, player can dodge or blast past
+                            const blockSpeed = Math.max(80, Math.min(maxTgtSpeed * 0.92, state.speed * 0.92));
+                            u.speed += (blockSpeed - u.speed) * Math.min(1.0, 2.0 * dt);
                         }
                     }
                 }
@@ -7757,11 +7780,11 @@
                 const steerDist = u.targetX - car.position.x;
                 if (Math.abs(steerDist) > 0.05) {
                     const dir = steerDist > 0 ? 1 : -1;
-                    const steerSpeed = (u.type === 'police' && state.wantedStars > 0) ? 4.5 : 2.2;
+                    const steerSpeed = (u.type === 'police' && state.wantedStars > 0) ? 2.6 : 2.0;
                     const step = dir * Math.min(Math.abs(steerDist), steerSpeed * dt);
                     car.position.x += step;
-                    car.rotation.y = (dir > 0 ? 0.08 : -0.08);
-                    car.rotation.z = (dir > 0 ? -0.04 : 0.04);
+                    car.rotation.y = (dir > 0 ? 0.06 : -0.06);
+                    car.rotation.z = (dir > 0 ? -0.03 : 0.03);
                 } else {
                     car.position.x = u.targetX;
                     car.rotation.y = 0;
@@ -7788,20 +7811,57 @@
                     }
                 }
 
-                // 4. Collision Detection with Player Car
+                // 4. Collision Detection with Player Car & Takedown
                 const trafficHalfW = car.userData.halfWidth || 1.0;
                 const trafficHalfL = car.userData.halfLength || 2.2;
                 const lateralClearance = trafficHalfW + 0.55;
                 const longitudinalClearance = trafficHalfL + 1.2;
 
                 if (dx < lateralClearance && dz > -0.6 && dz < longitudinalClearance) {
-                    if (u.type === 'police') {
-                        this.addWantedStars(1, 'Таран экипажа ДПС');
+                    // 💥 TAKEDOWN MECHANIC FOR POLICE: Player CAN ram & knock out pursuit cars!
+                    if (u.type === 'police' && !u.isWrecked) {
+                        const isNitroActive = !!(this.keys && this.keys.nitro);
+                        const isFastRam = state.speed > 120;
+                        const isHardSideHit = Math.abs(state.vx) > 0.6;
+                        const isOvertakeRam = (state.speed - u.speed) > 15;
+
+                        if (isNitroActive || isFastRam || isHardSideHit || isOvertakeRam) {
+                            // TAKEDOWN! СБИТ ЭКИПАЖ ДПС!
+                            u.isWrecked = true;
+                            u.wreckTimer = 2.4;
+                            u.wreckSpinVx = (car.position.x >= state.x ? 8.5 : -8.5);
+                            u.speed = Math.max(0, u.speed - 90);
+
+                            // Player takes minimal impact damage instead of instant crash
+                            state.speed = Math.max(50, state.speed - 12);
+                            state.damageTaken += 1.2;
+                            state.shakeAmount = 0.65;
+
+                            // Huge sparks and sound
+                            this.spawnSparks(car.position.x, 0.7, car.position.z, 45);
+                            const takedownBounty = 35000;
+                            state.earnedCash += takedownBounty;
+                            if (this.options.onPopup) {
+                                this.options.onPopup(`💥 ТАРАН! ЭКИПАЖ ДПС СБИТ! +${takedownBounty.toLocaleString('ru-RU')} ₽`, '#22c55e');
+                            }
+                            if (this.options.onSound) {
+                                this.options.onSound('crash');
+                            }
+
+                            // Reward player with escape boost
+                            if (state.wantedStars > 1) {
+                                state.wantedStars = Math.max(1, state.wantedStars - 1);
+                            }
+                            state.escapeTimer = Math.max(1.0, state.escapeTimer - 3.0);
+                            return;
+                        } else {
+                            this.addWantedStars(1, 'Таран экипажа ДПС');
+                        }
                     }
 
                     const isRearEndHit = dz > 0.4 && dx < (trafficHalfW * 0.65);
-                    if (isRearEndHit && speedDiff > 35) {
-                        // High-speed direct rear-end collision -> CRASH
+                    if (isRearEndHit && speedDiff > 35 && u.type !== 'police') {
+                        // High-speed direct rear-end collision into civilian or truck -> CRASH
                         this.stop();
                         state.damageTaken += 12;
                         this.spawnSparks(state.x, 0.8, state.z + 1.0, 45);
@@ -7810,10 +7870,10 @@
                         return;
                     } else {
                         // Glancing sideswipe / low-speed bumper nudge
-                        state.speed = Math.max(15, state.speed * 0.80);
-                        state.damageTaken += 3.5;
-                        state.shakeAmount = 0.5;
-                        car.position.x += (car.position.x > state.x ? 0.7 : -0.7);
+                        state.speed = Math.max(15, state.speed * 0.82);
+                        state.damageTaken += 3.0;
+                        state.shakeAmount = 0.45;
+                        car.position.x += (car.position.x > state.x ? 0.8 : -0.8);
                         this.spawnSparks(state.x, 0.5, state.z + 0.5, 20);
                         if (this.options.onPopup) this.options.onPopup('💥 КАСАТЕЛЬНЫЙ УДАР!', '#ef4444');
                         if (this.options.onSound) this.options.onSound('scrape');
@@ -7821,14 +7881,22 @@
                 }
 
                 // 5. Recycle traffic when it falls behind player
-                const recycleBehindZ = (u.type === 'police' && state.wantedStars > 0) ? (state.z - 160) : (state.z - 35);
+                const recycleBehindZ = (u.type === 'police' && state.wantedStars > 0) ? (state.z - 75) : (state.z - 35);
                 if (car.position.z < recycleBehindZ) {
+                    if (u.type === 'police' && state.wantedStars > 0) {
+                        // Outrun police car despawns behind and does NOT jump right in front of player
+                        car.position.set(0, -999, 0);
+                        u.isWrecked = false;
+                        u.speed = 0;
+                        return;
+                    }
                     const newLane = (u.type === 'truck') ? 3 : Math.floor(Math.random() * 4);
                     car.position.set(this.trafficLanes[newLane], 0, state.z + 180 + Math.random() * 120);
                     u.laneIndex = newLane;
                     u.targetX = this.trafficLanes[newLane];
                     u.speed = u.baseSpeed;
                     u.overtaken = false;
+                    u.isWrecked = false;
                 }
             });
 
@@ -7879,8 +7947,8 @@
             if (state.wantedStars > 0) {
                 state.isPursuitActive = true;
 
-                // Escape countdown logic
-                if (minPoliceDist >= 48) {
+                // Escape countdown logic: starts when distance >= 38m (allows outrunning DPS at high speeds)
+                if (minPoliceDist >= 38) {
                     state.escapeTimer = Math.max(0, state.escapeTimer - dt);
                     if (state.escapeTimer <= 0) {
                         const starsWon = state.wantedStars;
@@ -7895,8 +7963,10 @@
                         this.clearPursuit();
                     }
                 } else {
-                    // Police is in visual sight (< 48m) - reset escape timer
-                    state.escapeTimer = 8.0;
+                    // Police is in visual sight: only recover timer if very close (< 22m), and do it gradually
+                    if (minPoliceDist < 22) {
+                        state.escapeTimer = Math.min(8.0, state.escapeTimer + 0.8 * dt);
+                    }
                 }
 
                 // Busted logic: if player slowed down < 25 km/h while cornered by DPS (< 12m) for 2.8s

@@ -3326,29 +3326,32 @@ body.race-active .main-container {
     margin-top: 2px;
 }
 
-/* 🚨 3D Police Pursuit & Wanted Level Box */
+/* 🚨 3D Police Pursuit & Wanted Level Box (Top Screen Placement) */
 .race-3d-pursuit-box {
-    margin: 8px auto 0 auto;
-    background: rgba(15, 23, 42, 0.90);
-    backdrop-filter: blur(8px);
-    border: 1px solid rgba(239, 68, 68, 0.6);
-    border-radius: 12px;
-    padding: 6px 14px;
-    max-width: 320px;
-    box-shadow: 0 4px 20px rgba(239, 68, 68, 0.35), 0 0 15px rgba(59, 130, 246, 0.25);
+    margin: 0 auto 10px auto;
+    background: rgba(10, 15, 29, 0.94);
+    backdrop-filter: blur(10px);
+    border: 2px solid rgba(239, 68, 68, 0.8);
+    border-radius: 14px;
+    padding: 7px 16px;
+    width: fit-content;
+    min-width: 260px;
+    max-width: 380px;
+    box-shadow: 0 4px 25px rgba(239, 68, 68, 0.45), 0 0 18px rgba(59, 130, 246, 0.35);
     animation: pursuitPulse 1.2s infinite alternate;
     pointer-events: none;
     transition: opacity 0.3s ease, transform 0.3s ease;
+    z-index: 30;
 }
 
 @keyframes pursuitPulse {
     0% {
-        border-color: rgba(239, 68, 68, 0.85);
-        box-shadow: 0 4px 20px rgba(239, 68, 68, 0.45), 0 0 12px rgba(59, 130, 246, 0.25);
+        border-color: rgba(239, 68, 68, 0.95);
+        box-shadow: 0 4px 25px rgba(239, 68, 68, 0.55), 0 0 16px rgba(59, 130, 246, 0.3);
     }
     100% {
-        border-color: rgba(59, 130, 246, 0.85);
-        box-shadow: 0 4px 20px rgba(59, 130, 246, 0.45), 0 0 12px rgba(239, 68, 68, 0.25);
+        border-color: rgba(59, 130, 246, 0.95);
+        box-shadow: 0 4px 25px rgba(59, 130, 246, 0.55), 0 0 16px rgba(239, 68, 68, 0.3);
     }
 }
 
@@ -3356,13 +3359,13 @@ body.race-active .main-container {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: 8px;
+    gap: 12px;
 }
 
 .race-3d-wanted-stars {
-    font-size: 14px;
-    letter-spacing: 2px;
-    text-shadow: 0 0 8px rgba(251, 191, 36, 0.85);
+    font-size: 18px;
+    letter-spacing: 3px;
+    text-shadow: 0 0 10px rgba(251, 191, 36, 0.95);
     line-height: 1;
 }
 

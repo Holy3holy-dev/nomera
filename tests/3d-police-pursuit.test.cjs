@@ -285,3 +285,72 @@ test('3D Police Pursuit: HUD notification passes wanted stars, escape percent an
         engine.destroy();
     }
 });
+
+test('3D Police Pursuit: Takedown (таран) disables police vehicle, awards cash bounty, and does not kill player', () => {
+    const { THREE, Car3DManager } = setupTestContext();
+    const mockContainer = { clientWidth: 800, clientHeight: 500, style: {}, appendChild: () => {}, removeChild: () => {} };
+
+    let popups = [];
+    const engine = new Car3DManager.Car3DRacingEngine(mockContainer, {
+        onPopup: (txt) => { popups.push(txt); }
+    });
+
+    try {
+        engine.start({
+            carName: 'Lada Vesta Sport',
+            performance: { speed: 220, accel: 15 }
+        });
+
+        const policeCar = engine.trafficCars.find(c => c.userData.type === 'police');
+        assert.ok(policeCar, 'Traffic pool must include a police car');
+
+        engine.addWantedStars(3, 'Погоня');
+        const initialCash = engine.state.earnedCash || 0;
+
+        // Position player with high speed and nitro directly hitting police
+        engine.state.speed = 160;
+        engine.state.isNitroActive = true;
+        engine.state.x = policeCar.position.x;
+        engine.state.z = policeCar.position.z - 1.2;
+
+        engine.update(0.1);
+
+        assert.strictEqual(policeCar.userData.isWrecked, true, 'Police car should be marked as wrecked/takedown');
+        assert.ok(engine.state.earnedCash >= initialCash + 35000, 'Player should receive cash bounty for takedown');
+        assert.strictEqual(engine.isRunning, true, 'Player should remain driving and not instantly die/crash');
+        assert.ok(popups.some(p => p.includes('СБИТ')), 'Popup notification should announce takedown');
+    } finally {
+        engine.destroy();
+    }
+});
+
+test('3D Police Pursuit: Outrun police falling behind (>75m) despawns instead of teleporting ahead', () => {
+    const { THREE, Car3DManager } = setupTestContext();
+    const mockContainer = { clientWidth: 800, clientHeight: 500, style: {}, appendChild: () => {}, removeChild: () => {} };
+
+    const engine = new Car3DManager.Car3DRacingEngine(mockContainer);
+
+    try {
+        engine.start({
+            carName: 'Lada Vesta Sport',
+            performance: { speed: 220, accel: 15 }
+        });
+
+        const policeCar = engine.trafficCars.find(c => c.userData.type === 'police');
+        assert.ok(policeCar);
+
+        engine.addWantedStars(2, 'Погоня');
+
+        // Position police car far behind player (> 75m behind)
+        policeCar.position.z = engine.state.z - 80;
+
+        engine.update(0.1);
+
+        // Should be despawned offscreen (y = -999) rather than teleported ahead of player
+        assert.strictEqual(policeCar.position.y, -999, 'Outrun police should be despawned offscreen');
+        assert.ok(policeCar.position.z < engine.state.z, 'Outrun police must not be placed in front of player');
+    } finally {
+        engine.destroy();
+    }
+});
+

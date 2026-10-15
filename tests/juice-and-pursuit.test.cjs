@@ -507,4 +507,37 @@ test('car audio profiles and horn effects trigger SGU, truck air-brake and dual-
     app.run(`isRaceRunning = false;`);
 });
 
+test('2D police takedown: ramming DPS at high speed or nitro spins police out, awards bounty, and does not kill player', () => {
+    const app = createApp();
+    app.run(`
+        isRaceRunning = true;
+        raceTraffic = [{
+            x: 180,
+            y: 450,
+            laneIdx: 1,
+            targetX: 180,
+            speed: 100,
+            targetSpeed: 100,
+            isTruck: false,
+            isPolice: true,
+            isCone: false,
+            spinning: false
+        }];
+        racePlayer.x = 180;
+        racePlayer.y = 470;
+        racePlayer.speed = 150;
+        racePlayer.wantedStars = 2;
+        racePlayer.escapeTimer = 6.0;
+        racePlayer.isNitroActive = true;
+
+        updateRacePhysics(0.05);
+    `);
+
+    assert.equal(app.run('raceTraffic[0].spinning'), true, 'Police car should be spinning after takedown');
+    assert.equal(app.run('isRaceRunning'), true, 'Player should continue driving without crash');
+    assert.ok(app.run('racePlayer.earnedCash') >= 30000, 'Takedown awards bounty cash');
+    app.run(`isRaceRunning = false;`);
+});
+
+
 

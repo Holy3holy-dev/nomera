@@ -10962,6 +10962,17 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 const relativeSpeed = (racePlayer.speed - (t.speed || 0)) * 3.5;
                 t.y += relativeSpeed * dt;
 
+                // Если машина сбита / закручена в аварии
+                if (t.spinning) {
+                    t.x += (t.spinVx || 0) * dt;
+                    t.tilt = (t.tilt || 0) + 14 * dt;
+                    t.y += 40 * dt;
+                    if (t.y > 680 || t.x < -60 || t.x > 460) {
+                        raceTraffic.splice(i, 1);
+                    }
+                    continue;
+                }
+
                 // ДИНАМИЧЕСКИЙ ТРАФИК: Машины двигаются между рядами, обгоняют и тормозят
                 if (!t.isCone) {
                     // Влияние СГУ («Крякалка»): попутный гражданский трафик впереди в панике уступает дорогу VIP
@@ -11110,8 +11121,10 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     t.blinkerFlash = Math.floor(Date.now() / 130) % 2 === 0;
 
                     // ДПС реагирует на превышение скорости игроком
-                    if (t.isPolice && Math.abs(t.y - (racePlayer.y || 470)) < 180 && racePlayer.speed > 130) {
-                        t.targetSpeed = Math.min(235, racePlayer.speed + 15);
+                    if (t.isPolice && !t.spinning && Math.abs(t.y - (racePlayer.y || 470)) < 160 && racePlayer.speed > 160) {
+                        const maxSpdByStars = [95, 140, 170, 195, 215, 230];
+                        const maxPursuitSpd = maxSpdByStars[Math.min(5, racePlayer?.wantedStars || 1)] || 170;
+                        t.targetSpeed = Math.min(maxPursuitSpd, Math.max(130, racePlayer.speed + 5));
                         if (!t.spottedSpeeding) {
                             t.spottedSpeeding = true;
                             addWantedStars(1, 'ПРЕВЫШЕНИЕ');
@@ -11180,6 +11193,34 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                         showRacePopup("🛡️ ЩИТ ОТРАЗИЛ УДАР!", "#38bdf8");
                         playLockSound(1.8);
                         triggerScreenShake();
+                    } else if (t.isPolice && (racePlayer.isNitroActive || racePlayer.speed > 120 || dx >= 10)) {
+                        // 💥 СБИТ ЭКИПАЖ ДПС (2D Police Takedown)!
+                        t.spinning = true;
+                        t.spinVx = (racePlayer.x < t.x ? 210 : -210);
+                        t.speed = 20;
+                        racePlayer.speed = Math.max(50, racePlayer.speed - 12);
+                        racePlayer.damageTaken += 1.0;
+                        racePlayer.invulnerableTimer = 0.8;
+                        const takedownBounty = 30000;
+                        racePlayer.earnedCash += takedownBounty;
+                        showRacePopup(`💥 ЭКИПАЖ ДПС СБИТ! +${takedownBounty.toLocaleString('ru-RU')} ₽`, '#22c55e');
+                        triggerScreenShake();
+                        playCashSound();
+                        if (racePlayer.wantedStars > 1) {
+                            racePlayer.wantedStars = Math.max(1, racePlayer.wantedStars - 1);
+                        }
+                        racePlayer.escapeTimer = Math.max(1.0, racePlayer.escapeTimer - 3.0);
+
+                        for (let s = 0; s < 24; s++) {
+                            raceSparks.push({
+                                x: (racePlayer.x + t.x) / 2,
+                                y: racePlayer.y + (Math.random() - 0.5) * 20,
+                                vx: (Math.random() - 0.5) * 140 + (t.spinVx > 0 ? 50 : -50),
+                                vy: (Math.random() - 0.5) * 80,
+                                life: 0.55,
+                                color: Math.random() < 0.5 ? '#ef4444' : '#38bdf8'
+                            });
+                        }
                     } else if (dx >= 12 && !t.isTruck) {
                         // БОКОВОЙ КОНТАКТ (SIDE SCRAPE) с легковым авто!
                         // Отскок в сторону, искры от трения металла, потеря скорости вместо смерти
@@ -11268,7 +11309,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
             // 13. Система розыска ДПС (Wanted Stars) и сброс погони (Cooldown / Escape)
             if (racePlayer.wantedStars > 0) {
-                const nearestPolice = raceTraffic.find(t => t.isPolice && Math.abs(t.y - (racePlayer.y || 470)) < 280);
+                const nearestPolice = raceTraffic.find(t => t.isPolice && !t.spinning && Math.abs(t.y - (racePlayer.y || 470)) < 200);
                 if (!nearestPolice) {
                     racePlayer.escapeTimer -= dt;
                     if (racePlayer.escapeTimer <= 0) {
@@ -11283,7 +11324,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                         showRacePopup(`🏆 УШЁЛ ОТ ПОГОНИ! +${bounty.toLocaleString('ru-RU')} ₽ (+${xpBonus} XP)`, '#10b981');
                     }
                 } else {
-                    racePlayer.escapeTimer = Math.max(racePlayer.escapeTimer, 5.0);
+                    if (Math.abs(nearestPolice.y - (racePlayer.y || 470)) < 140) {
+                        racePlayer.escapeTimer = Math.max(racePlayer.escapeTimer, 5.0);
+                    }
                 }
             } else {
                 if (typeof sound?.setSiren === 'function') {
@@ -11359,10 +11402,12 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     overtaken: false
                 });
             } else if (roll < (0.22 + policeBonus)) {
-                // Патруль ДПС с мигалками (при активном розыске ускоряется на перехват)
+                // Патруль ДПС с мигалками (при активном розыске ускоряется на перехват с учетом звезд)
                 const isPursuit = (racePlayer?.wantedStars || 0) > 0;
-                const spd = isPursuit ? Math.max(120, curSpd * 0.95) : 85 + Math.random() * 20;
-                const tgtSpd = isPursuit ? Math.min(240, curSpd + 20) : 95;
+                const maxSpdByStars = [95, 140, 170, 195, 215, 230];
+                const maxPursuitSpd = maxSpdByStars[Math.min(5, racePlayer?.wantedStars || 1)] || 170;
+                const spd = isPursuit ? Math.max(110, Math.min(maxPursuitSpd * 0.9, curSpd * 0.92)) : 85 + Math.random() * 20;
+                const tgtSpd = isPursuit ? Math.min(maxPursuitSpd, Math.max(120, curSpd + 6)) : 95;
                 raceTraffic.push({
                     x: laneX,
                     y: spawnY,
@@ -12234,10 +12279,42 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             }
 
             // 11. Игровой HUD на Canvas
+            // 🚨 Индикатор уровня розыска (⭐⭐⭐⭐⭐ Wanted Stars) - ВВЕРХУ ПО ЦЕНТРУ ЭКРАНА
+            let topCenterOffset = 10;
+            if (racePlayer.wantedStars > 0) {
+                const bw = 176, bh = 30;
+                const bx = W / 2 - bw / 2, by = 10;
+                const isFlash = Math.floor(Date.now() / 150) % 2 === 0;
+                ctx.fillStyle = "rgba(10, 15, 29, 0.94)";
+                ctx.beginPath();
+                ctx.roundRect(bx, by, bw, bh, 8);
+                ctx.fill();
+                ctx.strokeStyle = isFlash ? "#ef4444" : "#3b82f6";
+                ctx.lineWidth = 2.2;
+                ctx.stroke();
+
+                ctx.font = "14px sans-serif";
+                ctx.textAlign = "left";
+                let starStr = '';
+                for (let s = 1; s <= 5; s++) {
+                    starStr += s <= racePlayer.wantedStars ? '⭐' : '☆';
+                }
+                ctx.fillText(starStr, bx + 8, by + 20);
+
+                ctx.fillStyle = isFlash ? "#fca5a5" : "#93c5fd";
+                ctx.font = "bold 10px sans-serif";
+                ctx.textAlign = "right";
+                const isEscaping = !raceTraffic.some(t => t.isPolice && !t.spinning && Math.abs(t.y - (racePlayer.y || 470)) < 200);
+                const statusText = isEscaping ? `⏳${Math.max(0, racePlayer.escapeTimer).toFixed(1)}с` : "🚨 ПОГОНЯ";
+                ctx.fillText(statusText, bx + bw - 8, by + 20);
+
+                topCenterOffset = 44;
+            }
+
             // Плашка текущего биома по центру сверху
             ctx.fillStyle = "rgba(10, 15, 29, 0.85)";
             ctx.beginPath();
-            ctx.roundRect(W / 2 - 75, 10, 150, 24, 6);
+            ctx.roundRect(W / 2 - 75, topCenterOffset, 150, 24, 6);
             ctx.fill();
             ctx.strokeStyle = biome.themeCol;
             ctx.lineWidth = 1.2;
@@ -12246,15 +12323,16 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             ctx.fillStyle = biome.themeCol;
             ctx.font = "800 11px sans-serif";
             ctx.textAlign = "center";
-            ctx.fillText(`${biome.icon} ${biome.name}`, W / 2, 26);
+            ctx.fillText(`${biome.icon} ${biome.name}`, W / 2, topCenterOffset + 16);
 
             // Оверлей активного дрифта прямо под биомом
             if (racePlayer.isDrifting || racePlayer.driftCurrentScore > 0) {
                 const bw = 186;
                 const bh = 28;
+                const driftY = topCenterOffset + 28;
                 ctx.fillStyle = "rgba(15, 23, 42, 0.92)";
                 ctx.beginPath();
-                ctx.roundRect(W / 2 - bw / 2, 38, bw, bh, 6);
+                ctx.roundRect(W / 2 - bw / 2, driftY, bw, bh, 6);
                 ctx.fill();
                 ctx.strokeStyle = racePlayer.isCounterSteering ? "#38bdf8" : "#f59e0b";
                 ctx.lineWidth = 1.6;
@@ -12263,23 +12341,23 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 ctx.fillStyle = "#fbbf24";
                 ctx.font = "900 11px sans-serif";
                 ctx.textAlign = "center";
-                ctx.fillText(`🌪️ ДРИФТ x${racePlayer.driftCombo} • ${Math.round(racePlayer.driftCurrentScore)} PTS`, W / 2, 51);
+                ctx.fillText(`🌪️ ДРИФТ x${racePlayer.driftCombo} • ${Math.round(racePlayer.driftCurrentScore)} PTS`, W / 2, driftY + 13);
 
                 if (racePlayer.isCounterSteering) {
                     ctx.fillStyle = "#38bdf8";
                     ctx.font = "bold 9px sans-serif";
-                    ctx.fillText("🔄 КОНТР-РУЛЕНИЕ (+50% PTS)", W / 2, 62);
+                    ctx.fillText("🔄 КОНТР-РУЛЕНИЕ (+50% PTS)", W / 2, driftY + 24);
                 } else if (racePlayer.driftQuality) {
                     ctx.fillStyle = "#a3e635";
                     ctx.font = "bold 9px sans-serif";
-                    ctx.fillText(racePlayer.driftQuality, W / 2, 62);
+                    ctx.fillText(racePlayer.driftQuality, W / 2, driftY + 24);
                 }
 
                 // Combo timer gauge bar
                 if (racePlayer.driftComboTimer > 0) {
                     const timerPct = Math.min(1, Math.max(0, racePlayer.driftComboTimer / 2.0));
                     ctx.fillStyle = racePlayer.isCounterSteering ? "#38bdf8" : "rgba(245, 158, 11, 0.9)";
-                    ctx.fillRect(W / 2 - (bw - 16) / 2, 38 + bh - 2.5, (bw - 16) * timerPct, 2);
+                    ctx.fillRect(W / 2 - (bw - 16) / 2, driftY + bh - 2.5, (bw - 16) * timerPct, 2);
                 }
             }
 
@@ -12349,32 +12427,6 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             ctx.font = "700 9px sans-serif";
             ctx.fillText(raceCurrentMode === 'drift' ? '🏁 Дрифт' : '🏁 Шоссе', W - 16, 46);
 
-            // Индикатор уровня розыска (⭐⭐⭐⭐⭐ Wanted Stars)
-            if (racePlayer.wantedStars > 0) {
-                const bw = 125, bh = 28;
-                const bx = W - 135, by = 56;
-                const isFlash = Math.floor(Date.now() / 150) % 2 === 0;
-                ctx.fillStyle = "rgba(10, 15, 29, 0.9)";
-                ctx.beginPath();
-                ctx.roundRect(bx, by, bw, bh, 6);
-                ctx.fill();
-                ctx.strokeStyle = isFlash ? "#ef4444" : "#3b82f6";
-                ctx.lineWidth = 1.8;
-                ctx.stroke();
-
-                ctx.font = "12px sans-serif";
-                ctx.textAlign = "left";
-                let starStr = '';
-                for (let s = 1; s <= 5; s++) {
-                    starStr += s <= racePlayer.wantedStars ? '⭐' : '☆';
-                }
-                ctx.fillText(starStr, bx + 6, by + 18);
-
-                ctx.fillStyle = "#e2e8f0";
-                ctx.font = "bold 9px sans-serif";
-                ctx.textAlign = "right";
-                ctx.fillText(`⏳${Math.max(0, racePlayer.escapeTimer).toFixed(1)}с`, bx + bw - 6, by + 18);
-            }
 
             // В режиме Дрифта: предупреждение о крутых шпильках серпантина
             if (raceCurrentMode === 'drift' && Math.abs(roadCurve) > 38) {
