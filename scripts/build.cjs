@@ -9,5 +9,9 @@ fs.mkdirSync(dist,{recursive:true});
 for(const name of ['index.html','test.html','styles.css','manifest.json','sw.js']){
   fs.copyFileSync(path.join(root,name),path.join(dist,name));
 }
-for(const folder of ['js','icons']) fs.cpSync(path.join(root,folder),path.join(dist,folder),{recursive:true});
+for(const folder of ['js','icons','assets']) {
+  if (fs.existsSync(path.join(root, folder))) {
+    fs.cpSync(path.join(root,folder),path.join(dist,folder),{recursive:true});
+  }
+}
 console.log('Clean public dist ready. Private server code stays outside publish directory.');
