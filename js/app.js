@@ -9461,6 +9461,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     const audioProfile = getCarAudioProfile(activeRaceCar);
                     sound.updateEngine({
                         speed: hud.speed,
+                        rpm: hud.rpm,
                         gas: car3DRacingEngine.keys.gas,
                         nitro: hud.isNitroActive,
                         running: isRaceRunning,
@@ -9489,6 +9490,14 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     if (name === 'nearMiss' && typeof sound?.nearMiss === 'function') sound.nearMiss();
                     if (name === 'crash' && typeof sound?.crash === 'function') sound.crash();
                     if (name === 'cash' && typeof sound?.cash === 'function') sound.cash();
+                    if (name === 'backfire' && typeof sound?.backfire === 'function') sound.backfire();
+                    if (name === 'blowOff' && typeof sound?.blowOff === 'function') sound.blowOff();
+                    if (name === 'brake' && typeof sound?.brake === 'function') sound.brake();
+                    if (name === 'scrape' && typeof sound?.scrape === 'function') sound.scrape();
+                    if (name === 'horn' && typeof sound?.horn === 'function') sound.horn();
+                },
+                onHaptic: (pattern) => {
+                    if (typeof sound?.haptic === 'function') sound.haptic(pattern);
                 }
             });
 

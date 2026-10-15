@@ -96,7 +96,7 @@
                 siren = { gain, filter, nodes: [osc, lfo, lfoGain] };
             } catch (_) { stopSiren(); }
         }
-        function updateEngine({speed = 0, gas = false, nitro = false, running = false, carClass = 'standard'} = {}) {
+        function updateEngine({speed = 0, gas = false, nitro = false, running = false, carClass = 'standard', rpm = null} = {}) {
             if (!running || !prefs.engine || level() <= 0 || !unlocked || !context || context.state === 'suspended') { stopEngine(); return; }
             try {
                 if (!engine) {
@@ -112,38 +112,48 @@
                 if (carClass === 'v8') {
                     minRPM = 22; maxRPM = 68; mult2 = 1.5; filterBase = 540;
                 } else if (carClass === 'sport' || carClass === 'supercar') {
-                    minRPM = 36; maxRPM = 105; mult2 = 2.02; filterBase = 620;
+                    minRPM = 52; maxRPM = 280; mult2 = 2.0; filterBase = 850;
                 } else if (carClass === 'classic') {
                     minRPM = 26; maxRPM = 74; mult2 = 1.33; filterBase = 400;
                 } else if (carClass === 'kamaz') {
                     minRPM = 18; maxRPM = 48; mult2 = 0.75; filterBase = 320;
                 }
 
-                // Реалистичная ступенчатая коробка передач (7 передач с плавной тягой)
-                let gearMin = 0, gearMax = 44, gearBase = minRPM;
-                if (velocity < 44) {
-                    gearMin = 0; gearMax = 44; gearBase = minRPM;
-                } else if (velocity < 86) {
-                    gearMin = 40; gearMax = 86; gearBase = minRPM + 4;
-                } else if (velocity < 140) {
-                    gearMin = 80; gearMax = 140; gearBase = minRPM + 8;
-                } else if (velocity < 205) {
-                    gearMin = 132; gearMax = 205; gearBase = minRPM + 12;
-                } else if (velocity < 285) {
-                    gearMin = 195; gearMax = 285; gearBase = minRPM + 16;
-                } else if (velocity < 380) {
-                    gearMin = 270; gearMax = 380; gearBase = minRPM + 20;
+                let revs;
+                if (typeof rpm === 'number' && Number.isFinite(rpm) && rpm > 0) {
+                    const rpmNorm = Math.min(1, Math.max(0, (rpm - 1000) / 7800));
+                    revs = minRPM + rpmNorm * (maxRPM - minRPM) + (gas ? 8 : 0) + (nitro ? 22 : 0);
                 } else {
-                    gearMin = 360; gearMax = 520; gearBase = minRPM + 24;
-                }
+                    // Реалистичная ступенчатая коробка передач (7 передач с плавной тягой)
+                    let gearMin = 0, gearMax = 44, gearBase = minRPM;
+                    if (velocity < 44) {
+                        gearMin = 0; gearMax = 44; gearBase = minRPM;
+                    } else if (velocity < 86) {
+                        gearMin = 40; gearMax = 86; gearBase = minRPM + 4;
+                    } else if (velocity < 140) {
+                        gearMin = 80; gearMax = 140; gearBase = minRPM + 8;
+                    } else if (velocity < 205) {
+                        gearMin = 132; gearMax = 205; gearBase = minRPM + 12;
+                    } else if (velocity < 285) {
+                        gearMin = 195; gearMax = 285; gearBase = minRPM + 16;
+                    } else if (velocity < 380) {
+                        gearMin = 270; gearMax = 380; gearBase = minRPM + 20;
+                    } else {
+                        gearMin = 360; gearMax = 520; gearBase = minRPM + 24;
+                    }
 
-                const progress = Math.min(1, Math.max(0, (velocity - gearMin) / (gearMax - gearMin || 1)));
-                const revs = gearBase + progress * (maxRPM - gearBase) + (gas ? 8 : 0) + (nitro ? 22 : 0);
+                    const progress = Math.min(1, Math.max(0, (velocity - gearMin) / (gearMax - gearMin || 1)));
+                    revs = gearBase + progress * (maxRPM - gearBase) + (gas ? 8 : 0) + (nitro ? 22 : 0);
+                }
 
                 param(engine.nodes[0].frequency, revs, context.currentTime);
                 param(engine.nodes[1].frequency, revs * mult2, context.currentTime);
-                param(engine.filter.frequency, nitro ? 1600 : (gas ? filterBase + velocity * 1.6 + 200 : filterBase + velocity * 0.7), context.currentTime);
-                param(engine.gain.gain, nitro ? 0.058 : (gas ? 0.042 : 0.024), context.currentTime);
+                const filterFreq = nitro ? 2400 : (gas ? filterBase + velocity * 2.2 + 250 : filterBase + velocity * 0.9);
+                param(engine.filter.frequency, filterFreq, context.currentTime);
+                if (engine.filter.Q) {
+                    param(engine.filter.Q, carClass === 'supercar' || carClass === 'sport' ? 2.2 : 1.0, context.currentTime);
+                }
+                param(engine.gain.gain, nitro ? 0.065 : (gas ? 0.046 : 0.024), context.currentTime);
             } catch (_) { stopEngine(); }
         }
         return {
@@ -187,6 +197,10 @@
             brake() {
                 tone(340, 0.14, 0.09, 0, 'sawtooth', 140);
                 tone(680, 0.08, 0.06, 0.02, 'triangle', 260);
+            },
+            scrape() {
+                tone(320, 0.12, 0.12, 0, 'sawtooth', 120);
+                tone(180, 0.15, 0.16, 0.02, 'triangle', 60);
             },
             drift() {
                 // Аутентичный визг шин по асфальту (многотональный скользящий резонанс)

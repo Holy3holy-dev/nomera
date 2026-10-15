@@ -4005,6 +4005,16 @@
                         }
                     }
 
+                    // 5. Carpet & Floorpan: prevent bright white/light floor appearing underneath Ferrari/chassis
+                    if (mName.includes('carpet') || matName.includes('carpet') || mName.includes('floor') || matName.includes('floor')) {
+                        return new THREE.MeshStandardMaterial({
+                            color: 0x111114,
+                            roughness: 0.95,
+                            metalness: 0.05,
+                            name: 'DarkCarpet'
+                        });
+                    }
+
                     return mat;
                 });
 
@@ -4147,6 +4157,20 @@
         const rp = createLicensePlate(THREE, 'А 777 АА | 77 RUS', false);
         rp.position.set(0, box.min.y + size.y * 0.28, box.min.z - 0.02);
         modelRoot.add(rp);
+
+        // Aerodynamic Undercarriage Undertray (matte dark chassis undertray, closes interior gaps under car)
+        const undertrayGeo = new THREE.PlaneGeometry(size.x * 0.82, size.z * 0.78);
+        undertrayGeo.rotateX(Math.PI / 2);
+        const undertrayMat = new THREE.MeshStandardMaterial({
+            color: 0x09090b,
+            roughness: 0.95,
+            metalness: 0.1,
+            side: THREE.DoubleSide,
+            name: 'ChassisUndertray'
+        });
+        const undertray = new THREE.Mesh(undertrayGeo, undertrayMat);
+        undertray.position.set(0, Math.max(0.04, box.min.y + 0.05), center.z);
+        modelRoot.add(undertray);
     }
 
     function loadCarModel(THREE, carName, styling = {}, onLoaded) {
@@ -5501,8 +5525,28 @@
             this.state.damageTaken = 0;
             this.state.bodyRoll = 0;
             this.state.pitchSquat = 0;
+            this.state.pitchVelocity = 0;
+            this.state.downforceY = 0;
             this.state.yawAngle = 0;
             this.state.shakeAmount = 0;
+
+            // 7-speed transmission, RPM and spring-damper suspension state
+            this.state.gear = 1;
+            this.state.prevGear = 1;
+            this.state.rpm = 1200;
+            const carId = identifyCarModel(this.carName);
+            const isSupercar = ['sf90', 'huracan', 'porsche911', 'chiron', 'jesko', 'gtr'].includes(carId);
+            this.state.maxRpm = isSupercar ? 8800 : (['m5e60', 'm5f90', 'm8', 'e63', 'rs6', 'g63'].includes(carId) ? 7500 : 6500);
+            this.state.idleRpm = isSupercar ? 1100 : 900;
+            this.state.shiftShock = 0;
+            this.state.gasHoldTime = 0;
+            this.state.prevGas = false;
+            this.state.wasBraking = false;
+            if (this.camera && typeof this.camera.fov === 'number') {
+                this.baseFov = this.camera.fov;
+            } else {
+                this.baseFov = 60;
+            }
 
             // Load Player's authentic 3D car model
             this.loadPlayerCar();
@@ -5593,20 +5637,48 @@
                 this.playerNitroFlames.push(flame);
             });
 
-            // 4. Underglow Neon Disc (if player has neon tuning)
+            // 4. Underglow Neon (if player has neon tuning)
             const neonVal = this.styling.neon;
             if (neonVal && neonVal !== 'none') {
                 const col = parseColor(neonVal, 0x00f0ff);
-                const neonDiscGeo = new THREE.PlaneGeometry(halfW * 1.8, halfL * 1.8);
+                let neonTexture = null;
+                try {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = 128;
+                    canvas.height = 128;
+                    const ctx = canvas.getContext('2d');
+                    if (ctx) {
+                        const grad = ctx.createRadialGradient(64, 64, 8, 64, 64, 64);
+                        const cObj = new THREE.Color(col);
+                        const r = Math.round(cObj.r * 255), g = Math.round(cObj.g * 255), b = Math.round(cObj.b * 255);
+                        grad.addColorStop(0, `rgba(${r},${g},${b},0.85)`);
+                        grad.addColorStop(0.35, `rgba(${r},${g},${b},0.45)`);
+                        grad.addColorStop(0.70, `rgba(${r},${g},${b},0.12)`);
+                        grad.addColorStop(1, `rgba(${r},${g},${b},0)`);
+                        ctx.fillStyle = grad;
+                        ctx.fillRect(0, 0, 128, 128);
+                        neonTexture = new THREE.CanvasTexture(canvas);
+                    }
+                } catch (_) {}
+
+                const neonDiscGeo = new THREE.PlaneGeometry(halfW * 2.2, halfL * 2.0);
                 neonDiscGeo.rotateX(-Math.PI / 2);
                 const neonDiscMat = new THREE.MeshBasicMaterial({
                     color: col,
+                    map: neonTexture,
                     transparent: true,
-                    opacity: 0.75
+                    opacity: 0.75,
+                    depthWrite: false,
+                    blending: THREE.AdditiveBlending
                 });
                 const neonMesh = new THREE.Mesh(neonDiscGeo, neonDiscMat);
-                neonMesh.position.set(0, 0.04, 0);
+                neonMesh.position.set(0, 0.03, 0);
                 this.playerCar.add(neonMesh);
+
+                // Authentic ground bounce illumination
+                const neonPointLight = new THREE.PointLight(col, 1.6, 4.5, 1.8);
+                neonPointLight.position.set(0, 0.20, 0);
+                this.playerCar.add(neonPointLight);
             }
 
             // 5. Roof SGU Flasher Strobe Light (if car has SGU flasher)
@@ -5692,22 +5764,83 @@
                 }
             }
 
-            // 2. THROTTLE, ACCELERATION & BRAKING
+            // 2. TRANSMISSION, THROTTLE, ACCELERATION & BRAKING
             const nitroMult = state.isNitroActive ? 1.25 : 1.0;
             const targetMaxSpeed = state.maxSpeed * nitroMult;
 
-            if (keys.gas) {
-                const accelRate = state.accel * (state.isNitroActive ? 1.6 : 1.0);
-                state.speed = Math.min(targetMaxSpeed, state.speed + accelRate * dt);
-                state.pitchSquat = -0.035;
-            } else if (keys.brake) {
-                state.speed = Math.max(0, state.speed - 95 * dt);
-                state.pitchSquat = 0.045;
-            } else {
-                // Natural road coasting drag
-                state.speed = Math.max(0, state.speed - 12 * dt);
-                state.pitchSquat = 0;
+            // 7-speed automatic gearbox definition
+            const gearWindows = [
+                { min: 0, max: 62, down: 0 },
+                { min: 45, max: 115, down: 38 },
+                { min: 92, max: 172, down: 82 },
+                { min: 145, max: 235, down: 135 },
+                { min: 205, max: 298, down: 195 },
+                { min: 270, max: 365, down: 255 },
+                { min: 335, max: 550, down: 318 }
+            ];
+
+            // Up-shift check
+            const curGw = gearWindows[Math.min(gearWindows.length - 1, (state.gear || 1) - 1)];
+            if (state.speed > curGw.max && state.gear < gearWindows.length) {
+                state.gear++;
+                state.shiftShock = 0.12; // brief clutch shift delay
+                state.pitchVelocity += 0.38; // punchy forward impulse
+                if (this.options.onSound) this.options.onSound('backfire');
+                if (this.options.onHaptic) this.options.onHaptic('medium');
+            } else if (state.speed < curGw.down && state.gear > 1) {
+                state.gear--;
+                state.rpm = Math.min(state.maxRpm, state.rpm + 1200);
             }
+
+            // Dynamic RPM calculation
+            const activeGw = gearWindows[Math.min(gearWindows.length - 1, (state.gear || 1) - 1)];
+            const gearProg = Math.min(1.0, Math.max(0.0, (state.speed - activeGw.min) / (activeGw.max - activeGw.min || 1)));
+            const targetRpm = state.idleRpm + gearProg * (state.maxRpm - state.idleRpm) * 0.90 + (keys.gas ? (state.maxRpm * 0.10) : 0);
+            state.rpm = (state.rpm || state.idleRpm) + (targetRpm - (state.rpm || state.idleRpm)) * Math.min(1.0, 16.0 * dt);
+
+            // Shift torque interruption
+            const shiftTorque = state.shiftShock > 0 ? 0.35 : 1.0;
+            if (state.shiftShock > 0) state.shiftShock = Math.max(0, state.shiftShock - dt);
+
+            // Throttle & Braking
+            if (keys.gas) {
+                state.gasHoldTime = (state.gasHoldTime || 0) + dt;
+                // High low-gear wheel torque (hypercar launch feeling)
+                const gearTorque = Math.max(0.70, 1.45 - ((state.gear || 1) - 1) * 0.11);
+                // Realistic aerodynamic drag (proportional to v^2)
+                const aeroDrag = Math.pow(state.speed / 100, 2) * 1.85;
+                const rawAccel = state.accel * gearTorque * (state.isNitroActive ? 1.70 : 1.0) * shiftTorque;
+                const netAccel = Math.max(3.0, rawAccel - aeroDrag);
+                state.speed = Math.min(targetMaxSpeed, state.speed + netAccel * dt);
+            } else if (keys.brake) {
+                if (!state.wasBraking && state.speed > 60) {
+                    if (this.options.onSound) this.options.onSound('brake');
+                }
+                const brakeBite = 105 + (state.speed / 100) * 20;
+                state.speed = Math.max(0, state.speed - brakeBite * dt);
+            } else {
+                // Natural engine braking & aerodynamic coasting drag
+                if (state.prevGas && state.speed > 80 && state.gasHoldTime > 0.6) {
+                    if (this.options.onSound) this.options.onSound('blowOff');
+                }
+                const coastingDrag = 9.0 + Math.pow(state.speed / 100, 2) * 4.2;
+                state.speed = Math.max(0, state.speed - coastingDrag * dt);
+            }
+            if (!keys.gas) state.gasHoldTime = 0;
+            state.prevGas = !!keys.gas;
+            state.wasBraking = !!keys.brake;
+
+            // Spring-damper suspension model for pitch (rear squat on acceleration, nose-dive on braking)
+            const targetPitch = keys.gas ? -0.042 : (keys.brake ? 0.055 : 0.0);
+            const springK = 48.0;
+            const damperC = 10.5;
+            const pitchForce = (targetPitch - (state.pitchSquat || 0)) * springK - (state.pitchVelocity || 0) * damperC;
+            state.pitchVelocity = (state.pitchVelocity || 0) + pitchForce * dt;
+            state.pitchSquat = (state.pitchSquat || 0) + state.pitchVelocity * dt;
+            state.pitchSquat = Math.max(-0.065, Math.min(0.075, state.pitchSquat));
+
+            // Aerodynamic high-speed downforce (chassis lowers to ground)
+            state.downforceY = -Math.min(0.035, Math.pow(state.speed / 380, 2) * 0.035);
 
             // Taillight emissive intensity & dynamic brake light on braking
             const isBraking = !!keys.brake;
@@ -5753,7 +5886,9 @@
             // 5. STEERING, HANDBRAKE & DRIFT MECHANICS
             const isHandbrake = !!keys.drift;
             const driftMult = state.driftFactor || 1.35;
-            const lateralMax = (state.handling * 2.8) * (isHandbrake ? (1 + (driftMult - 1) * 0.7) : 1.0);
+            // High-speed steering stability: heavier feel and high directional stability at 200+ km/h
+            const speedStability = Math.max(0.68, 1.0 - (state.speed / 380) * 0.32);
+            const lateralMax = (state.handling * 2.8 * speedStability) * (isHandbrake ? (1 + (driftMult - 1) * 0.7) : 1.0);
 
             let steerInput = 0;
             if (keys.left) steerInput += 1;  // In Three.js with camera facing +Z: +X moves to screen LEFT
@@ -5839,7 +5974,7 @@
 
             // 6. UPDATE PLAYER CAR 3D MESH
             if (this.playerCar) {
-                this.playerCar.position.set(state.x, 0, state.z);
+                this.playerCar.position.set(state.x, state.downforceY || 0, state.z);
                 this.playerCar.rotation.set(state.pitchSquat, state.yawAngle, state.bodyRoll);
 
                 // Rotate dedicated procedural wheel spinners around local hub axis
@@ -6021,9 +6156,10 @@
             // 1. Target camera offset based on camera mode and viewport aspect
             // In portrait aspect, elevate camera slightly so the vehicle sits higher in frame,
             // preventing lower HUD gauges (speedometer & nitro) from covering the bumper and plate.
+            const accelLag = !isHood ? ((this.keys && this.keys.gas) ? 0.30 : ((this.keys && this.keys.brake) ? -0.25 : 0)) : 0;
             const targetCamX = state.x * (isHood ? 1.0 : 0.75);
             const targetCamY = mode.offset.y + (isPortrait && !isHood ? 0.45 : 0);
-            const targetCamZ = state.z + mode.offset.z - (isPortrait && !isHood ? 0.35 : 0);
+            const targetCamZ = state.z + mode.offset.z - (isPortrait && !isHood ? 0.35 : 0) - accelLag * Math.min(1.0, state.speed / 100);
 
             // 2. Smooth spring follow for camera position (glides smoothly across lanes without snapping)
             const posLerp = isHood ? 16.0 : 6.0;
@@ -6073,7 +6209,7 @@
 
             // 6. Dynamic FOV warp with speed & nitro
             const speedRatio = Math.min(1.0, state.speed / state.maxSpeed);
-            const targetFov = mode.fov + (speedRatio * 10) + (state.isNitroActive ? 5 : 0);
+            const targetFov = mode.fov + (speedRatio * 14) + (state.isNitroActive ? 7 : 0);
             this.camera.fov += (targetFov - this.camera.fov) * Math.min(1.0, 5.0 * dt);
             this.camera.updateProjectionMatrix();
 
@@ -6136,22 +6272,23 @@
             if (!this.options.onUpdateHUD) return;
             const state = this.state;
 
-            // Calculate transmission gear (D1 - D6)
-            let gear = 'D1';
-            if (state.speed > 230) gear = 'D6';
-            else if (state.speed > 175) gear = 'D5';
-            else if (state.speed > 125) gear = 'D4';
-            else if (state.speed > 80) gear = 'D3';
-            else if (state.speed > 45) gear = 'D2';
+            // Transmission gear (D1 - D7)
+            const gearNum = Math.max(1, Math.min(7, state.gear || 1));
+            const gear = 'D' + gearNum;
 
-            // Calculate tachometer / RPM %
-            let rpm = ((state.speed % 45) / 45) * 80 + 20;
-            if (state.isNitroActive) rpm = 98;
+            // Tachometer / RPM
+            const rpm = Math.round(state.rpm || 1000);
+            const idleRpm = state.idleRpm || 1000;
+            const maxRpm = state.maxRpm || 8500;
+            const rpmRange = maxRpm - idleRpm || 1;
+            const rpmPercent = Math.min(100, Math.max(0, Math.round(((rpm - idleRpm) / rpmRange) * 100)));
 
             this.options.onUpdateHUD({
                 speed: Math.round(state.speed),
                 gear: gear,
-                rpmPercent: Math.min(100, Math.round(rpm)),
+                rpm: rpm,
+                maxRpm: maxRpm,
+                rpmPercent: rpmPercent,
                 distanceKm: state.distanceKm,
                 earnedCash: state.earnedCash,
                 fuelCurrent: state.fuelCurrent,

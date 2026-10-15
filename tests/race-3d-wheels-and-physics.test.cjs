@@ -379,6 +379,83 @@ test('3D car visual fixes: Ferrari faces forward down the road, no floating red 
     assert.ok(css.includes('margin-left: 3px') || css.includes('margin-left: 2px'), 'Must not push nitro badge off with excessive margin-left');
 });
 
+test('Ferrari bottom fix and physics rework: undertray, gearbox, suspension squat, HUD rpm, and audio', () => {
+    const { THREE, Car3DManager } = setupTestContext();
+    const fs = require('fs');
+    const car3dCode = fs.readFileSync(path.join(__dirname, '..', 'js', 'car-3d.js'), 'utf8');
+
+    // 1. Ferrari bottom floor & undertray verification
+    assert.ok(car3dCode.includes('DarkCarpet'), 'car-3d.js must replace white carpet/floor with DarkCarpet material');
+    assert.ok(car3dCode.includes('ChassisUndertray'), 'car-3d.js must create aerodynamic ChassisUndertray to seal underside');
+    assert.ok(car3dCode.includes('createRadialGradient') && car3dCode.includes('CanvasTexture'), 'car-3d.js must create soft radial gradient texture for underglow');
+
+    // 2. Physics & Gearbox simulation
+    let hudReceived = null;
+    let soundsTriggered = [];
+    const mockContainer = { clientWidth: 800, clientHeight: 500, style: {}, appendChild: () => {}, removeChild: () => {} };
+    const engine = new Car3DManager.Car3DRacingEngine(mockContainer, {
+        onUpdateHUD: (hud) => { hudReceived = hud; },
+        onSound: (sound) => { soundsTriggered.push(sound); }
+    });
+    engine.start({ carName: 'Ferrari SF90 Stradale', performance: { speed: 380, accel: 85 } });
+
+    // Initial state: D1, idle RPM
+    assert.equal(engine.state.gear, 1, 'Initial gear should be 1');
+    assert.ok(engine.state.rpm >= 1000, 'Initial RPM should be at or above idle');
+
+    // Simulate acceleration
+    engine.keys.gas = true;
+    for (let i = 0; i < 60; i++) {
+        engine.update(0.05); // 3 seconds of acceleration
+    }
+
+    // Verify gear shifted up, suspension squatted backwards (negative pitchSquat), and HUD received gear & rpm
+    assert.ok(engine.state.speed > 50, 'Car should accelerate to speed');
+    assert.ok(engine.state.gear >= 2, `Car should have upshifted at speed, current gear: ${engine.state.gear}`);
+    assert.ok(engine.state.pitchSquat < 0, `Suspension should squat on acceleration (pitchSquat < 0), got ${engine.state.pitchSquat}`);
+    assert.ok(engine.state.downforceY < 0, `Downforce should pull chassis downwards at speed (downforceY < 0), got ${engine.state.downforceY}`);
+    assert.ok(hudReceived, 'HUD should receive telemetry updates');
+    assert.ok(hudReceived.gear.startsWith('D'), 'HUD gear should be formatted D1-D7');
+    assert.ok(hudReceived.rpm > 1000, 'HUD RPM should be above idle during acceleration');
+    assert.ok(hudReceived.rpmPercent > 0, 'HUD rpmPercent should be positive');
+
+    // Simulate braking
+    engine.keys.gas = false;
+    engine.keys.brake = true;
+    for (let i = 0; i < 30; i++) {
+        engine.update(0.05);
+    }
+    assert.ok(engine.state.pitchSquat > 0, `Suspension should dive forward on braking (pitchSquat > 0), got ${engine.state.pitchSquat}`);
+
+    engine.destroy();
+
+    // 3. Audio synthesis verification
+    const { createAudio } = require('../js/audio.js');
+    function fakeCtx() {
+        const ctx = { currentTime: 1, state: 'running', destination: {}, created: [] };
+        const p = () => ({ values: [], setValueAtTime(v) { this.values.push(v); }, setTargetAtTime(v) { this.values.push(v); }, exponentialRampToValueAtTime(v) { this.values.push(v); } });
+        const n = () => ({ gain: p(), frequency: p(), Q: p(), connect() {}, disconnect() {}, start() {}, stop() {} });
+        ctx.createGain = n; ctx.createBiquadFilter = n;
+        ctx.createOscillator = () => { const res = n(); ctx.created.push(res); return res; };
+        return ctx;
+    }
+    const audioCtx = fakeCtx();
+    const audio = createAudio({ contextFactory: () => audioCtx });
+    audio.unlock();
+    assert.equal(typeof audio.scrape, 'function', 'audio should have scrape() method');
+    audio.scrape();
+    assert.ok(audioCtx.created.length >= 2, 'scrape should create audio nodes');
+
+    // Engine sport revs test with physical RPM parameter
+    const sportCtx = fakeCtx();
+    const sportAudio = createAudio({ contextFactory: () => sportCtx });
+    sportAudio.unlock();
+    sportAudio.updateEngine({ running: true, speed: 200, gas: true, carClass: 'sport', rpm: 8000 });
+    const highRpmPitch = sportCtx.created[0].frequency.values.at(-1);
+    assert.ok(highRpmPitch > 200, `Sport engine at 8000 RPM should produce high-frequency revs (> 200 Hz), got ${highRpmPitch}`);
+    sportAudio.stopEngine();
+});
+
 
 
 
