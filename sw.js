@@ -1,5 +1,5 @@
 // Release-coherent app shell. No Firebase, external assets or non-GET requests are cached.
-const CACHE_NAME = 'nomera-cache-4e17f0fc639b';
+const CACHE_NAME = 'nomera-cache-679072f08dbb';
 const ASSETS = ['./', './index.html', './manifest.json', './styles.css?v=4433d45bc1a8',
     './js/security.js?v=ed845ef69db6', './js/storage.js?v=327dc7592b84', './js/race-records.js?v=eaeaf8e59fc2', './js/race-economy.js?v=2cbfd8e11f42', './js/audio.js?v=72ff40b13141', './js/app.js?v=63a085a178d3',
     './icons/car-placeholder.svg', './icons/icon-192.png', './icons/icon-512.png'];

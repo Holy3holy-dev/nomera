@@ -309,5 +309,40 @@ test('3D mobile controls HTML and CSS enforce non-overlapping layout and unclipp
     assert.ok(css.includes('bottom: max(64px'), 'Landscape HUD bottom must be elevated above 48px steer/pedal buttons');
 });
 
+test('3D camera turn dynamics: banking roll is smoothly clamped under 0.06 rad and body roll is damped', () => {
+    const { THREE, Car3DManager } = setupTestContext();
+    const mockContainer = { clientWidth: 800, clientHeight: 500, style: {}, appendChild: () => {}, removeChild: () => {} };
+    const engine = new Car3DManager.Car3DRacingEngine(mockContainer, {});
+
+    engine.start({
+        carName: 'ВАЗ-2107 «Жигули»',
+        performance: { speed: 180, handling: 6.0 }
+    });
+    engine.state.speed = 120;
+
+    // Steer right for 10 frames to build up max lateral velocity
+    engine.keys.right = true;
+    for (let i = 0; i < 10; i++) {
+        engine.update(0.05);
+    }
+
+    assert.ok(Math.abs(engine.state.vx) > 5.0, 'Lateral velocity should be active during sharp turn');
+    // Camera roll must be subtle and clamped under 0.06 rad (~3.4 deg), NOT 0.40 rad (23 deg)
+    assert.ok(Math.abs(engine.camRoll) <= 0.055, `Camera roll (${engine.camRoll}) must be clamped under 0.055 rad`);
+    assert.ok(Math.abs(engine.camRoll) > 0.005, 'Camera roll should have subtle non-zero banking');
+    // Car body roll must be subtle and damped
+    assert.ok(Math.abs(engine.state.bodyRoll) <= 0.065, `Body roll (${engine.state.bodyRoll}) must be damped under 0.065 rad`);
+
+    // Release steering: camRoll must smoothly decay towards 0
+    engine.keys.right = false;
+    for (let i = 0; i < 15; i++) {
+        engine.update(0.05);
+    }
+    assert.ok(Math.abs(engine.camRoll) < 0.02, `Camera roll should smoothly return near level: ${engine.camRoll}`);
+
+    engine.destroy();
+});
+
+
 
 

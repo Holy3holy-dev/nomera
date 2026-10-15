@@ -4801,6 +4801,7 @@
             ];
             this.camPos = new this.THREE.Vector3(0, 2.05, -5.8);
             this.camLook = new this.THREE.Vector3(0, 1.05, 14.0);
+            this.camRoll = 0;
 
             // Controls state
             this.keys = {
@@ -5471,6 +5472,8 @@
             this.state.x = 2.125; // start in lane 2
             this.state.z = 0;
             this.state.vx = 0;
+            this.state.bodyRoll = 0;
+            this.camRoll = 0;
             this.state.speed = 40; // rolling start
             this.state.targetSpeed = (this.performance.speed || 180) * 0.75;
             this.state.accel = 24 + ((this.performance.accel || 3.0) < 2.5 ? 12 : 6);
@@ -5819,8 +5822,9 @@
                 if (this.options.onSound) this.options.onSound('scrape');
             }
 
-            // Body roll tilt (lean outwards towards outside of turn)
-            state.bodyRoll = state.vx * 0.025;
+            // Body roll tilt: car chassis leans gently outwards into turn with realistic suspension damping
+            const targetBodyRoll = Math.max(-0.065, Math.min(0.065, state.vx * 0.0045));
+            state.bodyRoll = (state.bodyRoll || 0) + (targetBodyRoll - (state.bodyRoll || 0)) * Math.min(1.0, 9.0 * dt);
 
             // 6. UPDATE PLAYER CAR 3D MESH
             if (this.playerCar) {
@@ -6001,54 +6005,65 @@
             const state = this.state;
             const mode = this.cameraModes[this.cameraMode] || this.cameraModes[0];
             const isPortrait = this.camera && this.camera.aspect < 1.0;
+            const isHood = this.cameraMode === 2;
 
             // 1. Target camera offset based on camera mode and viewport aspect
             // In portrait aspect, elevate camera slightly so the vehicle sits higher in frame,
             // preventing lower HUD gauges (speedometer & nitro) from covering the bumper and plate.
-            const targetCamX = state.x * (this.cameraMode === 2 ? 1.0 : 0.78);
-            const targetCamY = mode.offset.y + (isPortrait && this.cameraMode !== 2 ? 0.45 : 0);
-            const targetCamZ = state.z + mode.offset.z - (isPortrait && this.cameraMode !== 2 ? 0.35 : 0);
+            const targetCamX = state.x * (isHood ? 1.0 : 0.75);
+            const targetCamY = mode.offset.y + (isPortrait && !isHood ? 0.45 : 0);
+            const targetCamZ = state.z + mode.offset.z - (isPortrait && !isHood ? 0.35 : 0);
 
-            // 2. Smooth spring follow on X (cinematic camera lag behind car)
-            this.camPos.x += (targetCamX - this.camPos.x) * Math.min(1.0, 10.0 * dt);
-            this.camPos.y += (targetCamY - this.camPos.y) * Math.min(1.0, 8.0 * dt);
+            // 2. Smooth spring follow for camera position (glides smoothly across lanes without snapping)
+            const posLerp = isHood ? 16.0 : 6.0;
+            this.camPos.x += (targetCamX - this.camPos.x) * Math.min(1.0, posLerp * dt);
+            this.camPos.y += (targetCamY - this.camPos.y) * Math.min(1.0, 6.0 * dt);
             this.camPos.z = targetCamZ;
 
             // 3. Screen shake on collision / wall hit
             let shakeX = 0, shakeY = 0;
             if (state.shakeAmount > 0) {
                 state.shakeAmount = Math.max(0, state.shakeAmount - 2.5 * dt);
-                shakeX = (Math.random() - 0.5) * state.shakeAmount * 0.4;
-                shakeY = (Math.random() - 0.5) * state.shakeAmount * 0.4;
+                shakeX = (Math.random() - 0.5) * state.shakeAmount * 0.35;
+                shakeY = (Math.random() - 0.5) * state.shakeAmount * 0.35;
             }
 
-            // High-speed vibration (>180 km/h)
-            if (state.speed > 180) {
-                const vib = ((state.speed - 180) / 140) * 0.025;
+            // High-speed subtle road vibration (>200 km/h)
+            if (state.speed > 200) {
+                const vib = ((state.speed - 200) / 140) * 0.012;
                 shakeX += (Math.random() - 0.5) * vib;
                 shakeY += (Math.random() - 0.5) * vib;
             }
 
             this.camera.position.set(this.camPos.x + shakeX, this.camPos.y + shakeY, this.camPos.z);
 
-            // 4. Target look-at point ahead of car
-            const targetLookX = state.x * 0.88;
-            const targetLookY = mode.lookOffset.y - (isPortrait && this.cameraMode !== 2 ? 0.20 : 0);
+            // 4. Stable look-at point:
+            // Aligned forward along the camera trajectory so the road ahead does NOT violently whip
+            // diagonally across the screen when steering. In drift, adds gentle slide anticipation.
+            const driftLookBias = (state.isDrifting && !isHood) ? state.yawAngle * 0.16 : 0;
+            const targetLookX = isHood ? state.x : (this.camPos.x * 0.82 + state.x * 0.18 + driftLookBias);
+            const targetLookY = mode.lookOffset.y - (isPortrait && !isHood ? 0.20 : 0);
             const targetLookZ = state.z + mode.lookOffset.z;
 
-            this.camLook.x += (targetLookX - this.camLook.x) * Math.min(1.0, 12.0 * dt);
+            const lookLerp = isHood ? 16.0 : 6.5;
+            this.camLook.x += (targetLookX - this.camLook.x) * Math.min(1.0, lookLerp * dt);
             this.camLook.y = targetLookY;
             this.camLook.z = targetLookZ;
 
             this.camera.lookAt(this.camLook);
 
-            // 5. Camera banking roll into sharp turns
-            this.camera.rotateZ(state.vx * 0.028);
+            // 5. Cinematic camera banking roll:
+            // Smoothly damped and clamped to realistic tilt (max ~3 deg / 0.052 rad in chase, ~0.8 deg in hood).
+            // Completely eliminates abrupt jerks, violent swaying, and horizon rocking.
+            const maxCamRoll = isHood ? 0.015 : 0.052;
+            const targetRoll = Math.max(-maxCamRoll, Math.min(maxCamRoll, -state.vx * 0.0032));
+            this.camRoll = (this.camRoll || 0) + (targetRoll - (this.camRoll || 0)) * Math.min(1.0, 5.0 * dt);
+            this.camera.rotateZ(this.camRoll);
 
             // 6. Dynamic FOV warp with speed & nitro
             const speedRatio = Math.min(1.0, state.speed / state.maxSpeed);
-            const targetFov = mode.fov + (speedRatio * 11) + (state.isNitroActive ? 6 : 0);
-            this.camera.fov += (targetFov - this.camera.fov) * Math.min(1.0, 6.0 * dt);
+            const targetFov = mode.fov + (speedRatio * 10) + (state.isNitroActive ? 5 : 0);
+            this.camera.fov += (targetFov - this.camera.fov) * Math.min(1.0, 5.0 * dt);
             this.camera.updateProjectionMatrix();
 
             // Starfield follows camera Z
