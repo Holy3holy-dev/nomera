@@ -1761,6 +1761,20 @@
             width: 100%;
             margin-bottom: max(6px, env(safe-area-inset-bottom));
         }
+        #race-3d-touch-controls .touch-actions-bar {
+            grid-template-columns: repeat(3, 1fr);
+        }
+        .touch-actions-bar .touch-btn {
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            box-sizing: border-box;
+        }
+        .touch-actions-bar .touch-action-label {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
         .touch-horn {
             width: 100%;
             min-height: 48px;
@@ -3488,21 +3502,34 @@ body.race-active .race-3d-viewport-wrapper {
     .race-3d-stat-val {
         font-size: 11px;
     }
+    .race-3d-hud-bottom {
+        padding: 0 4px;
+        gap: 8px;
+        align-items: flex-end;
+    }
     .race-3d-speedo-box,
     .race-3d-nitro-box {
-        min-width: 105px;
-        padding: 6px 10px;
-        border-radius: 12px;
+        min-width: 92px;
+        padding: 4px 8px;
+        border-radius: 10px;
+        background: rgba(10, 15, 29, 0.8);
+        gap: 2px;
     }
     .race-3d-speed-num {
-        font-size: 26px;
+        font-size: 22px;
     }
     .race-3d-gear-badge {
-        font-size: 9px;
-        padding: 1px 5px;
+        font-size: 8.5px;
+        padding: 1px 4px;
     }
     .race-3d-speed-unit {
-        font-size: 9px;
+        font-size: 8px;
+    }
+    .race-3d-nitro-header span:first-child {
+        font-size: 9px !important;
+    }
+    .race-3d-nitro-header span:last-child {
+        font-size: 9.5px !important;
     }
     .race-touch-controls {
         margin: 6px auto 0 auto;
@@ -3560,16 +3587,45 @@ body.race-active .race-3d-viewport-wrapper {
         position: relative !important;
         margin: 0 !important;
     }
+    /* 1. Top Header: Left Exit Button & Right Camera Button */
     body.race-active .race-header-hud {
         position: absolute;
-        top: max(8px, env(safe-area-inset-top));
-        left: max(14px, env(safe-area-inset-left));
-        right: max(14px, env(safe-area-inset-right));
+        top: max(6px, env(safe-area-inset-top));
+        left: max(12px, env(safe-area-inset-left));
+        right: max(12px, env(safe-area-inset-right));
         z-index: 30;
         background: transparent;
         border: none;
         padding: 0;
+        margin: 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        pointer-events: none;
     }
+    body.race-active .race-header-hud > * {
+        pointer-events: auto;
+    }
+    body.race-active .race-header-hud .btn-close {
+        padding: 5px 10px;
+        font-size: 11px;
+        border-radius: 8px;
+        backdrop-filter: blur(8px);
+        background: rgba(239, 68, 68, 0.28);
+        border: 1px solid rgba(239, 68, 68, 0.6);
+        color: #fff;
+    }
+    body.race-active #btn-camera-view-3d {
+        padding: 5px 10px;
+        font-size: 11px;
+        border-radius: 8px;
+        backdrop-filter: blur(8px);
+        background: rgba(10, 15, 29, 0.82);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: #fff;
+    }
+
+    /* 2. Top Stats Bar: Centered between Exit and Camera without colliding */
     body.race-active .race-3d-viewport-wrapper {
         position: absolute !important;
         inset: 0 !important;
@@ -3581,15 +3637,98 @@ body.race-active .race-3d-viewport-wrapper {
         box-shadow: none !important;
     }
     body.race-active .race-3d-hud-overlay {
-        padding: max(38px, calc(env(safe-area-inset-top) + 34px)) max(16px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+        position: absolute;
+        inset: 0;
+        padding: 0;
+        pointer-events: none;
+        z-index: 20;
     }
+    body.race-active .race-3d-hud-top {
+        position: absolute;
+        top: max(6px, env(safe-area-inset-top));
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        z-index: 28;
+        pointer-events: none;
+        flex-wrap: nowrap;
+        margin: 0;
+    }
+    body.race-active .race-3d-hud-stat {
+        padding: 3px 8px;
+        gap: 5px;
+        border-radius: 8px;
+        background: rgba(10, 15, 29, 0.85);
+        backdrop-filter: blur(8px);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+    }
+    body.race-active .race-3d-stat-icon {
+        font-size: 11px;
+    }
+    body.race-active .race-3d-stat-lbl {
+        font-size: 7.5px;
+        letter-spacing: 0.4px;
+    }
+    body.race-active .race-3d-stat-val {
+        font-size: 10.5px;
+        margin-top: 1px;
+    }
+
+    /* 3. Speedometer & Nitro HUD: Floated safely above steer & pedals with guaranteed clearance */
     body.race-active .race-3d-hud-bottom {
         position: absolute;
-        bottom: max(76px, calc(env(safe-area-inset-bottom) + 70px));
-        left: max(16px, env(safe-area-inset-left));
-        right: max(16px, env(safe-area-inset-right));
+        bottom: max(64px, calc(env(safe-area-inset-bottom) + 60px));
+        left: max(12px, env(safe-area-inset-left));
+        right: max(12px, env(safe-area-inset-right));
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
         pointer-events: none;
+        z-index: 22;
     }
+    body.race-active .race-3d-speedo-box {
+        min-width: 95px;
+        max-width: 115px;
+        padding: 4px 8px;
+        gap: 2px;
+        border-radius: 10px;
+        background: rgba(10, 15, 29, 0.82);
+        backdrop-filter: blur(8px);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+    body.race-active .race-3d-speed-num {
+        font-size: 20px;
+    }
+    body.race-active .race-3d-speed-unit {
+        font-size: 8px;
+    }
+    body.race-active .race-3d-gear-badge {
+        font-size: 8px;
+        padding: 1px 4px;
+    }
+    body.race-active .race-3d-nitro-box {
+        min-width: 95px;
+        max-width: 115px;
+        padding: 4px 8px;
+        gap: 2px;
+        border-radius: 10px;
+        background: rgba(10, 15, 29, 0.82);
+        backdrop-filter: blur(8px);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+    body.race-active .race-3d-nitro-header span:first-child {
+        font-size: 8.5px !important;
+    }
+    body.race-active .race-3d-nitro-header span:last-child {
+        font-size: 9px !important;
+    }
+
+    /* 4. Bottom Controls: Left Steer, Right Pedals, Center Action Bar */
     body.race-active .race-touch-controls {
         position: absolute !important;
         bottom: 0 !important;
@@ -3598,7 +3737,7 @@ body.race-active .race-3d-viewport-wrapper {
         width: 100% !important;
         max-width: 100% !important;
         margin: 0 !important;
-        padding: 0 max(16px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)) !important;
+        padding: 0 max(12px, env(safe-area-inset-right)) max(6px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left)) !important;
         z-index: 25;
         pointer-events: none;
     }
@@ -3606,39 +3745,82 @@ body.race-active .race-3d-viewport-wrapper {
         display: flex;
         justify-content: space-between;
         align-items: flex-end;
-        pointer-events: auto;
+        width: 100%;
+        pointer-events: none;
     }
     body.race-active .touch-cluster-steer {
-        width: 180px;
+        width: 165px;
         flex: none;
-        background: rgba(10, 15, 29, 0.78);
+        background: rgba(10, 15, 29, 0.82);
         backdrop-filter: blur(10px);
         border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 14px;
+        padding: 3px;
+        pointer-events: auto;
+    }
+    body.race-active .touch-cluster-steer .touch-btn {
+        min-height: 48px;
+        height: 48px;
+        padding: 6px 2px;
+    }
+    body.race-active .touch-cluster-steer .touch-steer .touch-arrow {
+        font-size: 18px;
+    }
+    body.race-active .touch-cluster-steer .touch-steer .touch-sublabel {
+        font-size: 8.5px;
     }
     body.race-active .touch-cluster-pedals {
-        width: 180px;
+        width: 165px;
         flex: none;
-        background: rgba(10, 15, 29, 0.78);
+        background: rgba(10, 15, 29, 0.82);
         backdrop-filter: blur(10px);
-        border-radius: 16px;
-        padding: 4px;
+        border-radius: 14px;
+        padding: 3px;
         border: 1px solid rgba(255, 255, 255, 0.2);
+        pointer-events: auto;
+    }
+    body.race-active .touch-cluster-pedals .touch-btn {
+        min-height: 48px;
+        height: 48px;
+        padding: 6px 2px;
+    }
+    body.race-active .touch-brake .touch-icon,
+    body.race-active .touch-gas .touch-icon {
+        font-size: 15px;
+    }
+    body.race-active .touch-brake .touch-pedal-label,
+    body.race-active .touch-gas .touch-pedal-label {
+        font-size: 8.5px;
     }
     body.race-active .touch-actions-bar {
         position: absolute;
-        bottom: max(8px, env(safe-area-inset-bottom));
+        bottom: max(6px, env(safe-area-inset-bottom));
         left: 50%;
         transform: translateX(-50%);
-        width: 290px;
+        width: 210px;
+        max-width: 210px;
         pointer-events: auto;
-        gap: 6px;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 5px;
         margin: 0;
+        z-index: 26;
     }
     body.race-active .touch-actions-bar .touch-btn {
-        min-height: 42px;
-        font-size: 10px;
-        background: rgba(10, 15, 29, 0.82);
+        min-height: 40px;
+        height: 40px;
+        font-size: 9.5px;
+        padding: 4px 2px;
+        background: rgba(10, 15, 29, 0.85);
         backdrop-filter: blur(10px);
+        border-radius: 10px;
+    }
+    body.race-active .touch-actions-bar .touch-action-label {
+        font-size: 9px;
+    }
+    body.race-active .touch-nitro .nitro-badge {
+        font-size: 8.5px;
+        padding: 1px 4px;
     }
 }
 

@@ -6000,11 +6000,14 @@
         updateChaseCamera(dt) {
             const state = this.state;
             const mode = this.cameraModes[this.cameraMode] || this.cameraModes[0];
+            const isPortrait = this.camera && this.camera.aspect < 1.0;
 
-            // 1. Target camera offset based on camera mode
+            // 1. Target camera offset based on camera mode and viewport aspect
+            // In portrait aspect, elevate camera slightly so the vehicle sits higher in frame,
+            // preventing lower HUD gauges (speedometer & nitro) from covering the bumper and plate.
             const targetCamX = state.x * (this.cameraMode === 2 ? 1.0 : 0.78);
-            const targetCamY = mode.offset.y;
-            const targetCamZ = state.z + mode.offset.z;
+            const targetCamY = mode.offset.y + (isPortrait && this.cameraMode !== 2 ? 0.45 : 0);
+            const targetCamZ = state.z + mode.offset.z - (isPortrait && this.cameraMode !== 2 ? 0.35 : 0);
 
             // 2. Smooth spring follow on X (cinematic camera lag behind car)
             this.camPos.x += (targetCamX - this.camPos.x) * Math.min(1.0, 10.0 * dt);
@@ -6030,7 +6033,7 @@
 
             // 4. Target look-at point ahead of car
             const targetLookX = state.x * 0.88;
-            const targetLookY = mode.lookOffset.y;
+            const targetLookY = mode.lookOffset.y - (isPortrait && this.cameraMode !== 2 ? 0.20 : 0);
             const targetLookZ = state.z + mode.lookOffset.z;
 
             this.camLook.x += (targetLookX - this.camLook.x) * Math.min(1.0, 12.0 * dt);

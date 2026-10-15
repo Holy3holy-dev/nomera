@@ -265,4 +265,49 @@ test('3D mobile controls: resetKeys clears all keys, cycleCamera cycles modes, a
     engine.destroy();
 });
 
+test('3D portrait camera framing elevates chase camera to prevent bottom HUD overlap on car bumper', () => {
+    const { THREE, Car3DManager } = setupTestContext();
+    
+    // 1. Landscape container (aspect > 1.0)
+    const landscapeContainer = { clientWidth: 800, clientHeight: 450, style: {}, appendChild: () => {}, removeChild: () => {} };
+    const landEngine = new Car3DManager.Car3DRacingEngine(landscapeContainer, {});
+    landEngine.start({ carName: 'ВАЗ-2107 «Жигули»', performance: { speed: 100 } });
+    landEngine.update(0.1);
+    const landCamY = landEngine.camera.position.y;
+    landEngine.destroy();
+
+    // 2. Portrait container (aspect < 1.0)
+    const portraitContainer = { clientWidth: 380, clientHeight: 700, style: {}, appendChild: () => {}, removeChild: () => {} };
+    const portEngine = new Car3DManager.Car3DRacingEngine(portraitContainer, {});
+    portEngine.start({ carName: 'ВАЗ-2107 «Жигули»', performance: { speed: 100 } });
+    portEngine.update(0.1);
+    const portCamY = portEngine.camera.position.y;
+    portEngine.destroy();
+
+    assert.ok(portCamY > landCamY, `Portrait camera Y (${portCamY}) should be elevated higher than landscape camera Y (${landCamY})`);
+});
+
+test('3D mobile controls HTML and CSS enforce non-overlapping layout and unclipped 3-button actions bar', () => {
+    const fs = require('fs');
+    const path = require('path');
+    const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
+    const css = fs.readFileSync(path.join(__dirname, '..', 'styles.css'), 'utf8');
+
+    // 1. In index.html, #race-3d-touch-controls must have 3 action buttons and NOT duplicate camera in the bottom bar
+    assert.ok(html.includes('id="btn-3d-touch-drift"'), 'Must have 3D drift button');
+    assert.ok(html.includes('id="btn-3d-touch-nitro"'), 'Must have 3D nitro button');
+    assert.ok(html.includes('id="btn-3d-touch-horn"'), 'Must have 3D horn button');
+    assert.ok(!html.includes('id="btn-3d-touch-cam"'), 'Must NOT have duplicate camera button in 3D touch actions bar');
+    assert.ok(html.includes('id="btn-camera-view-3d"'), 'Must have top header camera toggle button');
+
+    // 2. In styles.css, 3D touch actions bar has 3 columns to avoid mobile edge clipping
+    assert.ok(css.includes('#race-3d-touch-controls .touch-actions-bar'), 'Must define specific 3D touch actions bar style');
+    assert.ok(css.includes('grid-template-columns: repeat(3, 1fr)'), 'Must configure 3 equal columns for 3D action bar');
+
+    // 3. In landscape media query, actions bar width is constrained and bottom HUD is elevated above pedals/steer
+    assert.ok(css.includes('width: 210px'), 'Landscape action bar must be constrained to 210px to guarantee zero brake pedal collision');
+    assert.ok(css.includes('bottom: max(64px'), 'Landscape HUD bottom must be elevated above 48px steer/pedal buttons');
+});
+
+
 
