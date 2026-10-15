@@ -9589,6 +9589,8 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 document.getElementById('race-play-container').classList.add('hidden');
                 const play3D = document.getElementById('race-3d-play-container');
                 if (play3D) play3D.classList.remove('hidden');
+                const initPursuitBox = document.getElementById('hud-3d-pursuit-box');
+                if (initPursuitBox) initPursuitBox.classList.add('hidden');
 
                 car3DRacingEngine = new Car3DManager.Car3DRacingEngine(container, {
                     onUpdateHUD: (hud) => {
@@ -9631,6 +9633,34 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                             if (hud.overtakeCombo > 1) {
                                 comboBadge.textContent = `🔥 x${hud.overtakeCombo} ОБГОН`;
                             }
+                        }
+
+                        // 🚨 Police Pursuit & Wanted Stars HUD sync
+                        const pursuitBox = document.getElementById('hud-3d-pursuit-box');
+                        const pursuitStars = document.getElementById('hud-3d-wanted-stars');
+                        const pursuitStatus = document.getElementById('hud-3d-pursuit-status');
+                        const escapeBar = document.getElementById('hud-3d-escape-bar');
+
+                        if (pursuitBox) {
+                            if (hud.wantedStars > 0) {
+                                pursuitBox.classList.remove('hidden');
+                                if (pursuitStars) pursuitStars.textContent = '⭐'.repeat(hud.wantedStars);
+                                if (pursuitStatus) {
+                                    pursuitStatus.textContent = hud.escapePercent > 0
+                                        ? `⚡ УХОД: ${hud.escapeTimer}с (${hud.escapePercent}%)`
+                                        : (hud.bustedTimer > 0 ? `🚨 ЗАДЕРЖАНИЕ ${(2.8 - hud.bustedTimer).toFixed(1)}с` : `🚨 ПОГОНЯ ДПС (${hud.nearestPoliceDist}м)`);
+                                }
+                                if (escapeBar) {
+                                    escapeBar.style.width = (100 - hud.escapePercent) + '%';
+                                }
+                            } else {
+                                pursuitBox.classList.add('hidden');
+                            }
+                        }
+
+                        // Siren audio sync
+                        if (typeof sound?.setSiren === 'function') {
+                            sound.setSiren(!!hud.isPursuitActive && isRaceRunning);
                         }
 
                         // Sync values into global racePlayer
@@ -9681,6 +9711,10 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                         if (name === 'brake' && typeof sound?.brake === 'function') sound.brake();
                         if (name === 'scrape' && typeof sound?.scrape === 'function') sound.scrape();
                         if (name === 'horn' && typeof sound?.horn === 'function') sound.horn();
+                        if (name === 'siren_start' && typeof sound?.setSiren === 'function') sound.setSiren(true);
+                        if (name === 'siren_stop' && typeof sound?.setSiren === 'function') sound.setSiren(false);
+                        if (name === 'escape' && typeof sound?.cash === 'function') sound.cash();
+                        if (name === 'busted' && typeof sound?.crash === 'function') sound.crash();
                     },
                     onHaptic: (pattern) => {
                         if (typeof sound?.haptic === 'function') sound.haptic(pattern);
@@ -11326,7 +11360,13 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             resetRaceKeys();
             sound.stopEngine();
             if (typeof sound?.setSiren === 'function') sound.setSiren(false);
-            if (crashed) { sound.crash(); triggerScreenShake(); if (typeof sound?.haptic === 'function') sound.haptic('crash'); }
+            if (crashed) {
+                if (crashed !== 'busted') {
+                    sound.crash();
+                    triggerScreenShake();
+                }
+                if (typeof sound?.haptic === 'function') sound.haptic('crash');
+            }
             document.body.classList.remove('race-active');
             if (raceAnimFrame) cancelAnimationFrame(raceAnimFrame);
             if (car3DRacingEngine) car3DRacingEngine.stop();
@@ -11359,7 +11399,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             }
             addExp(finalXp);
             updateBalance();
-            logPlayerActivity('Гонка', `Заезд ${crashed === 'fuel' ? 'закончился бензин' : (crashed ? 'авария' : 'выход')}: ${racePlayer.distanceKm.toFixed(2)} км, дрифт: ${Math.round(racePlayer.driftScore || 0)} pts, до расходов ${receipt.gross} ₽, бензин -${receipt.fuelCost} ₽, итог ${receipt.credited} ₽`);
+            logPlayerActivity('Гонка', `Заезд ${crashed === 'fuel' ? 'закончился бензин' : (crashed === 'busted' ? 'задержание ДПС' : (crashed ? 'авария' : 'выход'))}: ${racePlayer.distanceKm.toFixed(2)} км, дрифт: ${Math.round(racePlayer.driftScore || 0)} pts, до расходов ${receipt.gross} ₽, бензин -${receipt.fuelCost} ₽, итог ${receipt.credited} ₽`);
             // Race records track received net winnings, never fuel-free gross income.
             saveRaceRecords(NomeraRaceRecords.finishRecords(getRaceRecords(), racePlayer, Math.max(0, receipt.credited)));
             recordQuestProgress('distance', Math.round(racePlayer.distanceKm || 0));
@@ -11374,7 +11414,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             updateRaceRecordsUI();
             renderCars();
 
-            document.getElementById('gameover-title').innerText = crashed === 'fuel' ? '⛽ Закончился бензин!' : (crashed ? '💥 Заезд завершён!' : '🏁 Заезд завершён');
+            document.getElementById('gameover-title').innerText = crashed === 'fuel' ? '⛽ Закончился бензин!' : (crashed === 'busted' ? '🚔 Задержание ДПС!' : (crashed ? '💥 Заезд завершён!' : '🏁 Заезд завершён'));
             document.getElementById('go-stat-dist').innerText = `${racePlayer.distanceKm.toFixed(2)} км`;
             document.getElementById('go-stat-speed').innerText = `${Math.round(racePlayer.peakSpeed)} км/ч`;
             document.getElementById('go-stat-overtakes').innerText = `${racePlayer.overtakesCount}`;

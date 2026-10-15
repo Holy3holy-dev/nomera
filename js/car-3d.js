@@ -5473,7 +5473,8 @@
                 left: false,
                 right: false,
                 drift: false,
-                nitro: false
+                nitro: false,
+                horn: false
             };
 
             // Player state
@@ -5484,6 +5485,7 @@
             this.playerNitroFlames = [];
             this.playerNeonLight = null;
             this.playerSguLight = null;
+            this.helicopterLight = null;
             this.playerWheels = [];
             this.playerSteerWheels = [];
 
@@ -5525,7 +5527,15 @@
                 yawAngle: 0,
                 sguTimer: 0,
                 sguActive: false,
-                shakeAmount: 0
+                shakeAmount: 0,
+
+                // Police Pursuit & Wanted Level
+                wantedStars: 0,
+                escapeTimer: 0,
+                isPursuitActive: false,
+                nearestPoliceDist: 999,
+                bustedTimer: 0,
+                isBusted: false
             };
 
             // Road track & chunks
@@ -6340,8 +6350,8 @@
 
             // Spawn pool of traffic cars
             for (let i = 0; i < this.trafficCount; i++) {
-                const type = (i % 4 === 0) ? 'truck' : (i % 4 === 1) ? 'suv' : (i % 4 === 2) ? 'sedan' : (i === 7) ? 'police' : 'sedan';
-                const laneIdx = (type === 'truck') ? 3 : (type === 'suv') ? 0 : (i % 4);
+                const type = (i % 5 === 3) ? 'police' : (i % 4 === 0) ? 'truck' : (i % 4 === 1) ? 'suv' : 'sedan';
+                const laneIdx = (type === 'truck') ? 3 : (type === 'suv') ? 0 : (type === 'police' ? 1 : (i % 4));
                 const laneX = this.trafficLanes[laneIdx];
                 const spawnZ = 55 + i * 34 + Math.random() * 12;
 
@@ -6492,6 +6502,12 @@
                     sguBlue.position.set(0.25, H + 0.37, -L * 0.05);
                     group.add(sguBlue);
                     group.userData.policeBlue = sguBlue;
+
+                    // Dynamic flashing point light for SGU pursuit
+                    const sguLight = new THREE.PointLight(0xef4444, 0, 16, 2.0);
+                    sguLight.position.set(0, H + 0.55, -L * 0.05);
+                    group.add(sguLight);
+                    group.userData.policeLight = sguLight;
                 }
 
                 // Taillights
@@ -6581,6 +6597,21 @@
             this.state.downforceY = 0;
             this.state.yawAngle = 0;
             this.state.shakeAmount = 0;
+
+            // Police pursuit & wanted state reset
+            this.state.wantedStars = 0;
+            this.state.escapeTimer = 0;
+            this.state.isPursuitActive = false;
+            this.state.nearestPoliceDist = 999;
+            this.state.bustedTimer = 0;
+            this.state.isBusted = false;
+            if (this.helicopterLight) {
+                try {
+                    if (this.helicopterLight.target && this.helicopterLight.target.parent) this.helicopterLight.target.parent.remove(this.helicopterLight.target);
+                    if (this.helicopterLight.parent) this.helicopterLight.parent.remove(this.helicopterLight);
+                } catch (_) {}
+                this.helicopterLight = null;
+            }
 
             // 7-speed transmission, RPM and spring-damper suspension state
             this.state.gear = 1;
@@ -6895,6 +6926,37 @@
             const modeNames = ['Вид сзади (Динамический)', 'Вид сзади (Спортивный)', 'Капот / Бампер'];
             if (this.options.onPopup) this.options.onPopup('📷 ' + modeNames[this.cameraMode], '#38bdf8');
             return this.cameraMode;
+        }
+
+        addWantedStars(amount, reason = '') {
+            const prev = this.state.wantedStars || 0;
+            const next = Math.min(5, Math.max(0, prev + amount));
+            this.state.wantedStars = next;
+            this.state.escapeTimer = 8.0;
+            if (next > prev) {
+                this.state.isPursuitActive = true;
+                if (this.options.onSound) this.options.onSound('siren_start');
+                const starStr = '⭐'.repeat(next);
+                if (this.options.onPopup) {
+                    this.options.onPopup(`🚨 РОЗЫСК: ${starStr} ${reason}!`, '#ef4444');
+                }
+                if (this.options.onHaptic) this.options.onHaptic('crash');
+            }
+        }
+
+        clearPursuit() {
+            this.state.wantedStars = 0;
+            this.state.escapeTimer = 0;
+            this.state.isPursuitActive = false;
+            this.state.bustedTimer = 0;
+            if (this.options.onSound) this.options.onSound('siren_stop');
+            if (this.helicopterLight) {
+                try {
+                    if (this.helicopterLight.target && this.helicopterLight.target.parent) this.helicopterLight.target.parent.remove(this.helicopterLight.target);
+                    if (this.helicopterLight.parent) this.helicopterLight.parent.remove(this.helicopterLight);
+                } catch (_) {}
+                this.helicopterLight = null;
+            }
         }
 
         loop(timestamp) {
@@ -7311,6 +7373,7 @@
 
         updateTraffic(dt) {
             const state = this.state;
+            let minPoliceDist = 999;
 
             this.trafficCars.forEach(car => {
                 const u = car.userData;
@@ -7330,29 +7393,76 @@
                 // Traffic suspension micro-bounce
                 car.position.y = Math.sin(car.position.z * 0.16 + (u.laneIndex || 0)) * 0.005;
 
-                // Police strobe flashing animation
-                if (u.type === 'police' && u.policeRed && u.policeBlue) {
-                    u.sguStrobeTimer = (u.sguStrobeTimer || 0) + dt * 14;
-                    const isRed = Math.floor(u.sguStrobeTimer) % 2 === 0;
-                    u.policeRed.material.color.setHex(isRed ? 0xef4444 : 0x450a0a);
-                    u.policeBlue.material.color.setHex(isRed ? 0x1e3a8a : 0x3b82f6);
+                // Relative distances to player
+                const dx = Math.abs(state.x - car.position.x);
+                const dz = car.position.z - state.z;
+                const distToPlayer = Math.hypot(dx, dz);
+
+                // Police strobe flashing animation & AI
+                if (u.type === 'police') {
+                    if (distToPlayer < minPoliceDist) {
+                        minPoliceDist = distToPlayer;
+                    }
+
+                    if (u.policeRed && u.policeBlue) {
+                        u.sguStrobeTimer = (u.sguStrobeTimer || 0) + dt * 14;
+                        const isRed = Math.floor(u.sguStrobeTimer) % 2 === 0;
+                        u.policeRed.material.color.setHex(isRed ? 0xef4444 : 0x450a0a);
+                        u.policeBlue.material.color.setHex(isRed ? 0x1e3a8a : 0x3b82f6);
+                        if (u.policeLight) {
+                            const isActive = (state.wantedStars > 0);
+                            u.policeLight.color.setHex(isRed ? 0xef4444 : 0x3b82f6);
+                            u.policeLight.intensity = isActive ? 2.8 : 0.6;
+                        }
+                    }
+
+                    // Speeding violation check (within 18m along Z and 6m along X)
+                    if (Math.abs(dz) < 18 && dx < 6.0) {
+                        if (state.speed > 215 && state.wantedStars < 3) {
+                            this.addWantedStars(1, 'Опасное превышение > 215 км/ч');
+                        } else if (state.speed > 140 && state.wantedStars === 0) {
+                            this.addWantedStars(1, 'Превышение > 140 км/ч');
+                        }
+                        if (this.keys && this.keys.horn && state.wantedStars < 2) {
+                            this.addWantedStars(1, 'Провокация ДПС сигналом');
+                        }
+                    }
+
+                    // Hot pursuit AI
+                    if (state.wantedStars > 0) {
+                        // Steer directly towards player's lane to tail or box in
+                        u.targetX = Math.max(-7.5, Math.min(7.5, state.x));
+                        u.laneChangeTimer = 999; // suspend random lane changes during active pursuit
+                        if (car.position.z < state.z) {
+                            // Chasing from behind - accelerate to catch up
+                            const targetSpeed = Math.min(240, Math.max(160 + state.wantedStars * 16, state.speed + 15));
+                            u.speed += (targetSpeed - u.speed) * Math.min(1.0, 4.0 * dt);
+                        } else {
+                            // Ahead of player - maintain blocking speed or intercept
+                            const blockSpeed = Math.max(85, Math.min(190, state.speed * 0.94));
+                            u.speed += (blockSpeed - u.speed) * Math.min(1.0, 3.0 * dt);
+                        }
+                    }
                 }
 
-                // 2. Periodic lane changing behavior
-                u.laneChangeTimer -= dt;
-                if (u.laneChangeTimer <= 0) {
-                    u.laneChangeTimer = 6 + Math.random() * 10;
-                    // Change to adjacent lane
-                    const curLane = u.laneIndex;
-                    const newLane = (curLane === 0) ? 1 : (curLane === 3) ? 2 : (Math.random() < 0.5 ? curLane - 1 : curLane + 1);
-                    u.laneIndex = newLane;
-                    u.targetX = this.trafficLanes[newLane];
+                // 2. Periodic lane changing behavior (for civilian cars or calm police)
+                if (state.wantedStars === 0 || u.type !== 'police') {
+                    u.laneChangeTimer -= dt;
+                    if (u.laneChangeTimer <= 0) {
+                        u.laneChangeTimer = 6 + Math.random() * 10;
+                        const curLane = u.laneIndex;
+                        const newLane = (curLane === 0) ? 1 : (curLane === 3) ? 2 : (Math.random() < 0.5 ? curLane - 1 : curLane + 1);
+                        u.laneIndex = newLane;
+                        u.targetX = this.trafficLanes[newLane];
+                    }
                 }
 
                 // Smoothly steer towards target lane with body roll lean
-                if (Math.abs(car.position.x - u.targetX) > 0.05) {
-                    const dir = u.targetX > car.position.x ? 1 : -1;
-                    const step = dir * 2.2 * dt;
+                const steerDist = u.targetX - car.position.x;
+                if (Math.abs(steerDist) > 0.05) {
+                    const dir = steerDist > 0 ? 1 : -1;
+                    const steerSpeed = (u.type === 'police' && state.wantedStars > 0) ? 4.5 : 2.2;
+                    const step = dir * Math.min(Math.abs(steerDist), steerSpeed * dt);
                     car.position.x += step;
                     car.rotation.y = (dir > 0 ? 0.08 : -0.08);
                     car.rotation.z = (dir > 0 ? -0.04 : 0.04);
@@ -7363,10 +7473,7 @@
                 }
 
                 // 3. Near-Miss Overtake Detection
-                const dx = Math.abs(state.x - car.position.x);
-                const dz = car.position.z - state.z;
                 const speedDiff = state.speed - u.speed;
-
                 if (!u.overtaken && dz < 0 && dz > -5.0 && dx < 2.3 && speedDiff > 25) {
                     u.overtaken = true;
                     state.overtakesCount++;
@@ -7391,8 +7498,11 @@
                 const lateralClearance = trafficHalfW + 0.55;
                 const longitudinalClearance = trafficHalfL + 1.2;
 
-                // Contact occurs only when overlapping in front or sides (not behind)
                 if (dx < lateralClearance && dz > -0.6 && dz < longitudinalClearance) {
+                    if (u.type === 'police') {
+                        this.addWantedStars(1, 'Таран экипажа ДПС');
+                    }
+
                     const isRearEndHit = dz > 0.4 && dx < (trafficHalfW * 0.65);
                     if (isRearEndHit && speedDiff > 35) {
                         // High-speed direct rear-end collision -> CRASH
@@ -7415,7 +7525,8 @@
                 }
 
                 // 5. Recycle traffic when it falls behind player
-                if (car.position.z < state.z - 35) {
+                const recycleBehindZ = (u.type === 'police' && state.wantedStars > 0) ? (state.z - 160) : (state.z - 35);
+                if (car.position.z < recycleBehindZ) {
                     const newLane = (u.type === 'truck') ? 3 : Math.floor(Math.random() * 4);
                     car.position.set(this.trafficLanes[newLane], 0, state.z + 180 + Math.random() * 120);
                     u.laneIndex = newLane;
@@ -7431,6 +7542,84 @@
                 if (state.overtakeComboTimer <= 0) {
                     state.overtakeCombo = 0;
                 }
+            }
+
+            // --- Pursuit, Escape & Busted Resolution ---
+            state.nearestPoliceDist = minPoliceDist;
+
+            // 5-Star Helicopter spotlight
+            if (state.wantedStars >= 5) {
+                if (!this.helicopterLight && this.THREE) {
+                    try {
+                        this.helicopterLight = new this.THREE.SpotLight(0xffffff, 4.5, 60, Math.PI / 6, 0.45, 1.0);
+                        this.helicopterLight.position.set(state.x, 20, state.z + 4);
+                        const targetObj = new this.THREE.Object3D();
+                        targetObj.position.set(state.x, 0, state.z);
+                        this.scene.add(targetObj);
+                        this.helicopterLight.target = targetObj;
+                        this.scene.add(this.helicopterLight);
+                        if (this.options.onPopup) {
+                            this.options.onPopup('🚁 ВЕРТОЛЕТ ДПС В ВОЗДУХЕ! МАКСИМАЛЬНЫЙ РОЗЫСК!', '#ef4444');
+                        }
+                    } catch (_) {}
+                }
+                if (this.helicopterLight) {
+                    const heliTime = (this.lastTime || 0) * 0.003;
+                    const heliOffsetX = Math.sin(heliTime) * 3.5;
+                    const heliOffsetZ = Math.cos(heliTime * 1.3) * 4.0;
+                    this.helicopterLight.position.set(state.x + heliOffsetX, 20, state.z + heliOffsetZ);
+                    if (this.helicopterLight.target) {
+                        this.helicopterLight.target.position.set(state.x + heliOffsetX * 0.3, 0, state.z + heliOffsetZ * 0.3);
+                    }
+                }
+            } else if (this.helicopterLight && state.wantedStars < 5) {
+                try {
+                    if (this.helicopterLight.target && this.helicopterLight.target.parent) this.helicopterLight.target.parent.remove(this.helicopterLight.target);
+                    if (this.helicopterLight.parent) this.helicopterLight.parent.remove(this.helicopterLight);
+                } catch (_) {}
+                this.helicopterLight = null;
+            }
+
+            if (state.wantedStars > 0) {
+                state.isPursuitActive = true;
+
+                // Escape countdown logic
+                if (minPoliceDist >= 48) {
+                    state.escapeTimer = Math.max(0, state.escapeTimer - dt);
+                    if (state.escapeTimer <= 0) {
+                        const starsWon = state.wantedStars;
+                        const bounty = Math.round(starsWon * 35000 * (state.rewardMult || 1.0));
+                        state.earnedCash += bounty;
+                        if (this.options.onPopup) {
+                            this.options.onPopup(`🎉 УХОД ОТ ПОГОНИ! +${bounty.toLocaleString('ru-RU')} ₽`, '#22c55e');
+                        }
+                        if (this.options.onSound) {
+                            this.options.onSound('escape');
+                        }
+                        this.clearPursuit();
+                    }
+                } else {
+                    // Police is in visual sight (< 48m) - reset escape timer
+                    state.escapeTimer = 8.0;
+                }
+
+                // Busted logic: if player slowed down < 25 km/h while cornered by DPS (< 12m) for 2.8s
+                if (state.wantedStars > 0 && state.speed < 25 && minPoliceDist < 12) {
+                    state.bustedTimer += dt;
+                    if (state.bustedTimer >= 2.8) {
+                        state.isBusted = true;
+                        this.stop();
+                        if (this.options.onSound) this.options.onSound('busted');
+                        if (this.options.onGameOver) this.options.onGameOver('busted', this.getState());
+                        return;
+                    }
+                } else {
+                    state.bustedTimer = Math.max(0, state.bustedTimer - dt * 2.0);
+                }
+            } else {
+                state.isPursuitActive = false;
+                state.escapeTimer = 0;
+                state.bustedTimer = 0;
             }
         }
 
@@ -7602,7 +7791,14 @@
                 weather: this.currentActiveWeather,
                 weatherIcon: curPreset ? curPreset.icon : '🌃',
                 weatherTitle: curPreset ? curPreset.name : 'Ночь',
-                weatherMode: this.weatherMode
+                weatherMode: this.weatherMode,
+                wantedStars: state.wantedStars || 0,
+                isPursuitActive: !!state.isPursuitActive,
+                escapeTimer: Math.max(0, Number((state.escapeTimer || 0).toFixed(1))),
+                escapePercent: state.wantedStars > 0 ? Math.min(100, Math.max(0, Math.round(((8.0 - (state.escapeTimer || 0)) / 8.0) * 100))) : 0,
+                nearestPoliceDist: Math.round(state.nearestPoliceDist || 999),
+                bustedTimer: Number((state.bustedTimer || 0).toFixed(1)),
+                isBusted: !!state.isBusted
             });
         }
 
@@ -7635,6 +7831,13 @@
 
         destroy() {
             this.stop();
+            if (this.helicopterLight) {
+                try {
+                    if (this.helicopterLight.target && this.helicopterLight.target.parent) this.helicopterLight.target.parent.remove(this.helicopterLight.target);
+                    if (this.helicopterLight.parent) this.helicopterLight.parent.remove(this.helicopterLight);
+                } catch (_) {}
+                this.helicopterLight = null;
+            }
             if (this._onResize && typeof window !== 'undefined' && typeof window.removeEventListener === 'function') {
                 window.removeEventListener('resize', this._onResize);
             }
