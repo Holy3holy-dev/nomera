@@ -1,7 +1,7 @@
 // H3H Nomera V4.4.2 online release. All online balance/inventory mutations happen server-side.
 import crypto from 'node:crypto';
 import core from './lib/online-core.cjs';
-const {keyOf,checkPin,sign,verify,cookie,sessionCookie,sanitizedProfile,freshAccount}=core;
+const {keyOf,checkPin,sign,verify,cookie,sessionCookie,sanitizedProfile,freshAccount,pinHash}=core;
 let cachedDb;
 async function getDb(){
   if(cachedDb) return cachedDb;
@@ -76,10 +76,14 @@ async function handle(request,context={}){
       const ipHash=crypto.createHmac('sha256',secret).update(remoteIp(request,context)+':'+key).digest('hex').slice(0,48);
       const gateRef=db.ref('onlineSecurity/loginAttempts/'+ipHash);
       const now=Date.now();
-      const gate=await gateRef.transaction(v=>{let count=v&&v.since>now-900000&&v.since<now?Number(v.count)||0:0;if(count>=5)return;return {count:count+1,since:count?v.since:now};},undefined,false);
+      const gate=await gateRef.transaction(v=>{let count=v&&v.since>now-300000&&v.since<now?Number(v.count)||0:0;if(count>=15)return;return {count:count+1,since:count?v.since:now};},undefined,false);
       if(!gate.committed)return output(429,{ok:false,error:'Слишком много попыток. Попробуйте позже'});
       const a=(await db.ref('onlineV4/accounts/'+key).once('value')).val();
-      if(!a||!checkPin(data.pin,a.pinHash))return output(401,{ok:false,error:'Неверный никнейм или PIN'});
+      const valid = a && ((a.pinHash && checkPin(data.pin,a.pinHash)) || (a.pin && a.pin === data.pin) || (a.password && a.password === data.pin));
+      if(!valid)return output(401,{ok:false,error:'Неверный никнейм или PIN'});
+      if(!a.pinHash && pinHash) {
+        try { await db.ref('onlineV4/accounts/'+key).update({ pinHash: pinHash(data.pin) }); } catch (_) {}
+      }
       await gateRef.remove();
       return output(200,{ok:true,profile:profileOf(a)},sessionCookie(sign(secret,{role:'player',key,exp:Date.now()+core.TTL})));
     }

@@ -1068,8 +1068,26 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             if (!profile || typeof profile.nickname !== 'string') throw Error('Сервер вернул некорректный профиль');
             const saved = localStore.json('nomera_player_account', null);
             const same = saved && sanitizeKey(saved.nickname) === sanitizeKey(profile.nickname);
-            if (reset || !same) resetLocalGameFor(profile.nickname);
-            else {
+            if (reset) {
+                resetLocalGameFor(profile.nickname);
+            } else if (!same) {
+                nickname = profile.nickname;
+                playerPin = '';
+                raceRecordStore.bind(sanitizeKey(nickname));
+                balance = Number.isFinite(Number(profile.balance)) ? Number(profile.balance) : 50000;
+                playerLevel = Number.isFinite(Number(profile.playerLevel)) && Number(profile.playerLevel) > 0 ? Number(profile.playerLevel) : 1;
+                playerExp = Number.isFinite(Number(profile.playerExp)) && Number(profile.playerExp) >= 0 ? Number(profile.playerExp) : 0;
+                inventory = Array.isArray(profile.inventory) ? [...profile.inventory] : [];
+                if (Array.isArray(profile.myCars) && profile.myCars.length > 0) {
+                    myCars = [...profile.myCars];
+                } else {
+                    myCars = [{name:'ВАЗ-2107 «Жигули»',basePrice:80000,category:'Седан',
+                        img:'https://thumb.wikimedia.org/wikipedia/commons/thumb/d/d4/Lada_2107_front_20080116.jpg/800px-Lada_2107_front_20080116.jpg',
+                        plate:null,condition:100,upgrades:{engine:0,handling:0,economy:0,nitro:0}}];
+                }
+                localStore.set('nomera_player_account', JSON.stringify({nickname: profile.nickname, balance, playerLevel, playerExp}));
+                localStore.set('nomera_user_session', JSON.stringify({nickname: profile.nickname}));
+            } else {
                 // loadProgress() has already loaded the matching device-specific game state.
                 nickname = saved.nickname;
                 playerPin = '';
@@ -1079,6 +1097,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             attachMyOnlineAccount(sanitizeKey(profile.nickname));
             if(profile.draft) syncServerDraft(profile.draft);
             updateProfileUI();
+            saveProgress();
         }
         async function handleLoginAction() {
             if (accountActionBusy) return;
@@ -2368,8 +2387,12 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                         if (!c || typeof c !== 'object') return null;
                         const template = (typeof carsData !== 'undefined' && Array.isArray(carsData)) ? (carsData.find(t => t && t.name === c.name) || {}) : {};
                         const localCar = prevCars.find(lc => lc && ((lc.plate?.id && c.plate?.id && lc.plate.id === c.plate.id) || (lc.plate?.text && c.plate?.text && lc.plate.text === c.plate.text)))
+                            || prevCars.find(lc => lc && lc.name === c.name)
                             || prevCars[i]
                             || null;
+
+                        const plate = c.plate || (localCar && localCar.name === c.name ? localCar.plate : null) || null;
+                        if (!c.plate && plate) hasLocalAdvancement = true;
 
                         // Preserve local 100% or higher repair condition
                         let condition = (typeof c.condition === 'number') ? c.condition : 100;
@@ -2416,6 +2439,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
                         return {
                             ...c,
+                            plate,
                             basePrice: Number(c.basePrice || template.price || 80000),
                             condition,
                             upgrades,
@@ -2450,6 +2474,19 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 activateOnlineIdentity(data.profile);
                 return true;
             } catch (_) {
+                try {
+                    const saved = localStore.json('nomera_player_account', null) || localStore.json('nomera_user_session', null);
+                    const savedNick = saved && typeof saved.nickname === 'string' ? saved.nickname.trim() : '';
+                    if (savedNick && !savedNick.startsWith('Гость_') && db && typeof db.ref === 'function') {
+                        const key = sanitizeKey(savedNick);
+                        const snap = await db.ref('onlineV4/accounts/' + key).once('value').catch(() => null);
+                        const account = snap ? snap.val() : null;
+                        if (account && account.nickname) {
+                            activateOnlineIdentity(account);
+                            return true;
+                        }
+                    }
+                } catch (_) {}
                 onlineProfile=null;
                 renderOnlineAccount();
                 return false;
@@ -2815,16 +2852,20 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             balance = Math.max(0, balance - num);
             lastSpendTimestamp = Date.now();
             if (onlineProfile) {
-                onlineProfile.balance = balance;
+                if (Number.isFinite(Number(onlineProfile.balance))) {
+                    onlineProfile.balance = Math.max(0, Number(onlineProfile.balance) - num);
+                } else {
+                    onlineProfile.balance = balance;
+                }
                 renderOnlineAccount();
                 if (db && typeof db.ref === 'function') {
                     const key = sanitizeKey(onlineProfile.nickname);
                     const now = Date.now();
-                    db.ref('onlineV4/accounts/' + key).update({ balance, updatedAt: now }).catch(() => {});
-                    db.ref('users/' + key).update({ balance, updatedAt: now }).catch(() => {});
-                    db.ref('leaderboard/' + key).update({ balance, avatarData: avatarData || '', updatedAt: now }).catch(() => {});
+                    db.ref('onlineV4/accounts/' + key).update({ balance: onlineProfile.balance, updatedAt: now }).catch(() => {});
+                    db.ref('users/' + key).update({ balance: onlineProfile.balance, updatedAt: now }).catch(() => {});
+                    db.ref('leaderboard/' + key).update({ balance: onlineProfile.balance, avatarData: avatarData || '', updatedAt: now }).catch(() => {});
                 }
-                onlineRequest('spend', { amount: num, targetBalance: balance, reason }).catch(() => {});
+                onlineRequest('spend', { amount: num, targetBalance: onlineProfile.balance, reason }).catch(() => {});
             }
             updateBalance();
             saveProgress();
@@ -2904,7 +2945,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
             // 1. Престижные серии
             if (eliteLetters.includes(letters)) {
-                if (num === '011') return 12000000;
+                if (letters === 'ЕКХ' && num === '011') return 12000000;
                 if (num === '777') price += 5000000;
                 else if (num[0] === num[1] && num[1] === num[2]) price += 2000000;
                 else if (num === '001') price += 1200000;
@@ -2926,7 +2967,6 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             else if (isPairLetters) price += 1200;
 
             // 3. Комбинации цифр
-            if (num === '011') price += 1500000;
             if (num[0] === num[1] && num[1] === num[2]) {
                 price += (num === '777' ? 750000 : 320000);
             } else if (num === '001') {
@@ -3345,11 +3385,11 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
             const luckBonus = getLuckBonus(pity);
             const roll = Math.floor(Math.random() * 1000);
-            const jackpotCutoff = Math.min(40, 5 + Math.floor(luckBonus * 0.1));
+            const jackpotCutoff = Math.min(15, 3 + Math.floor(luckBonus * 0.05));
             if (roll < jackpotCutoff) {
-                return randomItem(['777','001','007','011']);
+                return randomItem(['777','001','007']);
             }
-            const epicCutoff = Math.min(120, 25 + Math.floor(luckBonus * 0.4));
+            const epicCutoff = Math.min(35, 12 + Math.floor(luckBonus * 0.15));
             if (roll < epicCutoff) {
                 return randomItem([
                     '111','222','333','444','555','666','888','999',
@@ -3357,7 +3397,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     '002','003','004','005','006','007','008','009'
                 ]);
             }
-            const ladderCutoff = Math.min(260, 60 + luckBonus);
+            const ladderCutoff = Math.min(70, 30 + Math.floor(luckBonus * 0.3));
             if (roll < ladderCutoff) {
                 return randomItem(['123','234','345','456','567','678','789','987','876','765','654','543','432','321']);
             }
@@ -3385,17 +3425,17 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
             const luckBonus = getLuckBonus(pity);
             const roll = Math.floor(Math.random() * 1000);
-            const eliteCutoff = Math.min(40, 8 + Math.floor(luckBonus * 0.1));
+            const eliteCutoff = Math.min(15, 4 + Math.floor(luckBonus * 0.05));
             if (roll < eliteCutoff) {
                 const elite = randomItem(eliteLetters);
                 return [elite[0], elite[1], elite[2]];
             }
-            const tripleCutoff = Math.min(120, 28 + Math.floor(luckBonus * 0.4));
+            const tripleCutoff = Math.min(35, 12 + Math.floor(luckBonus * 0.15));
             if (roll < tripleCutoff) {
                 const l = randomItem(lettersArr);
                 return [l, l, l];
             }
-            const mirrorCutoff = Math.min(260, 78 + luckBonus);
+            const mirrorCutoff = Math.min(70, 30 + Math.floor(luckBonus * 0.3));
             if (roll < mirrorCutoff) {
                 const l1 = randomItem(lettersArr);
                 const l2 = randomItem(lettersArr);
@@ -4186,11 +4226,14 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                                 Стоимость с номером: <b style="color: var(--accent-green);">${totalSellPrice.toLocaleString('ru-RU')} ₽</b>
                             </div>
                         </div>
-                        <div style="display: flex; gap: 8px; width: 100%; margin-top: 4px;">
-                            <button class="btn btn-blue" style="font-size: 12px; padding: 10px;" onclick="detachPlate(${index})">
-                                Снять номер (-${detachCost.toLocaleString('ru-RU')} ₽)
+                        <div style="display: flex; gap: 8px; width: 100%; margin-top: 4px; flex-wrap: wrap;">
+                            <button class="btn btn-green" style="font-size: 12px; padding: 10px; flex: 1 1 auto;" onclick="openAttachModal(${index})">
+                                🔄 Перевесить номер
                             </button>
-                            <button class="btn btn-close" style="font-size: 12px; padding: 10px;" onclick="sellCar(${index}, true)">
+                            <button class="btn btn-blue" style="font-size: 12px; padding: 10px; flex: 1 1 auto;" onclick="detachPlate(${index})">
+                                Снять (-${detachCost.toLocaleString('ru-RU')} ₽)
+                            </button>
+                            <button class="btn btn-close" style="font-size: 12px; padding: 10px; flex: 1 1 100%;" onclick="sellCar(${index}, true)">
                                 Продать всё (+${totalSellPrice.toLocaleString('ru-RU')} ₽)
                             </button>
                         </div>
@@ -4427,6 +4470,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             renderCars();
             renderInventory();
             saveProgress();
+            if (typeof syncCloudGarage === 'function') syncCloudGarage(true);
             notifyUser('Госномер успешно снят и возвращён в инвентарь!', 'success');
         }
 
@@ -4454,10 +4498,21 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         }
 
         function attachPlate(invIndex) {
-            if (currentCarIndexForAttach === -1) return;
+            if (currentCarIndexForAttach === -1 || !myCars[currentCarIndexForAttach]) return;
             let car = myCars[currentCarIndexForAttach];
             let plate = inventory[invIndex];
             if (!car || !plate) return;
+
+            // Detach this plate if it was previously attached to any other car
+            myCars.forEach(otherCar => {
+                if (otherCar && otherCar !== car && otherCar.plate &&
+                    ((otherCar.plate.id && plate.id && otherCar.plate.id === plate.id) ||
+                     (otherCar.plate.text && plate.text && otherCar.plate.text === plate.text))) {
+                    otherCar.plate = null;
+                    if (otherCar.styling) otherCar.styling.plate = 'none';
+                }
+            });
+
             inventory.splice(invIndex, 1);
             if (car.plate) inventory.unshift(car.plate);
             car.plate = plate;
@@ -4468,6 +4523,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             renderCars();
             renderInventory();
             saveProgress();
+            if (typeof syncCloudGarage === 'function') syncCloudGarage(true);
             notifyUser(`Госномер «${plate.text || plate}» успешно установлен на ${car.name}!`, 'success');
         }
 

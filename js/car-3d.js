@@ -1353,7 +1353,7 @@
             rp.position.set(0, baseY + H * 0.38, -L * 0.515);
             root.add(rp);
 
-            return { root, bodyLength: L, bodyWidth: W, wheelBase: L * 0.33, wheelTrack: W * 0.48, wheelR: 0.32, defaultWheels: 'stamps' };
+            return { root, bodyLength: L, bodyWidth: W, wheelBase: L * 0.33, wheelTrack: W * 0.52, wheelR: 0.32, defaultWheels: 'stamps' };
         }
 
         // -------------------------------------------------------------
@@ -4380,6 +4380,7 @@
         wRR.userData.camber = camberDeg;
         wheelsRig.add(wRR);
 
+        root.userData.spec = spec;
         return root;
     }
 
@@ -5782,6 +5783,11 @@
                     }
 
                     loadedModel.userData.carId = carId;
+                    loadedModel.traverse(c => {
+                        if (c.userData && c.userData.isSteerable) {
+                            c.rotation.y = c.userData.baseRotY || 0;
+                        }
+                    });
                     this.glbCar = loadedModel;
                     this.carGroup = loadedModel;
                     this.scene.add(loadedModel);
@@ -5810,6 +5816,11 @@
                 try {
                     this.proceduralCar = buildDetailedCarModel(THREE, this.currentCarName, this.currentStyling);
                     if (this.proceduralCar) {
+                        this.proceduralCar.traverse(c => {
+                            if (c.userData && c.userData.isSteerable) {
+                                c.rotation.y = c.userData.baseRotY || 0;
+                            }
+                        });
                         if (this.currentStyling && this.currentStyling.plate !== undefined) {
                             applyLicensePlateToModel(THREE, this.proceduralCar, this.currentStyling.plate);
                         }

@@ -132,7 +132,7 @@ function priceOfPlate(l1,l2,l3,num,reg) {
 
   // 1. Престижные буквенные серии
   if (ELITES.includes(letters)) {
-    if (num === '011') return 12000000;
+    if (letters === 'ЕКХ' && num === '011') return 12000000;
     if (num === '777') price += 5000000;
     else if (num[0] === num[1] && num[1] === num[2]) price += 2000000;
     else if (num === '001') price += 1200000;
@@ -154,7 +154,6 @@ function priceOfPlate(l1,l2,l3,num,reg) {
   else if (isPairLetters) price += 1200;
 
   // 3. Комбинации цифр
-  if (num === '011') price += 1500000;
   if (num[0] === num[1] && num[1] === num[2]) {
     price += (num === '777' ? 750000 : 320000);
   } else if (num === '001') {
@@ -229,11 +228,11 @@ function secureRoll(mode, pity = 0){
     }
 
     const roll = crypto.randomInt(1000);
-    const jackpotCutoff = Math.min(40, 5 + Math.floor(luckBonus * 0.1));
+    const jackpotCutoff = Math.min(15, 3 + Math.floor(luckBonus * 0.05));
     if (roll < jackpotCutoff) {
-      return choose(['777','001','007','011']);
+      return choose(['777','001','007']);
     }
-    const epicCutoff = Math.min(120, 25 + Math.floor(luckBonus * 0.4));
+    const epicCutoff = Math.min(35, 12 + Math.floor(luckBonus * 0.15));
     if (roll < epicCutoff) {
       const epicPool = [
         '111','222','333','444','555','666','888','999',
@@ -242,7 +241,7 @@ function secureRoll(mode, pity = 0){
       ];
       return choose(epicPool);
     }
-    const ladderCutoff = Math.min(260, 60 + luckBonus);
+    const ladderCutoff = Math.min(70, 30 + Math.floor(luckBonus * 0.3));
     if (roll < ladderCutoff) {
       return choose(['123','234','345','456','567','678','789','987','876','765','654','543','432','321']);
     }
@@ -269,17 +268,17 @@ function secureRoll(mode, pity = 0){
     }
 
     const roll = crypto.randomInt(1000);
-    const eliteCutoff = Math.min(40, 8 + Math.floor(luckBonus * 0.1));
+    const eliteCutoff = Math.min(15, 4 + Math.floor(luckBonus * 0.05));
     if (roll < eliteCutoff) {
       const elite = choose(ELITES);
       return [elite[0], elite[1], elite[2]];
     }
-    const tripleCutoff = Math.min(120, 28 + Math.floor(luckBonus * 0.4));
+    const tripleCutoff = Math.min(35, 12 + Math.floor(luckBonus * 0.15));
     if (roll < tripleCutoff) {
       const l = choose(LETTERS);
       return [l, l, l];
     }
-    const mirrorCutoff = Math.min(260, 78 + luckBonus);
+    const mirrorCutoff = Math.min(70, 30 + Math.floor(luckBonus * 0.3));
     if (roll < mirrorCutoff) {
       const l1 = choose(LETTERS);
       const l2 = choose(LETTERS);
