@@ -3,84 +3,150 @@
     "name": "ВАЗ-2107 «Жигули»",
     "category": "Классика",
     "price": 120000,
-    "img": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/46/VAZ-2107_in_Tsaghkadzor.jpg/960px-VAZ-2107_in_Tsaghkadzor.jpg"
+    "img": "./icons/car-placeholder.svg"
+  },
+  {
+    "name": "ВАЗ-2109 «Девятка»",
+    "category": "Хэтчбек",
+    "price": 180000,
+    "img": "./icons/car-placeholder.svg"
+  },
+  {
+    "name": "ГАЗ-24 «Волга»",
+    "category": "Ретро-седан",
+    "price": 240000,
+    "img": "./icons/car-placeholder.svg"
   },
   {
     "name": "Lada Priora БПАН",
     "category": "Седан",
     "price": 350000,
-    "img": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/1e/Lada_Priora_2018.jpg/960px-Lada_Priora_2018.jpg"
+    "img": "./icons/car-placeholder.svg"
+  },
+  {
+    "name": "Hyundai Solaris",
+    "category": "Городской",
+    "price": 650000,
+    "img": "./icons/car-placeholder.svg"
   },
   {
     "name": "Lada Vesta Sport",
     "category": "Спорт-седан",
     "price": 850000,
-    "img": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/8d/2024_Lada_Vesta_sedan_white_front.jpg/960px-2024_Lada_Vesta_sedan_white_front.jpg"
+    "img": "./icons/car-placeholder.svg"
   },
   {
     "name": "Volkswagen Polo",
     "category": "Городской",
     "price": 950000,
-    "img": "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/79/VW_Polo_beats_%28VI%29_%E2%80%93_f_03032019.jpg/960px-VW_Polo_beats_%28VI%29_%E2%80%93_f_03032019.jpg"
+    "img": "./icons/car-placeholder.svg"
+  },
+  {
+    "name": "Toyota Mark II Tourer V",
+    "category": "Дрифт-легенда",
+    "price": 1400000,
+    "img": "./icons/car-placeholder.svg"
+  },
+  {
+    "name": "Subaru Impreza WRX STI",
+    "category": "Ралли-спорт",
+    "price": 1850000,
+    "img": "./icons/car-placeholder.svg"
   },
   {
     "name": "BMW M5 E60 V10",
     "category": "Легенда",
     "price": 2200000,
-    "img": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/b3/BMW_M5_E60_Silver_Grey_Metallic_01.jpg/960px-BMW_M5_E60_Silver_Grey_Metallic_01.jpg"
+    "img": "./icons/car-placeholder.svg"
+  },
+  {
+    "name": "Nissan Silvia S15 Spec-R",
+    "category": "Икона дрифта",
+    "price": 2600000,
+    "img": "./icons/car-placeholder.svg"
   },
   {
     "name": "Toyota Camry 3.5",
     "category": "Бизнес",
     "price": 2800000,
-    "img": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/ac/2018_Toyota_Camry_%28ASV70R%29_Ascent_sedan_%282018-08-27%29_01.jpg/960px-2018_Toyota_Camry_%28ASV70R%29_Ascent_sedan_%282018-08-27%29_01.jpg"
+    "img": "./icons/car-placeholder.svg"
   },
   {
     "name": "Toyota Land Cruiser 300",
     "category": "Внедорожник",
     "price": 5500000,
-    "img": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/6d/2021_Toyota_Land_Cruiser_300_3.4_ZX_%28Colombia%29_front_view_04.png/960px-2021_Toyota_Land_Cruiser_300_3.4_ZX_%28Colombia%29_front_view_04.png"
+    "img": "./icons/car-placeholder.svg"
+  },
+  {
+    "name": "Nissan GT-R R35 Nismo",
+    "category": "Спорткупе",
+    "price": 6900000,
+    "img": "./icons/car-placeholder.svg"
   },
   {
     "name": "Mercedes-Benz E63s AMG",
     "category": "Премиум-спорт",
     "price": 7800000,
-    "img": "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/75/Mercedes-AMG_E63_S_%28W213%29_Washington_DC_Metro_Area%2C_USA_%287%29.jpg/960px-Mercedes-AMG_E63_S_%28W213%29_Washington_DC_Metro_Area%2C_USA_%287%29.jpg"
+    "img": "./icons/car-placeholder.svg"
   },
   {
     "name": "Audi RS6 Avant",
     "category": "Универсал-ракета",
     "price": 9200000,
-    "img": "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/20/2021_Audi_RS6_Avant_in_Nardo_Gray%2C_front_right.jpg/960px-2021_Audi_RS6_Avant_in_Nardo_Gray%2C_front_right.jpg"
+    "img": "./icons/car-placeholder.svg"
   },
   {
     "name": "BMW M5 F90 Competition",
     "category": "Спорткар",
     "price": 11500000,
-    "img": "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/24/BMW_M5_F90_Competition_BMW_Individual_Tanzanite_Blue_Metallic.jpg/960px-BMW_M5_F90_Competition_BMW_Individual_Tanzanite_Blue_Metallic.jpg"
+    "img": "./icons/car-placeholder.svg"
+  },
+  {
+    "name": "BMW M8 Gran Coupe",
+    "category": "Гран-туризмо",
+    "price": 14500000,
+    "img": "./icons/car-placeholder.svg"
   },
   {
     "name": "Mercedes-Benz G63 AMG «Гелик»",
     "category": "Люкс Внедорожник",
     "price": 18000000,
-    "img": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/38/Mercedes-Benz_W463_G_350_BlueTEC_01.jpg/960px-Mercedes-Benz_W463_G_350_BlueTEC_01.jpg"
+    "img": "./icons/car-placeholder.svg"
   },
   {
     "name": "Porsche 911 Turbo S",
     "category": "Суперкар",
     "price": 25000000,
-    "img": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a2/Porsche_911_No_1000000%2C_70_Years_Porsche_Sports_Car%2C_Berlin_%281X7A3888%29.jpg/960px-Porsche_911_No_1000000%2C_70_Years_Porsche_Sports_Car%2C_Berlin_%281X7A3888%29.jpg"
+    "img": "./icons/car-placeholder.svg"
+  },
+  {
+    "name": "Lamborghini Huracan Performante",
+    "category": "Суперкар V10",
+    "price": 32000000,
+    "img": "./icons/car-placeholder.svg"
   },
   {
     "name": "Rolls-Royce Cullinan",
     "category": "Ультра-Люкс",
     "price": 55000000,
-    "img": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/0d/2019_Rolls-Royce_Cullinan_V12_Automatic_6.75_Front.jpg/960px-2019_Rolls-Royce_Cullinan_V12_Automatic_6.75_Front.jpg"
+    "img": "./icons/car-placeholder.svg"
+  },
+  {
+    "name": "Ferrari SF90 Stradale",
+    "category": "Гиперкар",
+    "price": 68000000,
+    "img": "./icons/car-placeholder.svg"
   },
   {
     "name": "Bugatti Chiron Super Sport",
-    "category": "Гиперкар",
+    "category": "Гиперкар W16",
     "price": 190000000,
-    "img": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/18/Bugatti_Chiron_1.jpg/960px-Bugatti_Chiron_1.jpg"
+    "img": "./icons/car-placeholder.svg"
+  },
+  {
+    "name": "Koenigsegg Jesko Attack",
+    "category": "Гиперкар Рекордсмен",
+    "price": 270000000,
+    "img": "./icons/car-placeholder.svg"
   }
 ]

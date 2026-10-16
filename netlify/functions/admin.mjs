@@ -93,10 +93,12 @@ async function adjustBalance(db,key,value,isDelta) {
 async function addCars(db,key,names) {
   const templates=names.map(name=>cars.find(c=>c.name===name));
   if(templates.some(c=>!c)) throw Error('Автомобиль отсутствует в каталоге');
+  let finalCars = [];
   const add=profile=>{
     const existing=Array.isArray(profile.myCars)?profile.myCars:Object.values(profile.myCars||{});
     const fresh=templates.filter(c=>!existing.some(item=>item.name===c.name)).map(c=>({name:c.name,basePrice:c.price,category:c.category,img:c.img,plate:null,condition:100,upgrades:{engine:0,handling:0,economy:0,nitro:0}}));
-    return {...profile,myCars:[...existing,...fresh].slice(0,200),updatedAt:Date.now()};
+    finalCars = [...existing,...fresh].slice(0,200);
+    return {...profile,myCars:finalCars,updatedAt:Date.now()};
   };
   const onlineRef=db.ref('onlineV4/accounts/'+key);
   const onlineSnap=await onlineRef.once('value');
@@ -120,7 +122,8 @@ async function addCars(db,key,names) {
     return add(base && typeof base==='object'?base:{nickname:key,balance:50000,playerLevel:1});
   },undefined,false);
   if (!result.committed) throw Error('Не удалось обновить гараж');
-  await db.ref('leaderboard/'+key).update({carsCount:Object.keys(result.snapshot.val().myCars||{}).length});
+  await db.ref('leaderboard/'+key).update({carsCount:Array.isArray(finalCars)?finalCars.length:Object.keys(finalCars||{}).length});
+  return finalCars;
 }
 async function givePlate(db,key,plateText) {
   if(typeof plateText!=='string'||plateText.length>36||!/^([АВЕКМНОРСТУХ] [0-9]{3} [АВЕКМНОРСТУХ]{2} \| [0-9]{2,3} RUS)$/u.test(plateText)) throw Error('Неверный формат номера');
@@ -206,6 +209,27 @@ async function handle(event) {
       const events=Object.values(snap.val()||{}).reverse().filter(v=>v&&typeof v==='object').map(x=>({nickname:String(x.nickname||'Игрок').slice(0,64),action:String(x.action||'').slice(0,80),details:String(x.details||'').slice(0,500),timestamp:Number(x.timestamp)||0}));
       return json(200,{ok:true,activity:events});
     }
+    if(action==='online' && method==='GET') {
+      const snap=await db.ref('presence').once('value');
+      const map=snap.val()||{};
+      const now=Date.now();
+      const list=Object.entries(map).map(([k,v])=>({
+        key: k,
+        nickname: String(v.nickname||k).slice(0,50),
+        avatarData: v.avatarData||'',
+        loginTime: Number(v.loginTime)||Number(v.timestamp)||now,
+        lastActive: Number(v.lastActive)||Number(v.timestamp)||now,
+        action: String(v.action||'В игре').slice(0,60),
+        details: String(v.details||'').slice(0,120),
+        balance: Number(v.balance)||0,
+        playerLevel: Number(v.playerLevel)||1,
+        currentCar: String(v.currentCar||'').slice(0,60),
+        carsCount: Number(v.carsCount)||1,
+        platesCount: Number(v.platesCount)||0,
+        online: true
+      })).sort((a,b)=>(b.lastActive||0)-(a.lastActive||0));
+      return json(200,{ok:true,online:list});
+    }
     if(method!=='POST') return json(405,{ok:false,error:'Для изменения данных нужен POST'});
     const key=['setBalance','addBalance','giveCar','giveAllCars','givePlate','deleteUser','renameUser'].includes(action)?keyFromPlayer(input.key):null;
     let auditData={key};
@@ -219,7 +243,10 @@ async function handle(event) {
       }
       case 'giveCar': case 'giveAllCars': {
         const names=action==='giveAllCars'?cars.map(c=>c.name):[input.carName];
-        await addCars(db,key,names); auditData={key,names}; break;
+        const updatedCars=await addCars(db,key,names);
+        auditData={key,names};
+        await audit(db,action,auditData);
+        return json(200,{ok:true,cars:updatedCars});
       }
       case 'givePlate': {
         await givePlate(db,key,input.plateText);auditData={key,plateText:input.plateText};break;

@@ -224,7 +224,13 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         let isAdmin = false;
         let adminUsersMap = {};
         let adminActivityLogs = [];
-        let activeAdminSubTab = 'users';
+        let adminOnlineUsers = [];
+        let activeAdminSubTab = 'online';
+        let adminCarPickerTargetKey = null;
+        let adminCarPickerTargetNick = '';
+        let sessionStartTime = Date.now();
+        let currentActionName = 'В игре';
+        let currentActionDetails = 'Главное меню';
 
         // Чистое состояние официального игрока
         let balance = 50000;
@@ -644,9 +650,39 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         };
 
         // --- ЖИВОЙ АУДИТ ДЕЙСТВИЙ («КТО ЧТО КРУТИТ») ---
+        function updatePlayerPresence(actionName, details) {
+            if (actionName) currentActionName = String(actionName).slice(0, 60);
+            if (details !== undefined) currentActionDetails = String(details).slice(0, 120);
+            const rtdb = (typeof firebase !== 'undefined' && typeof firebase.database === 'function') ? firebase.database() : db;
+            if (!rtdb || typeof rtdb.ref !== 'function') return;
+            try {
+                const curNick = (onlineProfile ? onlineProfile.nickname : nickname) || 'Гость';
+                const pKey = sanitizeKey(curNick);
+                const curCarName = (isRaceRunning && typeof selectedRaceCarName !== 'undefined' && selectedRaceCarName) || (Array.isArray(myCars) && myCars[0]?.name) || (typeof selectedRaceCarName !== 'undefined' && selectedRaceCarName) || (carsData[0]?.name || '');
+                const payload = {
+                    key: pKey,
+                    nickname: curNick,
+                    avatarData: avatarData || '',
+                    loginTime: sessionStartTime,
+                    lastActive: Date.now(),
+                    action: currentActionName,
+                    details: currentActionDetails,
+                    balance: Number(balance) || 0,
+                    playerLevel: Number(playerLevel) || 1,
+                    currentCar: curCarName,
+                    carsCount: Array.isArray(myCars) ? myCars.length : 0,
+                    platesCount: Array.isArray(inventory) ? inventory.length : 0,
+                    online: true
+                };
+                const presenceRef = rtdb.ref('presence/' + pKey);
+                presenceRef.set(payload).catch?.(() => {});
+                if (presenceRef.onDisconnect) presenceRef.onDisconnect().remove();
+            } catch (_) {}
+        }
+
         function logPlayerActivity(action, details) {
             const entry = {
-                nickname: nickname || "Гость",
+                nickname: (onlineProfile ? onlineProfile.nickname : nickname) || "Гость",
                 action: action,
                 details: details,
                 timestamp: Date.now()
@@ -655,8 +691,14 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             if (adminActivityLogs.length > 200) adminActivityLogs.pop();
             if (isAdmin) renderAdminActivity();
 
-            // Browser activity is deliberately not written to the protected database.
+            updatePlayerPresence(action, details);
 
+            const rtdb = (typeof firebase !== 'undefined' && typeof firebase.database === 'function') ? firebase.database() : db;
+            if (rtdb && typeof rtdb.ref === 'function') {
+                try {
+                    rtdb.ref('activity').push(entry).catch?.(() => {});
+                } catch (_) {}
+            }
         }
 
         function saveProgress() {
@@ -870,18 +912,37 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                         isFirebaseConnected = !!snap.val();
                         if (isFirebaseConnected) {
                             setFirebaseState('🟢 Firebase: онлайн', true);
-                            const pKey = sanitizeKey(nickname || 'Гость');
-                            const presenceRef = db.ref('presence/' + pKey);
-                            presenceRef.set({ nickname: nickname || 'Гость', timestamp: Date.now() }).catch(() => {});
-                            if (presenceRef.onDisconnect) presenceRef.onDisconnect().remove();
+                            updatePlayerPresence('🟢 В сети', 'Главное меню');
                         } else {
                             setFirebaseState('⚪ Firebase: подключение...', false);
                         }
                     });
                     db.ref('presence').on('value', snap => {
-                        const count = Object.keys(snap.val() || {}).length || 1;
+                        const map = snap.val() || {};
+                        const count = Object.keys(map).length || 1;
                         const badge = document.getElementById('multi-online-count');
                         if (badge) badge.textContent = `${count} онлайн`;
+                        const admBadge = document.getElementById('adm-online-count');
+                        if (admBadge) admBadge.textContent = String(count);
+                        const now = Date.now();
+                        adminOnlineUsers = Object.entries(map).map(([k, v]) => ({
+                            key: k,
+                            nickname: String(v.nickname || k).slice(0, 50),
+                            avatarData: v.avatarData || '',
+                            loginTime: Number(v.loginTime) || Number(v.timestamp) || now,
+                            lastActive: Number(v.lastActive) || Number(v.timestamp) || now,
+                            action: String(v.action || 'В игре').slice(0, 60),
+                            details: String(v.details || '').slice(0, 120),
+                            balance: Number(v.balance) || 0,
+                            playerLevel: Number(v.playerLevel) || 1,
+                            currentCar: String(v.currentCar || '').slice(0, 60),
+                            carsCount: Number(v.carsCount) || 0,
+                            platesCount: Number(v.platesCount) || 0,
+                            online: true
+                        })).sort((a, b) => (b.lastActive || 0) - (a.lastActive || 0));
+                        if (isAdmin && activeAdminSubTab === 'online') {
+                            renderAdminOnline();
+                        }
                     });
                     db.ref('onlineV4/chat').limitToLast(50).on('value', snap => {
                         const chatMap = snap.val() || {};
@@ -899,6 +960,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 } catch (_) {}
             }
             setInterval(()=>{ if(!document.hidden) refreshOnlinePublic().catch(()=>{}); },12000);
+            setInterval(()=>{ if(!document.hidden && typeof updatePlayerPresence === 'function') updatePlayerPresence(); }, 20000);
             return sessionPromise;
         }
 
@@ -1108,6 +1170,8 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             setOnlineProfile(profile, true);
             attachMyOnlineAccount(sanitizeKey(profile.nickname));
             if(profile.draft) syncServerDraft(profile.draft);
+            sessionStartTime = Date.now();
+            updatePlayerPresence('🟢 В сети', 'Вход в аккаунт');
             updateProfileUI();
             saveProgress();
         }
@@ -1187,6 +1251,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             renderOnlineAccount();
             saveProgress();
             closeProfileModal();
+            sessionStartTime = Date.now();
             logPlayerActivity('Гость', `Вошел как гость: ${nickname}`);
             notifyUser(`Вы вошли как ${nickname}. Стартовый баланс: 50 000 ₽.`);
         }
@@ -1637,12 +1702,106 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         }
         function switchAdminSubTab(tab) {
             activeAdminSubTab = tab;
-            for (const name of ['users','activity','tools']) {
+            for (const name of ['online','users','activity','tools']) {
                 document.getElementById('adm-panel-' + name)?.classList.toggle('hidden', name !== tab);
                 document.getElementById('btn-adm-' + name)?.classList.toggle('active', name === tab);
             }
+            if (tab === 'online') fetchAdminOnline();
             if (tab === 'users') fetchAdminUsers();
             if (tab === 'activity') fetchAdminActivity();
+        }
+        async function fetchAdminOnline() {
+            const body = document.getElementById('admin-online-tbody');
+            if (body && !adminOnlineUsers.length) {
+                body.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 20px;">Загрузка списка онлайн-игроков…</td></tr>';
+            }
+            try {
+                const { online } = await adminRequest('online', {}, 'GET');
+                if (Array.isArray(online)) {
+                    adminOnlineUsers = online;
+                }
+            } catch (_) {}
+            renderAdminOnline();
+        }
+        function getActionBadgeClass(action) {
+            const a = String(action || '').toLowerCase();
+            if (a.includes('гонк') || a.includes('race') || a.includes('заезд') || a.includes('дрифт')) return 'badge-race';
+            if (a.includes('рулетк') || a.includes('кейc') || a.includes('case') || a.includes('выбил')) return 'badge-roulette';
+            if (a.includes('номер') || a.includes('генератор') || a.includes('spin')) return 'badge-plate';
+            if (a.includes('рынок') || a.includes('рынк') || a.includes('маркет') || a.includes('продаж')) return 'badge-market';
+            if (a.includes('гараж') || a.includes('тюнинг') || a.includes('стайлинг') || a.includes('ремонт') || a.includes('авто')) return 'badge-garage';
+            if (a.includes('чат') || a.includes('chat')) return 'badge-chat';
+            return 'badge-default';
+        }
+        function formatOnlineDuration(loginTime) {
+            if (!loginTime) return '—';
+            const diffMin = Math.max(0, Math.floor((Date.now() - loginTime) / 60000));
+            const timeStr = new Date(loginTime).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            if (diffMin < 1) return `${timeStr} (< 1 мин.)`;
+            if (diffMin < 60) return `${timeStr} (${diffMin} мин.)`;
+            const hours = Math.floor(diffMin / 60);
+            const mins = diffMin % 60;
+            return `${timeStr} (${hours} ч. ${mins} мин.)`;
+        }
+        function formatLastActive(lastActive) {
+            if (!lastActive) return '—';
+            const sec = Math.max(0, Math.floor((Date.now() - lastActive) / 1000));
+            if (sec < 5) return '🟢 только что';
+            if (sec < 60) return `${sec} сек. назад`;
+            const min = Math.floor(sec / 60);
+            if (min < 60) return `${min} мин. назад`;
+            return `${Math.floor(min / 60)} ч. назад`;
+        }
+        function renderAdminOnline() {
+            const body = document.getElementById('admin-online-tbody');
+            if (!body) return;
+            const countEl = document.getElementById('adm-online-count');
+            if (countEl) countEl.textContent = String(adminOnlineUsers.length);
+            if (!adminOnlineUsers.length) {
+                body.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 25px; color: var(--text-dim);">Сейчас нет игроков в сети</td></tr>';
+                return;
+            }
+            body.innerHTML = adminOnlineUsers.map(u => {
+                const badgeClass = getActionBadgeClass(u.action);
+                const avatarImg = u.avatarData ? `<img src="${escapeHtml(u.avatarData)}" class="avatar" style="width: 28px; height: 28px; border-radius: 50%; object-fit: cover;" alt="">` : '';
+                return `
+                <tr>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span class="admin-status-dot online" title="В сети"></span>
+                            ${avatarImg}
+                            <div>
+                                <b style="color: #fff;">${escapeHtml(u.nickname)}</b>
+                                <small class="admin-key" style="display: block;">${escapeHtml(u.key)}</small>
+                            </div>
+                        </div>
+                    </td>
+                    <td><div style="font-size: 12px; color: #fff;">${formatOnlineDuration(u.loginTime)}</div></td>
+                    <td><div style="font-size: 12px; color: #34d399;">${formatLastActive(u.lastActive)}</div></td>
+                    <td>
+                        <span class="admin-action-badge ${badgeClass}">${escapeHtml(u.action || 'В игре')}</span>
+                        ${u.details ? `<div style="font-size: 11px; color: var(--text-dim); margin-top: 3px;">${escapeHtml(u.details)}</div>` : ''}
+                    </td>
+                    <td>
+                        <div style="font-weight: 700; color: #fbbf24;">${Number(u.balance || 0).toLocaleString('ru-RU')} ₽</div>
+                        <small style="color: var(--text-dim);">Ур. ${Number(u.playerLevel || 1)}</small>
+                    </td>
+                    <td>
+                        <div style="font-size: 12px; color: #fff;">${escapeHtml(u.currentCar || '—')}</div>
+                        <small style="color: var(--text-dim);">🚗 ${Number(u.carsCount || 0)} / 🎫 ${Number(u.platesCount || 0)}</small>
+                    </td>
+                    <td>
+                        <div class="admin-actions">
+                            <button class="test-btn" onclick="openAdminCarPicker(${jsArg(u.key)}, ${jsArg(u.nickname)})">🚗 Выдать авто</button>
+                            <button class="test-btn" onclick="adminGiveAllCars(${jsArg(u.key)})">🏎️ Все авто</button>
+                            <button class="test-btn" onclick="adminPromptBalance(${jsArg(u.key)})">💰 Баланс</button>
+                            <button class="test-btn" onclick="adminGiveUserPlate(${jsArg(u.key)})">🎫 Номер</button>
+                            <button class="test-btn admin-danger" onclick="adminDeleteUser(${jsArg(u.key)})">🗑️ Удалить</button>
+                        </div>
+                    </td>
+                </tr>
+                `;
+            }).join('');
         }
         async function fetchAdminUsers() {
             const body = document.getElementById('admin-users-tbody');
@@ -1656,15 +1815,28 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         function renderAdminUsers() {
             const body = document.getElementById('admin-users-tbody');
             const users = Object.values(adminUsersMap);
-            body.innerHTML = users.length ? users.map(u => `
-                <tr><td><b>${escapeHtml(u.nickname)}</b><small class="admin-key">${escapeHtml(u.key)}</small></td>
+            const onlineKeys = new Set(adminOnlineUsers.map(o => o.key));
+            body.innerHTML = users.length ? users.map(u => {
+                const isOnline = onlineKeys.has(u.key);
+                return `
+                <tr><td>
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                        <span class="admin-status-dot ${isOnline ? 'online' : 'offline'}" title="${isOnline ? 'В сети' : 'Офлайн'}"></span>
+                        <div>
+                            <b>${escapeHtml(u.nickname)}</b>
+                            <small class="admin-key" style="display: block;">${escapeHtml(u.key)}</small>
+                        </div>
+                    </div>
+                </td>
                 <td><span class="admin-pass-code">${escapeHtml(u.pin || u.password || '—')}</span></td><td>${Number(u.balance||0).toLocaleString('ru-RU')} ₽</td>
                 <td>${Number(u.playerLevel||1)}</td><td>🚗 ${Number(u.carsCount||0)} / 🎫 ${Number(u.platesCount||0)}</td>
                 <td><div class="admin-actions"><button class="test-btn" onclick="adminRenameUser(${jsArg(u.key)})">✏️ Ник</button>
                 <button class="test-btn" onclick="adminPromptBalance(${jsArg(u.key)})">💰 Баланс</button>
-                <button class="test-btn" onclick="adminGiveUserCar(${jsArg(u.key)})">🚗 Авто</button>
+                <button class="test-btn" onclick="openAdminCarPicker(${jsArg(u.key)}, ${jsArg(u.nickname)})">🚗 Выдать авто</button>
+                <button class="test-btn" onclick="adminGiveAllCars(${jsArg(u.key)})">🏎️ Все авто</button>
                 <button class="test-btn" onclick="adminGiveUserPlate(${jsArg(u.key)})">🎫 Номер</button>
-                <button class="test-btn admin-danger" onclick="adminDeleteUser(${jsArg(u.key)})">🗑️ Удалить</button></div></td></tr>`).join('') : '<tr><td colspan="6">В базе пока нет игроков</td></tr>';
+                <button class="test-btn admin-danger" onclick="adminDeleteUser(${jsArg(u.key)})">🗑️ Удалить</button></div></td></tr>`;
+            }).join('') : '<tr><td colspan="6">В базе пока нет игроков</td></tr>';
         }
         async function adminRenameUser(key) {
             const u = adminUsersMap[key] || { nickname: key };
@@ -1687,8 +1859,59 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             el.innerHTML = rows.length ? rows.slice(0,150).map(x => `<div class="admin-activity-row"><time>${new Date(x.timestamp||0).toLocaleString('ru-RU')}</time><b>${escapeHtml(x.nickname)}</b> · ${escapeHtml(x.action)}<div>${escapeHtml(x.details)}</div></div>`).join('') : '<p class="empty-state">Нет событий</p>';
         }
         async function adminExecute(action, data = {}, success = 'Выполнено') {
-            try { await adminRequest(action, data); notifyUser(success); await fetchAdminUsers(); return true; }
-            catch (e) { notifyUser(e.message, 'error'); return false; }
+            try {
+                const result = await adminRequest(action, data);
+                notifyUser(success);
+
+                // Synchronize client garage if target is active local player
+                if (action === 'giveCar' || action === 'giveAllCars') {
+                    const activeKey = sanitizeKey(onlineProfile ? onlineProfile.nickname : nickname);
+                    if (data.key && sanitizeKey(data.key) === activeKey) {
+                        if (Array.isArray(result?.cars)) {
+                            myCars = result.cars;
+                        } else if (action === 'giveCar' && data.carName) {
+                            if (!myCars.some(c => c.name === data.carName)) {
+                                const cData = carsData.find(c => c.name === data.carName);
+                                myCars.push({
+                                    name: data.carName,
+                                    basePrice: cData ? cData.price : 200000,
+                                    category: cData ? cData.category : 'Седан',
+                                    img: cData ? cData.img : DEFAULT_CAR_IMG,
+                                    plate: null,
+                                    condition: 100,
+                                    upgrades: { engine: 0, handling: 0, economy: 0, nitro: 0 }
+                                });
+                            }
+                        } else if (action === 'giveAllCars') {
+                            for (const c of carsData) {
+                                if (!myCars.some(item => item.name === c.name)) {
+                                    myCars.push({
+                                        name: c.name,
+                                        basePrice: c.price,
+                                        category: c.category,
+                                        img: c.img,
+                                        plate: null,
+                                        condition: 100,
+                                        upgrades: { engine: 0, handling: 0, economy: 0, nitro: 0 }
+                                    });
+                                }
+                            }
+                        }
+                        if (onlineProfile) onlineProfile.myCars = myCars;
+                        renderCars();
+                        updateBadge();
+                        saveProgress();
+                        if (typeof syncCloudGarage === 'function') syncCloudGarage(true);
+                    }
+                }
+
+                await fetchAdminUsers();
+                if (activeAdminSubTab === 'online') fetchAdminOnline();
+                return result || true;
+            } catch (e) {
+                notifyUser(e.message, 'error');
+                return false;
+            }
         }
         async function clearActivityLogs() {
             if (!(await confirmAction('Очистить журнал активности?'))) return;
@@ -1704,13 +1927,64 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             await adminExecute('setBalance', { key, amount: Math.floor(parsed) }, 'Баланс игрока ' + key + ' обновлён');
         }
         async function adminGiveUserCash(key) { return adminPromptBalance(key); }
-        async function adminGiveUserCar(key) {
-            const names = carsData.map(c=>c.name);
-            const carIndex = await adminInput('Добавить авто игроку '+key, 'Индекс модели (1–14): '+names.map((x,i)=>`${i+1} ${x}`).join('; '), '1');
-            if (carIndex === null) return;
-            const car = carsData[Number(carIndex)-1];
-            if (!car) { notifyUser('Неверный номер модели','error'); return; }
-            await adminExecute('giveCar',{key, carName:car.name},'Автомобиль выдан');
+        function openAdminCarPicker(targetKey, targetNick) {
+            const activeKey = sanitizeKey(onlineProfile ? onlineProfile.nickname : nickname);
+            adminCarPickerTargetKey = targetKey || activeKey;
+            adminCarPickerTargetNick = targetNick || (targetKey === activeKey ? (onlineProfile ? onlineProfile.nickname : nickname) : targetKey);
+            const nameEl = document.getElementById('admin-car-target-name');
+            if (nameEl) nameEl.textContent = adminCarPickerTargetNick;
+            const searchInput = document.getElementById('admin-car-picker-search');
+            if (searchInput) searchInput.value = '';
+            renderAdminCarPickerList();
+            document.getElementById('admin-car-picker-modal')?.classList.add('show');
+        }
+        function closeAdminCarPicker() {
+            document.getElementById('admin-car-picker-modal')?.classList.remove('show');
+        }
+        function renderAdminCarPickerList() {
+            const listEl = document.getElementById('admin-car-picker-list');
+            if (!listEl) return;
+            const q = String(document.getElementById('admin-car-picker-search')?.value || '').toLowerCase().trim();
+            const filtered = carsData.filter(c => !q || c.name.toLowerCase().includes(q) || (c.category && c.category.toLowerCase().includes(q)));
+            if (!filtered.length) {
+                listEl.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; padding: 30px; color: var(--text-dim);">Автомобили не найдены</div>';
+                return;
+            }
+            listEl.innerHTML = filtered.map(c => `
+                <div class="admin-car-item">
+                    <img src="${getCarSpriteDataUrl(c.name)}" class="admin-car-thumb" alt="${escapeHtml(c.name)}" onerror="this.onerror=null; this.src='./icons/car-placeholder.svg';">
+                    <div class="admin-car-info">
+                        <div class="admin-car-name" title="${escapeHtml(c.name)}">${escapeHtml(c.name)}</div>
+                        <div class="admin-car-cat">
+                            <span class="badge-cat">${escapeHtml(c.category || 'Седан')}</span> · <b>${Number(c.price || 0).toLocaleString('ru-RU')} ₽</b>
+                        </div>
+                    </div>
+                    <button class="btn btn-green admin-car-give-btn" onclick="adminExecuteGiveCarFromPicker(${jsArg(c.name)})">Выдать</button>
+                </div>
+            `).join('');
+        }
+        async function adminExecuteGiveCarFromPicker(carName) {
+            if (!adminCarPickerTargetKey) return;
+            const key = adminCarPickerTargetKey;
+            const nick = adminCarPickerTargetNick || key;
+            const ok = await adminGiveUserCar(key, carName);
+            if (ok) {
+                notifyUser(`«${carName}» успешно выдан игроку ${nick}`);
+            }
+        }
+        async function adminExecuteGiveAllCarsFromPicker() {
+            if (!adminCarPickerTargetKey) return;
+            const key = adminCarPickerTargetKey;
+            await adminGiveAllCars(key);
+        }
+        async function adminGiveUserCar(key, carName) {
+            if (!key) key = sanitizeKey(onlineProfile ? onlineProfile.nickname : nickname);
+            if (!carName) {
+                const u = adminUsersMap[key] || adminOnlineUsers.find(o => o.key === key);
+                openAdminCarPicker(key, u ? u.nickname : key);
+                return;
+            }
+            return await adminExecute('giveCar', { key, carName }, `Автомобиль «${carName}» выдан`);
         }
         async function adminGiveUserPlate(key) {
             const value = await adminInput('Выдать номер игроку '+key,'Номер (например А 777 АА | 77 RUS)','А 777 АА | 77 RUS');
@@ -1756,8 +2030,12 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 notifyUser('Не удалось начислить деньги: ' + e.message, 'error');
             }
         }
-        async function adminGiveAllCars() {
-            await adminExecute('giveAllCars',{key:'h3h'},'Автопарк добавлен в профиль h3h');
+        async function adminGiveAllCars(targetKey) {
+            if (!isAdmin) return notifyUser('Сначала войдите в админку', 'error');
+            const key = targetKey || sanitizeKey(onlineProfile ? onlineProfile.nickname : nickname);
+            const u = adminUsersMap[key] || adminOnlineUsers.find(o => o.key === key);
+            const name = u ? u.nickname : key;
+            return await adminExecute('giveAllCars', { key }, `Все 25 автомобилей добавлены игроку ${name}`);
         }
         async function adminBroadcastAnnouncement() {
             const el = document.getElementById('admin-announcement-input');
@@ -10107,6 +10385,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
             try {
                 isRaceRunning = true;
+                updatePlayerPresence('🏎️ В 3D гонке', `${selectedRaceCarName}`);
                 document.body.classList.add('race-active');
                 document.getElementById('race-menu-container').classList.add('hidden');
                 document.getElementById('race-play-container').classList.add('hidden');
@@ -10588,6 +10867,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             if (touchHornLabel) touchHornLabel.textContent = 'СИГНАЛ [H]';
 
             isRaceRunning = true;
+            updatePlayerPresence('🏎️ В заезде', `${selectedRaceCarName}`);
             document.body.classList.add("race-active");
             sound.start();
             lastRaceTime = performance.now();
@@ -12999,4 +13279,18 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 }
             }
             if (tabId !== 'racegame' && isRaceRunning) exitRaceGame();
+
+            if (typeof updatePlayerPresence === 'function') {
+                const tabNames = {
+                    'generator': ['🔢 Генератор номеров', `Регион ${currentReg}`],
+                    'cars': ['🔧 В гараже', `Машин: ${Array.isArray(myCars) ? myCars.length : 0}`],
+                    'cases': ['🎰 Рулетка и кейсы', 'Выбор кейса'],
+                    'multiplayer': ['👥 Мультиплеер', activeMultiSubTab === 'market' ? 'На авторынке' : 'В онлайн-чате'],
+                    'leaderboard': ['🏆 Рейтинг', 'Таблица лидеров'],
+                    'city3d': ['🏙️ Город 3D', 'Исследование карты'],
+                    'racegame': ['🏎️ Гоночный трек', 'Подготовка к заезду']
+                };
+                const tabInfo = tabNames[tabId] || ['🎮 В игре', tabId];
+                updatePlayerPresence(tabInfo[0], tabInfo[1]);
+            }
         }

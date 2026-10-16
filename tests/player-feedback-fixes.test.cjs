@@ -281,3 +281,110 @@ test('confirmSellCar syncs cloud garage before sending sell request to prevent i
     assert.equal(callOrder[0], 'syncGarage', 'syncGarage must be awaited BEFORE sell action');
     assert.equal(callOrder[1], 'sell');
 });
+
+test('adminGiveUserCar and adminGiveAllCars grant 25 realistic cars and sync active player garage', async () => {
+    const app = createApp({
+        saved: {
+            nickname: 'AdminBoss',
+            balance: 1000000,
+            myCars: [{ name: 'ВАЗ-2107 «Жигули»', condition: 100, plate: null }]
+        }
+    });
+    app.run('loadProgress();');
+    app.run('nickname = "AdminBoss";');
+    app.run('setOnlineProfile({ nickname: "AdminBoss", balance: 1000000, inventory: [], myCars: [{ name: "ВАЗ-2107 «Жигули»", condition: 100, plate: null }] }, false);');
+
+    let adminRequests = [];
+    app.context.adminRequest = async (action, data) => {
+        adminRequests.push({ action, data });
+        if (action === 'giveCar') {
+            return {
+                ok: true,
+                cars: [
+                    { name: 'ВАЗ-2107 «Жигули»', condition: 100, plate: null },
+                    { name: data.carName, condition: 100, plate: null, basePrice: 270000000 }
+                ]
+            };
+        }
+        if (action === 'giveAllCars') {
+            const cars = app.run('carsData').map(c => ({ name: c.name, condition: 100, plate: null, basePrice: c.price }));
+            return { ok: true, cars };
+        }
+        return { ok: true };
+    };
+
+    // 1. Give specific car
+    await app.run('adminGiveUserCar("adminboss", "Koenigsegg Jesko Attack");');
+    const carReqs = adminRequests.filter(r => r.action === 'giveCar' || r.action === 'giveAllCars');
+    assert.equal(carReqs[0].action, 'giveCar');
+    assert.equal(carReqs[0].data.carName, 'Koenigsegg Jesko Attack');
+    assert(app.run('myCars.some(c => c.name === "Koenigsegg Jesko Attack")'), 'Granted car must appear in active player garage');
+    assert(app.run('onlineProfile.myCars.some(c => c.name === "Koenigsegg Jesko Attack")'), 'Granted car must update onlineProfile');
+
+    // 2. Give all 25 cars
+    app.run('isAdmin = true;');
+    await app.run('adminGiveAllCars();');
+    const finalCarReqs = adminRequests.filter(r => r.action === 'giveCar' || r.action === 'giveAllCars');
+    assert.equal(finalCarReqs[1].action, 'giveAllCars');
+    assert.equal(finalCarReqs[1].data.key, 'adminboss', 'Default target must be the active player');
+    assert.equal(app.run('myCars.length'), 25, 'Garage must contain all 25 cars');
+    assert.equal(app.run('onlineProfile.myCars.length'), 25);
+    const carNames = app.run('myCars.map(c => c.name)');
+    assert(carNames.includes('Ferrari SF90 Stradale'));
+    assert(carNames.includes('Bugatti Chiron Super Sport'));
+    assert(carNames.includes('BMW M5 F90 Competition'));
+});
+
+test('updatePlayerPresence writes presence data and helpers format correctly', () => {
+    let writtenPath = null;
+    let writtenPayload = null;
+    const mockDb = {
+        ref: (path) => ({
+            set: async (val) => { writtenPath = path; writtenPayload = val; },
+            onDisconnect: () => ({ remove: () => {} }),
+            on: () => {}
+        })
+    };
+
+    const app = createApp({
+        saved: {
+            nickname: 'SpeedDemon',
+            balance: 5000000,
+            myCars: [{ name: 'BMW M5 E60 V10', condition: 100, plate: null }]
+        },
+        cloud: mockDb
+    });
+    app.run('loadProgress();');
+    app.run('nickname = "SpeedDemon";');
+
+    // Trigger presence update
+    app.run('updatePlayerPresence("🏎️ В 3D гонке", "BMW M5 E60 V10, 240 км/ч");');
+    assert.equal(writtenPath, 'presence/speeddemon');
+    assert.equal(writtenPayload.nickname, 'SpeedDemon');
+    assert.equal(writtenPayload.action, '🏎️ В 3D гонке');
+    assert.equal(writtenPayload.details, 'BMW M5 E60 V10, 240 км/ч');
+    assert.equal(writtenPayload.currentCar, 'BMW M5 E60 V10');
+    assert.equal(writtenPayload.balance, 5000000);
+    assert.equal(writtenPayload.online, true);
+    assert(Number.isFinite(writtenPayload.loginTime));
+    assert(Number.isFinite(writtenPayload.lastActive));
+
+    // Badge styling helper
+    assert.equal(app.run('getActionBadgeClass("🏎️ В 3D гонке")'), 'badge-race');
+    assert.equal(app.run('getActionBadgeClass("🎰 Крутит рулетку")'), 'badge-roulette');
+    assert.equal(app.run('getActionBadgeClass("🔢 Крутит номер")'), 'badge-plate');
+    assert.equal(app.run('getActionBadgeClass("🔧 В гараже")'), 'badge-garage');
+    assert.equal(app.run('getActionBadgeClass("🏪 На авторынке")'), 'badge-market');
+    assert.equal(app.run('getActionBadgeClass("💬 В онлайн-чате")'), 'badge-chat');
+    assert.equal(app.run('getActionBadgeClass("Что-то другое")'), 'badge-default');
+
+    // Online duration helper
+    const now = Date.now();
+    const tenMinAgo = now - 10 * 60 * 1000;
+    const durStr = app.run(`formatOnlineDuration(${tenMinAgo})`);
+    assert(durStr.includes('10 мин.'), 'Duration string must include elapsed minutes');
+
+    const twoSecAgo = now - 2000;
+    const actStr = app.run(`formatLastActive(${twoSecAgo})`);
+    assert(actStr.includes('только что') || actStr.includes('сек.'), 'Fresh activity must show recent seconds');
+});

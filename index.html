@@ -31,7 +31,7 @@
     <!-- Подключение Firebase SDK для базы данных, аккаунтов и мультиплеера -->
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
-    <link rel="stylesheet" href="./styles.css?v=67f416f15f0b">
+    <link rel="stylesheet" href="./styles.css?v=e7d1c7cecfa3">
 </head>
 <body>
     <svg class="icon-sprite" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><defs><symbol id="icon-plate" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M7 10h5m-5 4h5m4-4v4"/></symbol><symbol id="icon-collection" viewBox="0 0 24 24"><rect x="4" y="7" width="16" height="13" rx="2"/><path d="M8 7V4h8v3m-8 5h8m-8 4h5"/></symbol><symbol id="icon-garage" viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v10H3zM7 21V12h10v9m-10-5h10"/></symbol><symbol id="icon-race" viewBox="0 0 24 24"><path d="M5 21V3m0 1h6l2 2h7v10h-7l-2-2H5m6-10v10m2-8v10"/></symbol><symbol id="icon-case" viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="14" rx="2"/><path d="M12 7v14M3 12h18m-9-5C4 7 5 1 8 3l4 4m0 0c8 0 7-6 4-4z"/></symbol><symbol id="icon-rating" viewBox="0 0 24 24"><path d="M7 3h10v5a5 5 0 01-10 0zm10 2h4v3a4 4 0 01-4 4M7 5H3v3a4 4 0 004 4m5 1v5m-4 3h8m-6-3h4"/></symbol><symbol id="icon-online" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><ellipse cx="12" cy="12" rx="4" ry="9"/><path d="M3 12h18"/></symbol><symbol id="icon-profile" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M5 21v-2a7 7 0 0114 0v2"/></symbol><symbol id="icon-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3M5 5l2 2m10 10l2 2M5 19l2-2M17 7l2-2"/></symbol></defs></svg>
@@ -928,13 +928,43 @@
             </div>
 
             <div class="admin-nav-tabs">
-                <button class="admin-tab-btn active" id="btn-adm-users" onclick="switchAdminSubTab('users')">👥 Пользователи</button>
+                <button class="admin-tab-btn active" id="btn-adm-online" onclick="switchAdminSubTab('online')">🟢 Онлайн (<span id="adm-online-count">0</span>)</button>
+                <button class="admin-tab-btn" id="btn-adm-users" onclick="switchAdminSubTab('users')">👥 Все аккаунты</button>
                 <button class="admin-tab-btn" id="btn-adm-activity" onclick="switchAdminSubTab('activity')">📋 Журнал событий</button>
                 <button class="admin-tab-btn" id="btn-adm-tools" onclick="switchAdminSubTab('tools')">⚡ Быстрые действия</button>
             </div>
 
-            <!-- Вкладка 1: Управление пользователями через сервер -->
-            <div id="adm-panel-users">
+            <!-- Вкладка: Мониторинг игроков онлайн в реальном времени -->
+            <div id="adm-panel-online">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span class="admin-pulse-dot"></span>
+                        <span style="font-size: 13px; font-weight: 700; color: #10b981;">Игроки в сети в реальном времени:</span>
+                    </div>
+                    <button class="test-btn" onclick="fetchAdminOnline()" title="Обновить список онлайн">🔄 Обновить онлайн</button>
+                </div>
+                <div class="admin-table-wrap">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Игрок</th>
+                                <th>Вход / Время в сети</th>
+                                <th>Посл. активность</th>
+                                <th>Текущее занятие</th>
+                                <th>Баланс / Уровень</th>
+                                <th>Авто / Гараж</th>
+                                <th>Действия Админа</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-online-tbody">
+                            <tr><td colspan="7" style="text-align: center; padding: 20px;">Загрузка списка игроков онлайн...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Вкладка: Управление пользователями через сервер -->
+            <div id="adm-panel-users" class="hidden">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
                     <span style="font-size: 13px; color: var(--text-dim);">Данные администрирования доступны только через защищённый сервер:</span>
                     <button class="test-btn" onclick="fetchAdminUsers()" title="Обновить базу">🔄 Обновить</button>
@@ -958,7 +988,7 @@
                 </div>
             </div>
 
-            <!-- Вкладка 2: Кто что крутит (Журнал событий) -->
+            <!-- Вкладка: Кто что крутит (Журнал событий) -->
             <div id="adm-panel-activity" class="hidden">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
                     <input type="text" id="admin-act-search" placeholder="Поиск по никнейму или действию..." style="padding: 8px 12px; background: rgba(255,255,255,0.06); border: 1px solid var(--border-subtle); color: #fff; border-radius: var(--radius-sm); font-size: 13px; min-width: 240px;" oninput="renderAdminActivity()">
@@ -969,7 +999,7 @@
                 </div>
             </div>
 
-            <!-- Вкладка 3: Быстрые действия -->
+            <!-- Вкладка: Быстрые действия -->
             <div id="adm-panel-tools" class="hidden">
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px;">
                     <div style="background: rgba(255,255,255,0.03); padding: 14px; border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
@@ -979,9 +1009,12 @@
                     </div>
 
                     <div style="background: rgba(255,255,255,0.03); padding: 14px; border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
-                        <h4 style="margin: 0 0 8px 0; color: #fff;">🏎️ Выдать весь автопарк</h4>
-                        <p style="font-size: 12px; color: var(--text-dim); margin-bottom: 10px;">Добавить все 14 автомобилей в свой гараж:</p>
-                        <button class="btn btn-blue" onclick="adminGiveAllCars()">🏎️ Получить все 14 авто</button>
+                        <h4 style="margin: 0 0 8px 0; color: #fff;">🏎️ Автопарк (25 авто)</h4>
+                        <p style="font-size: 12px; color: var(--text-dim); margin-bottom: 10px;">Выбрать модель из каталога или выдать сразу все 25 автомобилей в гараж:</p>
+                        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                            <button class="btn btn-blue" onclick="adminGiveAllCars()">🏎️ Выдать все 25 авто</button>
+                            <button class="btn btn-dark" onclick="openAdminCarPicker()" style="border: 1px solid rgba(255,255,255,0.2);">🚗 Каталог 25 авто</button>
+                        </div>
                     </div>
 
                     <div style="background: rgba(255,255,255,0.03); padding: 14px; border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
@@ -1418,6 +1451,32 @@
         </div>
     </div>
 
+    <!-- МОДАЛЬНОЕ ОКНО: АДМИН-ВЫБОР АВТОМОБИЛЯ (25 АВТО) -->
+    <div id="admin-car-picker-modal" class="modal-overlay">
+        <div class="modal-box" style="max-width: 680px; max-height: 85vh; display: flex; flex-direction: column;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid var(--border-subtle); padding-bottom: 10px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 20px;">🚗</span>
+                    <h3 style="margin: 0; color: #fbbf24; font-size: 16px;">Каталог автомобилей для выдачи</h3>
+                </div>
+                <button class="btn btn-close" style="padding: 4px 12px; font-size: 12px;" onclick="closeAdminCarPicker()">✕ Закрыть</button>
+            </div>
+
+            <div style="margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                <div style="font-size: 13px; color: var(--text-dim);">Получатель: <b id="admin-car-target-name" style="color: #fbbf24;">—</b></div>
+                <button class="btn btn-blue" style="font-size: 11px; padding: 5px 12px;" onclick="adminExecuteGiveAllCarsFromPicker()">🏎️ Выдать все 25 авто сразу</button>
+            </div>
+
+            <div style="margin-bottom: 12px;">
+                <input type="text" id="admin-car-picker-search" placeholder="Поиск по названию или категории..." style="width: 100%; padding: 8px 12px; background: rgba(255,255,255,0.06); border: 1px solid var(--border-subtle); color: #fff; border-radius: var(--radius-sm); font-size: 13px;" oninput="renderAdminCarPickerList()">
+            </div>
+
+            <div id="admin-car-picker-list" class="admin-car-picker-grid" style="overflow-y: auto; max-height: 55vh; padding-right: 4px;">
+                <!-- Car cards rendered here dynamically -->
+            </div>
+        </div>
+    </div>
+
     <!-- Public Firebase Web configuration is loaded from server runtime, never a private service account. -->
     <script>
         if (!window.NOMERA_FIREBASE_WEB_CONFIG) {
@@ -1454,6 +1513,6 @@
         }
     </script>
     <script src="./js/car-3d.js?v=5e53ae4839e0"></script>
-    <script src="./js/app.js?v=0f978ae7e3bb"></script>
+    <script src="./js/app.js?v=5682e0df4ba6"></script>
 </body>
 </html>
