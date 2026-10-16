@@ -5833,6 +5833,9 @@
 
         requestRender() {
             this.needsRender = true;
+            if (!this.active) {
+                this.start();
+            }
         }
 
         initScene() {
@@ -6558,6 +6561,7 @@
                 this.prevPointerX = e.clientX || (e.touches && e.touches[0].clientX) || 0;
                 this.prevPointerY = e.clientY || (e.touches && e.touches[0].clientY) || 0;
                 this.needsRender = true;
+                if (!this.active) this.start();
             };
 
             this._onPointerMove = (e) => {
@@ -6581,6 +6585,11 @@
                 this.targetAngleX = this.cameraAngleX;
                 this.updateCameraPosition();
                 this.needsRender = true;
+                if (!this.active) this.start();
+                if (this.renderer && this.scene && this.camera) {
+                    this.renderer.render(this.scene, this.camera);
+                    this.needsRender = false;
+                }
             };
 
             this._onPointerUp = () => {
@@ -6594,6 +6603,7 @@
                 const delta = Math.sign(e.deltaY) * 0.25;
                 this.targetDistance = Math.max(this.options.minDistance, Math.min(this.options.maxDistance, this.targetDistance + delta));
                 this.needsRender = true;
+                if (!this.active) this.start();
             };
 
             this._onTouchMove = (e) => {
@@ -6607,10 +6617,17 @@
                         const delta = (this.pinchStartDist - dist) * 0.01;
                         this.targetDistance = Math.max(this.options.minDistance, Math.min(this.options.maxDistance, this.targetDistance + delta));
                         this.needsRender = true;
+                        if (!this.active) this.start();
                     }
                     this.pinchStartDist = dist;
-                } else if (e.touches.length === 1 && this.isDragging) {
+                } else if (e.touches.length === 1) {
                     if (e.cancelable) e.preventDefault();
+                    if (!this.isDragging) {
+                        this.isDragging = true;
+                        this.prevPointerX = e.touches[0].clientX;
+                        this.prevPointerY = e.touches[0].clientY;
+                        if (!this.active) this.start();
+                    }
                     this._onPointerMove(e);
                 }
             };
@@ -6627,9 +6644,10 @@
             window.addEventListener('mousemove', this._onPointerMove);
             window.addEventListener('mouseup', this._onPointerUp);
 
-            dom.addEventListener('touchstart', this._onPointerDown, { passive: true });
-            dom.addEventListener('touchmove', this._onTouchMove, { passive: false });
-            dom.addEventListener('touchend', this._onTouchEnd);
+            dom.addEventListener('touchstart', this._onPointerDown, { passive: false });
+            window.addEventListener('touchmove', this._onTouchMove, { passive: false });
+            window.addEventListener('touchend', this._onTouchEnd);
+            window.addEventListener('touchcancel', this._onTouchEnd);
 
             dom.addEventListener('wheel', this._onWheel, { passive: false });
             window.addEventListener('resize', this._onResize);
@@ -6676,6 +6694,11 @@
                 return;
             }
             if (this.container && this.container.offsetParent === null) {
+                setTimeout(() => {
+                    if (!this.active && this.container && this.container.offsetParent !== null) {
+                        this.start();
+                    }
+                }, 100);
                 return;
             }
             this.active = true;
@@ -6846,12 +6869,6 @@
                     try { dom.removeEventListener('mousedown', this._onPointerDown); } catch (_) {}
                     try { dom.removeEventListener('touchstart', this._onPointerDown); } catch (_) {}
                 }
-                if (this._onTouchMove) {
-                    try { dom.removeEventListener('touchmove', this._onTouchMove); } catch (_) {}
-                }
-                if (this._onTouchEnd) {
-                    try { dom.removeEventListener('touchend', this._onTouchEnd); } catch (_) {}
-                }
                 if (this._onWheel) {
                     try { dom.removeEventListener('wheel', this._onWheel); } catch (_) {}
                 }
@@ -6860,8 +6877,15 @@
                 if (this._onPointerMove) {
                     try { window.removeEventListener('mousemove', this._onPointerMove); } catch (_) {}
                 }
+                if (this._onTouchMove) {
+                    try { window.removeEventListener('touchmove', this._onTouchMove); } catch (_) {}
+                }
                 if (this._onPointerUp) {
                     try { window.removeEventListener('mouseup', this._onPointerUp); } catch (_) {}
+                }
+                if (this._onTouchEnd) {
+                    try { window.removeEventListener('touchend', this._onTouchEnd); } catch (_) {}
+                    try { window.removeEventListener('touchcancel', this._onTouchEnd); } catch (_) {}
                 }
                 if (this._onResize) {
                     try { window.removeEventListener('resize', this._onResize); } catch (_) {}

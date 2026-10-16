@@ -724,9 +724,11 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             localStore.set('nomera_player_account', JSON.stringify(data));
             localStore.set('nomera_user_session', JSON.stringify({ nickname }));
 
-            // V4.4: legacy direct client writes disabled. Server economy uses onlineV4 API.
             showSaveStatus('✓ Игра сохранена на устройстве · онлайн-кошелёк на сервере');
-            renderLeaderboard();
+            const lbTab = document.getElementById('leaderboard');
+            if (lbTab && !lbTab.classList.contains('hidden')) {
+                renderLeaderboard();
+            }
             updateBadge();
             updateProfileUI();
             if (typeof syncCloudGarage === 'function') syncCloudGarage();
@@ -2092,44 +2094,51 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         // V4.4: отдельная защищённая серверная экономика.
         const ONLINE_ENDPOINT='/.netlify/functions/online';
         let onlineProfile=null;
+        let netlifyAvailable = !(typeof window !== 'undefined' && window.location && typeof window.location.hostname === 'string' && (window.location.hostname.endsWith('github.io') || window.location.hostname.endsWith('github.dev') || window.location.hostname.endsWith('pages.dev')));
         async function onlineRequest(action,params={},method='POST') {
-            let useFirebaseFallback = false;
+            let useFirebaseFallback = !netlifyAvailable;
             let body = null;
-            try {
-                const url=ONLINE_ENDPOINT+(method==='GET'?'?action='+encodeURIComponent(action):'');
-                const res=await fetch(url,{method,credentials:'same-origin',
-                    ...(method==='POST'?{headers:{'Content-Type':'application/json'},body:JSON.stringify({action,...params})}:{})});
-                if (res.status === 404 || res.status === 503) {
-                    useFirebaseFallback = true;
-                } else {
-                    body = await res.json().catch(() => null);
-                    if (!body) {
+            if (netlifyAvailable) {
+                try {
+                    const url=ONLINE_ENDPOINT+(method==='GET'?'?action='+encodeURIComponent(action):'');
+                    const res=await fetch(url,{method,credentials:'same-origin',
+                        ...(method==='POST'?{headers:{'Content-Type':'application/json'},body:JSON.stringify({action,...params})}:{})});
+                    if (res.status === 404 || res.status === 503) {
+                        netlifyAvailable = false;
                         useFirebaseFallback = true;
-                    } else if (res.ok && body.ok) {
-                        return body;
                     } else {
-                        const errMsg = String(body?.error || '');
-                        if (errMsg.includes('секреты') || errMsg.includes('Netlify') || errMsg.includes('не настроен')) {
+                        body = await res.json().catch(() => null);
+                        if (!body) {
+                            netlifyAvailable = false;
                             useFirebaseFallback = true;
+                        } else if (res.ok && body.ok) {
+                            return body;
                         } else {
-                            if(res.status===401 && action!=='login' && action!=='register' && action!=='logout') {
-                                onlineProfile=null;
-                                renderOnlineAccount();
-                                updateProfileUI();
-                                if(['roll','claim','sell','buy','cancel','chat'].includes(action)) {
-                                    openProfileModal();
-                                    switchAuthTab('login');
+                            const errMsg = String(body?.error || '');
+                            if (errMsg.includes('секреты') || errMsg.includes('Netlify') || errMsg.includes('не настроен')) {
+                                netlifyAvailable = false;
+                                useFirebaseFallback = true;
+                            } else {
+                                if(res.status===401 && action!=='login' && action!=='register' && action!=='logout') {
+                                    onlineProfile=null;
+                                    renderOnlineAccount();
+                                    updateProfileUI();
+                                    if(['roll','claim','sell','buy','cancel','chat'].includes(action)) {
+                                        openProfileModal();
+                                        switchAuthTab('login');
+                                    }
                                 }
+                                throw Error(body?.error||'Ошибка сервера');
                             }
-                            throw Error(body?.error||'Ошибка сервера');
                         }
                     }
+                } catch (err) {
+                    if (err && err.message && !err.message.includes('Не удалось получить ответ') && !err.message.includes('Failed to fetch') && !err.message.includes('JSON')) {
+                        throw err;
+                    }
+                    netlifyAvailable = false;
+                    useFirebaseFallback = true;
                 }
-            } catch (err) {
-                if (err && err.message && !err.message.includes('Не удалось получить ответ') && !err.message.includes('Failed to fetch') && !err.message.includes('JSON')) {
-                    throw err;
-                }
-                useFirebaseFallback = true;
             }
 
             if (useFirebaseFallback) {
@@ -2549,11 +2558,10 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 onlineProfile.balance = newBal;
                 renderOnlineAccount();
 
-                await Promise.all([
-                    db.ref('onlineV4/accounts/' + userKey).update({ balance: newBal, draft, updatedAt: Date.now() }),
-                    db.ref('users/' + userKey).update({ balance: newBal, updatedAt: Date.now() }).catch(() => {}),
-                    db.ref('leaderboard/' + userKey).update({ balance: newBal, updatedAt: Date.now() }).catch(() => {})
-                ]);
+                const updatePromise = db.ref('onlineV4/accounts/' + userKey).update({ balance: newBal, draft, updatedAt: Date.now() });
+                db.ref('users/' + userKey).update({ balance: newBal, updatedAt: Date.now() }).catch(() => {});
+                db.ref('leaderboard/' + userKey).update({ balance: newBal, updatedAt: Date.now() }).catch(() => {});
+                await updatePromise;
 
                 return { ok: true, profile: onlineProfile, draft };
             }
@@ -3950,26 +3958,52 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             executeCellSpin(targets, finals);
         }
 
+        let autoSpinRemaining = Infinity;
         function toggleAutoSpin() {
             isAutoSpinning = !isAutoSpinning;
             const btn = document.getElementById('btn-auto-spin');
-            btn.innerText = isAutoSpinning ? "🔄 Авто: ВКЛ" : "🔄 Авто: ВЫКЛ";
-            btn.classList.toggle('active', isAutoSpinning);
-
-            if (isAutoSpinning) runAutoSpinStep();
+            const select = document.getElementById('auto-spin-count');
+            if (isAutoSpinning) {
+                const countVal = select ? select.value : 'Infinity';
+                autoSpinRemaining = countVal === 'Infinity' ? Infinity : (parseInt(countVal, 10) || 10);
+                if (btn) {
+                    btn.innerText = Number.isFinite(autoSpinRemaining) ? `🔄 Авто: ${autoSpinRemaining}` : "🔄 Авто: ВКЛ";
+                    btn.classList.add('active');
+                }
+                runAutoSpinStep();
+            } else {
+                autoSpinRemaining = 0;
+                if (btn) {
+                    btn.innerText = "🔄 Авто: ВЫКЛ";
+                    btn.classList.remove('active');
+                }
+            }
         }
 
         function runAutoSpinStep() {
             if (!isAutoSpinning) return;
-            if (isSpinning) { setTimeout(runAutoSpinStep, 200); return; }
+            if (Number.isFinite(autoSpinRemaining) && autoSpinRemaining <= 0) {
+                toggleAutoSpin();
+                notifyUser('Авто-прокрутка завершена!', 'info');
+                return;
+            }
+            if (isSpinning || serverSpinBusy) { setTimeout(runAutoSpinStep, 150); return; }
             if ((onlineProfile ? Number(onlineProfile.balance) : balance) < 900) {
-                toggleAutoSpin(); notifyUser('Авто-спин остановлен: на активном кошельке недостаточно денег!'); return;
+                toggleAutoSpin(); notifyUser('Авто-спин остановлен: на активном кошельке недостаточно денег!', 'error'); return;
+            }
+
+            if (Number.isFinite(autoSpinRemaining)) {
+                autoSpinRemaining--;
+                const btn = document.getElementById('btn-auto-spin');
+                if (btn) btn.innerText = `🔄 Авто: ${autoSpinRemaining}`;
             }
 
             spinBoth();
+            const turbo = document.getElementById('turbo-toggle');
+            const delay = (turbo && turbo.checked) ? 600 : 1600;
             setTimeout(() => {
                 if (isAutoSpinning) runAutoSpinStep();
-            }, 1800);
+            }, delay);
         }
 
         async function savePlate() {
@@ -4572,9 +4606,52 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             }
             playCashSound();
             renderInventory();
-            saveProgress();
             notifyUser(`Номер «${item.text}» продан за ${price.toLocaleString('ru-RU')} ₽!`);
         }
+
+        function sellAllPlates(filter = 'common') {
+            if (!Array.isArray(inventory) || inventory.length === 0) {
+                notifyUser('Инвентарь пуст!', 'info');
+                return;
+            }
+            const toSell = [];
+            const toKeep = [];
+            let totalCash = 0;
+            for (const item of inventory) {
+                const r = getRarity(Number(item.price) || 0);
+                const isCommon = (!r || r.text === 'Обычный' || r.text === 'Базовый' || (Number(item.price) || 0) <= 2500);
+                if (filter === 'all' || isCommon) {
+                    toSell.push(item);
+                    totalCash += (Number(item.price) || 0);
+                } else {
+                    toKeep.push(item);
+                }
+            }
+            if (toSell.length === 0) {
+                notifyUser(filter === 'common' ? 'Нет обычных номеров для продажи' : 'Нет номеров для продажи', 'info');
+                return;
+            }
+            inventory = toKeep;
+            creditPlayerBalance(totalCash, `Массовая продажа номеров (${toSell.length} шт.)`);
+            if (onlineProfile) {
+                onlineProfile.inventory = [...inventory];
+                if (db) {
+                    const key = sanitizeKey(onlineProfile.nickname);
+                    db.ref('onlineV4/accounts/' + key).update({
+                        inventory: onlineProfile.inventory,
+                        updatedAt: Date.now()
+                    }).catch(() => {});
+                    db.ref('users/' + key).update({
+                        inventory: onlineProfile.inventory,
+                        updatedAt: Date.now()
+                    }).catch(() => {});
+                }
+            }
+            playCashSound();
+            renderInventory();
+            notifyUser(`Продано номеров: ${toSell.length} шт. на сумму +${totalCash.toLocaleString('ru-RU')} ₽!`, 'success');
+        }
+        window.sellAllPlates = sellAllPlates;
 
         // --- ГАРАЖ ---
         let currentShopFilter = 'all';
@@ -12867,6 +12944,15 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         let cachedPlayerGrad = null;
         let cachedPlayerNeonColor = null;
         let cachedPlayerNeonGrad = null;
+        let cachedTouchNitroVal = null;
+        let cachedTouchNitroBtn = null;
+        let cachedDriftBadge = null;
+        let cachedQualityBadge = null;
+        let prevNitroText = '';
+        let prevNitroEmpty = null;
+        let prevNitroActive = null;
+        let prevDriftText = '';
+        let prevQualityText = '';
 
         function getSunGrad(ctx) {
             if (!cachedSunGrad) {
@@ -13514,36 +13600,55 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 ctx.restore();
             }
 
-            // Обновление индикатора нитро на мобильной панели
-            const touchNitroVal = document.getElementById('hud-touch-nitro-val');
-            const touchNitroBtn = document.getElementById('btn-touch-nitro');
+            // Обновление индикатора нитро на мобильной панели (кэшировано без лишних DOM мутаций)
+            if (!cachedTouchNitroVal) cachedTouchNitroVal = document.getElementById('hud-touch-nitro-val');
+            if (!cachedTouchNitroBtn) cachedTouchNitroBtn = document.getElementById('btn-touch-nitro');
             const isNitroEmpty = racePlayer.nitroDepleted || racePlayer.nitro <= 0.05;
-            if (touchNitroVal) {
-                touchNitroVal.textContent = isNitroEmpty ? '0% ПУСТО' : `${Math.round(racePlayer.nitro)}%`;
+            const nitroText = isNitroEmpty ? '0% ПУСТО' : `${Math.round(racePlayer.nitro)}%`;
+            if (cachedTouchNitroVal && prevNitroText !== nitroText) {
+                cachedTouchNitroVal.textContent = nitroText;
+                prevNitroText = nitroText;
             }
-            if (touchNitroBtn) {
-                touchNitroBtn.classList.toggle('nitro-empty', isNitroEmpty);
-                touchNitroBtn.classList.toggle('nitro-active', !!racePlayer.isNitroActive);
-            }
-
-            // Обновление плашки дрифта в мобильном заголовке
-            const driftBadge = document.getElementById('game-drift-badge');
-            if (driftBadge) {
-                if (racePlayer.isDrifting || racePlayer.driftCurrentScore > 0) {
-                    driftBadge.textContent = `🌪️ x${racePlayer.driftCombo} | ${Math.round(racePlayer.driftCurrentScore)} PTS`;
-                    driftBadge.classList.remove('hidden');
-                } else {
-                    driftBadge.classList.add('hidden');
+            if (cachedTouchNitroBtn) {
+                if (prevNitroEmpty !== isNitroEmpty) {
+                    cachedTouchNitroBtn.classList.toggle('nitro-empty', isNitroEmpty);
+                    prevNitroEmpty = isNitroEmpty;
+                }
+                const isNitroAct = !!racePlayer.isNitroActive;
+                if (prevNitroActive !== isNitroAct) {
+                    cachedTouchNitroBtn.classList.toggle('nitro-active', isNitroAct);
+                    prevNitroActive = isNitroAct;
                 }
             }
 
-            const qualityBadge = document.getElementById('game-drift-quality');
-            if (qualityBadge) {
-                if (racePlayer.isDrifting && (racePlayer.isCounterSteering || racePlayer.driftQuality)) {
-                    qualityBadge.textContent = racePlayer.isCounterSteering ? '🔄 КОНТР-РУЛЬ' : (racePlayer.driftQuality || '⚡ УГОЛ');
-                    qualityBadge.classList.remove('hidden');
-                } else {
-                    qualityBadge.classList.add('hidden');
+            // Обновление плашки дрифта в мобильном заголовке
+            if (!cachedDriftBadge) cachedDriftBadge = document.getElementById('game-drift-badge');
+            if (cachedDriftBadge) {
+                const isDriftActive = racePlayer.isDrifting || racePlayer.driftCurrentScore > 0;
+                const driftText = isDriftActive ? `🌪️ x${racePlayer.driftCombo} | ${Math.round(racePlayer.driftCurrentScore)} PTS` : '';
+                if (prevDriftText !== driftText) {
+                    prevDriftText = driftText;
+                    if (isDriftActive) {
+                        cachedDriftBadge.textContent = driftText;
+                        cachedDriftBadge.classList.remove('hidden');
+                    } else {
+                        cachedDriftBadge.classList.add('hidden');
+                    }
+                }
+            }
+
+            if (!cachedQualityBadge) cachedQualityBadge = document.getElementById('game-drift-quality');
+            if (cachedQualityBadge) {
+                const isQualActive = racePlayer.isDrifting && (racePlayer.isCounterSteering || racePlayer.driftQuality);
+                const qualText = isQualActive ? (racePlayer.isCounterSteering ? '🔄 КОНТР-РУЛЬ' : (racePlayer.driftQuality || '⚡ УГОЛ')) : '';
+                if (prevQualityText !== qualText) {
+                    prevQualityText = qualText;
+                    if (isQualActive) {
+                        cachedQualityBadge.textContent = qualText;
+                        cachedQualityBadge.classList.remove('hidden');
+                    } else {
+                        cachedQualityBadge.classList.add('hidden');
+                    }
                 }
             }
 
