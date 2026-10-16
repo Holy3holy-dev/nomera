@@ -7182,7 +7182,7 @@
 
             // Road track & chunks
             this.chunkLength = 60;
-            this.numChunks = 8;
+            this.numChunks = 6;
             this.roadChunks = [];
             this.highestChunkZ = 0;
             this.weather = 'night';
@@ -7204,7 +7204,7 @@
             const THREE = this.THREE;
 
             this.scene = new THREE.Scene();
-            this.camera = new THREE.PerspectiveCamera(58, Math.max(0.1, this.width / Math.max(1, this.height)), 0.2, 550);
+            this.camera = new THREE.PerspectiveCamera(58, Math.max(0.1, this.width / Math.max(1, this.height)), 0.2, 320);
 
             try {
                 this.renderer = new THREE.WebGLRenderer({
@@ -7707,6 +7707,35 @@
 
         buildHighwayChunks() {
             const THREE = this.THREE;
+            const L = this.chunkLength;
+            const roadW = 17.5; // 4 lanes
+
+            // Shared reusable geometries across all chunks
+            this.roadGeo = new THREE.PlaneGeometry(roadW, L);
+            this.roadGeo.rotateX(-Math.PI / 2);
+
+            this.grassGeo = new THREE.PlaneGeometry(35, L);
+            this.grassGeo.rotateX(-Math.PI / 2);
+
+            this.dashGeo = new THREE.PlaneGeometry(0.20, 3.6);
+            this.dashGeo.rotateX(-Math.PI / 2);
+
+            this.outerGeo = new THREE.PlaneGeometry(0.25, L);
+            this.outerGeo.rotateX(-Math.PI / 2);
+
+            this.curbBoxGeo = new THREE.BoxGeometry(0.35, 0.04, 1.4);
+
+            this.beamGeo = new THREE.BoxGeometry(0.12, 0.28, L);
+            this.lowerBeamGeo = new THREE.BoxGeometry(0.10, 0.20, L);
+            this.postGeo = new THREE.BoxGeometry(0.10, 0.65, 0.10);
+            this.refGeo = new THREE.BoxGeometry(0.06, 0.12, 0.06);
+
+            this.mastGeo = new THREE.CylinderGeometry(0.12, 0.18, 7.5, 12);
+            this.armGeo = new THREE.BoxGeometry(2.4, 0.10, 0.10);
+            this.lumGeo = new THREE.BoxGeometry(0.70, 0.12, 0.35);
+
+            this.treeTrunkGeo = new THREE.CylinderGeometry(0.18, 0.28, 2.2, 8);
+            this.treeConeGeo = new THREE.ConeGeometry(2.0, 1.9, 7);
 
             // Shared materials for highway assets
             this.asphaltMat = new THREE.MeshStandardMaterial({
@@ -7781,104 +7810,154 @@
 
             const L = this.chunkLength;
             const roadW = 17.5; // 4 lanes
+            const dummy = new THREE.Object3D();
 
             // 1. Asphalt Road Bed
-            const roadGeo = new THREE.PlaneGeometry(roadW, L);
-            roadGeo.rotateX(-Math.PI / 2);
-            const roadMesh = new THREE.Mesh(roadGeo, this.asphaltMat);
+            const roadMesh = new THREE.Mesh(this.roadGeo, this.asphaltMat);
             roadMesh.position.y = 0;
             chunk.add(roadMesh);
 
             // 2. Roadside Grass Verges
             [-1, 1].forEach(side => {
-                const grassGeo = new THREE.PlaneGeometry(35, L);
-                grassGeo.rotateX(-Math.PI / 2);
-                const grass = new THREE.Mesh(grassGeo, this.grassMat);
+                const grass = new THREE.Mesh(this.grassGeo, this.grassMat);
                 grass.position.set(side * (roadW * 0.5 + 17.5), -0.01, 0);
                 chunk.add(grass);
             });
 
-            // 3. Lane Divider Markings (3 dashed white lines)
+            // 3. Lane Divider Markings (3 dashed white lines, instanced)
             const laneStep = roadW / 4; // 4.375m per lane
             const dashL = 3.6;
             const gapL = 3.4;
             const totalDashes = Math.floor(L / (dashL + gapL));
 
-            [-1.5, -0.5, 0.5, 1.5].forEach((laneMult, idx) => {
-                if (idx > 0 && idx < 3) {
-                    // Dashed lines between lanes
-                    const lineX = (idx - 1.5) * laneStep;
+            if (typeof THREE.InstancedMesh === 'function') {
+                const dashInst = new THREE.InstancedMesh(this.dashGeo, this.lineMat, totalDashes * 3);
+                let dIdx = 0;
+                [-laneStep * 0.5, 0, laneStep * 0.5].forEach(lineX => {
                     for (let d = 0; d < totalDashes; d++) {
-                        const dashGeo = new THREE.PlaneGeometry(0.18, dashL);
-                        dashGeo.rotateX(-Math.PI / 2);
-                        const dash = new THREE.Mesh(dashGeo, this.lineMat);
+                        dummy.position.set(lineX, 0.005, -L * 0.5 + d * (dashL + gapL) + dashL * 0.5);
+                        dummy.rotation.set(0, 0, 0);
+                        dummy.scale.set(1, 1, 1);
+                        dummy.updateMatrix();
+                        dashInst.setMatrixAt(dIdx++, dummy.matrix);
+                    }
+                });
+                dashInst.instanceMatrix.needsUpdate = true;
+                chunk.add(dashInst);
+            } else {
+                [-laneStep * 0.5, 0, laneStep * 0.5].forEach(lineX => {
+                    for (let d = 0; d < totalDashes; d++) {
+                        const dash = new THREE.Mesh(this.dashGeo, this.lineMat);
                         dash.position.set(lineX, 0.005, -L * 0.5 + d * (dashL + gapL) + dashL * 0.5);
                         chunk.add(dash);
                     }
-                }
-            });
-
-            // Center dashed line (X = 0)
-            for (let d = 0; d < totalDashes; d++) {
-                const dashGeo = new THREE.PlaneGeometry(0.20, dashL);
-                dashGeo.rotateX(-Math.PI / 2);
-                const dash = new THREE.Mesh(dashGeo, this.lineMat);
-                dash.position.set(0, 0.005, -L * 0.5 + d * (dashL + gapL) + dashL * 0.5);
-                chunk.add(dash);
+                });
             }
 
             // 4. Solid Outer Edge Lines (White/Yellow)
             [-1, 1].forEach(side => {
-                const outerGeo = new THREE.PlaneGeometry(0.25, L);
-                outerGeo.rotateX(-Math.PI / 2);
-                const outerLine = new THREE.Mesh(outerGeo, side === -1 ? this.yellowLineMat : this.lineMat);
+                const outerLine = new THREE.Mesh(this.outerGeo, side === -1 ? this.yellowLineMat : this.lineMat);
                 outerLine.position.set(side * (roadW * 0.5 - 0.4), 0.006, 0);
                 chunk.add(outerLine);
             });
 
-            // 5. Rumble Curb Strips (Alternating Red and White)
+            // 5. Rumble Curb Strips (Alternating Red and White, instanced)
             const curbDashes = Math.floor(L / 1.5);
-            [-1, 1].forEach(side => {
-                const curbX = side * (roadW * 0.5 - 0.05);
-                for (let c = 0; c < curbDashes; c++) {
-                    const mat = (c % 2 === 0) ? this.curbRedMat : this.curbWhiteMat;
-                    const curbGeo = new THREE.BoxGeometry(0.35, 0.04, 1.4);
-                    const curb = new THREE.Mesh(curbGeo, mat);
-                    curb.position.set(curbX, 0.02, -L * 0.5 + c * 1.5 + 0.75);
-                    chunk.add(curb);
-                }
-            });
+            if (typeof THREE.InstancedMesh === 'function') {
+                const curbRedInst = new THREE.InstancedMesh(this.curbBoxGeo, this.curbRedMat, curbDashes);
+                const curbWhiteInst = new THREE.InstancedMesh(this.curbBoxGeo, this.curbWhiteMat, curbDashes);
+                let rIdx = 0, wIdx = 0;
+                [-1, 1].forEach(side => {
+                    const curbX = side * (roadW * 0.5 - 0.05);
+                    for (let c = 0; c < curbDashes; c++) {
+                        dummy.position.set(curbX, 0.02, -L * 0.5 + c * 1.5 + 0.75);
+                        dummy.rotation.set(0, 0, 0);
+                        dummy.scale.set(1, 1, 1);
+                        dummy.updateMatrix();
+                        if (c % 2 === 0) {
+                            curbRedInst.setMatrixAt(rIdx++, dummy.matrix);
+                        } else {
+                            curbWhiteInst.setMatrixAt(wIdx++, dummy.matrix);
+                        }
+                    }
+                });
+                curbRedInst.instanceMatrix.needsUpdate = true;
+                curbWhiteInst.instanceMatrix.needsUpdate = true;
+                chunk.add(curbRedInst);
+                chunk.add(curbWhiteInst);
+            } else {
+                [-1, 1].forEach(side => {
+                    const curbX = side * (roadW * 0.5 - 0.05);
+                    for (let c = 0; c < curbDashes; c++) {
+                        const mat = (c % 2 === 0) ? this.curbRedMat : this.curbWhiteMat;
+                        const curb = new THREE.Mesh(this.curbBoxGeo, mat);
+                        curb.position.set(curbX, 0.02, -L * 0.5 + c * 1.5 + 0.75);
+                        chunk.add(curb);
+                    }
+                });
+            }
 
             // 6. Double Corrugated Steel Guardrails (Crash Barriers)
             [-1, 1].forEach(side => {
                 const railX = side * (roadW * 0.5 + 0.45);
                 // Upper beam
-                const beamGeo = new THREE.BoxGeometry(0.12, 0.28, L);
-                const beam = new THREE.Mesh(beamGeo, this.guardrailMat);
+                const beam = new THREE.Mesh(this.beamGeo, this.guardrailMat);
                 beam.position.set(railX, 0.52, 0);
                 chunk.add(beam);
 
                 // Lower beam
-                const lowerBeamGeo = new THREE.BoxGeometry(0.10, 0.20, L);
-                const lowerBeam = new THREE.Mesh(lowerBeamGeo, this.guardrailMat);
+                const lowerBeam = new THREE.Mesh(this.lowerBeamGeo, this.guardrailMat);
                 lowerBeam.position.set(railX, 0.24, 0);
                 chunk.add(lowerBeam);
-
-                // Guardrail Posts every 4.0 meters
-                const postCount = Math.floor(L / 4.0);
-                for (let p = 0; p < postCount; p++) {
-                    const postGeo = new THREE.BoxGeometry(0.10, 0.65, 0.10);
-                    const post = new THREE.Mesh(postGeo, this.guardrailMat);
-                    post.position.set(railX, 0.32, -L * 0.5 + p * 4.0);
-                    chunk.add(post);
-
-                    // Reflective warning marker on post
-                    const refMat = (side === 1) ? this.curbRedMat : this.curbWhiteMat;
-                    const refMesh = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.12, 0.06), refMat);
-                    refMesh.position.set(railX - side * 0.06, 0.56, -L * 0.5 + p * 4.0);
-                    chunk.add(refMesh);
-                }
             });
+
+            // Guardrail Posts & Reflectors (Instanced)
+            const postCount = Math.floor(L / 4.0);
+            if (typeof THREE.InstancedMesh === 'function') {
+                const postInst = new THREE.InstancedMesh(this.postGeo, this.guardrailMat, postCount * 2);
+                const refWhiteInst = new THREE.InstancedMesh(this.refGeo, this.curbWhiteMat, postCount);
+                const refRedInst = new THREE.InstancedMesh(this.refGeo, this.curbRedMat, postCount);
+                let pIdx = 0;
+                [-1, 1].forEach((side) => {
+                    const railX = side * (roadW * 0.5 + 0.45);
+                    for (let p = 0; p < postCount; p++) {
+                        const postZ = -L * 0.5 + p * 4.0;
+                        dummy.position.set(railX, 0.32, postZ);
+                        dummy.rotation.set(0, 0, 0);
+                        dummy.scale.set(1, 1, 1);
+                        dummy.updateMatrix();
+                        postInst.setMatrixAt(pIdx++, dummy.matrix);
+
+                        dummy.position.set(railX - side * 0.06, 0.56, postZ);
+                        dummy.updateMatrix();
+                        if (side === -1) {
+                            refWhiteInst.setMatrixAt(p, dummy.matrix);
+                        } else {
+                            refRedInst.setMatrixAt(p, dummy.matrix);
+                        }
+                    }
+                });
+                postInst.instanceMatrix.needsUpdate = true;
+                refWhiteInst.instanceMatrix.needsUpdate = true;
+                refRedInst.instanceMatrix.needsUpdate = true;
+                chunk.add(postInst);
+                chunk.add(refWhiteInst);
+                chunk.add(refRedInst);
+            } else {
+                [-1, 1].forEach((side) => {
+                    const railX = side * (roadW * 0.5 + 0.45);
+                    for (let p = 0; p < postCount; p++) {
+                        const post = new THREE.Mesh(this.postGeo, this.guardrailMat);
+                        post.position.set(railX, 0.32, -L * 0.5 + p * 4.0);
+                        chunk.add(post);
+
+                        const refMat = (side === 1) ? this.curbRedMat : this.curbWhiteMat;
+                        const refMesh = new THREE.Mesh(this.refGeo, refMat);
+                        refMesh.position.set(railX - side * 0.06, 0.56, -L * 0.5 + p * 4.0);
+                        chunk.add(refMesh);
+                    }
+                });
+            }
 
             // 7. Highway Lampposts (every 40 meters)
             [-1, 1].forEach(side => {
@@ -7887,21 +7966,18 @@
                 lampGroup.position.set(lampX, 0, 0);
 
                 // Arched Vertical Mast
-                const mastGeo = new THREE.CylinderGeometry(0.12, 0.18, 7.5, 12);
-                const mast = new THREE.Mesh(mastGeo, this.lampPostMat);
+                const mast = new THREE.Mesh(this.mastGeo, this.lampPostMat);
                 mast.position.y = 3.75;
                 lampGroup.add(mast);
 
                 // Horizontal Cantilever Arm over road
-                const armGeo = new THREE.BoxGeometry(2.4, 0.10, 0.10);
-                const arm = new THREE.Mesh(armGeo, this.lampPostMat);
+                const arm = new THREE.Mesh(this.armGeo, this.lampPostMat);
                 arm.position.set(-side * 1.1, 7.3, 0);
                 arm.rotation.z = side * 0.14;
                 lampGroup.add(arm);
 
                 // Glowing Lamp Luminaire Head
-                const lumGeo = new THREE.BoxGeometry(0.70, 0.12, 0.35);
-                const lum = new THREE.Mesh(lumGeo, this.lampLightMat);
+                const lum = new THREE.Mesh(this.lumGeo, this.lampLightMat);
                 lum.position.set(-side * 2.2, 7.1, 0);
                 lampGroup.add(lum);
 
@@ -7928,7 +8004,7 @@
                 gantryGroup.add(truss);
 
                 // Large Green Russian Highway Information Signs
-                [-3.8, 3.8].forEach((signX, sIdx) => {
+                [-3.8, 3.8].forEach((signX) => {
                     const signGeo = new THREE.BoxGeometry(5.2, 1.8, 0.12);
                     const signMesh = new THREE.Mesh(signGeo, this.signGreenMat);
                     signMesh.position.set(signX, 6.8, -0.42);
@@ -7956,31 +8032,55 @@
                 chunk.add(gantryGroup);
             }
 
-            // 9. Roadside Low-Poly Pine and Birch Trees along shoulders
-            for (let t = 0; t < 6; t++) {
-                const side = (t % 2 === 0) ? -1 : 1;
-                const treeX = side * (roadW * 0.5 + 3.5 + Math.random() * 6.0);
-                const treeZ = -L * 0.5 + t * (L / 6) + (Math.random() - 0.5) * 4.0;
-                const treeH = 5.0 + Math.random() * 3.5;
+            // 9. Roadside Low-Poly Pine and Birch Trees along shoulders (Instanced)
+            if (typeof THREE.InstancedMesh === 'function') {
+                const trunkInst = new THREE.InstancedMesh(this.treeTrunkGeo, this.treeTrunkMat, 6);
+                const coneInst = new THREE.InstancedMesh(this.treeConeGeo, this.treeFoliageMat, 18);
+                let coneIdx = 0;
+                for (let t = 0; t < 6; t++) {
+                    const side = (t % 2 === 0) ? -1 : 1;
+                    const treeX = side * (roadW * 0.5 + 4.0 + (t * 2.3) % 4.5);
+                    const treeZ = -L * 0.5 + t * (L / 6) + 3.5;
+                    const scale = 0.85 + (t % 3) * 0.22;
 
-                const tree = new THREE.Group();
-                tree.position.set(treeX, 0, treeZ);
+                    // Trunk
+                    dummy.position.set(treeX, 1.1 * scale, treeZ);
+                    dummy.rotation.set(0, t * 1.05, 0);
+                    dummy.scale.set(scale, scale, scale);
+                    dummy.updateMatrix();
+                    trunkInst.setMatrixAt(t, dummy.matrix);
 
-                // Trunk
-                const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.28, treeH * 0.4, 8), this.treeTrunkMat);
-                trunk.position.y = treeH * 0.2;
-                tree.add(trunk);
-
-                // Foliage Cones (Pine style)
-                for (let tier = 0; tier < 3; tier++) {
-                    const coneR = (2.2 - tier * 0.5);
-                    const coneH = treeH * 0.35;
-                    const cone = new THREE.Mesh(new THREE.ConeGeometry(coneR, coneH, 7), this.treeFoliageMat);
-                    cone.position.y = treeH * 0.28 + tier * (coneH * 0.7);
-                    tree.add(cone);
+                    // 3 Foliage Cones
+                    for (let tier = 0; tier < 3; tier++) {
+                        const tierScale = scale * (1.0 - tier * 0.18);
+                        dummy.position.set(treeX, (1.4 + tier * 1.05) * scale, treeZ);
+                        dummy.rotation.set(0, t * 1.05 + tier * 0.5, 0);
+                        dummy.scale.set(tierScale, scale, tierScale);
+                        dummy.updateMatrix();
+                        coneInst.setMatrixAt(coneIdx++, dummy.matrix);
+                    }
                 }
-
-                chunk.add(tree);
+                trunkInst.instanceMatrix.needsUpdate = true;
+                coneInst.instanceMatrix.needsUpdate = true;
+                chunk.add(trunkInst);
+                chunk.add(coneInst);
+            } else {
+                for (let t = 0; t < 6; t++) {
+                    const side = (t % 2 === 0) ? -1 : 1;
+                    const treeX = side * (roadW * 0.5 + 4.0 + (t * 2.3) % 4.5);
+                    const treeZ = -L * 0.5 + t * (L / 6) + 3.5;
+                    const tree = new THREE.Group();
+                    tree.position.set(treeX, 0, treeZ);
+                    const trunk = new THREE.Mesh(this.treeTrunkGeo, this.treeTrunkMat);
+                    trunk.position.y = 1.1;
+                    tree.add(trunk);
+                    for (let tier = 0; tier < 3; tier++) {
+                        const cone = new THREE.Mesh(this.treeConeGeo, this.treeFoliageMat);
+                        cone.position.y = 1.4 + tier * 1.05;
+                        tree.add(cone);
+                    }
+                    chunk.add(tree);
+                }
             }
 
             return chunk;

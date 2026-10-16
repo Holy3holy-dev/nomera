@@ -3488,11 +3488,22 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         }
 
         // --- ДВИЖОК ПРОКРУТКИ ЯЧЕЕК (CELL-BY-CELL REEL ENGINE) ---
+        const cellSpanCache = {};
+        function getCellSpan(cellId) {
+            if (!cellSpanCache[cellId]) {
+                const cell = document.getElementById(cellId);
+                if (cell) {
+                    cellSpanCache[cellId] = cell.querySelector('.char-span');
+                }
+            }
+            return cellSpanCache[cellId];
+        }
+
         function setCellChar(cellId, char) {
-            const cell = document.getElementById(cellId);
-            if (cell) {
-                const span = cell.querySelector('.char-span');
-                if (span) span.innerText = char;
+            const span = getCellSpan(cellId);
+            if (span) {
+                span.textContent = char;
+                span.innerText = char;
             }
         }
 
@@ -3500,8 +3511,10 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             initAudio();
             isSpinning = true;
 
-            const animStyle = document.getElementById('anim-style-select').value;
-            const isTurbo = document.getElementById('turbo-toggle').checked;
+            const animStyleSelect = document.getElementById('anim-style-select');
+            const animStyle = animStyleSelect ? animStyleSelect.value : 'cascade';
+            const turboToggle = document.getElementById('turbo-toggle');
+            const isTurbo = !!(turboToggle && turboToggle.checked);
 
             const stopDelays = {};
             const speedScale = isTurbo ? 0.35 : 1.0;
@@ -3546,32 +3559,89 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 });
             }
 
-            const startTime = performance.now();
-            const activeCells = new Set(targets);
-
+            const targetElements = {};
             targets.forEach(id => {
                 const cellEl = document.getElementById(id);
                 if (cellEl) {
+                    targetElements[id] = cellEl;
                     cellEl.classList.add('spinning');
                     cellEl.classList.remove('stopped');
                 }
             });
 
-            let maxDuration = Math.max(...Object.values(stopDelays)) + 150;
+            const startTime = performance.now();
+            const activeCells = new Set(targets);
+            const maxDuration = Math.max(...Object.values(stopDelays)) + 150;
+            let lastTickTime = 0;
+            let animFrameId = null;
 
-            const spinInterval = setInterval(() => {
-                const elapsed = performance.now() - startTime;
-                playTick();
+            const requestAnim = (typeof window !== 'undefined' && window.requestAnimationFrame) ? window.requestAnimationFrame.bind(window) : (cb => setTimeout(cb, 16));
+            const cancelAnim = (typeof window !== 'undefined' && window.cancelAnimationFrame) ? window.cancelAnimationFrame.bind(window) : (id => clearTimeout(id));
+
+            function finishSpin() {
+                if (animFrameId) cancelAnim(animFrameId);
+                targets.forEach(id => {
+                    const cellEl = targetElements[id] || document.getElementById(id);
+                    if (cellEl) cellEl.classList.remove('spinning');
+                    setCellChar(id, finalValues[id]);
+                });
+
+                isSpinning = false;
+                checkCanSaveButton();
+                saveProgress();
+
+                if (boardHasLetters && boardHasNumbers) {
+                    let finalPrice = calculatePrice();
+                    let r = getRarity(finalPrice);
+                    flashPlateReward(r.text);
+                    const isHighTier = ['Редкий', 'Супер редкий', 'Эпический', 'Легендарный', 'БЛАТНОЙ', 'Крутой', 'Мифический'].includes(r.text);
+                    if (isHighTier) {
+                        pityCounterBoth = 0;
+                        updatePityUI();
+                    }
+                    if (r.text === "БЛАТНОЙ" || r.text === "Легендарный" || r.text === "Крутой" || r.text === "Мифический") {
+                        triggerLegendaryEffect();
+                        triggerScreenShake();
+                        playWinJingle(r.text);
+                        if (typeof sound?.haptic === 'function') sound.haptic('win');
+                    } else if (r.text === "Эпический") {
+                        playWinJingle(r.text);
+                        if (typeof sound?.haptic === 'function') sound.haptic('win');
+                    } else if (r.text === "Редкий") {
+                        if (typeof sound?.haptic === 'function') sound.haptic('medium');
+                    } else if (r.text === "Супер редкий") {
+                        playWinJingle(r.text);
+                        if (typeof sound?.haptic === 'function') sound.haptic('win');
+                    }
+                    const curPlateText = `${currentL1} ${currentNum} ${currentL2}${currentL3} | ${currentReg} RUS`;
+                    logPlayerActivity('Крутит номер', `Выпал госномер «${curPlateText}» (${escapeHtml(r.text)}, ${finalPrice.toLocaleString('ru-RU')} ₽)`);
+                    recordQuestProgress('spins', 1);
+                    checkAchievements();
+                }
+
+                if (onFinish) onFinish();
+            }
+
+            function frameStep(now) {
+                const elapsed = now - startTime;
+
+                if (now - lastTickTime >= 48) {
+                    lastTickTime = now;
+                    playTick();
+                    activeCells.forEach(id => {
+                        if (id.startsWith('cell-l')) setCellChar(id, randomItem(lettersArr));
+                        else setCellChar(id, Math.floor(Math.random() * 10).toString());
+                    });
+                }
 
                 activeCells.forEach(id => {
-                    if (id.startsWith('cell-l')) setCellChar(id, randomItem(lettersArr));
-                    else setCellChar(id, Math.floor(Math.random() * 10).toString());
-
                     if (elapsed >= stopDelays[id]) {
                         activeCells.delete(id);
-                        const cellEl = document.getElementById(id);
-                        cellEl.classList.remove('spinning');
-                        cellEl.classList.add('stopped');
+                        const cellEl = targetElements[id] || document.getElementById(id);
+                        if (cellEl) {
+                            cellEl.classList.remove('spinning');
+                            cellEl.classList.add('stopped');
+                        }
                         setCellChar(id, finalValues[id]);
 
                         let pitch = 0.9 + (targets.indexOf(id) * 0.1);
@@ -3581,49 +3651,13 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 });
 
                 if (activeCells.size === 0 || elapsed > maxDuration) {
-                    clearInterval(spinInterval);
-                    targets.forEach(id => {
-                        const cellEl = document.getElementById(id);
-                        cellEl.classList.remove('spinning');
-                        setCellChar(id, finalValues[id]);
-                    });
-
-                    isSpinning = false;
-                    checkCanSaveButton();
-                    saveProgress();
-
-                    if (boardHasLetters && boardHasNumbers) {
-                        let finalPrice = calculatePrice();
-                        let r = getRarity(finalPrice);
-                        flashPlateReward(r.text);
-                        const isHighTier = ['Редкий', 'Супер редкий', 'Эпический', 'Легендарный', 'БЛАТНОЙ', 'Крутой', 'Мифический'].includes(r.text);
-                        if (isHighTier) {
-                            pityCounterBoth = 0;
-                            updatePityUI();
-                        }
-                        if (r.text === "БЛАТНОЙ" || r.text === "Легендарный" || r.text === "Крутой" || r.text === "Мифический") {
-                            triggerLegendaryEffect();
-                            triggerScreenShake();
-                            playWinJingle(r.text);
-                            if (typeof sound?.haptic === 'function') sound.haptic('win');
-                        } else if (r.text === "Эпический") {
-                            playWinJingle(r.text);
-                            if (typeof sound?.haptic === 'function') sound.haptic('win');
-                        } else if (r.text === "Редкий") {
-                            if (typeof sound?.haptic === 'function') sound.haptic('medium');
-                        } else if (r.text === "Супер редкий") {
-                            playWinJingle(r.text);
-                            if (typeof sound?.haptic === 'function') sound.haptic('win');
-                        }
-                        const curPlateText = `${currentL1} ${currentNum} ${currentL2}${currentL3} | ${currentReg} RUS`;
-                        logPlayerActivity('Крутит номер', `Выпал госномер «${curPlateText}» (${escapeHtml(r.text)}, ${finalPrice.toLocaleString('ru-RU')} ₽)`);
-                        recordQuestProgress('spins', 1);
-                        checkAchievements();
-                    }
-
-                    if (onFinish) onFinish();
+                    finishSpin();
+                } else {
+                    animFrameId = requestAnim(frameStep);
                 }
-            }, 55);
+            }
+
+            animFrameId = requestAnim(frameStep);
         }
 
         // One generator UI. Signed-in players receive a server-authorized number;
@@ -10773,69 +10807,115 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 const initPursuitBox = document.getElementById('hud-3d-pursuit-box');
                 if (initPursuitBox) initPursuitBox.classList.add('hidden');
 
+                const hud3DElements = {
+                    speedNum: document.getElementById('hud-3d-speed-num'),
+                    gearBadge: document.getElementById('hud-3d-gear'),
+                    tachFill: document.getElementById('hud-3d-tach-fill'),
+                    nitroFill: document.getElementById('hud-3d-nitro-fill'),
+                    nitroText: document.getElementById('hud-3d-nitro-text'),
+                    nitroTouch: document.getElementById('hud-3d-touch-nitro-val'),
+                    distEl: document.getElementById('hud-3d-dist'),
+                    cashEl: document.getElementById('hud-3d-cash'),
+                    fuelEl: document.getElementById('hud-3d-fuel'),
+                    driftBadge: document.getElementById('game-3d-drift-badge'),
+                    comboBadge: document.getElementById('game-3d-combo-badge'),
+                    weatherText: document.getElementById('hud-3d-weather-text'),
+                    pursuitBox: document.getElementById('hud-3d-pursuit-box'),
+                    pursuitStars: document.getElementById('hud-3d-wanted-stars'),
+                    pursuitStatus: document.getElementById('hud-3d-pursuit-status'),
+                    escapeBar: document.getElementById('hud-3d-escape-bar')
+                };
+                const prevHudState = {};
+
                 car3DRacingEngine = new Car3DManager.Car3DRacingEngine(container, {
                     onUpdateHUD: (hud) => {
-                        const speedNum = document.getElementById('hud-3d-speed-num');
-                        const gearBadge = document.getElementById('hud-3d-gear');
-                        const tachFill = document.getElementById('hud-3d-tach-fill');
-                        const nitroFill = document.getElementById('hud-3d-nitro-fill');
-                        const nitroText = document.getElementById('hud-3d-nitro-text');
-                        const nitroTouch = document.getElementById('hud-3d-touch-nitro-val');
-                        const distEl = document.getElementById('hud-3d-dist');
-                        const cashEl = document.getElementById('hud-3d-cash');
-                        const fuelEl = document.getElementById('hud-3d-fuel');
-                        const driftBadge = document.getElementById('game-3d-drift-badge');
-                        const comboBadge = document.getElementById('game-3d-combo-badge');
-                        const weatherText = document.getElementById('hud-3d-weather-text');
-
-                        if (speedNum) speedNum.textContent = hud.speed;
-                        if (gearBadge) gearBadge.textContent = hud.gear;
-                        if (tachFill) tachFill.style.width = hud.rpmPercent + '%';
-                        if (nitroFill) nitroFill.style.width = hud.nitroLevel + '%';
-                        if (nitroText) nitroText.textContent = hud.nitroLevel + '%';
-                        if (nitroTouch) nitroTouch.textContent = hud.nitroLevel + '%';
-                        if (distEl) distEl.textContent = hud.distanceKm.toFixed(2) + ' км';
-                        if (cashEl) cashEl.textContent = '+' + hud.earnedCash.toLocaleString('ru-RU') + ' ₽';
-                        if (fuelEl) fuelEl.textContent = hud.fuelCurrent.toFixed(1) + ' л';
-                        if (weatherText && hud.weatherTitle) {
+                        const els = hud3DElements;
+                        if (els.speedNum && prevHudState.speed !== hud.speed) {
+                            els.speedNum.textContent = hud.speed;
+                            prevHudState.speed = hud.speed;
+                        }
+                        if (els.gearBadge && prevHudState.gear !== hud.gear) {
+                            els.gearBadge.textContent = hud.gear;
+                            prevHudState.gear = hud.gear;
+                        }
+                        if (els.tachFill && prevHudState.rpmPercent !== hud.rpmPercent) {
+                            els.tachFill.style.width = hud.rpmPercent + '%';
+                            prevHudState.rpmPercent = hud.rpmPercent;
+                        }
+                        if (els.nitroFill && prevHudState.nitroLevel !== hud.nitroLevel) {
+                            els.nitroFill.style.width = hud.nitroLevel + '%';
+                            if (els.nitroText) els.nitroText.textContent = hud.nitroLevel + '%';
+                            if (els.nitroTouch) els.nitroTouch.textContent = hud.nitroLevel + '%';
+                            prevHudState.nitroLevel = hud.nitroLevel;
+                        }
+                        const distStr = hud.distanceKm.toFixed(2) + ' км';
+                        if (els.distEl && prevHudState.distStr !== distStr) {
+                            els.distEl.textContent = distStr;
+                            prevHudState.distStr = distStr;
+                        }
+                        if (els.cashEl && prevHudState.earnedCash !== hud.earnedCash) {
+                            els.cashEl.textContent = '+' + hud.earnedCash.toLocaleString('ru-RU') + ' ₽';
+                            prevHudState.earnedCash = hud.earnedCash;
+                        }
+                        const fuelStr = hud.fuelCurrent.toFixed(1) + ' л';
+                        if (els.fuelEl && prevHudState.fuelStr !== fuelStr) {
+                            els.fuelEl.textContent = fuelStr;
+                            prevHudState.fuelStr = fuelStr;
+                        }
+                        if (els.weatherText && hud.weatherTitle && prevHudState.weatherTitle !== hud.weatherTitle) {
                             const icon = hud.weatherIcon || '🌦️';
                             const firstWord = hud.weatherTitle.split(' ')[0];
-                            weatherText.textContent = `${icon} ${firstWord} [T]`;
+                            els.weatherText.textContent = `${icon} ${firstWord} [T]`;
+                            prevHudState.weatherTitle = hud.weatherTitle;
                         }
 
-                        if (driftBadge) {
-                            driftBadge.classList.toggle('hidden', !hud.isDrifting && hud.driftScore === 0);
-                            if (hud.isDrifting) {
-                                driftBadge.textContent = `🌪️ ДРИФТ x${hud.driftCombo}`;
+                        if (els.driftBadge) {
+                            const showDrift = hud.isDrifting || hud.driftScore > 0;
+                            if (prevHudState.showDrift !== showDrift) {
+                                els.driftBadge.classList.toggle('hidden', !showDrift);
+                                prevHudState.showDrift = showDrift;
+                            }
+                            if (hud.isDrifting && prevHudState.driftCombo !== hud.driftCombo) {
+                                els.driftBadge.textContent = `🌪️ ДРИФТ x${hud.driftCombo}`;
+                                prevHudState.driftCombo = hud.driftCombo;
                             }
                         }
-                        if (comboBadge) {
-                            comboBadge.classList.toggle('hidden', hud.overtakeCombo <= 1);
-                            if (hud.overtakeCombo > 1) {
-                                comboBadge.textContent = `🔥 x${hud.overtakeCombo} ОБГОН`;
+                        if (els.comboBadge) {
+                            const showCombo = hud.overtakeCombo > 1;
+                            if (prevHudState.showCombo !== showCombo) {
+                                els.comboBadge.classList.toggle('hidden', !showCombo);
+                                prevHudState.showCombo = showCombo;
+                            }
+                            if (showCombo && prevHudState.overtakeCombo !== hud.overtakeCombo) {
+                                els.comboBadge.textContent = `🔥 x${hud.overtakeCombo} ОБГОН`;
+                                prevHudState.overtakeCombo = hud.overtakeCombo;
                             }
                         }
 
                         // 🚨 Police Pursuit & Wanted Stars HUD sync
-                        const pursuitBox = document.getElementById('hud-3d-pursuit-box');
-                        const pursuitStars = document.getElementById('hud-3d-wanted-stars');
-                        const pursuitStatus = document.getElementById('hud-3d-pursuit-status');
-                        const escapeBar = document.getElementById('hud-3d-escape-bar');
-
-                        if (pursuitBox) {
+                        if (els.pursuitBox) {
                             if (hud.wantedStars > 0) {
-                                pursuitBox.classList.remove('hidden');
-                                if (pursuitStars) pursuitStars.textContent = '⭐'.repeat(hud.wantedStars);
-                                if (pursuitStatus) {
-                                    pursuitStatus.textContent = hud.escapePercent > 0
+                                if (prevHudState.wantedStars !== hud.wantedStars) {
+                                    els.pursuitBox.classList.remove('hidden');
+                                    if (els.pursuitStars) els.pursuitStars.textContent = '⭐'.repeat(hud.wantedStars);
+                                    prevHudState.wantedStars = hud.wantedStars;
+                                }
+                                if (els.pursuitStatus) {
+                                    const statusText = hud.escapePercent > 0
                                         ? `⚡ УХОД: ${hud.escapeTimer}с (${hud.escapePercent}%)`
                                         : (hud.bustedTimer > 0 ? `🚨 ЗАДЕРЖАНИЕ ${(2.8 - hud.bustedTimer).toFixed(1)}с` : `🚨 ПОГОНЯ ДПС (${hud.nearestPoliceDist}м)`);
+                                    if (prevHudState.statusText !== statusText) {
+                                        els.pursuitStatus.textContent = statusText;
+                                        prevHudState.statusText = statusText;
+                                    }
                                 }
-                                if (escapeBar) {
-                                    escapeBar.style.width = (100 - hud.escapePercent) + '%';
+                                if (els.escapeBar && prevHudState.escapePercent !== hud.escapePercent) {
+                                    els.escapeBar.style.width = (100 - hud.escapePercent) + '%';
+                                    prevHudState.escapePercent = hud.escapePercent;
                                 }
-                            } else {
-                                pursuitBox.classList.add('hidden');
+                            } else if (prevHudState.wantedStars !== 0) {
+                                els.pursuitBox.classList.add('hidden');
+                                prevHudState.wantedStars = 0;
                             }
                         }
 
