@@ -70,6 +70,8 @@ async function adjustBalance(db,key,value,isDelta) {
     const confirmed=tx.snapshot.val().balance;
     // Legacy mirror is non-authoritative after online migration.
     await db.ref('users/'+key+'/balance').set(confirmed);
+    await db.ref('leaderboard/'+key).update({balance: confirmed, updatedAt: Date.now()}).catch(()=>{});
+    await db.ref('presence/'+key).update({balance: confirmed, lastActive: Date.now()}).catch(()=>{});
     return confirmed;
   }
   const ref=db.ref('users/'+key);
@@ -87,7 +89,9 @@ async function adjustBalance(db,key,value,isDelta) {
   }, undefined, false);
   if (!result.committed) throw Error('Баланс выходит за допустимые пределы');
   const profile=result.snapshot.val();
+  await db.ref('onlineV4/accounts/'+key).update({nickname:profile.nickname||key,balance:profile.balance,updatedAt:Date.now()}).catch(()=>{});
   await db.ref('leaderboard/'+key).update({nickname:profile.nickname,balance:profile.balance,playerLevel:profile.playerLevel||1,updatedAt:Date.now()});
+  await db.ref('presence/'+key).update({balance: profile.balance, lastActive: Date.now()}).catch(()=>{});
   return profile.balance;
 }
 async function addCars(db,key,names) {

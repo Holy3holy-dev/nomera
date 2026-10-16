@@ -388,3 +388,72 @@ test('updatePlayerPresence writes presence data and helpers format correctly', (
     const actStr = app.run(`formatLastActive(${twoSecAgo})`);
     assert(actStr.includes('только что') || actStr.includes('сек.'), 'Fresh activity must show recent seconds');
 });
+
+test('admin grant balance to player (e.g. aner) survives subsequent player actions (buy car, sell car, deduct balance)', () => {
+    const listeners = {};
+    const fakeDb = {
+        ref(path) {
+            return {
+                on(ev, cb) {
+                    listeners[path] = cb;
+                },
+                off() {
+                    delete listeners[path];
+                },
+                update: () => Promise.resolve(),
+                set: () => Promise.resolve(),
+                once: () => Promise.resolve({ val: () => null, exists: () => false })
+            };
+        }
+    };
+
+    const app = createApp({
+        cloud: fakeDb,
+        saved: {
+            nickname: 'aner',
+            balance: 50000,
+            myCars: [{ name: 'ВАЗ-2107 «Жигули»', condition: 100, plate: null }],
+            inventory: []
+        }
+    });
+    app.run('loadProgress();');
+    app.run(`
+        onlineProfile = {
+            nickname: 'aner',
+            balance: 50000,
+            inventory: [],
+            myCars: [{ name: 'ВАЗ-2107 «Жигули»', condition: 100, plate: null }]
+        };
+        attachMyOnlineAccount('aner');
+    `);
+
+    assert(listeners['onlineV4/accounts/aner'], 'Listener must be attached to onlineV4/accounts/aner');
+
+    // Admin grants 100,000,000 ₽ to aner
+    listeners['onlineV4/accounts/aner']({
+        val: () => ({
+            nickname: 'aner',
+            balance: 100000000,
+            inventory: [],
+            myCars: [{ name: 'ВАЗ-2107 «Жигули»', condition: 100, plate: null }]
+        })
+    });
+
+    // onlineProfile balance is updated to 100,000,000
+    assert.equal(app.run('onlineProfile.balance'), 100000000);
+
+    // Player buys BMW M5 F90 Competition (11,500,000 ₽)
+    app.run('buyCar("BMW M5 F90 Competition");');
+    assert.equal(app.run('myCars[0].name'), 'BMW M5 F90 Competition');
+    assert.equal(app.run('onlineProfile.balance'), 88500000);
+
+    // Player sells a car
+    app.run('sellCar(0, false);');
+    assert(app.run('onlineProfile.balance') > 88500000);
+
+    // Player spends balance on service / tuning
+    const prev = app.run('onlineProfile.balance');
+    const deducted = app.run('deductPlayerBalance(50000, "Тюнинг");');
+    assert.equal(deducted, true);
+    assert.equal(app.run('onlineProfile.balance'), prev - 50000);
+});
