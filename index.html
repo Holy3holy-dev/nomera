@@ -18,9 +18,17 @@
                     for (let reg of regs) reg.unregister();
                 });
             } else {
+                let refreshing = false;
+                navigator.serviceWorker.addEventListener('controllerchange', () => {
+                    if (!refreshing) {
+                        refreshing = true;
+                        window.location.reload();
+                    }
+                });
                 window.addEventListener('load', () => {
-                    navigator.serviceWorker.register('./sw.js')
-                        .catch(error => console.warn('Service Worker registration failed:', error));
+                    navigator.serviceWorker.register('./sw.js').then(reg => {
+                        if (typeof reg.update === 'function') reg.update();
+                    }).catch(error => console.warn('Service Worker registration failed:', error));
                 });
             }
         }
@@ -1578,7 +1586,7 @@
             document.write('<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"><\/script>');
         }
     </script>
-    <script src="./js/car-3d.js?v=0db4ff8ccad7"></script>
+    <script src="./js/car-3d.js?v=9aff5b8bb385"></script>
     <script src="./js/app.js?v=7ed290a3b561"></script>
 </body>
 </html>

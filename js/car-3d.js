@@ -6661,6 +6661,7 @@
             const w = Math.floor(rect && rect.width ? rect.width : (this.container.clientWidth || 0));
             const h = Math.floor(rect && rect.height ? rect.height : (this.container.clientHeight || 0));
             if (w <= 0 || h <= 0) return;
+            if (this.width === w && this.height === h) return;
             this.width = w;
             this.height = h;
             this.camera.aspect = w / h;
@@ -9790,6 +9791,7 @@
                 const w = Math.floor(rect && rect.width ? rect.width : (this.container.clientWidth || 800));
                 const h = Math.floor(rect && rect.height ? rect.height : (this.container.clientHeight || 500));
                 if (w > 0 && h > 0) {
+                    if (this.width === w && this.height === h) return;
                     this.width = w;
                     this.height = h;
                     this.camera.aspect = w / h;
