@@ -635,9 +635,6 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             renderLeaderboard();
             renderAvatarPresets();
             setupOnlinePresence();
-            setTimeout(() => {
-                try { preloadUserGarageModels(); } catch (_) {}
-            }, 600);
             const onlineBoot = setupMultiplayerListeners();
             // Check the server cookie BEFORE prompting a returning player to register.
             if (typeof fetch === 'function') {
@@ -4631,22 +4628,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             });
             list.innerHTML = html;
 
-            filteredCars.forEach((car, idx) => {
-                const imgId = 'shop-car-img-' + encodeURIComponent(car.name).replace(/%/g, '_') + '-' + idx;
-                const cached3D = (typeof Car3DManager !== 'undefined' && Car3DManager.getSideThumbnail) ? Car3DManager.getSideThumbnail(car.name) : null;
-                if (!cached3D && typeof Car3DManager !== 'undefined' && typeof Car3DManager.renderSideThumbnail === 'function') {
-                    Car3DManager.renderSideThumbnail(car.name, {}, (url) => {
-                        if (url) {
-                            const img = document.getElementById(imgId);
-                            if (img) img.src = url;
-                        }
-                    });
-                }
-            });
         }
 
         function renderCars() {
-            try { preloadUserGarageModels(); } catch (_) {}
             renderShopCars();
             let myCarsDiv = document.getElementById('my-cars');
 
@@ -4789,23 +4773,6 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 `;
             });
             myCarsDiv.innerHTML = html;
-
-            // Asynchronously load 3D side profile for garage cars
-            myCars.forEach((car, index) => {
-                const myImgId = 'my-car-img-' + index;
-                const carEffectiveStyling = Object.assign({}, car.styling || {}, {
-                    plate: car.plate ? (car.plate.text || car.plate) : 'none'
-                });
-                const cachedMy3D = (typeof Car3DManager !== 'undefined' && Car3DManager.getSideThumbnail) ? Car3DManager.getSideThumbnail(car.name, carEffectiveStyling) : null;
-                if (!cachedMy3D && typeof Car3DManager !== 'undefined' && typeof Car3DManager.renderSideThumbnail === 'function') {
-                    Car3DManager.renderSideThumbnail(car.name, carEffectiveStyling, (url) => {
-                        if (url) {
-                            const img = document.getElementById(myImgId);
-                            if (img) img.src = url;
-                        }
-                    });
-                }
-            });
 
             const podiumCard = document.getElementById('garage-3d-podium-card');
             if (podiumCard) podiumCard.style.display = 'block';
@@ -6299,11 +6266,6 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                         prevImg.src = cachedSell3D;
                     } else {
                         prevImg.src = getCarSpriteDataUrl(car.name, car.styling);
-                        if (typeof Car3DManager !== 'undefined' && typeof Car3DManager.renderSideThumbnail === 'function') {
-                            Car3DManager.renderSideThumbnail(car.name, sellStyling, (url) => {
-                                if (url && prevImg) prevImg.src = url;
-                            });
-                        }
                     }
                 }
                 if (desc) desc.innerText = `Продажа «${car.name}». Госномер: ${car.plate ? car.plate.text : 'нет'}. Состояние: ${Math.round(car.condition || 100)}%.`;
@@ -10208,11 +10170,6 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                         tint: carStyling.tint,
                         neon: carStyling.neon
                     });
-                    if (typeof Car3DManager !== 'undefined' && typeof Car3DManager.renderSideThumbnail === 'function') {
-                        Car3DManager.renderSideThumbnail(carItem.name, carStyling, (url) => {
-                            if (url) drawThumbOnCvs(url);
-                        });
-                    }
                 }
 
                 const nameDiv = document.createElement('div');
@@ -13801,6 +13758,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 }
             }
             if (tabId === 'garage') {
+                try { preloadUserGarageModels(); } catch (_) {}
                 initGarage3DShowroom();
             } else {
                 if (garage3DShowroom) garage3DShowroom.stop();
