@@ -5707,6 +5707,40 @@
         node.position.copy(node.userData._hingePoint).add(rel);
     }
 
+    function disposeMaterial(mat) {
+        if (!mat) return;
+        const texKeys = ['map', 'normalMap', 'roughnessMap', 'metalnessMap', 'emissiveMap', 'envMap', 'alphaMap', 'aoMap'];
+        for (let i = 0; i < texKeys.length; i++) {
+            const tex = mat[texKeys[i]];
+            if (tex && typeof tex.dispose === 'function') {
+                try { tex.dispose(); } catch (_) {}
+            }
+        }
+        if (typeof mat.dispose === 'function') {
+            try { mat.dispose(); } catch (_) {}
+        }
+    }
+
+    function deepDispose(obj) {
+        if (!obj) return;
+        try {
+            if (typeof obj.traverse === 'function') {
+                obj.traverse(child => {
+                    if (child.geometry && typeof child.geometry.dispose === 'function') {
+                        try { child.geometry.dispose(); } catch (_) {}
+                    }
+                    if (child.material) {
+                        if (Array.isArray(child.material)) {
+                            child.material.forEach(m => disposeMaterial(m));
+                        } else {
+                            disposeMaterial(child.material);
+                        }
+                    }
+                });
+            }
+        } catch (_) {}
+    }
+
     // =========================================================================
     // 🌟 MAIN CAR 3D SHOWROOM CLASS
     // =========================================================================
@@ -5948,8 +5982,10 @@
 
         setLoading(isLoading, text) {
             if (typeof document === 'undefined') return;
-            const loader = document.getElementById('styling-3d-loader');
-            const label = document.getElementById('styling-3d-loader-text');
+            const loaderId = (this.options && this.options.loaderId) || 'styling-3d-loader';
+            const textId = (this.options && this.options.loaderTextId) || 'styling-3d-loader-text';
+            const loader = document.getElementById(loaderId);
+            const label = document.getElementById(textId);
             if (loader) {
                 loader.style.display = isLoading ? 'flex' : 'none';
                 if (label && text) label.textContent = text;
@@ -6004,10 +6040,12 @@
 
                         if (this.glbCar) {
                             this.scene.remove(this.glbCar);
+                            deepDispose(this.glbCar);
                             this.glbCar = null;
                         }
                         if (this.proceduralCar) {
                             this.scene.remove(this.proceduralCar);
+                            deepDispose(this.proceduralCar);
                             this.proceduralCar = null;
                         }
                         if (this.carGroup) {
@@ -6043,14 +6081,17 @@
                 this.setLoading(false);
                 if (this.glbCar) {
                     this.scene.remove(this.glbCar);
+                    deepDispose(this.glbCar);
                     this.glbCar = null;
                 }
                 if (this.proceduralCar) {
                     this.scene.remove(this.proceduralCar);
+                    deepDispose(this.proceduralCar);
                     this.proceduralCar = null;
                 }
                 if (this.carGroup) {
                     this.scene.remove(this.carGroup);
+                    deepDispose(this.carGroup);
                     this.carGroup = null;
                 }
 
@@ -6592,6 +6633,17 @@
                     this._resizeObserver.observe(this.container);
                 } catch (_) {}
             }
+
+            if (typeof document !== 'undefined') {
+                this._visHandler = () => {
+                    if (document.hidden) {
+                        this.stop();
+                    } else if (this.container && this.container.offsetParent !== null && !this.active) {
+                        this.start();
+                    }
+                };
+                document.addEventListener('visibilitychange', this._visHandler);
+            }
         }
 
         resize() {
@@ -6610,6 +6662,12 @@
 
         start() {
             if (this.active) return;
+            if (typeof document !== 'undefined' && document.hidden) {
+                return;
+            }
+            if (this.container && this.container.offsetParent === null) {
+                return;
+            }
             this.active = true;
             this.needsRender = true;
             let lastTime = performance.now();
@@ -6618,13 +6676,13 @@
                 if (!this.active) return;
                 lastTime = time;
 
-                // Stop rendering if hidden or container disconnected
+                // Stop rendering cleanly if hidden or container disconnected
                 if (typeof document !== 'undefined' && document.hidden) {
-                    this.animFrameId = requestAnimationFrame(loop);
+                    this.stop();
                     return;
                 }
                 if (this.container && this.container.offsetParent === null) {
-                    this.animFrameId = requestAnimationFrame(loop);
+                    this.stop();
                     return;
                 }
 
@@ -6769,13 +6827,38 @@
 
         destroy() {
             this.stop();
+            if (this._visHandler && typeof document !== 'undefined') {
+                try { document.removeEventListener('visibilitychange', this._visHandler); } catch (_) {}
+                this._visHandler = null;
+            }
             if (this._resizeObserver) {
                 try { this._resizeObserver.disconnect(); } catch (_) {}
                 this._resizeObserver = null;
             }
-            if (this.renderer && this.renderer.domElement && this.renderer.domElement.parentNode) {
-                this.renderer.domElement.parentNode.removeChild(this.renderer.domElement);
-                this.renderer.dispose();
+            if (this.carGroup) {
+                try { this.scene.remove(this.carGroup); } catch (_) {}
+                deepDispose(this.carGroup);
+                this.carGroup = null;
+            }
+            if (this.glbCar) {
+                try { this.scene.remove(this.glbCar); } catch (_) {}
+                deepDispose(this.glbCar);
+                this.glbCar = null;
+            }
+            if (this.proceduralCar) {
+                try { this.scene.remove(this.proceduralCar); } catch (_) {}
+                deepDispose(this.proceduralCar);
+                this.proceduralCar = null;
+            }
+            if (this.scene) {
+                deepDispose(this.scene);
+            }
+            if (this.renderer) {
+                if (this.renderer.domElement && this.renderer.domElement.parentNode) {
+                    this.renderer.domElement.parentNode.removeChild(this.renderer.domElement);
+                }
+                if (typeof this.renderer.dispose === 'function') this.renderer.dispose();
+                if (typeof this.renderer.forceContextLoss === 'function') this.renderer.forceContextLoss();
             }
         }
     }
@@ -6826,8 +6909,7 @@
         if (typeof offscreenRenderer.setSize === 'function') offscreenRenderer.setSize(440, 240, false);
         if (typeof offscreenRenderer.setPixelRatio === 'function') offscreenRenderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
         if (offscreenRenderer.shadowMap) {
-            offscreenRenderer.shadowMap.enabled = true;
-            offscreenRenderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            offscreenRenderer.shadowMap.enabled = false;
         }
         offscreenRenderer.toneMapping = THREE.ACESFilmicToneMapping;
         offscreenRenderer.toneMappingExposure = 1.20;
@@ -6847,9 +6929,6 @@
 
         const keyLight = new THREE.DirectionalLight(0xffffff, 1.35);
         keyLight.position.set(7, 7, 5);
-        keyLight.castShadow = true;
-        keyLight.shadow.mapSize.width = 1024;
-        keyLight.shadow.mapSize.height = 1024;
         offscreenScene.add(keyLight);
 
         const fillLight = new THREE.DirectionalLight(0xbfdbfe, 0.85);
@@ -6876,87 +6955,102 @@
         offscreenCamera = new THREE.PerspectiveCamera(23, 440 / 240, 0.1, 100);
     }
 
+    function clearThumbnailQueue() {
+        thumbnailQueue.length = 0;
+        isProcessingQueue = false;
+        thumbnailCallbacks.clear();
+    }
+
     function processThumbnailQueue(THREE) {
         if (isProcessingQueue || thumbnailQueue.length === 0) return;
+        if (typeof window !== 'undefined' && window.isRaceRunning) {
+            clearThumbnailQueue();
+            return;
+        }
         isProcessingQueue = true;
 
         const task = thumbnailQueue.shift();
         initOffscreenPipeline(THREE);
 
-        loadCarModel(THREE, task.carName, task.styling, model => {
-            try {
-                if (model && offscreenRenderer && offscreenScene && offscreenCamera) {
-                    model.updateMatrixWorld(true);
-                    const box = new THREE.Box3().setFromObject(model);
-                    const center = box.getCenter(new THREE.Vector3());
+        try {
+            // Build procedural 3D model: renders in ~0.5ms with zero network transfer
+            const model = buildDetailedCarModel(THREE, task.carName, task.styling);
+            if (model && offscreenRenderer && offscreenScene && offscreenCamera) {
+                model.updateMatrixWorld(true);
+                const box = new THREE.Box3().setFromObject(model);
+                const center = box.getCenter(new THREE.Vector3());
 
-                    // Center model horizontally and position flush on floor
-                    model.position.x -= center.x;
-                    model.position.z -= center.z;
-                    model.position.y -= box.min.y;
-                    model.updateMatrixWorld(true);
+                // Center model horizontally and position flush on floor
+                model.position.x -= center.x;
+                model.position.z -= center.z;
+                model.position.y -= box.min.y;
+                model.updateMatrixWorld(true);
 
-                    offscreenScene.add(model);
+                offscreenScene.add(model);
 
-                    // Compute framing for side camera (+X axis looking towards -X)
-                    const finalBox = new THREE.Box3().setFromObject(model);
-                    const carHeight = finalBox.max.y - finalBox.min.y;
-                    const targetY = finalBox.min.y + carHeight * 0.46;
-                    const carLength = Math.max(3.8, finalBox.max.z - finalBox.min.z);
-                    const camDist = Math.max(8.2, carLength * 1.88);
+                // Compute framing for side camera (+X axis looking towards -X)
+                const finalBox = new THREE.Box3().setFromObject(model);
+                const carHeight = finalBox.max.y - finalBox.min.y;
+                const targetY = finalBox.min.y + carHeight * 0.46;
+                const carLength = Math.max(3.8, finalBox.max.z - finalBox.min.z);
+                const camDist = Math.max(8.2, carLength * 1.88);
 
-                    offscreenCamera.position.set(camDist, targetY, 0);
-                    offscreenCamera.lookAt(0, targetY, 0);
+                offscreenCamera.position.set(camDist, targetY, 0);
+                offscreenCamera.lookAt(0, targetY, 0);
 
-                    offscreenRenderer.render(offscreenScene, offscreenCamera);
-                    let dataUrl = null;
-                    if (offscreenRenderer.domElement && typeof offscreenRenderer.domElement.toDataURL === 'function') {
-                        try {
-                            dataUrl = offscreenRenderer.domElement.toDataURL('image/png');
-                        } catch (_) {
-                            dataUrl = null;
-                        }
+                offscreenRenderer.render(offscreenScene, offscreenCamera);
+                let dataUrl = null;
+                if (offscreenRenderer.domElement && typeof offscreenRenderer.domElement.toDataURL === 'function') {
+                    try {
+                        dataUrl = offscreenRenderer.domElement.toDataURL('image/png');
+                    } catch (_) {
+                        dataUrl = null;
                     }
-                    if (!dataUrl) {
-                        dataUrl = 'data:image/png;base64,mock3d';
-                    }
-
-                    offscreenScene.remove(model);
-
-                    if (dataUrl && dataUrl.startsWith('data:image')) {
-                        sideThumbnailCache.set(task.key, dataUrl);
-                    }
-
-                    const cbs = thumbnailCallbacks.get(task.key) || [];
-                    thumbnailCallbacks.delete(task.key);
-                    cbs.forEach(cb => {
-                        try { cb(dataUrl); } catch (_) {}
-                    });
-                } else {
-                    const cbs = thumbnailCallbacks.get(task.key) || [];
-                    thumbnailCallbacks.delete(task.key);
-                    cbs.forEach(cb => {
-                        try { cb(null); } catch (_) {}
-                    });
                 }
-            } catch (err) {
-                console.warn('Error rendering 3D thumbnail:', err);
+                if (!dataUrl) {
+                    dataUrl = 'data:image/png;base64,mock3d';
+                }
+
+                offscreenScene.remove(model);
+                deepDispose(model);
+
+                if (dataUrl && dataUrl.startsWith('data:image')) {
+                    sideThumbnailCache.set(task.key, dataUrl);
+                }
+
+                const cbs = thumbnailCallbacks.get(task.key) || [];
+                thumbnailCallbacks.delete(task.key);
+                cbs.forEach(cb => {
+                    try { cb(dataUrl); } catch (_) {}
+                });
+            } else {
                 const cbs = thumbnailCallbacks.get(task.key) || [];
                 thumbnailCallbacks.delete(task.key);
                 cbs.forEach(cb => {
                     try { cb(null); } catch (_) {}
                 });
-            } finally {
-                isProcessingQueue = false;
-                if (thumbnailQueue.length > 0) {
-                    setTimeout(() => processThumbnailQueue(THREE), 16);
-                }
             }
-        });
+        } catch (err) {
+            console.warn('Error rendering 3D thumbnail:', err);
+            const cbs = thumbnailCallbacks.get(task.key) || [];
+            thumbnailCallbacks.delete(task.key);
+            cbs.forEach(cb => {
+                try { cb(null); } catch (_) {}
+            });
+        } finally {
+            isProcessingQueue = false;
+            if (thumbnailQueue.length > 0 && !(typeof window !== 'undefined' && window.isRaceRunning)) {
+                setTimeout(() => processThumbnailQueue(THREE), 32);
+            }
+        }
     }
 
     function renderSideThumbnail(carName, styling = {}, callback) {
         if (!isWebGLAvailable()) {
+            if (callback) callback(null);
+            return;
+        }
+        if (typeof window !== 'undefined' && window.isRaceRunning) {
             if (callback) callback(null);
             return;
         }
@@ -6998,6 +7092,7 @@
             this.isRunning = false;
             this.animFrameId = null;
             this.lastTime = 0;
+            this._loopBound = this.loop.bind(this);
 
             // Camera Modes:
             // 0: Dynamic Chase (default 3rd-person behind & above car)
@@ -8196,7 +8291,7 @@
             this.isRunning = true;
             this.lastTime = performance.now();
             if (this.animFrameId) cancelAnimationFrame(this.animFrameId);
-            this.animFrameId = requestAnimationFrame(this.loop.bind(this));
+            this.animFrameId = requestAnimationFrame(this._loopBound);
 
             setTimeout(() => {
                 if (this._onResize) this._onResize();
@@ -8524,6 +8619,10 @@
 
         loop(timestamp) {
             if (!this.isRunning) return;
+            if (typeof document !== 'undefined' && document.hidden) {
+                this.animFrameId = requestAnimationFrame(this._loopBound);
+                return;
+            }
             const dt = Math.min((timestamp - this.lastTime) / 1000, 0.05);
             this.lastTime = timestamp;
 
@@ -8531,7 +8630,7 @@
             this.render();
 
             if (this.isRunning) {
-                this.animFrameId = requestAnimationFrame(this.loop.bind(this));
+                this.animFrameId = requestAnimationFrame(this._loopBound);
             }
         }
 
@@ -9566,6 +9665,10 @@
             if (this._onResize && typeof window !== 'undefined' && typeof window.removeEventListener === 'function') {
                 window.removeEventListener('resize', this._onResize);
             }
+            if (this.scene) {
+                try { deepDispose(this.scene); } catch (_) {}
+                this.scene = null;
+            }
             if (this.renderer) {
                 try {
                     if (this.renderer.domElement && this.renderer.domElement.parentNode) {
@@ -9602,7 +9705,9 @@
         applyLicensePlateToModel,
         createLicensePlate,
         formatPlateComponents,
-        detectVehicleLightPositions
+        detectVehicleLightPositions,
+        clearThumbnailQueue,
+        deepDispose
     };
 }));
 

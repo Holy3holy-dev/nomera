@@ -4617,6 +4617,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             let myCarsDiv = document.getElementById('my-cars');
 
             if (myCars.length === 0) {
+                const podiumCard = document.getElementById('garage-3d-podium-card');
+                if (podiumCard) podiumCard.style.display = 'none';
+                if (garage3DShowroom) garage3DShowroom.stop();
                 myCarsDiv.innerHTML = `<div class="empty-state"><div class="empty-state-icon">🏎️</div><p>В вашем гараже пока нет автомобилей. Выберите и купите автомобиль в автосалоне ниже!</p></div>`;
                 updateBadge();
                 return;
@@ -4714,7 +4717,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 const myInitialSrc = cachedMy3D || getCarSpriteDataUrl(car.name, carEffectiveStyling);
 
                 html += `
-                    <div class="my-car-card">
+                    <div class="my-car-card ${index === activeGarageCarIndex ? 'active-podium-card' : ''}" onclick="selectGarageCarForPodium(${index})">
                         <div style="padding: 12px 16px; display: flex; justify-content: space-between; align-items: center;">
                             <div>
                                 <b style="font-size: 15px; color: #fff;">${colorDot}🏎️ ${escapeHtml(car.name)} ${stylingBadge}</b>
@@ -4769,6 +4772,11 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     });
                 }
             });
+
+            const podiumCard = document.getElementById('garage-3d-podium-card');
+            if (podiumCard) podiumCard.style.display = 'block';
+            activeGarageCarIndex = Math.max(0, Math.min(activeGarageCarIndex, myCars.length - 1));
+            selectGarageCarForPodium(activeGarageCarIndex, true);
 
             updateBadge();
         }
@@ -5455,6 +5463,217 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             playTick();
         }
         window.toggleShowroomHeadlights = toggleShowroomHeadlights;
+
+        // =====================================================================
+        // 🏎️ GARAGE 3D SHOWROOM (Интерактивный 3D-подиум прямо в Гараже)
+        // =====================================================================
+        let garage3DShowroom = null;
+        let activeGarageCarIndex = 0;
+        let garageViewMode = '3d';
+
+        function updateGarageButtonsState() {
+            if (!garage3DShowroom) return;
+            const btnDoors = document.getElementById('btn-gshow-doors');
+            const btnHood = document.getElementById('btn-gshow-hood');
+            const btnTrunk = document.getElementById('btn-gshow-trunk');
+            const btnLights = document.getElementById('btn-gshow-lights');
+
+            if (btnDoors) {
+                const has = garage3DShowroom.hasCapability('doors');
+                btnDoors.style.opacity = has ? '1' : '0.4';
+                btnDoors.classList.toggle('active', !!garage3DShowroom.doorsOpen);
+            }
+            if (btnHood) {
+                const has = garage3DShowroom.hasCapability('hood');
+                btnHood.style.opacity = has ? '1' : '0.4';
+                btnHood.classList.toggle('active', !!garage3DShowroom.hoodOpen);
+            }
+            if (btnTrunk) {
+                const has = garage3DShowroom.hasCapability('trunk');
+                btnTrunk.style.opacity = has ? '1' : '0.4';
+                btnTrunk.classList.toggle('active', !!garage3DShowroom.trunkOpen);
+            }
+            if (btnLights) {
+                btnLights.classList.toggle('active', !!garage3DShowroom.headlightsOn);
+            }
+        }
+
+        function initGarage3DShowroom() {
+            const podiumCard = document.getElementById('garage-3d-podium-card');
+            if (!Array.isArray(myCars) || myCars.length === 0) {
+                if (podiumCard) podiumCard.style.display = 'none';
+                if (garage3DShowroom) garage3DShowroom.stop();
+                return;
+            }
+            if (typeof Car3DManager === 'undefined' || typeof window.THREE === 'undefined' || (typeof Car3DManager.isWebGLAvailable === 'function' && !Car3DManager.isWebGLAvailable())) {
+                if (podiumCard) podiumCard.style.display = 'none';
+                return;
+            }
+            if (podiumCard) podiumCard.style.display = 'block';
+
+            activeGarageCarIndex = Math.max(0, Math.min(activeGarageCarIndex, myCars.length - 1));
+
+            if (!garage3DShowroom) {
+                garage3DShowroom = new Car3DManager.Car3DShowroom('garage-preview-3d-wrap', {
+                    autoRotate: false,
+                    autoRotateSpeed: 0.007,
+                    showPodium: true,
+                    loaderId: 'garage-3d-loader',
+                    loaderTextId: 'garage-3d-loader-text'
+                });
+                garage3DShowroom.onCapabilitiesChange = () => {
+                    updateGarageButtonsState();
+                };
+            } else {
+                garage3DShowroom.onCapabilitiesChange = () => {
+                    updateGarageButtonsState();
+                };
+                garage3DShowroom.resize();
+                garage3DShowroom.start();
+            }
+
+            selectGarageCarForPodium(activeGarageCarIndex, false);
+        }
+        window.initGarage3DShowroom = initGarage3DShowroom;
+
+        function selectGarageCarForPodium(index, fromRender) {
+            if (!Array.isArray(myCars) || myCars.length === 0) return;
+            index = Math.max(0, Math.min(index, myCars.length - 1));
+            activeGarageCarIndex = index;
+
+            const car = myCars[index];
+            if (!car) return;
+
+            const template = carsData.find(c => c.name === car.name) || {};
+            const carCategory = car.category || template.category || 'Автомобиль';
+
+            const titleEl = document.getElementById('garage-3d-car-title');
+            const catEl = document.getElementById('garage-3d-car-category');
+            if (titleEl) titleEl.textContent = '🏎️ ' + car.name;
+            if (catEl) catEl.textContent = carCategory;
+
+            // Highlight card in #my-cars list
+            document.querySelectorAll('.my-car-card').forEach((card, i) => {
+                card.classList.toggle('active-podium-card', i === index);
+            });
+
+            if (garage3DShowroom) {
+                const effectiveStyling = Object.assign({}, car.styling || {}, {
+                    plate: car.plate ? (car.plate.text || car.plate) : 'none'
+                });
+                garage3DShowroom.setCar(car.name, effectiveStyling, () => {
+                    updateGarageButtonsState();
+                });
+                garage3DShowroom.setViewPreset(garageViewMode);
+                garage3DShowroom.requestRender();
+            }
+        }
+        window.selectGarageCarForPodium = selectGarageCarForPodium;
+
+        function setGarageViewMode(mode) {
+            let preset = mode || 'isometric';
+            if (preset === '3d') preset = 'isometric';
+            garageViewMode = (mode === 'top' || mode === 'side' || mode === 'front' || mode === 'rear') ? mode : '3d';
+
+            const btnSide = document.getElementById('btn-gview-side');
+            const btnTop = document.getElementById('btn-gview-top');
+            const btnFront = document.getElementById('btn-gview-front');
+            const btnRear = document.getElementById('btn-gview-rear');
+            const btn3D = document.getElementById('btn-gview-3d');
+
+            const isIso = (preset === 'isometric' || mode === '3d');
+            if (btnSide) btnSide.classList.toggle('active', preset === 'side');
+            if (btnTop) btnTop.classList.toggle('active', preset === 'top');
+            if (btnFront) btnFront.classList.toggle('active', preset === 'front');
+            if (btnRear) btnRear.classList.toggle('active', preset === 'rear');
+            if (btn3D) btn3D.classList.toggle('active', isIso);
+
+            if (garage3DShowroom) {
+                garage3DShowroom.setViewPreset(garageViewMode);
+                garage3DShowroom.requestRender();
+            }
+            playTick();
+        }
+        window.setGarageViewMode = setGarageViewMode;
+
+        function resetGarageCamera() {
+            if (garage3DShowroom) {
+                garage3DShowroom.resetCamera();
+            }
+            setGarageViewMode('3d');
+            playTick();
+        }
+        window.resetGarageCamera = resetGarageCamera;
+
+        function toggleGarageAutoRotate() {
+            if (!garage3DShowroom) return;
+            const isRotating = garage3DShowroom.toggleAutoRotate();
+            const btn = document.getElementById('btn-gview-autorotate');
+            if (btn) btn.classList.toggle('active', isRotating);
+            playTick();
+        }
+        window.toggleGarageAutoRotate = toggleGarageAutoRotate;
+
+        function toggleGarageDoors() {
+            if (!garage3DShowroom) return;
+            if (!garage3DShowroom.hasCapability('doors')) {
+                notifyUser('У этой 3D модели нет открывающихся дверей', 'info');
+                return;
+            }
+            const isOpen = garage3DShowroom.toggleDoors();
+            const btn = document.getElementById('btn-gshow-doors');
+            if (btn) btn.classList.toggle('active', isOpen);
+            playTick();
+        }
+        window.toggleGarageDoors = toggleGarageDoors;
+
+        function toggleGarageHood() {
+            if (!garage3DShowroom) return;
+            if (!garage3DShowroom.hasCapability('hood')) {
+                notifyUser('У этой 3D модели нет капота', 'info');
+                return;
+            }
+            const isOpen = garage3DShowroom.toggleHood();
+            const btn = document.getElementById('btn-gshow-hood');
+            if (btn) btn.classList.toggle('active', isOpen);
+            playTick();
+        }
+        window.toggleGarageHood = toggleGarageHood;
+
+        function toggleGarageTrunk() {
+            if (!garage3DShowroom) return;
+            if (!garage3DShowroom.hasCapability('trunk')) {
+                notifyUser('У этой 3D модели нет открывающегося багажника', 'info');
+                return;
+            }
+            const isOpen = garage3DShowroom.toggleTrunk();
+            const btn = document.getElementById('btn-gshow-trunk');
+            if (btn) btn.classList.toggle('active', isOpen);
+            playTick();
+        }
+        window.toggleGarageTrunk = toggleGarageTrunk;
+
+        function toggleGarageHeadlights() {
+            if (!garage3DShowroom) return;
+            const isOn = garage3DShowroom.toggleHeadlights();
+            const btn = document.getElementById('btn-gshow-lights');
+            if (btn) btn.classList.toggle('active', isOn);
+            playTick();
+        }
+        window.toggleGarageHeadlights = toggleGarageHeadlights;
+
+        function openStylingForActiveGarageCar() {
+            openStylingModal(activeGarageCarIndex, '3d');
+        }
+        window.openStylingForActiveGarageCar = openStylingForActiveGarageCar;
+
+        function start3DRaceWithActiveGarageCar() {
+            if (!Array.isArray(myCars) || !myCars[activeGarageCarIndex]) return;
+            selectedRaceCarName = myCars[activeGarageCarIndex].name;
+            switchTab('racegame', null, '3d');
+            start3DRaceGame();
+        }
+        window.start3DRaceWithActiveGarageCar = start3DRaceWithActiveGarageCar;
 
         function renderStylingPlateChips() {
             const container = document.getElementById('styling-plate-chips');
@@ -10492,6 +10711,11 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 exitRaceGame();
                 exit3DRaceGame();
             }
+            if (garage3DShowroom) garage3DShowroom.stop();
+            if (car3DShowroom) car3DShowroom.stop();
+            if (typeof Car3DManager !== 'undefined' && Car3DManager.clearThumbnailQueue) {
+                Car3DManager.clearThumbnailQueue();
+            }
             resetRaceKeys();
             const carIndex = getSelectedRaceCarIndex();
             if (carIndex < 0) {
@@ -10539,6 +10763,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
             try {
                 isRaceRunning = true;
+                window.isRaceRunning = true;
                 updatePlayerPresence('🏎️ В 3D гонке', `${selectedRaceCarName}`);
                 document.body.classList.add('race-active');
                 document.getElementById('race-menu-container').classList.add('hidden');
@@ -10918,6 +11143,11 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 return;
             }
             if (isRaceRunning) return;
+            if (garage3DShowroom) garage3DShowroom.stop();
+            if (car3DShowroom) car3DShowroom.stop();
+            if (typeof Car3DManager !== 'undefined' && Car3DManager.clearThumbnailQueue) {
+                Car3DManager.clearThumbnailQueue();
+            }
             resetRaceKeys();
             const carIndex = getSelectedRaceCarIndex();
             if (carIndex < 0) {
@@ -11025,6 +11255,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             if (touchHornLabel) touchHornLabel.textContent = 'СИГНАЛ [H]';
 
             isRaceRunning = true;
+            window.isRaceRunning = true;
             updatePlayerPresence('🏎️ В заезде', `${selectedRaceCarName}`);
             document.body.classList.add("race-active");
             sound.start();
@@ -11047,6 +11278,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             document.body.classList.remove("race-active");
             resetRaceKeys();
             isRaceRunning = false;
+            window.isRaceRunning = false;
             if (raceAnimFrame) cancelAnimationFrame(raceAnimFrame);
             if (car3DRacingEngine) car3DRacingEngine.stop();
             const play3D = document.getElementById('race-3d-play-container');
@@ -12452,6 +12684,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         function settleRaceRun(crashed) {
             if (!isRaceRunning) return;
             isRaceRunning = false;
+            window.isRaceRunning = false;
             resetRaceKeys();
             sound.stopEngine();
             if (typeof sound?.setSiren === 'function') sound.setSiren(false);
@@ -13461,11 +13694,17 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     switchRaceMode('3d');
                 }
             }
+            if (tabId === 'garage') {
+                initGarage3DShowroom();
+            } else {
+                if (garage3DShowroom) garage3DShowroom.stop();
+            }
             if (tabId !== 'racegame' && isRaceRunning) exitRaceGame();
 
             if (typeof updatePlayerPresence === 'function') {
                 const tabNames = {
                     'generator': ['🔢 Генератор номеров', `Регион ${currentReg}`],
+                    'garage': ['🔧 В гараже', `Машин: ${Array.isArray(myCars) ? myCars.length : 0}`],
                     'cars': ['🔧 В гараже', `Машин: ${Array.isArray(myCars) ? myCars.length : 0}`],
                     'cases': ['🎰 Рулетка и кейсы', 'Выбор кейса'],
                     'multiplayer': ['👥 Мультиплеер', activeMultiSubTab === 'market' ? 'На авторынке' : 'В онлайн-чате'],
