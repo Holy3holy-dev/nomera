@@ -162,7 +162,7 @@ test('App.js: toggleShowroom buttons auto-switch to 3D mode if in 2D view and ma
     const appCode = fs.readFileSync(path.join(__dirname, '../js/app.js'), 'utf8');
 
     // Check that toggleShowroom functions switch to 3D mode
-    assert.ok(appCode.includes("if (stylingViewMode !== '3d') {\n                setStylingViewMode('3d');"), 'toggleShowroomDoors must switch to 3D if in 2D mode');
+    assert.ok(/if\s*\(\s*stylingViewMode\s*!==\s*['"]3d['"]\s*\)\s*\{\s*setStylingViewMode\(['"]3d['"]\);/.test(appCode), 'toggleShowroomDoors must switch to 3D if in 2D mode');
     assert.ok(appCode.includes('toggle3DTouchControls'), 'app.js must define toggle3DTouchControls');
     assert.ok(appCode.includes('preloadUserGarageModels'), 'app.js must define preloadUserGarageModels');
     assert.ok(appCode.includes('updateShowroomButtonsState'), 'app.js must define updateShowroomButtonsState');
