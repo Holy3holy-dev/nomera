@@ -4344,7 +4344,22 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     document.getElementById('roulette-actions-plate').classList.add('hidden');
                     document.getElementById('roulette-actions-car').classList.remove('hidden');
 
-                    document.getElementById('roulette-car-img').src = getCarSpriteDataUrl(wonCarObj.name);
+                    const rCarImg = document.getElementById('roulette-car-img');
+                    if (rCarImg) {
+                        const cachedRoulette3D = (typeof Car3DManager !== 'undefined' && typeof Car3DManager.getSideThumbnail === 'function')
+                            ? Car3DManager.getSideThumbnail(wonCarObj.name)
+                            : null;
+                        if (cachedRoulette3D) {
+                            rCarImg.src = cachedRoulette3D;
+                        } else {
+                            rCarImg.src = getCarSpriteDataUrl(wonCarObj.name);
+                            if (typeof Car3DManager !== 'undefined' && typeof Car3DManager.renderSideThumbnail === 'function') {
+                                Car3DManager.renderSideThumbnail(wonCarObj.name, {}, (url) => {
+                                    if (url && rCarImg) rCarImg.src = url;
+                                });
+                            }
+                        }
+                    }
                     document.getElementById('roulette-car-name').innerText = wonCarObj.name;
                     document.getElementById('roulette-car-category').innerText = wonCarObj.category || 'Автомобиль';
                     document.getElementById('roulette-price').innerText = `Рыночная цена: ${wonCarObj.price.toLocaleString('ru-RU')} ₽`;
@@ -6011,7 +6026,22 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             const priceInput = document.getElementById('sell-car-price');
             const prevImg = document.getElementById('sell-car-preview-img');
             if (car) {
-                if (prevImg) prevImg.src = getCarSpriteDataUrl(car.name, car.styling);
+                if (prevImg) {
+                    const sellStyling = car.styling || {};
+                    const cachedSell3D = (typeof Car3DManager !== 'undefined' && typeof Car3DManager.getSideThumbnail === 'function')
+                        ? Car3DManager.getSideThumbnail(car.name, sellStyling)
+                        : null;
+                    if (cachedSell3D) {
+                        prevImg.src = cachedSell3D;
+                    } else {
+                        prevImg.src = getCarSpriteDataUrl(car.name, car.styling);
+                        if (typeof Car3DManager !== 'undefined' && typeof Car3DManager.renderSideThumbnail === 'function') {
+                            Car3DManager.renderSideThumbnail(car.name, sellStyling, (url) => {
+                                if (url && prevImg) prevImg.src = url;
+                            });
+                        }
+                    }
+                }
                 if (desc) desc.innerText = `Продажа «${car.name}». Госномер: ${car.plate ? car.plate.text : 'нет'}. Состояние: ${Math.round(car.condition || 100)}%.`;
                 if (priceInput && !priceInput.value) {
                     priceInput.value = Math.round((car.basePrice || 200000) * 1.1);
@@ -9890,11 +9920,36 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 cvs.height = 68;
                 const cCtx = cvs.getContext('2d');
                 const ownedCar = carItem.owned ? myCars[carItem.index] : null;
-                drawPixelCar(cCtx, 22, 34, carItem.name, 1.1, {
-                    color: ownedCar?.styling?.color,
-                    tint: ownedCar?.styling?.tint,
-                    neon: ownedCar?.styling?.neon
-                });
+                const carStyling = ownedCar?.styling || {};
+                const cached3D = (typeof Car3DManager !== 'undefined' && typeof Car3DManager.getSideThumbnail === 'function')
+                    ? Car3DManager.getSideThumbnail(carItem.name, carStyling)
+                    : null;
+                const drawThumbOnCvs = (url) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        cCtx.clearRect(0, 0, cvs.width, cvs.height);
+                        const aspect = img.width / (img.height || 1);
+                        const dw = cvs.width;
+                        const dh = dw / aspect;
+                        const dy = (cvs.height - dh) / 2;
+                        cCtx.drawImage(img, 0, dy, dw, dh);
+                    };
+                    img.src = url;
+                };
+                if (cached3D) {
+                    drawThumbOnCvs(cached3D);
+                } else {
+                    drawPixelCar(cCtx, 22, 34, carItem.name, 1.1, {
+                        color: carStyling.color,
+                        tint: carStyling.tint,
+                        neon: carStyling.neon
+                    });
+                    if (typeof Car3DManager !== 'undefined' && typeof Car3DManager.renderSideThumbnail === 'function') {
+                        Car3DManager.renderSideThumbnail(carItem.name, carStyling, (url) => {
+                            if (url) drawThumbOnCvs(url);
+                        });
+                    }
+                }
 
                 const nameDiv = document.createElement('div');
                 nameDiv.style.fontSize = '10px';
@@ -10019,22 +10074,59 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             document.getElementById('stat-reward').innerText = `x${stats.rewardMult.toFixed(1)}`;
             document.getElementById('bar-reward').style.width = `${Math.min(100, (stats.rewardMult / 35) * 100)}%`;
 
-            // Отрисовка большой пиксельной витрины
+            // Отрисовка витрины выбранного авто (3D модель)
             const canvas = document.getElementById('race-showcase-canvas');
             if (canvas) {
                 const ctx = canvas.getContext('2d');
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
-                drawPixelCar(ctx, canvas.width / 2, canvas.height / 2 + 10, selectedRaceCarName, 2.4, {
-                    lightsOn: true,
-                    color: ownedCarObj?.styling?.color,
-                    tint: ownedCarObj?.styling?.tint,
-                    neon: ownedCarObj?.styling?.neon,
-                    spoiler: ownedCarObj?.styling?.spoiler,
-                    vinyl: ownedCarObj?.styling?.vinyl,
-                    wheels: ownedCarObj?.styling?.wheels,
-                    suspension: ownedCarObj?.styling?.suspension,
-                    sgu: ownedCarObj?.styling?.sgu
-                });
+                const carStyling = ownedCarObj?.styling || {};
+                const cached3D = (typeof Car3DManager !== 'undefined' && typeof Car3DManager.getSideThumbnail === 'function')
+                    ? Car3DManager.getSideThumbnail(selectedRaceCarName, carStyling)
+                    : null;
+
+                const draw3DThumb = (url) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        ctx.clearRect(0, 0, canvas.width, canvas.height);
+                        const aspect = img.width / (img.height || 1);
+                        const dw = canvas.width - 8;
+                        const dh = dw / aspect;
+                        const dy = (canvas.height - dh) / 2;
+                        ctx.drawImage(img, 4, dy, dw, dh);
+                    };
+                    img.src = url;
+                };
+
+                if (cached3D) {
+                    draw3DThumb(cached3D);
+                } else if (typeof Car3DManager !== 'undefined' && typeof Car3DManager.renderSideThumbnail === 'function') {
+                    Car3DManager.renderSideThumbnail(selectedRaceCarName, carStyling, (url) => {
+                        if (url) draw3DThumb(url);
+                    });
+                    drawPixelCar(ctx, canvas.width / 2, canvas.height / 2 + 10, selectedRaceCarName, 2.4, {
+                        lightsOn: true,
+                        color: carStyling.color,
+                        tint: carStyling.tint,
+                        neon: carStyling.neon,
+                        spoiler: carStyling.spoiler,
+                        vinyl: carStyling.vinyl,
+                        wheels: carStyling.wheels,
+                        suspension: carStyling.suspension,
+                        sgu: carStyling.sgu
+                    });
+                } else {
+                    drawPixelCar(ctx, canvas.width / 2, canvas.height / 2 + 10, selectedRaceCarName, 2.4, {
+                        lightsOn: true,
+                        color: carStyling.color,
+                        tint: carStyling.tint,
+                        neon: carStyling.neon,
+                        spoiler: carStyling.spoiler,
+                        vinyl: carStyling.vinyl,
+                        wheels: carStyling.wheels,
+                        suspension: carStyling.suspension,
+                        sgu: carStyling.sgu
+                    });
+                }
             }
         }
 
@@ -12437,7 +12529,32 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             if (goCvs) {
                 const gCtx = goCvs.getContext('2d');
                 gCtx.clearRect(0, 0, goCvs.width, goCvs.height);
-                drawPixelCar(gCtx, goCvs.width / 2, goCvs.height / 2, selectedRaceCarName, 1.3);
+                const goStyling = activeRaceCar?.styling || {};
+                const cachedGo3D = (typeof Car3DManager !== 'undefined' && typeof Car3DManager.getSideThumbnail === 'function')
+                    ? Car3DManager.getSideThumbnail(selectedRaceCarName, goStyling)
+                    : null;
+                const drawGo3D = (url) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        gCtx.clearRect(0, 0, goCvs.width, goCvs.height);
+                        const aspect = img.width / (img.height || 1);
+                        const dw = goCvs.width - 12;
+                        const dh = dw / aspect;
+                        const dy = (goCvs.height - dh) / 2;
+                        gCtx.drawImage(img, 6, dy, dw, dh);
+                    };
+                    img.src = url;
+                };
+                if (cachedGo3D) {
+                    drawGo3D(cachedGo3D);
+                } else if (typeof Car3DManager !== 'undefined' && typeof Car3DManager.renderSideThumbnail === 'function') {
+                    Car3DManager.renderSideThumbnail(selectedRaceCarName, goStyling, (url) => {
+                        if (url) drawGo3D(url);
+                    });
+                    drawPixelCar(gCtx, goCvs.width / 2, goCvs.height / 2, selectedRaceCarName, 1.3);
+                } else {
+                    drawPixelCar(gCtx, goCvs.width / 2, goCvs.height / 2, selectedRaceCarName, 1.3);
+                }
             }
             activeRaceCar = null;
             setTimeout(() => document.getElementById('race-gameover-modal').classList.add('show'), 300);

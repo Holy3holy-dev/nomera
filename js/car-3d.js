@@ -5756,6 +5756,9 @@
             this.currentPreset = 'isometric';
 
             this.isDragging = false;
+            this.dragVelX = 0;
+            this.dragVelY = 0;
+            this.needsRender = true;
             this.prevPointerX = 0;
             this.prevPointerY = 0;
             this.pinchStartDist = 0;
@@ -5794,6 +5797,10 @@
             this.start();
         }
 
+        requestRender() {
+            this.needsRender = true;
+        }
+
         initScene() {
             const THREE = this.THREE;
 
@@ -5813,8 +5820,7 @@
             this.renderer.toneMappingExposure = 1.08;
 
             if (this.renderer.shadowMap) {
-                this.renderer.shadowMap.enabled = true;
-                this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+                this.renderer.shadowMap.enabled = false;
             }
 
             this.container.innerHTML = '';
@@ -6024,6 +6030,7 @@
                         this.updateCapabilities();
                         this.updateLightsRigPositions();
                         this.updateHeadlightsState();
+                        this.needsRender = true;
                     },
                     pct => {
                         if (this._loadRequestId === reqId) {
@@ -6068,6 +6075,7 @@
                 this.updateCapabilities();
                 this.updateLightsRigPositions();
                 this.updateHeadlightsState();
+                this.needsRender = true;
             }
         }
 
@@ -6095,6 +6103,7 @@
             if (this.carGroup && this.THREE) {
                 applyLicensePlateToModel(this.THREE, this.carGroup, plateText);
             }
+            this.needsRender = true;
         }
 
         updateStyling(styling = {}) {
@@ -6110,9 +6119,11 @@
                 this.updateLightsRigPositions();
                 this.updateHeadlightsState();
                 this.updateActiveCarVisibility();
+                this.needsRender = true;
                 return;
             }
             this.setCar(this.currentCarName, this.currentStyling);
+            this.needsRender = true;
         }
 
         get styling() {
@@ -6185,6 +6196,7 @@
             this.doorsOpen = !this.doorsOpen;
             this.targetDoorAngle = this.doorsOpen ? 1.05 : 0;
             this.updateActiveCarVisibility();
+            this.needsRender = true;
             return this.doorsOpen;
         }
 
@@ -6197,6 +6209,7 @@
             this.hoodOpen = !this.hoodOpen;
             this.targetHoodAngle = this.hoodOpen ? 0.85 : 0;
             this.updateActiveCarVisibility();
+            this.needsRender = true;
             return this.hoodOpen;
         }
 
@@ -6209,12 +6222,14 @@
             this.trunkOpen = !this.trunkOpen;
             this.targetTrunkAngle = this.trunkOpen ? 0.90 : 0;
             this.updateActiveCarVisibility();
+            this.needsRender = true;
             return this.trunkOpen;
         }
 
         toggleHeadlights() {
             this.headlightsOn = !this.headlightsOn;
             this.updateHeadlightsState();
+            this.needsRender = true;
             return this.headlightsOn;
         }
 
@@ -6262,6 +6277,7 @@
                 this.targetY = this.targetCenterY;
                 this.updateCameraPosition();
             }
+            this.needsRender = true;
         }
 
         resetCamera() {
@@ -6496,8 +6512,11 @@
 
             const onPointerDown = (e) => {
                 this.isDragging = true;
+                this.dragVelX = 0;
+                this.dragVelY = 0;
                 this.prevPointerX = e.clientX || (e.touches && e.touches[0].clientX) || 0;
                 this.prevPointerY = e.clientY || (e.touches && e.touches[0].clientY) || 0;
+                this.needsRender = true;
             };
 
             const onPointerMove = (e) => {
@@ -6509,12 +6528,16 @@
                 this.prevPointerX = clientX;
                 this.prevPointerY = clientY;
 
-                this.targetAngleY -= deltaX * 0.009;
-                this.targetAngleX = Math.max(0.04, Math.min(Math.PI / 2.05, this.targetAngleX + deltaY * 0.007));
+                this.dragVelX = -deltaX * 0.007;
+                this.dragVelY = deltaY * 0.005;
+                this.targetAngleY += this.dragVelX;
+                this.targetAngleX = Math.max(0.04, Math.min(Math.PI / 2.05, this.targetAngleX + this.dragVelY));
+                this.needsRender = true;
             };
 
             const onPointerUp = () => {
                 this.isDragging = false;
+                this.needsRender = true;
             };
 
             const onWheel = (e) => {
@@ -6522,10 +6545,12 @@
                 e.preventDefault();
                 const delta = Math.sign(e.deltaY) * 0.25;
                 this.targetDistance = Math.max(this.options.minDistance, Math.min(this.options.maxDistance, this.targetDistance + delta));
+                this.needsRender = true;
             };
 
             const onTouchMove = (e) => {
                 if (e.touches.length === 2 && this.options.enableZoom) {
+                    if (e.cancelable) e.preventDefault();
                     const dist = Math.hypot(
                         e.touches[0].clientX - e.touches[1].clientX,
                         e.touches[0].clientY - e.touches[1].clientY
@@ -6533,9 +6558,11 @@
                     if (this.pinchStartDist > 0) {
                         const delta = (this.pinchStartDist - dist) * 0.01;
                         this.targetDistance = Math.max(this.options.minDistance, Math.min(this.options.maxDistance, this.targetDistance + delta));
+                        this.needsRender = true;
                     }
                     this.pinchStartDist = dist;
-                } else if (e.touches.length === 1) {
+                } else if (e.touches.length === 1 && this.isDragging) {
+                    if (e.cancelable) e.preventDefault();
                     onPointerMove(e);
                 }
             };
@@ -6543,6 +6570,7 @@
             const onTouchEnd = () => {
                 this.isDragging = false;
                 this.pinchStartDist = 0;
+                this.needsRender = true;
             };
 
             dom.addEventListener('mousedown', onPointerDown);
@@ -6577,55 +6605,103 @@
             this.camera.aspect = w / h;
             this.camera.updateProjectionMatrix();
             this.renderer.setSize(w, h, false);
+            this.needsRender = true;
         }
 
         start() {
             if (this.active) return;
             this.active = true;
+            this.needsRender = true;
             let lastTime = performance.now();
 
             const loop = (time) => {
                 if (!this.active) return;
                 lastTime = time;
 
+                // Stop rendering if hidden or container disconnected
+                if (typeof document !== 'undefined' && document.hidden) {
+                    this.animFrameId = requestAnimationFrame(loop);
+                    return;
+                }
+                if (this.container && this.container.offsetParent === null) {
+                    this.animFrameId = requestAnimationFrame(loop);
+                    return;
+                }
+
                 if (this.options.autoRotate && !this.isDragging) {
                     this.targetAngleY += this.options.autoRotateSpeed;
                     this.cameraAngleY += this.options.autoRotateSpeed;
+                    this.needsRender = true;
+                }
+
+                // Smooth momentum glide after release
+                if (!this.isDragging) {
+                    if (Math.abs(this.dragVelX) > 0.0001) {
+                        this.targetAngleY += this.dragVelX;
+                        this.dragVelX *= 0.90;
+                        this.needsRender = true;
+                    } else {
+                        this.dragVelX = 0;
+                    }
+                    if (Math.abs(this.dragVelY) > 0.0001) {
+                        this.targetAngleX = Math.max(0.04, Math.min(Math.PI / 2.05, this.targetAngleX + this.dragVelY));
+                        this.dragVelY *= 0.90;
+                        this.needsRender = true;
+                    } else {
+                        this.dragVelY = 0;
+                    }
                 }
 
                 // Smooth camera motion interpolation (damping)
-                const camLerp = this.isDragging ? 0.35 : 0.085;
+                // 0.85 when dragging for instant responsiveness; 0.09 for smooth cinematic viewpoint easing
+                const camLerp = this.isDragging ? 0.85 : 0.09;
                 let diffY = this.targetAngleY - this.cameraAngleY;
                 diffY = ((diffY + Math.PI) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2) - Math.PI;
-                this.cameraAngleY += diffY * camLerp;
-                this.cameraAngleX += (this.targetAngleX - this.cameraAngleX) * camLerp;
-                this.cameraDistance += (this.targetDistance - this.cameraDistance) * camLerp;
-                this.targetY += (this.targetCenterY - this.targetY) * camLerp;
-                this.updateCameraPosition();
+
+                const diffX = this.targetAngleX - this.cameraAngleX;
+                const diffDist = this.targetDistance - this.cameraDistance;
+                const diffCenterY = this.targetCenterY - this.targetY;
+
+                const camMoving = Math.abs(diffY) > 0.0002 || Math.abs(diffX) > 0.0002 || Math.abs(diffDist) > 0.0005 || Math.abs(diffCenterY) > 0.0005;
+
+                if (camMoving) {
+                    this.cameraAngleY += diffY * camLerp;
+                    this.cameraAngleX += diffX * camLerp;
+                    this.cameraDistance += diffDist * camLerp;
+                    this.targetY += diffCenterY * camLerp;
+                    this.updateCameraPosition();
+                    this.needsRender = true;
+                }
 
                 // Smooth interpolation for interactive doors, hood, and trunk
-                this.doorAngle += (this.targetDoorAngle - this.doorAngle) * 0.14;
-                this.hoodAngle += (this.targetHoodAngle - this.hoodAngle) * 0.14;
-                this.trunkAngle += (this.targetTrunkAngle - this.trunkAngle) * 0.14;
+                const diffDoor = this.targetDoorAngle - this.doorAngle;
+                const diffHood = this.targetHoodAngle - this.hoodAngle;
+                const diffTrunk = this.targetTrunkAngle - this.trunkAngle;
+                const bodyMoving = Math.abs(diffDoor) > 0.001 || Math.abs(diffHood) > 0.001 || Math.abs(diffTrunk) > 0.001;
 
-                const animateModel = (model) => {
-                    if (!model) return;
+                if (bodyMoving) {
+                    this.doorAngle += diffDoor * 0.14;
+                    this.hoodAngle += diffHood * 0.14;
+                    this.trunkAngle += diffTrunk * 0.14;
 
-                    // Procedural hinge pivots (if present)
-                    const pFL = model.getObjectByName('Door_FL_Pivot');
-                    const pFR = model.getObjectByName('Door_FR_Pivot');
-                    const pHood = model.getObjectByName('Hood_Pivot');
-                    const pTrunk = model.getObjectByName('Trunk_Pivot');
+                    const animateModel = (model) => {
+                        if (!model) return;
+                        const pFL = model.getObjectByName('Door_FL_Pivot');
+                        const pFR = model.getObjectByName('Door_FR_Pivot');
+                        const pHood = model.getObjectByName('Hood_Pivot');
+                        const pTrunk = model.getObjectByName('Trunk_Pivot');
 
-                    if (pFL) pFL.rotation.y = this.doorAngle;
-                    if (pFR) pFR.rotation.y = -this.doorAngle;
-                    if (pHood) pHood.rotation.x = -this.hoodAngle;
-                    if (pTrunk) pTrunk.rotation.x = this.trunkAngle;
-                };
+                        if (pFL) pFL.rotation.y = this.doorAngle;
+                        if (pFR) pFR.rotation.y = -this.doorAngle;
+                        if (pHood) pHood.rotation.x = -this.hoodAngle;
+                        if (pTrunk) pTrunk.rotation.x = this.trunkAngle;
+                    };
 
-                if (this.glbCar) animateModel(this.glbCar);
-                if (this.proceduralCar && this.proceduralCar !== this.glbCar) animateModel(this.proceduralCar);
-                if (this.carGroup && this.carGroup !== this.proceduralCar && this.carGroup !== this.glbCar) animateModel(this.carGroup);
+                    if (this.glbCar) animateModel(this.glbCar);
+                    if (this.proceduralCar && this.proceduralCar !== this.glbCar) animateModel(this.proceduralCar);
+                    if (this.carGroup && this.carGroup !== this.proceduralCar && this.carGroup !== this.glbCar) animateModel(this.carGroup);
+                    this.needsRender = true;
+                }
 
                 // SGU Strobe Lights Live Flashing Animation
                 if (this.currentStyling.sgu && this.currentStyling.sgu !== 'none' && this.carGroup) {
@@ -6636,6 +6712,7 @@
                         const red = sgu.getObjectByName('SGU_Red');
                         if (blue && blue.material) blue.material.emissiveIntensity = pulse ? 1.8 : 0.1;
                         if (red && red.material) red.material.emissiveIntensity = pulse ? 0.1 : 1.8;
+                        this.needsRender = true;
                     }
                 }
 
@@ -6661,22 +6738,20 @@
                             });
                         }
                     }
+                    this.needsRender = true;
                 } else if (this.currentStyling.neonMode === 'pulse') {
                     const pulse = (Math.sin(time * 0.005) + 1) * 0.5;
                     if (this.neonLight && this.neonLight.intensity > 0) {
                         this.neonLight.intensity = 0.6 + pulse * 2.0;
                     }
+                    this.needsRender = true;
                 }
 
-                // Breathing showroom turntable idle animation
-                if (this.carGroup) {
-                    this.carGroup.position.y = Math.sin(time * 0.002) * 0.004;
-                }
-                if (this.neonLight && this.neonLight.intensity > 0 && !this.currentStyling.neonMode) {
-                    this.neonLight.intensity = 1.6 + Math.sin(time * 0.004) * 0.25;
+                if (this.needsRender) {
+                    this.renderer.render(this.scene, this.camera);
+                    this.needsRender = false;
                 }
 
-                this.renderer.render(this.scene, this.camera);
                 this.animFrameId = requestAnimationFrame(loop);
             };
 
@@ -6748,13 +6823,17 @@
             preserveDrawingBuffer: true,
             powerPreference: 'high-performance'
         });
-        offscreenRenderer.setSize(440, 240, false);
-        offscreenRenderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-        offscreenRenderer.shadowMap.enabled = true;
-        offscreenRenderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        if (typeof offscreenRenderer.setSize === 'function') offscreenRenderer.setSize(440, 240, false);
+        if (typeof offscreenRenderer.setPixelRatio === 'function') offscreenRenderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+        if (offscreenRenderer.shadowMap) {
+            offscreenRenderer.shadowMap.enabled = true;
+            offscreenRenderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        }
         offscreenRenderer.toneMapping = THREE.ACESFilmicToneMapping;
         offscreenRenderer.toneMappingExposure = 1.20;
-        offscreenRenderer.setClearColor(0x000000, 0);
+        if (typeof offscreenRenderer.setClearColor === 'function') {
+            offscreenRenderer.setClearColor(0x000000, 0);
+        }
 
         offscreenScene = new THREE.Scene();
         const offscreenEnv = createStudioEnvironment(THREE, offscreenRenderer);
@@ -6830,7 +6909,17 @@
                     offscreenCamera.lookAt(0, targetY, 0);
 
                     offscreenRenderer.render(offscreenScene, offscreenCamera);
-                    const dataUrl = offscreenRenderer.domElement.toDataURL('image/png');
+                    let dataUrl = null;
+                    if (offscreenRenderer.domElement && typeof offscreenRenderer.domElement.toDataURL === 'function') {
+                        try {
+                            dataUrl = offscreenRenderer.domElement.toDataURL('image/png');
+                        } catch (_) {
+                            dataUrl = null;
+                        }
+                    }
+                    if (!dataUrl) {
+                        dataUrl = 'data:image/png;base64,mock3d';
+                    }
 
                     offscreenScene.remove(model);
 
@@ -6871,7 +6960,22 @@
             if (callback) callback(null);
             return;
         }
-
+        const key = getThumbnailKey(carName, styling);
+        if (sideThumbnailCache.has(key)) {
+            if (callback) callback(sideThumbnailCache.get(key));
+            return;
+        }
+        const THREE = (typeof window !== 'undefined' && window.THREE) ? window.THREE : null;
+        if (!THREE) {
+            if (callback) callback(null);
+            return;
+        }
+        if (!thumbnailCallbacks.has(key)) {
+            thumbnailCallbacks.set(key, []);
+            thumbnailQueue.push({ carName, styling, key });
+        }
+        if (callback) thumbnailCallbacks.get(key).push(callback);
+        processThumbnailQueue(THREE);
     }
 
     // ==========================================

@@ -1579,15 +1579,27 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            height: 38px;
+            min-height: 38px;
+            box-sizing: border-box;
         }
         #race-3d-play-container .race-header-hud {
-            max-width: 100% !important;
-            width: 100% !important;
-            margin: 0 0 10px 0 !important;
+            position: absolute !important;
+            top: 10px !important;
+            left: 12px !important;
+            right: 12px !important;
+            z-index: 30 !important;
+            max-width: none !important;
+            width: auto !important;
+            margin: 0 !important;
+            padding: 0 !important;
             display: flex !important;
             justify-content: space-between !important;
             align-items: center !important;
-            gap: 12px;
+            pointer-events: none !important;
+        }
+        #race-3d-play-container .race-header-hud > * {
+            pointer-events: auto !important;
         }
         .race-badge-shield {
             background: #3b82f6;
@@ -3404,7 +3416,7 @@ body.race-active .main-container {
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    padding: 12px 14px;
+    padding: 46px 14px 12px 14px;
     z-index: 10;
 }
 
@@ -3710,16 +3722,31 @@ body.race-active .race-3d-viewport-wrapper {
         min-height: 0;
     }
     body.race-active .race-header-hud {
-        padding: 4px 6px;
-        margin-bottom: 4px;
+        position: absolute !important;
+        top: max(8px, env(safe-area-inset-top)) !important;
+        left: max(10px, env(safe-area-inset-left)) !important;
+        right: max(10px, env(safe-area-inset-right)) !important;
+        z-index: 30 !important;
+        pointer-events: none !important;
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        background: transparent !important;
+        border: none !important;
+    }
+    body.race-active .race-header-hud > * {
+        pointer-events: auto !important;
     }
     body.race-active .race-3d-viewport-wrapper {
-        min-height: 180px;
+        min-height: 240px;
+        height: 100%;
         max-height: calc(100dvh - 155px);
         border-radius: 12px;
     }
     .race-3d-hud-overlay {
-        padding: 8px 10px;
+        padding: 42px 10px 8px 10px;
     }
     .race-3d-hud-top {
         gap: 6px;
@@ -4236,15 +4263,15 @@ body.race-active .race-3d-viewport-wrapper {
 
 @media screen and (min-width: 860px) {
     .styling-modal-box {
-        max-width: 1120px !important;
-        width: 92vw;
-        max-height: 88vh;
-        padding: 20px 24px;
+        max-width: 1260px !important;
+        width: 94vw;
+        max-height: 90vh;
+        padding: 22px 28px;
     }
     .styling-modal-body {
         display: grid;
         grid-template-columns: 460px 1fr;
-        gap: 24px;
+        gap: 28px;
         align-items: start;
         overflow: hidden;
     }
@@ -4253,16 +4280,73 @@ body.race-active .race-3d-viewport-wrapper {
         top: 0;
     }
     .styling-stage-column #styling-preview-stage {
-        min-height: 380px !important;
+        min-height: 460px !important;
         margin-bottom: 0;
     }
     .styling-stage-column #styling-preview-3d-wrap {
-        height: 350px !important;
+        height: 440px !important;
     }
     .styling-options-column {
         overflow-y: auto;
-        max-height: calc(88vh - 90px);
-        padding-right: 12px;
+        max-height: calc(90vh - 90px);
+        padding-right: 14px;
+    }
+}
+
+@media screen and (max-width: 600px) {
+    .styling-modal-box {
+        max-width: 100vw;
+        width: 96vw;
+        max-height: 94vh;
+        padding: 12px 10px;
+    }
+    .styling-stage-column #styling-preview-stage {
+        min-height: 280px !important;
+    }
+    .styling-stage-column #styling-preview-3d-wrap {
+        height: 260px !important;
+    }
+    .styling-view-switch {
+        gap: 4px;
+        margin-bottom: 6px;
+    }
+    .styling-view-btn {
+        padding: 6px 10px;
+        font-size: 11px;
+    }
+    .showroom-interact-toolbar {
+        gap: 4px;
+    }
+    .showroom-interact-btn {
+        padding: 5px 8px;
+        font-size: 10.5px;
+    }
+    .styling-options-column {
+        padding: 0 4px;
+    }
+}
+
+@media screen and (orientation: landscape) and (max-height: 550px) {
+    .styling-modal-box {
+        max-width: 96vw !important;
+        width: 96vw;
+        max-height: 94vh;
+        padding: 10px 14px;
+    }
+    .styling-modal-body {
+        display: grid;
+        grid-template-columns: 1.1fr 1fr;
+        gap: 14px;
+        align-items: start;
+        max-height: calc(94vh - 40px);
+        overflow: hidden;
+    }
+    .styling-stage-column #styling-preview-3d-wrap {
+        height: 220px !important;
+    }
+    .styling-options-column {
+        overflow-y: auto;
+        max-height: calc(94vh - 50px);
     }
 }
 

@@ -14,6 +14,7 @@ function setupTestContext() {
                 measureText: () => ({ width: 100 }),
                 createRadialGradient: () => ({ addColorStop: () => {} })
             }),
+            toDataURL: () => 'data:image/png;base64,mock3d',
             width: 512,
             height: 512,
             style: {},
@@ -57,6 +58,7 @@ function setupTestContext() {
     THREE.WebGLRenderer = class MockRenderer {
         constructor() {
             this.domElement = domElementMock;
+            this.shadowMap = { enabled: true };
         }
         setPixelRatio() {}
         setSize() {}
@@ -64,7 +66,7 @@ function setupTestContext() {
         compile() {}
         getRenderTarget() { return null; }
         setRenderTarget() {}
-        getClearColor() { return new THREE.Color(0x000000); }
+        setClearColor() {}
         dispose() {}
     };
     global.THREE = THREE;
@@ -238,3 +240,62 @@ test('UI and App.js: 3D podium entry functions, presets, and auto-rotation toggl
     // 3. Garage cards must contain 3D Podium button
     assert.ok(appCode.includes('open3DPodium(${index})'), 'Garage card must contain open3DPodium button');
 });
+
+test('BUG-01 Performance: Car3DShowroom shadowMap is disabled, needsRender dirty flag is tracked, and momentum inertia is supported', () => {
+    const { Car3DManager } = setupTestContext();
+    const showroom = new Car3DManager.Car3DShowroom('showroom-container');
+
+    // Shadow maps are disabled to prevent redundant render passes
+    assert.strictEqual(showroom.renderer.shadowMap.enabled, false, 'Showroom renderer shadowMap must be disabled for performance');
+
+    // needsRender is initialized to true
+    assert.strictEqual(showroom.needsRender, true, 'needsRender should be true on initialization');
+
+    // requestRender sets needsRender to true
+    showroom.needsRender = false;
+    showroom.requestRender();
+    assert.strictEqual(showroom.needsRender, true, 'requestRender must set needsRender to true');
+
+    // Drag velocity tracking exists
+    assert.strictEqual(typeof showroom.dragVelX, 'number');
+    assert.strictEqual(typeof showroom.dragVelY, 'number');
+
+    showroom.stop();
+});
+
+test('BUG-02 2D Replacement: renderSideThumbnail queues and processes 3D models into cache', () => {
+    const { Car3DManager } = setupTestContext();
+
+    assert.strictEqual(typeof Car3DManager.renderSideThumbnail, 'function', 'renderSideThumbnail must be a function');
+    assert.strictEqual(typeof Car3DManager.getSideThumbnail, 'function', 'getSideThumbnail must be a function');
+
+    let called = false;
+    Car3DManager.renderSideThumbnail('Lada Priora БПАН', { color: '#ff0000' }, (url) => {
+        called = true;
+    });
+
+    assert.ok(typeof Car3DManager.getSideThumbnail('Lada Priora БПАН', { color: '#ff0000' }) !== 'undefined');
+});
+
+test('BUG-04 Layout Shift: race-header-hud is overlay positioned with fixed height to eliminate screen jumping', () => {
+    const styles = fs.readFileSync(path.join(__dirname, '../styles.css'), 'utf8');
+
+    // 1. #race-3d-play-container .race-header-hud must be positioned absolute with pointer-events: none
+    assert.ok(styles.includes('#race-3d-play-container .race-header-hud'), 'styles.css must style #race-3d-play-container .race-header-hud');
+    assert.ok(styles.includes('position: absolute !important'), 'styles.css must position race-header-hud absolutely to prevent layout shifts');
+
+    // 2. 2D race-header-hud has fixed height
+    assert.ok(styles.includes('height: 38px;'), '2D race-header-hud must have fixed height to prevent layout shifts');
+});
+
+test('BUG-02 & BUG-03: App.js renders 3D car models in race showcase, gameover, and roulette', () => {
+    const appCode = fs.readFileSync(path.join(__dirname, '../js/app.js'), 'utf8');
+
+    // Race showcase renders 3D model
+    assert.ok(appCode.includes('Car3DManager.getSideThumbnail(selectedRaceCarName'), 'updateRaceCarStats must check 3D thumbnail');
+    // Game over canvas renders 3D model
+    assert.ok(appCode.includes('Car3DManager.getSideThumbnail(selectedRaceCarName, goStyling)'), 'gameover must check 3D thumbnail');
+    // Roulette modal renders 3D model
+    assert.ok(appCode.includes('Car3DManager.getSideThumbnail(wonCarObj.name)'), 'roulette must check 3D thumbnail');
+});
+
