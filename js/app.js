@@ -4529,14 +4529,14 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 return;
             }
 
-            list.innerHTML = '';
+            let html = '';
             inventory.forEach((item, index) => {
                 const r = getRarity(Number(item.price) || 0);
                 let rarityHTML = r.text !== "Обычный"
                     ? `<span class="inv-card-rarity" style="background:${r.bg}; color:${r.color};">${escapeHtml(r.text)}</span>`
                     : '';
 
-                list.innerHTML += `
+                html += `
                     <div class="inv-card">
                         <div class="inv-card-header">
                             ${rarityHTML}
@@ -4546,6 +4546,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                         <button class="btn btn-close" style="padding:8px 12px; width:100%;" onclick="sellPlate(${index})">Продать (+${Number(item.price||0).toLocaleString('ru-RU')} ₽)</button>
                     </div>`;
             });
+            list.innerHTML = html;
             updateBadge();
         }
 
