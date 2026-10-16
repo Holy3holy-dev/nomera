@@ -8966,7 +8966,6 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             racePlayer.wantedStars = next;
             racePlayer.escapeTimer = 9.0;
             if (next > prev) {
-                if (typeof sound?.setSiren === 'function') sound.setSiren(true);
                 if (typeof sound?.lock === 'function') sound.lock(1.3);
                 const starStr = '⭐'.repeat(next);
                 showRacePopup(`🚨 РОЗЫСК: ${starStr} ${reason}!`, '#ef4444');
@@ -9971,9 +9970,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                             }
                         }
 
-                        // Siren audio sync
+                        // Siren audio sync - disabled per user request so it does not distract the player
                         if (typeof sound?.setSiren === 'function') {
-                            sound.setSiren(!!hud.isPursuitActive && isRaceRunning);
+                            sound.setSiren(false);
                         }
 
                         // Sync values into global racePlayer
@@ -10024,7 +10023,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                         if (name === 'brake' && typeof sound?.brake === 'function') sound.brake();
                         if (name === 'scrape' && typeof sound?.scrape === 'function') sound.scrape();
                         if (name === 'horn' && typeof sound?.horn === 'function') sound.horn();
-                        if (name === 'siren_start' && typeof sound?.setSiren === 'function') sound.setSiren(true);
+                        if (name === 'siren_start') {
+                            // Siren sound disabled per user request
+                        }
                         if (name === 'siren_stop' && typeof sound?.setSiren === 'function') sound.setSiren(false);
                         if (name === 'escape' && typeof sound?.cash === 'function') sound.cash();
                         if (name === 'busted' && typeof sound?.crash === 'function') sound.crash();
@@ -10370,11 +10371,10 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             document.getElementById('race-play-container').classList.remove('hidden');
             initRaceTouchControls();
 
-            const hasSgu = activeRaceCar?.styling?.sgu === 'installed';
             const touchHornIcon = document.getElementById('touch-horn-icon');
             const touchHornLabel = document.getElementById('touch-horn-label');
-            if (touchHornIcon) touchHornIcon.textContent = hasSgu ? '🚨' : '📢';
-            if (touchHornLabel) touchHornLabel.textContent = hasSgu ? 'СГУ [H]' : 'СИГНАЛ [H]';
+            if (touchHornIcon) touchHornIcon.textContent = '📢';
+            if (touchHornLabel) touchHornLabel.textContent = 'СИГНАЛ [H]';
 
             isRaceRunning = true;
             document.body.classList.add("race-active");
