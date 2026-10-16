@@ -4706,7 +4706,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                             </div>
                             <span class="car-category-pill" style="position: static;">${escapeHtml(carCategory)}</span>
                         </div>
-                        <div class="car-img-wrap" style="height: 150px;">
+                        <div class="car-img-wrap" style="height: 150px; cursor: pointer;" onclick="open3DPodium(${index})" title="Нажмите, чтобы открыть интерактивный 3D-подиум">
                             <img id="${myImgId}" src="${myInitialSrc}" class="car-img car-sprite-img" onerror="this.onerror=null; this.src='./icons/car-placeholder.svg';" alt="${escapeHtml(car.name)}">
                         </div>
                         <div class="garage-tuning">
@@ -4718,11 +4718,14 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                         </div>
                         <div class="my-car-bumper">
                             ${bumperHtml}
-                            <div style="display: flex; gap: 8px; width: 100%; margin-top: 6px;">
-                                <button class="btn btn-blue" style="font-size: 11px; padding: 8px; flex: 1;" onclick="openStylingModal(${index})">
+                            <div style="display: flex; gap: 6px; width: 100%; margin-top: 6px;">
+                                <button class="btn btn-gold" style="font-size: 11px; padding: 8px 6px; flex: 1.1;" onclick="open3DPodium(${index})" title="Открыть интерактивный 3D-подиум">
+                                    🌟 3D Подиум
+                                </button>
+                                <button class="btn btn-blue" style="font-size: 11px; padding: 8px 6px; flex: 1;" onclick="openStylingModal(${index})" title="Тюнинг и стайлинг">
                                     🎨 Стайлинг
                                 </button>
-                                <button class="btn btn-blue" style="font-size: 11px; padding: 8px; flex: 1;" onclick="openSellCarModal(${index})">
+                                <button class="btn btn-blue" style="font-size: 11px; padding: 8px 6px; flex: 1;" onclick="openSellCarModal(${index})">
                                     🏷️ На рынок
                                 </button>
                             </div>
@@ -4988,64 +4991,74 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         let car3DShowroom = null;
 
         function setStylingViewMode(mode) {
-            stylingViewMode = (mode === '3d') ? '3d' : (mode === 'top' ? 'top' : 'side');
+            let preset = mode || 'isometric';
+            if (preset === '3d') preset = 'isometric';
+            stylingViewMode = (mode === 'top' || mode === 'side' || mode === 'front' || mode === 'rear') ? mode : '3d';
+
             const btnSide = document.getElementById('btn-view-side');
             const btnTop = document.getElementById('btn-view-top');
+            const btnFront = document.getElementById('btn-view-front');
+            const btnRear = document.getElementById('btn-view-rear');
             const btn3D = document.getElementById('btn-view-3d');
-            if (btnSide) btnSide.classList.toggle('active', stylingViewMode === 'side');
-            if (btnTop) btnTop.classList.toggle('active', stylingViewMode === 'top');
-            if (btn3D) btn3D.classList.toggle('active', stylingViewMode === '3d');
+            const btnIso = document.getElementById('btn-view-isometric');
+
+            const isIso = (preset === 'isometric' || mode === '3d');
+            if (btnSide) btnSide.classList.toggle('active', preset === 'side');
+            if (btnTop) btnTop.classList.toggle('active', preset === 'top');
+            if (btnFront) btnFront.classList.toggle('active', preset === 'front');
+            if (btnRear) btnRear.classList.toggle('active', preset === 'rear');
+            if (btn3D) btn3D.classList.toggle('active', isIso);
+            if (btnIso) btnIso.classList.toggle('active', isIso);
 
             const cvs = document.getElementById('styling-preview-canvas');
             const wrap3D = document.getElementById('styling-preview-3d-wrap');
             const hint3D = document.getElementById('styling-3d-hint');
             const toolbar3D = document.getElementById('showroom-toolbar');
 
-            if (stylingViewMode === '3d') {
+            if (typeof Car3DManager !== 'undefined' && Car3DManager.isWebGLAvailable()) {
                 if (cvs) cvs.style.display = 'none';
                 if (wrap3D) wrap3D.style.display = 'block';
                 if (hint3D) hint3D.style.display = 'block';
                 if (toolbar3D) toolbar3D.style.display = 'flex';
 
-                if (typeof Car3DManager !== 'undefined' && Car3DManager.isWebGLAvailable()) {
-                    if (!car3DShowroom) {
-                        car3DShowroom = new Car3DManager.Car3DShowroom('styling-preview-3d-wrap', {
-                            autoRotate: true,
-                            autoRotateSpeed: 0.007,
-                            showPodium: true
-                        });
-                        car3DShowroom.onCapabilitiesChange = () => {
-                            updateShowroomButtonsState();
-                        };
-                    } else {
-                        car3DShowroom.onCapabilitiesChange = () => {
-                            updateShowroomButtonsState();
-                        };
-                        car3DShowroom.resize();
-                        car3DShowroom.start();
-                    }
-                    const car = (stylingActiveCarIndex >= 0 && myCars[stylingActiveCarIndex]) ? myCars[stylingActiveCarIndex] : null;
-                    if (car && car3DShowroom) {
-                        car3DShowroom.setCar(car.name, {
-                            color: stylingTempColor,
-                            tint: stylingTempTint,
-                            neon: stylingTempNeon,
-                            spoiler: stylingTempSpoiler,
-                            vinyl: stylingTempVinyl,
-                            wheels: stylingTempWheels,
-                            suspension: stylingTempSuspension,
-                            sgu: stylingTempSgu,
-                            plate: stylingTempPlate,
-                            camber: stylingTempCamber,
-                            wheelOffset: stylingTempOffset,
-                            neonMode: stylingTempNeonMode
-                        });
+                if (!car3DShowroom) {
+                    car3DShowroom = new Car3DManager.Car3DShowroom('styling-preview-3d-wrap', {
+                        autoRotate: false,
+                        autoRotateSpeed: 0.007,
+                        showPodium: true
+                    });
+                    car3DShowroom.onCapabilitiesChange = () => {
                         updateShowroomButtonsState();
-                    }
+                    };
                 } else {
-                    notifyUser('3D режим не поддерживается вашим браузером, переключаем на 2D', 'info');
-                    setStylingViewMode('side');
-                    return;
+                    car3DShowroom.onCapabilitiesChange = () => {
+                        updateShowroomButtonsState();
+                    };
+                    car3DShowroom.resize();
+                    car3DShowroom.start();
+                }
+
+                const car = (stylingActiveCarIndex >= 0 && myCars[stylingActiveCarIndex]) ? myCars[stylingActiveCarIndex] : null;
+                if (car && car3DShowroom) {
+                    car3DShowroom.setCar(car.name, {
+                        color: stylingTempColor,
+                        tint: stylingTempTint,
+                        neon: stylingTempNeon,
+                        spoiler: stylingTempSpoiler,
+                        vinyl: stylingTempVinyl,
+                        wheels: stylingTempWheels,
+                        suspension: stylingTempSuspension,
+                        sgu: stylingTempSgu,
+                        plate: stylingTempPlate,
+                        camber: stylingTempCamber,
+                        wheelOffset: stylingTempOffset,
+                        neonMode: stylingTempNeonMode
+                    });
+                    updateShowroomButtonsState();
+                }
+
+                if (car3DShowroom && typeof car3DShowroom.setViewPreset === 'function') {
+                    car3DShowroom.setViewPreset(preset);
                 }
             } else {
                 if (cvs) cvs.style.display = 'block';
@@ -5059,19 +5072,47 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             }
         }
 
+        function toggleShowroomAutoRotate() {
+            if (!car3DShowroom) return;
+            const isRotating = car3DShowroom.toggleAutoRotate();
+            const btn = document.getElementById('btn-view-autorotate');
+            if (btn) btn.classList.toggle('active', isRotating);
+            playTick();
+        }
+
+        function resetShowroomCamera() {
+            if (!car3DShowroom) return;
+            car3DShowroom.resetCamera();
+            setStylingViewMode('3d');
+            playTick();
+        }
+
+        function open3DPodium(carIndex) {
+            openStylingModal(carIndex, '3d');
+        }
+
         // --- 2. СТАЙЛИНГ АВТОМОБИЛЕЙ (ПОКРАСКА, ТОНИРОВКА, ДИСКИ, КЛИРЕНС, СГУ, НЕОН) ---
-        function openStylingModal(carIndex) {
+        function openStylingModal(carIndex, initialMode) {
             try { preloadUserGarageModels(); } catch (_) {}
             stylingActiveCarIndex = carIndex;
-            if (typeof window !== 'undefined' && window.innerWidth >= 860) {
+            if (initialMode) {
+                stylingViewMode = initialMode;
+            } else if (typeof window !== 'undefined' && window.innerWidth >= 860) {
                 stylingViewMode = '3d';
+            } else {
+                stylingViewMode = 'side';
             }
             const btnSide = document.getElementById('btn-view-side');
             const btnTop = document.getElementById('btn-view-top');
+            const btnFront = document.getElementById('btn-view-front');
+            const btnRear = document.getElementById('btn-view-rear');
             const btn3D = document.getElementById('btn-view-3d');
+            const is3D = (stylingViewMode === '3d' || stylingViewMode === 'isometric');
             if (btnSide) btnSide.classList.toggle('active', stylingViewMode === 'side');
             if (btnTop) btnTop.classList.toggle('active', stylingViewMode === 'top');
-            if (btn3D) btn3D.classList.toggle('active', stylingViewMode === '3d');
+            if (btnFront) btnFront.classList.toggle('active', stylingViewMode === 'front');
+            if (btnRear) btnRear.classList.toggle('active', stylingViewMode === 'rear');
+            if (btn3D) btn3D.classList.toggle('active', is3D);
             const car = myCars[carIndex];
             if (!car) return;
             car.styling = car.styling || { color: '#ffffff', tint: 0, neon: 'none', spoiler: 'none', vinyl: 'none', wheels: 'stock', suspension: 'stock', sgu: 'none', camber: 0, wheelOffset: 0, neonMode: 'solid' };
@@ -9382,7 +9423,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             const car = (stylingActiveCarIndex >= 0 && myCars[stylingActiveCarIndex]) ? myCars[stylingActiveCarIndex] : null;
             if (!car) return;
 
-            if (stylingViewMode === '3d' && car3DShowroom) {
+            if (car3DShowroom) {
                 car3DShowroom.updateStyling({
                     color: stylingTempColor,
                     tint: stylingTempTint,

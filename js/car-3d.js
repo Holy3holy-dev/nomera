@@ -715,14 +715,14 @@
             const halfW = (size.x || 1.8) * 0.5;
             const carH = size.y || 1.4;
 
-            // Front 38% Z threshold for headlights, Rear 38% Z threshold for taillights
-            const hlMinZ = center.z + size.z * 0.10;
-            const tlMaxZ = center.z - size.z * 0.10;
+            // Front fascia Z threshold for headlights, Rear fascia Z threshold for taillights
+            const hlMinZ = box.max.z - Math.min(0.85, Math.max(0.25, size.z * 0.18));
+            const tlMaxZ = box.min.z + Math.min(0.85, Math.max(0.25, size.z * 0.18));
 
             const hlCandidates = [];
             const tlCandidates = [];
 
-            const badWords = /interior|seat|dash|mirror|wheel|tire|plate|bottom|chassis|under|roof|cabin|radiator|grille|intake|diffuser|disc|caliper|pad|rotor|exhaust/i;
+            const badWords = /interior|seat|dash|mirror|wheel|tire|plate|bottom|chassis|under|roof|cabin|radiator|grille|intake|diffuser|disc|caliper|pad|rotor|exhaust|hood|bonnet|scoop|vent|toit|glass_toit|wiper|spoiler|wing/i;
 
             model.traverse(c => {
                 if (!c.name && (!c.material || !c.material.name)) return;
@@ -744,6 +744,9 @@
                 if (b.isEmpty() || (b.max.y - b.min.y) <= 0.01) return;
                 const bSize = b.getSize(new THREE.Vector3());
                 const bCen = b.getCenter(new THREE.Vector3());
+
+                // Headlights & taillights are on the car body fascia (not roof, not ground floor)
+                if (bCen.y < box.min.y + size.y * 0.18 || bCen.y > box.min.y + size.y * 0.80) return;
 
                 if (isHl && bCen.z >= hlMinZ) {
                     let priority = 1;
@@ -821,23 +824,29 @@
             let hlL, hlR, tlL, tlR;
 
             if (hlResult.leftPos && hlResult.rightPos) {
-                hlL = hlResult.leftPos;
-                hlR = hlResult.rightPos;
+                const avgY = (hlResult.leftPos.y + hlResult.rightPos.y) * 0.5;
+                const avgZ = (hlResult.leftPos.z + hlResult.rightPos.z) * 0.5;
+                const halfDistX = (Math.abs(hlResult.leftPos.x - center.x) + Math.abs(hlResult.rightPos.x - center.x)) * 0.5;
+                hlL = new THREE.Vector3(center.x - halfDistX, avgY, avgZ);
+                hlR = new THREE.Vector3(center.x + halfDistX, avgY, avgZ);
             } else {
-                const hlY = isSUV ? (box.min.y + carH * 0.46) : (isSuper ? (box.min.y + carH * 0.50) : (box.min.y + carH * 0.46));
+                const hlY = isSUV ? (box.min.y + carH * 0.48) : (isSuper ? (box.min.y + carH * 0.50) : (box.min.y + carH * 0.48));
                 const hlX = halfW * 0.72;
-                const hlZ = box.max.z - Math.min(0.38, Math.max(0.16, size.z * 0.055));
+                const hlZ = box.max.z - Math.min(0.28, Math.max(0.12, size.z * 0.045));
                 hlL = new THREE.Vector3(center.x - hlX, hlY, hlZ);
                 hlR = new THREE.Vector3(center.x + hlX, hlY, hlZ);
             }
 
             if (tlResult.leftPos && tlResult.rightPos) {
-                tlL = tlResult.leftPos;
-                tlR = tlResult.rightPos;
+                const avgY = (tlResult.leftPos.y + tlResult.rightPos.y) * 0.5;
+                const avgZ = (tlResult.leftPos.z + tlResult.rightPos.z) * 0.5;
+                const halfDistX = (Math.abs(tlResult.leftPos.x - center.x) + Math.abs(tlResult.rightPos.x - center.x)) * 0.5;
+                tlL = new THREE.Vector3(center.x - halfDistX, avgY, avgZ);
+                tlR = new THREE.Vector3(center.x + halfDistX, avgY, avgZ);
             } else {
-                const tlY = isSUV ? (box.min.y + carH * 0.38) : (isSuper ? (box.min.y + carH * 0.50) : (box.min.y + carH * 0.48));
+                const tlY = isSUV ? (box.min.y + carH * 0.42) : (isSuper ? (box.min.y + carH * 0.50) : (box.min.y + carH * 0.48));
                 const tlX = halfW * 0.74;
-                const tlZ = box.min.z + Math.min(0.25, Math.max(0.08, size.z * 0.035));
+                const tlZ = box.min.z + Math.min(0.22, Math.max(0.08, size.z * 0.035));
                 tlL = new THREE.Vector3(center.x - tlX, tlY, tlZ);
                 tlR = new THREE.Vector3(center.x + tlX, tlY, tlZ);
             }
@@ -3644,7 +3653,7 @@
                 const hlPodGeo = new THREE.CylinderGeometry(0.125, 0.125, 0.08, 24);
                 hlPodGeo.rotateX(-Math.PI / 4.5);
                 const hlPod = new THREE.Mesh(hlPodGeo, mats.headlightLED);
-                hlPod.position.set(side * (W * 0.35), baseY + H * 0.92, L * 0.38);
+                hlPod.position.set(side * (W * 0.35), baseY + H * 0.88, L * 0.45);
                 root.add(hlPod);
 
                 // 4-Point Matrix LED DRL points
@@ -3652,7 +3661,7 @@
                     [-0.04, 0.04].forEach(dy => {
                         const ptGeo = new THREE.BoxGeometry(0.018, 0.018, 0.02);
                         const pt = new THREE.Mesh(ptGeo, mats.chrome);
-                        pt.position.set(side * (W * 0.35) + dx, baseY + H * 0.92 + dy, L * 0.41);
+                        pt.position.set(side * (W * 0.35) + dx, baseY + H * 0.88 + dy, L * 0.475);
                         root.add(pt);
                     });
                 });
@@ -4686,10 +4695,11 @@
             const mn = String(matName || '').toLowerCase();
             const ms = String(meshName || '').toLowerCase();
             if (carId === 'subaru' && (
-                ms === 'object_13' || ms === 'object_14' || ms === 'object_18' ||
-                ms === 'object_19' || ms === 'object_20' || ms === 'object_21' ||
-                mn === 'material_10' || mn === 'material_11' || mn === 'material_15' ||
-                mn === 'material_16' || mn === 'material_17' || mn === 'material_18'
+                ms === 'object_14' || ms === 'object_18' ||
+                ms === 'object_19' || ms === 'object_20' ||
+                mn === 'material_11' || mn === 'material_15' ||
+                mn === 'material_16' || mn === 'material_17' ||
+                mn === 'material_14' || mn === 'material_7'
             )) return true;
             if (carId === 'vaz2107' && (mn.includes('orange light') || mn.includes('red light') || mn === 'white')) return true;
             if (carId === 'vaz2109' && (mn === 'standardmater7' || mn === 'standardmater3' || mn === 'standardmater5')) return true;
@@ -4951,8 +4961,10 @@
 
             if (carId === 'subaru') {
                 return (
-                    ms === 'object_2' || ms === 'object_7' || ms === 'object_8' || ms === 'object_9' || ms === 'object_17' || ms === 'object_28' ||
-                    mn === 'material_26' || mn === 'material_4' || mn === 'material_5' || mn === 'material_6' || mn === 'material_14' || mn === 'material_25'
+                    ms === 'object_2' || ms === 'object_7' || ms === 'object_8' || ms === 'object_9' ||
+                    ms === 'object_13' || ms === 'object_17' || ms === 'object_21' || ms === 'object_28' ||
+                    mn === 'material_26' || mn === 'material_4' || mn === 'material_5' || mn === 'material_6' ||
+                    mn === 'material_10' || mn === 'material_18' || mn === 'material_25'
                 );
             }
             if (carId === 'vaz2107') return mn === 'body' || ms.includes('object_128_body') || ms.includes('_body_');
@@ -5718,7 +5730,7 @@
             }
 
             this.options = Object.assign({
-                autoRotate: true,
+                autoRotate: false,
                 autoRotateSpeed: 0.007,
                 showPodium: true,
                 enableZoom: true,
@@ -5731,11 +5743,17 @@
             this.active = false;
             this.animFrameId = null;
 
-            // Camera angles and orbit controls
+            // Camera angles and orbit controls (current & target for smooth animation)
             this.cameraAngleY = Math.PI / 4.2;
             this.cameraAngleX = 0.26;
             this.cameraDistance = 4.3;
             this.targetY = 0.52;
+
+            this.targetAngleY = this.cameraAngleY;
+            this.targetAngleX = this.cameraAngleX;
+            this.targetDistance = this.cameraDistance;
+            this.targetCenterY = this.targetY;
+            this.currentPreset = 'isometric';
 
             this.isDragging = false;
             this.prevPointerX = 0;
@@ -6200,6 +6218,61 @@
             return this.headlightsOn;
         }
 
+        setViewPreset(presetName, immediate = false) {
+            this.currentPreset = presetName || 'isometric';
+            switch (presetName) {
+                case 'front':
+                    this.targetAngleY = 0;
+                    this.targetAngleX = 0.12;
+                    this.targetDistance = 4.2;
+                    this.targetCenterY = 0.50;
+                    break;
+                case 'rear':
+                    this.targetAngleY = Math.PI;
+                    this.targetAngleX = 0.12;
+                    this.targetDistance = 4.2;
+                    this.targetCenterY = 0.50;
+                    break;
+                case 'side':
+                    this.targetAngleY = Math.PI / 2;
+                    this.targetAngleX = 0.08;
+                    this.targetDistance = 4.4;
+                    this.targetCenterY = 0.52;
+                    break;
+                case 'top':
+                    this.targetAngleY = 0;
+                    this.targetAngleX = Math.PI / 2.05;
+                    this.targetDistance = 4.8;
+                    this.targetCenterY = 0.50;
+                    break;
+                case 'isometric':
+                case '3d':
+                default:
+                    this.currentPreset = 'isometric';
+                    this.targetAngleY = Math.PI / 4.2;
+                    this.targetAngleX = 0.26;
+                    this.targetDistance = 4.3;
+                    this.targetCenterY = 0.52;
+                    break;
+            }
+            if (immediate) {
+                this.cameraAngleY = this.targetAngleY;
+                this.cameraAngleX = this.targetAngleX;
+                this.cameraDistance = this.targetDistance;
+                this.targetY = this.targetCenterY;
+                this.updateCameraPosition();
+            }
+        }
+
+        resetCamera() {
+            this.setViewPreset('isometric');
+        }
+
+        toggleAutoRotate() {
+            this.options.autoRotate = !this.options.autoRotate;
+            return this.options.autoRotate;
+        }
+
         updateLightsRigPositions() {
             const activeModel = this.glbCar || this.proceduralCar || this.carGroup;
             if (!activeModel || !this.THREE) return;
@@ -6436,9 +6509,8 @@
                 this.prevPointerX = clientX;
                 this.prevPointerY = clientY;
 
-                this.cameraAngleY -= deltaX * 0.009;
-                this.cameraAngleX = Math.max(0.04, Math.min(Math.PI / 2.2, this.cameraAngleX + deltaY * 0.007));
-                this.updateCameraPosition();
+                this.targetAngleY -= deltaX * 0.009;
+                this.targetAngleX = Math.max(0.04, Math.min(Math.PI / 2.05, this.targetAngleX + deltaY * 0.007));
             };
 
             const onPointerUp = () => {
@@ -6449,8 +6521,7 @@
                 if (!this.options.enableZoom) return;
                 e.preventDefault();
                 const delta = Math.sign(e.deltaY) * 0.25;
-                this.cameraDistance = Math.max(this.options.minDistance, Math.min(this.options.maxDistance, this.cameraDistance + delta));
-                this.updateCameraPosition();
+                this.targetDistance = Math.max(this.options.minDistance, Math.min(this.options.maxDistance, this.targetDistance + delta));
             };
 
             const onTouchMove = (e) => {
@@ -6461,8 +6532,7 @@
                     );
                     if (this.pinchStartDist > 0) {
                         const delta = (this.pinchStartDist - dist) * 0.01;
-                        this.cameraDistance = Math.max(this.options.minDistance, Math.min(this.options.maxDistance, this.cameraDistance + delta));
-                        this.updateCameraPosition();
+                        this.targetDistance = Math.max(this.options.minDistance, Math.min(this.options.maxDistance, this.targetDistance + delta));
                     }
                     this.pinchStartDist = dist;
                 } else if (e.touches.length === 1) {
@@ -6519,9 +6589,19 @@
                 lastTime = time;
 
                 if (this.options.autoRotate && !this.isDragging) {
+                    this.targetAngleY += this.options.autoRotateSpeed;
                     this.cameraAngleY += this.options.autoRotateSpeed;
-                    this.updateCameraPosition();
                 }
+
+                // Smooth camera motion interpolation (damping)
+                const camLerp = this.isDragging ? 0.35 : 0.085;
+                let diffY = this.targetAngleY - this.cameraAngleY;
+                diffY = ((diffY + Math.PI) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2) - Math.PI;
+                this.cameraAngleY += diffY * camLerp;
+                this.cameraAngleX += (this.targetAngleX - this.cameraAngleX) * camLerp;
+                this.cameraDistance += (this.targetDistance - this.cameraDistance) * camLerp;
+                this.targetY += (this.targetCenterY - this.targetY) * camLerp;
+                this.updateCameraPosition();
 
                 // Smooth interpolation for interactive doors, hood, and trunk
                 this.doorAngle += (this.targetDoorAngle - this.doorAngle) * 0.14;
