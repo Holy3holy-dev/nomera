@@ -171,3 +171,113 @@ test('secureRoll base rates: forced combinations are rare under 0 pity', () => {
     assert(ladderRate < 0.15, `Ladder rate ${ladderRate} should be under 15%`);
     assert(tripleRate < 0.12, `Triple rate ${tripleRate} should be under 12%`);
 });
+
+test('garage car persistence: salon purchase is preserved and not wiped by server profile sync', () => {
+    const app = createApp({
+        saved: {
+            nickname: 'CarCollector',
+            balance: 10000000,
+            myCars: [{ name: 'ВАЗ-2107 «Жигули»', condition: 100, plate: null, upgrades: { engine: 0, handling: 0, economy: 0, nitro: 0 } }]
+        }
+    });
+    app.run('loadProgress();');
+    app.run('setOnlineProfile({ nickname: "CarCollector", balance: 10000000, inventory: [], myCars: [{ name: "ВАЗ-2107 «Жигули»", condition: 100, plate: null }] }, false);');
+
+    let syncCalled = false;
+    app.context.syncCloudGarage = () => { syncCalled = true; return Promise.resolve(); };
+
+    // Buy a BMW in the salon
+    app.run('buyCar("BMW M5 E60 V10");');
+
+    assert.equal(app.run('myCars.length'), 2);
+    assert.equal(app.run('myCars[0].name'), 'BMW M5 E60 V10');
+    assert.equal(app.run('myCars[0].condition'), 100);
+    assert.equal(app.run('myCars[0].upgrades.engine'), 0);
+    assert.equal(app.run('myCars[0].upgrades.nitro'), 0);
+    assert.equal(app.run('onlineProfile.myCars.length'), 2);
+    assert.equal(syncCalled, true);
+
+    // Simulate server returning stale snapshot that doesn't have the newly bought car yet
+    const staleServerProfile = {
+        nickname: 'CarCollector',
+        balance: 5000000,
+        inventory: [],
+        myCars: [{ name: 'ВАЗ-2107 «Жигули»', condition: 100, plate: null }]
+    };
+    app.run(`setOnlineProfile(${JSON.stringify(staleServerProfile)}, true);`);
+
+    // The BMW M5 E60 V10 MUST NOT BE WIPED!
+    assert.equal(app.run('myCars.length'), 2);
+    const carNames = app.run('myCars.map(c => c.name)');
+    assert(carNames.includes('BMW M5 E60 V10'), 'Purchased BMW must be retained in garage');
+    assert(carNames.includes('ВАЗ-2107 «Жигули»'), 'Starter Zhiguli must be retained in garage');
+
+    // Local storage must also reflect both cars
+    const saved = JSON.parse(app.data.get('nomera_player_account'));
+    assert.equal(saved.myCars.length, 2);
+    assert.equal(saved.myCars.some(c => c.name === 'BMW M5 E60 V10'), true);
+});
+
+test('garage car persistence: roulette won car is preserved across server syncs', () => {
+    const app = createApp({
+        saved: {
+            nickname: 'LuckySpinner',
+            balance: 500000,
+            myCars: [{ name: 'ВАЗ-2107 «Жигули»', condition: 100, plate: null }]
+        }
+    });
+    app.run('loadProgress();');
+    app.run('setOnlineProfile({ nickname: "LuckySpinner", balance: 500000, inventory: [], myCars: [{ name: "ВАЗ-2107 «Жигули»", condition: 100, plate: null }] }, false);');
+
+    let syncCalled = false;
+    app.context.syncCloudGarage = () => { syncCalled = true; return Promise.resolve(); };
+
+    // Simulate winning a Porsche in roulette
+    app.run('wonCarObj = { name: "Porsche 911 GT3 RS", price: 15000000, category: "Спорткар", img: "", rarity: { text: "Легендарный" } };');
+    app.run('rouletteSaveCar();');
+
+    assert.equal(app.run('myCars.length'), 2);
+    assert.equal(app.run('myCars[0].name'), 'Porsche 911 GT3 RS');
+    assert.equal(app.run('myCars[0].condition'), 100);
+    assert.equal(app.run('myCars[0].upgrades.engine'), 0);
+    assert.equal(app.run('myCars[0].upgrades.nitro'), 0);
+    assert.equal(app.run('onlineProfile.myCars.length'), 2);
+    assert.equal(syncCalled, true);
+
+    // Stale server sync must not wipe the won Porsche
+    app.run('setOnlineProfile({ nickname: "LuckySpinner", balance: 500000, inventory: [], myCars: [{ name: "ВАЗ-2107 «Жигули»", condition: 100, plate: null }] }, true);');
+    assert.equal(app.run('myCars.length'), 2);
+    const carNames = app.run('myCars.map(c => c.name)');
+    assert(carNames.includes('Porsche 911 GT3 RS'), 'Won Porsche must be retained in garage');
+});
+
+test('confirmSellCar syncs cloud garage before sending sell request to prevent index mismatch', async () => {
+    const app = createApp({
+        saved: {
+            nickname: 'CarTrader',
+            balance: 5000000,
+            myCars: [
+                { name: 'ВАЗ-2107 «Жигули»', condition: 100, plate: null },
+                { name: 'BMW M5 F90', condition: 100, plate: null }
+            ]
+        }
+    });
+    app.run('loadProgress();');
+    app.run('setOnlineProfile({ nickname: "CarTrader", balance: 5000000, inventory: [], myCars: [{ name: "ВАЗ-2107 «Жигули»" }, { name: "BMW M5 F90" }] }, false);');
+
+    const callOrder = [];
+    app.context.onlineRequest = async (action, params) => {
+        callOrder.push(action);
+        if (action === 'syncGarage') return { ok: true };
+        if (action === 'sell') return { ok: true, profile: { nickname: 'CarTrader', balance: 5000000, inventory: [], myCars: [{ name: 'ВАЗ-2107 «Жигули»' }] } };
+        return { ok: true };
+    };
+
+    app.context.document.getElementById('sell-car-select').value = '1';
+    app.context.document.getElementById('sell-car-price').value = '2000000';
+
+    await app.run('confirmSellCar();');
+
+    assert.equal(callOrder[0], 'syncGarage', 'syncGarage must be awaited BEFORE sell action');
+    assert.equal(callOrder[1], 'sell');
+});

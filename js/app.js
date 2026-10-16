@@ -816,7 +816,13 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                         updateProfileUI();
                     }
                     if (Array.isArray(data.inventory)) onlineProfile.inventory = data.inventory;
-                    if (Array.isArray(data.myCars)) onlineProfile.myCars = data.myCars;
+                    if (Array.isArray(data.myCars)) {
+                        if (Array.isArray(myCars) && myCars.length > data.myCars.length) {
+                            if (typeof syncCloudGarage === 'function') syncCloudGarage(true);
+                        } else {
+                            onlineProfile.myCars = data.myCars;
+                        }
+                    }
                     if (data.draft) onlineProfile.draft = data.draft;
 
                     renderOnlineAccount();
@@ -1078,8 +1084,14 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 playerLevel = Number.isFinite(Number(profile.playerLevel)) && Number(profile.playerLevel) > 0 ? Number(profile.playerLevel) : 1;
                 playerExp = Number.isFinite(Number(profile.playerExp)) && Number(profile.playerExp) >= 0 ? Number(profile.playerExp) : 0;
                 inventory = Array.isArray(profile.inventory) ? [...profile.inventory] : [];
-                if (Array.isArray(profile.myCars) && profile.myCars.length > 0) {
-                    myCars = [...profile.myCars];
+                const serverCars = Array.isArray(profile.myCars) && profile.myCars.length > 0 ? [...profile.myCars] : [];
+                const localCars = Array.isArray(myCars) ? [...myCars] : [];
+                if (serverCars.length > 0) {
+                    const serverCarNames = new Set(serverCars.map(c => c && c.name));
+                    const extraLocal = localCars.filter(lc => lc && !serverCarNames.has(lc.name));
+                    myCars = [...serverCars, ...extraLocal];
+                } else if (localCars.length > 0) {
+                    myCars = localCars;
                 } else {
                     myCars = [{name:'ВАЗ-2107 «Жигули»',basePrice:80000,category:'Седан',
                         img:'https://thumb.wikimedia.org/wikipedia/commons/thumb/d/d4/Lada_2107_front_20080116.jpg/800px-Lada_2107_front_20080116.jpg',
@@ -2337,6 +2349,25 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 } catch (e) {
                     console.warn('Не удалось синхронизировать гараж с сервером:', e.message);
                 }
+                if (onlineProfile && db && typeof db.ref === 'function') {
+                    try {
+                        const key = sanitizeKey(onlineProfile.nickname);
+                        const now = Date.now();
+                        db.ref('onlineV4/accounts/' + key).update({
+                            myCars: JSON.parse(JSON.stringify(myCars)),
+                            updatedAt: now
+                        }).catch(() => {});
+                        db.ref('users/' + key).update({
+                            myCars: JSON.parse(JSON.stringify(myCars)),
+                            updatedAt: now
+                        }).catch(() => {});
+                        db.ref('leaderboard/' + key).update({
+                            carsCount: myCars.length,
+                            avatarData: avatarData || '',
+                            updatedAt: now
+                        }).catch(() => {});
+                    } catch (_) {}
+                }
             };
             if (immediate) {
                 return doSync();
@@ -2382,14 +2413,24 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     const serverCars = profile.myCars;
                     const prevCars = Array.isArray(myCars) ? [...myCars] : [];
                     let hasLocalAdvancement = false;
+                    const usedPrevIndices = new Set();
 
                     myCars = serverCars.map((c, i) => {
                         if (!c || typeof c !== 'object') return null;
                         const template = (typeof carsData !== 'undefined' && Array.isArray(carsData)) ? (carsData.find(t => t && t.name === c.name) || {}) : {};
-                        const localCar = prevCars.find(lc => lc && ((lc.plate?.id && c.plate?.id && lc.plate.id === c.plate.id) || (lc.plate?.text && c.plate?.text && lc.plate.text === c.plate.text)))
-                            || prevCars.find(lc => lc && lc.name === c.name)
-                            || prevCars[i]
-                            || null;
+                        let matchedIdx = -1;
+                        if (c.plate && (c.plate.id || c.plate.text)) {
+                            matchedIdx = prevCars.findIndex((lc, idx) => !usedPrevIndices.has(idx) && lc && lc.plate && ((c.plate.id && lc.plate.id === c.plate.id) || (c.plate.text && lc.plate.text === c.plate.text)));
+                        }
+                        if (matchedIdx === -1) {
+                            matchedIdx = prevCars.findIndex((lc, idx) => !usedPrevIndices.has(idx) && lc && lc.name === c.name);
+                        }
+                        if (matchedIdx === -1 && i < prevCars.length && !usedPrevIndices.has(i)) {
+                            matchedIdx = i;
+                        }
+
+                        const localCar = matchedIdx !== -1 ? prevCars[matchedIdx] : null;
+                        if (matchedIdx !== -1) usedPrevIndices.add(matchedIdx);
 
                         const plate = c.plate || (localCar && localCar.name === c.name ? localCar.plate : null) || null;
                         if (!c.plate && plate) hasLocalAdvancement = true;
@@ -2446,6 +2487,12 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                             ...(styling ? { styling } : {})
                         };
                     }).filter(Boolean);
+
+                    const unmatchedLocalCars = prevCars.filter((lc, idx) => lc && !usedPrevIndices.has(idx));
+                    if (unmatchedLocalCars.length > 0) {
+                        hasLocalAdvancement = true;
+                        myCars.push(...unmatchedLocalCars);
+                    }
 
                     renderCars();
                     if (hasLocalAdvancement) {
@@ -2590,6 +2637,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             if (lot.type === 'car') {
                 deductPlayerBalance(lot.price, `Покупка автомобиля ${lot.car?.name || ''}`);
                 myCars.push(lot.car);
+                if (onlineProfile) {
+                    onlineProfile.myCars = JSON.parse(JSON.stringify(myCars));
+                }
                 if (db) {
                     db.ref('onlineV4/market/' + lotId).remove().catch(() => {});
                     if (lot.sellerKey) {
@@ -2603,11 +2653,31 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                             return (Number(cur) || 0) + lot.price;
                         }).catch(() => {});
                     }
+                    if (onlineProfile) {
+                        const buyerKey = sanitizeKey(onlineProfile.nickname);
+                        const now = Date.now();
+                        db.ref('onlineV4/accounts/' + buyerKey).update({
+                            myCars: onlineProfile.myCars,
+                            balance: onlineProfile.balance,
+                            updatedAt: now
+                        }).catch(() => {});
+                        db.ref('users/' + buyerKey).update({
+                            myCars: onlineProfile.myCars,
+                            balance: onlineProfile.balance,
+                            updatedAt: now
+                        }).catch(() => {});
+                        db.ref('leaderboard/' + buyerKey).update({
+                            carsCount: myCars.length,
+                            balance: onlineProfile.balance,
+                            updatedAt: now
+                        }).catch(() => {});
+                    }
                 }
                 delete marketLots[lotId];
                 playCashSound();
                 renderCars();
                 saveProgress();
+                if (typeof syncCloudGarage === 'function') syncCloudGarage(true);
                 renderMarketListings();
                 notifyUser(`✅ Автомобиль «${lot.car?.name}» успешно приобретён!`, 'success');
                 return;
@@ -2634,12 +2704,32 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
             if (lot && lot.type === 'car') {
                 myCars.push(lot.car);
+                if (onlineProfile) {
+                    onlineProfile.myCars = JSON.parse(JSON.stringify(myCars));
+                }
                 if (db) {
                     db.ref('onlineV4/market/' + lotId).remove().catch(() => {});
+                    if (onlineProfile) {
+                        const sellerKey = sanitizeKey(onlineProfile.nickname);
+                        const now = Date.now();
+                        db.ref('onlineV4/accounts/' + sellerKey).update({
+                            myCars: onlineProfile.myCars,
+                            updatedAt: now
+                        }).catch(() => {});
+                        db.ref('users/' + sellerKey).update({
+                            myCars: onlineProfile.myCars,
+                            updatedAt: now
+                        }).catch(() => {});
+                        db.ref('leaderboard/' + sellerKey).update({
+                            carsCount: myCars.length,
+                            updatedAt: now
+                        }).catch(() => {});
+                    }
                 }
                 delete marketLots[lotId];
                 renderCars();
                 saveProgress();
+                if (typeof syncCloudGarage === 'function') syncCloudGarage(true);
                 renderMarketListings();
                 notifyUser('✅ Автомобиль возвращён в ваш гараж');
                 return;
@@ -4047,14 +4137,37 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 basePrice: reward.price,
                 img: reward.img,
                 category: reward.category,
-                plate: null
+                condition: 100,
+                plate: null,
+                upgrades: { engine: 0, handling: 0, economy: 0, nitro: 0 }
             });
+            if (onlineProfile) {
+                onlineProfile.myCars = JSON.parse(JSON.stringify(myCars));
+                if (db && typeof db.ref === 'function') {
+                    const key = sanitizeKey(onlineProfile.nickname);
+                    const now = Date.now();
+                    db.ref('onlineV4/accounts/' + key).update({
+                        myCars: onlineProfile.myCars,
+                        updatedAt: now
+                    }).catch(() => {});
+                    db.ref('users/' + key).update({
+                        myCars: onlineProfile.myCars,
+                        updatedAt: now
+                    }).catch(() => {});
+                    db.ref('leaderboard/' + key).update({
+                        carsCount: myCars.length,
+                        avatarData: avatarData || '',
+                        updatedAt: now
+                    }).catch(() => {});
+                }
+            }
             addExp(reward.rarity.text || "Супер редкий");
             playCashSound();
             renderCars();
             updateBadge();
             logPlayerActivity('Рулетка авто', `Выиграл в рулетке авто «${reward.name}» (${reward.category})`);
             saveProgress();
+            if (typeof syncCloudGarage === 'function') syncCloudGarage(true);
             document.getElementById('roulette-modal').classList.remove('show');
         }
 
@@ -4386,15 +4499,42 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             if (balance < carTemplate.price) return notifyUser(`Недостаточно средств для покупки ${name}! Нужно ${carTemplate.price.toLocaleString('ru-RU')} ₽`);
             deductPlayerBalance(carTemplate.price, `Покупка автомобиля ${name}`);
             playCashSound();
-            myCars.unshift({
+            const newCar = {
                 name: carTemplate.name,
                 basePrice: carTemplate.price,
                 img: carTemplate.img,
                 category: carTemplate.category,
-                plate: null
-            });
+                condition: 100,
+                plate: null,
+                upgrades: { engine: 0, handling: 0, economy: 0, nitro: 0 }
+            };
+            myCars.unshift(newCar);
+            if (onlineProfile) {
+                onlineProfile.myCars = JSON.parse(JSON.stringify(myCars));
+                if (db && typeof db.ref === 'function') {
+                    const key = sanitizeKey(onlineProfile.nickname);
+                    const now = Date.now();
+                    db.ref('onlineV4/accounts/' + key).update({
+                        balance: onlineProfile.balance,
+                        myCars: onlineProfile.myCars,
+                        updatedAt: now
+                    }).catch(() => {});
+                    db.ref('users/' + key).update({
+                        balance: onlineProfile.balance,
+                        myCars: onlineProfile.myCars,
+                        updatedAt: now
+                    }).catch(() => {});
+                    db.ref('leaderboard/' + key).update({
+                        balance: onlineProfile.balance,
+                        carsCount: myCars.length,
+                        avatarData: avatarData || '',
+                        updatedAt: now
+                    }).catch(() => {});
+                }
+            }
             renderCars();
             saveProgress();
+            if (typeof syncCloudGarage === 'function') syncCloudGarage(true);
             notifyUser(`🎉 Поздравляем! ${name} успешно приобретен и добавлен в ваш гараж!`);
         }
 
@@ -5556,13 +5696,12 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
             if (onlineProfile) {
                 try {
-                    if (!Array.isArray(onlineProfile.myCars) || onlineProfile.myCars.length === 0) {
-                        await onlineRequest('syncGarage', { myCars });
-                    }
-                    const res = await onlineRequest('sell', { type: 'car', carIndex: idx, car, price });
+                    await syncCloudGarage(true);
+                    const res = await onlineRequest('sell', { type: 'car', carIndex: idx, car, price, lotId: 'lot_car_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8) });
                     if (res.profile) setOnlineProfile(res.profile, true);
                     else {
                         myCars.splice(idx, 1);
+                        onlineProfile.myCars = JSON.parse(JSON.stringify(myCars));
                         saveProgress();
                         renderCars();
                     }
@@ -5591,13 +5730,29 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             };
 
             myCars.splice(idx, 1);
+            if (onlineProfile) {
+                onlineProfile.myCars = JSON.parse(JSON.stringify(myCars));
+            }
             if (db) {
                 db.ref('onlineV4/market/' + lotId).set(lot).catch(() => {});
+                if (onlineProfile) {
+                    const sellerKey = sanitizeKey(onlineProfile.nickname);
+                    const now = Date.now();
+                    db.ref('onlineV4/accounts/' + sellerKey).update({
+                        myCars: onlineProfile.myCars,
+                        updatedAt: now
+                    }).catch(() => {});
+                    db.ref('leaderboard/' + sellerKey).update({
+                        carsCount: myCars.length,
+                        updatedAt: now
+                    }).catch(() => {});
+                }
             }
             marketLots[lotId] = lot;
 
             saveProgress();
             renderCars();
+            if (typeof syncCloudGarage === 'function') syncCloudGarage(true);
             closeSellCarModal();
             fetchMarketListings();
             notifyUser(`Автомобиль «${car.name}» выставлен на авторынок за ${price.toLocaleString('ru-RU')} ₽!`, 'success');
