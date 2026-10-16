@@ -635,6 +635,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             renderLeaderboard();
             renderAvatarPresets();
             setupOnlinePresence();
+            setTimeout(() => {
+                try { preloadUserGarageModels(); } catch (_) {}
+            }, 600);
             const onlineBoot = setupMultiplayerListeners();
             // Check the server cookie BEFORE prompting a returning player to register.
             if (typeof fetch === 'function') {
@@ -5147,6 +5150,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             if (modal) modal.classList.remove('show');
             stylingActiveCarIndex = -1;
             if (car3DShowroom) {
+                if (typeof car3DShowroom.setLoading === 'function') car3DShowroom.setLoading(false);
                 car3DShowroom.stop();
             }
         }
@@ -10662,16 +10666,20 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             if (typeof Car3DManager === 'undefined' || !Car3DManager.preloadCarModel) return;
             const THREE = window.THREE;
             if (!THREE) return;
-            const activeCar = (myCars && currentCarIndex >= 0 && myCars[currentCarIndex]) ? myCars[currentCarIndex] : null;
+            const activeCar = (Array.isArray(myCars) && myCars.length > 0)
+                ? (myCars.find(c => c && c.name === selectedRaceCarName) || myCars[0])
+                : null;
             if (activeCar && activeCar.name) {
                 Car3DManager.preloadCarModel(THREE, activeCar.name);
             }
             if (Array.isArray(myCars)) {
+                let delay = 350;
                 myCars.slice(0, 6).forEach(c => {
                     if (c && c.name && (!activeCar || c.name !== activeCar.name)) {
                         setTimeout(() => {
                             Car3DManager.preloadCarModel(THREE, c.name);
-                        }, 250);
+                        }, delay);
+                        delay += 400;
                     }
                 });
             }

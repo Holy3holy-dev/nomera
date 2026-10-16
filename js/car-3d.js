@@ -139,6 +139,7 @@
             metalness: glassMetalness,
             transparent: true,
             opacity: glassOpacity,
+            depthWrite: false,
             name: 'CarGlass'
         });
 
@@ -4423,6 +4424,7 @@
     };
 
     const rawGLBCache = new Map();
+    const inFlightGLBPromises = new Map();
     const NOMERA_MODEL_CACHE_NAME = 'nomera-glb-cache-v1';
 
     async function fetchCachedGLBBuffer(modelUrl) {
@@ -4473,6 +4475,127 @@
         return loader;
     }
 
+    function createVinylCanvasTexture(THREE, vinylType, carColorHex) {
+        if (!THREE || !vinylType || vinylType === 'none') return null;
+        if (typeof document === 'undefined' || !document.createElement) return null;
+        try {
+            const canvas = document.createElement('canvas');
+            canvas.width = 512;
+            canvas.height = 512;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) return null;
+
+            const baseColorStr = '#' + ('000000' + (carColorHex || 0xefefef).toString(16)).slice(-6);
+            ctx.fillStyle = baseColorStr;
+            ctx.fillRect(0, 0, 512, 512);
+
+            if (vinylType === 'stripes') {
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(215, 0, 36, 512);
+                ctx.fillRect(261, 0, 36, 512);
+
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
+                ctx.fillRect(211, 0, 4, 512);
+                ctx.fillRect(251, 0, 4, 512);
+                ctx.fillRect(257, 0, 4, 512);
+                ctx.fillRect(297, 0, 4, 512);
+            } else if (vinylType === 'drift') {
+                ctx.save();
+                ctx.fillStyle = '#ff2a5f';
+                ctx.beginPath();
+                ctx.moveTo(0, 180);
+                ctx.lineTo(240, 20);
+                ctx.lineTo(280, 20);
+                ctx.lineTo(40, 240);
+                ctx.closePath();
+                ctx.fill();
+
+                ctx.fillStyle = '#00f0ff';
+                ctx.beginPath();
+                ctx.moveTo(60, 260);
+                ctx.lineTo(340, 50);
+                ctx.lineTo(380, 50);
+                ctx.lineTo(100, 320);
+                ctx.closePath();
+                ctx.fill();
+
+                ctx.fillStyle = '#ffffff';
+                ctx.beginPath();
+                ctx.moveTo(120, 340);
+                ctx.lineTo(440, 90);
+                ctx.lineTo(480, 90);
+                ctx.lineTo(160, 400);
+                ctx.closePath();
+                ctx.fill();
+
+                ctx.fillStyle = '#fffa20';
+                for (let i = 0; i < 6; i++) {
+                    const sx = 200 + i * 45;
+                    const sy = 180 + i * 35;
+                    ctx.beginPath();
+                    ctx.moveTo(sx, sy);
+                    ctx.lineTo(sx + 35, sy - 15);
+                    ctx.lineTo(sx + 20, sy + 25);
+                    ctx.closePath();
+                    ctx.fill();
+                }
+                ctx.restore();
+            }
+
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.wrapS = THREE.RepeatWrapping;
+            texture.wrapT = THREE.RepeatWrapping;
+            texture.needsUpdate = true;
+            return texture;
+        } catch (_) {
+            return null;
+        }
+    }
+
+    function applyStanceToWheelNodes(THREE, modelRoot, styling = {}) {
+        if (!THREE || !modelRoot || typeof modelRoot.traverse !== 'function') return;
+        const camberDeg = Number(styling.camber) || 0;
+        const camberRad = (camberDeg * Math.PI) / 180;
+        const spacerOffset = Number(styling.wheelOffset) || 0;
+
+        const wheelCandidates = [];
+        modelRoot.traverse(node => {
+            const nm = String(node.name || '').toLowerCase();
+            if (/(?:wheel|koles|tyre|tire|rim)[_\-\s]*(?:fl|fr|rl|rr|f_l|f_r|r_l|r_r|front_l|front_r|rear_l|rear_r|l|r|01|02|03|04|\d)?/i.test(nm)) {
+                if (!nm.includes('steer') && !nm.includes('interior') && !nm.includes('cabin')) {
+                    wheelCandidates.push(node);
+                }
+            }
+        });
+
+        const topWheels = wheelCandidates.filter(node => {
+            let p = node.parent;
+            while (p && p !== modelRoot) {
+                if (wheelCandidates.includes(p)) return false;
+                p = p.parent;
+            }
+            return true;
+        });
+
+        topWheels.forEach(wNode => {
+            if (wNode.userData._basePosX === undefined) {
+                wNode.userData._basePosX = wNode.position.x;
+                wNode.userData._baseRotZ = wNode.rotation.z;
+                wNode.userData._side = wNode.position.x < -0.05 ? -1 : (wNode.position.x > 0.05 ? 1 : 0);
+            }
+            const side = wNode.userData._side;
+            if (side === -1) {
+                wNode.position.x = wNode.userData._basePosX - spacerOffset;
+                wNode.rotation.z = (wNode.userData._baseRotZ || 0) - camberRad;
+            } else if (side === 1) {
+                wNode.position.x = wNode.userData._basePosX + spacerOffset;
+                wNode.rotation.z = (wNode.userData._baseRotZ || 0) + camberRad;
+            }
+            wNode.userData.camber = camberDeg;
+            wNode.userData.wheelOffset = spacerOffset;
+        });
+    }
+
     function applyStylingToGLTF(THREE, modelRoot, styling = {}, carId = '') {
         const bodyColorHex = parseColor(styling.color, 0xefefef);
         const mats = createCarMaterials(THREE, styling);
@@ -4487,6 +4610,7 @@
             modelRoot.userData._basePosY = modelRoot.position.y;
         }
         modelRoot.position.y = modelRoot.userData._basePosY + suspensionOffsetY;
+        applyStanceToWheelNodes(THREE, modelRoot, styling);
 
         function isTireMaterial(matName, meshName) {
             const mn = String(matName || '').toLowerCase();
@@ -4883,6 +5007,12 @@
             styledPaint.clearcoat = 1.0;
             styledPaint.clearcoatRoughness = 0.05;
         }
+        if (styling.vinyl && styling.vinyl !== 'none') {
+            const vinylTex = createVinylCanvasTexture(THREE, styling.vinyl, bodyColorHex);
+            if (vinylTex) styledPaint.map = vinylTex;
+        } else {
+            styledPaint.map = null;
+        }
         styledPaint.name = 'StyledPaint_' + bodyColorHex.toString(16);
         styledPaint.needsUpdate = true;
 
@@ -4906,21 +5036,57 @@
 
                 const isMulti = Array.isArray(child.material);
                 const matList = isMulti ? child.material : [child.material];
-                const updatedMats = matList.map(mat => {
+
+                // Cache material roles on first pass so subsequent styling updates never lose material assignments
+                if (!child.userData._stylingRoles) {
+                    child.userData._stylingRoles = matList.map(mat => {
+                        if (!mat) return 'stock';
+                        const matName = String(mat.name || '').toLowerCase();
+                        if (matName.includes('badge') || matName.includes('emblem') || matName.includes('logo') || matName.includes('illinois') || matName.includes('philippine_license') || matName === 'plate' || matName.includes('2020-2026')) {
+                            child.visible = false;
+                            return 'badge';
+                        }
+                        if (isTireMaterial(matName, mName)) return 'tire';
+                        if (isRimMaterial(matName, mName)) return 'rim';
+                        if (isBrakeMaterial(matName, mName)) return 'brake';
+                        if (isLightMaterial(matName, mName)) return 'light';
+                        if (isExhaustMaterial(matName, mName)) return 'exhaust';
+                        if (isGrilleMaterial(matName, mName)) return 'grille';
+                        if (isInteriorMaterial(matName, mName)) return 'interior';
+                        if (isGlassMaterial(mat, matName, mName)) return 'glass';
+                        if (isBodyMaterial(matName, mName)) return 'body';
+                        if (mName.includes('chrom') || matName.toLowerCase().includes('chrom')) return 'chrome';
+                        if (mName.includes('carpet') || matName.includes('carpet') || mName.includes('floor')) return 'carpet';
+                        if (matName.includes('diffuser') || matName.includes('trim') || matName.includes('arch') || matName.includes('plastic') || matName.includes('underbody') || matName.includes('vent') || mName.includes('diffuser') || mName.includes('trim') || mName.includes('underbody') || (carId === 'vaz2109' && (
+                            matName.toLowerCase() === 'standardmater24' ||
+                            matName.toLowerCase() === 'standardmater27' ||
+                            matName.toLowerCase() === 'standardmater1' ||
+                            matName.toLowerCase() === 'standardmater2'
+                        ))) return 'trim';
+                        return 'stock';
+                    });
+                    child.userData._origMatNames = matList.map(mat => mat ? (mat.name || '') : '');
+                }
+
+                const updatedMats = matList.map((mat, idx) => {
                     if (!mat) return mat;
-                    const matName = String(mat.name || '').toLowerCase();
-                    if (matName.includes('badge') || matName.includes('emblem') || matName.includes('logo') || matName.includes('illinois') || matName.includes('philippine_license') || matName === 'plate' || matName.includes('2020-2026')) {
-                        child.visible = false;
-                    }
+                    const role = child.userData._stylingRoles ? child.userData._stylingRoles[idx] : 'stock';
+                    const origMatName = (child.userData._origMatNames && child.userData._origMatNames[idx]) || String(mat.name || '');
+                    const matName = origMatName.toLowerCase();
                     const mName = String(child.name || '').toLowerCase();
 
+                    if (role === 'badge') {
+                        child.visible = false;
+                        return mat;
+                    }
+
                     // 1. Rubber Tires (Always deep black/charcoal realistic rubber)
-                    if (isTireMaterial(matName, mName)) {
+                    if (role === 'tire') {
                         return mats.tireRubber;
                     }
 
                     // 2. Wheels / Rims
-                    if (isRimMaterial(matName, mName)) {
+                    if (role === 'rim') {
                         if (styling.wheels === 'stamps') {
                             return new THREE.MeshStandardMaterial({ color: 0x141416, roughness: 0.72, metalness: 0.35, name: 'Rim_Stamps' });
                         } else if (styling.wheels === 'deepdish') {
@@ -4940,7 +5106,7 @@
                     }
 
                     // 3. Brake Rotors & Calipers
-                    if (isBrakeMaterial(matName, mName)) {
+                    if (role === 'brake') {
                         if (mName.includes('caliper') || matName.includes('caliper') || mName === 'object_4' || matName === 'material_1' || matName.includes('red')) {
                             return mats.brakeCaliper;
                         }
@@ -4948,7 +5114,7 @@
                     }
 
                     // 4. Lights (Headlights, Taillights, Indicators)
-                    if (isLightMaterial(matName, mName)) {
+                    if (role === 'light') {
                         if (mName.includes('taillight') || matName.includes('red') || matName.includes('ruby') || mName === 'object_20' || matName === 'material_17' || matName === 'stopar' || (carId === 'vaz2109' && matName.toLowerCase() === 'standardmater5')) {
                             return mats.taillightRed;
                         }
@@ -4971,37 +5137,39 @@
                     }
 
                     // 5. Exhaust Tips
-                    if (isExhaustMaterial(matName, mName)) {
+                    if (role === 'exhaust') {
                         return mats.exhaustChrome;
                     }
 
                     // 6. Grilles & Intercooler Mesh
-                    if (isGrilleMaterial(matName, mName)) {
+                    if (role === 'grille') {
                         return mats.grilleMesh;
                     }
 
-                    // 7. Interior Cockpit, Seats, Steering Wheel
-                    if (isInteriorMaterial(matName, mName)) {
+                    // 7. Interior Cockpit (renderOrder 0)
+                    if (role === 'interior') {
+                        child.renderOrder = 0;
                         return mats.interior;
                     }
 
-                    // 8. Glass & Tint
-                    if (isGlassMaterial(mat, matName, mName)) {
+                    // 8. Glass & Tint (renderOrder 2, depthWrite false)
+                    if (role === 'glass') {
+                        child.renderOrder = 2;
                         return mats.glass;
                     }
 
                     // 9. Car Body Paint
-                    if (isBodyMaterial(matName, mName)) {
+                    if (role === 'body') {
                         return styledPaint;
                     }
 
                     // 10. Chrome Trim
-                    if (mName.includes('chrom') || matName.toLowerCase().includes('chrom')) {
+                    if (role === 'chrome') {
                         return mats.chrome;
                     }
 
                     // 11. Carpet & Floorpan
-                    if (mName.includes('carpet') || matName.includes('carpet') || mName.includes('floor') || matName.includes('floor')) {
+                    if (role === 'carpet') {
                         return new THREE.MeshStandardMaterial({
                             color: 0x111114,
                             roughness: 0.95,
@@ -5011,12 +5179,7 @@
                     }
 
                     // 12. Black Trim, Diffusers, Moldings, Plastic, Underbody, Vents
-                    if (matName.includes('diffuser') || matName.includes('trim') || matName.includes('arch') || matName.includes('plastic') || matName.includes('underbody') || matName.includes('vent') || mName.includes('diffuser') || mName.includes('trim') || mName.includes('underbody') || (carId === 'vaz2109' && (
-                        matName.toLowerCase() === 'standardmater24' ||
-                        matName.toLowerCase() === 'standardmater27' ||
-                        matName.toLowerCase() === 'standardmater1' ||
-                        matName.toLowerCase() === 'standardmater2'
-                    ))) {
+                    if (role === 'trim') {
                         return mats.trim;
                     }
 
@@ -5177,7 +5340,7 @@
         }
     }
 
-    function loadCarModel(THREE, carName, styling = {}, onLoaded) {
+    function loadCarModel(THREE, carName, styling = {}, onLoaded, onProgress) {
         const carId = identifyCarModel(carName);
         const modelUrl = GLB_MODEL_MAP[carId];
         const loader = getGLTFLoader(THREE);
@@ -5297,57 +5460,97 @@
             return;
         }
 
-        const fallbackLoad = () => {
-            try {
-                loader.load(
-                    modelUrl,
-                    gltf => {
-                        rawGLBCache.set(modelUrl, gltf.scene);
-                        const finalModel = setupModel(gltf.scene);
-                        if (onLoaded) onLoaded(finalModel);
-                    },
-                    undefined,
-                    err => {
-                        console.warn('Failed to load GLB model, falling back to procedural:', err);
-                        const fallbackModel = buildDetailedCarModel(THREE, carName, styling);
-                        if (onLoaded) onLoaded(fallbackModel);
+        if (inFlightGLBPromises.has(modelUrl)) {
+            inFlightGLBPromises.get(modelUrl).then(scene => {
+                if (scene) {
+                    const finalModel = setupModel(scene);
+                    if (onLoaded) onLoaded(finalModel);
+                } else {
+                    const fallbackModel = buildDetailedCarModel(THREE, carName, styling);
+                    if (onLoaded) onLoaded(fallbackModel);
+                }
+            }).catch(() => {
+                const fallbackModel = buildDetailedCarModel(THREE, carName, styling);
+                if (onLoaded) onLoaded(fallbackModel);
+            });
+            return;
+        }
+
+        const loadPromise = new Promise(resolve => {
+            const fallbackLoad = () => {
+                try {
+                    loader.load(
+                        modelUrl,
+                        gltf => {
+                            if (gltf && gltf.scene) {
+                                rawGLBCache.set(modelUrl, gltf.scene);
+                                resolve(gltf.scene);
+                            } else {
+                                resolve(null);
+                            }
+                        },
+                        xhr => {
+                            if (xhr && xhr.lengthComputable && xhr.total > 0 && typeof onProgress === 'function') {
+                                const pct = Math.round((xhr.loaded / xhr.total) * 100);
+                                onProgress(pct);
+                            }
+                        },
+                        err => {
+                            console.warn('Failed to load GLB model, falling back to procedural:', err);
+                            resolve(null);
+                        }
+                    );
+                } catch (err) {
+                    resolve(null);
+                }
+            };
+
+            if (typeof window !== 'undefined' && window.caches && typeof loader.parse === 'function') {
+                fetchCachedGLBBuffer(modelUrl).then(buffer => {
+                    if (buffer) {
+                        try {
+                            const baseUrl = modelUrl.substring(0, modelUrl.lastIndexOf('/') + 1);
+                            loader.parse(
+                                buffer,
+                                baseUrl,
+                                gltf => {
+                                    if (gltf && gltf.scene) {
+                                        rawGLBCache.set(modelUrl, gltf.scene);
+                                        resolve(gltf.scene);
+                                    } else {
+                                        fallbackLoad();
+                                    }
+                                },
+                                () => fallbackLoad()
+                            );
+                        } catch (_) {
+                            fallbackLoad();
+                        }
+                    } else {
+                        fallbackLoad();
                     }
-                );
-            } catch (err) {
+                }).catch(() => fallbackLoad());
+            } else {
+                fallbackLoad();
+            }
+        });
+
+        inFlightGLBPromises.set(modelUrl, loadPromise);
+
+        loadPromise.then(scene => {
+            inFlightGLBPromises.delete(modelUrl);
+            if (scene) {
+                const finalModel = setupModel(scene);
+                if (onLoaded) onLoaded(finalModel);
+            } else {
                 const fallbackModel = buildDetailedCarModel(THREE, carName, styling);
                 if (onLoaded) onLoaded(fallbackModel);
             }
-        };
-
-        if (typeof window !== 'undefined' && window.caches && typeof loader.parse === 'function') {
-            fetchCachedGLBBuffer(modelUrl).then(buffer => {
-                if (buffer) {
-                    try {
-                        const baseUrl = modelUrl.substring(0, modelUrl.lastIndexOf('/') + 1);
-                        loader.parse(
-                            buffer,
-                            baseUrl,
-                            gltf => {
-                                if (gltf && gltf.scene) {
-                                    rawGLBCache.set(modelUrl, gltf.scene);
-                                    const finalModel = setupModel(gltf.scene);
-                                    if (onLoaded) onLoaded(finalModel);
-                                } else {
-                                    fallbackLoad();
-                                }
-                            },
-                            () => fallbackLoad()
-                        );
-                    } catch (_) {
-                        fallbackLoad();
-                    }
-                } else {
-                    fallbackLoad();
-                }
-            }).catch(() => fallbackLoad());
-        } else {
-            fallbackLoad();
-        }
+        }).catch(() => {
+            inFlightGLBPromises.delete(modelUrl);
+            const fallbackModel = buildDetailedCarModel(THREE, carName, styling);
+            if (onLoaded) onLoaded(fallbackModel);
+        });
     }
 
     function preloadCarModel(THREE, carName) {
@@ -5355,30 +5558,8 @@
         const carId = identifyCarModel(carName);
         const modelUrl = GLB_MODEL_MAP[carId];
         const loader = getGLTFLoader(THREE);
-        if (!loader || !modelUrl || rawGLBCache.has(modelUrl)) return;
-        try {
-            if (typeof window !== 'undefined' && window.caches && typeof loader.parse === 'function') {
-                fetchCachedGLBBuffer(modelUrl).then(buffer => {
-                    if (buffer && !rawGLBCache.has(modelUrl)) {
-                        const baseUrl = modelUrl.substring(0, modelUrl.lastIndexOf('/') + 1);
-                        loader.parse(buffer, baseUrl, gltf => {
-                            if (gltf && gltf.scene) rawGLBCache.set(modelUrl, gltf.scene);
-                        }, () => {});
-                    }
-                }).catch(() => {});
-            } else {
-                loader.load(
-                    modelUrl,
-                    gltf => {
-                        if (gltf && gltf.scene) {
-                            rawGLBCache.set(modelUrl, gltf.scene);
-                        }
-                    },
-                    undefined,
-                    () => {}
-                );
-            }
-        } catch (_) {}
+        if (!loader || !modelUrl || rawGLBCache.has(modelUrl) || inFlightGLBPromises.has(modelUrl)) return;
+        loadCarModel(THREE, carName, {}, () => {});
     }
 
     // Automotive Studio HDRI Environment Generator
@@ -5611,7 +5792,7 @@
             this.renderer.setSize(this.width, this.height);
             this.renderer.outputEncoding = THREE.sRGBEncoding || 3001;
             this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-            this.renderer.toneMappingExposure = 1.15;
+            this.renderer.toneMappingExposure = 1.08;
 
             if (this.renderer.shadowMap) {
                 this.renderer.shadowMap.enabled = true;
@@ -5630,20 +5811,24 @@
             }
 
             // Studio Showroom Lighting
-            this.ambientLight = new THREE.AmbientLight(0xffffff, 0.70);
+            this.ambientLight = new THREE.AmbientLight(0xffffff, 0.42);
             this.scene.add(this.ambientLight);
 
-            this.keyLight = new THREE.DirectionalLight(0xffffff, 1.25);
+            this.keyLight = new THREE.DirectionalLight(0xffffff, 1.20);
             this.keyLight.position.set(4, 5, 4);
             this.scene.add(this.keyLight);
 
-            this.fillLight = new THREE.DirectionalLight(0xa5c4d4, 0.65);
+            this.fillLight = new THREE.DirectionalLight(0xa5c4d4, 0.55);
             this.fillLight.position.set(-4, 3, -2);
             this.scene.add(this.fillLight);
 
-            this.rimLight = new THREE.DirectionalLight(0xffffff, 0.90);
+            this.rimLight = new THREE.DirectionalLight(0xffffff, 0.85);
             this.rimLight.position.set(0, 4, -5);
             this.scene.add(this.rimLight);
+
+            this.softboxLight = new THREE.DirectionalLight(0xffffff, 0.70);
+            this.softboxLight.position.set(0, 6, 0);
+            this.scene.add(this.softboxLight);
 
             this.neonLight = new THREE.PointLight(0x00f0ff, 0, 4.0);
             this.neonLight.position.set(0, 0.14, 0);
@@ -5737,6 +5922,16 @@
             this.camera.lookAt(0, this.targetY, 0);
         }
 
+        setLoading(isLoading, text) {
+            if (typeof document === 'undefined') return;
+            const loader = document.getElementById('styling-3d-loader');
+            const label = document.getElementById('styling-3d-loader-text');
+            if (loader) {
+                loader.style.display = isLoading ? 'flex' : 'none';
+                if (label && text) label.textContent = text;
+            }
+        }
+
         setCar(carName, styling = {}) {
             this.currentCarName = carName || 'ВАЗ-2107 «Жигули»';
             this.currentStyling = Object.assign({}, styling);
@@ -5748,6 +5943,7 @@
 
             // If the same GLB model is already loaded and active, just re-apply styling in place
             if (hasGlb && loader && this.glbCar && this.glbCar.userData && this.glbCar.userData.carId === carId) {
+                this.setLoading(false);
                 applyStylingToGLTF(THREE, this.glbCar, this.currentStyling, carId);
                 this.updateActiveCarVisibility();
                 this.updateNeonLight();
@@ -5759,47 +5955,67 @@
             const reqId = this._loadRequestId;
 
             if (hasGlb && loader) {
-                // In browser environment with GLTFLoader: load external 3D model.
-                // Never show or flash a procedural box car.
-                if (this.proceduralCar) {
-                    this.scene.remove(this.proceduralCar);
-                    this.proceduralCar = null;
+                // Instant procedural preview on podium so user never stares into an empty void!
+                if (!this.glbCar && !this.proceduralCar) {
+                    try {
+                        this.proceduralCar = buildDetailedCarModel(THREE, this.currentCarName, this.currentStyling);
+                        if (this.proceduralCar) {
+                            this.scene.add(this.proceduralCar);
+                            this.carGroup = this.proceduralCar;
+                            this.updateActiveCarVisibility();
+                            this.updateCapabilities();
+                        }
+                    } catch (_) {}
                 }
 
-                loadCarModel(THREE, this.currentCarName, this.currentStyling, loadedModel => {
-                    if (this._loadRequestId !== reqId || !loadedModel) return;
+                this.setLoading(true, 'Загрузка 3D модели...');
 
-                    if (this.glbCar) {
-                        this.scene.remove(this.glbCar);
-                        this.glbCar = null;
-                    }
-                    if (this.proceduralCar) {
-                        this.scene.remove(this.proceduralCar);
-                        this.proceduralCar = null;
-                    }
-                    if (this.carGroup) {
-                        this.scene.remove(this.carGroup);
-                        this.carGroup = null;
-                    }
+                loadCarModel(
+                    THREE,
+                    this.currentCarName,
+                    this.currentStyling,
+                    loadedModel => {
+                        this.setLoading(false);
+                        if (this._loadRequestId !== reqId || !loadedModel) return;
 
-                    loadedModel.userData.carId = carId;
-                    loadedModel.traverse(c => {
-                        if (c.userData && c.userData.isSteerable) {
-                            c.rotation.y = c.userData.baseRotY || 0;
+                        if (this.glbCar) {
+                            this.scene.remove(this.glbCar);
+                            this.glbCar = null;
                         }
-                    });
-                    this.glbCar = loadedModel;
-                    this.carGroup = loadedModel;
-                    this.scene.add(loadedModel);
+                        if (this.proceduralCar) {
+                            this.scene.remove(this.proceduralCar);
+                            this.proceduralCar = null;
+                        }
+                        if (this.carGroup) {
+                            this.scene.remove(this.carGroup);
+                            this.carGroup = null;
+                        }
 
-                    this.updateActiveCarVisibility();
-                    this.updateNeonLight();
-                    this.updateCapabilities();
-                    this.updateLightsRigPositions();
-                    this.updateHeadlightsState();
-                });
+                        loadedModel.userData.carId = carId;
+                        loadedModel.traverse(c => {
+                            if (c.userData && c.userData.isSteerable) {
+                                c.rotation.y = c.userData.baseRotY || 0;
+                            }
+                        });
+                        this.glbCar = loadedModel;
+                        this.carGroup = loadedModel;
+                        this.scene.add(loadedModel);
+
+                        this.updateActiveCarVisibility();
+                        this.updateNeonLight();
+                        this.updateCapabilities();
+                        this.updateLightsRigPositions();
+                        this.updateHeadlightsState();
+                    },
+                    pct => {
+                        if (this._loadRequestId === reqId) {
+                            this.setLoading(true, `Загрузка 3D модели ${pct}%...`);
+                        }
+                    }
+                );
             } else {
                 // Fallback (or in test environments without GLTFLoader): build detailed procedural model
+                this.setLoading(false);
                 if (this.glbCar) {
                     this.scene.remove(this.glbCar);
                     this.glbCar = null;
@@ -5909,28 +6125,24 @@
             const hasHoodPivots = !!activeModel.getObjectByName('Hood_Pivot');
             const hasTrunkPivots = !!activeModel.getObjectByName('Trunk_Pivot');
 
-            const hasDoorNodes = hasDoorPivots || findTopNodes(activeModel, /(?:door.*(?:fl|fr|l|r|left|right|zl|pl|zp|pp|01|02|03|04)|f_door\.[lr]|b_door\.[lr])/i).length > 0;
-            const hasHoodNodes = hasHoodPivots || findTopNodes(activeModel, /(?:hood|kapot|bonnet)/i).length > 0;
-            const hasTrunkNodes = hasTrunkPivots || findTopNodes(activeModel, /(?:boot_lid|trunk_lid|trunk|bagaj|boot)/i).length > 0;
-
             this.capabilities = {
-                doors: hasDoorNodes,
-                hood: hasHoodNodes,
-                trunk: hasTrunkNodes,
+                doors: hasDoorPivots,
+                hood: hasHoodPivots,
+                trunk: hasTrunkPivots,
                 headlights: true
             };
 
-            if (!hasDoorNodes) {
+            if (!hasDoorPivots) {
                 this.doorsOpen = false;
                 this.targetDoorAngle = 0;
                 this.doorAngle = 0;
             }
-            if (!hasHoodNodes) {
+            if (!hasHoodPivots) {
                 this.hoodOpen = false;
                 this.targetHoodAngle = 0;
                 this.hoodAngle = 0;
             }
-            if (!hasTrunkNodes) {
+            if (!hasTrunkPivots) {
                 this.trunkOpen = false;
                 this.targetTrunkAngle = 0;
                 this.trunkAngle = 0;
@@ -6329,37 +6541,6 @@
                     if (pFR) pFR.rotation.y = -this.doorAngle;
                     if (pHood) pHood.rotation.x = -this.hoodAngle;
                     if (pTrunk) pTrunk.rotation.x = this.trunkAngle;
-
-                    // GLB Nodes animation with true physical hinge rotation
-                    if (!pFL && !pFR && this.THREE) {
-                        const leftDoors = findTopNodes(model, /(?:door.*(?:fl|l|left|zl|pl|01|03)|f_door\.l|b_door\.l)/i);
-                        const rightDoors = findTopNodes(model, /(?:door.*(?:fr|r|right|zp|pp|02|04)|f_door\.r|b_door\.r)/i);
-
-                        leftDoors.forEach(d => {
-                            setupNodeHinge(d, 'door_l', this.THREE);
-                            applyHingeRotation(d, this.doorAngle, this.THREE);
-                        });
-                        rightDoors.forEach(d => {
-                            setupNodeHinge(d, 'door_r', this.THREE);
-                            applyHingeRotation(d, this.doorAngle, this.THREE);
-                        });
-                    }
-
-                    if (!pHood && this.THREE) {
-                        const hoods = findTopNodes(model, /(?:hood|kapot|bonnet)/i);
-                        hoods.forEach(h => {
-                            setupNodeHinge(h, 'hood', this.THREE);
-                            applyHingeRotation(h, this.hoodAngle, this.THREE);
-                        });
-                    }
-
-                    if (!pTrunk && this.THREE) {
-                        const trunks = findTopNodes(model, /(?:boot_lid|trunk_lid|trunk|bagaj|boot)/i);
-                        trunks.forEach(t => {
-                            setupNodeHinge(t, 'trunk', this.THREE);
-                            applyHingeRotation(t, this.trunkAngle, this.THREE);
-                        });
-                    }
                 };
 
                 if (this.glbCar) animateModel(this.glbCar);
@@ -6423,6 +6604,7 @@
         }
 
         stop() {
+            this.setLoading(false);
             this.active = false;
             if (this.animFrameId) {
                 cancelAnimationFrame(this.animFrameId);

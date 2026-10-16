@@ -268,3 +268,79 @@ test('Styling Modal UI and pricing: camber, spacers offset, and rainbow neon are
     assert.strictEqual(updatedCar.styling.neon, '#f472b6');
     assert.strictEqual(updatedCar.styling.neonMode, 'rainbow');
 });
+
+test('GLB stance camber, wheel offset, material role persistence, vinyl mapping, and showroom loader', () => {
+    const { THREE, Car3DManager } = setupThreeAnd3DManager();
+
+    // Mock GLB model hierarchy
+    const modelRoot = new THREE.Group();
+    modelRoot.name = 'CarModel_vaz2107';
+
+    const bodyMat = new THREE.MeshBasicMaterial({ name: 'body', color: 0xffffff });
+    const bodyMesh = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), bodyMat);
+    bodyMesh.name = 'Object_128_body';
+    modelRoot.add(bodyMesh);
+
+    const glassMat = new THREE.MeshBasicMaterial({ name: 'glass', transparent: true, opacity: 0.4 });
+    const glassMesh = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), glassMat);
+    glassMesh.name = 'Object_722_glass';
+    modelRoot.add(glassMesh);
+
+    const interiorMat = new THREE.MeshBasicMaterial({ name: 'interior_01' });
+    const interiorMesh = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), interiorMat);
+    interiorMesh.name = 'Interior_Salon';
+    modelRoot.add(interiorMesh);
+
+    const wheelFL = new THREE.Group();
+    wheelFL.name = 'Wheel_FL';
+    wheelFL.position.set(-0.8, 0.3, 1.2);
+    modelRoot.add(wheelFL);
+
+    const wheelFR = new THREE.Group();
+    wheelFR.name = 'Wheel_FR';
+    wheelFR.position.set(0.8, 0.3, 1.2);
+    modelRoot.add(wheelFR);
+
+    // 1. Initial styling pass
+    Car3DManager.applyStylingToGLTF(THREE, modelRoot, {
+        color: '#ff0000',
+        camber: -6,
+        wheelOffset: 0.04,
+        vinyl: 'stripes'
+    }, 'vaz2107');
+
+    // Stance camber and offset verification on GLB wheel nodes
+    assert.ok(Math.abs(wheelFL.position.x - (-0.84)) < 0.001, 'Wheel_FL offset must be -0.8 - 0.04 = -0.84');
+    assert.ok(Math.abs(wheelFR.position.x - 0.84) < 0.001, 'Wheel_FR offset must be 0.8 + 0.04 = 0.84');
+    assert.ok(wheelFL.rotation.z > 0 || wheelFL.rotation.z < 0, 'Wheel_FL must have camber rotation applied');
+
+    // Roles and depth write verification
+    assert.ok(bodyMesh.userData._stylingRoles, 'Meshes must cache _stylingRoles');
+    assert.strictEqual(bodyMesh.userData._stylingRoles[0], 'body', 'Body mesh role must be body');
+    assert.strictEqual(glassMesh.userData._stylingRoles[0], 'glass', 'Glass mesh role must be glass');
+    assert.strictEqual(interiorMesh.userData._stylingRoles[0], 'interior', 'Interior mesh role must be interior');
+    assert.strictEqual(glassMesh.renderOrder, 2, 'Glass renderOrder must be 2 to prevent depth sorting artifacts');
+    assert.strictEqual(interiorMesh.renderOrder, 0, 'Interior renderOrder must be 0');
+    assert.ok(bodyMesh.material.map, 'Vinyl stripes must attach texture to body paint');
+
+    // 2. Second styling pass (changing color to green, wheels to stamps, vinyl to none)
+    Car3DManager.applyStylingToGLTF(THREE, modelRoot, {
+        color: '#00ff00',
+        wheels: 'stamps',
+        camber: -3,
+        wheelOffset: 0.02,
+        vinyl: 'none'
+    }, 'vaz2107');
+
+    // Body color must update smoothly on second click (not lost or broken into black trim)
+    assert.strictEqual(bodyMesh.material.color.getHexString(), '00ff00', 'Body paint must update to green on subsequent clicks');
+    assert.strictEqual(bodyMesh.material.map, null, 'Vinyl none must clear paint map');
+    assert.ok(Math.abs(wheelFL.position.x - (-0.82)) < 0.001, 'Wheel_FL offset must update to -0.8 - 0.02 = -0.82');
+
+    // 3. Showroom loading overlay check
+    const showroom = new Car3DManager.Car3DShowroom('showroom-container');
+    assert.strictEqual(typeof showroom.setLoading, 'function', 'Showroom must implement setLoading method');
+    showroom.setLoading(true, 'Загрузка 3D модели 50%...');
+    showroom.setLoading(false);
+    showroom.stop();
+});
