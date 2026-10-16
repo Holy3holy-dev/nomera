@@ -18,6 +18,33 @@ try {
                 $urlPath = "/index.html"
             }
 
+            # Netlify Functions Mock for Local Testing
+            if ($urlPath -eq "/.netlify/functions/firebase-web-config") {
+                $body = 'window.NOMERA_FIREBASE_CONFIG_ERROR = "Локальный тестовый режим (гость/офлайн)";'
+                $bytes = [System.Text.Encoding]::UTF8.GetBytes($body)
+                $response.ContentType = "application/javascript; charset=utf-8"
+                $response.ContentLength64 = $bytes.Length
+                $response.Headers.Add("Cache-Control", "no-cache")
+                $response.Headers.Add("Access-Control-Allow-Origin", "*")
+                if ($request.HttpMethod -ne "HEAD") {
+                    $response.OutputStream.Write($bytes, 0, $bytes.Length)
+                }
+                continue
+            }
+
+            if ($urlPath -eq "/.netlify/functions/online") {
+                $body = '{"ok":false,"error":"Локальный режим: баланс и машины сохраняются в гостевом профиле"}'
+                $bytes = [System.Text.Encoding]::UTF8.GetBytes($body)
+                $response.ContentType = "application/json; charset=utf-8"
+                $response.ContentLength64 = $bytes.Length
+                $response.Headers.Add("Cache-Control", "no-cache")
+                $response.Headers.Add("Access-Control-Allow-Origin", "*")
+                if ($request.HttpMethod -ne "HEAD") {
+                    $response.OutputStream.Write($bytes, 0, $bytes.Length)
+                }
+                continue
+            }
+
             $filePath = Join-Path $root ($urlPath.TrimStart("/").Replace("/", [System.IO.Path]::DirectorySeparatorChar))
 
             $filePath = [System.IO.Path]::GetFullPath($filePath)
@@ -27,7 +54,6 @@ try {
             }
 
             if (Test-Path $filePath -PathType Leaf) {
-                $bytes = [System.IO.File]::ReadAllBytes($filePath)
                 $ext = [System.IO.Path]::GetExtension($filePath).ToLower()
                 $contentType = "text/plain; charset=utf-8"
                 switch ($ext) {
@@ -38,19 +64,36 @@ try {
                     ".png"  { $contentType = "image/png" }
                     ".svg"  { $contentType = "image/svg+xml" }
                     ".jpg"  { $contentType = "image/jpeg" }
+                    ".jpeg" { $contentType = "image/jpeg" }
                     ".ico"  { $contentType = "image/x-icon" }
                     ".glb"  { $contentType = "model/gltf-binary" }
                     ".gltf" { $contentType = "model/gltf+json" }
                     ".bin"  { $contentType = "application/octet-stream" }
                     ".wasm" { $contentType = "application/wasm" }
+                    ".mp3"  { $contentType = "audio/mpeg" }
+                    ".wav"  { $contentType = "audio/wav" }
                 }
                 $response.ContentType = $contentType
-                $response.ContentLength64 = $bytes.Length
-                $response.Headers.Add("Cache-Control", "no-cache, no-store, must-revalidate")
                 $response.Headers.Add("Access-Control-Allow-Origin", "*")
 
-                if ($request.HttpMethod -ne "HEAD") {
-                    $response.OutputStream.Write($bytes, 0, $bytes.Length)
+                $isStaticAsset = $ext -in @(".glb", ".gltf", ".bin", ".wasm", ".png", ".jpg", ".jpeg", ".svg", ".ico", ".mp3", ".wav")
+                if ($isStaticAsset) {
+                    $response.Headers.Add("Cache-Control", "public, max-age=604800, immutable")
+                } else {
+                    $response.Headers.Add("Cache-Control", "no-cache, no-store, must-revalidate")
+                }
+
+                $fileStream = [System.IO.File]::OpenRead($filePath)
+                try {
+                    $response.ContentLength64 = $fileStream.Length
+                    if ($request.HttpMethod -ne "HEAD") {
+                        $buffer = New-Object byte[] 65536
+                        while (($bytesRead = $fileStream.Read($buffer, 0, $buffer.Length)) -gt 0) {
+                            $response.OutputStream.Write($buffer, 0, $bytesRead)
+                        }
+                    }
+                } finally {
+                    $fileStream.Dispose()
                 }
             } else {
                 $response.StatusCode = 404

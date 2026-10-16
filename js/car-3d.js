@@ -5847,7 +5847,7 @@
                 alpha: true,
                 powerPreference: 'high-performance'
             });
-            this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+            this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.25));
             this.renderer.setSize(this.width, this.height);
             this.renderer.outputEncoding = THREE.sRGBEncoding || 3001;
             this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -6551,7 +6551,7 @@
         bindEvents() {
             const dom = this.renderer.domElement;
 
-            const onPointerDown = (e) => {
+            this._onPointerDown = (e) => {
                 this.isDragging = true;
                 this.dragVelX = 0;
                 this.dragVelY = 0;
@@ -6560,7 +6560,7 @@
                 this.needsRender = true;
             };
 
-            const onPointerMove = (e) => {
+            this._onPointerMove = (e) => {
                 if (!this.isDragging) return;
                 const clientX = e.clientX || (e.touches && e.touches[0].clientX) || 0;
                 const clientY = e.clientY || (e.touches && e.touches[0].clientY) || 0;
@@ -6569,19 +6569,26 @@
                 this.prevPointerX = clientX;
                 this.prevPointerY = clientY;
 
-                this.dragVelX = -deltaX * 0.007;
-                this.dragVelY = deltaY * 0.005;
-                this.targetAngleY += this.dragVelX;
-                this.targetAngleX = Math.max(0.04, Math.min(Math.PI / 2.05, this.targetAngleX + this.dragVelY));
+                const vx = -deltaX * 0.0075;
+                const vy = deltaY * 0.0055;
+                this.dragVelX = vx;
+                this.dragVelY = vy;
+
+                // Immediate 1:1 direct tracking when dragging - fluid 60 FPS response
+                this.cameraAngleY += vx;
+                this.targetAngleY = this.cameraAngleY;
+                this.cameraAngleX = Math.max(0.04, Math.min(Math.PI / 2.05, this.cameraAngleX + vy));
+                this.targetAngleX = this.cameraAngleX;
+                this.updateCameraPosition();
                 this.needsRender = true;
             };
 
-            const onPointerUp = () => {
+            this._onPointerUp = () => {
                 this.isDragging = false;
                 this.needsRender = true;
             };
 
-            const onWheel = (e) => {
+            this._onWheel = (e) => {
                 if (!this.options.enableZoom) return;
                 e.preventDefault();
                 const delta = Math.sign(e.deltaY) * 0.25;
@@ -6589,7 +6596,7 @@
                 this.needsRender = true;
             };
 
-            const onTouchMove = (e) => {
+            this._onTouchMove = (e) => {
                 if (e.touches.length === 2 && this.options.enableZoom) {
                     if (e.cancelable) e.preventDefault();
                     const dist = Math.hypot(
@@ -6604,26 +6611,28 @@
                     this.pinchStartDist = dist;
                 } else if (e.touches.length === 1 && this.isDragging) {
                     if (e.cancelable) e.preventDefault();
-                    onPointerMove(e);
+                    this._onPointerMove(e);
                 }
             };
 
-            const onTouchEnd = () => {
+            this._onTouchEnd = () => {
                 this.isDragging = false;
                 this.pinchStartDist = 0;
                 this.needsRender = true;
             };
 
-            dom.addEventListener('mousedown', onPointerDown);
-            window.addEventListener('mousemove', onPointerMove);
-            window.addEventListener('mouseup', onPointerUp);
+            this._onResize = () => this.resize();
 
-            dom.addEventListener('touchstart', onPointerDown, { passive: true });
-            dom.addEventListener('touchmove', onTouchMove, { passive: false });
-            dom.addEventListener('touchend', onTouchEnd);
+            dom.addEventListener('mousedown', this._onPointerDown);
+            window.addEventListener('mousemove', this._onPointerMove);
+            window.addEventListener('mouseup', this._onPointerUp);
 
-            dom.addEventListener('wheel', onWheel, { passive: false });
-            window.addEventListener('resize', () => this.resize());
+            dom.addEventListener('touchstart', this._onPointerDown, { passive: true });
+            dom.addEventListener('touchmove', this._onTouchMove, { passive: false });
+            dom.addEventListener('touchend', this._onTouchEnd);
+
+            dom.addEventListener('wheel', this._onWheel, { passive: false });
+            window.addEventListener('resize', this._onResize);
 
             if (typeof ResizeObserver !== 'undefined' && this.container) {
                 try {
@@ -6689,46 +6698,49 @@
                 if (this.options.autoRotate && !this.isDragging) {
                     this.targetAngleY += this.options.autoRotateSpeed;
                     this.cameraAngleY += this.options.autoRotateSpeed;
+                    this.updateCameraPosition();
                     this.needsRender = true;
                 }
 
                 // Smooth momentum glide after release
                 if (!this.isDragging) {
                     if (Math.abs(this.dragVelX) > 0.0001) {
-                        this.targetAngleY += this.dragVelX;
+                        this.cameraAngleY += this.dragVelX;
+                        this.targetAngleY = this.cameraAngleY;
                         this.dragVelX *= 0.90;
+                        this.updateCameraPosition();
                         this.needsRender = true;
                     } else {
                         this.dragVelX = 0;
                     }
                     if (Math.abs(this.dragVelY) > 0.0001) {
-                        this.targetAngleX = Math.max(0.04, Math.min(Math.PI / 2.05, this.targetAngleX + this.dragVelY));
+                        this.cameraAngleX = Math.max(0.04, Math.min(Math.PI / 2.05, this.cameraAngleX + this.dragVelY));
+                        this.targetAngleX = this.cameraAngleX;
                         this.dragVelY *= 0.90;
+                        this.updateCameraPosition();
                         this.needsRender = true;
                     } else {
                         this.dragVelY = 0;
                     }
-                }
 
-                // Smooth camera motion interpolation (damping)
-                // 0.85 when dragging for instant responsiveness; 0.09 for smooth cinematic viewpoint easing
-                const camLerp = this.isDragging ? 0.85 : 0.09;
-                let diffY = this.targetAngleY - this.cameraAngleY;
-                diffY = ((diffY + Math.PI) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2) - Math.PI;
+                    // Preset view transition smoothing (only when not dragging)
+                    let diffY = this.targetAngleY - this.cameraAngleY;
+                    diffY = ((diffY + Math.PI) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2) - Math.PI;
 
-                const diffX = this.targetAngleX - this.cameraAngleX;
-                const diffDist = this.targetDistance - this.cameraDistance;
-                const diffCenterY = this.targetCenterY - this.targetY;
+                    const diffX = this.targetAngleX - this.cameraAngleX;
+                    const diffDist = this.targetDistance - this.cameraDistance;
+                    const diffCenterY = this.targetCenterY - this.targetY;
 
-                const camMoving = Math.abs(diffY) > 0.0002 || Math.abs(diffX) > 0.0002 || Math.abs(diffDist) > 0.0005 || Math.abs(diffCenterY) > 0.0005;
+                    const camMoving = Math.abs(diffY) > 0.0002 || Math.abs(diffX) > 0.0002 || Math.abs(diffDist) > 0.0005 || Math.abs(diffCenterY) > 0.0005;
 
-                if (camMoving) {
-                    this.cameraAngleY += diffY * camLerp;
-                    this.cameraAngleX += diffX * camLerp;
-                    this.cameraDistance += diffDist * camLerp;
-                    this.targetY += diffCenterY * camLerp;
-                    this.updateCameraPosition();
-                    this.needsRender = true;
+                    if (camMoving) {
+                        this.cameraAngleY += diffY * 0.12;
+                        this.cameraAngleX += diffX * 0.12;
+                        this.cameraDistance += diffDist * 0.12;
+                        this.targetY += diffCenterY * 0.12;
+                        this.updateCameraPosition();
+                        this.needsRender = true;
+                    }
                 }
 
                 // Smooth interpolation for interactive doors, hood, and trunk
@@ -6827,6 +6839,33 @@
 
         destroy() {
             this.stop();
+            if (this.renderer && this.renderer.domElement) {
+                const dom = this.renderer.domElement;
+                if (this._onPointerDown) {
+                    try { dom.removeEventListener('mousedown', this._onPointerDown); } catch (_) {}
+                    try { dom.removeEventListener('touchstart', this._onPointerDown); } catch (_) {}
+                }
+                if (this._onTouchMove) {
+                    try { dom.removeEventListener('touchmove', this._onTouchMove); } catch (_) {}
+                }
+                if (this._onTouchEnd) {
+                    try { dom.removeEventListener('touchend', this._onTouchEnd); } catch (_) {}
+                }
+                if (this._onWheel) {
+                    try { dom.removeEventListener('wheel', this._onWheel); } catch (_) {}
+                }
+            }
+            if (typeof window !== 'undefined') {
+                if (this._onPointerMove) {
+                    try { window.removeEventListener('mousemove', this._onPointerMove); } catch (_) {}
+                }
+                if (this._onPointerUp) {
+                    try { window.removeEventListener('mouseup', this._onPointerUp); } catch (_) {}
+                }
+                if (this._onResize) {
+                    try { window.removeEventListener('resize', this._onResize); } catch (_) {}
+                }
+            }
             if (this._visHandler && typeof document !== 'undefined') {
                 try { document.removeEventListener('visibilitychange', this._visHandler); } catch (_) {}
                 this._visHandler = null;
@@ -6907,7 +6946,7 @@
             powerPreference: 'high-performance'
         });
         if (typeof offscreenRenderer.setSize === 'function') offscreenRenderer.setSize(440, 240, false);
-        if (typeof offscreenRenderer.setPixelRatio === 'function') offscreenRenderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+        if (typeof offscreenRenderer.setPixelRatio === 'function') offscreenRenderer.setPixelRatio(1.0);
         if (offscreenRenderer.shadowMap) {
             offscreenRenderer.shadowMap.enabled = false;
         }
@@ -7218,11 +7257,30 @@
                     alpha: false
                 });
             }
-            this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+            this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.25));
             this.renderer.setSize(this.width, this.height);
             if (THREE.sRGBEncoding) {
                 this.renderer.outputEncoding = THREE.sRGBEncoding;
             }
+
+            // Shared particle assets (zero per-frame GPU allocations)
+            this.sharedSparkGeo = new THREE.BoxGeometry(0.06, 0.06, 0.06);
+            this.sharedSparkMat = new THREE.MeshBasicMaterial({ color: 0xfbbf24 });
+
+            this.sharedSmokeGeo = new THREE.SphereGeometry(0.24, 6, 6);
+            this.sharedSmokeMat = new THREE.MeshBasicMaterial({
+                color: 0xd1d5db,
+                transparent: true,
+                opacity: 0.45
+            });
+
+            this.sharedSprayGeo = new THREE.BoxGeometry(0.18, 0.18, 0.18);
+            this.sharedSprayMat = new THREE.MeshBasicMaterial({
+                color: 0x94a3b8,
+                transparent: true,
+                opacity: 0.35,
+                depthWrite: false
+            });
 
             this.container.innerHTML = '';
             this.container.style.position = 'relative';
@@ -7599,14 +7657,16 @@
         }
 
         spawnWaterSpray(x, y, z) {
+            if (this.smokeParticles.length >= 20) return;
             const THREE = this.THREE;
-            const mat = new THREE.MeshBasicMaterial({
+            const geo = this.sharedSprayGeo || new THREE.BoxGeometry(0.18, 0.18, 0.18);
+            const mat = this.sharedSprayMat || new THREE.MeshBasicMaterial({
                 color: 0x94a3b8,
                 transparent: true,
                 opacity: 0.35,
                 depthWrite: false
             });
-            const mesh = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.18, 0.18), mat);
+            const mesh = new THREE.Mesh(geo, mat);
             mesh.position.set(x, y, z);
             mesh.userData = {
                 life: 0.25,
@@ -9610,14 +9670,14 @@
 
         spawnDriftSmoke(dt) {
             const THREE = this.THREE;
-            if (Math.random() < 0.6) {
-                const smokeMat = new THREE.MeshBasicMaterial({
+            if (Math.random() < 0.6 && this.smokeParticles.length < 25) {
+                const geo = this.sharedSmokeGeo || new THREE.SphereGeometry(0.24, 6, 6);
+                const mat = this.sharedSmokeMat ? this.sharedSmokeMat.clone() : new THREE.MeshBasicMaterial({
                     color: 0xd1d5db,
                     transparent: true,
                     opacity: 0.45
                 });
-                const smokeGeo = new THREE.SphereGeometry(0.24, 6, 6);
-                const smoke = new THREE.Mesh(smokeGeo, smokeMat);
+                const smoke = new THREE.Mesh(geo, mat);
                 smoke.position.set(this.state.x + (Math.random() - 0.5) * 1.4, 0.2, this.state.z - 1.8);
                 smoke.userData = { life: 0.55, maxLife: 0.55 };
                 this.scene.add(smoke);
@@ -9631,20 +9691,28 @@
                 p.userData.life -= dt;
                 p.scale.addScalar(dt * 3.5);
                 p.position.y += dt * 0.6;
-                p.material.opacity = Math.max(0, (p.userData.life / p.userData.maxLife) * 0.45);
+                if (p.material) {
+                    p.material.opacity = Math.max(0, (p.userData.life / p.userData.maxLife) * 0.45);
+                }
                 if (p.userData.life <= 0) {
                     this.scene.remove(p);
+                    if (p.material && p.material !== this.sharedSmokeMat && p.material !== this.sharedSprayMat && typeof p.material.dispose === 'function') {
+                        p.material.dispose();
+                    }
                     this.smokeParticles.splice(i, 1);
                 }
             }
         }
 
-        spawnSparks(x, y, z, count = 10) {
+        spawnSparks(x, y, z, count = 8) {
             const THREE = this.THREE;
             const forwardSpeedMps = (this.state.speed || 0) / 3.6;
-            for (let i = 0; i < count; i++) {
-                const mat = new THREE.MeshBasicMaterial({ color: 0xfbbf24 });
-                const mesh = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.06, 0.06), mat);
+            const geo = this.sharedSparkGeo || new THREE.BoxGeometry(0.06, 0.06, 0.06);
+            const mat = this.sharedSparkMat || new THREE.MeshBasicMaterial({ color: 0xfbbf24 });
+
+            const actualCount = Math.min(count, Math.max(2, 40 - this.sparkParticles.length));
+            for (let i = 0; i < actualCount; i++) {
+                const mesh = new THREE.Mesh(geo, mat);
                 mesh.position.set(x + (Math.random() - 0.5) * 0.4, y, z + (Math.random() - 0.5) * 0.4);
                 mesh.userData = {
                     vx: (Math.random() - 0.5) * 8.0,
@@ -9765,6 +9833,12 @@
             if (this._onResize && typeof window !== 'undefined' && typeof window.removeEventListener === 'function') {
                 window.removeEventListener('resize', this._onResize);
             }
+            if (this.sharedSparkGeo) { try { this.sharedSparkGeo.dispose(); } catch (_) {} this.sharedSparkGeo = null; }
+            if (this.sharedSparkMat) { try { this.sharedSparkMat.dispose(); } catch (_) {} this.sharedSparkMat = null; }
+            if (this.sharedSmokeGeo) { try { this.sharedSmokeGeo.dispose(); } catch (_) {} this.sharedSmokeGeo = null; }
+            if (this.sharedSmokeMat) { try { this.sharedSmokeMat.dispose(); } catch (_) {} this.sharedSmokeMat = null; }
+            if (this.sharedSprayGeo) { try { this.sharedSprayGeo.dispose(); } catch (_) {} this.sharedSprayGeo = null; }
+            if (this.sharedSprayMat) { try { this.sharedSprayMat.dispose(); } catch (_) {} this.sharedSprayMat = null; }
             if (this.scene) {
                 try { deepDispose(this.scene); } catch (_) {}
                 this.scene = null;

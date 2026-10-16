@@ -5150,6 +5150,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
         // --- 2. СТАЙЛИНГ АВТОМОБИЛЕЙ (ПОКРАСКА, ТОНИРОВКА, ДИСКИ, КЛИРЕНС, СГУ, НЕОН) ---
         function openStylingModal(carIndex, initialMode) {
+            if (garage3DShowroom) {
+                try { garage3DShowroom.stop(); } catch (_) {}
+            }
             try { preloadUserGarageModels(); } catch (_) {}
             stylingActiveCarIndex = carIndex;
             if (initialMode) {
@@ -5250,6 +5253,14 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             if (car3DShowroom) {
                 if (typeof car3DShowroom.setLoading === 'function') car3DShowroom.setLoading(false);
                 car3DShowroom.stop();
+            }
+            const garageTab = document.getElementById('garage');
+            if (garageTab && !garageTab.classList.contains('hidden') && garage3DShowroom) {
+                try {
+                    garage3DShowroom.resize();
+                    garage3DShowroom.start();
+                    garage3DShowroom.requestRender();
+                } catch (_) {}
             }
         }
 
@@ -11100,27 +11111,42 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         }
         window.toggle3DTouchControls = toggle3DTouchControls;
 
+        let _preloadGarageTimer = null;
+        const _preloadedModelsSet = new Set();
+
         function preloadUserGarageModels() {
             if (typeof Car3DManager === 'undefined' || !Car3DManager.preloadCarModel) return;
             const THREE = window.THREE;
             if (!THREE) return;
-            const activeCar = (Array.isArray(myCars) && myCars.length > 0)
-                ? (myCars.find(c => c && c.name === selectedRaceCarName) || myCars[0])
-                : null;
-            if (activeCar && activeCar.name) {
-                Car3DManager.preloadCarModel(THREE, activeCar.name);
+            if (typeof isRaceRunning !== 'undefined' && isRaceRunning) return;
+
+            if (_preloadGarageTimer) {
+                clearTimeout(_preloadGarageTimer);
             }
-            if (Array.isArray(myCars)) {
-                let delay = 350;
-                myCars.slice(0, 6).forEach(c => {
-                    if (c && c.name && (!activeCar || c.name !== activeCar.name)) {
-                        setTimeout(() => {
-                            Car3DManager.preloadCarModel(THREE, c.name);
-                        }, delay);
-                        delay += 400;
-                    }
-                });
-            }
+
+            _preloadGarageTimer = setTimeout(() => {
+                _preloadGarageTimer = null;
+                const activeCar = (Array.isArray(myCars) && myCars.length > 0)
+                    ? (myCars.find(c => c && c.name === selectedRaceCarName) || myCars[0])
+                    : null;
+                if (activeCar && activeCar.name && !_preloadedModelsSet.has(activeCar.name)) {
+                    _preloadedModelsSet.add(activeCar.name);
+                    Car3DManager.preloadCarModel(THREE, activeCar.name);
+                }
+                if (Array.isArray(myCars)) {
+                    let delay = 1000;
+                    myCars.slice(0, 4).forEach(c => {
+                        if (c && c.name && (!_preloadedModelsSet.has(c.name)) && (!activeCar || c.name !== activeCar.name)) {
+                            setTimeout(() => {
+                                if (typeof isRaceRunning !== 'undefined' && isRaceRunning) return;
+                                _preloadedModelsSet.add(c.name);
+                                Car3DManager.preloadCarModel(THREE, c.name);
+                            }, delay);
+                            delay += 1000;
+                        }
+                    });
+                }
+            }, 500);
         }
         window.preloadUserGarageModels = preloadUserGarageModels;
 

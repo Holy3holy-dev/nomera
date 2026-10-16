@@ -21,15 +21,18 @@ const MIME_TYPES = {
     '.glb': 'model/gltf-binary',
     '.gltf': 'model/gltf+json',
     '.bin': 'application/octet-stream',
-    '.wasm': 'application/wasm'
+    '.wasm': 'application/wasm',
+    '.mp3': 'audio/mpeg',
+    '.wav': 'audio/wav'
 };
 
+const STATIC_EXTENSIONS = new Set(['.glb', '.gltf', '.bin', '.wasm', '.png', '.jpg', '.jpeg', '.svg', '.ico', '.mp3', '.wav']);
+
 const server = http.createServer((req, res) => {
-    // Basic CORS & caching headers
+    // Basic CORS
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', '*');
-    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
 
     if (req.method === 'OPTIONS') {
         res.writeHead(204);
@@ -93,6 +96,9 @@ const server = http.createServer((req, res) => {
         const contentType = MIME_TYPES[ext] || 'application/octet-stream';
         const fileSize = stats.size;
         const rangeHeader = req.headers.range;
+
+        const isStatic = STATIC_EXTENSIONS.has(ext);
+        res.setHeader('Cache-Control', isStatic ? 'public, max-age=604800, immutable' : 'no-cache, no-store, must-revalidate');
 
         // HTTP 206 Partial Content for Range requests (streaming large 3D models)
         if (rangeHeader) {
