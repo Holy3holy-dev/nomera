@@ -3249,6 +3249,10 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
     object-fit: contain !important;
     background: radial-gradient(circle at center, #1b2333 0%, #0a0d16 100%);
 }
+.car-3d-thumb {
+    image-rendering: auto !important;
+    object-fit: contain !important;
+}
 #styling-preview-canvas {
     image-rendering: -moz-crisp-edges;
     image-rendering: pixelated;

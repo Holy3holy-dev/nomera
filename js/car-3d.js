@@ -5305,104 +5305,122 @@
             return;
         }
 
-        function setupModel(gltfScene) {
-            const modelGroup = new THREE.Group();
-            modelGroup.name = 'CarModel_' + carId;
+        function protectSceneBuffers(scene) {
+            if (!scene || typeof scene.traverse !== 'function') return scene;
+            scene.traverse(child => {
+                child.userData.preserveBuffers = true;
+                if (child.geometry) child.geometry.userData.preserveBuffers = true;
+                if (child.material) {
+                    if (Array.isArray(child.material)) child.material.forEach(m => { m.userData.preserveBuffers = true; });
+                    else child.material.userData.preserveBuffers = true;
+                }
+            });
+            return scene;
+        }
 
-            let rootToUse = gltfScene;
-            if (carId === 'gaz24') {
-                let newVolga = null;
-                gltfScene.traverse(c => {
-                    if (!newVolga && c.name && (c.name.includes('Volga_(new)') || c.name.includes('Volga (new)'))) {
-                        newVolga = c;
-                    }
-                });
-                if (newVolga) {
-                    rootToUse = newVolga;
-                }
-            }
-            const clonedScene = rootToUse.clone(true);
-            const toRemove = [];
-            clonedScene.traverse(c => {
-                const nm = String(c.name || '').toLowerCase();
-                if (/shadow.*plane|ground.*shadow|floor.*shadow|shadow_plane|obj_shadow/i.test(nm)) {
-                    toRemove.push(c);
-                }
+        function setupModel(gltfScene) {
+            try {
+                const modelGroup = new THREE.Group();
+                modelGroup.name = 'CarModel_' + carId;
+
+                let rootToUse = gltfScene;
                 if (carId === 'gaz24') {
-                    if (nm.includes('object_174') || nm.includes('reg plate') || nm.includes('2020') || nm.includes('plate')) {
+                    let newVolga = null;
+                    gltfScene.traverse(c => {
+                        if (!newVolga && c.name && (c.name.includes('Volga_(new)') || c.name.includes('Volga (new)'))) {
+                            newVolga = c;
+                        }
+                    });
+                    if (newVolga) {
+                        rootToUse = newVolga;
+                    }
+                }
+                const clonedScene = rootToUse.clone(true);
+                const toRemove = [];
+                clonedScene.traverse(c => {
+                    const nm = String(c.name || '').toLowerCase();
+                    if (/shadow.*plane|ground.*shadow|floor.*shadow|shadow_plane|obj_shadow/i.test(nm)) {
                         toRemove.push(c);
                     }
+                    if (carId === 'gaz24') {
+                        if (nm.includes('object_174') || nm.includes('reg plate') || nm.includes('2020') || nm.includes('plate')) {
+                            toRemove.push(c);
+                        }
+                    }
+                });
+                toRemove.forEach(c => {
+                    if (c.parent) c.parent.remove(c);
+                });
+                clonedScene.updateMatrixWorld(true);
+
+                let box = new THREE.Box3().setFromObject(clonedScene);
+                let size = box.getSize(new THREE.Vector3());
+                let center = box.getCenter(new THREE.Vector3());
+
+                // 1. If height is greater than length and width (Z-up coordinate system from Blender/3ds Max)
+                if (size.y > size.z * 1.2 && size.y > size.x * 1.2) {
+                    clonedScene.rotation.x = -Math.PI / 2;
+                    clonedScene.updateMatrixWorld(true);
+                    box = new THREE.Box3().setFromObject(clonedScene);
+                    size = box.getSize(new THREE.Vector3());
+                    center = box.getCenter(new THREE.Vector3());
                 }
-            });
-            toRemove.forEach(c => {
-                if (c.parent) c.parent.remove(c);
-            });
-            clonedScene.updateMatrixWorld(true);
 
-            let box = new THREE.Box3().setFromObject(clonedScene);
-            let size = box.getSize(new THREE.Vector3());
-            let center = box.getCenter(new THREE.Vector3());
+                // 2. If length is along X axis, rotate 90 degrees so the car aligns forward along Z
+                if (size.x > size.z * 1.15) {
+                    clonedScene.rotation.y = Math.PI / 2;
+                    clonedScene.updateMatrixWorld(true);
+                    box = new THREE.Box3().setFromObject(clonedScene);
+                    size = box.getSize(new THREE.Vector3());
+                    center = box.getCenter(new THREE.Vector3());
+                }
 
-            // 1. If height is greater than length and width (Z-up coordinate system from Blender/3ds Max)
-            if (size.y > size.z * 1.2 && size.y > size.x * 1.2) {
-                clonedScene.rotation.x = -Math.PI / 2;
+                // 3. Align car forward facing along +Z
+                if (carId === 'vaz2109' || carId === 'sf90') {
+                    clonedScene.rotation.y += Math.PI;
+                    clonedScene.updateMatrixWorld(true);
+                    box = new THREE.Box3().setFromObject(clonedScene);
+                    size = box.getSize(new THREE.Vector3());
+                    center = box.getCenter(new THREE.Vector3());
+                }
+
+                // Standardize car dimensions with realistic relative scale
+                let targetLength = 4.45;
+                if (carId === 'vaz2107' || carId === 'vaz2109' || carId === 'polo') {
+                    targetLength = 4.05;
+                } else if (carId === 'cullinan') {
+                    targetLength = 5.25;
+                } else if (carId === 'g63' || carId === 'lc300') {
+                    targetLength = 4.90;
+                } else if (carId === 'camry' || carId === 'e63' || carId === 'rs6' || carId === 'm8' || carId === 'gaz24') {
+                    targetLength = 4.75;
+                } else if (carId === 'jesko' || carId === 'chiron' || carId === 'sf90' || carId === 'huracan' || carId === 'porsche911') {
+                    targetLength = 4.50;
+                } else if (carId === 'priora' || carId === 'solaris' || carId === 'vesta') {
+                    targetLength = 4.35;
+                } else if (carId === 'mark2' || carId === 'subaru' || carId === 'm5e60' || carId === 'm5f90' || carId === 'gtr' || carId === 'silvia') {
+                    targetLength = 4.55;
+                }
+                const currentLength = size.z || 1;
+                const scaleFactor = targetLength / currentLength;
+                clonedScene.scale.setScalar(scaleFactor);
                 clonedScene.updateMatrixWorld(true);
-                box = new THREE.Box3().setFromObject(clonedScene);
-                size = box.getSize(new THREE.Vector3());
-                center = box.getCenter(new THREE.Vector3());
+
+                const scaledBox = new THREE.Box3().setFromObject(clonedScene);
+                const scaledCenter = scaledBox.getCenter(new THREE.Vector3());
+
+                clonedScene.position.x = -scaledCenter.x;
+                clonedScene.position.z = -scaledCenter.z;
+                clonedScene.position.y = -scaledBox.min.y;
+
+                modelGroup.add(clonedScene);
+                applyStylingToGLTF(THREE, modelGroup, styling, carId);
+
+                return modelGroup;
+            } catch (err) {
+                console.warn('Failed to setup cloned GLTF scene, falling back to detailed procedural model:', err);
+                return buildDetailedCarModel(THREE, carName, styling);
             }
-
-            // 2. If length is along X axis, rotate 90 degrees so the car aligns forward along Z
-            if (size.x > size.z * 1.15) {
-                clonedScene.rotation.y = Math.PI / 2;
-                clonedScene.updateMatrixWorld(true);
-                box = new THREE.Box3().setFromObject(clonedScene);
-                size = box.getSize(new THREE.Vector3());
-                center = box.getCenter(new THREE.Vector3());
-            }
-
-            // 3. Align car forward facing along +Z
-            if (carId === 'vaz2109' || carId === 'sf90') {
-                clonedScene.rotation.y += Math.PI;
-                clonedScene.updateMatrixWorld(true);
-                box = new THREE.Box3().setFromObject(clonedScene);
-                size = box.getSize(new THREE.Vector3());
-                center = box.getCenter(new THREE.Vector3());
-            }
-
-            // Standardize car dimensions with realistic relative scale
-            let targetLength = 4.45;
-            if (carId === 'vaz2107' || carId === 'vaz2109' || carId === 'polo') {
-                targetLength = 4.05;
-            } else if (carId === 'cullinan') {
-                targetLength = 5.25;
-            } else if (carId === 'g63' || carId === 'lc300') {
-                targetLength = 4.90;
-            } else if (carId === 'camry' || carId === 'e63' || carId === 'rs6' || carId === 'm8' || carId === 'gaz24') {
-                targetLength = 4.75;
-            } else if (carId === 'jesko' || carId === 'chiron' || carId === 'sf90' || carId === 'huracan' || carId === 'porsche911') {
-                targetLength = 4.50;
-            } else if (carId === 'priora' || carId === 'solaris' || carId === 'vesta') {
-                targetLength = 4.35;
-            } else if (carId === 'mark2' || carId === 'subaru' || carId === 'm5e60' || carId === 'm5f90' || carId === 'gtr' || carId === 'silvia') {
-                targetLength = 4.55;
-            }
-            const currentLength = size.z || 1;
-            const scaleFactor = targetLength / currentLength;
-            clonedScene.scale.setScalar(scaleFactor);
-            clonedScene.updateMatrixWorld(true);
-
-            const scaledBox = new THREE.Box3().setFromObject(clonedScene);
-            const scaledCenter = scaledBox.getCenter(new THREE.Vector3());
-
-            clonedScene.position.x = -scaledCenter.x;
-            clonedScene.position.z = -scaledCenter.z;
-            clonedScene.position.y = -scaledBox.min.y;
-
-            modelGroup.add(clonedScene);
-            applyStylingToGLTF(THREE, modelGroup, styling, carId);
-
-            return modelGroup;
         }
 
         if (rawGLBCache.has(modelUrl)) {
@@ -5435,7 +5453,7 @@
                         modelUrl,
                         gltf => {
                             if (gltf && gltf.scene) {
-                                rawGLBCache.set(modelUrl, gltf.scene);
+                                rawGLBCache.set(modelUrl, protectSceneBuffers(gltf.scene));
                                 resolve(gltf.scene);
                             } else {
                                 resolve(null);
@@ -5467,7 +5485,7 @@
                                 baseUrl,
                                 gltf => {
                                     if (gltf && gltf.scene) {
-                                        rawGLBCache.set(modelUrl, gltf.scene);
+                                        rawGLBCache.set(modelUrl, protectSceneBuffers(gltf.scene));
                                         resolve(gltf.scene);
                                     } else {
                                         fallbackLoad();
@@ -5671,14 +5689,21 @@
         try {
             if (typeof obj.traverse === 'function') {
                 obj.traverse(child => {
+                    if (child.userData && child.userData.preserveBuffers) return;
                     if (child.geometry && typeof child.geometry.dispose === 'function') {
-                        try { child.geometry.dispose(); } catch (_) {}
+                        if (!child.geometry.userData || !child.geometry.userData.preserveBuffers) {
+                            try { child.geometry.dispose(); } catch (_) {}
+                        }
                     }
                     if (child.material) {
                         if (Array.isArray(child.material)) {
-                            child.material.forEach(m => disposeMaterial(m));
+                            child.material.forEach(m => {
+                                if (!m.userData || !m.userData.preserveBuffers) disposeMaterial(m);
+                            });
                         } else {
-                            disposeMaterial(child.material);
+                            if (!child.material.userData || !child.material.userData.preserveBuffers) {
+                                disposeMaterial(child.material);
+                            }
                         }
                     }
                 });
@@ -7102,11 +7127,13 @@
             // 0: Dynamic Chase (default 3rd-person behind & above car)
             // 1: Close Sports Chase (lower & closer)
             // 2: Hood / Bumper POV
+            // 3: Overhead / Top-Down View
             this.cameraMode = 0;
             this.cameraModes = [
                 { offset: new this.THREE.Vector3(0, 2.05, -5.8), lookOffset: new this.THREE.Vector3(0, 1.05, 14.0), fov: 58 },
                 { offset: new this.THREE.Vector3(0, 1.55, -4.4), lookOffset: new this.THREE.Vector3(0, 0.85, 13.0), fov: 62 },
-                { offset: new this.THREE.Vector3(0, 1.15, 0.6), lookOffset: new this.THREE.Vector3(0, 1.00, 25.0), fov: 68 }
+                { offset: new this.THREE.Vector3(0, 1.15, 0.6), lookOffset: new this.THREE.Vector3(0, 1.00, 25.0), fov: 68 },
+                { offset: new this.THREE.Vector3(0, 11.5, -2.2), lookOffset: new this.THREE.Vector3(0, 0.5, 9.5), fov: 62 }
             ];
             this.camPos = new this.THREE.Vector3(0, 2.05, -5.8);
             this.camLook = new this.THREE.Vector3(0, 1.05, 14.0);
@@ -7190,6 +7217,10 @@
             this.roadChunks = [];
             this.highestChunkZ = 0;
             this.weather = 'night';
+            this.mode = 'circuit';
+            this.roadCurve = 0;
+            this.targetRoadCurve = 0;
+            this.curveTimer = 2.0;
 
             // Traffic
             this.trafficCars = [];
@@ -8116,6 +8147,14 @@
 
         initTraffic() {
             const THREE = this.THREE;
+            if (this.trafficCars && this.trafficCars.length > 0) {
+                this.trafficCars.forEach(car => {
+                    try {
+                        if (this.scene) this.scene.remove(car);
+                        deepDispose(car);
+                    } catch (_) {}
+                });
+            }
             this.trafficCars = [];
 
             // Spawn pool of traffic cars
@@ -8327,9 +8366,13 @@
         }
 
         start(config = {}) {
+            this.mode = config.mode || 'circuit';
             this.carName = config.carName || 'ВАЗ-2107 «Жигули»';
             this.styling = Object.assign({}, config.styling || {});
             this.performance = Object.assign({}, config.performance || {});
+            this.roadCurve = 0;
+            this.targetRoadCurve = 0;
+            this.curveTimer = 2.0;
 
             // Initialize player physics parameters
             this.state.x = 2.125; // start in lane 2
@@ -8410,6 +8453,28 @@
                 this.baseFov = 60;
             }
 
+            // Reset road chunks to start coordinates
+            this.highestChunkZ = 0;
+            if (this.roadChunks && this.roadChunks.length > 0) {
+                this.roadChunks.forEach((chunk, i) => {
+                    const chunkZ = (i - 1) * this.chunkLength;
+                    chunk.position.set(0, 0, chunkZ);
+                    chunk.rotation.set(0, 0, 0);
+                    if (chunkZ > this.highestChunkZ) {
+                        this.highestChunkZ = chunkZ;
+                    }
+                });
+            }
+
+            // Reset camera positions to start
+            const initialMode = this.cameraModes[this.cameraMode] || this.cameraModes[0];
+            this.camPos.set(this.state.x, initialMode.offset.y, this.state.z + initialMode.offset.z);
+            this.camLook.set(this.state.x, initialMode.lookOffset.y, this.state.z + initialMode.lookOffset.z);
+            this.camRoll = 0;
+
+            // Re-initialize traffic pool at start
+            this.initTraffic();
+
             // Load Player's authentic 3D car model
             this.loadPlayerCar();
 
@@ -8436,22 +8501,27 @@
 
         loadPlayerCar() {
             const THREE = this.THREE;
-            if (!this.playerCar) {
-                // Immediately spawn the detailed procedural 3D model so the car is on track on frame 1
+            if (this.playerCar) {
                 try {
-                    const immediateModel = buildDetailedCarModel(THREE, this.carName, this.styling);
-                    if (immediateModel) {
-                        this.playerCar = immediateModel;
-                        if (this.styling && this.styling.plate !== undefined) {
-                            applyLicensePlateToModel(THREE, this.playerCar, this.styling.plate);
-                        }
-                        this.playerCar.position.set(this.state.x, 0, this.state.z);
-                        this.scene.add(this.playerCar);
-                        this.setupCarLightingAndFX();
+                    if (this.scene) this.scene.remove(this.playerCar);
+                    deepDispose(this.playerCar);
+                } catch (_) {}
+                this.playerCar = null;
+            }
+            // Immediately spawn the detailed procedural 3D model so the car is on track on frame 1
+            try {
+                const immediateModel = buildDetailedCarModel(THREE, this.carName, this.styling);
+                if (immediateModel) {
+                    this.playerCar = immediateModel;
+                    if (this.styling && this.styling.plate !== undefined) {
+                        applyLicensePlateToModel(THREE, this.playerCar, this.styling.plate);
                     }
-                } catch (e) {
-                    console.warn('Could not build immediate procedural model:', e);
+                    this.playerCar.position.set(this.state.x, 0, this.state.z);
+                    this.scene.add(this.playerCar);
+                    this.setupCarLightingAndFX();
                 }
+            } catch (e) {
+                console.warn('Could not build immediate procedural model:', e);
             }
 
             // Load high-resolution model asynchronously with timeout guard
@@ -8467,15 +8537,18 @@
                     hasLoaded = true;
                     clearTimeout(loadTimer);
                     if (!this.isRunning || !this.scene) return;
+                    if (!model) return;
                     if (this.playerCar) {
                         this.scene.remove(this.playerCar);
+                        deepDispose(this.playerCar);
                         this.playerCar = null;
                     }
                     this.playerCar = model;
                     if (this.styling && this.styling.plate !== undefined) {
                         applyLicensePlateToModel(THREE, this.playerCar, this.styling.plate);
                     }
-                    this.playerCar.position.set(this.state.x, 0, this.state.z);
+                    this.playerCar.position.set(this.state.x, (this.state.downforceY || 0), this.state.z);
+                    this.playerCar.updateMatrixWorld(true);
                     this.scene.add(this.playerCar);
                     this.setupCarLightingAndFX();
                 });
@@ -8489,6 +8562,25 @@
             if (!this.playerCar) return;
 
             try {
+                this.playerCar.updateMatrixWorld(true);
+                if (this.playerHeadlights) {
+                    this.playerHeadlights.forEach(hl => {
+                        try {
+                            if (hl.target && hl.target.parent) hl.target.parent.remove(hl.target);
+                            if (hl.parent) hl.parent.remove(hl);
+                        } catch (_) {}
+                    });
+                }
+                if (this.playerBrakeLight && this.playerBrakeLight.parent) {
+                    try { this.playerBrakeLight.parent.remove(this.playerBrakeLight); } catch (_) {}
+                }
+                if (this.playerNitroLight && this.playerNitroLight.parent) {
+                    try { this.playerNitroLight.parent.remove(this.playerNitroLight); } catch (_) {}
+                }
+                if (this.playerBackfireLight && this.playerBackfireLight.parent) {
+                    try { this.playerBackfireLight.parent.remove(this.playerBackfireLight); } catch (_) {}
+                }
+
                 // Compute bounds of player model
                 const box = new THREE.Box3().setFromObject(this.playerCar);
                 const size = box.getSize(new THREE.Vector3());
@@ -8705,7 +8797,7 @@
         cycleCamera() {
             this.cameraMode = (this.cameraMode + 1) % this.cameraModes.length;
             if (this.options.onSound) this.options.onSound('camera');
-            const modeNames = ['Вид сзади (Динамический)', 'Вид сзади (Спортивный)', 'Капот / Бампер'];
+            const modeNames = ['Вид сзади (Динамический)', 'Вид сзади (Спортивный)', 'Капот / Бампер', 'Вид сверху'];
             if (this.options.onPopup) this.options.onPopup('📷 ' + modeNames[this.cameraMode], '#38bdf8');
             return this.cameraMode;
         }
@@ -8955,7 +9047,8 @@
 
             // 5. STEERING, HANDBRAKE & DRIFT MECHANICS
             const isHandbrake = !!keys.drift;
-            const driftMult = state.driftFactor || 1.35;
+            const isDriftMode = this.mode === 'drift';
+            const driftMult = state.driftFactor || (isDriftMode ? 1.6 : 1.35);
             // High-speed steering stability: heavier feel and high directional stability at 200+ km/h
             const speedStability = Math.max(0.68, 1.0 - (state.speed / 380) * 0.32);
             const lateralMax = (state.handling * 2.8 * speedStability) * (isHandbrake ? (1 + (driftMult - 1) * 0.7) : 1.0);
@@ -8964,11 +9057,42 @@
             if (keys.left) steerInput += 1;  // In Three.js with camera facing +Z: +X moves to screen LEFT
             if (keys.right) steerInput -= 1; // -X moves to screen RIGHT
 
-            if (steerInput !== 0) {
-                state.vx += steerInput * lateralMax * 4.2 * dt;
+            // Steering authority: tied to forward rolling motion and throttle. Car cannot steer sideways on the spot when stationary!
+            const speedSteerAuthority = Math.min(1.0, Math.max(0, state.speed / 18));
+            const throttleSteerAuthority = keys.gas ? 1.0 : (state.speed > 5 ? Math.min(1.0, 0.40 + (state.speed / 50) * 0.60) : 0);
+            const effectiveSteerAuthority = speedSteerAuthority * throttleSteerAuthority;
+
+            if (steerInput !== 0 && effectiveSteerAuthority > 0) {
+                state.vx += steerInput * lateralMax * 4.2 * effectiveSteerAuthority * dt;
                 state.vx = Math.max(-lateralMax, Math.min(lateralMax, state.vx));
             } else {
-                state.vx *= Math.max(0, 1 - 7.5 * dt);
+                const lateralDecay = effectiveSteerAuthority < 0.05 ? 14.0 : 7.5;
+                state.vx *= Math.max(0, 1 - lateralDecay * dt);
+            }
+
+            // Dynamic Touge & Highway curves
+            this.curveTimer = (this.curveTimer || 2.0) - dt;
+            if (this.curveTimer <= 0) {
+                if (isDriftMode) {
+                    this.curveTimer = 1.0 + Math.random() * 1.5;
+                    const r = Math.random();
+                    if (r < 0.10) this.targetRoadCurve = 0;
+                    else if (r < 0.55) this.targetRoadCurve = 1.6 + Math.random() * 1.2;
+                    else this.targetRoadCurve = -(1.6 + Math.random() * 1.2);
+                } else {
+                    this.curveTimer = 3.5 + Math.random() * 3.0;
+                    const r = Math.random();
+                    if (r < 0.35) this.targetRoadCurve = 0;
+                    else if (r < 0.68) this.targetRoadCurve = 0.6 + Math.random() * 0.7;
+                    else this.targetRoadCurve = -(0.6 + Math.random() * 0.7);
+                }
+            }
+            const curveRate = isDriftMode ? 3.5 : 1.2;
+            this.roadCurve = (this.roadCurve || 0) + (this.targetRoadCurve - (this.roadCurve || 0)) * Math.min(1.0, curveRate * dt);
+
+            if (Math.abs(this.roadCurve) > 0.15) {
+                const centrifugal3D = -this.roadCurve * (state.speed / 110) * (isDriftMode ? 7.5 : 3.5) * dt;
+                state.vx += centrifugal3D;
             }
 
             // Drift detection: initiated with handbrake, maintained while sliding
@@ -9552,10 +9676,20 @@
 
         updateRoadChunks() {
             const state = this.state;
+            const curve = this.roadCurve || 0;
             this.roadChunks.forEach(chunk => {
                 if (chunk.position.z < state.z - 50) {
                     chunk.position.z = this.highestChunkZ + this.chunkLength;
                     this.highestChunkZ = chunk.position.z;
+                }
+                const dz = chunk.position.z - state.z;
+                if (dz > 0 && Math.abs(curve) > 0.05) {
+                    const curveOffset = curve * Math.pow(Math.min(3.5, dz / 45), 2) * 1.5;
+                    chunk.position.x = curveOffset;
+                    chunk.rotation.y = -curve * Math.min(1.0, dz / 80) * 0.25;
+                } else {
+                    chunk.position.x = 0;
+                    chunk.rotation.y = 0;
                 }
             });
         }
@@ -9565,17 +9699,18 @@
             const mode = this.cameraModes[this.cameraMode] || this.cameraModes[0];
             const isPortrait = this.camera && this.camera.aspect < 1.0;
             const isHood = this.cameraMode === 2;
+            const isTopDown = this.cameraMode === 3;
 
             // 1. Target camera offset based on camera mode and viewport aspect
             // In portrait aspect, elevate camera slightly so the vehicle sits higher in frame,
             // preventing lower HUD gauges (speedometer & nitro) from covering the bumper and plate.
-            const accelLag = !isHood ? ((this.keys && this.keys.gas) ? 0.30 : ((this.keys && this.keys.brake) ? -0.25 : 0)) : 0;
-            const targetCamX = state.x * (isHood ? 1.0 : 0.75);
-            const targetCamY = mode.offset.y + (isPortrait && !isHood ? 0.45 : 0);
-            const targetCamZ = state.z + mode.offset.z - (isPortrait && !isHood ? 0.35 : 0) - accelLag * Math.min(1.0, state.speed / 100);
+            const accelLag = (!isHood && !isTopDown) ? ((this.keys && this.keys.gas) ? 0.30 : ((this.keys && this.keys.brake) ? -0.25 : 0)) : 0;
+            const targetCamX = (isHood || isTopDown) ? state.x : state.x * 0.75;
+            const targetCamY = mode.offset.y + (isPortrait && !isHood && !isTopDown ? 0.45 : 0);
+            const targetCamZ = state.z + mode.offset.z - (isPortrait && !isHood && !isTopDown ? 0.35 : 0) - accelLag * Math.min(1.0, state.speed / 100);
 
             // 2. Smooth spring follow for camera position (glides smoothly across lanes without snapping)
-            const posLerp = isHood ? 16.0 : 6.0;
+            const posLerp = isHood ? 16.0 : (isTopDown ? 10.0 : 6.0);
             this.camPos.x += (targetCamX - this.camPos.x) * Math.min(1.0, posLerp * dt);
             this.camPos.y += (targetCamY - this.camPos.y) * Math.min(1.0, 6.0 * dt);
             this.camPos.z = targetCamZ;
@@ -9600,12 +9735,12 @@
             // 4. Stable look-at point:
             // Aligned forward along the camera trajectory so the road ahead does NOT violently whip
             // diagonally across the screen when steering. In drift, adds gentle slide anticipation.
-            const driftLookBias = (state.isDrifting && !isHood) ? state.yawAngle * 0.16 : 0;
-            const targetLookX = isHood ? state.x : (this.camPos.x * 0.82 + state.x * 0.18 + driftLookBias);
-            const targetLookY = mode.lookOffset.y - (isPortrait && !isHood ? 0.20 : 0);
+            const driftLookBias = (state.isDrifting && !isHood && !isTopDown) ? state.yawAngle * 0.16 : 0;
+            const targetLookX = (isHood || isTopDown) ? state.x : (this.camPos.x * 0.82 + state.x * 0.18 + driftLookBias);
+            const targetLookY = mode.lookOffset.y - (isPortrait && !isHood && !isTopDown ? 0.20 : 0);
             const targetLookZ = state.z + mode.lookOffset.z;
 
-            const lookLerp = isHood ? 16.0 : 6.5;
+            const lookLerp = (isHood || isTopDown) ? 16.0 : 6.5;
             this.camLook.x += (targetLookX - this.camLook.x) * Math.min(1.0, lookLerp * dt);
             this.camLook.y = targetLookY;
             this.camLook.z = targetLookZ;
@@ -9613,9 +9748,9 @@
             this.camera.lookAt(this.camLook);
 
             // 5. Cinematic camera banking roll:
-            // Smoothly damped and clamped to realistic tilt (max ~3 deg / 0.052 rad in chase, ~0.8 deg in hood).
+            // Smoothly damped and clamped to realistic tilt (max ~3 deg / 0.052 rad in chase, ~0.8 deg in hood/topdown).
             // Completely eliminates abrupt jerks, violent swaying, and horizon rocking.
-            const maxCamRoll = isHood ? 0.015 : 0.052;
+            const maxCamRoll = (isHood || isTopDown) ? 0.015 : 0.052;
             const targetRoll = Math.max(-maxCamRoll, Math.min(maxCamRoll, -state.vx * 0.0032));
             this.camRoll = (this.camRoll || 0) + (targetRoll - (this.camRoll || 0)) * Math.min(1.0, 5.0 * dt);
             this.camera.rotateZ(this.camRoll);

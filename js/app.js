@@ -3637,6 +3637,25 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     logPlayerActivity('Крутит номер', `Выпал госномер «${curPlateText}» (${escapeHtml(r.text)}, ${finalPrice.toLocaleString('ru-RU')} ₽)`);
                     recordQuestProgress('spins', 1);
                     checkAchievements();
+
+                    // Авто-прокрутка: остановка на красных (Супер редкий >= 80 000 ₽), эпических (>= 300 000 ₽) и выше, на остальных автоматом продает
+                    if (isAutoSpinning) {
+                        const isStopTier = finalPrice >= 80000 || ['Супер редкий', 'Эпический', 'Легендарный', 'Крутой', 'БЛАТНОЙ', 'Мифический'].includes(r.text);
+                        if (isStopTier) {
+                            toggleAutoSpin();
+                            notifyUser(`🔥 Выбит ценный номер «${curPlateText}» (${r.text}, ${finalPrice.toLocaleString('ru-RU')} ₽)! Авто-прокрутка остановлена.`, 'success');
+                        } else {
+                            const turbo = document.getElementById('turbo-toggle');
+                            const nextDelay = (turbo && turbo.checked) ? 120 : 450;
+                            Promise.resolve(sellCurrentPlate()).catch(err => {
+                                console.warn('Auto-spin auto-sell error:', err);
+                            }).finally(() => {
+                                if (isAutoSpinning) {
+                                    setTimeout(runAutoSpinStep, nextDelay);
+                                }
+                            });
+                        }
+                    }
                 }
 
                 if (onFinish) onFinish();
@@ -4014,11 +4033,6 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             }
 
             spinBoth();
-            const turbo = document.getElementById('turbo-toggle');
-            const delay = (turbo && turbo.checked) ? 600 : 1600;
-            setTimeout(() => {
-                if (isAutoSpinning) runAutoSpinStep();
-            }, delay);
         }
 
         async function savePlate() {
@@ -4721,6 +4735,23 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             });
             list.innerHTML = html;
 
+            if (typeof Car3DManager !== 'undefined' && typeof Car3DManager.renderSideThumbnail === 'function') {
+                filteredCars.forEach((car, idx) => {
+                    const imgId = 'shop-car-img-' + encodeURIComponent(car.name).replace(/%/g, '_') + '-' + idx;
+                    const cached = Car3DManager.getSideThumbnail(car.name);
+                    if (!cached) {
+                        Car3DManager.renderSideThumbnail(car.name, {}, (dataUrl) => {
+                            if (dataUrl) {
+                                const imgEl = document.getElementById(imgId);
+                                if (imgEl) {
+                                    imgEl.src = dataUrl;
+                                    imgEl.classList.add('car-3d-thumb');
+                                }
+                            }
+                        });
+                    }
+                });
+            }
         }
 
         function renderCars() {
@@ -4865,6 +4896,26 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 `;
             });
             myCarsDiv.innerHTML = html;
+
+            if (typeof Car3DManager !== 'undefined' && typeof Car3DManager.renderSideThumbnail === 'function') {
+                myCars.forEach((c, idx) => {
+                    const effStyling = Object.assign({}, c.styling || {}, {
+                        plate: c.plate ? (c.plate.text || c.plate) : 'none'
+                    });
+                    const cached = Car3DManager.getSideThumbnail(c.name, effStyling);
+                    if (!cached) {
+                        Car3DManager.renderSideThumbnail(c.name, effStyling, (dataUrl) => {
+                            if (dataUrl) {
+                                const imgEl = document.getElementById('my-car-img-' + idx);
+                                if (imgEl) {
+                                    imgEl.src = dataUrl;
+                                    imgEl.classList.add('car-3d-thumb');
+                                }
+                            }
+                        });
+                    }
+                });
+            }
 
             const podiumCard = document.getElementById('garage-3d-podium-card');
             if (podiumCard) podiumCard.style.display = 'block';
@@ -10266,6 +10317,11 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                         tint: carStyling.tint,
                         neon: carStyling.neon
                     });
+                    if (typeof Car3DManager !== 'undefined' && typeof Car3DManager.renderSideThumbnail === 'function') {
+                        Car3DManager.renderSideThumbnail(carItem.name, carStyling, (url) => {
+                            if (url) drawThumbOnCvs(url);
+                        });
+                    }
                 }
 
                 const nameDiv = document.createElement('div');
@@ -11055,6 +11111,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     carName: selectedRaceCarName,
                     styling: raceStyling,
                     performance: stats,
+                    mode: raceCurrentMode,
                     weather: (typeof raceSelectedWeather !== 'undefined' ? raceSelectedWeather : 'night')
                 });
                 if (typeof requestAnimationFrame === 'function') {
@@ -11487,12 +11544,12 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     // Резкие повороты горного серпантина (Touge): частая сменяемость крутых шпилек
                     curveTimer = 1.0 + Math.random() * 1.5;
                     const r = Math.random();
-                    if (r < 0.12) {
+                    if (r < 0.10) {
                         targetRoadCurve = 0; // короткий прямой прострел
-                    } else if (r < 0.56) {
-                        targetRoadCurve = 80 + Math.random() * 60; // крутой вираж вправо (80..140)
+                    } else if (r < 0.55) {
+                        targetRoadCurve = 120 + Math.random() * 70; // крутой вираж вправо (120..190)
                     } else {
-                        targetRoadCurve = -(80 + Math.random() * 60); // крутой вираж влево (-80..-140)
+                        targetRoadCurve = -(120 + Math.random() * 70); // крутой вираж влево (-120..-190)
                     }
                 } else {
                     curveTimer = 4.0 + Math.random() * 3.5;
@@ -11502,12 +11559,12 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     else targetRoadCurve = -(45 + Math.random() * 50);
                 }
             }
-            const curveTransitionRate = raceCurrentMode === 'drift' ? 4.0 : 1.5;
+            const curveTransitionRate = raceCurrentMode === 'drift' ? 4.5 : 1.5;
             roadCurve += (targetRoadCurve - roadCurve) * curveTransitionRate * dt;
 
             // Центробежная сила при прохождении поворота
             if (Math.abs(roadCurve) > 8) {
-                const centrifugalFactor = raceCurrentMode === 'drift' ? 88 : 45;
+                const centrifugalFactor = raceCurrentMode === 'drift' ? 120 : 45;
                 const centrifugalPush = -(roadCurve / 75) * (racePlayer.speed / 130) * centrifugalFactor * dt;
                 racePlayer.vx += centrifugalPush;
             }
@@ -11669,33 +11726,42 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             }
 
             // 5. Инерция руления, ручник и дрифт
-            const driftMult = stats.driftFactor || 1.35;
+            const isDriftMode = raceCurrentMode === 'drift';
+            const driftMult = stats.driftFactor || (isDriftMode ? 1.65 : 1.35);
             const isHandbrake = !!raceKeys.drift;
             const maxLateral = racePlayer.handling * 42 * (isHandbrake ? (1 + (driftMult - 1) * 0.7) : 1);
             const steerRate = racePlayer.handling * 185 * (isHandbrake ? 1.4 : 1);
+
+            // Авторитет руления: при отсутствии газа и остановке машина не может смещаться в стороны на месте!
+            const speedSteerAuthority = Math.min(1.0, Math.max(0, racePlayer.speed / 20));
+            const throttleSteerAuthority = isGasActive ? 1.0 : (racePlayer.speed > 5 ? Math.min(1.0, 0.40 + (racePlayer.speed / 60) * 0.60) : 0);
+            const effectiveSteerAuthority = speedSteerAuthority * throttleSteerAuthority;
 
             // Контр-руление: когда автомобиль смещается в одну сторону, а руль повернут в противоположную
             const isCounterSteer = (racePlayer.vx > 16 && raceKeys.left) || (racePlayer.vx < -16 && raceKeys.right);
             racePlayer.isCounterSteering = isCounterSteer;
 
-            if (isCounterSteer) {
+            if (isCounterSteer && effectiveSteerAuthority > 0) {
                 // Стабилизация заноса при контр-рулении: контролируемое удержание траектории
-                const stabilizeDecay = (raceCurrentMode === 'drift' || isHandbrake) ? 0.35 : 0.15;
+                const stabilizeDecay = (isDriftMode || isHandbrake) ? 0.35 : 0.15;
                 racePlayer.vx *= Math.pow(stabilizeDecay, dt);
-                const counterTorque = (racePlayer.vx > 0 ? -1 : 1) * steerRate * 0.52 * dt;
+                const counterTorque = (racePlayer.vx > 0 ? -1 : 1) * steerRate * 0.52 * effectiveSteerAuthority * dt;
                 racePlayer.vx += counterTorque;
-            } else if (raceKeys.left) {
-                racePlayer.vx = Math.max(-maxLateral, racePlayer.vx - steerRate * dt);
-            } else if (raceKeys.right) {
-                racePlayer.vx = Math.min(maxLateral, racePlayer.vx + steerRate * dt);
+            } else if (raceKeys.left && effectiveSteerAuthority > 0) {
+                racePlayer.vx = Math.max(-maxLateral, racePlayer.vx - steerRate * effectiveSteerAuthority * dt);
+            } else if (raceKeys.right && effectiveSteerAuthority > 0) {
+                racePlayer.vx = Math.min(maxLateral, racePlayer.vx + steerRate * effectiveSteerAuthority * dt);
             } else {
                 // Плавное затухание инерции (при заносе/ручнике скольжение длится дольше)
-                const decayBase = (isHandbrake || raceCurrentMode === 'drift') ? 0.10 : 0.015;
+                const decayBase = (isHandbrake || isDriftMode) ? 0.10 : 0.015;
                 racePlayer.vx *= Math.pow(decayBase, dt);
+                if (effectiveSteerAuthority < 0.05) {
+                    racePlayer.vx *= Math.max(0, 1 - 16 * dt);
+                }
             }
 
             // Power Oversteer (тяга и поддержание заноса при нажатом газе)
-            if (raceKeys.gas && (isHandbrake || Math.abs(racePlayer.vx) > maxLateral * 0.36 || raceCurrentMode === 'drift') && Math.abs(racePlayer.vx) > 18) {
+            if (raceKeys.gas && (isHandbrake || Math.abs(racePlayer.vx) > maxLateral * 0.36 || isDriftMode) && Math.abs(racePlayer.vx) > 18) {
                 const oversteerPush = (racePlayer.vx >= 0 ? 1 : -1) * (stats.accel * 9.5) * dt;
                 racePlayer.vx = Math.max(-maxLateral, Math.min(maxLateral, racePlayer.vx + oversteerPush));
             }
@@ -12591,8 +12657,8 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     }
                 }
 
-                // Удаление уехавших объектов
-                if (t.y > 680 || t.y < -160) {
+                // Удаление уехавших объектов (расширенный диапазон culling'а для высоких скоростей)
+                if (t.y > 700 || t.y < -380) {
                     raceTraffic.splice(i, 1);
                 }
             }
@@ -12675,20 +12741,20 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         }
 
         function spawnTrafficCar() {
-            // В режиме Дрифта обычный трафик отключен для чистой траектории скольжения
-            if (raceCurrentMode === 'drift') return;
+            // В режиме Дрифта трафик более разреженный, давая пространство для заносов и крутых поворотов
+            if (raceCurrentMode === 'drift' && Math.random() < 0.45) return;
 
             const lanes = [95, 165, 235, 305];
             const laneIdx = Math.floor(Math.random() * lanes.length);
             const laneX = lanes[laneIdx];
 
-            for (let t of raceTraffic) {
-                if (Math.abs(t.x - laneX) < 32 && t.y < 35) return;
-            }
-
             // На высокой скорости спавним машины дальше по трассе, давая нормальное окно реакции
             const curSpd = racePlayer ? (racePlayer.speed || 70) : 70;
-            const spawnY = curSpd > 160 ? -110 - Math.min(220, (curSpd - 160) * 0.95) : -60;
+            const spawnY = curSpd > 160 ? -100 - Math.min(180, (curSpd - 160) * 0.85) : -60;
+
+            for (let t of raceTraffic) {
+                if (Math.abs(t.x - laneX) < 32 && Math.abs(t.y - spawnY) < 130) return;
+            }
 
             // При 4+ звёздах розыска периодически выставляется кордон / блокпост ДПС
             if ((racePlayer?.wantedStars || 0) >= 4 && Math.random() < 0.22) {
