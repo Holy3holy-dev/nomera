@@ -728,62 +728,341 @@
             border-color: #161616;
         }
 
-        /* ТЕМЫ ГОСНОМЕРОВ ПО СТРАНАМ (KZ / USA / UAE) */
-        .plate-container.country-kz {
-            background: linear-gradient(180deg, #ffffff 0%, #f0f9ff 48%, #e0f2fe 100%);
-            color: #0f172a;
-            border-color: #0369a1;
-        }
-        .plate-container.country-kz .plate-cells-main {
-            border-right-color: #0369a1;
-        }
-        .plate-container.country-kz .plate-region-text {
-            color: #0369a1;
+        /* ТЕМЫ ГОСНОМЕРОВ ПО СТРАНАМ (RUS / KZ / USA / UAE — РЕАЛЬНЫЕ СТАНДАРТЫ) */
+        .plate-kz-strip {
+            display: none;
         }
 
+        /* 🇰🇿 КАЗАХСТАН (СТ РК 986-2012: слева флаг+KZ, по центру 777 AAA, справа 2-значный регион 01) */
+        .plate-container.country-kz {
+            background: linear-gradient(180deg, #ffffff 0%, #f8fafc 60%, #e2e8f0 100%);
+            color: #0f172a;
+            border-color: #111827;
+            padding: 8px 14px 8px 12px;
+        }
+        .plate-container.country-kz .plate-kz-strip {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 3px;
+            padding: 0 8px 0 4px;
+            z-index: 2;
+        }
+        .plate-container.country-kz .plate-kz-strip .flag.flag-kz {
+            margin-left: 0;
+            width: 22px;
+            height: 13px;
+            border: 1px solid #0284c7;
+        }
+        .plate-container.country-kz .plate-kz-strip span {
+            font-size: 13px;
+            font-weight: 900;
+            color: #0369a1;
+            line-height: 1;
+            letter-spacing: 0.5px;
+        }
+        .plate-container.country-kz .plate-cells-main {
+            border-right: 3px solid #111827;
+            padding: 0 12px 0 4px;
+        }
+        .plate-container.country-kz #cell-n1 { order: 1; }
+        .plate-container.country-kz #cell-n2 { order: 2; }
+        .plate-container.country-kz #cell-n3 { order: 3; margin-right: 8px; }
+        .plate-container.country-kz #cell-l1 { order: 4; }
+        .plate-container.country-kz #cell-l2 { order: 5; }
+        .plate-container.country-kz #cell-l3 { order: 6; }
+        .plate-container.country-kz .plate-cell.letter-cell {
+            font-size: 38px;
+            min-width: 31px;
+        }
+        .plate-container.country-kz .plate-cell.num-cell {
+            font-size: 42px;
+            min-width: 28px;
+        }
+        .plate-container.country-kz .plate-region {
+            padding-left: 12px;
+            padding-right: 4px;
+            justify-content: center;
+            align-items: center;
+        }
+        .plate-container.country-kz .plate-region #region {
+            font-size: 36px;
+            line-height: 1;
+            font-weight: 900;
+            letter-spacing: 0.5px;
+        }
+        .plate-container.country-kz .plate-region-text {
+            display: none;
+        }
+
+        /* 🇺🇸 США (North American 12"×6" State Plate: сверху штат, по центру ABC • 123, снизу слоган штата) */
         .plate-container.country-usa {
-            background: linear-gradient(180deg, #fef3c7 0%, #fffbeb 28%, #f8fafc 100%);
-            color: #1e293b;
-            border-color: #1e3a8a;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            padding: 26px 22px 20px 22px;
+            min-height: 112px;
+            border-radius: 10px;
+            border: 3px solid #1e293b;
+            background: linear-gradient(180deg, #ffffff 0%, #f8fafc 75%, #f1f5f9 100%);
+            color: #1e3a8a;
+        }
+        .plate-container.country-usa .plate-bolt.bolt-left {
+            top: 8px;
+            left: 14px;
+            transform: none;
+        }
+        .plate-container.country-usa .plate-bolt.bolt-right {
+            top: 8px;
+            right: 14px;
+            transform: none;
         }
         .plate-container.country-usa::before {
-            content: "";
+            content: attr(data-state-title);
             position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: linear-gradient(90deg, #dc2626 0%, #dc2626 50%, #1e3a8a 50%, #1e3a8a 100%);
-            z-index: 6;
+            top: 5px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: Georgia, "Times New Roman", serif;
+            font-style: italic;
+            font-weight: 900;
+            font-size: 16px;
+            letter-spacing: 1.5px;
+            color: #b91c1c;
             pointer-events: none;
+            white-space: nowrap;
+            z-index: 6;
         }
-        .plate-container.country-usa .plate-cells-main {
-            border-right-color: #1e3a8a;
+        .plate-container.country-usa[data-reg="NY"]::before {
+            color: #1e3a8a;
+            font-style: normal;
+            font-family: var(--font-plate);
+            letter-spacing: 2px;
+        }
+        .plate-container.country-usa[data-reg="TX"]::before {
+            color: #0f172a;
+            font-style: normal;
+            font-family: var(--font-plate);
+            letter-spacing: 2.5px;
+        }
+        .plate-container.country-usa[data-reg="FL"]::before {
+            color: #ea580c;
+        }
+        .plate-container.country-usa[data-reg="NV"]::before {
+            color: #0369a1;
+        }
+        .plate-container.country-usa::after {
+            content: attr(data-state-slogan);
+            position: absolute;
+            inset: auto;
+            top: auto;
+            right: auto;
+            bottom: 4px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: none;
+            border-radius: 0;
+            font-size: 9px;
+            font-weight: 800;
+            letter-spacing: 1.2px;
+            color: #1e3a8a;
+            text-transform: uppercase;
+            white-space: nowrap;
+            pointer-events: none;
+            z-index: 6;
         }
         .plate-container.country-usa .plate-region {
-            color: #991b1b;
+            position: absolute;
+            top: 5px;
+            right: 28px;
+            padding: 1px 6px;
+            background: #1e3a8a;
+            color: #fff;
+            border-radius: 3px;
+            font-size: 11px;
+            font-weight: 900;
+            text-shadow: none;
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            gap: 4px;
+            z-index: 7;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+        }
+        .plate-container.country-usa .plate-region #region {
+            font-size: 11px;
+            line-height: 1.1;
+            font-weight: 900;
+            color: #fff;
         }
         .plate-container.country-usa .plate-region-text {
+            display: none;
+        }
+        .plate-container.country-usa .plate-region .region-edit-hint {
+            position: static;
+            font-size: 9px;
+            color: #93c5fd;
+            opacity: 0.85;
+        }
+        .plate-container.country-usa .plate-cells-main {
+            border-right: none;
+            padding: 4px 6px;
+            gap: 4px;
+        }
+        .plate-container.country-usa #cell-l1 { order: 1; }
+        .plate-container.country-usa #cell-l2 { order: 2; }
+        .plate-container.country-usa #cell-l3 { order: 3; margin-right: 12px; }
+        .plate-container.country-usa #cell-n1 { order: 4; }
+        .plate-container.country-usa #cell-n2 { order: 5; }
+        .plate-container.country-usa #cell-n3 { order: 6; }
+        .plate-container.country-usa .plate-cell.letter-cell,
+        .plate-container.country-usa .plate-cell.num-cell {
+            font-size: 40px;
+            min-width: 30px;
+            height: 50px;
             color: #1e3a8a;
         }
 
+        /* 🇦🇪 ОАЭ / ДУБАЙ (RTA 520×110mm: слева эмират DUBAI / دبي, справа код + номер) */
         .plate-container.country-uae {
-            background: linear-gradient(180deg, #ffffff 0%, #f8fafc 60%, #fef9c3 100%);
+            background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
             color: #0f172a;
-            border-color: #b45309;
+            border: 4px solid #0f172a;
             box-shadow:
-                inset 0 0 0 2px rgba(251, 191, 36, 0.55),
-                inset 0 2px 2px rgba(255, 255, 255, 1),
+                inset 0 1px 2px rgba(255, 255, 255, 1),
+                inset 0 -2px 3px rgba(0, 0, 0, 0.25),
                 0 16px 36px rgba(0, 0, 0, 0.75);
         }
-        .plate-container.country-uae .plate-cells-main {
-            border-right-color: #d97706;
-        }
         .plate-container.country-uae .plate-region {
-            color: #92400e;
+            order: -1;
+            padding: 2px 12px 2px 6px;
+            border-right: 3px solid #0f172a;
+            margin-right: 6px;
+            min-width: 68px;
+            justify-content: center;
+            align-items: center;
+            color: #0f172a;
+            position: relative;
         }
         .plate-container.country-uae .plate-region-text {
-            color: #b45309;
+            display: none;
+        }
+        .plate-container.country-uae .plate-region::before {
+            content: "دبي";
+            font-size: 15px;
+            font-weight: 900;
+            line-height: 1.1;
+            color: #0f172a;
+            font-family: system-ui, -apple-system, "Segoe UI", Tahoma, sans-serif;
+        }
+        .plate-container.country-uae[data-reg="AUH"] .plate-region {
+            background: linear-gradient(180deg, #dc2626 0%, #991b1b 100%);
+            color: #fff;
+            border-radius: 5px;
+            padding: 4px 10px;
+            text-shadow: none;
+        }
+        .plate-container.country-uae[data-reg="AUH"] .plate-region::before {
+            content: "أبوظبي";
+            color: #fff;
+        }
+        .plate-container.country-uae[data-reg="SHJ"] .plate-region::before {
+            content: "الشارقة";
+        }
+        .plate-container.country-uae[data-reg="AJM"] .plate-region::before {
+            content: "عجمان";
+        }
+        .plate-container.country-uae[data-reg="RAK"] .plate-region::before {
+            content: "رأس الخيمة";
+            font-size: 11px;
+        }
+        .plate-container.country-uae .plate-region #region {
+            font-size: 16px;
+            font-weight: 900;
+            letter-spacing: 1px;
+            line-height: 1.1;
+            color: #0f172a;
+        }
+        .plate-container.country-uae[data-reg="AUH"] .plate-region #region {
+            color: #fff;
+        }
+        .plate-container.country-uae .plate-cells-main {
+            border-right: none;
+            padding: 0 6px;
+        }
+        .plate-container.country-uae #cell-l1 { order: 1; }
+        .plate-container.country-uae #cell-l2 { order: 2; }
+        .plate-container.country-uae #cell-l3 { order: 3; margin-right: 12px; }
+        .plate-container.country-uae #cell-n1 { order: 4; }
+        .plate-container.country-uae #cell-n2 { order: 5; }
+        .plate-container.country-uae #cell-n3 { order: 6; }
+        .plate-container.country-uae .plate-cell.letter-cell {
+            font-size: 28px;
+            min-width: 26px;
+            height: 48px;
+        }
+        .plate-container.country-uae .plate-cell.num-cell {
+            font-size: 45px;
+            min-width: 30px;
+            height: 54px;
+        }
+
+        @media (max-width: 480px) {
+            .plate-container {
+                padding: 6px 10px;
+                max-width: 100%;
+                box-sizing: border-box;
+            }
+            .plate-container.country-kz {
+                padding: 6px 10px 6px 8px;
+            }
+            .plate-container.country-kz .plate-kz-strip {
+                padding: 0 5px 0 2px;
+            }
+            .plate-container.country-kz .plate-cell.letter-cell {
+                font-size: 32px;
+                min-width: 26px;
+            }
+            .plate-container.country-kz .plate-cell.num-cell {
+                font-size: 36px;
+                min-width: 24px;
+            }
+            .plate-container.country-kz .plate-region #region {
+                font-size: 30px;
+            }
+            .plate-container.country-usa {
+                padding: 24px 14px 18px 14px;
+                min-height: 104px;
+            }
+            .plate-container.country-usa::before {
+                font-size: 14px;
+            }
+            .plate-container.country-usa .plate-region {
+                right: 22px;
+                font-size: 10px;
+                padding: 1px 5px;
+            }
+            .plate-container.country-usa .plate-cell.letter-cell,
+            .plate-container.country-usa .plate-cell.num-cell {
+                font-size: 34px;
+                min-width: 26px;
+                height: 44px;
+            }
+            .plate-container.country-uae .plate-region {
+                min-width: 56px;
+                padding: 2px 8px 2px 4px;
+            }
+            .plate-container.country-uae .plate-cell.letter-cell {
+                font-size: 24px;
+                min-width: 22px;
+                height: 42px;
+            }
+            .plate-container.country-uae .plate-cell.num-cell {
+                font-size: 38px;
+                min-width: 26px;
+                height: 48px;
+            }
         }
         .plate-container.glow-uncommon {
             box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.75), 0 0 32px rgba(59, 130, 246, 0.75), inset 0 0 14px rgba(59, 130, 246, 0.2), 0 16px 36px rgba(0,0,0,0.8);
@@ -1047,25 +1326,73 @@
         }
 
         .mini-plate.country-kz {
-            background: linear-gradient(180deg, #ffffff 0%, #e0f2fe 100%);
-            border-color: #0284c7;
+            background: linear-gradient(180deg, #ffffff 0%, #f1f5f9 100%);
+            border-color: #0f172a;
             color: #0f172a;
+            gap: 5px;
             box-shadow: inset 0 1px 1px #fff, 0 2px 8px rgba(14, 165, 233, 0.25);
+        }
+        .mini-plate.country-kz::before {
+            content: "KZ";
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: #0284c7;
+            color: #fde047;
+            font-size: 8.5px;
+            font-weight: 900;
+            padding: 1.5px 3.5px;
+            border-radius: 2px;
+            line-height: 1;
+            letter-spacing: 0.3px;
+            flex-shrink: 0;
         }
 
         .mini-plate.country-usa {
-            background: linear-gradient(180deg, #fef3c7 0%, #fffbeb 45%, #f8fafc 100%);
-            border-color: #1e3a8a;
-            border-top: 3px solid #dc2626;
-            color: #1e293b;
+            background: linear-gradient(180deg, #ffffff 0%, #f8fafc 70%, #e2e8f0 100%);
+            border: 2px solid #1e293b;
+            border-top: 3.5px solid #b91c1c;
+            color: #1e3a8a;
+            gap: 5px;
             box-shadow: inset 0 1px 1px #fff, 0 2px 8px rgba(30, 58, 138, 0.3);
+        }
+        .mini-plate.country-usa::before {
+            content: "USA";
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: #1e3a8a;
+            color: #ffffff;
+            font-size: 8px;
+            font-weight: 900;
+            padding: 1.5px 3.5px;
+            border-radius: 2px;
+            line-height: 1;
+            letter-spacing: 0.4px;
+            flex-shrink: 0;
         }
 
         .mini-plate.country-uae {
-            background: linear-gradient(180deg, #ffffff 0%, #fef9c3 100%);
-            border-color: #d97706;
+            background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+            border: 2px solid #0f172a;
             color: #0f172a;
-            box-shadow: inset 0 0 0 1px rgba(251, 191, 36, 0.6), 0 2px 10px rgba(217, 119, 6, 0.3);
+            gap: 5px;
+            box-shadow: inset 0 1px 1px #fff, 0 2px 10px rgba(15, 23, 42, 0.35);
+        }
+        .mini-plate.country-uae::before {
+            content: "DUBAI";
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: #0f172a;
+            color: #ffffff;
+            font-size: 7.5px;
+            font-weight: 900;
+            padding: 1.5px 4px;
+            border-radius: 2px;
+            line-height: 1;
+            letter-spacing: 0.5px;
+            flex-shrink: 0;
         }
 
         .inv-card-header {

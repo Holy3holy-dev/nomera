@@ -370,6 +370,91 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         let currentNum = '---';
         let currentReg = '777';
 
+        function formatPlateText(l1, l2, l3, num, reg, country = currentCountry) {
+            const code = String(country || currentCountry || 'RUS').toUpperCase();
+            const c = PLATE_COUNTRIES[code] ? code : 'RUS';
+            const r = reg !== undefined && reg !== null && String(reg).trim() !== ''
+                ? String(reg).trim()
+                : (PLATE_COUNTRIES[c].defaultReg || '777');
+            const letters = `${l1 || '-'}${l2 || '-'}${l3 || '-'}`;
+            const digits = String(num || '---');
+            if (c === 'KZ') {
+                return `${digits} ${letters} | ${r} KZ`;
+            }
+            if (c === 'USA' || c === 'UAE') {
+                return `${letters} ${digits} | ${r} ${c}`;
+            }
+            return `${l1 || '-'} ${digits} ${l2 || '-'}${l3 || '-'} | ${r} ${c}`;
+        }
+        if (typeof window !== 'undefined') window.formatPlateText = formatPlateText;
+
+        const US_STATE_PLATE_META = {
+            CA: { title: 'CALIFORNIA', slogan: 'dmv.ca.gov • THE GOLDEN STATE', theme: 'ca' },
+            NY: { title: 'NEW YORK', slogan: 'THE EMPIRE STATE', theme: 'ny' },
+            FL: { title: 'MYFLORIDA.COM', slogan: 'SUNSHINE STATE', theme: 'fl' },
+            TX: { title: 'TEXAS', slogan: 'THE LONE STAR STATE', theme: 'tx' },
+            NV: { title: 'NEVADA', slogan: 'HOME MEANS NEVADA', theme: 'nv' },
+            IL: { title: 'ILLINOIS', slogan: 'LAND OF LINCOLN', theme: 'il' },
+            WA: { title: 'WASHINGTON', slogan: 'EVERGREEN STATE', theme: 'wa' },
+            MI: { title: 'MICHIGAN', slogan: 'WATER-WINTER WONDERLAND', theme: 'mi' },
+            GA: { title: 'GEORGIA', slogan: 'PEACH STATE', theme: 'ga' },
+            NJ: { title: 'NEW JERSEY', slogan: 'GARDEN STATE', theme: 'nj' }
+        };
+
+        const UAE_EMIRATE_PLATE_META = {
+            DXB: { en: 'DUBAI', ar: 'دبي' },
+            AUH: { en: 'ABU DHABI', ar: 'أبوظبي' },
+            SHJ: { en: 'SHARJAH', ar: 'الشارقة' },
+            AJM: { en: 'AJMAN', ar: 'عجمان' },
+            RAK: { en: 'R.A.K.', ar: 'رأس الخيمة' },
+            FUJ: { en: 'FUJAIRAH', ar: 'الفجيرة' },
+            UAQ: { en: 'U.A.Q.', ar: 'أم القيوين' }
+        };
+
+        function updatePlateBoxMeta(country = currentCountry, reg = currentReg) {
+            if (typeof document === 'undefined' || typeof document.getElementById !== 'function') return;
+            const plateBox = document.getElementById('plate-box');
+            if (!plateBox) return;
+            const c = String(country || currentCountry || 'RUS').toUpperCase();
+            const r = String(reg || currentReg || (PLATE_COUNTRIES[c] && PLATE_COUNTRIES[c].defaultReg) || '777').trim();
+            const rUpper = r.toUpperCase();
+
+            const usMeta = US_STATE_PLATE_META[rUpper] || {
+                title: 'UNITED STATES • ' + rUpper,
+                slogan: 'USA STATE PLATE',
+                theme: 'ca'
+            };
+            const uaeMeta = UAE_EMIRATE_PLATE_META[rUpper] || {
+                en: 'DUBAI',
+                ar: 'دبي'
+            };
+
+            const attrs = {
+                'data-country': c,
+                'data-reg': rUpper,
+                'data-state-title': usMeta.title,
+                'data-state-slogan': usMeta.slogan,
+                'data-state-theme': usMeta.theme,
+                'data-emirate-en': uaeMeta.en,
+                'data-emirate-ar': uaeMeta.ar
+            };
+
+            if (typeof plateBox.setAttribute === 'function') {
+                Object.entries(attrs).forEach(([k, v]) => plateBox.setAttribute(k, v));
+            }
+            if (plateBox.dataset && typeof plateBox.dataset === 'object') {
+                plateBox.dataset.country = c;
+                plateBox.dataset.reg = rUpper;
+                plateBox.dataset.stateTitle = usMeta.title;
+                plateBox.dataset.stateSlogan = usMeta.slogan;
+                plateBox.dataset.stateTheme = usMeta.theme;
+                plateBox.dataset.emirateEn = uaeMeta.en;
+                plateBox.dataset.emirateAr = uaeMeta.ar;
+            }
+        }
+        if (typeof window !== 'undefined') window.updatePlateBoxMeta = updatePlateBoxMeta;
+        updatePlateBoxMeta(currentCountry, currentReg);
+
         function getMiniPlateCountryClass(plateText) {
             const raw = String(plateText || '').trim().toUpperCase();
             if (/\bUAE$/.test(raw)) return 'mini-plate country-uae';
@@ -932,6 +1017,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     }
                 } catch (_) {}
             }, 300);
+            updatePlateBoxMeta(currentCountry, currentReg);
             checkCanSaveButton();
             renderLeaderboard();
             renderAvatarPresets();
@@ -2887,7 +2973,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     letters: [currentL1 !== '-' ? currentL1 : defLetter, currentL2 !== '-' ? currentL2 : defLetter, currentL3 !== '-' ? currentL3 : defLetter],
                     num: currentNum !== '---' ? currentNum : '111',
                     reg: params.region || currentReg || cfg.defaultReg,
-                    country: countryCode,
+                    country: currentCountry || countryCode,
                     hasNumbers: boardHasNumbers,
                     hasLetters: boardHasLetters,
                     changedNumbers: hasSpunNumSinceSave,
@@ -2900,6 +2986,16 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 let hasLetters = !!existingDraft.hasLetters;
                 let changedNumbers = !!existingDraft.changedNumbers;
                 let changedLetters = !!existingDraft.changedLetters;
+
+                const prevCountry = String(existingDraft.country || 'RUS').toUpperCase();
+                if (prevCountry !== countryCode) {
+                    newNum = '---';
+                    newLetters = ['-', '-', '-'];
+                    hasNumbers = false;
+                    hasLetters = false;
+                    changedNumbers = false;
+                    changedLetters = false;
+                }
 
                 if (params.mode === 'both' || params.mode === 'numbers') {
                     let forceTier = null;
@@ -2960,14 +3056,38 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             if (action === 'setRegion') {
                 if (!onlineProfile) throw Error('Требуется вход');
                 const userKey = sanitizeKey(onlineProfile.nickname);
-                const countryCode = String(params.country || onlineProfile.draft?.country || currentCountry || 'RUS').toUpperCase();
+                const prevDraft = (onlineProfile.draft && typeof onlineProfile.draft === 'object') ? onlineProfile.draft : {};
+                const prevCountry = String(prevDraft.country || currentCountry || 'RUS').toUpperCase();
+                const countryCode = String(params.country || prevDraft.country || currentCountry || 'RUS').toUpperCase();
                 const cfg = PLATE_COUNTRIES[countryCode] || PLATE_COUNTRIES.RUS;
                 const rawReg = String(params.region || '').trim();
                 const reg = (countryCode === 'USA' || countryCode === 'UAE') ? rawReg.toUpperCase() : rawReg;
                 if (!cfg.regPattern.test(reg)) throw Error('Неверный регион');
-                const draft = { ...((onlineProfile.draft && typeof onlineProfile.draft === 'object') ? onlineProfile.draft : {}), reg, country: cfg.code };
+                const resetPatch = cfg.code !== prevCountry ? {
+                    hasNumbers: false,
+                    hasLetters: false,
+                    changedNumbers: false,
+                    changedLetters: false,
+                    num: '---',
+                    letters: ['-', '-', '-']
+                } : {};
+                const draft = { ...prevDraft, ...resetPatch, reg, country: cfg.code };
                 onlineProfile.draft = draft;
-                await db.ref('onlineV4/accounts/' + userKey + '/draft').update({ reg, country: cfg.code, updatedAt: Date.now() }).catch(() => {});
+                const fbUpdate = {
+                    ...resetPatch,
+                    ...(draft.hasNumbers === false && draft.hasLetters === false && draft.num === '---' ? {
+                        hasNumbers: false,
+                        hasLetters: false,
+                        changedNumbers: false,
+                        changedLetters: false,
+                        num: '---',
+                        letters: ['-', '-', '-']
+                    } : {}),
+                    reg,
+                    country: cfg.code,
+                    updatedAt: Date.now()
+                };
+                await db.ref('onlineV4/accounts/' + userKey + '/draft').update(fbUpdate).catch(() => {});
                 return { ok: true, profile: onlineProfile, draft };
             }
 
@@ -2984,23 +3104,28 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     changedNumbers: hasSpunNumSinceSave,
                     changedLetters: hasSpunLetSinceSave
                 };
+                const draftCountry = String(draft.country || currentCountry || 'RUS').toUpperCase();
+                if (params.country && String(params.country).toUpperCase() !== draftCountry) {
+                    throw Error('Сначала прокрутите цифры и буквы в выбранной стране');
+                }
                 if (!draft.hasNumbers || !draft.hasLetters || !draft.changedNumbers || !draft.changedLetters) {
                     throw Error('Сначала прокрутите цифры и буквы');
                 }
-                const countryCode = String(params.country || draft.country || currentCountry || 'RUS').toUpperCase();
+                const countryCode = draftCountry;
                 const cfg = PLATE_COUNTRIES[countryCode] || PLATE_COUNTRIES.RUS;
                 const rawParamReg = typeof params.region === 'string' ? params.region.trim() : '';
                 const normParamReg = (countryCode === 'USA' || countryCode === 'UAE') ? rawParamReg.toUpperCase() : rawParamReg;
                 const reg = (normParamReg && cfg.regPattern.test(normParamReg)) ? normParamReg : (draft.reg || currentReg || cfg.defaultReg);
                 const [l1, l2, l3] = draft.letters;
-                const plateText = `${l1} ${draft.num} ${l2}${l3} | ${reg} ${cfg.code}`;
+                const plateText = formatPlateText(l1, l2, l3, draft.num, reg, cfg.code);
                 const price = typeof getCalculatedPrice === 'function' ? getCalculatedPrice(l1, l2, l3, draft.num, reg, cfg.code) : (typeof calculatePrice === 'function' ? calculatePrice() : 2500);
                 const r = typeof getRarity === 'function' ? getRarity(price) : { text: 'Обычный' };
                 const plate = {
                     id: 'plate_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
                     text: plateText,
                     price: price || 2500,
-                    rarity: { text: (r && r.text) || 'Обычный' }
+                    rarity: { text: (r && r.text) || 'Обычный' },
+                    country: cfg.code
                 };
                 const inv = [plate, ...(onlineProfile.inventory || [])];
                 const updatedDraft = {
@@ -3886,8 +4011,30 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             const code = String(countryCode || 'RUS').toUpperCase();
             const cfg = PLATE_COUNTRIES[code];
             if (!cfg) return;
+            const prevCountry = currentCountry;
             currentCountry = code;
             currentReg = cfg.defaultReg || cfg.defaultRegion;
+
+            if (code !== prevCountry) {
+                boardHasLetters = false;
+                boardHasNumbers = false;
+                hasSpunLetSinceSave = false;
+                hasSpunNumSinceSave = false;
+                mustSpinBothForNextSave = false;
+                currentL1 = '-';
+                currentL2 = '-';
+                currentL3 = '-';
+                currentNum = '---';
+                ['cell-l1', 'cell-l2', 'cell-l3', 'cell-n1', 'cell-n2', 'cell-n3'].forEach(id => setCellChar(id, '-'));
+                if (onlineProfile && onlineProfile.draft && typeof onlineProfile.draft === 'object') {
+                    onlineProfile.draft.hasNumbers = false;
+                    onlineProfile.draft.hasLetters = false;
+                    onlineProfile.draft.changedNumbers = false;
+                    onlineProfile.draft.changedLetters = false;
+                    onlineProfile.draft.num = '---';
+                    onlineProfile.draft.letters = ['-', '-', '-'];
+                }
+            }
 
             const regEl = document.getElementById('region');
             if (regEl) regEl.innerText = currentReg;
@@ -3908,6 +4055,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 plateBox.classList.remove('country-rus', 'country-kz', 'country-usa', 'country-uae');
                 plateBox.classList.add('country-' + code.toLowerCase());
             }
+            updatePlateBoxMeta(currentCountry, currentReg);
 
             if (typeof document !== 'undefined' && typeof document.querySelectorAll === 'function') {
                 const btns = document.querySelectorAll('.country-select-btn, .country-pill');
@@ -3950,17 +4098,6 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     .join('');
             }
 
-            if (!cfg.letters.includes(currentL1) || !cfg.letters.includes(currentL2) || !cfg.letters.includes(currentL3)) {
-                currentL1 = cfg.letters[0];
-                currentL2 = cfg.letters[0];
-                currentL3 = cfg.letters[0];
-                if (boardHasLetters) {
-                    setCellChar('cell-l1', currentL1);
-                    setCellChar('cell-l2', currentL2);
-                    setCellChar('cell-l3', currentL3);
-                }
-            }
-
             if (onlineProfile) {
                 if (onlineProfile.draft && typeof onlineProfile.draft === 'object') {
                     onlineProfile.draft.reg = currentReg;
@@ -4000,6 +4137,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             currentReg = next;
             const regEl = document.getElementById('region');
             if (regEl) regEl.innerText = currentReg;
+            updatePlateBoxMeta(currentCountry, currentReg);
             if (editor) editor.classList.add('hidden');
             if (onlineProfile) {
                 if (onlineProfile.draft && typeof onlineProfile.draft === 'object') {
@@ -4189,7 +4327,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                         playWinJingle(r.text);
                         if (typeof sound?.haptic === 'function') sound.haptic('win');
                     }
-                    const curPlateText = `${currentL1} ${currentNum} ${currentL2}${currentL3} | ${currentReg} ${currentCountry}`;
+                    const curPlateText = formatPlateText(currentL1, currentL2, currentL3, currentNum, currentReg, currentCountry);
                     logPlayerActivity('Крутит номер', `Выпал госномер «${curPlateText}» (${escapeHtml(r.text)}, ${finalPrice.toLocaleString('ru-RU')} ₽)`);
                     recordQuestProgress('spins', 1);
                     checkAchievements();
@@ -4274,7 +4412,14 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 currentCountry = draft.country;
                 const cfg = PLATE_COUNTRIES[currentCountry];
                 const flagEl = document.getElementById('plate-country-flag');
-                if (flagEl) flagEl.innerText = cfg.flag;
+                if (flagEl) {
+                    if (flagEl.classList) {
+                        flagEl.classList.remove('flag-rus', 'flag-kz', 'flag-usa', 'flag-uae');
+                        flagEl.classList.add('flag-' + currentCountry.toLowerCase());
+                    } else {
+                        flagEl.className = 'flag flag-' + currentCountry.toLowerCase();
+                    }
+                }
                 const codeEl = document.getElementById('plate-country-code');
                 if (codeEl) codeEl.innerText = cfg.code;
                 const plateBox = document.getElementById('plate-box');
@@ -4316,6 +4461,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 if (regEl) regEl.innerText = currentReg;
             }
 
+            updatePlateBoxMeta(currentCountry, currentReg);
             mustSpinBothForNextSave = true;
             checkCanSaveButton();
         }
@@ -4685,7 +4831,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 finally{serverSpinBusy=false;}
                 return;
             }
-            let pText = `${currentL1} ${currentNum} ${currentL2}${currentL3} | ${currentReg} ${currentCountry}`;
+            let pText = formatPlateText(currentL1, currentL2, currentL3, currentNum, currentReg, currentCountry);
             let price = calculatePrice();
             let r = getRarity(price);
 
@@ -4744,7 +4890,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 return;
             }
 
-            let pText = `${currentL1} ${currentNum} ${currentL2}${currentL3} | ${currentReg} ${currentCountry}`;
+            let pText = formatPlateText(currentL1, currentL2, currentL3, currentNum, currentReg, currentCountry);
             let price = calculatePrice();
             let r = getRarity(price);
 
@@ -4768,7 +4914,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             const cfg = PLATE_COUNTRIES[country] || PLATE_COUNTRIES.RUS;
             const pool = cfg.letters || lettersArr;
             const elites = cfg.eliteLetters || eliteLetters;
-            let l1, l2, l3, num, reg = currentReg, price, actualRarity;
+            let l1, l2, l3, num, reg = (country === currentCountry && currentReg) ? currentReg : (cfg.defaultReg || currentReg), price, actualRarity;
             for (let i = 0; i < 100; i++) {
                 l1 = randomItem(pool); l2 = randomItem(pool); l3 = randomItem(pool);
                 num = Math.floor(Math.random() * 899 + 100).toString();
@@ -4827,7 +4973,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 else { [l1, l2, l3] = defLetters; num = '142'; }
                 price = getCalculatedPrice(l1, l2, l3, num, reg.toString(), country);
             }
-            return { text: `${l1} ${num} ${l2}${l3} | ${reg} ${country}`, price: price, rarity: getRarity(price), country };
+            return { text: formatPlateText(l1, l2, l3, num, reg, country), price: price, rarity: getRarity(price), country };
         }
 
         function getCarRarity(price) {

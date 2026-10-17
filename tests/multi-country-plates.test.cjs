@@ -36,11 +36,23 @@ test('COUNTRIES configuration and spin costs for RUS, KZ, USA, UAE', () => {
   assert.equal(c.COUNTRIES.UAE.spinCostPart, 5000);
 });
 
-test('safePlate accepts RUS, KZ, USA, UAE plates and rejects invalid formats', () => {
+test('safePlate accepts authentic and legacy RUS, KZ, USA, UAE plates and rejects invalid formats', () => {
+  // Authentic formats
   assert.equal(c.safePlate({ text: 'А 777 АА | 777 RUS', price: 50000 }, 'p1').text, 'А 777 АА | 777 RUS');
-  assert.equal(c.safePlate({ text: 'V 777 IP | 01 KZ', price: 150000 }, 'p2').text, 'V 777 IP | 01 KZ');
-  assert.equal(c.safePlate({ text: 'V 777 IP | CA USA', price: 300000 }, 'p3').text, 'V 777 IP | CA USA');
-  assert.equal(c.safePlate({ text: 'D 001 XB | DXB UAE', price: 900000 }, 'p4').text, 'D 001 XB | DXB UAE');
+  assert.equal(c.safePlate({ text: '777 VIP | 01 KZ', price: 150000 }, 'p2').text, '777 VIP | 01 KZ');
+  assert.equal(c.safePlate({ text: 'VIP 777 | CA USA', price: 300000 }, 'p3').text, 'VIP 777 | CA USA');
+  assert.equal(c.safePlate({ text: 'DXB 001 | DXB UAE', price: 900000 }, 'p4').text, 'DXB 001 | DXB UAE');
+
+  // Legacy formats
+  assert.equal(c.safePlate({ text: 'V 777 IP | 01 KZ', price: 150000 }, 'p2_leg').text, 'V 777 IP | 01 KZ');
+  assert.equal(c.safePlate({ text: 'V 777 IP | CA USA', price: 300000 }, 'p3_leg').text, 'V 777 IP | CA USA');
+  assert.equal(c.safePlate({ text: 'D 001 XB | DXB UAE', price: 900000 }, 'p4_leg').text, 'D 001 XB | DXB UAE');
+
+  // formatPlateText helper
+  assert.equal(c.formatPlateText('А', 'А', 'А', '777', '777', 'RUS'), 'А 777 АА | 777 RUS');
+  assert.equal(c.formatPlateText('V', 'I', 'P', '777', '01', 'KZ'), '777 VIP | 01 KZ');
+  assert.equal(c.formatPlateText('V', 'I', 'P', '777', 'CA', 'USA'), 'VIP 777 | CA USA');
+  assert.equal(c.formatPlateText('D', 'X', 'B', '001', 'DXB', 'UAE'), 'DXB 001 | DXB UAE');
 
   assert.throws(() => c.safePlate({ text: 'local_item', price: 1000 }, 'bad1'), /формат/);
   assert.throws(() => c.safePlate({ text: 'A 777 AA | 77 GER', price: 1000 }, 'bad2'), /формат/);
@@ -57,24 +69,24 @@ test('priceOfPlate scales by country multiplier and rewards country-specific eli
   assert(usaSimple > kzSimple, 'USA simple plate should cost more than KZ');
   assert(uaeSimple > usaSimple, 'UAE simple plate should cost more than USA');
 
-  // Elite combinations: D 001 XB | DXB UAE, V 777 IP | CA USA, V 777 IP | 01 KZ
+  // Elite combinations: DXB 001 | DXB UAE, VIP 777 | CA USA, 777 VIP | 01 KZ
   const uaeElite = c.priceOfPlate('D', 'X', 'B', '001', 'DXB', 'UAE');
   const uaeNonElite = c.priceOfPlate('B', 'C', 'D', '124', 'SHJ', 'UAE');
-  assert(uaeElite > 50000000, `Expected UAE D 001 XB | DXB to be ultra-valuable, got ${uaeElite}`);
+  assert(uaeElite > 50000000, `Expected UAE DXB 001 | DXB to be ultra-valuable, got ${uaeElite}`);
   assert(uaeElite > uaeNonElite * 10);
 
   const usaElite = c.priceOfPlate('V', 'I', 'P', '777', 'CA', 'USA');
   const usaNonElite = c.priceOfPlate('B', 'C', 'D', '124', 'OH', 'USA');
-  assert(usaElite > 20000000, `Expected USA V 777 IP | CA to be ultra-valuable, got ${usaElite}`);
+  assert(usaElite > 20000000, `Expected USA VIP 777 | CA to be ultra-valuable, got ${usaElite}`);
   assert(usaElite > usaNonElite * 10);
 
   const kzElite = c.priceOfPlate('V', 'I', 'P', '777', '01', 'KZ');
   const kzNonElite = c.priceOfPlate('B', 'C', 'D', '124', '09', 'KZ');
-  assert(kzElite > 10000000, `Expected KZ V 777 IP | 01 to be ultra-valuable, got ${kzElite}`);
+  assert(kzElite > 10000000, `Expected KZ 777 VIP | 01 to be ultra-valuable, got ${kzElite}`);
   assert(kzElite > kzNonElite * 10);
 });
 
-test('mutate roll, setRegion, claim, and sell work end-to-end for KZ, USA, and UAE plates', () => {
+test('mutate roll, setRegion, claim, and sell work end-to-end with authentic plate formats for KZ, USA, and UAE', () => {
   // 1. KZ flow
   let s = makeState(100000);
   const kzRoll = c.secureRoll('both', 0, 'KZ');
@@ -92,7 +104,7 @@ test('mutate roll, setRegion, claim, and sell work end-to-end for KZ, USA, and U
 
   s = c.mutate(s, 'claim', 'racer', { plateId: 'plate_kz_1' }, 1200);
   assert.equal(s.accounts.racer.inventory.length, 1);
-  assert.match(s.accounts.racer.inventory[0].text, /^[A-Z] \d{3} [A-Z]{2} \| 02 KZ$/);
+  assert.match(s.accounts.racer.inventory[0].text, /^\d{3} [A-Z]{3} \| 02 KZ$/);
 
   // 2. USA flow (partial spins + setRegion + claim + sell)
   const usaNumRoll = c.secureRoll('numbers', 0, 'USA');
@@ -109,7 +121,7 @@ test('mutate roll, setRegion, claim, and sell work end-to-end for KZ, USA, and U
 
   s = c.mutate(s, 'claim', 'racer', { plateId: 'plate_usa_1' }, 2300);
   assert.equal(s.accounts.racer.inventory.length, 2);
-  assert.match(s.accounts.racer.inventory[0].text, /^[A-Z] \d{3} [A-Z]{2} \| NY USA$/);
+  assert.match(s.accounts.racer.inventory[0].text, /^[A-Z]{3} \d{3} \| NY USA$/);
 
   // 3. UAE flow (full spin + setRegion + claim + sell + buy)
   const uaeRoll = { mode: 'both', country: 'UAE', num: '001', letters: ['D', 'X', 'B'] };
@@ -122,18 +134,51 @@ test('mutate roll, setRegion, claim, and sell work end-to-end for KZ, USA, and U
   assert.equal(s.accounts.racer.draft.reg, 'DXB');
 
   s = c.mutate(s, 'claim', 'racer', { plateId: 'plate_uae_1' }, 3200);
-  assert.equal(s.accounts.racer.inventory[0].text, 'D 001 XB | DXB UAE');
+  assert.equal(s.accounts.racer.inventory[0].text, 'DXB 001 | DXB UAE');
   assert.equal(s.accounts.racer.inventory[0].price, c.priceOfPlate('D', 'X', 'B', '001', 'DXB', 'UAE'));
 
   // Sell UAE plate on market and buy it with buyer account
   s = c.mutate(s, 'sell', 'racer', { plateId: 'plate_uae_1', lotId: 'lot_uae_1234567890', price: 25000000 }, 3300);
-  assert.equal(s.market.lot_uae_1234567890.plate.text, 'D 001 XB | DXB UAE');
+  assert.equal(s.market.lot_uae_1234567890.plate.text, 'DXB 001 | DXB UAE');
 
   s = c.mutate(s, 'buy', 'buyer', { lotId: 'lot_uae_1234567890' }, 3400);
-  assert.equal(s.accounts.buyer.inventory[0].text, 'D 001 XB | DXB UAE');
+  assert.equal(s.accounts.buyer.inventory[0].text, 'DXB 001 | DXB UAE');
 });
 
-test('Frontend selectPlateCountry switches country, spin costs, regions, and plate formatting across RUS, KZ, USA, UAE', () => {
+test('Backend blocks country-switch price arbitrage exploit via setRegion or claim', () => {
+  // Exploit vector 1: Roll in RUS for 900 ₽, then call setRegion to switch to UAE, then claim
+  let s = makeState(100000);
+  const rusRoll = { mode: 'both', country: 'RUS', num: '777', letters: ['А', 'А', 'А'] };
+  s = c.mutate(s, 'roll', 'racer', { roll: rusRoll, region: '777', country: 'RUS' }, 1000);
+  assert.equal(s.accounts.racer.balance, 100000 - 900);
+  assert.equal(s.accounts.racer.draft.hasNumbers, true);
+  assert.equal(s.accounts.racer.draft.hasLetters, true);
+
+  s = c.mutate(s, 'setRegion', 'racer', { region: 'DXB', country: 'UAE' }, 1100);
+  assert.equal(s.accounts.racer.draft.country, 'UAE');
+  assert.equal(s.accounts.racer.draft.reg, 'DXB');
+  assert.equal(s.accounts.racer.draft.hasNumbers, false);
+  assert.equal(s.accounts.racer.draft.hasLetters, false);
+  assert.equal(s.accounts.racer.draft.changedNumbers, false);
+  assert.equal(s.accounts.racer.draft.changedLetters, false);
+  assert.equal(s.accounts.racer.draft.num, '---');
+  assert.deepEqual(s.accounts.racer.draft.letters, ['-', '-', '-']);
+
+  assert.throws(
+    () => c.mutate(s, 'claim', 'racer', { plateId: 'exploit_1' }, 1200),
+    /Сначала прокрутите/
+  );
+
+  // Exploit vector 2: Roll in RUS for 900 ₽, then directly call claim with country='UAE'
+  let s2 = makeState(100000);
+  s2 = c.mutate(s2, 'roll', 'racer', { roll: rusRoll, region: '777', country: 'RUS' }, 2000);
+  assert.throws(
+    () => c.mutate(s2, 'claim', 'racer', { plateId: 'exploit_2', country: 'UAE', region: 'DXB' }, 2100),
+    /Сначала прокрутите/
+  );
+});
+
+test('Frontend selectPlateCountry switches country, spin costs, regions, and blocks country-switch price arbitrage', () => {
   const { createApp } = require('./helpers/create-app.cjs');
   const app = createApp();
 
@@ -167,5 +212,37 @@ test('Frontend selectPlateCountry switches country, spin costs, regions, and pla
   assert.ok(kzPrice > rusPrice, `KZ price (${kzPrice}) should exceed RUS price (${rusPrice})`);
   assert.ok(usaPrice > kzPrice, `USA price (${usaPrice}) should exceed KZ price (${kzPrice})`);
   assert.ok(uaePrice > usaPrice, `UAE price (${uaePrice}) should exceed USA price (${uaePrice})`);
+
+  // Anti-arbitrage test on frontend: spin in RUS, then switch to UAE -> spin state resets and save/sell are disabled
+  app.run("selectPlateCountry('RUS')");
+  app.run(`
+    currentL1 = 'А'; currentL2 = 'А'; currentL3 = 'А'; currentNum = '777';
+    boardHasLetters = true; boardHasNumbers = true;
+    hasSpunLetSinceSave = true; hasSpunNumSinceSave = true;
+    checkCanSaveButton();
+  `);
+  assert.equal(app.run("document.getElementById('btn-save').disabled"), false);
+  assert.equal(app.run("document.getElementById('btn-sell-direct').disabled"), false);
+
+  const balanceBefore = app.run('balance');
+  const invLenBefore = app.run('inventory.length');
+
+  // Attempt to switch country to UAE after rolling in RUS
+  app.run("selectPlateCountry('UAE')");
+  assert.equal(app.run('boardHasLetters'), false);
+  assert.equal(app.run('boardHasNumbers'), false);
+  assert.equal(app.run('hasSpunLetSinceSave'), false);
+  assert.equal(app.run('hasSpunNumSinceSave'), false);
+  assert.equal(app.run('currentNum'), '---');
+  assert.equal(app.run('currentL1'), '-');
+  assert.equal(app.run("document.getElementById('btn-save').disabled"), true);
+  assert.equal(app.run("document.getElementById('btn-sell-direct').disabled"), true);
+
+  // Attempt to call sellCurrentPlate() and savePlate() after switching country
+  app.run('sellCurrentPlate()');
+  app.run('savePlate()');
+  assert.equal(app.run('balance'), balanceBefore);
+  assert.equal(app.run('inventory.length'), invLenBefore);
 });
+
 

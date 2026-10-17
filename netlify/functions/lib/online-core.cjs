@@ -57,7 +57,12 @@ function sessionCookie(tok,maxAge=86400){return `${COOKIE}=${tok}; HttpOnly; Sec
 function safePlate(raw,id){
   if (!raw || typeof raw!=='object'||Array.isArray(raw)) throw Error('Неверный номер');
   const text=String(raw.text||'');
-  if (text.length>36 || !/^[АВЕКМНОРСТУХA-Z] \d{3} [АВЕКМНОРСТУХA-Z]{2} \| [A-Z0-9]{1,3} (?:RUS|KZ|USA|UAE)$/u.test(text)) throw Error('Неверный формат номера');
+  const isValidFormat = text.length<=36 && (
+    /^[АВЕКМНОРСТУХA-Z] \d{3} [АВЕКМНОРСТУХA-Z]{2} \| [A-Z0-9]{1,3} (?:RUS|KZ|USA|UAE)$/u.test(text) ||
+    /^\d{3} [A-Z]{3} \| [A-Z0-9]{1,3} KZ$/.test(text) ||
+    /^[A-Z]{3} \d{3} \| [A-Z0-9]{1,3} (?:USA|UAE)$/.test(text)
+  );
+  if (!isValidFormat) throw Error('Неверный формат номера');
   const price=Number.isSafeInteger(raw.price) && raw.price>=0 && raw.price<=MAX_MONEY ? raw.price : 1000;
   return {id, text, price, rarity:{text:typeof raw.rarity?.text==='string'?raw.rarity.text.slice(0,30):'Обычный'}};
 }
@@ -402,6 +407,13 @@ function secureRoll(mode, pity = 0, country = 'RUS'){
   };
 }
 function draftOf(a){return a?.draft&&typeof a.draft==='object'?a.draft:{num:'---',letters:['-','-','-'],reg:'777',country:'RUS',hasNumbers:false,hasLetters:false,changedNumbers:false,changedLetters:false,pityCounter:0};}
+function formatPlateText(l1, l2, l3, num, reg, country = 'RUS') {
+  const cCode = (country && COUNTRIES[String(country).toUpperCase()]) ? String(country).toUpperCase() : 'RUS';
+  const r = String(reg || COUNTRIES[cCode].defaultReg).toUpperCase();
+  if (cCode === 'KZ') return `${num} ${l1}${l2}${l3} | ${r} KZ`;
+  if (cCode === 'USA' || cCode === 'UAE') return `${l1}${l2}${l3} ${num} | ${r} ${cCode}`;
+  return `${l1} ${num} ${l2}${l3} | ${r} RUS`;
+}
 function migrateLegacyPin(account, pin) {
   if (!account || typeof account !== 'object') return null;
   const hashed = pinHash(pin);
@@ -462,25 +474,37 @@ function mutate(state, action, key, data, now=Date.now()) {
     if (a.balance < amount) throw Error('Недостаточно денег на онлайн-кошельке');
     accounts[key] = { ...a, balance: a.balance - amount, updatedAt: now };
   } else if(action==='setRegion') {
+    const prevDraft = draftOf(a);
+    const prevCountry = (prevDraft.country && COUNTRIES[prevDraft.country]) ? prevDraft.country : 'RUS';
     const country = (data?.country && COUNTRIES[String(data.country).toUpperCase()])
       ? String(data.country).toUpperCase()
-      : (a.draft?.country && COUNTRIES[a.draft.country] ? a.draft.country : 'RUS');
+      : prevCountry;
     const cfg = COUNTRIES[country];
     if(!data?.region || typeof data.region !== 'string' || !cfg.regRegex.test(data.region)) throw Error('Неверный регион');
-    const draft={...draftOf(a), reg:data.region.toUpperCase(), country};
+    const draft={...prevDraft, reg:data.region.toUpperCase(), country};
+    if (country !== prevCountry) {
+      draft.num = '---';
+      draft.letters = ['-', '-', '-'];
+      draft.hasNumbers = false;
+      draft.hasLetters = false;
+      draft.changedNumbers = false;
+      draft.changedLetters = false;
+    }
     accounts[key]={...a, draft, updatedAt:now};
   } else if(action==='claim') {
     const draft=draftOf(a);
-    const country = (data?.country && COUNTRIES[String(data.country).toUpperCase()])
-      ? String(data.country).toUpperCase()
-      : (draft.country && COUNTRIES[draft.country] ? draft.country : 'RUS');
+    const draftCountry = (draft.country && COUNTRIES[draft.country]) ? draft.country : 'RUS';
+    if (data?.country && String(data.country).toUpperCase() !== draftCountry) {
+      throw Error('Сначала прокрутите цифры и буквы в выбранной стране');
+    }
+    const country = draftCountry;
     const cfg = COUNTRIES[country];
     if(!draft.hasNumbers||!draft.hasLetters||!draft.changedNumbers||!draft.changedLetters)throw Error('Сначала прокрутите цифры и буквы');
     if((a.inventory||[]).length>=1000)throw Error('Инвентарь заполнен');
     if(!/^[0-9]{3}$/.test(draft.num)||!Array.isArray(draft.letters)||draft.letters.length!==3||draft.letters.some(l=>!cfg.letters.includes(l)))throw Error('Неверный номер');
     const [l1,l2,l3]=draft.letters;
     const reg=(typeof data?.region==='string'&&cfg.regRegex.test(data.region))?data.region.toUpperCase():(draft.reg&&cfg.regRegex.test(draft.reg)?String(draft.reg).toUpperCase():cfg.defaultReg);
-    const text=`${l1} ${draft.num} ${l2}${l3} | ${reg} ${country}`;
+    const text=formatPlateText(l1,l2,l3,draft.num,reg,country);
     const price=priceOfPlate(l1,l2,l3,draft.num,reg,country);
     const plate=safePlate({text,price,rarity:{text:rarityOfPrice(price)}},data.plateId);
     accounts[key]={...a,inventory:[plate,...(a.inventory||[])],draft:{...draft,reg,country,changedNumbers:false,changedLetters:false},updatedAt:now};
@@ -586,4 +610,4 @@ function makeOnlineTransactionUpdate(loaded, action, key, data, now) {
     getReason() {return reason;}
   };
 }
-module.exports={COOKIE,TTL,MAX_MONEY,STARTING_BALANCE,COUNTRIES,keyOf,pinHash,checkPin,migrateLegacyPin,sign,verify,cookie,sessionCookie,safePlate,safeCar,safeCars,money,sanitizedProfile,mutate,makeOnlineTransactionUpdate,freshAccount,priceOfPlate,rarityOfPrice,secureRoll,draftOf};
+module.exports={COOKIE,TTL,MAX_MONEY,STARTING_BALANCE,COUNTRIES,keyOf,pinHash,checkPin,migrateLegacyPin,sign,verify,cookie,sessionCookie,safePlate,safeCar,safeCars,money,sanitizedProfile,mutate,makeOnlineTransactionUpdate,freshAccount,priceOfPlate,rarityOfPrice,secureRoll,draftOf,formatPlateText};
