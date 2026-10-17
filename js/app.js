@@ -4812,7 +4812,6 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 }).join('');
                 const stylingBadge = [
                     car.styling?.neon && car.styling.neon !== 'none' ? `<span style="font-size: 10px; color: ${car.styling.neon}; font-weight: 800; margin-left: 6px;">💡 НЕОН</span>` : '',
-                    car.styling?.sgu === 'installed' ? `<span style="font-size: 10px; color: #38bdf8; font-weight: 800; margin-left: 4px;">🚨 СГУ</span>` : '',
                     car.styling?.suspension && car.styling.suspension !== 'stock' ? `<span style="font-size: 10px; color: #f59e0b; font-weight: 800; margin-left: 4px;">⚡ ${car.styling.suspension === 'bpan' ? 'БПАН' : car.styling.suspension === 'lift' ? 'ЛИФТ' : 'СПОРТ'}</span>` : '',
                     car.styling?.wheels && car.styling.wheels !== 'stock' ? `<span style="font-size: 10px; color: #cbd5e1; font-weight: 800; margin-left: 4px;">🛞</span>` : ''
                 ].filter(Boolean).join(' ');
@@ -8503,8 +8502,8 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 }
             }
 
-            // 🚨 СПЕЦСИГНАЛ СГУ И СТРОБОСКОПЫ В РЕШЁТКЕ РАДИАТОРА
-            if (options.sgu === 'installed') {
+            // 🚨 СПЕЦСИГНАЛ СГУ И СТРОБОСКОПЫ В РЕШЁТКЕ РАДИАТОРА (только для служебных машин)
+            if (options.sgu === 'installed' && (name.includes('Полиция') || name.includes('ДПС'))) {
                 const grillY = name === "КАМАЗ / Фура" ? -33 : -23.5;
                 const isStrobing = !!options.sguStrobe;
                 const phase = Math.floor(Date.now() / 85) % 4; // 4-фазный строб: Синий-Синий-Красный-Красный
@@ -9628,8 +9627,8 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 }
             }
 
-            // 16. Спецсигнал СГУ на крыше со стробоскопами
-            if (options.sgu === 'installed') {
+            // 16. Спецсигнал СГУ на крыше со стробоскопами (только для служебных машин)
+            if (options.sgu === 'installed' && (name.includes('Полиция') || name.includes('ДПС'))) {
                 const roofBarY = roofY + bodyYOffset - 3.2;
                 const phase = Math.floor(Date.now() / 85) % 4;
                 const isStrobing = !!options.sguStrobe;

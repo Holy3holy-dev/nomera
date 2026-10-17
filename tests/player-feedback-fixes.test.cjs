@@ -457,3 +457,40 @@ test('admin grant balance to player (e.g. aner) survives subsequent player actio
     assert.equal(deducted, true);
     assert.equal(app.run('onlineProfile.balance'), prev - 50000);
 });
+
+test('3D race HUD layout & flasher lights removal: header controls do not wrap over stats and cars do not render flashers', () => {
+    const fs = require('fs');
+    const path = require('path');
+    const html = fs.readFileSync(path.join(__dirname, '../index.html'), 'utf8');
+    const css = fs.readFileSync(path.join(__dirname, '../styles.css'), 'utf8');
+    const car3dCode = fs.readFileSync(path.join(__dirname, '../js/car-3d.js'), 'utf8');
+
+    // 1. Race header actions bar enforces non-wrapping flex layout
+    assert.ok(html.includes('class="race-header-actions"'), 'index.html must have race-header-actions');
+    assert.ok(html.includes('flex-wrap: nowrap'), 'index.html must enforce nowrap on race-header-actions');
+    assert.ok(css.includes('#race-3d-play-container .race-header-actions'), 'styles.css must style race-header-actions');
+    assert.ok(css.includes('flex-wrap: nowrap !important'), 'styles.css must enforce nowrap on race-header-actions');
+
+    // 2. Overlay padding provides guaranteed clearance from header
+    assert.ok(css.includes('padding: 48px 14px 12px 14px;'), 'styles.css must provide 48px clearance for top HUD stats');
+
+    // 3. SGU flasher bar and player roof flasher lights are removed from player cars
+    assert.ok(!car3dCode.includes('sguGroup.name = \'SGUGroup\''), 'car-3d.js must not create SGUGroup for player car styling');
+    assert.ok(!car3dCode.includes('this.playerSguLight = new THREE.PointLight'), 'car-3d.js must not attach playerSguLight to player car');
+
+    // 4. Showroom and 3D car creation works without flasher lights
+    const { THREE, Car3DManager } = setupThree();
+    const modelRoot = new THREE.Group();
+    Car3DManager.applyStylingToGLTF(THREE, modelRoot, {
+        color: '#ff0000',
+        sgu: 'installed',
+        wheels: 'forged'
+    }, 'BMW M5 F90 Competition');
+    assert.equal(modelRoot.getObjectByName('SGUGroup'), undefined, 'Player car model must not contain SGUGroup even if sgu is installed in data');
+
+    const procCar = Car3DManager.buildDetailedCarModel(THREE, 'ВАЗ-2107 «Жигули»', {
+        sgu: 'installed'
+    });
+    assert.equal(procCar.getObjectByName('SGUGroup'), undefined, 'Procedural car must not contain SGUGroup even if sgu is installed');
+});
+

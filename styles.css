@@ -1587,7 +1587,7 @@
         }
         #race-3d-play-container .race-header-hud {
             position: absolute !important;
-            top: 10px !important;
+            top: 8px !important;
             left: 12px !important;
             right: 12px !important;
             z-index: 30 !important;
@@ -1599,9 +1599,48 @@
             justify-content: space-between !important;
             align-items: center !important;
             pointer-events: none !important;
+            height: 32px !important;
+            min-height: 32px !important;
         }
         #race-3d-play-container .race-header-hud > * {
             pointer-events: auto !important;
+        }
+        #race-3d-play-container .race-header-actions {
+            display: flex !important;
+            gap: 6px !important;
+            align-items: center !important;
+            flex-wrap: nowrap !important;
+            flex-shrink: 0 !important;
+        }
+        #race-3d-play-container .race-hud-action-btn {
+            padding: 5px 10px !important;
+            font-size: 11px !important;
+            line-height: 1.2 !important;
+            white-space: nowrap !important;
+            background: rgba(10, 15, 29, 0.82) !important;
+            backdrop-filter: blur(8px) !important;
+            border: 1px solid rgba(255, 255, 255, 0.18) !important;
+            border-radius: 8px !important;
+            color: #fff !important;
+            cursor: pointer !important;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35) !important;
+            transition: background 0.15s ease, border-color 0.15s ease !important;
+        }
+        #race-3d-play-container .race-hud-action-btn:hover {
+            background: rgba(30, 41, 59, 0.95) !important;
+            border-color: rgba(255, 255, 255, 0.35) !important;
+        }
+        #race-3d-play-container .race-hud-close-btn {
+            padding: 5px 12px !important;
+            font-size: 11.5px !important;
+            line-height: 1.2 !important;
+            white-space: nowrap !important;
+            border-radius: 8px !important;
+            backdrop-filter: blur(8px) !important;
+            background: rgba(239, 68, 68, 0.28) !important;
+            border: 1px solid rgba(239, 68, 68, 0.6) !important;
+            color: #fff !important;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35) !important;
         }
         .race-badge-shield {
             background: #3b82f6;
@@ -3418,7 +3457,7 @@ body.race-active .main-container {
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    padding: 46px 14px 12px 14px;
+    padding: 48px 14px 12px 14px;
     z-index: 10;
 }
 
@@ -3725,9 +3764,9 @@ body.race-active .race-3d-viewport-wrapper {
     }
     body.race-active .race-header-hud {
         position: absolute !important;
-        top: max(8px, env(safe-area-inset-top)) !important;
-        left: max(10px, env(safe-area-inset-left)) !important;
-        right: max(10px, env(safe-area-inset-right)) !important;
+        top: max(6px, env(safe-area-inset-top)) !important;
+        left: max(8px, env(safe-area-inset-left)) !important;
+        right: max(8px, env(safe-area-inset-right)) !important;
         z-index: 30 !important;
         pointer-events: none !important;
         display: flex !important;
@@ -3737,9 +3776,28 @@ body.race-active .race-3d-viewport-wrapper {
         margin: 0 !important;
         background: transparent !important;
         border: none !important;
+        height: 28px !important;
+        min-height: 28px !important;
     }
     body.race-active .race-header-hud > * {
         pointer-events: auto !important;
+    }
+    body.race-active .race-header-actions {
+        display: flex !important;
+        gap: 4px !important;
+        align-items: center !important;
+        flex-wrap: nowrap !important;
+        flex-shrink: 0 !important;
+    }
+    body.race-active .race-hud-action-btn {
+        padding: 4px 6px !important;
+        font-size: 10px !important;
+        border-radius: 6px !important;
+    }
+    body.race-active .race-hud-close-btn {
+        padding: 4px 8px !important;
+        font-size: 10px !important;
+        border-radius: 6px !important;
     }
     body.race-active .race-3d-viewport-wrapper {
         min-height: 240px;
@@ -3748,7 +3806,7 @@ body.race-active .race-3d-viewport-wrapper {
         border-radius: 12px;
     }
     .race-3d-hud-overlay {
-        padding: 42px 10px 8px 10px;
+        padding: 40px 8px 8px 8px;
     }
     .race-3d-hud-top {
         gap: 6px;
@@ -3836,6 +3894,12 @@ body.race-active .race-3d-viewport-wrapper {
         font-size: 9px;
         padding: 1px 4px;
         margin-left: 2px;
+    }
+}
+
+@media screen and (max-width: 440px) {
+    .race-hud-btn-lbl {
+        display: none !important;
     }
 }
 

@@ -4119,39 +4119,7 @@
             });
         }
 
-        // Tuning: SGU Strobe Lights (Roof flasher bar)
-        const sguGroup = new THREE.Group();
-        sguGroup.name = 'SGUGroup';
-        chassisGroup.add(sguGroup);
-
-        if (styling.sgu && styling.sgu !== 'none') {
-            const barGeo = new THREE.BoxGeometry(spec.bodyWidth * 0.55, 0.06, 0.12);
-            const barMesh = new THREE.Mesh(barGeo, mats.trim);
-            barMesh.position.set(0, 0.34 + 0.55 + 0.50 + 0.03, -0.10);
-            sguGroup.add(barMesh);
-
-            const blueGeo = new THREE.BoxGeometry(spec.bodyWidth * 0.24, 0.05, 0.10);
-            const blueMat = new THREE.MeshStandardMaterial({
-                color: 0x0088ff,
-                emissive: 0x0088ff,
-                emissiveIntensity: 0.9,
-                name: 'SGU_Blue'
-            });
-            const blueStrobe = new THREE.Mesh(blueGeo, blueMat);
-            blueStrobe.position.set(-spec.bodyWidth * 0.13, 0.34 + 0.55 + 0.50 + 0.04, -0.10);
-            sguGroup.add(blueStrobe);
-
-            const redGeo = new THREE.BoxGeometry(spec.bodyWidth * 0.24, 0.05, 0.10);
-            const redMat = new THREE.MeshStandardMaterial({
-                color: 0xff0044,
-                emissive: 0xff0044,
-                emissiveIntensity: 0.9,
-                name: 'SGU_Red'
-            });
-            const redStrobe = new THREE.Mesh(redGeo, redMat);
-            redStrobe.position.set(spec.bodyWidth * 0.13, 0.34 + 0.55 + 0.50 + 0.04, -0.10);
-            sguGroup.add(redStrobe);
-        }
+        // Tuning: SGU Strobe Lights removed per user request: "убери все мигалки которые можно ставить на машину, они только мешают"
 
         // Tuning: Neon Underglow Tubes
         const neonGroup = new THREE.Group();
@@ -5285,35 +5253,7 @@
             modelRoot.add(spoilerGroup);
         }
 
-        // Roof-Mounted Police/Government SGU Flasher Bar
-        if (styling.sgu && styling.sgu !== 'none') {
-            const roofY = box.max.y;
-            const roofZ = center.z;
-            const sguWidth = Math.min(size.x * 0.52, 0.82);
-
-            const sguGroup = new THREE.Group();
-            sguGroup.name = 'SGUGroup';
-
-            const barGeo = new THREE.BoxGeometry(sguWidth, 0.06, 0.14);
-            const barMesh = new THREE.Mesh(barGeo, mats.trim);
-            barMesh.position.set(0, roofY + 0.03, roofZ);
-            sguGroup.add(barMesh);
-
-            const half = sguWidth * 0.44;
-            const blueGeo = new THREE.BoxGeometry(half, 0.06, 0.14);
-            const blueMat = new THREE.MeshStandardMaterial({ color: 0x0088ff, emissive: 0x0088ff, emissiveIntensity: 1.0, name: 'SGU_Blue' });
-            const blueMesh = new THREE.Mesh(blueGeo, blueMat);
-            blueMesh.position.set(-half * 0.52, roofY + 0.04, roofZ);
-            sguGroup.add(blueMesh);
-
-            const redGeo = new THREE.BoxGeometry(half, 0.06, 0.14);
-            const redMat = new THREE.MeshStandardMaterial({ color: 0xff0044, emissive: 0xff0044, emissiveIntensity: 1.0, name: 'SGU_Red' });
-            const redMesh = new THREE.Mesh(redGeo, redMat);
-            redMesh.position.set(half * 0.52, roofY + 0.04, roofZ);
-            sguGroup.add(redMesh);
-
-            modelRoot.add(sguGroup);
-        }
+        // Roof-Mounted Police/Government SGU Flasher Bar removed per user request: "убери все мигалки которые можно ставить на машину, они только мешают"
 
         // Underglow Neon Tubes
         if (styling.neon && styling.neon !== 'none') {
@@ -6805,18 +6745,7 @@
                     this.needsRender = true;
                 }
 
-                // SGU Strobe Lights Live Flashing Animation
-                if (this.currentStyling.sgu && this.currentStyling.sgu !== 'none' && this.carGroup) {
-                    const sgu = this.carGroup.getObjectByName('SGUGroup');
-                    if (sgu) {
-                        const pulse = Math.floor(time * 0.009) % 2 === 0;
-                        const blue = sgu.getObjectByName('SGU_Blue');
-                        const red = sgu.getObjectByName('SGU_Red');
-                        if (blue && blue.material) blue.material.emissiveIntensity = pulse ? 1.8 : 0.1;
-                        if (red && red.material) red.material.emissiveIntensity = pulse ? 0.1 : 1.8;
-                        this.needsRender = true;
-                    }
-                }
+                // SGU Strobe Lights Live Flashing Animation disabled per user request
 
                 // Dynamic Neon Modes: Rainbow / Pulse
                 if (this.currentStyling.neonMode === 'rainbow') {
@@ -8736,12 +8665,8 @@
                     this.playerCar.add(neonPointLight);
                 }
 
-                // 5. Roof SGU Flasher Strobe Light (if car has SGU flasher)
-                if (this.styling.sgu) {
-                    this.playerSguLight = new THREE.PointLight(0xef4444, 0, 15);
-                    this.playerSguLight.position.set(0, size.y + 0.1, 0);
-                    this.playerCar.add(this.playerSguLight);
-                }
+                // 5. Roof SGU Flasher Strobe Light removed per user request: "убери все мигалки которые можно ставить на машину, они только мешают"
+                this.playerSguLight = null;
 
                 // Find wheel spinner objects inside player car (ONLY dedicated validated wheel spinners)
                 this.playerWheels = [];

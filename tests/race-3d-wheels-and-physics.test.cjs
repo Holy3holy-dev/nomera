@@ -547,6 +547,7 @@ test('Weather & time-of-day system: presets, mirror wet asphalt, snow verges, pa
     // Update frame in rain (simulate falling drops and spray)
     engine.state.speed = 120;
     engine.rainSystem.geometry.attributes.position.array[1] = 25.0;
+    engine.rainSystem.geometry.attributes.position.array[2] = 0.0;
     const initialDropY = 25.0;
     engine.update(0.05);
     const updatedDropY = engine.rainSystem.geometry.attributes.position.array[1];
