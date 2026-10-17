@@ -109,3 +109,20 @@ test('Bugfix: 3D road seamless continuity and car visual fixes', () => {
     assert.ok(car3dJs.includes('camDist * 0.90'), 'Thumbnail camera must use 3/4 perspective to reveal car depth');
 });
 
+test('Bugfix: Shop/Garage authentic GLTF thumbnails and instant 3D race model loading', () => {
+    const car3dJs = fs.readFileSync(path.join(__dirname, '../js/car-3d.js'), 'utf8');
+    const appJs = fs.readFileSync(path.join(__dirname, '../js/app.js'), 'utf8');
+
+    // 1. Thumbnails must load authentic GLTF models via loadCarModel, not primitive box builder
+    assert.ok(car3dJs.includes('loadCarModel(THREE, task.carName, task.styling'), 'Thumbnails must use loadCarModel to render authentic GLTF car models');
+    assert.ok(!car3dJs.includes('const model = buildDetailedCarModel(THREE, task.carName, task.styling)'), 'Thumbnails must not bypass GLTF models with primitive box models');
+
+    // 2. 3D Race engine must load authentic model immediately on frame 1
+    assert.ok(car3dJs.includes('syncLoaded = true;'), 'loadPlayerCar must detect synchronous GLB cache hits for 0ms frame-1 spawn');
+
+    // 3. Early preloading hooks in app.js
+    assert.ok(appJs.includes('Car3DManager.preloadCarModel(window.THREE, targetCar);'), 'App must preload active car model on boot');
+    assert.ok(appJs.includes('Car3DManager.preloadCarModel(window.THREE, selectedRaceCarName);'), 'Race tab must preload selected car model on tab open and car switch');
+});
+
+

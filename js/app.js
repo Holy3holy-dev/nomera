@@ -631,6 +631,15 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             updateExpUI();
             renderInventory();
             renderCars();
+            // Background preload authentic 3D model of active car for instant 3D race and garage start
+            setTimeout(() => {
+                try {
+                    if (typeof Car3DManager !== 'undefined' && Car3DManager.preloadCarModel && window.THREE) {
+                        const targetCar = (Array.isArray(myCars) && myCars[0]) ? myCars[0].name : 'ВАЗ-2107 «Жигули»';
+                        Car3DManager.preloadCarModel(window.THREE, targetCar);
+                    }
+                } catch (_) {}
+            }, 300);
             checkCanSaveButton();
             renderLeaderboard();
             renderAvatarPresets();
@@ -5865,6 +5874,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         function start3DRaceWithActiveGarageCar() {
             if (!Array.isArray(myCars) || !myCars[activeGarageCarIndex]) return;
             selectedRaceCarName = myCars[activeGarageCarIndex].name;
+            if (typeof Car3DManager !== 'undefined' && Car3DManager.preloadCarModel && window.THREE) {
+                try { Car3DManager.preloadCarModel(window.THREE, selectedRaceCarName); } catch (_) {}
+            }
             switchTab('racegame', null, '3d');
             start3DRaceGame();
         }
@@ -10299,6 +10311,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     selectedRaceCarIndex = 0;
                 }
             }
+            if (typeof Car3DManager !== 'undefined' && Car3DManager.preloadCarModel && window.THREE) {
+                try { Car3DManager.preloadCarModel(window.THREE, selectedRaceCarName); } catch (_) {}
+            }
             renderRaceCarPicker();
             updateRaceCarShowcase();
             updateRaceRecordsUI();
@@ -10395,6 +10410,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         function selectRaceCar(carName, index = -1) {
             selectedRaceCarName = carName;
             selectedRaceCarIndex = index;
+            if (typeof Car3DManager !== 'undefined' && Car3DManager.preloadCarModel && window.THREE) {
+                try { Car3DManager.preloadCarModel(window.THREE, selectedRaceCarName); } catch (_) {}
+            }
             renderRaceCarPicker();
             updateRaceCarShowcase();
             playTick();

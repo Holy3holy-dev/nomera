@@ -7046,80 +7046,80 @@
         const task = thumbnailQueue.shift();
         initOffscreenPipeline(THREE);
 
-        try {
-            // Build procedural 3D model: renders in ~0.5ms with zero network transfer
-            const model = buildDetailedCarModel(THREE, task.carName, task.styling);
-            if (model && offscreenRenderer && offscreenScene && offscreenCamera) {
-                model.updateMatrixWorld(true);
-                const box = new THREE.Box3().setFromObject(model);
-                const center = box.getCenter(new THREE.Vector3());
-
-                // Center model horizontally and position flush on floor
-                model.position.x -= center.x;
-                model.position.z -= center.z;
-                model.position.y -= box.min.y;
-                model.updateMatrixWorld(true);
-
-                offscreenScene.add(model);
-
-                // Compute framing for side camera (+X axis looking towards -X)
-                const finalBox = new THREE.Box3().setFromObject(model);
-                const carHeight = finalBox.max.y - finalBox.min.y;
-                const targetY = finalBox.min.y + carHeight * 0.46;
-                const carLength = Math.max(3.8, finalBox.max.z - finalBox.min.z);
-                const camDist = Math.max(8.2, carLength * 1.88);
-
-                // Dynamic 3D 3/4 perspective to reveal car bodywork, hood, wheels and front styling
-                const camX = camDist * 0.90;
-                const camY = targetY + carHeight * 0.32;
-                const camZ = carLength * 0.40;
-                offscreenCamera.position.set(camX, camY, camZ);
-                offscreenCamera.lookAt(0, targetY, 0);
-
-                offscreenRenderer.render(offscreenScene, offscreenCamera);
-                let dataUrl = null;
-                if (offscreenRenderer.domElement && typeof offscreenRenderer.domElement.toDataURL === 'function') {
-                    try {
-                        dataUrl = offscreenRenderer.domElement.toDataURL('image/png');
-                    } catch (_) {
-                        dataUrl = null;
-                    }
-                }
-                if (!dataUrl) {
-                    dataUrl = 'data:image/png;base64,mock3d';
-                }
-
-                offscreenScene.remove(model);
-                deepDispose(model);
-
-                if (dataUrl && dataUrl.startsWith('data:image')) {
-                    sideThumbnailCache.set(task.key, dataUrl);
-                }
-
-                const cbs = thumbnailCallbacks.get(task.key) || [];
-                thumbnailCallbacks.delete(task.key);
-                cbs.forEach(cb => {
-                    try { cb(dataUrl); } catch (_) {}
-                });
-            } else {
-                const cbs = thumbnailCallbacks.get(task.key) || [];
-                thumbnailCallbacks.delete(task.key);
-                cbs.forEach(cb => {
-                    try { cb(null); } catch (_) {}
-                });
+        const onThumbnailDone = (dataUrl) => {
+            if (dataUrl && dataUrl.startsWith('data:image')) {
+                sideThumbnailCache.set(task.key, dataUrl);
             }
-        } catch (err) {
-            console.warn('Error rendering 3D thumbnail:', err);
             const cbs = thumbnailCallbacks.get(task.key) || [];
             thumbnailCallbacks.delete(task.key);
             cbs.forEach(cb => {
-                try { cb(null); } catch (_) {}
+                try { cb(dataUrl); } catch (_) {}
             });
-        } finally {
             isProcessingQueue = false;
             if (thumbnailQueue.length > 0 && !(typeof window !== 'undefined' && window.isRaceRunning)) {
-                setTimeout(() => processThumbnailQueue(THREE), 32);
+                setTimeout(() => processThumbnailQueue(THREE), 24);
             }
+        };
+
+        try {
+            // Load authentic GLTF model for realistic 3D thumbnails (falls back to detailed procedural if GLTF unavailable)
+            loadCarModel(THREE, task.carName, task.styling, (model) => {
+                if (model && offscreenRenderer && offscreenScene && offscreenCamera) {
+                    try {
+                        model.updateMatrixWorld(true);
+                        const box = new THREE.Box3().setFromObject(model);
+                        const center = box.getCenter(new THREE.Vector3());
+
+                        // Center model horizontally and position flush on floor
+                        model.position.x -= center.x;
+                        model.position.z -= center.z;
+                        model.position.y -= box.min.y;
+                        model.updateMatrixWorld(true);
+
+                        offscreenScene.add(model);
+
+                        // Compute framing for side camera (+X axis looking towards -X)
+                        const finalBox = new THREE.Box3().setFromObject(model);
+                        const carHeight = Math.max(1.0, finalBox.max.y - finalBox.min.y);
+                        const targetY = finalBox.min.y + carHeight * 0.46;
+                        const carLength = Math.max(3.8, finalBox.max.z - finalBox.min.z);
+                        const camDist = Math.max(8.2, carLength * 1.88);
+
+                        // Dynamic 3D 3/4 perspective to reveal car bodywork, hood, wheels and front styling
+                        const camX = camDist * 0.90;
+                        const camY = targetY + carHeight * 0.32;
+                        const camZ = carLength * 0.40;
+                        offscreenCamera.position.set(camX, camY, camZ);
+                        offscreenCamera.lookAt(0, targetY, 0);
+
+                        offscreenRenderer.render(offscreenScene, offscreenCamera);
+                        let dataUrl = null;
+                        if (offscreenRenderer.domElement && typeof offscreenRenderer.domElement.toDataURL === 'function') {
+                            try {
+                                dataUrl = offscreenRenderer.domElement.toDataURL('image/png');
+                            } catch (_) {
+                                dataUrl = null;
+                            }
+                        }
+                        if (!dataUrl) {
+                            dataUrl = 'data:image/png;base64,mock3d';
+                        }
+
+                        offscreenScene.remove(model);
+                        deepDispose(model);
+
+                        onThumbnailDone(dataUrl);
+                    } catch (renderErr) {
+                        console.warn('Error during offscreen thumbnail render:', renderErr);
+                        onThumbnailDone(null);
+                    }
+                } else {
+                    onThumbnailDone(null);
+                }
+            });
+        } catch (err) {
+            console.warn('Error rendering 3D thumbnail:', err);
+            onThumbnailDone(null);
         }
     }
 
@@ -8557,39 +8557,17 @@
                 } catch (_) {}
                 this.playerCar = null;
             }
-            // Immediately spawn the detailed procedural 3D model so the car is on track on frame 1
-            try {
-                const immediateModel = buildDetailedCarModel(THREE, this.carName, this.styling);
-                if (immediateModel) {
-                    this.playerCar = immediateModel;
-                    if (this.styling && this.styling.plate !== undefined) {
-                        applyLicensePlateToModel(THREE, this.playerCar, this.styling.plate);
-                    }
-                    this.playerCar.position.set(this.state.x, 0, this.state.z);
-                    this.scene.add(this.playerCar);
-                    this.setupCarLightingAndFX();
-                }
-            } catch (e) {
-                console.warn('Could not build immediate procedural model:', e);
-            }
 
-            // Load high-resolution model asynchronously with timeout guard
-            let hasLoaded = false;
-            const loadTimer = setTimeout(() => {
-                if (!hasLoaded) {
-                    console.info('GLB model loading took longer than 2.5s, keeping detailed procedural model active.');
-                }
-            }, 2500);
-
+            let syncLoaded = false;
             try {
                 loadCarModel(THREE, this.carName, this.styling, (model) => {
-                    hasLoaded = true;
-                    clearTimeout(loadTimer);
-                    if (!this.isRunning || !this.scene) return;
                     if (!model) return;
+                    syncLoaded = true;
                     if (this.playerCar) {
-                        this.scene.remove(this.playerCar);
-                        deepDispose(this.playerCar);
+                        try {
+                            if (this.scene) this.scene.remove(this.playerCar);
+                            deepDispose(this.playerCar);
+                        } catch (_) {}
                         this.playerCar = null;
                     }
                     this.playerCar = model;
@@ -8598,11 +8576,34 @@
                     }
                     this.playerCar.position.set(this.state.x, (this.state.downforceY || 0), this.state.z);
                     this.playerCar.updateMatrixWorld(true);
-                    this.scene.add(this.playerCar);
-                    this.setupCarLightingAndFX();
+                    if (this.scene) {
+                        this.scene.add(this.playerCar);
+                        this.setupCarLightingAndFX();
+                    }
                 });
             } catch (err) {
                 console.warn('loadCarModel error:', err);
+            }
+
+            // If GLB model is still fetching over network, spawn procedural placeholder on frame 1
+            // (will be automatically swapped out as soon as loadCarModel resolves)
+            if (!syncLoaded && !this.playerCar) {
+                try {
+                    const immediateModel = buildDetailedCarModel(THREE, this.carName, this.styling);
+                    if (immediateModel) {
+                        this.playerCar = immediateModel;
+                        if (this.styling && this.styling.plate !== undefined) {
+                            applyLicensePlateToModel(THREE, this.playerCar, this.styling.plate);
+                        }
+                        this.playerCar.position.set(this.state.x, 0, this.state.z);
+                        if (this.scene) {
+                            this.scene.add(this.playerCar);
+                            this.setupCarLightingAndFX();
+                        }
+                    }
+                } catch (e) {
+                    console.warn('Could not build immediate procedural model:', e);
+                }
             }
         }
 
