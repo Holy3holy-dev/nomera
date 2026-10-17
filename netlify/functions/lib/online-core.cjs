@@ -60,7 +60,8 @@ function safePlate(raw,id){
   const isValidFormat = text.length<=36 && (
     /^[АВЕКМНОРСТУХA-Z] \d{3} [АВЕКМНОРСТУХA-Z]{2} \| [A-Z0-9]{1,3} (?:RUS|KZ|USA|UAE)$/u.test(text) ||
     /^\d{3} [A-Z]{3} \| [A-Z0-9]{1,3} KZ$/.test(text) ||
-    /^[A-Z]{3} \d{3} \| [A-Z0-9]{1,3} (?:USA|UAE)$/.test(text)
+    /^[A-Z]{3} \d{3} \| [A-Z0-9]{1,3} USA$/.test(text) ||
+    /^[A-Z]{1,3} \d{1,5} \| [A-Z0-9]{1,3} UAE$/.test(text)
   );
   if (!isValidFormat) throw Error('Неверный формат номера');
   const price=Number.isSafeInteger(raw.price) && raw.price>=0 && raw.price<=MAX_MONEY ? raw.price : 1000;
@@ -407,12 +408,33 @@ function secureRoll(mode, pity = 0, country = 'RUS'){
   };
 }
 function draftOf(a){return a?.draft&&typeof a.draft==='object'?a.draft:{num:'---',letters:['-','-','-'],reg:'777',country:'RUS',hasNumbers:false,hasLetters:false,changedNumbers:false,changedLetters:false,pityCounter:0};}
+function getUaePlateDisplayParts(l1, l2, l3, num) {
+  const c1 = String(l1 || '-').toUpperCase();
+  const c2 = String(l2 || '-').toUpperCase();
+  const c3 = String(l3 || '-').toUpperCase();
+  let code = '-';
+  if (c1 !== '-') {
+    code = (c1 === c2 && c2 === c3) ? (c1 + c2) : c1;
+  }
+  let digits = '---';
+  if (num && !String(num).includes('-')) {
+    const parsed = parseInt(String(num), 10);
+    digits = (Number.isFinite(parsed) && parsed > 0) ? String(parsed) : '100';
+  }
+  return { code, digits };
+}
 function formatPlateText(l1, l2, l3, num, reg, country = 'RUS') {
   const cCode = (country && COUNTRIES[String(country).toUpperCase()]) ? String(country).toUpperCase() : 'RUS';
   const r = String(reg || COUNTRIES[cCode].defaultReg).toUpperCase();
-  if (cCode === 'KZ') return `${num} ${l1}${l2}${l3} | ${r} KZ`;
-  if (cCode === 'USA' || cCode === 'UAE') return `${l1}${l2}${l3} ${num} | ${r} ${cCode}`;
-  return `${l1} ${num} ${l2}${l3} | ${r} RUS`;
+  const letters = `${l1 || '-'}${l2 || '-'}${l3 || '-'}`;
+  const digits = num || '---';
+  if (cCode === 'KZ') return `${digits} ${letters} | ${r} KZ`;
+  if (cCode === 'USA') return `${letters} ${digits} | ${r} USA`;
+  if (cCode === 'UAE') {
+    const uae = getUaePlateDisplayParts(l1, l2, l3, num);
+    return `${uae.code} ${uae.digits} | ${r} UAE`;
+  }
+  return `${l1 || '-'} ${digits} ${l2 || '-'}${l3 || '-'} | ${r} RUS`;
 }
 function migrateLegacyPin(account, pin) {
   if (!account || typeof account !== 'object') return null;
@@ -610,4 +632,4 @@ function makeOnlineTransactionUpdate(loaded, action, key, data, now) {
     getReason() {return reason;}
   };
 }
-module.exports={COOKIE,TTL,MAX_MONEY,STARTING_BALANCE,COUNTRIES,keyOf,pinHash,checkPin,migrateLegacyPin,sign,verify,cookie,sessionCookie,safePlate,safeCar,safeCars,money,sanitizedProfile,mutate,makeOnlineTransactionUpdate,freshAccount,priceOfPlate,rarityOfPrice,secureRoll,draftOf,formatPlateText};
+module.exports={COOKIE,TTL,MAX_MONEY,STARTING_BALANCE,COUNTRIES,keyOf,pinHash,checkPin,migrateLegacyPin,sign,verify,cookie,sessionCookie,safePlate,safeCar,safeCars,money,sanitizedProfile,mutate,makeOnlineTransactionUpdate,freshAccount,priceOfPlate,rarityOfPrice,secureRoll,draftOf,getUaePlateDisplayParts,formatPlateText};

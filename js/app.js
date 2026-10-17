@@ -375,6 +375,27 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         let currentNum = '---';
         let currentReg = '777';
 
+        function getUaePlateDisplayParts(l1, l2, l3, num) {
+            const c1 = String(l1 || '-').toUpperCase();
+            const c2 = String(l2 || '-').toUpperCase();
+            const c3 = String(l3 || '-').toUpperCase();
+            let code = '-';
+            if (c1 !== '-') {
+                if (c1 === c2 && c2 === c3) {
+                    code = c1 + c2;
+                } else {
+                    code = c1;
+                }
+            }
+            let digits = '---';
+            if (num && !String(num).includes('-')) {
+                const parsed = parseInt(String(num), 10);
+                digits = Number.isFinite(parsed) && parsed > 0 ? String(parsed) : '100';
+            }
+            return { code, digits };
+        }
+        if (typeof window !== 'undefined') window.getUaePlateDisplayParts = getUaePlateDisplayParts;
+
         function formatPlateText(l1, l2, l3, num, reg, country = currentCountry) {
             const code = String(country || currentCountry || 'RUS').toUpperCase();
             const c = PLATE_COUNTRIES[code] ? code : 'RUS';
@@ -386,15 +407,19 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             if (c === 'KZ') {
                 return `${digits} ${letters} | ${r} KZ`;
             }
-            if (c === 'USA' || c === 'UAE') {
-                return `${letters} ${digits} | ${r} ${c}`;
+            if (c === 'USA') {
+                return `${letters} ${digits} | ${r} USA`;
+            }
+            if (c === 'UAE') {
+                const uae = getUaePlateDisplayParts(l1, l2, l3, num);
+                return `${uae.code} ${uae.digits} | ${r} UAE`;
             }
             return `${l1 || '-'} ${digits} ${l2 || '-'}${l3 || '-'} | ${r} ${c}`;
         }
         if (typeof window !== 'undefined') window.formatPlateText = formatPlateText;
 
         const US_STATE_PLATE_META = {
-            CA: { title: 'CALIFORNIA', slogan: 'dmv.ca.gov • THE GOLDEN STATE', theme: 'ca' },
+            CA: { title: 'California', slogan: 'dmv.ca.gov', theme: 'ca' },
             NY: { title: 'NEW YORK', slogan: 'THE EMPIRE STATE', theme: 'ny' },
             FL: { title: 'MYFLORIDA.COM', slogan: 'SUNSHINE STATE', theme: 'fl' },
             TX: { title: 'TEXAS', slogan: 'THE LONE STAR STATE', theme: 'tx' },
@@ -415,6 +440,73 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             FUJ: { en: 'FUJAIRAH', ar: 'الفجيرة' },
             UAQ: { en: 'U.A.Q.', ar: 'أم القيوين' }
         };
+
+        function syncPlateBoxCellsLayout() {
+            if (typeof document === 'undefined' || typeof document.getElementById !== 'function') return;
+            const cL1 = document.getElementById('cell-l1');
+            const cL2 = document.getElementById('cell-l2');
+            const cL3 = document.getElementById('cell-l3');
+            const cN1 = document.getElementById('cell-n1');
+            const cN2 = document.getElementById('cell-n2');
+            const cN3 = document.getElementById('cell-n3');
+            const allCells = [cL1, cL2, cL3, cN1, cN2, cN3];
+
+            if (String(currentCountry || 'RUS').toUpperCase() !== 'UAE') {
+                allCells.forEach(cell => {
+                    if (cell && cell.classList) {
+                        cell.classList.remove('uae-cell-hidden', 'uae-single-digit');
+                    }
+                });
+                return;
+            }
+
+            if (cL1 && cL1.classList) cL1.classList.remove('uae-cell-hidden');
+            if (cL3 && cL3.classList) cL3.classList.add('uae-cell-hidden');
+
+            const isDoubleCode = (
+                boardHasLetters &&
+                currentL1 &&
+                currentL1 !== '-' &&
+                currentL1 === currentL2 &&
+                currentL2 === currentL3
+            );
+            if (cL2 && cL2.classList) {
+                if (isDoubleCode) cL2.classList.remove('uae-cell-hidden');
+                else cL2.classList.add('uae-cell-hidden');
+            }
+
+            const numStr = String(currentNum || '---');
+            if (isSpinning || !boardHasNumbers || numStr.includes('-')) {
+                [cN1, cN2, cN3].forEach(cell => {
+                    if (cell && cell.classList) {
+                        cell.classList.remove('uae-cell-hidden', 'uae-single-digit');
+                    }
+                });
+                return;
+            }
+
+            if (numStr.startsWith('00') && numStr !== '000') {
+                if (cN1 && cN1.classList) cN1.classList.add('uae-cell-hidden');
+                if (cN2 && cN2.classList) cN2.classList.add('uae-cell-hidden');
+                if (cN3 && cN3.classList) {
+                    cN3.classList.remove('uae-cell-hidden');
+                    cN3.classList.add('uae-single-digit');
+                }
+            } else if (numStr.startsWith('0') && numStr !== '000') {
+                if (cN1 && cN1.classList) cN1.classList.add('uae-cell-hidden');
+                if (cN2 && cN2.classList) cN2.classList.remove('uae-cell-hidden');
+                if (cN3 && cN3.classList) {
+                    cN3.classList.remove('uae-cell-hidden', 'uae-single-digit');
+                }
+            } else {
+                [cN1, cN2, cN3].forEach(cell => {
+                    if (cell && cell.classList) {
+                        cell.classList.remove('uae-cell-hidden', 'uae-single-digit');
+                    }
+                });
+            }
+        }
+        if (typeof window !== 'undefined') window.syncPlateBoxCellsLayout = syncPlateBoxCellsLayout;
 
         function updatePlateBoxMeta(country = currentCountry, reg = currentReg) {
             if (typeof document === 'undefined' || typeof document.getElementById !== 'function') return;
@@ -456,23 +548,133 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 plateBox.dataset.emirateEn = uaeMeta.en;
                 plateBox.dataset.emirateAr = uaeMeta.ar;
             }
+            syncPlateBoxCellsLayout();
         }
         if (typeof window !== 'undefined') window.updatePlateBoxMeta = updatePlateBoxMeta;
-        updatePlateBoxMeta(currentCountry, currentReg);
 
         function getMiniPlateCountryClass(plateText) {
             const raw = String(plateText || '').trim().toUpperCase();
-            if (/\bUAE$/.test(raw)) return 'mini-plate country-uae';
-            if (/\bUSA$/.test(raw)) return 'mini-plate country-usa';
-            if (/\bKZ$/.test(raw)) return 'mini-plate country-kz';
-            return 'mini-plate country-rus';
+            if (/\bUAE$/.test(raw)) return 'mini-plate mp-structured country-uae';
+            if (/\bUSA$/.test(raw)) return 'mini-plate mp-structured country-usa';
+            if (/\bKZ$/.test(raw)) return 'mini-plate mp-structured country-kz';
+            return 'mini-plate mp-structured country-rus';
         }
+
+        function renderMiniPlateInnerHtml(plateText) {
+            const raw = String(plateText || '').trim();
+            if (!raw) return '';
+
+            const kzMatch = raw.match(/^(.*?)\s*\|\s*([A-Z0-9]{1,3})\s+KZ$/i);
+            if (kzMatch) {
+                const mainPart = kzMatch[1].trim();
+                const reg = kzMatch[2].trim().toUpperCase();
+                let digits = '777', letters = 'VIP';
+                const mStd = mainPart.match(/^(\d{3})\s+([A-ZА-ЯЁ]{2,3})$/i);
+                const mLeg = mainPart.match(/^([A-ZА-ЯЁ])\s*(\d{3})\s*([A-ZА-ЯЁ]{2})$/i);
+                if (mStd) {
+                    digits = mStd[1];
+                    letters = mStd[2].toUpperCase();
+                } else if (mLeg) {
+                    digits = mLeg[2];
+                    letters = (mLeg[1] + mLeg[3]).toUpperCase();
+                } else {
+                    const dMatch = mainPart.match(/\d+/);
+                    const lMatch = mainPart.replace(/[^A-ZА-ЯЁ]/gi, '');
+                    if (dMatch) digits = dMatch[0];
+                    if (lMatch) letters = lMatch.toUpperCase();
+                }
+                return `<span class="mp-kz-left" aria-hidden="true"><i class="mp-kz-flag"></i><b>KZ</b></span><span class="mp-main mp-kz-main"><span class="mp-num">${escapeHtml(digits)}</span> <span class="mp-let">${escapeHtml(letters)}</span></span><span class="mp-pipe-sr"> | </span><span class="mp-reg-box mp-kz-reg">${escapeHtml(reg)}</span><span class="mp-pipe-sr"> KZ</span>`;
+            }
+
+            const usaMatch = raw.match(/^(.*?)\s*\|\s*([A-Z0-9]{1,3})\s+USA$/i);
+            if (usaMatch) {
+                const mainPart = usaMatch[1].trim();
+                const reg = usaMatch[2].trim().toUpperCase();
+                let letters = 'VIP', digits = '777';
+                const mStd = mainPart.match(/^([A-ZА-ЯЁ]{1,4})\s+(\d{1,4})$/i);
+                const mLeg = mainPart.match(/^([A-ZА-ЯЁ])\s*(\d{3})\s*([A-ZА-ЯЁ]{2})$/i);
+                if (mStd) {
+                    letters = mStd[1].toUpperCase();
+                    digits = mStd[2];
+                } else if (mLeg) {
+                    letters = (mLeg[1] + mLeg[3]).toUpperCase();
+                    digits = mLeg[2];
+                } else {
+                    const lMatch = mainPart.replace(/[^A-ZА-ЯЁ]/gi, '');
+                    const dMatch = mainPart.match(/\d+/);
+                    if (lMatch) letters = lMatch.toUpperCase();
+                    if (dMatch) digits = dMatch[0];
+                }
+                const usMeta = US_STATE_PLATE_META[reg] || { title: reg, slogan: 'USA' };
+                const sep = reg === 'TX' ? '★' : (reg === 'FL' ? '🍊' : (reg === 'NY' ? '-' : '•'));
+                return `<span class="mp-usa-top" data-state="${escapeHtml(reg)}" aria-hidden="true">${escapeHtml(usMeta.title)}</span><span class="mp-main mp-usa-main"><span class="mp-let">${escapeHtml(letters)}</span><span class="mp-usa-sep" aria-hidden="true">${sep}</span><span class="mp-num">${escapeHtml(digits)}</span></span><span class="mp-usa-bot" aria-hidden="true">${escapeHtml(usMeta.slogan)}</span><span class="mp-pipe-sr"> | ${escapeHtml(reg)} USA</span>`;
+            }
+
+            const uaeMatch = raw.match(/^(.*?)\s*\|\s*([A-Z0-9]{1,3})\s+UAE$/i);
+            if (uaeMatch) {
+                const mainPart = uaeMatch[1].trim();
+                const reg = uaeMatch[2].trim().toUpperCase();
+                let code = 'A', cleanDigits = '1';
+                const mAuth = mainPart.match(/^([A-ZА-ЯЁ]{1,2})\s+(\d{1,5})$/i);
+                const mLeg3 = mainPart.match(/^([A-ZА-ЯЁ]{3})\s+(\d{1,5})$/i);
+                const mLegRus = mainPart.match(/^([A-ZА-ЯЁ])\s*(\d{3})\s*([A-ZА-ЯЁ]{2})$/i);
+                if (mAuth) {
+                    code = mAuth[1].toUpperCase();
+                    const parsed = parseInt(mAuth[2], 10);
+                    cleanDigits = Number.isFinite(parsed) && parsed > 0 ? String(parsed) : mAuth[2];
+                } else if (mLeg3) {
+                    const l3 = mLeg3[1].toUpperCase();
+                    const parts = getUaePlateDisplayParts(l3[0], l3[1], l3[2], mLeg3[2]);
+                    code = parts.code;
+                    cleanDigits = parts.digits;
+                } else if (mLegRus) {
+                    const parts = getUaePlateDisplayParts(mLegRus[1], mLegRus[3][0], mLegRus[3][1], mLegRus[2]);
+                    code = parts.code;
+                    cleanDigits = parts.digits;
+                } else {
+                    const lMatch = mainPart.replace(/[^A-ZА-ЯЁ]/gi, '').toUpperCase();
+                    const dMatch = mainPart.match(/\d+/);
+                    code = lMatch ? (lMatch.length >= 3 && lMatch[0] === lMatch[1] && lMatch[1] === lMatch[2] ? lMatch.slice(0, 2) : lMatch[0]) : 'A';
+                    if (dMatch) {
+                        const parsed = parseInt(dMatch[0], 10);
+                        cleanDigits = Number.isFinite(parsed) && parsed > 0 ? String(parsed) : dMatch[0];
+                    }
+                }
+                const uaeMeta = UAE_EMIRATE_PLATE_META[reg] || { en: reg, ar: 'دبي' };
+                return `<span class="mp-uae-left" data-emirate="${escapeHtml(reg)}" aria-hidden="true"><span class="mp-uae-em"><b>${escapeHtml(uaeMeta.en)}</b><small>${escapeHtml(uaeMeta.ar)}</small></span></span><span class="mp-uae-code">${escapeHtml(code)}</span><span class="mp-pipe-sr"> </span><span class="mp-main mp-uae-main"><span class="mp-num">${escapeHtml(cleanDigits)}</span></span><span class="mp-pipe-sr"> | ${escapeHtml(reg)} UAE</span>`;
+            }
+
+            const rusMatch = raw.match(/^(.*?)\s*\|\s*(\d{2,3})(?:\s+RUS)?$/i);
+            if (rusMatch) {
+                const mainPart = rusMatch[1].trim();
+                const reg = rusMatch[2].trim();
+                let l1 = 'А', digits = '777', l2l3 = 'АА';
+                const mRus = mainPart.match(/^([A-ZА-ЯЁ])\s*(\d{3})\s*([A-ZА-ЯЁ]{2})$/i);
+                if (mRus) {
+                    l1 = mRus[1].toUpperCase();
+                    digits = mRus[2];
+                    l2l3 = mRus[3].toUpperCase();
+                } else {
+                    const tokens = mainPart.split(/\s+/);
+                    if (tokens.length >= 3) {
+                        l1 = tokens[0];
+                        digits = tokens[1];
+                        l2l3 = tokens.slice(2).join('');
+                    }
+                }
+                return `<span class="mp-main mp-rus-main"><span class="mp-let">${escapeHtml(l1)}</span> <span class="mp-num">${escapeHtml(digits)}</span> <span class="mp-let">${escapeHtml(l2l3)}</span></span><span class="mp-pipe-sr"> | </span><span class="mp-reg-box mp-rus-reg"><span class="mp-reg-num">${escapeHtml(reg)}</span><span class="mp-rus-sub" aria-hidden="true">RUS<i class="mp-rus-flag"></i></span></span><span class="mp-pipe-sr"> RUS</span>`;
+            }
+
+            return escapeHtml(raw);
+        }
+        if (typeof window !== 'undefined') window.renderMiniPlateInnerHtml = renderMiniPlateInnerHtml;
 
         let hasSpunLetSinceSave = false;
         let hasSpunNumSinceSave = false;
         let mustSpinBothForNextSave = false;
         let boardHasLetters = false;
         let boardHasNumbers = false;
+        updatePlateBoxMeta(currentCountry, currentReg);
 
         let pityCounterBoth = 0;
         let pityCounterLet = 0;
@@ -3610,7 +3812,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
                 if (lot.type === 'car') {
                     const car = lot.car;
-                    const plateHtml = car.plate ? `<div class="mini-plate ${getMiniPlateCountryClass(car.plate.text)}" style="font-size:13px; padding:3px 8px; margin-top:4px;">${escapeHtml(car.plate.text)}</div>` : '<small style="color:var(--text-dim);">Без номера</small>';
+                    const plateHtml = car.plate ? `<div class="mini-plate ${getMiniPlateCountryClass(car.plate.text)}" style="font-size:13px; padding:3px 8px; margin-top:4px;">${renderMiniPlateInnerHtml(car.plate.text)}</div>` : '<small style="color:var(--text-dim);">Без номера</small>';
                     const stylingBadge = car.styling?.neon && car.styling.neon !== 'none' ? `<span style="font-size:9px; color:${car.styling.neon}; font-weight:800; margin-left:4px;">💡 НЕОН</span>` : '';
 
                     html += `
@@ -3662,7 +3864,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                             </div>
 
                             <div style="text-align:center; margin: 4px 0;">
-                                <div class="mini-plate ${getMiniPlateCountryClass(plate.text)}" style="font-size:18px; padding:6px 12px; border-width:2px; display:inline-block;">${escapeHtml(plate.text)}</div>
+                                <div class="mini-plate ${getMiniPlateCountryClass(plate.text)}" style="font-size:18px; padding:6px 12px; border-width:2px; display:inline-block;">${renderMiniPlateInnerHtml(plate.text)}</div>
                             </div>
 
                             <div class="market-price-tag">
@@ -4127,6 +4329,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 selectCaseCountry(code, true);
             }
 
+            syncPlateBoxCellsLayout();
             checkCanSaveButton();
             notifyUser(`Выбран стандарт номеров: ${cfg.flagEmoji} ${cfg.name} (${cfg.code})`, 'info');
         }
@@ -4245,6 +4448,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         function executeCellSpin(targets, finalValues, onFinish) {
             initAudio();
             isSpinning = true;
+            syncPlateBoxCellsLayout();
 
             const animStyleSelect = document.getElementById('anim-style-select');
             const animStyle = animStyleSelect ? animStyleSelect.value : 'cascade';
@@ -4322,6 +4526,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 });
 
                 isSpinning = false;
+                syncPlateBoxCellsLayout();
                 checkCanSaveButton();
                 saveProgress();
 
@@ -4483,6 +4688,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             }
 
             updatePlateBoxMeta(currentCountry, currentReg);
+            syncPlateBoxCellsLayout();
             mustSpinBothForNextSave = true;
             checkCanSaveButton();
         }
@@ -5490,7 +5696,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                             <div style="background: rgba(255,255,255,0.04); border: 1px solid var(--border-subtle); padding: 10px 14px; border-radius: var(--radius-sm); display: flex; justify-content: space-between; align-items: center; gap: 8px;">
                                 <div style="display:flex; align-items:center; flex-wrap:wrap; gap:6px;">
                                     ${rHtml}
-                                    <span class="mini-plate ${plateClass}" style="font-size:12px; padding:2px 8px;">${escapeHtml(item.text)}</span>
+                                    <span class="mini-plate ${plateClass}" style="font-size:12px; padding:2px 8px;">${renderMiniPlateInnerHtml(item.text)}</span>
                                 </div>
                                 <small style="color: var(--accent-green); font-weight:700; white-space:nowrap;">${Number(item.price || 0).toLocaleString('ru-RU')} ₽</small>
                             </div>`;
@@ -5618,7 +5824,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                         track.innerHTML += `
                             <div class="roulette-card" id="rcard-${i}" style="border-bottom-color: ${rColor};">
                                 <div class="r-rarity">${escapeHtml(item.rarity.text)}</div>
-                                <div class="r-plate ${plateClass}">${escapeHtml(item.text.split('|')[0].trim())}</div>
+                                <div class="r-plate ${plateClass}">${renderMiniPlateInnerHtml(item.text)}</div>
                                 <div class="r-price" style="color: ${rColor};">${Number(item.price || 0).toLocaleString('ru-RU')} ₽</div>
                             </div>
                         `;
@@ -5739,7 +5945,10 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     const rPlateCard = document.getElementById('roulette-plate-card');
                     if (rPlateCard) {
                         rPlateCard.className = `mini-plate ${getMiniPlateCountryClass(wonPlateObj.text)}`;
-                        rPlateCard.innerText = wonPlateObj.text;
+                        rPlateCard.innerHTML = renderMiniPlateInnerHtml(wonPlateObj.text);
+                        if (typeof HTMLElement === 'undefined' || !(rPlateCard instanceof HTMLElement)) {
+                            rPlateCard.innerText = wonPlateObj.text;
+                        }
                     }
                     document.getElementById('roulette-price').innerText = `+${wonPlateObj.price.toLocaleString('ru-RU')} ₽`;
                     document.getElementById('roulette-result')?.classList.remove('hidden');
@@ -5877,7 +6086,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                             ${rarityHTML}
                             <span class="inv-card-price">${Number(item.price || 0).toLocaleString('ru-RU')} ₽</span>
                         </div>
-                        <div class="mini-plate ${getMiniPlateCountryClass(item.text)}">${escapeHtml(item.text)}</div>
+                        <div class="mini-plate ${getMiniPlateCountryClass(item.text)}">${renderMiniPlateInnerHtml(item.text)}</div>
                         <button class="btn btn-close" style="padding:8px 12px; width:100%;" onclick="sellPlate(${index})">Продать (+${Number(item.price||0).toLocaleString('ru-RU')} ₽)</button>
                     </div>`;
             });
@@ -6064,7 +6273,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                         <div style="text-align: center; width: 100%;">
                             ${rHtml}
                             <div style="display: flex; justify-content: center;">
-                                <div class="mini-plate ${getMiniPlateCountryClass(car.plate.text)}">${escapeHtml(car.plate.text)}</div>
+                                <div class="mini-plate ${getMiniPlateCountryClass(car.plate.text)}">${renderMiniPlateInnerHtml(car.plate.text)}</div>
                             </div>
                             <div style="font-size: 11px; color: var(--text-muted); margin-top: 6px;">
                                 Стоимость с номером: <b style="color: var(--accent-green);">${totalSellPrice.toLocaleString('ru-RU')} ₽</b>
@@ -11885,7 +12094,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     const bonusBadge = stats.plateBonus > 0
                         ? `<span style="font-size: 11px; margin-left: 6px; color: #fbbf24; font-weight: 700; background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.4); padding: 2px 6px; border-radius: 4px;">✨ +${stats.plateBonus}% ₽</span>`
                         : '';
-                    plateSlot.innerHTML = `<span class="mini-plate" style="font-size: 13px; padding: 2px 8px;">${escapeHtml(ownedCarObj.plate.text)}</span>${bonusBadge}`;
+                    plateSlot.innerHTML = `<span class="${getMiniPlateCountryClass(ownedCarObj.plate.text)}" style="font-size: 13px; padding: 2px 8px;">${renderMiniPlateInnerHtml(ownedCarObj.plate.text)}</span>${bonusBadge}`;
                 } else if (isOwned) {
                     plateSlot.innerHTML = `<span style="font-size: 11px; color: var(--text-dim);">Без госномера</span>`;
                 } else {

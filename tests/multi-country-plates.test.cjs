@@ -41,18 +41,22 @@ test('safePlate accepts authentic and legacy RUS, KZ, USA, UAE plates and reject
   assert.equal(c.safePlate({ text: 'А 777 АА | 777 RUS', price: 50000 }, 'p1').text, 'А 777 АА | 777 RUS');
   assert.equal(c.safePlate({ text: '777 VIP | 01 KZ', price: 150000 }, 'p2').text, '777 VIP | 01 KZ');
   assert.equal(c.safePlate({ text: 'VIP 777 | CA USA', price: 300000 }, 'p3').text, 'VIP 777 | CA USA');
-  assert.equal(c.safePlate({ text: 'DXB 001 | DXB UAE', price: 900000 }, 'p4').text, 'DXB 001 | DXB UAE');
+  assert.equal(c.safePlate({ text: 'D 1 | DXB UAE', price: 900000 }, 'p4').text, 'D 1 | DXB UAE');
+  assert.equal(c.safePlate({ text: 'AA 777 | DXB UAE', price: 900000 }, 'p4_aa').text, 'AA 777 | DXB UAE');
+  assert.equal(c.safePlate({ text: 'B 77 | AUH UAE', price: 900000 }, 'p4_auh').text, 'B 77 | AUH UAE');
 
   // Legacy formats
   assert.equal(c.safePlate({ text: 'V 777 IP | 01 KZ', price: 150000 }, 'p2_leg').text, 'V 777 IP | 01 KZ');
   assert.equal(c.safePlate({ text: 'V 777 IP | CA USA', price: 300000 }, 'p3_leg').text, 'V 777 IP | CA USA');
+  assert.equal(c.safePlate({ text: 'DXB 001 | DXB UAE', price: 900000 }, 'p4_leg3').text, 'DXB 001 | DXB UAE');
   assert.equal(c.safePlate({ text: 'D 001 XB | DXB UAE', price: 900000 }, 'p4_leg').text, 'D 001 XB | DXB UAE');
 
   // formatPlateText helper
   assert.equal(c.formatPlateText('А', 'А', 'А', '777', '777', 'RUS'), 'А 777 АА | 777 RUS');
   assert.equal(c.formatPlateText('V', 'I', 'P', '777', '01', 'KZ'), '777 VIP | 01 KZ');
   assert.equal(c.formatPlateText('V', 'I', 'P', '777', 'CA', 'USA'), 'VIP 777 | CA USA');
-  assert.equal(c.formatPlateText('D', 'X', 'B', '001', 'DXB', 'UAE'), 'DXB 001 | DXB UAE');
+  assert.equal(c.formatPlateText('D', 'X', 'B', '001', 'DXB', 'UAE'), 'D 1 | DXB UAE');
+  assert.equal(c.formatPlateText('A', 'A', 'A', '777', 'DXB', 'UAE'), 'AA 777 | DXB UAE');
 
   assert.throws(() => c.safePlate({ text: 'local_item', price: 1000 }, 'bad1'), /формат/);
   assert.throws(() => c.safePlate({ text: 'A 777 AA | 77 GER', price: 1000 }, 'bad2'), /формат/);
@@ -134,15 +138,15 @@ test('mutate roll, setRegion, claim, and sell work end-to-end with authentic pla
   assert.equal(s.accounts.racer.draft.reg, 'DXB');
 
   s = c.mutate(s, 'claim', 'racer', { plateId: 'plate_uae_1' }, 3200);
-  assert.equal(s.accounts.racer.inventory[0].text, 'DXB 001 | DXB UAE');
+  assert.equal(s.accounts.racer.inventory[0].text, 'D 1 | DXB UAE');
   assert.equal(s.accounts.racer.inventory[0].price, c.priceOfPlate('D', 'X', 'B', '001', 'DXB', 'UAE'));
 
   // Sell UAE plate on market and buy it with buyer account
   s = c.mutate(s, 'sell', 'racer', { plateId: 'plate_uae_1', lotId: 'lot_uae_1234567890', price: 25000000 }, 3300);
-  assert.equal(s.market.lot_uae_1234567890.plate.text, 'DXB 001 | DXB UAE');
+  assert.equal(s.market.lot_uae_1234567890.plate.text, 'D 1 | DXB UAE');
 
   s = c.mutate(s, 'buy', 'buyer', { lotId: 'lot_uae_1234567890' }, 3400);
-  assert.equal(s.accounts.buyer.inventory[0].text, 'DXB 001 | DXB UAE');
+  assert.equal(s.accounts.buyer.inventory[0].text, 'D 1 | DXB UAE');
 });
 
 test('Backend blocks country-switch price arbitrage exploit via setRegion or claim', () => {
@@ -283,7 +287,7 @@ test('Frontend cases adapt prices and plate pools by country and support dedicat
 
   const uaePlate = app.run("forcePlate('Легендарный', 'UAE')");
   assert.equal(uaePlate.country, 'UAE');
-  assert.match(uaePlate.text, /^[A-Z]{3} \d{3} \| [A-Z]{3} UAE$/);
+  assert.match(uaePlate.text, /^[A-Z]{1,2} \d{1,5} \| [A-Z0-9]{1,3} UAE$/);
   assert.ok(uaePlate.price > 500000);
 
   const kzPlate = app.run("forcePlate('Эпический', 'KZ')");
@@ -293,6 +297,27 @@ test('Frontend cases adapt prices and plate pools by country and support dedicat
   const usaPlate = app.run("forcePlate('Мифический', 'USA')");
   assert.equal(usaPlate.country, 'USA');
   assert.match(usaPlate.text, /^[A-Z]{3} \d{3} \| [A-Z]{2} USA$/);
+
+  // Authentic mini-plate rendering for RUS, KZ, USA, and UAE
+  const rusMiniHtml = app.run("renderMiniPlateInnerHtml('А 777 АА | 777 RUS')");
+  assert.match(rusMiniHtml, /777/);
+  assert.match(rusMiniHtml, /RUS/);
+
+  const kzMiniHtml = app.run("renderMiniPlateInnerHtml('777 VIP | 01 KZ')");
+  assert.match(kzMiniHtml, /777/);
+  assert.match(kzMiniHtml, /VIP/);
+  assert.match(kzMiniHtml, /KZ/);
+  assert.match(kzMiniHtml, /01/);
+
+  const usaMiniHtml = app.run("renderMiniPlateInnerHtml('VIP 777 | CA USA')");
+  assert.match(usaMiniHtml, /VIP/);
+  assert.match(usaMiniHtml, /777/);
+  assert.match(usaMiniHtml, /CA|CALIFORNIA/i);
+
+  const uaeMiniHtml = app.run("renderMiniPlateInnerHtml('D 1 | DXB UAE')");
+  assert.match(uaeMiniHtml, /DUBAI|DXB/i);
+  assert.match(uaeMiniHtml, />D</);
+  assert.match(uaeMiniHtml, />1</);
 });
 
 

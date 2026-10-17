@@ -585,7 +585,7 @@
     // Multi-country License Plate parser & formatter (RUS, KZ, USA, UAE)
     function formatPlateComponents(rawText) {
         if (!rawText || rawText === 'none' || rawText === 'null') {
-            return { main: 'А 777 АА', letters: 'ААА', digits: '777', region: '77', country: 'RUS', isNone: true };
+            return { main: 'А 777 АА', l1: 'А', l2l3: 'АА', letters: 'ААА', digits: '777', region: '77', country: 'RUS', isNone: true };
         }
         let str = String(rawText).trim();
         const defaultRegionForCountry = (c) => {
@@ -596,7 +596,7 @@
         };
         const defaultLettersForCountry = (c) => {
             if (c === 'KZ' || c === 'USA') return 'VIP';
-            if (c === 'UAE') return 'SHK';
+            if (c === 'UAE') return 'D';
             return 'ААА';
         };
         const buildNormalized = (rawMain, region, country) => {
@@ -604,27 +604,55 @@
             const reg = (region || defaultRegionForCountry(c)).toUpperCase();
             const rawLetters = ((rawMain || '').match(/[A-ZА-ЯЁ]/gi) || []).join('').toUpperCase();
             const rawDigits = ((rawMain || '').match(/\d/g) || []).join('');
+
+            if (c === 'UAE') {
+                const authUae = String(rawMain || '').trim().match(/^([A-Z]{1,2})\s+(\d{1,5})$/i);
+                let uaeCode = 'D';
+                let uaeDigits = '1';
+                if (authUae) {
+                    uaeCode = authUae[1].toUpperCase();
+                    uaeDigits = authUae[2].replace(/^0+/, '') || '0';
+                } else {
+                    if (rawLetters.length >= 3) {
+                        uaeCode = (rawLetters[0] === rawLetters[1] && rawLetters[1] === rawLetters[2])
+                            ? rawLetters.slice(0, 2)
+                            : rawLetters[0];
+                    } else if (rawLetters.length >= 1) {
+                        uaeCode = rawLetters.slice(0, 2);
+                    } else {
+                        uaeCode = reg === 'AUH' ? 'B' : 'D';
+                    }
+                    uaeDigits = (rawDigits ? rawDigits.slice(0, 5).replace(/^0+/, '') : '1') || '1';
+                }
+                return {
+                    main: `${uaeCode} ${uaeDigits}`,
+                    letters: uaeCode,
+                    digits: uaeDigits,
+                    uaeCode,
+                    uaeDigits,
+                    region: reg,
+                    country: 'UAE',
+                    isNone: false
+                };
+            }
+
             const digits = (rawDigits ? rawDigits.slice(0, 4) : '777').padStart(3, '0');
             const fallbackLetters = defaultLettersForCountry(c);
             let letters = rawLetters ? rawLetters.slice(0, 3) : fallbackLetters;
 
             if (c === 'KZ') {
                 letters = letters.padEnd(3, fallbackLetters[0] || 'V');
-                return { main: `${digits} ${letters}`, letters, digits, region: reg, country: c, isNone: false };
+                return { main: `${digits} ${letters}`, letters, digits, region: reg, country: 'KZ', isNone: false };
             }
             if (c === 'USA') {
                 letters = letters.padEnd(3, fallbackLetters[0] || 'V');
-                return { main: `${letters} • ${digits}`, letters, digits, region: reg, country: c, isNone: false };
-            }
-            if (c === 'UAE') {
-                if (!letters) letters = fallbackLetters;
-                return { main: `${letters} ${digits}`, letters, digits, region: reg, country: c, isNone: false };
+                return { main: `${letters} • ${digits}`, letters, digits, region: reg, country: 'USA', isNone: false };
             }
             // RUS default: L NNN LL
             letters = letters.padEnd(3, 'А');
             const l1 = letters[0] || 'А';
-            const l2 = letters.slice(1, 3) || 'АА';
-            return { main: `${l1} ${digits} ${l2}`, letters, digits, region: reg, country: 'RUS', isNone: false };
+            const l2l3 = letters.slice(1, 3) || 'АА';
+            return { main: `${l1} ${digits} ${l2l3}`, l1, l2l3, letters, digits, region: reg, country: 'RUS', isNone: false };
         };
 
         if (str.includes('|')) {
@@ -646,6 +674,12 @@
             str = str.slice(0, trailingCountry.index).trim();
         }
 
+        // Match UAE authentic RTA format without pipe: "D 1 DXB" or "AA 777 AUH"
+        const mUae = str.match(/^([A-Z]{1,2}\s+\d{1,5})\s+(DXB|AUH|SHJ|AJM|RAK)$/i);
+        if (mUae) {
+            return buildNormalized(mUae[1], mUae[2], 'UAE');
+        }
+
         // Match L NNN LL + region
         const m = str.match(/^([А-ЯA-Z]{1,2})\s*(\d{1,4})\s*([А-ЯA-Z]{1,2})\s+([A-ZА-Я0-9]{2,3})$/i) ||
                   str.match(/^([А-ЯA-Z]{1,2})\s*(\d{1,4})\s*([А-ЯA-Z]{1,2})\s*(\d{2,3})$/i);
@@ -653,22 +687,22 @@
             return buildNormalized(`${m[1]} ${m[2]} ${m[3]}`, m[4], country);
         }
         // Match NNN LLL + region (KZ authentic) or LLL NNN + region (USA/UAE authentic)
-        const mAuth = str.match(/^(\d{3}\s+[A-ZА-Я]{3}|[A-ZА-Я]{1,3}\s*[•·-]?\s*\d{3})\s+([A-ZА-Я0-9]{2,3})$/i);
+        const mAuth = str.match(/^(\d{3}\s+[A-ZА-Я]{3}|[A-ZА-Я]{1,3}\s*[•·★-]?\s*\d{1,5})\s+([A-ZА-Я0-9]{2,3})$/i);
         if (mAuth) {
             return buildNormalized(mAuth[1], mAuth[2], country);
         }
+        const spaceIdx = str.lastIndexOf(' ');
+        if (spaceIdx > 0 && /^(\d{2,3}|CA|NY|FL|TX|NV|DXB|AUH|SHJ|AJM|RAK)$/i.test(str.slice(spaceIdx + 1))) {
+            return buildNormalized(str.slice(0, spaceIdx), str.slice(spaceIdx + 1), country);
+        }
         // Match standard Russian plate prefix
-        const m2 = str.match(/^([А-ЯA-Z]?)\s*(\d{1,3})\s*([А-ЯA-Z]{0,2})\s*(\d{2,3})?$/i);
+        const m2 = country === 'RUS' && str.match(/^([А-ЯA-Z]?)\s*(\d{1,3})\s*([А-ЯA-Z]{0,2})\s*(\d{2,3})?$/i);
         if (m2 && m2[2]) {
             const l1 = (m2[1] || 'А').toUpperCase();
             const digits = m2[2].padStart(3, '0');
             const l2 = (m2[3] || 'АА').toUpperCase();
             const reg = m2[4] || defaultRegionForCountry(country);
             return buildNormalized(`${l1} ${digits} ${l2}`, reg, country);
-        }
-        const spaceIdx = str.lastIndexOf(' ');
-        if (spaceIdx > 0 && /^(\d{2,3}|CA|NY|FL|TX|NV|DXB|AUH|SHJ)$/i.test(str.slice(spaceIdx + 1))) {
-            return buildNormalized(str.slice(0, spaceIdx), str.slice(spaceIdx + 1), country);
         }
         return buildNormalized(str, defaultRegionForCountry(country), country);
     }
@@ -686,166 +720,307 @@
         }
 
         const comp = formatPlateComponents(text);
-        group.userData.plateCountry = comp.country || 'RUS';
+        const country = comp.country || 'RUS';
+        group.userData.plateCountry = country;
         if (comp.isNone) {
             group.visible = false;
             return group;
         }
 
-        const plateW = 0.54;
-        const plateH = 0.12;
+        // Authentic physical plate dimensions: North American 12"x6" (2:1) vs European/GOST 520x112mm
+        const isUSA = country === 'USA';
+        const plateW = isUSA ? 0.36 : 0.52;
+        const plateH = isUSA ? 0.18 : 0.115;
 
         if (typeof document !== 'undefined') {
             try {
                 const canvas = document.createElement('canvas');
                 canvas.width = 512;
-                canvas.height = 128;
+                canvas.height = isUSA ? 256 : 128;
                 const ctx = canvas.getContext('2d');
                 if (ctx) {
-                    const country = comp.country || 'RUS';
-                    const mainText = comp.main;
                     const regCode = comp.region;
                     const letters = comp.letters || 'VIP';
                     const digits = comp.digits || '777';
 
                     if (country === 'USA') {
-                        // Authentic American State Plate (California, New York, Florida, Texas, Nevada)
-                        const isNY = regCode === 'NY';
-                        if (typeof ctx.createLinearGradient === 'function') {
-                            const grad = ctx.createLinearGradient(0, 0, 0, 128);
-                            if (isNY) {
+                        // Authentic 512x256 (2:1 aspect ratio) North American State Plates (CA, NY, FL, TX, NV)
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+
+                        if (regCode === 'NY') {
+                            // New York Empire Gold Plate (#fbbf24-#f59e0b) with top & bottom #172554 navy bands
+                            if (typeof ctx.createLinearGradient === 'function') {
+                                const grad = ctx.createLinearGradient(0, 0, 0, 256);
                                 grad.addColorStop(0, '#fbbf24');
                                 grad.addColorStop(1, '#f59e0b');
+                                ctx.fillStyle = grad;
                             } else {
-                                grad.addColorStop(0, '#ffffff');
-                                grad.addColorStop(1, '#f8fafc');
+                                ctx.fillStyle = '#fbbf24';
                             }
+                            ctx.fillRect(0, 0, 512, 256);
+
+                            // Top (y = 0..56) and Bottom (y = 204..256) deep navy bands
+                            ctx.fillStyle = '#172554';
+                            ctx.fillRect(0, 0, 512, 56);
+                            ctx.fillRect(0, 204, 512, 52);
+
+                            // Gold NEW YORK header
+                            ctx.fillStyle = '#fbbf24';
+                            ctx.font = '900 36px "Arial Black", sans-serif';
+                            ctx.fillText('NEW YORK', 256, 30);
+
+                            // Embossed navy serial LETTERS-DIGITS at y = 134
+                            ctx.fillStyle = '#172554';
+                            ctx.font = '900 92px "Arial Black", sans-serif';
+                            ctx.fillText(`${letters}-${digits}`, 256, 134);
+
+                            // Gold THE EMPIRE STATE at bottom
+                            ctx.fillStyle = '#fbbf24';
+                            ctx.font = '800 22px "Inter", sans-serif';
+                            ctx.fillText('THE EMPIRE STATE', 256, 230);
+                        } else if (regCode === 'FL') {
+                            // Florida Sunshine State Plate
+                            if (typeof ctx.createLinearGradient === 'function') {
+                                const grad = ctx.createLinearGradient(0, 0, 0, 256);
+                                grad.addColorStop(0, '#ffffff');
+                                grad.addColorStop(0.5, '#f8fafc');
+                                grad.addColorStop(1, '#ecfdf5');
+                                ctx.fillStyle = grad;
+                            } else {
+                                ctx.fillStyle = '#f8fafc';
+                            }
+                            ctx.fillRect(0, 0, 512, 256);
+
+                            ctx.strokeStyle = '#046a38';
+                            ctx.lineWidth = 6;
+                            ctx.strokeRect(6, 6, 500, 244);
+
+                            // Top orange MYFLORIDA.COM
+                            ctx.fillStyle = '#ea580c';
+                            ctx.font = '900 34px "Arial Black", sans-serif';
+                            ctx.fillText('MYFLORIDA.COM', 256, 38);
+
+                            // Center orange fruit circle (#f97316) with green leaf (#16a34a) at x = 256, y = 134
+                            ctx.fillStyle = '#f97316';
+                            if (typeof ctx.arc === 'function') {
+                                ctx.beginPath();
+                                ctx.arc(256, 134, 26, 0, Math.PI * 2);
+                                ctx.fill();
+                            } else {
+                                ctx.fillRect(230, 108, 52, 52);
+                            }
+                            ctx.fillStyle = '#16a34a';
+                            ctx.fillRect(254, 100, 14, 10);
+
+                            // Dark-green (#046a38) embossed serial at y = 136
+                            ctx.fillStyle = '#046a38';
+                            ctx.font = '900 88px "Arial Black", sans-serif';
+                            ctx.fillText(`${letters}   ${digits}`, 256, 136);
+
+                            // Bottom orange SUNSHINE STATE
+                            ctx.fillStyle = '#ea580c';
+                            ctx.font = '800 22px "Inter", sans-serif';
+                            ctx.fillText('SUNSHINE STATE', 256, 226);
+                        } else if (regCode === 'TX') {
+                            // Texas Lone Star State Plate
+                            ctx.fillStyle = '#ffffff';
+                            ctx.fillRect(0, 0, 512, 256);
+
+                            ctx.strokeStyle = '#0f172a';
+                            ctx.lineWidth = 6;
+                            ctx.strokeRect(6, 6, 500, 244);
+
+                            // Top-left Lone Star and top TEXAS header
+                            ctx.fillStyle = '#0f172a';
+                            ctx.font = '900 34px "Arial Black", sans-serif';
+                            ctx.fillText('★', 54, 40);
+                            ctx.font = '900 42px "Arial Black", sans-serif';
+                            ctx.fillText('TEXAS', 256, 40);
+
+                            // Black embossed serial with star separator at y = 136
+                            ctx.font = '900 88px "Arial Black", sans-serif';
+                            ctx.fillText(`${letters} ★ ${digits}`, 256, 136);
+
+                            // Bottom THE LONE STAR STATE
+                            ctx.font = '800 20px "Inter", sans-serif';
+                            ctx.fillText('THE LONE STAR STATE', 256, 226);
+                        } else if (regCode === 'NV') {
+                            // Nevada Sierra Mountain Sky-Blue/Silver/Gold Gradient Plate
+                            if (typeof ctx.createLinearGradient === 'function') {
+                                const grad = ctx.createLinearGradient(0, 0, 0, 256);
+                                grad.addColorStop(0, '#0284c7');
+                                grad.addColorStop(0.45, '#bae6fd');
+                                grad.addColorStop(0.78, '#fef3c7');
+                                grad.addColorStop(1, '#f8fafc');
+                                ctx.fillStyle = grad;
+                            } else {
+                                ctx.fillStyle = '#bae6fd';
+                            }
+                            ctx.fillRect(0, 0, 512, 256);
+
+                            ctx.strokeStyle = '#0f172a';
+                            ctx.lineWidth = 6;
+                            ctx.strokeRect(6, 6, 500, 244);
+
+                            // Top NEVADA header
+                            ctx.fillStyle = '#ffffff';
+                            ctx.font = '900 40px "Arial Black", sans-serif';
+                            ctx.fillText('NEVADA', 256, 40);
+
+                            // Dark slate embossed serial at y = 136
+                            ctx.fillStyle = '#0f172a';
+                            ctx.font = '900 90px "Arial Black", sans-serif';
+                            ctx.fillText(`${letters} • ${digits}`, 256, 136);
+
+                            // Bottom HOME MEANS NEVADA
+                            ctx.fillStyle = '#0f172a';
+                            ctx.font = '800 20px "Inter", sans-serif';
+                            ctx.fillText('HOME MEANS NEVADA', 256, 226);
+                        } else {
+                            // California (CA) Default White Reflective Plate
+                            if (typeof ctx.createLinearGradient === 'function') {
+                                const grad = ctx.createLinearGradient(0, 0, 0, 256);
+                                grad.addColorStop(0, '#ffffff');
+                                grad.addColorStop(1, '#f1f5f9');
+                                ctx.fillStyle = grad;
+                            } else {
+                                ctx.fillStyle = '#ffffff';
+                            }
+                            ctx.fillRect(0, 0, 512, 256);
+
+                            ctx.strokeStyle = '#cbd5e1';
+                            ctx.lineWidth = 6;
+                            ctx.strokeRect(6, 6, 500, 244);
+
+                            // Top-left blue OCT sticker & top-right red 2026 sticker
+                            ctx.fillStyle = '#1d4ed8';
+                            ctx.fillRect(22, 18, 64, 30);
+                            ctx.fillStyle = '#ffffff';
+                            ctx.font = '800 16px "Inter", sans-serif';
+                            ctx.fillText('OCT', 54, 33);
+
+                            ctx.fillStyle = '#dc2626';
+                            ctx.fillRect(426, 18, 64, 30);
+                            ctx.fillStyle = '#ffffff';
+                            ctx.font = '800 16px "Inter", sans-serif';
+                            ctx.fillText('2026', 458, 33);
+
+                            // Red cursive script California at top (y = 44)
+                            ctx.fillStyle = '#c8102e';
+                            ctx.font = 'italic 900 46px Georgia, serif';
+                            ctx.fillText('California', 256, 44);
+
+                            // Deep navy (#13294b) embossed serial at y = 136
+                            ctx.fillStyle = '#13294b';
+                            ctx.font = '900 92px "Arial Black", sans-serif';
+                            ctx.fillText(`${letters} • ${digits}`, 256, 136);
+
+                            // Red dmv.ca.gov at bottom (y = 226)
+                            ctx.fillStyle = '#c8102e';
+                            ctx.font = '800 20px "Inter", sans-serif';
+                            ctx.fillText('dmv.ca.gov', 256, 226);
+                        }
+                    } else if (country === 'UAE') {
+                        // Official RTA Dubai & Abu Dhabi Plate (512x128)
+                        const uaeCode = comp.uaeCode || letters || 'D';
+                        const uaeDigits = comp.uaeDigits || digits || '1';
+
+                        if (typeof ctx.createLinearGradient === 'function') {
+                            const grad = ctx.createLinearGradient(0, 0, 0, 128);
+                            grad.addColorStop(0, '#ffffff');
+                            grad.addColorStop(1, '#f1f5f9');
                             ctx.fillStyle = grad;
                         } else {
-                            ctx.fillStyle = isNY ? '#fbbf24' : '#ffffff';
-                        }
-                        ctx.fillRect(0, 0, 512, 128);
-
-                        // State accent border (NO vertical region divider on the right)
-                        ctx.strokeStyle = isNY ? '#1e3a8a' : '#1e293b';
-                        ctx.lineWidth = 8;
-                        ctx.strokeRect(6, 6, 500, 116);
-
-                        // Top-left registration month sticker (x = 18, y = 14, w = 52, h = 22)
-                        ctx.fillStyle = '#1d4ed8';
-                        ctx.fillRect(18, 14, 52, 22);
-                        ctx.fillStyle = '#ffffff';
-                        ctx.font = '800 13px "Inter", sans-serif';
-                        ctx.textAlign = 'center';
-                        ctx.textBaseline = 'middle';
-                        ctx.fillText('OCT', 44, 25);
-
-                        // Top-right registration year sticker (x = 442, y = 14, w = 52, h = 22)
-                        ctx.fillStyle = '#dc2626';
-                        ctx.fillRect(442, 14, 52, 22);
-                        ctx.fillStyle = '#ffffff';
-                        ctx.font = '800 13px "Inter", sans-serif';
-                        ctx.fillText('2026', 468, 25);
-
-                        // Top Centered State Header (x = 256, y = 25)
-                        const stateHeaderStyles = {
-                            CA: { text: 'California', color: '#b91c1c', font: 'italic 900 26px Georgia, serif' },
-                            NY: { text: 'NEW YORK', color: '#1e3a8a', font: '900 24px "Arial Black", sans-serif' },
-                            FL: { text: 'MYFLORIDA.COM', color: '#ea580c', font: '900 22px "Arial Black", sans-serif' },
-                            TX: { text: 'TEXAS', color: '#0f172a', font: '900 25px "Arial Black", sans-serif' },
-                            NV: { text: 'NEVADA', color: '#0284c7', font: '900 24px "Arial Black", sans-serif' }
-                        };
-                        const headerCfg = stateHeaderStyles[regCode] || {
-                            text: 'USA • ' + regCode,
-                            color: '#b91c1c',
-                            font: '900 22px "Arial Black", sans-serif'
-                        };
-                        ctx.fillStyle = headerCfg.color;
-                        ctx.font = headerCfg.font;
-                        ctx.fillText(headerCfg.text, 256, 25);
-
-                        // Center Serial (x = 256, y = 68)
-                        const usaSerial = `${letters} • ${digits}`;
-                        ctx.fillStyle = isNY ? '#1e3a8a' : '#1e293b';
-                        ctx.font = 'bold 58px "Inter", "Arial Black", sans-serif';
-                        ctx.fillText(usaSerial, 256, 68);
-
-                        // Bottom Centered State Slogan (x = 256, y = 110)
-                        const stateSlogans = {
-                            CA: 'dmv.ca.gov   •   THE GOLDEN STATE',
-                            NY: 'THE EMPIRE STATE',
-                            FL: 'SUNSHINE STATE',
-                            TX: 'THE LONE STAR STATE',
-                            NV: 'HOME MEANS NEVADA'
-                        };
-                        const sloganText = stateSlogans[regCode] || 'UNITED STATES';
-                        ctx.fillStyle = isNY ? '#1e3a8a' : '#1e293b';
-                        ctx.font = '800 13px "Inter", sans-serif';
-                        ctx.fillText(sloganText, 256, 110);
-                    } else if (country === 'UAE') {
-                        // Official RTA Dubai & Abu Dhabi Plate
-                        ctx.fillStyle = '#ffffff';
-                        ctx.fillRect(0, 0, 512, 128);
-
-                        // Left Emirate Section (x = 12..166)
-                        ctx.textAlign = 'center';
-                        ctx.textBaseline = 'middle';
-                        if (regCode === 'AUH') {
-                            // Classic Abu Dhabi red left band (x = 10..78)
-                            ctx.fillStyle = '#dc2626';
-                            ctx.fillRect(10, 10, 68, 108);
                             ctx.fillStyle = '#ffffff';
-                            ctx.font = '900 18px "Inter", "Arial Black", sans-serif';
-                            ctx.fillText('U.A.E', 44, 44);
-                            ctx.font = 'bold 18px sans-serif';
-                            ctx.fillText('أبوظبي', 44, 82);
-
-                            // Plate code on x = 80..166
-                            ctx.fillStyle = '#090d16';
-                            ctx.font = '900 32px "Inter", "Arial Black", sans-serif';
-                            ctx.fillText(letters, 123, 66);
-                        } else {
-                            // Dubai (DXB) and default RTA layout
-                            ctx.fillStyle = '#090d16';
-                            ctx.font = '900 24px "Inter", "Arial Black", sans-serif';
-                            ctx.fillText(regCode === 'SHJ' ? 'SHARJAH' : 'DUBAI', 88, 34);
-                            ctx.font = 'bold 24px sans-serif';
-                            ctx.fillText(regCode === 'SHJ' ? 'الشارقة' : 'دبي', 88, 64);
-                            ctx.font = '900 26px "Inter", "Arial Black", sans-serif';
-                            ctx.fillText(letters, 88, 98);
                         }
+                        ctx.fillRect(0, 0, 512, 128);
 
-                        // Sleek Black Outer Border
-                        ctx.strokeStyle = '#090d16';
-                        ctx.lineWidth = 8;
-                        ctx.strokeRect(6, 6, 500, 116);
-
-                        // Vertical Black Divider at x = 172
-                        ctx.strokeStyle = '#090d16';
-                        ctx.beginPath();
-                        ctx.moveTo(172, 8);
-                        ctx.lineTo(172, 120);
-                        ctx.lineWidth = 5;
-                        ctx.stroke();
-
-                        // Right Main Number Section (x = 176..500)
-                        ctx.fillStyle = '#090d16';
-                        ctx.font = 'bold 82px "Inter", "Arial Black", sans-serif';
                         ctx.textAlign = 'center';
                         ctx.textBaseline = 'middle';
-                        ctx.fillText(digits, 338, 68);
+
+                        if (regCode === 'AUH') {
+                            // Abu Dhabi (AUH): Red left band (x = 10..86, #dc2626) with white A.D / أبوظبي
+                            ctx.fillStyle = '#dc2626';
+                            ctx.fillRect(10, 10, 76, 108);
+                            ctx.fillStyle = '#ffffff';
+                            ctx.font = '900 20px "Inter", "Arial Black", sans-serif';
+                            ctx.fillText('A.D', 48, 42);
+                            ctx.font = 'bold 20px sans-serif';
+                            ctx.fillText('أبوظبي', 48, 84);
+
+                            // Code letter at x = 136, y = 66
+                            ctx.fillStyle = '#090d16';
+                            ctx.font = '900 48px "Inter", "Arial Black", sans-serif';
+                            ctx.fillText(uaeCode, 136, 66);
+
+                            // Sleek Black Outer Border
+                            ctx.strokeStyle = '#090d16';
+                            ctx.lineWidth = 8;
+                            ctx.strokeRect(6, 6, 500, 116);
+
+                            // Vertical Black Divider at x = 184
+                            ctx.beginPath();
+                            ctx.moveTo(184, 8);
+                            ctx.lineTo(184, 120);
+                            ctx.lineWidth = 5;
+                            ctx.stroke();
+
+                            // Huge embossed uaeDigits at x = 344, y = 68
+                            ctx.fillStyle = '#090d16';
+                            ctx.font = '900 86px "Inter", "Arial Black", sans-serif';
+                            ctx.fillText(uaeDigits, 344, 68);
+                        } else {
+                            // Dubai (DXB) and other Emirates (SHJ, AJM, RAK) RTA layout
+                            const emirateTitle = regCode === 'SHJ' ? 'SHARJAH' : (regCode === 'AJM' ? 'AJMAN' : (regCode === 'RAK' ? 'R.A.K' : 'DUBAI'));
+                            const emirateArabic = regCode === 'SHJ' ? 'الشارقة' : (regCode === 'AJM' ? 'عجمان' : (regCode === 'RAK' ? 'رأس الخيمة' : 'دبي'));
+
+                            // Left compartment (x = 10..188): Top-left DUBAI & Arabic دبي, and RTA Code Letter on x = 148, y = 66
+                            ctx.fillStyle = '#090d16';
+                            ctx.font = '900 22px "Inter", "Arial Black", sans-serif';
+                            ctx.fillText(emirateTitle, 64, 40);
+                            ctx.font = 'bold 26px sans-serif';
+                            ctx.fillText(emirateArabic, 64, 82);
+
+                            ctx.font = '900 54px "Inter", "Arial Black", sans-serif';
+                            ctx.fillText(uaeCode, 148, 66);
+
+                            // Sleek Black Outer Border
+                            ctx.strokeStyle = '#090d16';
+                            ctx.lineWidth = 8;
+                            ctx.strokeRect(6, 6, 500, 116);
+
+                            // Vertical Black Divider at x = 194
+                            ctx.beginPath();
+                            ctx.moveTo(194, 8);
+                            ctx.lineTo(194, 120);
+                            ctx.lineWidth = 5;
+                            ctx.stroke();
+
+                            // Right compartment (x = 198..500): Huge embossed RTA Digits at x = 348, y = 68
+                            ctx.fillStyle = '#090d16';
+                            ctx.font = '900 88px "Inter", "Arial Black", sans-serif';
+                            ctx.fillText(uaeDigits, 348, 68);
+                        }
                     } else if (country === 'KZ') {
-                        // Kazakhstan (СТ РК 986-2012) Authentic Plate
-                        ctx.fillStyle = '#f8fafc';
+                        // Kazakhstan (СТ РК 986-2012) Authentic Plate (512x128)
+                        if (typeof ctx.createLinearGradient === 'function') {
+                            const grad = ctx.createLinearGradient(0, 0, 0, 128);
+                            grad.addColorStop(0, '#f8fafc');
+                            grad.addColorStop(1, '#e2e8f0');
+                            ctx.fillStyle = grad;
+                        } else {
+                            ctx.fillStyle = '#f8fafc';
+                        }
                         ctx.fillRect(0, 0, 512, 128);
 
                         ctx.strokeStyle = '#090d16';
                         ctx.lineWidth = 8;
                         ctx.strokeRect(6, 6, 500, 116);
 
-                        // Left Strip (x = 14..74): Top Sky-blue Kazakhstan flag (x = 18, y = 20, w = 48, h = 28)
+                        // Left Strip (x = 18..70): Sky-blue (#00afca) Kazakhstan flag (w = 48, h = 28) + golden sun & eagle bar
                         const fx = 18, fy = 20, fw = 48, fh = 28;
-                        ctx.fillStyle = '#0ea5e9';
+                        ctx.fillStyle = '#00afca';
                         ctx.fillRect(fx, fy, fw, fh);
                         ctx.fillStyle = '#fbbf24';
                         if (typeof ctx.arc === 'function') {
@@ -855,23 +1030,22 @@
                         } else {
                             ctx.fillRect(fx + 18, fy + 6, 12, 12);
                         }
-                        // Golden steppe eagle silhouette bar below sun
                         ctx.fillRect(fx + 14, fy + fh - 6, 20, 3);
 
-                        // Bottom of Left Strip (x = 42, y = 86): Bold KZ
+                        // Bold KZ below flag at x = 42, y = 88 (NO vertical line after KZ)
                         ctx.fillStyle = '#090d16';
                         ctx.font = '800 28px "Inter", "Arial Black", sans-serif';
                         ctx.textAlign = 'center';
                         ctx.textBaseline = 'middle';
-                        ctx.fillText('KZ', 42, 86);
+                        ctx.fillText('KZ', 42, 88);
 
-                        // Center Main Section (x = 80..396): 3 digits FIRST, then 3 capital Latin letters
+                        // Center (x = 238, y = 66): Equal-height digits + letters (777 VIP)
                         const kzMain = `${digits} ${letters}`;
                         ctx.fillStyle = '#090d16';
-                        ctx.font = 'bold 64px "Inter", "Arial Black", sans-serif';
+                        ctx.font = '900 66px "Inter", "Arial Black", sans-serif';
                         ctx.fillText(kzMain, 238, 66);
 
-                        // Vertical Divider at x = 402
+                        // Vertical Black Divider at x = 402
                         ctx.strokeStyle = '#090d16';
                         ctx.beginPath();
                         ctx.moveTo(402, 8);
@@ -879,39 +1053,68 @@
                         ctx.lineWidth = 5;
                         ctx.stroke();
 
-                        // Right Region Box (x = 404..500): Large 2-digit region code only
+                        // Right Square (x = 452, y = 66): Large 2-digit region code
                         ctx.fillStyle = '#090d16';
-                        ctx.font = 'bold 58px "Inter", "Arial Black", sans-serif';
+                        ctx.font = '900 62px "Inter", "Arial Black", sans-serif';
                         ctx.fillText(regCode, 452, 66);
                     } else {
-                        // Russian (RUS) Default Plate
-                        ctx.fillStyle = '#f8fafc';
+                        // Russian (RUS) Authentic GOST R 50577-93 Plate (512x128)
+                        if (typeof ctx.createLinearGradient === 'function') {
+                            const grad = ctx.createLinearGradient(0, 0, 0, 128);
+                            grad.addColorStop(0, '#f8fafc');
+                            grad.addColorStop(1, '#e2e8f0');
+                            ctx.fillStyle = grad;
+                        } else {
+                            ctx.fillStyle = '#f8fafc';
+                        }
                         ctx.fillRect(0, 0, 512, 128);
 
                         ctx.strokeStyle = '#090d16';
                         ctx.lineWidth = 8;
                         ctx.strokeRect(6, 6, 500, 116);
 
+                        // 2 realistic bolt heads (x = 22, y = 64 and x = 368, y = 64)
+                        [22, 368].forEach(bx => {
+                            ctx.fillStyle = '#94a3b8';
+                            if (typeof ctx.arc === 'function') {
+                                ctx.beginPath();
+                                ctx.arc(bx, 64, 4.5, 0, Math.PI * 2);
+                                ctx.fill();
+                            } else {
+                                ctx.fillRect(bx - 4, 60, 8, 8);
+                            }
+                        });
+
+                        // Vertical Black Divider at x = 382
+                        ctx.strokeStyle = '#090d16';
                         ctx.beginPath();
-                        ctx.moveTo(384, 8);
-                        ctx.lineTo(384, 120);
+                        ctx.moveTo(382, 8);
+                        ctx.lineTo(382, 120);
                         ctx.lineWidth = 5;
                         ctx.stroke();
 
+                        // Authentic GOST R 50577-93 Mixed-Size Baseline Typography
+                        const l1 = comp.l1 || (letters[0] || 'А');
+                        const l2l3 = comp.l2l3 || (letters.slice(1, 3) || 'АА');
                         ctx.fillStyle = '#090d16';
-                        const fontSize = mainText.length > 9 ? 56 : 68;
-                        ctx.font = `bold ${fontSize}px "Inter", "Arial Black", sans-serif`;
                         ctx.textAlign = 'center';
                         ctx.textBaseline = 'middle';
-                        ctx.fillText(mainText, 196, 68);
+                        ctx.font = 'bold 52px "Inter", "Arial Black", sans-serif';
+                        ctx.fillText(l1, 58, 74);
+                        ctx.font = '900 76px "Inter", "Arial Black", sans-serif';
+                        ctx.fillText(digits, 186, 68);
+                        ctx.font = 'bold 52px "Inter", "Arial Black", sans-serif';
+                        ctx.fillText(l2l3, 316, 74);
 
-                        const regFontSize = regCode.length > 2 ? 40 : 48;
-                        ctx.font = `bold ${regFontSize}px "Inter", "Arial Black", sans-serif`;
-                        ctx.fillText(regCode, 448, 46);
+                        // Right Region Block: large region digits (777) at x = 446, y = 44, bold RUS at x = 422, y = 98
+                        const regFontSize = regCode.length > 2 ? 42 : 48;
+                        ctx.font = `900 ${regFontSize}px "Inter", "Arial Black", sans-serif`;
+                        ctx.fillText(regCode, 446, 44);
 
                         ctx.font = '800 22px "Inter", sans-serif';
-                        ctx.fillText('RUS', 426, 98);
+                        ctx.fillText('RUS', 422, 98);
 
+                        // Crisp 3-stripe Russian flag (white / #2563eb / #dc2626 with thin #090d16 border) at x = 456, y = 86
                         const fx = 456, fy = 86, fw = 38, fh = 22;
                         ctx.fillStyle = '#ffffff';
                         ctx.fillRect(fx, fy, fw, 7.2);
@@ -919,6 +1122,9 @@
                         ctx.fillRect(fx, fy + 7.2, fw, 7.2);
                         ctx.fillStyle = '#dc2626';
                         ctx.fillRect(fx, fy + 14.4, fw, 7.6);
+                        ctx.strokeStyle = '#090d16';
+                        ctx.lineWidth = 1.5;
+                        ctx.strokeRect(fx, fy, fw, fh);
                     }
 
                     const tex = new THREE.CanvasTexture(canvas);
@@ -962,7 +1168,7 @@
         group.add(frame);
 
         group.userData.plateText = text;
-        group.userData.plateCountry = comp.country || 'RUS';
+        group.userData.plateCountry = country;
         return group;
     }
 
