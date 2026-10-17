@@ -50,8 +50,8 @@ function setupTestContext() {
         head: { appendChild: () => {} }
     };
     global.Image = function() { return makeMockElement(); };
-    global.navigator = { userAgent: 'NodeTest' };
-    global.requestAnimationFrame = (cb) => setTimeout(cb, 16);
+    Object.defineProperty(global, 'navigator', { value: { userAgent: 'NodeTest' }, writable: true, configurable: true });
+    global.requestAnimationFrame = (cb) => { const t = setTimeout(cb, 16); if (t && t.unref) t.unref(); return t; };
     global.cancelAnimationFrame = (id) => clearTimeout(id);
 
     const THREE = require('../js/vendor/three.min.js');
@@ -125,7 +125,7 @@ test('Car3DShowroom: standard viewpoints (front, rear, side, top, isometric) con
     assert.strictEqual(showroom.currentPreset, 'top');
     assert.strictEqual(showroom.cameraAngleY, 0);
     assert.ok(showroom.cameraAngleX > 1.4, 'Top view should have high angle X');
-    assert.strictEqual(showroom.cameraDistance, 4.8);
+    assert.strictEqual(showroom.cameraDistance, 5.8);
 
     // 5. Isometric (3/4) beauty preset
     showroom.setViewPreset('isometric', true);

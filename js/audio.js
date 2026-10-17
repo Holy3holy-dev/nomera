@@ -60,7 +60,7 @@
             }
         }
 
-        // 1. Realistic N2O Solenoid Purge + 11-Blade Twin-Scroll Turbo Spool + Jet Combustion Roar (0.85s PCM)
+        // 1. Warm Cinematic Pressurized Air Whoosh + Deep Velvety Sub-Bass Turbine Thrust (0.85s PCM)
         function getNitroRealisticBuffer() {
             if (!hasSampleSupport()) return null;
             const sr = context.sampleRate || 44100;
@@ -80,11 +80,12 @@
                     return ((seed >>> 0) / 4294967296) * 2 - 1;
                 };
 
-                // Resonator filter states for cryogenic N2O purge spray & intake rush
-                let bp1Low = 0, bp1Band = 0;
-                let bp2Low = 0, bp2Band = 0;
-                let pink0 = 0, pink1 = 0, pink2 = 0;
-                let turboPhase = 0, combPhase = 0, subPhase = 0;
+                // Warm brown/pink noise & cascaded low-pass resonator states (zero high-pitched whistle)
+                let pink0 = 0, pink1 = 0, pink2 = 0, brown = 0;
+                let lp1 = 0, lp2 = 0;
+                let airLp = 0, airBand = 0;
+                let finalLp1 = 0, finalLp2 = 0;
+                let bassPhase1 = 0, bassPhase2 = 0, subPhase = 0;
 
                 for (let i = 0; i < len; i++) {
                     const t = i / sr;
@@ -93,68 +94,65 @@
                     pink1 = 0.99332 * pink1 + white * 0.0750759;
                     pink2 = 0.96900 * pink2 + white * 0.1538520;
                     const pink = (pink0 + pink1 + pink2 + white * 0.5362) * 0.25;
+                    brown = (brown + 0.045 * white) * 0.965;
+                    const warmNoise = pink * 0.65 + brown * 0.35;
 
-                    // A. 0.00s - 0.16s: N2O Solenoid Valve Crack + Cryogenic Gas Expansion Hiss ("TSSSHHH-CHHH!")
-                    let solenoidClick = 0;
-                    if (t < 0.012) {
-                        const clickEnv = Math.exp(-t * 420);
-                        solenoidClick = (
-                            Math.sin(2 * Math.PI * 2450 * t) * 0.55 +
-                            Math.sin(2 * Math.PI * 5100 * t) * 0.35 +
-                            white * 0.45
-                        ) * clickEnv;
-                    }
+                    // Smooth 45ms cosine fade-in and 150ms cosine fade-out (never any click or pop)
+                    const attackEnv = t < 0.045
+                        ? 0.5 * (1 - Math.cos(Math.PI * (t / 0.045)))
+                        : 1.0;
+                    const releaseEnv = t > duration - 0.15
+                        ? 0.5 * (1 + Math.cos(Math.PI * ((t - (duration - 0.15)) / 0.15)))
+                        : 1.0;
+                    const masterEnv = attackEnv * releaseEnv;
 
-                    // Dual formant band-pass filters sweeping 4200Hz -> 1400Hz for pressurized liquid N2O purge
-                    const purgeCut1 = 1400 + 2800 * Math.exp(-t * 9.5);
-                    const purgeCut2 = 2200 + 2400 * Math.exp(-t * 7.2);
-                    const f1 = Math.min(0.75, 2 * Math.sin(Math.PI * Math.min(sr * 0.42, purgeCut1) / sr));
-                    const f2 = Math.min(0.75, 2 * Math.sin(Math.PI * Math.min(sr * 0.42, purgeCut2) / sr));
-                    bp1Low += f1 * bp1Band;
-                    const hp1 = white - bp1Low - 0.22 * bp1Band;
-                    bp1Band += f1 * hp1;
+                    // A. Soft, warm pneumatic pressurized air whoosh ("ФШШШ-УУУХ!")
+                    // Gently sweeps 380 Hz -> 620 Hz -> 420 Hz, rolling off everything above 750 Hz
+                    const swell = Math.sin(Math.PI * Math.min(1, Math.pow(t / duration, 0.65)));
+                    const whooshCutoff = 380 + 240 * swell;
+                    const fAir = Math.min(0.45, 2 * Math.sin(Math.PI * whooshCutoff / sr));
+                    airLp += fAir * airBand;
+                    const airHp = warmNoise - airLp - 0.85 * airBand;
+                    airBand += fAir * airHp;
 
-                    bp2Low += f2 * bp2Band;
-                    const hp2 = pink - bp2Low - 0.28 * bp2Band;
-                    bp2Band += f2 * hp2;
+                    // Cascaded 1-pole low-pass filters around 520 Hz for velvety aerodynamic rush
+                    const alphaLp = Math.min(0.35, (2 * Math.PI * (420 + 180 * swell)) / sr);
+                    lp1 += alphaLp * (warmNoise - lp1);
+                    lp2 += alphaLp * (lp1 - lp2);
 
-                    const purgeEnv = t < 0.003
-                        ? (t / 0.003)
-                        : (t < 0.18 ? Math.exp(-(t - 0.003) * 14.5) : Math.exp(-(t - 0.003) * 18.0));
-                    const purgeFlutter = 0.78 + 0.22 * Math.sin(2 * Math.PI * 44 * t) * Math.cos(2 * Math.PI * 112 * t);
-                    const purgeSample = (bp1Band * 0.55 + bp2Band * 0.45) * purgeEnv * purgeFlutter * 0.85;
+                    const whooshEnv = (0.72 + 0.28 * Math.exp(-Math.max(0, t - 0.05) * 3.2)) * masterEnv;
+                    const airWhoosh = (lp2 * 0.68 + airLp * 0.42 + airBand * 0.28) * whooshEnv * 0.95;
 
-                    // B. 0.05s - 0.85s: 11-Blade Garrett/BorgWarner Turbocharger Impeller Whistle
-                    const boostProgress = 1 - Math.exp(-Math.max(0, t - 0.03) * 4.8);
-                    const turboFreq = 720 + 2630 * boostProgress;
-                    turboPhase += (2 * Math.PI * turboFreq) / sr;
-                    const turboEnv = t < 0.03
-                        ? (t / 0.03) * 0.3
-                        : Math.min(1, (t - 0.02) / 0.09) * (t > 0.72 ? Math.max(0, (duration - t) / 0.13) : 1);
-                    const turbineWhistle = (
-                        Math.sin(turboPhase) * 0.62 +
-                        Math.sin(turboPhase * 2 + 0.3) * 0.26 +
-                        Math.sin(turboPhase * 3 + 0.7) * 0.12
-                    ) * (1 + 0.14 * pink) * turboEnv * 0.24;
+                    // B. Deep, velvety sub-bass turbine & exhaust thrust (48 Hz -> 92 Hz warm swell)
+                    const thrustProgress = 1 - Math.exp(-t * 3.6);
+                    const fundFreq = 55 + 33 * thrustProgress;
+                    const secondHarmFreq = fundFreq * 2.0;
+                    const subOctFreq = fundFreq * 0.5 + 20.5; // ~48 Hz -> 64.5 Hz deep chest bass
 
-                    // C. 0.04s - 0.85s: Rich-Fuel N2O Cylinder Detonation & Jet Exhaust Roar
-                    const combFreq = 52 + 93 * boostProgress;
-                    combPhase += (2 * Math.PI * combFreq) / sr;
-                    subPhase += (2 * Math.PI * (combFreq * 0.5)) / sr;
-                    const detonationPunch = t < 0.14
-                        ? Math.sin(2 * Math.PI * (112 - 64 * (t / 0.14)) * t) * Math.exp(-t * 19) * 0.55
-                        : 0;
-                    const rawExhaust =
-                        Math.sin(combPhase) * 0.65 +
-                        Math.sin(subPhase) * 0.48 +
-                        Math.sin(combPhase * 1.5 + 0.4) * 0.34 +
-                        Math.sin(combPhase * 2.0 + 1.1) * 0.25 +
-                        pink * 0.95;
-                    const roastEnv = Math.min(1, t / 0.025) * (t > 0.73 ? Math.max(0, (duration - t) / 0.12) : 1);
-                    const jetRoar = Math.tanh(2.4 * rawExhaust) * roastEnv * 0.42;
+                    bassPhase1 += (2 * Math.PI * fundFreq) / sr;
+                    bassPhase2 += (2 * Math.PI * secondHarmFreq) / sr;
+                    subPhase += (2 * Math.PI * subOctFreq) / sr;
 
-                    const sample = solenoidClick + purgeSample + turbineWhistle + detonationPunch + jetRoar;
-                    data[i] = Math.max(-0.96, Math.min(0.96, sample));
+                    // Soft initial low-end cushion thump (92 Hz -> 52 Hz) with smooth 25ms attack
+                    const cushionEnv = (t < 0.025 ? 0.5 * (1 - Math.cos(Math.PI * (t / 0.025))) : 1) * Math.exp(-t * 7.5);
+                    const bassCushion = Math.sin(2 * Math.PI * (92 - 40 * Math.min(1, t / 0.22)) * t) * cushionEnv * 0.28;
+
+                    const rawBass =
+                        Math.sin(subPhase) * 0.44 +
+                        Math.sin(bassPhase1) * 0.48 +
+                        Math.sin(bassPhase2 + 0.35) * 0.18 +
+                        bassCushion;
+
+                    // Gentle, warm soft-cosine saturation (zero harsh clipping)
+                    const warmBass = (rawBass / (1 + 0.42 * Math.abs(rawBass))) * masterEnv * 0.58;
+
+                    // Final warm low-pass smoothing at 680 Hz so zero high-frequency harshness can escape
+                    const rawMix = airWhoosh + warmBass;
+                    const finalAlpha = Math.min(0.45, (2 * Math.PI * 680) / sr);
+                    finalLp1 += finalAlpha * (rawMix - finalLp1);
+                    finalLp2 += finalAlpha * (finalLp1 - finalLp2);
+
+                    data[i] = Math.max(-0.92, Math.min(0.92, finalLp2));
                 }
 
                 cachedSamples[key] = buffer;
@@ -164,7 +162,7 @@
             }
         }
 
-        // 1b. Realistic JDM HKS/Greddy Compressor Surge Blow-Off Flutter ("PSSSHHH-tu-tu-tu-tu!", 0.42s PCM)
+        // 1b. Soft, Warm Pneumatic Air Release Sigh ("ПШШШ...", 0.42s PCM)
         function getBlowOffFlutterBuffer() {
             if (!hasSampleSupport()) return null;
             const sr = context.sampleRate || 44100;
@@ -184,32 +182,47 @@
                     return ((seed >>> 0) / 4294967296) * 2 - 1;
                 };
 
-                let bpLow = 0, bpBand = 0;
-                let whistlePhase = 0;
+                let pink0 = 0, pink1 = 0, pink2 = 0, brown = 0;
+                let lpLow = 0, lpBand = 0;
+                let postLp1 = 0, postLp2 = 0;
+                let bodyPhase = 0;
 
                 for (let i = 0; i < len; i++) {
                     const t = i / sr;
                     const white = rand();
+                    pink0 = 0.99886 * pink0 + white * 0.0555179;
+                    pink1 = 0.99332 * pink1 + white * 0.0750759;
+                    pink2 = 0.96900 * pink2 + white * 0.1538520;
+                    const pink = (pink0 + pink1 + pink2 + white * 0.5362) * 0.25;
+                    brown = (brown + 0.05 * white) * 0.96;
+                    const warmAir = pink * 0.6 + brown * 0.4;
 
-                    // 14Hz -> 18Hz compressor surge flutter envelope ("PSSSHHH-tu-tu-tu-tu!")
-                    const flutterFreq = 13.5 + 5.5 * (t / duration);
-                    const flutterWave = 0.55 + 0.45 * Math.sin(2 * Math.PI * flutterFreq * t + 0.8);
-                    const decay = Math.exp(-t * 6.8) * (t < 0.004 ? t / 0.004 : 1) * (t > 0.36 ? (duration - t) / 0.06 : 1);
+                    // Smooth 22ms cosine fade-in & gentle pneumatic pressure release envelope
+                    const attack = t < 0.022 ? 0.5 * (1 - Math.cos(Math.PI * (t / 0.022))) : 1.0;
+                    const tail = t > duration - 0.08
+                        ? 0.5 * (1 + Math.cos(Math.PI * ((t - (duration - 0.08)) / 0.08)))
+                        : 1.0;
+                    const gentlePulse = 0.86 + 0.14 * Math.sin(2 * Math.PI * 11.5 * t);
+                    const env = attack * tail * Math.exp(-t * 3.8) * gentlePulse;
 
-                    // Sweeping resonant blow-off air vent
-                    const cutoff = (1150 + 2500 * Math.exp(-t * 8.5)) * (0.82 + 0.18 * flutterWave);
-                    const f = Math.min(0.75, 2 * Math.sin(Math.PI * Math.min(sr * 0.42, cutoff) / sr));
-                    bpLow += f * bpBand;
-                    const hp = white - bpLow - 0.18 * bpBand;
-                    bpBand += f * hp;
+                    // Soft low-passed pneumatic air vent sweeping 320 Hz -> 140 Hz (zero shrill whistle)
+                    const cutoff = 140 + 180 * Math.exp(-t * 5.2);
+                    const f = Math.min(0.38, 2 * Math.sin(Math.PI * cutoff / sr));
+                    lpLow += f * lpBand;
+                    const hp = warmAir - lpLow - 0.9 * lpBand;
+                    lpBand += f * hp;
 
-                    // Metallic SSQV fin whistle stalling with flutter
-                    const whistleFreq = (680 + 1850 * Math.exp(-t * 7.2)) * (0.9 + 0.12 * flutterWave);
-                    whistlePhase += (2 * Math.PI * whistleFreq) / sr;
-                    const whistle = (Math.sin(whistlePhase) * 0.65 + Math.sin(whistlePhase * 1.62) * 0.35) * 0.28;
+                    // Warm low-frequency pneumatic valve cushion (92 Hz -> 48 Hz soft sine)
+                    const bodyFreq = 48 + 44 * Math.exp(-t * 6.0);
+                    bodyPhase += (2 * Math.PI * bodyFreq) / sr;
+                    const warmBody = Math.sin(bodyPhase) * 0.34;
 
-                    const sample = (bpBand * 0.72 + whistle) * flutterWave * decay;
-                    data[i] = Math.max(-0.95, Math.min(0.95, sample));
+                    const raw = (lpLow * 1.35 + lpBand * 0.45 + warmBody) * env;
+                    const postAlpha = Math.min(0.4, (2 * Math.PI * 480) / sr);
+                    postLp1 += postAlpha * (raw - postLp1);
+                    postLp2 += postAlpha * (postLp1 - postLp2);
+
+                    data[i] = Math.max(-0.88, Math.min(0.88, postLp2 * 1.15));
                 }
 
                 cachedSamples[key] = buffer;
@@ -514,20 +527,20 @@
                 if (playBlowOff && unlocked && context.state !== 'suspended' && level() > 0) {
                     const useSample = hasSampleSupport();
                     if (useSample) {
-                        playSampleBuffer(getBlowOffFlutterBuffer(), { gain: 0.42 });
+                        playSampleBuffer(getBlowOffFlutterBuffer(), { gain: 0.36 });
                     }
                     const oscScale = useSample ? 0.35 : 1.0;
-                    // Clean, crisp blow-off gas release upon key release without any pops or clicks
+                    // Soft, warm low-passed pneumatic air release ("ПШШШ...") without shrill high frequencies
                     noiseBurst({
-                        duration: 0.22,
-                        gain: 0.12 * oscScale,
-                        filterType: 'bandpass',
-                        filterFreq: 3200,
-                        filterEndFreq: 1400,
-                        filterQ: 2.2
+                        duration: 0.24,
+                        gain: 0.045 * oscScale,
+                        filterType: 'lowpass',
+                        filterFreq: 320,
+                        filterEndFreq: 140,
+                        filterQ: 0.7
                     });
-                    tone(2100, 0.11, 0.08 * oscScale, 0, 'triangle', 720);
-                    tone(1420, 0.07, 0.05 * oscScale, 0.02, 'sine', 480);
+                    tone(2100, 0.11, 0.0002, 0, 'sine', 720);
+                    tone(1420, 0.07, 0.0002, 0.02, 'sine', 480);
                 }
             }
         }
@@ -632,7 +645,7 @@
             }
         }
 
-        function tone(freq, duration, gain = 0.12, delay = 0, type = 'sine', endFreq = freq) {
+        function tone(freq, duration, gain = 0.12, delay = 0, type = 'sine', endFreq = freq, filterFreq = null) {
             if (!unlocked || !context || context.state === 'suspended' || level() <= 0 || voices.size >= 64) return null;
             duration = Math.max(0.01, Number.isFinite(duration) ? duration : 0.1);
             freq = Math.max(20, Number.isFinite(freq) ? freq : 440);
@@ -650,23 +663,34 @@
                     osc.frequency.setValueAtTime(endFreq, start + duration);
                 }
                 envelope.gain.setValueAtTime(0.0001, start);
+                const attackTime = Math.min(0.018, duration / 3);
                 if (envelope.gain.exponentialRampToValueAtTime) {
-                    envelope.gain.exponentialRampToValueAtTime(Math.max(0.0001, gain), start + Math.min(0.008, duration / 3));
+                    envelope.gain.exponentialRampToValueAtTime(Math.max(0.0001, gain), start + attackTime);
                     envelope.gain.exponentialRampToValueAtTime(0.0001, start + duration);
                 } else if (envelope.gain.setValueAtTime) {
-                    envelope.gain.setValueAtTime(gain, start + Math.min(0.008, duration / 3));
+                    envelope.gain.setValueAtTime(gain, start + attackTime);
                     envelope.gain.setValueAtTime(0.0001, start + duration);
                 }
-                osc.connect(envelope);
+                let filter = null;
+                if (Number.isFinite(filterFreq) && filterFreq > 0 && typeof context.createBiquadFilter === 'function') {
+                    filter = context.createBiquadFilter();
+                    filter.type = 'lowpass';
+                    filter.frequency.setValueAtTime(filterFreq, start);
+                    if (filter.Q) filter.Q.setValueAtTime(0.7, start);
+                    osc.connect(filter);
+                    filter.connect(envelope);
+                } else {
+                    osc.connect(envelope);
+                }
                 envelope.connect(master);
                 voices.add(osc);
                 osc.onended = () => {
                     voices.delete(osc);
-                    try { osc.disconnect(); envelope.disconnect(); } catch (_) {}
+                    try { osc.disconnect(); if (filter) filter.disconnect(); envelope.disconnect(); } catch (_) {}
                 };
                 osc.start(start);
                 osc.stop(start + duration + 0.02);
-                return { osc, envelope };
+                return { osc, envelope, filter };
             } catch (_) {
                 /* Audio must never interrupt game logic. */
                 return null;
@@ -952,31 +976,31 @@
                 param(engine.nodes[0].frequency, revs, context.currentTime);
                 param(engine.nodes[1].frequency, revs * mult2, context.currentTime);
 
-                // Dynamic tone filter (avoids harsh high-frequency buzzing while keeping authentic bite)
+                // Dynamic tone filter (avoids harsh high-frequency buzzing while keeping authentic warm body)
                 const filterFreq = nitro
-                    ? Math.min(2200, filterBase + velocity * 2.6 + 380)
-                    : (gas ? Math.min(1650, filterBase + velocity * 1.8 + 220) : Math.min(920, filterBase + velocity * 0.8));
+                    ? Math.min(1150, filterBase + velocity * 1.4 + 140)
+                    : (gas ? Math.min(1450, filterBase + velocity * 1.6 + 180) : Math.min(880, filterBase + velocity * 0.8));
                 param(engine.filter.frequency, filterFreq, context.currentTime);
                 if (engine.filter.Q) {
-                    param(engine.filter.Q, carClass === 'supercar' || carClass === 'sport' ? 1.8 : 0.9, context.currentTime);
+                    param(engine.filter.Q, carClass === 'supercar' || carClass === 'sport' ? 1.4 : 0.85, context.currentTime);
                 }
 
                 // Throaty intake roar: peaking resonance opens with throttle
                 if (engine.intakeFilter) {
-                    const intakeCenter = carClass === 'v8' ? 240 : (carClass === 'sport' ? 420 : 320);
-                    param(engine.intakeFilter.frequency, intakeCenter + (gas ? 35 : 0), context.currentTime);
+                    const intakeCenter = carClass === 'v8' ? 220 : (carClass === 'sport' ? 360 : 280);
+                    param(engine.intakeFilter.frequency, intakeCenter + (gas ? 25 : 0), context.currentTime);
                     if (engine.intakeFilter.gain) {
-                        param(engine.intakeFilter.gain, gas ? (nitro ? 5.5 : 4.0) : 0, context.currentTime);
+                        param(engine.intakeFilter.gain, gas ? (nitro ? 3.2 : 3.5) : 0, context.currentTime);
                     }
                 }
 
-                // Sub-bass body rumble
+                // Sub-bass body rumble (deepens warmly during nitro)
                 if (engine.rumbleFilter && engine.rumbleFilter.gain) {
-                    param(engine.rumbleFilter.gain, gas ? (carClass === 'v8' ? 5.0 : 3.5) : 1.8, context.currentTime);
+                    param(engine.rumbleFilter.gain, nitro ? 6.0 : (gas ? (carClass === 'v8' ? 5.0 : 3.5) : 1.8), context.currentTime);
                 }
 
                 // Master engine gain with smooth volume scaling
-                const targetGain = nitro ? 0.068 : (gas ? 0.048 : 0.026);
+                const targetGain = nitro ? 0.058 : (gas ? 0.048 : 0.026);
                 param(engine.gain.gain, targetGain, context.currentTime);
             } catch (_) { stopEngine(); }
         }
@@ -1036,69 +1060,67 @@
                 if (now - lastNitroTime < 0.22) return;
                 lastNitroTime = now;
 
-                // Play high-resolution PCM sample buffer of real N2O solenoid purge + 11-blade turbo spool + jet roar
+                // Play warm PCM sample buffer of pressurized air whoosh + deep velvety sub-bass thrust
                 const useSample = hasSampleSupport();
                 if (useSample) {
-                    playSampleBuffer(getNitroRealisticBuffer(), { gain: 0.52, registerNitro: true });
+                    playSampleBuffer(getNitroRealisticBuffer(), { gain: 0.48, registerNitro: true });
                 }
                 const oscScale = useSample ? 0.28 : 1.0;
 
-                // 1. INSTANT HIGH-PRESSURE PNEUMATIC PURGE BURST ("TSSSHHH-POW!") ON TRIGGER
-                // High-pressure cryogenic solenoid release spray (sharp decompression hiss)
+                // 1. SOFT WARM PNEUMATIC PRESSURIZED AIR WHOOSH ("ФШШШ-УУУХ!") ON TRIGGER
+                // Warm low-passed pneumatic air release rush (rolls off everything above 380 Hz)
                 const purgeSpray = noiseBurst({
-                    duration: 0.42,
-                    gain: 0.22 * oscScale,
-                    filterType: 'bandpass',
-                    filterFreq: 3800,
-                    filterEndFreq: 1900,
-                    filterQ: 2.2
+                    duration: 0.48,
+                    gain: 0.08 * oscScale,
+                    filterType: 'lowpass',
+                    filterFreq: 380,
+                    filterEndFreq: 240,
+                    filterQ: 0.7
                 });
                 registerNitroVoice(purgeSpray);
 
-                // Solenoid valve snap transient (metallic click)
-                const purgeSnap = tone(2400, 0.045, 0.12 * oscScale, 0, 'triangle', 820);
+                // Muted high-frequency valve node (0.0001 gain keeps ear completely free of clicks/whine)
+                const purgeSnap = tone(2400, 0.045, 0.0001, 0, 'sine', 820, 280);
                 registerNitroVoice(purgeSnap);
 
-                // Visceral kinetic detonation punch ("-POW!"): sub-bass cylinder pressure punch
-                const subPunch = tone(108, 0.32, 0.32 * oscScale, 0, 'triangle', 44);
+                // Warm low-end pressure cushion (108 Hz -> 44 Hz deep sub-bass sine)
+                const subPunch = tone(108, 0.36, 0.18 * oscScale, 0, 'sine', 44, 240);
                 registerNitroVoice(subPunch);
 
-                // Mid-frequency cylinder combustion slam
-                const midPunch = tone(220, 0.16, 0.22 * oscScale, 0, 'sawtooth', 68);
+                // Warm low-mid air cushion (220 Hz -> 68 Hz lowpass-filtered triangle)
+                const midPunch = tone(220, 0.22, 0.09 * oscScale, 0, 'triangle', 68, 260);
                 registerNitroVoice(midPunch);
 
-                // 2. TWIN-TURBO COMPRESSOR SPOOL/WHINE THAT RISES RAPIDLY IN PITCH
-                // Primary compressor impeller spool (screaming turbine whine)
-                const turboSpool1 = tone(680, 0.62, 0.10 * oscScale, 0.015, 'sine', 2100);
+                // 2. WARM PNEUMATIC INTAKE AIRFLOW SWELL (high-frequency whistle nodes muted to 0.0001)
+                const turboSpool1 = tone(680, 0.62, 0.0001, 0.015, 'sine', 2100, 280);
                 registerNitroVoice(turboSpool1);
 
-                // Secondary twin-turbo harmonic overtone whine
-                const turboSpool2 = tone(1020, 0.58, 0.07 * oscScale, 0.025, 'triangle', 2850);
+                const turboSpool2 = tone(1020, 0.58, 0.0001, 0.025, 'sine', 2850, 280);
                 registerNitroVoice(turboSpool2);
 
-                // Aerodynamic compressor intake rush
+                // Smooth, low-passed aerodynamic air rush (280 Hz -> 460 Hz warm lowpass)
                 const intakeRush = noiseBurst({
-                    duration: 0.55,
-                    gain: 0.14 * oscScale,
+                    duration: 0.62,
+                    gain: 0.09 * oscScale,
                     delay: 0.02,
-                    filterType: 'bandpass',
-                    filterFreq: 1050,
-                    filterEndFreq: 2600,
-                    filterQ: 1.8
+                    filterType: 'lowpass',
+                    filterFreq: 280,
+                    filterEndFreq: 460,
+                    filterQ: 0.7
                 });
                 registerNitroVoice(intakeRush);
 
-                // 3. DEEP RESONANT COMBUSTION AFTERBURNER ROAR WITH RICH BASS HARMONIC SATURATION WHILE HELD
-                // Sub-bass afterburner combustion fundamental
-                const afterburner = tone(54, 0.72, 0.26 * oscScale, 0.01, 'triangle', 72);
+                // 3. DEEP VELVETY SUB-BASS TURBINE & EXHAUST THRUST (54 Hz -> 224 Hz warm lowpass-filtered sine/triangle)
+                // Deep sub-bass thrust fundamental (54 Hz -> 72 Hz pure warm sine)
+                const afterburner = tone(54, 0.74, 0.18 * oscScale, 0.01, 'sine', 72, 220);
                 registerNitroVoice(afterburner);
 
-                // Saturated exhaust manifold growl
-                const exhaustGrowl = tone(118, 0.68, 0.20 * oscScale, 0.015, 'sawtooth', 156);
+                // Warm bass body harmonic (118 Hz -> 156 Hz triangle routed through 280 Hz lowpass)
+                const exhaustGrowl = tone(118, 0.68, 0.11 * oscScale, 0.015, 'triangle', 156, 280);
                 registerNitroVoice(exhaustGrowl);
 
-                // Throaty air expansion roar
-                const airExpansion = tone(168, 0.64, 0.15 * oscScale, 0.02, 'triangle', 224);
+                // Soft upper-bass air resonance (168 Hz -> 224 Hz sine routed through 280 Hz lowpass)
+                const airExpansion = tone(168, 0.64, 0.08 * oscScale, 0.02, 'sine', 224, 280);
                 registerNitroVoice(airExpansion);
             },
             stopNitro(smooth = 0.06) { stopNitro(smooth, true); },
@@ -1261,19 +1283,19 @@
                 tone(220, 0.26, 0.16, 0, 'triangle', 75);
             },
             blowOff() {
-                // Turbo blow-off valve flutter (pssshh-tsu-tsu-tsu)
+                // Soft, warm pneumatic air release ("ПШШШ...")
                 const useSample = hasSampleSupport();
                 if (useSample) {
-                    playSampleBuffer(getBlowOffFlutterBuffer(), { gain: 0.44 });
+                    playSampleBuffer(getBlowOffFlutterBuffer(), { gain: 0.38 });
                 }
                 const oscScale = useSample ? 0.32 : 1.0;
-                noiseBurst({ duration: 0.22, gain: 0.11 * oscScale, filterType: 'bandpass', filterFreq: 2600, filterEndFreq: 1100, filterQ: 2.0 });
-                tone(2400, 0.22, 0.10 * oscScale, 0, 'triangle', 750);
-                tone(3200, 0.16, 0.06 * oscScale, 0.005, 'sine', 1100);
-                tone(1450, 0.075, 0.08 * oscScale, 0.045, 'sawtooth', 460);
-                tone(1250, 0.065, 0.06 * oscScale, 0.095, 'triangle', 400);
-                tone(1080, 0.055, 0.045 * oscScale, 0.145, 'triangle', 350);
-                tone(920, 0.045, 0.03 * oscScale, 0.195, 'triangle', 300);
+                noiseBurst({ duration: 0.24, gain: 0.05 * oscScale, filterType: 'lowpass', filterFreq: 320, filterEndFreq: 140, filterQ: 0.7 });
+                tone(2400, 0.22, 0.0002, 0, 'sine', 750);
+                tone(3200, 0.16, 0.0002, 0.005, 'sine', 1100);
+                tone(1450, 0.075, 0.0002, 0.045, 'sine', 460);
+                tone(1250, 0.065, 0.0002, 0.095, 'sine', 400);
+                tone(1080, 0.055, 0.0002, 0.145, 'sine', 350);
+                tone(920, 0.045, 0.0002, 0.195, 'sine', 300);
             },
             backfire() {
                 // Explosive unburnt fuel detonation in exhaust manifold ("popcorn" crackle)

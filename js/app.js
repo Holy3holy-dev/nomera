@@ -11523,7 +11523,8 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         // Перспективное смещение поворота дороги на высоте Y
         function getCurveX(y) {
             const factor = Math.max(0, Math.min(1, (600 - y) / 600));
-            return roadCurve * Math.pow(factor, 1.8);
+            const exp = raceCurrentMode === 'drift' ? 1.45 : 1.8;
+            return roadCurve * Math.pow(factor, exp);
         }
 
         // Система динамических биомов и атмосферы по дистанции / погоде
@@ -12994,15 +12995,22 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             raceLightningTimer = 4.5 + Math.random() * 4.0;
             raceLightningBolt = [];
             raceClippingZones = [];
-            clippingSpawnTimer = 0;
+            clippingSpawnTimer = raceCurrentMode === 'drift' ? 0.75 : 0;
             raceHighwayEvent = null;
             raceHighwayEventCooldown = 18 + Math.random() * 12;
             raceRoadOffset = 0;
             trafficSpawnTimer = 0;
             collectibleSpawnTimer = 0;
-            roadCurve = 0;
-            targetRoadCurve = 0;
-            curveTimer = 3.5;
+            if (raceCurrentMode === 'drift') {
+                const initDir = Math.random() < 0.5 ? 1 : -1;
+                targetRoadCurve = initDir * (120 + Math.random() * 70);
+                roadCurve = targetRoadCurve * 0.45;
+                curveTimer = 0.35 + Math.random() * 0.25;
+            } else {
+                roadCurve = 0;
+                targetRoadCurve = 0;
+                curveTimer = 3.5;
+            }
 
             document.getElementById('race-menu-container').classList.add('hidden');
             document.getElementById('race-play-container').classList.remove('hidden');
@@ -13084,12 +13092,10 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             curveTimer -= dt;
             if (curveTimer <= 0) {
                 if (raceCurrentMode === 'drift') {
-                    // Резкие повороты горного серпантина (Touge): частая сменяемость крутых шпилек
-                    curveTimer = 1.0 + Math.random() * 1.5;
-                    const r = Math.random();
-                    if (r < 0.10) {
-                        targetRoadCurve = 0; // короткий прямой прострел
-                    } else if (r < 0.55) {
+                    // Резкие повороты горного серпантина (Touge): непрерывные связки крутых шпилек и S-виражей без пустых прямых
+                    curveTimer = 0.40 + Math.random() * 0.35;
+                    const goRight = targetRoadCurve <= 0 ? (targetRoadCurve === 0 ? Math.random() < 0.5 : true) : (Math.random() < 0.12);
+                    if (goRight) {
                         targetRoadCurve = 120 + Math.random() * 70; // крутой вираж вправо (120..190)
                     } else {
                         targetRoadCurve = -(120 + Math.random() * 70); // крутой вираж влево (-120..-190)
@@ -13102,7 +13108,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     else targetRoadCurve = -(45 + Math.random() * 50);
                 }
             }
-            const curveTransitionRate = raceCurrentMode === 'drift' ? 4.5 : 1.5;
+            const curveTransitionRate = raceCurrentMode === 'drift' ? 6.0 : 1.5;
             roadCurve += (targetRoadCurve - roadCurve) * curveTransitionRate * dt;
 
             // Центробежная сила при прохождении поворота
@@ -13768,10 +13774,13 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             // ---------------------------------------------------------
             if (raceCurrentMode === 'drift') {
                 clippingSpawnTimer += dt;
-                if (clippingSpawnTimer > 2.8) {
+                if (clippingSpawnTimer > 1.15) {
                     clippingSpawnTimer = 0;
-                    const isRight = roadCurve > 10 || targetRoadCurve > 10;
-                    const apexX = isRight ? 320 : 80;
+                    const lastSide = raceClippingZones.length > 0 ? raceClippingZones[raceClippingZones.length - 1].side : null;
+                    const isRight = (targetRoadCurve > 10 || (targetRoadCurve === 0 && roadCurve > 10))
+                        ? (lastSide === 'right' && Math.random() < 0.7 ? false : true)
+                        : (lastSide === 'left' && Math.random() < 0.7 ? true : false);
+                    const apexX = isRight ? (285 + Math.round(Math.random() * 38)) : (77 + Math.round(Math.random() * 38));
                     raceClippingZones.push({
                         x: apexX,
                         y: -80,
@@ -13782,11 +13791,12 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 for (let i = raceClippingZones.length - 1; i >= 0; i--) {
                     const cz = raceClippingZones[i];
                     cz.y += (racePlayer.speed * 3.5) * dt;
-                    if (!cz.hit && Math.abs(cz.y - (racePlayer.y || 470)) < 42 && Math.abs(cz.x - racePlayer.x) < 55) {
+                    if (!cz.hit && Math.abs(cz.y - (racePlayer.y || 470)) < 46 && Math.abs(cz.x - racePlayer.x) < 60) {
                         cz.hit = true;
-                        if (racePlayer.isDrifting && Math.abs(racePlayer.yawAngle || 0) > 0.22) {
+                        if (racePlayer.isDrifting && Math.abs(racePlayer.yawAngle || 0) > 0.14) {
                             const pts = Math.round(1500 * (racePlayer.driftCombo || 1));
                             racePlayer.driftScore = (racePlayer.driftScore || 0) + pts;
+                            racePlayer.driftCurrentScore = (racePlayer.driftCurrentScore || 0) + pts;
                             racePlayer.driftCombo = Math.min(10, (racePlayer.driftCombo || 1) + 1);
                             racePlayer.driftComboTimer = 4.0;
                             showRacePopup(`🎯 АПЕКС ЗАНОСА! +${pts.toLocaleString('ru-RU')} PTS`, '#c084fc');
