@@ -278,9 +278,13 @@ test('5. Headlight & Taillight Beams: projected cones onto asphalt and optical b
     const engine = createMockEngine(THREE);
     const vfx = new RaceEffectsManager(engine);
 
-    // Verify projected headlight cones & ground patches
-    assert.equal(vfx.headlightCones.length, 2, 'Must create 2 forward volumetric angled headlight cones');
+    // Verify projected headlight flares, ground patches, and subtle SpotLights
+    assert.equal(vfx.headlightCones.length, 2, 'Must maintain backward compatibility alias for headlightCones');
+    assert.equal(vfx.headlightFlares.length, 2, 'Must create 2 clean bright lens flare points on headlight glass');
+    assert.ok(!vfx.headlightFlares.some(f => f.geometry && (f.geometry.type === 'CylinderGeometry' || f.geometry.type === 'ConeGeometry')), 'Must not use polygonal 3D wedge or umbrella meshes');
     assert.equal(vfx.headlightGroundPatches.length, 2, 'Must create 2 ground projected light patches on asphalt');
+    assert.equal(vfx.headlightSpots.length, 2, 'Must configure 2 subtle Three.js SpotLights angled forward down the road');
+    assert.ok(vfx.headlightSpots[0].isSpotLight, 'Headlight spots must be Three.js SpotLight instances');
     assert.equal(vfx.taillightFlares.length, 2, 'Must create 2 optical brake flares at taillights');
     assert.ok(vfx.brakeGroundDecal, 'Must create rear red brake ground illumination wash decal');
 

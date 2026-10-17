@@ -104,3 +104,47 @@ test('airBrake and sgu produce authentic procedural effects', () => {
     assert(context.created.length >= beforeCount + 6, 'sgu creates multi-harmonic VIP horn burst');
 });
 
+test('redesigned procedural nitro boost produces authentic harmonics and smooth cutoff', () => {
+    const context = fakeContext();
+    const sound = createAudio({ contextFactory: () => context });
+    sound.unlock();
+
+    // 1. Trigger nitro
+    sound.nitro();
+    // Verify 3 harmonic oscillators are created (combustion punch 74->52Hz, exhaust resonance 98->134Hz, turbo intake 152->218Hz)
+    assert.equal(context.created.length, 3, 'nitro should create 3 harmonic combustion and exhaust oscillators');
+    const punchOsc = context.created[0];
+    const exhaustOsc = context.created[1];
+    const turboOsc = context.created[2];
+
+    assert.equal(punchOsc.frequency.values[0], 74, 'Combustion punch starts at solid 74Hz');
+    assert.equal(punchOsc.frequency.values.at(-1), 52, 'Combustion punch settles into 52Hz sub-bass without alien sine drops');
+    assert.equal(exhaustOsc.frequency.values[0], 98, 'Exhaust resonance starts at warm 98Hz');
+    assert.equal(exhaustOsc.frequency.values.at(-1), 134, 'Exhaust resonance rises to 134Hz under acceleration');
+    assert.equal(turboOsc.frequency.values[0], 152, 'Turbo intake whoosh starts at 152Hz');
+    assert.equal(turboOsc.frequency.values.at(-1), 218, 'Turbo intake whoosh rises smoothly to 218Hz');
+
+    // 2. Rapid re-trigger debounce: repeated calls within 220ms (e.g. 3D loop) must not stack nodes
+    sound.nitro();
+    sound.nitro();
+    assert.equal(context.created.length, 3, 'Rapid nitro calls within debounce window must not stack oscillators');
+
+    // 3. Smooth cutoff via stopNitro() / nitro(false)
+    assert.equal(typeof sound.stopNitro, 'function', 'stopNitro should be exported');
+    sound.stopNitro();
+
+    // 4. Smooth cutoff via updateEngine nitro: true -> false transition
+    const ctx2 = fakeContext();
+    const sound2 = createAudio({ contextFactory: () => ctx2 });
+    sound2.unlock();
+    sound2.updateEngine({ running: true, speed: 120, gas: true, nitro: true });
+    ctx2.currentTime += 0.5;
+    sound2.nitro();
+    assert.equal(ctx2.created.length, 5, '2 engine + 3 nitro oscillators');
+    ctx2.currentTime += 0.1;
+    sound2.updateEngine({ running: true, speed: 120, gas: true, nitro: false });
+    sound2.stopEngine();
+    assert.ok(ctx2.created.slice(0, 2).every(node => node.stopped));
+});
+
+

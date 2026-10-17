@@ -9,6 +9,55 @@
         let prefs = {volume: 0.45, muted: false, engine: true};
         let cachedNoiseBuffer = null;
         const voices = new Set();
+        let activeNitroVoices = [];
+        let lastNitroTime = -Infinity;
+        let lastEngineNitroState = false;
+
+        function stopNitro(smooth = 0.06) {
+            if (!context || !activeNitroVoices.length) return;
+            const now = context.currentTime;
+            activeNitroVoices.forEach(voice => {
+                try {
+                    const env = voice.envelope;
+                    if (env && env.gain) {
+                        if (env.gain.cancelScheduledValues) {
+                            env.gain.cancelScheduledValues(now);
+                        }
+                        if (env.gain.setTargetAtTime) {
+                            env.gain.setTargetAtTime(0.0001, now, Math.max(0.01, smooth * 0.5));
+                        } else if (env.gain.linearRampToValueAtTime) {
+                            env.gain.linearRampToValueAtTime(0.0001, now + smooth);
+                        } else if (env.gain.setValueAtTime) {
+                            env.gain.setValueAtTime(0.0001, now + smooth);
+                        }
+                    }
+                } catch (_) {}
+            });
+            activeNitroVoices = [];
+            lastNitroTime = -Infinity;
+        }
+
+        function registerNitroVoice(voice) {
+            if (!voice) return;
+            activeNitroVoices.push(voice);
+            const cleanup = () => {
+                const idx = activeNitroVoices.indexOf(voice);
+                if (idx !== -1) activeNitroVoices.splice(idx, 1);
+            };
+            if (voice.osc) {
+                const prevOnEnded = voice.osc.onended;
+                voice.osc.onended = (e) => {
+                    cleanup();
+                    if (typeof prevOnEnded === 'function') prevOnEnded(e);
+                };
+            } else if (voice.source) {
+                const prevOnEnded = voice.source.onended;
+                voice.source.onended = (e) => {
+                    cleanup();
+                    if (typeof prevOnEnded === 'function') prevOnEnded(e);
+                };
+            }
+        }
 
         function level() { return prefs.muted ? 0 : prefs.volume; }
 
@@ -89,7 +138,7 @@
         }
 
         function tone(freq, duration, gain = 0.12, delay = 0, type = 'sine', endFreq = freq) {
-            if (!unlocked || !context || context.state === 'suspended' || level() <= 0 || voices.size >= 24) return;
+            if (!unlocked || !context || context.state === 'suspended' || level() <= 0 || voices.size >= 24) return null;
             try {
                 const osc = context.createOscillator(), envelope = context.createGain();
                 const start = context.currentTime + delay;
@@ -117,21 +166,25 @@
                 };
                 osc.start(start);
                 osc.stop(start + duration + 0.02);
-            } catch (_) { /* Audio must never interrupt game logic. */ }
+                return { osc, envelope };
+            } catch (_) {
+                /* Audio must never interrupt game logic. */
+                return null;
+            }
         }
 
         // Procedural noise layer for authentic friction, aerodynamic rushing, and pressure bursts
         function noiseBurst({ duration = 0.25, gain = 0.08, delay = 0, filterType = 'bandpass', filterFreq = 1200, filterEndFreq = null, filterQ = 1.5 } = {}) {
-            if (!unlocked || !context || context.state === 'suspended' || level() <= 0) return;
+            if (!unlocked || !context || context.state === 'suspended' || level() <= 0) return null;
             const buffer = getNoiseBuffer();
-            if (!buffer || typeof context.createBufferSource !== 'function') return;
+            if (!buffer || typeof context.createBufferSource !== 'function') return null;
             try {
                 const source = context.createBufferSource();
                 source.buffer = buffer;
                 source.loop = true;
                 const filter = context.createBiquadFilter ? context.createBiquadFilter() : null;
                 const envelope = context.createGain ? context.createGain() : null;
-                if (!filter || !envelope) return;
+                if (!filter || !envelope) return null;
 
                 const start = context.currentTime + delay;
                 filter.type = filterType;
@@ -159,10 +212,15 @@
                 source.onended = () => {
                     try { source.disconnect(); filter.disconnect(); envelope.disconnect(); } catch (_) {}
                 };
-            } catch (_) {}
+                return { source, filter, envelope };
+            } catch (_) {
+                return null;
+            }
         }
 
         function stopEngine() {
+            stopNitro(0.04);
+            lastEngineNitroState = false;
             if (!engine) return;
             engine.nodes.forEach(node => { try { node.stop(); node.disconnect(); } catch (_) {} });
             try {
@@ -225,6 +283,12 @@
                 return;
             }
             try {
+                // Smooth cutoff when nitro is released / depleted
+                if (lastEngineNitroState && !nitro) {
+                    stopNitro(0.06);
+                }
+                lastEngineNitroState = !!nitro;
+
                 if (!engine) {
                     const gain = context.createGain();
                     const filter = context.createBiquadFilter();
@@ -377,7 +441,7 @@
                     engine: typeof next.engine === 'boolean' ? next.engine : prefs.engine
                 };
                 if (master) param(master.gain, level() * 0.65, context.currentTime);
-                if (!prefs.engine || !level()) { stopEngine(); stopSiren(); }
+                if (!prefs.engine || !level()) { stopEngine(); stopSiren(); stopNitro(0.02); }
                 return {...prefs};
             },
             preferences: () => ({...prefs}),
@@ -411,16 +475,56 @@
                 // Rewarding casino coin chime
                 [880, 1174.66, 1567.98].forEach((freq, i) => tone(freq, 0.24, 0.10, i * 0.065, 'triangle'));
             },
-            nitro() {
-                // 1. Pressurized jet expansion whoosh
-                noiseBurst({ duration: 0.32, gain: 0.12, filterType: 'bandpass', filterFreq: 540, filterEndFreq: 1150, filterQ: 1.6 });
-                // 2. Deep sub-bass pressure punch & combustion ignition
-                tone(65, 0.28, 0.22, 0, 'triangle', 32);
-                // 3. Pressurized gas jet expansion sweep
-                tone(380, 0.28, 0.14, 0, 'sawtooth', 760);
-                // 4. Roaring combustion turbine boost
-                tone(720, 0.22, 0.08, 0.025, 'triangle', 1150);
+            nitro(active = true) {
+                if (active === false) {
+                    stopNitro(0.06);
+                    return;
+                }
+                if (!unlocked || !context || context.state === 'suspended' || level() <= 0) return;
+
+                const now = context.currentTime;
+                // Debounce rapid re-triggering during continuous hold (e.g. 3D mode loop)
+                if (now - lastNitroTime < 0.22) return;
+                lastNitroTime = now;
+
+                // 1. Authentic crisp nitrous oxide purge valve hiss ("tssshhhhh")
+                // High-pressure solenoid release spray (crisp decompression)
+                const hiss = noiseBurst({
+                    duration: 0.46,
+                    gain: 0.16,
+                    filterType: 'bandpass',
+                    filterFreq: 2750,
+                    filterEndFreq: 1800,
+                    filterQ: 1.3
+                });
+                registerNitroVoice(hiss);
+
+                // Intake aerodynamic air-rush expansion surge
+                const intakeRush = noiseBurst({
+                    duration: 0.50,
+                    gain: 0.11,
+                    delay: 0.012,
+                    filterType: 'bandpass',
+                    filterFreq: 920,
+                    filterEndFreq: 1380,
+                    filterQ: 1.1
+                });
+                registerNitroVoice(intakeRush);
+
+                // 2. Deep, punchy combustion impact thump (sub-bass cylinder pressure punch)
+                // Solid 74 Hz thump settling into warm 52 Hz combustion resonance without unnatural sine drops
+                const punch = tone(74, 0.38, 0.22, 0, 'triangle', 52);
+                registerNitroVoice(punch);
+
+                // 3. Warm exhaust manifold resonance (muscular automotive growl under nitrous load)
+                const exhaust = tone(98, 0.48, 0.13, 0.010, 'triangle', 134);
+                registerNitroVoice(exhaust);
+
+                // 4. Rich low-end turbo intake whoosh (smooth air spooling surge)
+                const turbo = tone(152, 0.44, 0.09, 0.022, 'sine', 218);
+                registerNitroVoice(turbo);
             },
+            stopNitro() { stopNitro(0.06); },
             brake() {
                 // High-performance brake pad bite & rotor friction
                 noiseBurst({ duration: 0.15, gain: 0.06, filterType: 'bandpass', filterFreq: 1600, filterEndFreq: 850, filterQ: 2.2 });
@@ -526,7 +630,9 @@
             },
             stopEngine,
             updateEngine,
+            stopNitro,
             suspend() {
+                stopNitro(0.02);
                 stopEngine();
                 stopSiren();
                 voices.forEach(node => { try { node.stop(); } catch (_) {} });

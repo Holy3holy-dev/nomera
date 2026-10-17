@@ -10769,11 +10769,14 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 window._boundRacePointerRelease = true;
                 const releasePointer = (e) => {
                     if (e && e.pointerId !== undefined && activeRacePointers.has(e.pointerId)) {
-                        const key = activeRacePointers.get(e.pointerId);
+                        const rawKey = activeRacePointers.get(e.pointerId);
                         activeRacePointers.delete(e.pointerId);
+                        const key = (rawKey && typeof rawKey === 'string' && rawKey.startsWith('3d-')) ? rawKey.slice(3) : rawKey;
                         if (key === 'steer') {
                             setRaceKey('left', false);
                             setRaceKey('right', false);
+                        } else if (key === 'horn') {
+                            triggerRaceHorn(false);
                         } else if (key) {
                             setRaceKey(key, false);
                         }
@@ -11231,6 +11234,13 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     }
                 }, 80);
                 init3DRaceTouchControls();
+                const isTouchOrMobile = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) || (window.innerWidth <= 900);
+                if (isTouchOrMobile) {
+                    const touchEl = document.getElementById('race-3d-touch-controls');
+                    if (touchEl) touchEl.classList.add('touch-enabled');
+                    const btnText = document.getElementById('btn-toggle-touch-text');
+                    if (btnText) btnText.textContent = 'Скрыть руль';
+                }
             } catch (err) {
                 console.error('Failed to initialize 3D race engine:', err);
                 isRaceRunning = false;
@@ -11377,8 +11387,8 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 if (event.cancelable) event.preventDefault();
                 if (event.pointerId !== undefined) {
                     if (isDown) {
-                        activeRacePointers.set(event.pointerId, '3d-' + action);
-                    } else if (activeRacePointers.get(event.pointerId) === '3d-' + action) {
+                        activeRacePointers.set(event.pointerId, action);
+                    } else if (activeRacePointers.get(event.pointerId) === action || activeRacePointers.get(event.pointerId) === '3d-' + action) {
                         activeRacePointers.delete(event.pointerId);
                     }
                 }
@@ -11427,7 +11437,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     if (typeof steerZone.setPointerCapture === 'function') {
                         try { steerZone.setPointerCapture(e.pointerId); } catch (_) {}
                     }
-                    activeRacePointers.set(e.pointerId, '3d-steer');
+                    activeRacePointers.set(e.pointerId, 'steer');
                     updateSteerFromPoint(e.clientX);
                     if (typeof sound?.haptic === 'function') sound.haptic('light');
                 });
@@ -11439,13 +11449,15 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 });
 
                 const clearSteer = (e) => {
-                    if (steerPointerId === e.pointerId) {
+                    if (steerPointerId === e.pointerId || !e) {
                         if (e && e.cancelable) e.preventDefault();
-                        if (typeof steerZone.releasePointerCapture === 'function') {
+                        if (typeof steerZone.releasePointerCapture === 'function' && e && e.pointerId !== undefined) {
                             try { steerZone.releasePointerCapture(e.pointerId); } catch (_) {}
                         }
+                        if (e && e.pointerId !== undefined) {
+                            activeRacePointers.delete(e.pointerId);
+                        }
                         steerPointerId = null;
-                        activeRacePointers.delete(e.pointerId);
                         setRaceKey('left', false);
                         setRaceKey('right', false);
                     }
@@ -11453,6 +11465,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 steerZone.addEventListener('pointerup', clearSteer);
                 steerZone.addEventListener('pointercancel', clearSteer);
                 steerZone.addEventListener('lostpointercapture', clearSteer);
+                steerZone.addEventListener('pointerleave', clearSteer);
             }
         }
 

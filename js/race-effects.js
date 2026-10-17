@@ -42,18 +42,79 @@
             if (type === 'headlightGround') {
                 canvas.width = 256;
                 canvas.height = 512;
-                // Elongated forward light projection on asphalt
-                const grad = ctx.createRadialGradient(128, 120, 10, 128, 260, 240);
-                grad.addColorStop(0.0, 'rgba(255, 255, 255, 0.95)');
-                grad.addColorStop(0.18, 'rgba(235, 245, 255, 0.75)');
-                grad.addColorStop(0.45, 'rgba(180, 215, 255, 0.40)');
-                grad.addColorStop(0.75, 'rgba(120, 175, 255, 0.12)');
-                grad.addColorStop(1.0, 'rgba(60, 130, 245, 0.0)');
+                if (typeof ctx.clearRect === 'function') ctx.clearRect(0, 0, 256, 512);
+
+                // Smooth, soft asphalt ground illumination patch projecting forward on the road
+                // Feathers smoothly and completely to 0 alpha at all borders (zero hard polygonal edges)
+                if (typeof ctx.save === 'function' && typeof ctx.scale === 'function' && typeof ctx.translate === 'function') {
+                    ctx.save();
+                    ctx.translate(128, 230);
+                    ctx.scale(1.0, 2.1);
+                    const grad = ctx.createRadialGradient(0, -35, 6, 0, 0, 110);
+                    grad.addColorStop(0.00, 'rgba(255, 255, 255, 0.95)');
+                    grad.addColorStop(0.15, 'rgba(242, 248, 255, 0.75)');
+                    grad.addColorStop(0.38, 'rgba(215, 235, 255, 0.42)');
+                    grad.addColorStop(0.65, 'rgba(175, 210, 255, 0.16)');
+                    grad.addColorStop(0.85, 'rgba(140, 190, 255, 0.04)');
+                    grad.addColorStop(1.00, 'rgba(120, 180, 255, 0.00)');
+
+                    ctx.fillStyle = grad;
+                    if (typeof ctx.arc === 'function') {
+                        ctx.beginPath();
+                        ctx.arc(0, 0, 110, 0, Math.PI * 2);
+                        ctx.fill();
+                    } else if (typeof ctx.fillRect === 'function') {
+                        ctx.fillRect(-110, -110, 220, 220);
+                    }
+                    ctx.restore();
+                } else {
+                    const grad = ctx.createRadialGradient(128, 195, 8, 128, 230, 200);
+                    grad.addColorStop(0.00, 'rgba(255, 255, 255, 0.95)');
+                    grad.addColorStop(0.15, 'rgba(242, 248, 255, 0.75)');
+                    grad.addColorStop(0.38, 'rgba(215, 235, 255, 0.42)');
+                    grad.addColorStop(0.65, 'rgba(175, 210, 255, 0.16)');
+                    grad.addColorStop(0.85, 'rgba(140, 190, 255, 0.04)');
+                    grad.addColorStop(1.00, 'rgba(120, 180, 255, 0.00)');
+
+                    ctx.fillStyle = grad;
+                    if (typeof ctx.ellipse === 'function') {
+                        ctx.beginPath();
+                        ctx.ellipse(128, 230, 105, 200, 0, 0, Math.PI * 2);
+                        ctx.fill();
+                    } else if (typeof ctx.fillRect === 'function') {
+                        ctx.fillRect(0, 0, 256, 512);
+                    }
+                }
+            } else if (type === 'headlightFlare') {
+                canvas.width = 128;
+                canvas.height = 128;
+                if (typeof ctx.clearRect === 'function') ctx.clearRect(0, 0, 128, 128);
+
+                // Multi-ring optical lens flare with white-hot core and sparkling diamond aura
+                const grad = ctx.createRadialGradient(64, 64, 2, 64, 64, 62);
+                grad.addColorStop(0.00, 'rgba(255, 255, 255, 1.0)');
+                grad.addColorStop(0.12, 'rgba(255, 255, 255, 0.95)');
+                grad.addColorStop(0.28, 'rgba(235, 245, 255, 0.70)');
+                grad.addColorStop(0.55, 'rgba(190, 225, 255, 0.25)');
+                grad.addColorStop(0.80, 'rgba(140, 195, 255, 0.06)');
+                grad.addColorStop(1.00, 'rgba(100, 170, 255, 0.00)');
 
                 ctx.fillStyle = grad;
-                ctx.beginPath();
-                ctx.ellipse(128, 256, 110, 245, 0, 0, Math.PI * 2);
-                ctx.fill();
+                if (typeof ctx.fillRect === 'function') {
+                    ctx.fillRect(0, 0, 128, 128);
+                }
+
+                // Subtle horizontal streak for realistic anamorphic glass dispersion
+                if (typeof ctx.createLinearGradient === 'function' && typeof ctx.fillRect === 'function') {
+                    const streak = ctx.createLinearGradient(0, 64, 128, 64);
+                    streak.addColorStop(0.0, 'rgba(255, 255, 255, 0.0)');
+                    streak.addColorStop(0.4, 'rgba(255, 255, 255, 0.25)');
+                    streak.addColorStop(0.5, 'rgba(255, 255, 255, 0.85)');
+                    streak.addColorStop(0.6, 'rgba(255, 255, 255, 0.25)');
+                    streak.addColorStop(1.0, 'rgba(255, 255, 255, 0.0)');
+                    ctx.fillStyle = streak;
+                    ctx.fillRect(0, 62, 128, 4);
+                }
             } else if (type === 'brakeFlare') {
                 canvas.width = 128;
                 canvas.height = 128;
@@ -141,8 +202,10 @@
             this.speedStreaksData = [];
             this.speedVignetteEl = null;
 
-            // 5. Headlight & Taillight Beams (Projected Cones + Optical Flares)
-            this.headlightCones = [];
+            // 5. Headlight & Taillight Lighting (Smooth Ground Decal + Subtle SpotLights + Lens Flares)
+            this.headlightFlares = [];
+            this.headlightCones = this.headlightFlares; // Backward compatibility alias
+            this.headlightSpots = [];
             this.headlightGroundPatches = [];
             this.taillightFlares = [];
             this.brakeGroundDecal = null;
@@ -410,13 +473,48 @@
             if (!THREE) return;
 
             // Clean previous meshes if any
-            this.headlightCones.forEach(c => { try { if (c.parent) c.parent.remove(c); } catch (_) {} });
-            this.headlightGroundPatches.forEach(g => { try { if (g.parent) g.parent.remove(g); } catch (_) {} });
-            this.taillightFlares.forEach(f => { try { if (f.parent) f.parent.remove(f); } catch (_) {} });
-            if (this.brakeGroundDecal && this.brakeGroundDecal.parent) {
-                try { this.brakeGroundDecal.parent.remove(this.brakeGroundDecal); } catch (_) {}
+            if (this.headlightFlares) {
+                this.headlightFlares.forEach(f => {
+                    try {
+                        if (f.parent) f.parent.remove(f);
+                        if (f.geometry && typeof f.geometry.dispose === 'function') f.geometry.dispose();
+                        if (f.material && typeof f.material.dispose === 'function') f.material.dispose();
+                    } catch (_) {}
+                });
             }
-            this.headlightCones = [];
+            if (this.headlightCones && this.headlightCones !== this.headlightFlares) {
+                this.headlightCones.forEach(c => {
+                    try {
+                        if (c.parent) c.parent.remove(c);
+                        if (c.geometry && typeof c.geometry.dispose === 'function') c.geometry.dispose();
+                        if (c.material && typeof c.material.dispose === 'function') c.material.dispose();
+                    } catch (_) {}
+                });
+            }
+            this.headlightGroundPatches.forEach(g => {
+                try {
+                    if (g.parent) g.parent.remove(g);
+                    if (g.geometry && typeof g.geometry.dispose === 'function') g.geometry.dispose();
+                    if (g.material && typeof g.material.dispose === 'function') g.material.dispose();
+                } catch (_) {}
+            });
+            this.taillightFlares.forEach(f => {
+                try {
+                    if (f.parent) f.parent.remove(f);
+                    if (f.geometry && typeof f.geometry.dispose === 'function') f.geometry.dispose();
+                    if (f.material && typeof f.material.dispose === 'function') f.material.dispose();
+                } catch (_) {}
+            });
+            if (this.brakeGroundDecal && this.brakeGroundDecal.parent) {
+                try {
+                    this.brakeGroundDecal.parent.remove(this.brakeGroundDecal);
+                    if (this.brakeGroundDecal.geometry && typeof this.brakeGroundDecal.geometry.dispose === 'function') this.brakeGroundDecal.geometry.dispose();
+                    if (this.brakeGroundDecal.material && typeof this.brakeGroundDecal.material.dispose === 'function') this.brakeGroundDecal.material.dispose();
+                } catch (_) {}
+            }
+
+            this.headlightFlares = [];
+            this.headlightCones = this.headlightFlares; // Backward compatibility alias
             this.headlightGroundPatches = [];
             this.taillightFlares = [];
             this.brakeGroundDecal = null;
@@ -459,34 +557,49 @@
 
                 this.lightPositions = { localHlL, localHlR, localTlL, localTlR, halfL, halfW };
 
-                // A. Two Volumetric Angled Forward Cones
-                // Angled down at road surface to give authentic dust/fog light beam cone
+                // A. Clean, Bright Lens Flare Point on Vehicle Headlight Glass (Zero 3D Volumetric Wedge Meshes)
+                const hlFlareTex = createProceduralTexture('headlightFlare', THREE);
                 [-1, 1].forEach((side) => {
                     const localP = side < 0 ? localHlL : localHlR;
-                    const coneLen = 22.0;
-                    const coneGeo = (typeof THREE.CylinderGeometry === 'function')
-                        ? new THREE.CylinderGeometry(0.12, 2.4, coneLen, 14, 1, true)
-                        : new THREE.ConeGeometry(2.4, coneLen, 12, 1, true);
-
-                    // Orient along forward Z and tilt down ~4 deg
-                    coneGeo.rotateX(Math.PI / 2 - 0.07);
-
-                    const coneMat = new THREE.MeshBasicMaterial({
-                        color: 0xf8fafc,
+                    const flareGeo = new THREE.PlaneGeometry(0.46, 0.46);
+                    const flareMat = new THREE.MeshBasicMaterial({
+                        color: 0xffffff,
+                        map: hlFlareTex || null,
                         transparent: true,
-                        opacity: 0.20,
+                        opacity: 0.88,
                         blending: THREE.AdditiveBlending,
                         depthWrite: false,
                         side: THREE.DoubleSide
                     });
 
-                    const coneMesh = new THREE.Mesh(coneGeo, coneMat);
-                    coneMesh.position.set(localP.x, localP.y - 0.05, localP.z + (coneLen * 0.5) - 0.5);
-                    playerCar.add(coneMesh);
-                    this.headlightCones.push(coneMesh);
+                    const flareMesh = new THREE.Mesh(flareGeo, flareMat);
+                    // Placed flush right on the vehicle's headlight glass
+                    flareMesh.position.set(localP.x, localP.y, localP.z + 0.035);
+                    playerCar.add(flareMesh);
+                    this.headlightFlares.push(flareMesh);
                 });
+                this.headlightCones = this.headlightFlares; // Backward compatibility alias
 
-                // B. Vivid Ground Projected Light Patches (Road Decals)
+                // B. Realistic Subtle Three.js SpotLight Angled Forward Down the Road
+                if (this.engine && Array.isArray(this.engine.playerHeadlights) && this.engine.playerHeadlights.length > 0) {
+                    this.headlightSpots = this.engine.playerHeadlights;
+                } else {
+                    this.headlightSpots = [];
+                    [-1, 1].forEach((side) => {
+                        const localP = side < 0 ? localHlL : localHlR;
+                        const spot = new THREE.SpotLight(0xf8fafc, 2.0, 52, Math.PI / 6.5, 0.55, 1.2);
+                        spot.position.copy(localP);
+                        spot.target.position.set(localP.x * 1.05, 0.15, localP.z + 32);
+                        playerCar.add(spot);
+                        playerCar.add(spot.target);
+                        this.headlightSpots.push(spot);
+                    });
+                    if (this.engine) {
+                        this.engine.playerHeadlights = this.headlightSpots;
+                    }
+                }
+
+                // C. Smooth, Soft Asphalt Ground Illumination Patch (Flat Quad with Soft Elliptical Alpha Gradient)
                 const groundTex = createProceduralTexture('headlightGround', THREE);
                 [-1, 1].forEach((side) => {
                     const localP = side < 0 ? localHlL : localHlR;
@@ -497,19 +610,19 @@
                         color: 0xf8fafc,
                         map: groundTex || null,
                         transparent: true,
-                        opacity: 0.38,
+                        opacity: 0.42,
                         blending: THREE.AdditiveBlending,
                         depthWrite: false
                     });
 
                     const patchMesh = new THREE.Mesh(patchGeo, patchMat);
-                    // Sits just above asphalt (y = 0.008) spanning from front bumper to 28m ahead
-                    patchMesh.position.set(localP.x * 1.15, 0.008, localP.z + 13.5);
+                    // Sits just above asphalt (y = 0.012) spanning ahead of front bumper across road surface
+                    patchMesh.position.set(localP.x * 1.08, 0.012, localP.z + 13.0);
                     playerCar.add(patchMesh);
                     this.headlightGroundPatches.push(patchMesh);
                 });
 
-                // C. Realistic Optical Brake Light Flares at Taillights
+                // D. Realistic Optical Brake Light Flares at Taillights
                 const flareTex = createProceduralTexture('brakeFlare', THREE);
                 [-1, 1].forEach((side) => {
                     const localP = side < 0 ? localTlL : localTlR;
@@ -530,7 +643,7 @@
                     this.taillightFlares.push(flareMesh);
                 });
 
-                // D. Dynamic Rear Brake Red Ground Wash Decal
+                // E. Dynamic Rear Brake Red Ground Wash Decal
                 const redGroundTex = createProceduralTexture('brakeGround', THREE);
                 const redGroundGeo = new THREE.PlaneGeometry(4.2, 4.2);
                 redGroundGeo.rotateX(-Math.PI / 2);
@@ -559,40 +672,51 @@
             const w = this.currentWeather;
 
             // Palette values based on weather & time of day
-            let coneCol = 0xf8fafc;
-            let coneOp = 0.20;
+            let flareCol = 0xf8fafc;
+            let flareOp = 0.88;
             let groundCol = 0xf8fafc;
-            let groundOp = 0.38;
+            let groundOp = 0.42;
+            let spotInt = 2.10;
+            let spotCol = 0xf8fafc;
 
             if (w === 'day') {
-                coneOp = 0.0;
+                flareOp = 0.28;
                 groundOp = 0.06;
+                spotInt = 0.40;
             } else if (w === 'sunset') {
-                coneCol = 0xfef08a; // Golden twilight
-                coneOp = 0.14;
+                flareCol = 0xfef08a; // Golden twilight
+                flareOp = 0.75;
                 groundCol = 0xfde047;
                 groundOp = 0.28;
+                spotInt = 1.80;
+                spotCol = 0xfef08a;
             } else if (w === 'rain') {
-                coneCol = 0xbae6fd; // Blue-white rain reflection
-                coneOp = 0.28;
+                flareCol = 0xbae6fd; // Blue-white rain reflection
+                flareOp = 0.95;
                 groundCol = 0xdbeafe;
-                groundOp = 0.48; // Intense specular beam on wet asphalt
+                groundOp = 0.50; // Intense specular beam on wet asphalt
+                spotInt = 2.60;
+                spotCol = 0xbae6fd;
             } else if (w === 'snow') {
-                coneCol = 0xffffff;
-                coneOp = 0.24;
+                flareCol = 0xffffff;
+                flareOp = 0.90;
                 groundCol = 0xffffff;
-                groundOp = 0.34;
+                groundOp = 0.35;
+                spotInt = 2.20;
+                spotCol = 0xffffff;
             } else { // night
-                coneCol = 0xf8fafc;
-                coneOp = 0.22;
+                flareCol = 0xf8fafc;
+                flareOp = 0.90;
                 groundCol = 0xf8fafc;
-                groundOp = 0.38;
+                groundOp = 0.42;
+                spotInt = 2.10;
+                spotCol = 0xf8fafc;
             }
 
-            this.headlightCones.forEach(c => {
-                if (c && c.material) {
-                    c.material.color.setHex(coneCol);
-                    c.material.opacity = coneOp;
+            this.headlightFlares.forEach(f => {
+                if (f && f.material) {
+                    f.material.color.setHex(flareCol);
+                    f.material.opacity = flareOp;
                 }
             });
 
@@ -602,10 +726,37 @@
                     g.material.opacity = groundOp;
                 }
             });
+
+            if (this.headlightSpots) {
+                this.headlightSpots.forEach(s => {
+                    if (s) {
+                        s.intensity = spotInt;
+                        if (s.color) s.color.setHex(spotCol);
+                    }
+                });
+            }
         }
 
         updateLightsVFX(dt, isBraking) {
             this.isBraking = isBraking;
+
+            // Stabilize ground illumination patches against vehicle pitch squat and body roll
+            // Ensures the smooth light patch always hugs the asphalt surface at y = 0.012 without clipping
+            const playerCar = (this.engine && this.engine.playerCar) ? this.engine.playerCar : null;
+            const state = (this.engine && this.engine.state) ? this.engine.state : null;
+            if (playerCar && state && this.headlightGroundPatches && this.headlightGroundPatches.length > 0) {
+                const pitch = state.pitchSquat || 0;
+                const roll = (state.bodyRoll || 0) + ((this.engine && this.engine.engineTremorRoll) || 0);
+                const carY = playerCar.position.y || 0;
+                for (let i = 0; i < this.headlightGroundPatches.length; i++) {
+                    const p = this.headlightGroundPatches[i];
+                    if (p) {
+                        p.rotation.x = -pitch;
+                        p.rotation.z = -roll;
+                        p.position.y = 0.012 - carY;
+                    }
+                }
+            }
 
             // Taillight flares bloom & ground red wash on braking
             const flareScale = isBraking ? 1.35 : 0.42;
@@ -1038,11 +1189,44 @@
                 }
             });
 
-            this.headlightCones.forEach(c => { try { if (c.parent) c.parent.remove(c); } catch (_) {} });
-            this.headlightGroundPatches.forEach(g => { try { if (g.parent) g.parent.remove(g); } catch (_) {} });
-            this.taillightFlares.forEach(f => { try { if (f.parent) f.parent.remove(f); } catch (_) {} });
+            if (this.headlightFlares) {
+                this.headlightFlares.forEach(f => {
+                    try {
+                        if (f.parent) f.parent.remove(f);
+                        if (f.geometry && typeof f.geometry.dispose === 'function') f.geometry.dispose();
+                        if (f.material && typeof f.material.dispose === 'function') f.material.dispose();
+                    } catch (_) {}
+                });
+            }
+            if (this.headlightCones && this.headlightCones !== this.headlightFlares) {
+                this.headlightCones.forEach(c => {
+                    try {
+                        if (c.parent) c.parent.remove(c);
+                        if (c.geometry && typeof c.geometry.dispose === 'function') c.geometry.dispose();
+                        if (c.material && typeof c.material.dispose === 'function') c.material.dispose();
+                    } catch (_) {}
+                });
+            }
+            this.headlightGroundPatches.forEach(g => {
+                try {
+                    if (g.parent) g.parent.remove(g);
+                    if (g.geometry && typeof g.geometry.dispose === 'function') g.geometry.dispose();
+                    if (g.material && typeof g.material.dispose === 'function') g.material.dispose();
+                } catch (_) {}
+            });
+            this.taillightFlares.forEach(f => {
+                try {
+                    if (f.parent) f.parent.remove(f);
+                    if (f.geometry && typeof f.geometry.dispose === 'function') f.geometry.dispose();
+                    if (f.material && typeof f.material.dispose === 'function') f.material.dispose();
+                } catch (_) {}
+            });
             if (this.brakeGroundDecal && this.brakeGroundDecal.parent) {
-                try { this.brakeGroundDecal.parent.remove(this.brakeGroundDecal); } catch (_) {}
+                try {
+                    this.brakeGroundDecal.parent.remove(this.brakeGroundDecal);
+                    if (this.brakeGroundDecal.geometry && typeof this.brakeGroundDecal.geometry.dispose === 'function') this.brakeGroundDecal.geometry.dispose();
+                    if (this.brakeGroundDecal.material && typeof this.brakeGroundDecal.material.dispose === 'function') this.brakeGroundDecal.material.dispose();
+                } catch (_) {}
             }
 
             if (this.speedStreaksMesh && this.speedStreaksMesh.parent) {
@@ -1059,7 +1243,9 @@
             this.activeSparks = [];
             this.skidPool = [];
             this.activeSkids = [];
+            this.headlightFlares = [];
             this.headlightCones = [];
+            this.headlightSpots = [];
             this.headlightGroundPatches = [];
             this.taillightFlares = [];
             this.speedStreaksData = [];

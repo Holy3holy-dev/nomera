@@ -5426,7 +5426,8 @@
                 }
 
                 // 3. Align car forward facing along +Z
-                if (carId === 'vaz2107' || carId === 'vaz2109' || carId === 'sf90') {
+                // VAZ-2107 is natively modeled facing forward (+Z); only VAZ-2109 and SF90 require 180° rotation
+                if (carId === 'vaz2109' || carId === 'sf90') {
                     clonedScene.rotation.y += Math.PI;
                     clonedScene.updateMatrixWorld(true);
                     box = new THREE.Box3().setFromObject(clonedScene);
@@ -8691,6 +8692,7 @@
             this.state.backfireColor = 'orange';
             this.state.brakeHeat = 0;
             this.state.time = 0;
+            this.playerNitroFlames = [];
             this.playerBackfireFlames = [];
             this.playerBrakeDiscs = [];
             this.playerActiveAero = [];
@@ -8830,6 +8832,24 @@
                 if (this.playerBackfireLight && this.playerBackfireLight.parent) {
                     try { this.playerBackfireLight.parent.remove(this.playerBackfireLight); } catch (_) {}
                 }
+                if (this.playerNitroFlames && this.playerNitroFlames.length > 0) {
+                    this.playerNitroFlames.forEach(f => {
+                        try {
+                            if (f.parent) f.parent.remove(f);
+                            if (f.geometry) f.geometry.dispose();
+                            if (f.material) f.material.dispose();
+                        } catch (_) {}
+                    });
+                }
+                if (this.playerBackfireFlames && this.playerBackfireFlames.length > 0) {
+                    this.playerBackfireFlames.forEach(bf => {
+                        try {
+                            if (bf.parent) bf.parent.remove(bf);
+                            if (bf.geometry) bf.geometry.dispose();
+                            if (bf.material) bf.material.dispose();
+                        } catch (_) {}
+                    });
+                }
 
                 // Compute bounds of player model
                 const box = new THREE.Box3().setFromObject(this.playerCar);
@@ -8847,10 +8867,11 @@
                 this.playerCar.worldToLocal(localHlR);
 
                 [-1, 1].forEach(side => {
-                    const hlSpot = new THREE.SpotLight(0xffffff, 2.2, 55, Math.PI / 7, 0.45, 1.2);
+                    // Subtle, realistic Three.js SpotLight angled forward down the road
+                    const hlSpot = new THREE.SpotLight(0xf8fafc, 2.0, 52, Math.PI / 6.5, 0.55, 1.2);
                     const localP = side < 0 ? localHlL : localHlR;
                     hlSpot.position.copy(localP);
-                    hlSpot.target.position.set(localP.x * 1.05, 0.2, localP.z + 35);
+                    hlSpot.target.position.set(localP.x * 1.05, 0.15, localP.z + 32);
                     this.playerCar.add(hlSpot);
                     this.playerCar.add(hlSpot.target);
                     this.playerHeadlights.push(hlSpot);
@@ -8883,59 +8904,70 @@
                 this.playerBrakeLight.position.set(0, localTlMid.y, localTlMid.z - 0.04);
                 this.playerCar.add(this.playerBrakeLight);
 
-                // 3. Multi-Layer Nitro Exhaust Flame Meshes & Dynamic Road Light
+                // 3. Streamlined Subtle Nitro Exhaust Flame Meshes & Dynamic Road Light
                 this.playerNitroFlames = [];
+                const exhaustY = Math.max(0.18, Math.min(0.28, box.min.y + size.y * 0.16));
+                const exhaustSpanX = (carId === 'vaz2107' || carId === 'vaz2109') ? halfW * 0.34 : halfW * 0.40;
+
                 [-1, 1].forEach(side => {
-                    const flameGeo = new THREE.ConeGeometry(0.14, 0.95, 12);
+                    // Outer streamlined electric cyan-blue nitro flame jet
+                    const flameGeo = new THREE.ConeGeometry(0.042, 0.38, 16);
                     flameGeo.rotateX(-Math.PI / 2);
                     const flameMat = new THREE.MeshBasicMaterial({
-                        color: 0x00f0ff,
+                        color: 0x00d4ff,
                         transparent: true,
-                        opacity: 0.95
+                        opacity: 0.70,
+                        blending: THREE.AdditiveBlending,
+                        depthWrite: false
                     });
                     const flame = new THREE.Mesh(flameGeo, flameMat);
-                    flame.position.set(side * (halfW * 0.42), 0.28, -halfL - 0.48);
+                    flame.position.set(side * exhaustSpanX, exhaustY, -halfL - 0.20);
                     flame.visible = false;
                     this.playerCar.add(flame);
                     this.playerNitroFlames.push(flame);
 
-                    const coreGeo = new THREE.ConeGeometry(0.07, 0.65, 8);
+                    // Inner intense white-hot ignition core
+                    const coreGeo = new THREE.ConeGeometry(0.022, 0.22, 16);
                     coreGeo.rotateX(-Math.PI / 2);
                     const coreMat = new THREE.MeshBasicMaterial({
                         color: 0xffffff,
                         transparent: true,
-                        opacity: 0.95
+                        opacity: 0.90,
+                        blending: THREE.AdditiveBlending,
+                        depthWrite: false
                     });
                     const core = new THREE.Mesh(coreGeo, coreMat);
-                    core.position.set(side * (halfW * 0.42), 0.28, -halfL - 0.35);
+                    core.position.set(side * exhaustSpanX, exhaustY, -halfL - 0.12);
                     core.visible = false;
                     this.playerCar.add(core);
                     this.playerNitroFlames.push(core);
                 });
 
-                this.playerNitroLight = new THREE.PointLight(0x00d4ff, 0, 7.0, 1.8);
-                this.playerNitroLight.position.set(0, 0.35, -halfL - 0.5);
+                this.playerNitroLight = new THREE.PointLight(0x00d4ff, 0, 5.0, 2.0);
+                this.playerNitroLight.position.set(0, exhaustY + 0.08, -halfL - 0.25);
                 this.playerCar.add(this.playerNitroLight);
 
-                // 4. Exhaust Backfire Flame Pops & Road Flash Light
+                // 4. Compact Exhaust Backfire Flame Pops & Road Flash Light
                 this.playerBackfireFlames = [];
                 [-1, 1].forEach(side => {
-                    const bfGeo = new THREE.ConeGeometry(0.18, 0.72, 10);
+                    const bfGeo = new THREE.ConeGeometry(0.048, 0.30, 16);
                     bfGeo.rotateX(-Math.PI / 2);
                     const bfMat = new THREE.MeshBasicMaterial({
-                        color: 0xff6600,
+                        color: 0xff6a00,
                         transparent: true,
-                        opacity: 0.95
+                        opacity: 0.75,
+                        blending: THREE.AdditiveBlending,
+                        depthWrite: false
                     });
                     const bf = new THREE.Mesh(bfGeo, bfMat);
-                    bf.position.set(side * (halfW * 0.42), 0.28, -halfL - 0.36);
+                    bf.position.set(side * exhaustSpanX, exhaustY, -halfL - 0.16);
                     bf.visible = false;
                     this.playerCar.add(bf);
                     this.playerBackfireFlames.push(bf);
                 });
 
-                this.playerBackfireLight = new THREE.PointLight(0xff7700, 0, 6.0, 2.0);
-                this.playerBackfireLight.position.set(0, 0.35, -halfL - 0.4);
+                this.playerBackfireLight = new THREE.PointLight(0xff7700, 0, 4.5, 2.0);
+                this.playerBackfireLight.position.set(0, exhaustY + 0.08, -halfL - 0.20);
                 this.playerCar.add(this.playerBackfireLight);
 
                 // 5. Glowing Brake Discs Collection
@@ -9116,16 +9148,27 @@
             if (keys.nitro && state.nitroLevel > 0) {
                 state.isNitroActive = true;
                 state.nitroLevel = Math.max(0, state.nitroLevel - 30 * dt);
-                const nScale = 0.9 + Math.random() * 0.45;
-                this.playerNitroFlames.forEach(flame => {
+
+                // High-frequency organic combustion flutter and aerodynamic speed stretch
+                const flutterLen = 0.88 + Math.random() * 0.26;
+                const flutterW = 0.94 + Math.random() * 0.12;
+                const speedStretch = 1.0 + Math.min(0.35, state.speed / 450);
+
+                this.playerNitroFlames.forEach((flame, idx) => {
                     flame.visible = true;
-                    flame.scale.set(nScale, nScale, nScale * (1.1 + Math.random() * 0.35));
+                    const isCore = (idx % 2 === 1);
+                    const curW = flutterW * (isCore ? 0.92 : 1.0);
+                    const curL = flutterLen * speedStretch * (isCore ? 0.85 : 1.0);
+                    flame.scale.set(curW, curW, curL);
+                    if (flame.material) {
+                        flame.material.opacity = (isCore ? 0.85 : 0.65) * (0.85 + Math.random() * 0.30);
+                    }
                 });
                 if (this.playerNitroLight) {
-                    this.playerNitroLight.intensity = 2.8 + Math.random() * 0.8;
+                    this.playerNitroLight.intensity = 2.0 + Math.random() * 0.7;
                 }
-                if (Math.random() < 0.35) {
-                    this.spawnSparks(state.x + (Math.random() - 0.5) * 0.8, 0.28, state.z - 2.3, 2);
+                if (Math.random() < 0.25) {
+                    this.spawnSparks(state.x + (Math.random() - 0.5) * 0.5, 0.22, state.z - 2.1, 2);
                 }
                 if (this.options.onSound && Math.random() < 0.2) {
                     this.options.onSound('nitro');
@@ -9552,24 +9595,27 @@
                 });
             }
 
-            // Exhaust backfire animation update
+            // Exhaust backfire animation update (short, punchy pops on shifts)
             if (state.backfireTimer > 0) {
                 state.backfireTimer -= dt;
-                const bfScale = 0.85 + Math.random() * 0.65;
+                const progress = Math.max(0, Math.min(1.0, state.backfireTimer / 0.18));
+                const bfScaleW = (0.80 + Math.random() * 0.30) * Math.min(1.0, progress * 1.4);
+                const bfScaleL = (0.85 + Math.random() * 0.40) * (0.45 + progress * 0.55);
                 const isBlue = state.backfireColor === 'blue';
                 this.playerBackfireFlames.forEach(bf => {
                     bf.visible = true;
-                    bf.scale.set(bfScale, bfScale, bfScale * 1.25);
+                    bf.scale.set(bfScaleW, bfScaleW, bfScaleL);
                     if (bf.material) {
-                        bf.material.color.setHex(isBlue ? 0x38bdf8 : (Math.random() < 0.5 ? 0xff5500 : 0xffaa00));
+                        bf.material.color.setHex(isBlue ? 0x38bdf8 : (Math.random() < 0.5 ? 0xff5500 : 0xff9900));
+                        bf.material.opacity = 0.80 * progress;
                     }
                 });
                 if (this.playerBackfireLight) {
                     this.playerBackfireLight.color.setHex(isBlue ? 0x38bdf8 : 0xff7700);
-                    this.playerBackfireLight.intensity = 3.6;
+                    this.playerBackfireLight.intensity = 2.4 * progress;
                 }
-                if (Math.random() < 0.4) {
-                    this.spawnSparks(state.x + (Math.random() - 0.5) * 0.6, 0.3, state.z - 2.2, 3);
+                if (Math.random() < 0.3) {
+                    this.spawnSparks(state.x + (Math.random() - 0.5) * 0.5, 0.22, state.z - 2.1, 2);
                 }
             } else {
                 this.playerBackfireFlames.forEach(bf => { bf.visible = false; });
