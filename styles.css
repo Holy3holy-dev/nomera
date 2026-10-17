@@ -4487,7 +4487,7 @@ body.race-active .race-3d-viewport-wrapper {
     height: 380px;
     position: relative;
     cursor: grab;
-    touch-action: none;
+    touch-action: pan-y;
 }
 
 .garage-preview-3d-wrap:active {

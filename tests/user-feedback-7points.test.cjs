@@ -125,4 +125,60 @@ test('Bugfix: Shop/Garage authentic GLTF thumbnails and instant 3D race model lo
     assert.ok(appJs.includes('Car3DManager.preloadCarModel(window.THREE, selectedRaceCarName);'), 'Race tab must preload selected car model on tab open and car switch');
 });
 
+test('Mobile UX: 3D showroom podium allows vertical page scrolling without locking touch gestures', () => {
+    const stylesCss = fs.readFileSync(path.join(__dirname, '../styles.css'), 'utf8');
+    const car3dJs = fs.readFileSync(path.join(__dirname, '../js/car-3d.js'), 'utf8');
+
+    // 1. styles.css must declare touch-action: pan-y for 3D showroom wrap
+    assert.match(stylesCss, /\.garage-preview-3d-wrap\s*\{[^}]*touch-action:\s*pan-y;/s,
+        '.garage-preview-3d-wrap must specify touch-action: pan-y to allow vertical page scrolling');
+
+    // 2. car-3d.js must implement directional touch detection
+    assert.ok(car3dJs.includes('this.touchLockedDir = null;'), 'Showroom must reset touchLockedDir on touch start/end');
+    assert.ok(car3dJs.includes("(dy > dx) ? 'vertical' : 'horizontal'"), 'Showroom must differentiate vertical scroll from horizontal rotate');
+    assert.ok(car3dJs.includes("if (this.touchLockedDir === 'vertical')"), 'Showroom must detect vertical scroll gesture');
+    assert.ok(car3dJs.includes("if (this.touchLockedDir === 'horizontal')"), 'Showroom must detect horizontal rotate gesture');
+
+    // 3. touchstart must be registered with passive: true
+    assert.ok(car3dJs.includes("dom.addEventListener('touchstart', this._onTouchStart, { passive: true });"),
+        'touchstart must be passive to allow smooth browser page scrolling');
+});
+
+test('Visuals: All 25 vehicles have authentic 3D thumbnails pre-rendered and exported', () => {
+    const car3dJs = fs.readFileSync(path.join(__dirname, '../js/car-3d.js'), 'utf8');
+    const appJs = fs.readFileSync(path.join(__dirname, '../js/app.js'), 'utf8');
+    const root = path.join(__dirname, '..');
+
+    const expectedCarIds = [
+        'vaz2107', 'vaz2109', 'gaz24', 'priora', 'solaris', 'vesta', 'polo',
+        'mark2', 'subaru', 'm5e60', 'silvia', 'camry', 'lc300', 'gtr',
+        'e63', 'rs6', 'm5f90', 'm8', 'g63', 'porsche911', 'huracan',
+        'cullinan', 'sf90', 'chiron', 'jesko'
+    ];
+
+    // 1. All 25 thumbnail PNG files must exist on disk and be non-empty (> 20KB)
+    for (const carId of expectedCarIds) {
+        const thumbPath = path.join(root, 'assets', 'thumbnails', `${carId}.png`);
+        assert.ok(fs.existsSync(thumbPath), `Missing pre-rendered 3D thumbnail for ${carId}.png`);
+        const stat = fs.statSync(thumbPath);
+        assert.ok(stat.size > 20000, `Thumbnail for ${carId}.png is unexpectedly small: ${stat.size} bytes`);
+    }
+
+    // 2. STATIC_3D_THUMBNAILS in car-3d.js must map all 25 car IDs
+    assert.ok(car3dJs.includes('const STATIC_3D_THUMBNAILS = {'), 'car-3d.js must define STATIC_3D_THUMBNAILS');
+    for (const carId of expectedCarIds) {
+        assert.ok(car3dJs.includes(`${carId}: './assets/thumbnails/${carId}.png'`),
+            `STATIC_3D_THUMBNAILS must include mapping for ${carId}`);
+    }
+
+    // 3. getSideThumbnail must return static 3D thumbnail as instant fallback
+    assert.ok(car3dJs.includes('return getStaticThumbnail(carName);'),
+        'getSideThumbnail must return getStaticThumbnail(carName) immediately on frame 1');
+
+    // 4. getCarSpriteDataUrl in app.js must utilize 3D thumbnails for side view
+    assert.ok(appJs.includes("if (view === 'side' && !options.forcePixel && typeof Car3DManager !== 'undefined'"),
+        'getCarSpriteDataUrl must integrate with Car3DManager.getSideThumbnail');
+});
+
+
 

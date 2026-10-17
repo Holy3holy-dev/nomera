@@ -9847,6 +9847,16 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 return carSpriteCache.get(cacheKey);
             }
 
+            // Return authentic 3D model icon whenever available for side view
+            if (view === 'side' && !options.forcePixel && typeof Car3DManager !== 'undefined' && typeof Car3DManager.getSideThumbnail === 'function') {
+                const thumb3D = Car3DManager.getSideThumbnail(name, styling);
+                if (thumb3D) {
+                    if (carSpriteCache.size > 250) carSpriteCache.clear();
+                    carSpriteCache.set(cacheKey, thumb3D);
+                    return thumb3D;
+                }
+            }
+
             if (typeof document === 'undefined' || !document.createElement) {
                 return DEFAULT_CAR_IMG;
             }

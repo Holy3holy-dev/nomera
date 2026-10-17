@@ -1,7 +1,7 @@
 // Release-coherent app shell. No Firebase, external assets or non-GET requests are cached.
-const CACHE_NAME = 'nomera-cache-8c1cbabc060f';
-const ASSETS = ['./', './index.html', './manifest.json', './styles.css?v=762ea66ef79e',
-    './js/security.js?v=ed845ef69db6', './js/storage.js?v=327dc7592b84', './js/race-records.js?v=eaeaf8e59fc2', './js/race-economy.js?v=117874dbbaf3', './js/audio.js?v=5f37266c63a4', './js/car-3d.js?v=dac17a698f68', './js/app.js?v=75adcc7790f9',
+const CACHE_NAME = 'nomera-cache-8e68812fd01b';
+const ASSETS = ['./', './index.html', './manifest.json', './styles.css?v=491cfc4a2eef',
+    './js/security.js?v=ed845ef69db6', './js/storage.js?v=327dc7592b84', './js/race-records.js?v=eaeaf8e59fc2', './js/race-economy.js?v=117874dbbaf3', './js/audio.js?v=5f37266c63a4', './js/car-3d.js?v=24b4dc93a295', './js/app.js?v=7ed23131e46d',
     './icons/car-placeholder.svg', './icons/icon-192.png', './icons/icon-512.png'];
 const allowed = new Set(ASSETS.map(path => new URL(path, self.registration.scope).href));
 

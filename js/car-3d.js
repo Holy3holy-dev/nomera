@@ -6576,10 +6576,30 @@
                 this.isDragging = true;
                 this.dragVelX = 0;
                 this.dragVelY = 0;
-                this.prevPointerX = e.clientX || (e.touches && e.touches[0].clientX) || 0;
-                this.prevPointerY = e.clientY || (e.touches && e.touches[0].clientY) || 0;
+                this.prevPointerX = e.clientX || 0;
+                this.prevPointerY = e.clientY || 0;
                 this.needsRender = true;
                 if (!this.active) this.start();
+            };
+
+            this._onTouchStart = (e) => {
+                if (e.touches && e.touches.length === 1) {
+                    this.touchStartX = e.touches[0].clientX;
+                    this.touchStartY = e.touches[0].clientY;
+                    this.prevPointerX = e.touches[0].clientX;
+                    this.prevPointerY = e.touches[0].clientY;
+                    this.touchLockedDir = null;
+                    this.isDragging = false;
+                    this.dragVelX = 0;
+                    this.dragVelY = 0;
+                } else if (e.touches && e.touches.length === 2) {
+                    this.touchLockedDir = 'pinch';
+                    this.isDragging = false;
+                    this.pinchStartDist = Math.hypot(
+                        e.touches[0].clientX - e.touches[1].clientX,
+                        e.touches[0].clientY - e.touches[1].clientY
+                    );
+                }
             };
 
             this._onPointerMove = (e) => {
@@ -6638,21 +6658,41 @@
                         if (!this.active) this.start();
                     }
                     this.pinchStartDist = dist;
-                } else if (e.touches.length === 1) {
-                    if (e.cancelable) e.preventDefault();
-                    if (!this.isDragging) {
-                        this.isDragging = true;
-                        this.prevPointerX = e.touches[0].clientX;
-                        this.prevPointerY = e.touches[0].clientY;
-                        if (!this.active) this.start();
+                    return;
+                }
+                if (e.touches.length === 1) {
+                    const cx = e.touches[0].clientX;
+                    const cy = e.touches[0].clientY;
+                    if (!this.touchLockedDir) {
+                        const dx = Math.abs(cx - this.touchStartX);
+                        const dy = Math.abs(cy - this.touchStartY);
+                        if (dx > 7 || dy > 7) {
+                            this.touchLockedDir = (dy > dx) ? 'vertical' : 'horizontal';
+                        }
                     }
-                    this._onPointerMove(e);
+                    if (this.touchLockedDir === 'vertical') {
+                        // User wants to scroll the page vertically past the 3D podium
+                        // Do NOT call e.preventDefault(), do NOT drag the car
+                        this.isDragging = false;
+                        return;
+                    }
+                    if (this.touchLockedDir === 'horizontal') {
+                        if (e.cancelable) e.preventDefault();
+                        if (!this.isDragging) {
+                            this.isDragging = true;
+                            this.prevPointerX = cx;
+                            this.prevPointerY = cy;
+                            if (!this.active) this.start();
+                        }
+                        this._onPointerMove(e);
+                    }
                 }
             };
 
             this._onTouchEnd = () => {
                 this.isDragging = false;
                 this.pinchStartDist = 0;
+                this.touchLockedDir = null;
                 this.needsRender = true;
             };
 
@@ -6662,7 +6702,7 @@
             window.addEventListener('mousemove', this._onPointerMove);
             window.addEventListener('mouseup', this._onPointerUp);
 
-            dom.addEventListener('touchstart', this._onPointerDown, { passive: false });
+            dom.addEventListener('touchstart', this._onTouchStart, { passive: true });
             window.addEventListener('touchmove', this._onTouchMove, { passive: false });
             window.addEventListener('touchend', this._onTouchEnd);
             window.addEventListener('touchcancel', this._onTouchEnd);
@@ -6876,6 +6916,9 @@
                     try { dom.removeEventListener('mousedown', this._onPointerDown); } catch (_) {}
                     try { dom.removeEventListener('touchstart', this._onPointerDown); } catch (_) {}
                 }
+                if (this._onTouchStart) {
+                    try { dom.removeEventListener('touchstart', this._onTouchStart); } catch (_) {}
+                }
                 if (this._onWheel) {
                     try { dom.removeEventListener('wheel', this._onWheel); } catch (_) {}
                 }
@@ -6937,6 +6980,39 @@
     // =========================================================================
     // 📸 OFFLINE 3D SIDE PROFILE THUMBNAIL RENDERER FOR AUTO SALON & GARAGE
     // =========================================================================
+    const STATIC_3D_THUMBNAILS = {
+        vaz2107: './assets/thumbnails/vaz2107.png',
+        vaz2109: './assets/thumbnails/vaz2109.png',
+        gaz24: './assets/thumbnails/gaz24.png',
+        priora: './assets/thumbnails/priora.png',
+        solaris: './assets/thumbnails/solaris.png',
+        vesta: './assets/thumbnails/vesta.png',
+        polo: './assets/thumbnails/polo.png',
+        mark2: './assets/thumbnails/mark2.png',
+        subaru: './assets/thumbnails/subaru.png',
+        m5e60: './assets/thumbnails/m5e60.png',
+        silvia: './assets/thumbnails/silvia.png',
+        camry: './assets/thumbnails/camry.png',
+        lc300: './assets/thumbnails/lc300.png',
+        gtr: './assets/thumbnails/gtr.png',
+        e63: './assets/thumbnails/e63.png',
+        rs6: './assets/thumbnails/rs6.png',
+        m5f90: './assets/thumbnails/m5f90.png',
+        m8: './assets/thumbnails/m8.png',
+        g63: './assets/thumbnails/g63.png',
+        porsche911: './assets/thumbnails/porsche911.png',
+        huracan: './assets/thumbnails/huracan.png',
+        cullinan: './assets/thumbnails/cullinan.png',
+        sf90: './assets/thumbnails/sf90.png',
+        chiron: './assets/thumbnails/chiron.png',
+        jesko: './assets/thumbnails/jesko.png'
+    };
+
+    function getStaticThumbnail(carName) {
+        const carId = identifyCarModel(carName);
+        return STATIC_3D_THUMBNAILS[carId] || null;
+    }
+
     const sideThumbnailCache = new Map();
     const thumbnailCallbacks = new Map();
     const thumbnailQueue = [];
@@ -6959,7 +7035,10 @@
 
     function getSideThumbnail(carName, styling = {}) {
         const key = getThumbnailKey(carName, styling);
-        return sideThumbnailCache.get(key) || null;
+        if (sideThumbnailCache.has(key)) {
+            return sideThumbnailCache.get(key);
+        }
+        return getStaticThumbnail(carName);
     }
 
     function initOffscreenPipeline(THREE) {
@@ -10011,6 +10090,8 @@
         Car3DRacingEngine,
         buildDetailedCarModel,
         identifyCarModel,
+        STATIC_3D_THUMBNAILS,
+        getStaticThumbnail,
         renderSideThumbnail,
         getSideThumbnail,
         loadCarModel,
