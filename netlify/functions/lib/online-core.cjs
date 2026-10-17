@@ -60,12 +60,107 @@ function safePlate(raw,id){
   const isValidFormat = text.length<=36 && (
     /^[АВЕКМНОРСТУХA-Z] \d{3} [АВЕКМНОРСТУХA-Z]{2} \| [A-Z0-9]{1,3} (?:RUS|KZ|USA|UAE)$/u.test(text) ||
     /^\d{3} [A-Z]{3} \| [A-Z0-9]{1,3} KZ$/.test(text) ||
-    /^[A-Z]{3} \d{3} \| [A-Z0-9]{1,3} USA$/.test(text) ||
+    /^[A-Z]{3}[ -]\d{3,4} \| [A-Z0-9]{1,3} USA$/.test(text) ||
     /^[A-Z]{1,3} \d{1,5} \| [A-Z0-9]{1,3} UAE$/.test(text)
   );
   if (!isValidFormat) throw Error('Неверный формат номера');
   const price=Number.isSafeInteger(raw.price) && raw.price>=0 && raw.price<=MAX_MONEY ? raw.price : 1000;
   return {id, text, price, rarity:{text:typeof raw.rarity?.text==='string'?raw.rarity.text.slice(0,30):'Обычный'}};
+}
+function parsePlate(text, countryOverride = null) {
+  if (typeof text !== 'string') return null;
+  const trimmed = text.trim();
+  const normCountry = countryOverride && COUNTRIES[String(countryOverride).toUpperCase()]
+    ? String(countryOverride).toUpperCase()
+    : null;
+
+  // Authentic KZ: "777 AAA | 01 KZ"
+  const mKz = /^(\d{3})\s+([A-Z]{3})\s*\|\s*([A-Z0-9]{2,3})\s+KZ$/i.exec(trimmed);
+  if (mKz) {
+    const digits = mKz[1];
+    const letters = mKz[2].toUpperCase();
+    const region = mKz[3].toUpperCase();
+    const country = normCountry || 'KZ';
+    return {
+      l1: letters[0],
+      l2: letters[1],
+      l3: letters[2],
+      letters: [letters[0], letters[1], letters[2]],
+      digits,
+      num: digits,
+      region,
+      reg: region,
+      country
+    };
+  }
+
+  // Authentic USA: "AAA-777 | CA USA" or "AAA 777 | CA USA"
+  const mUsa = /^([A-Z]{3})[\s-]+(\d{3,4})\s*\|\s*([A-Z0-9]{2,3})\s+USA$/i.exec(trimmed);
+  if (mUsa) {
+    const letters = mUsa[1].toUpperCase();
+    const digits = mUsa[2].slice(-3).padStart(3, '0');
+    const region = mUsa[3].toUpperCase();
+    const country = normCountry || 'USA';
+    return {
+      l1: letters[0],
+      l2: letters[1],
+      l3: letters[2],
+      letters: [letters[0], letters[1], letters[2]],
+      digits,
+      num: digits,
+      region,
+      reg: region,
+      country
+    };
+  }
+
+  // Authentic / legacy UAE: "D 1 | DXB UAE", "AA 777 | DXB UAE", "DXB 001 | DXB UAE"
+  const mUae = /^([A-Z]{1,3})\s+(\d{1,5})\s*\|\s*([A-Z0-9]{1,3})\s+UAE$/i.exec(trimmed);
+  if (mUae) {
+    const code = mUae[1].toUpperCase();
+    const num = mUae[2];
+    const region = mUae[3].toUpperCase();
+    const l1 = code[0];
+    const l2 = code.length === 3 ? code[1] : (code.length === 2 ? code[1] : 'X');
+    const l3 = code.length === 3 ? code[2] : (code.length === 2 ? code[1] : 'Z');
+    const digits = num.slice(-3).padStart(3, '0');
+    const country = normCountry || 'UAE';
+    return {
+      l1,
+      l2,
+      l3,
+      letters: [l1, l2, l3],
+      digits,
+      num: digits,
+      region,
+      reg: region,
+      country
+    };
+  }
+
+  // Standard RUS & legacy format: "А 777 АА | 777 RUS", "A777AA77", "V 777 IP | 01 KZ"
+  const mRus = /^([A-ZА-ЯЁ])\s*(\d{3})\s*([A-ZА-ЯЁ]{2})\s*(?:\|\s*)?([A-Z0-9]{1,3})(?:\s*\|\s*|\s+)?(RUS|KZ|USA|UAE)?$/i.exec(trimmed);
+  if (mRus) {
+    const l1 = mRus[1].toUpperCase();
+    const digits = mRus[2];
+    const l2 = mRus[3][0].toUpperCase();
+    const l3 = mRus[3][1].toUpperCase();
+    const region = mRus[4].toUpperCase();
+    const country = normCountry || (mRus[5] ? mRus[5].toUpperCase() : 'RUS');
+    return {
+      l1,
+      l2,
+      l3,
+      letters: [l1, l2, l3],
+      digits,
+      num: digits,
+      region,
+      reg: region,
+      country
+    };
+  }
+
+  return null;
 }
 function safeCar(raw){
   if (!raw || typeof raw!=='object'||Array.isArray(raw)) throw Error('Неверный автомобиль');
@@ -168,26 +263,54 @@ const COUNTRIES = {
     regRegex: /^(?:DXB|AUH|SHJ|AJM|RAK|FUJ|UAQ|[A-Z]{1,3}|\d{1,3})$/i,
     defaultReg: 'DXB',
     letters: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split(''),
-    elites: ['DXB','UAE','SHK','VIP','AAA','ZZZ','FFF','GGG','RRR','SSS','XXX','CEO','OIL','GLD']
+    elites: ['DXB','UAE','SHK','VIP','AAA','ZZZ','FFF','GGG','RRR','SSS','XXX','CEO','OIL','GLD','AUH']
   }
 };
 
 function priceOfPlate(l1,l2,l3,num,reg,country='RUS') {
+  if (l1 && typeof l1 === 'object' && !Array.isArray(l1)) {
+    const p = l1;
+    const overrideCountry = typeof l2 === 'string' ? l2 : undefined;
+    const arr = Array.isArray(p.letters) ? p.letters : [p.l1, p.l2, p.l3];
+    return priceOfPlate(
+      p.l1 ?? arr[0],
+      p.l2 ?? arr[1],
+      p.l3 ?? arr[2],
+      p.digits ?? p.num,
+      p.region ?? p.reg,
+      overrideCountry || p.country || 'RUS'
+    );
+  }
+  if (Array.isArray(l1)) {
+    return priceOfPlate(l1[0], l1[1], l1[2], l2, l3, num || 'RUS');
+  }
+  if (typeof l1 === 'string' && (l2 === undefined || (l3 === undefined && l1.includes('|')))) {
+    const parsed = parsePlate(l1, typeof l2 === 'string' ? l2 : null);
+    if (!parsed) return 0;
+    return priceOfPlate(parsed.l1, parsed.l2, parsed.l3, parsed.digits, parsed.region, parsed.country);
+  }
+
   const cCode = (country && COUNTRIES[String(country).toUpperCase()]) ? String(country).toUpperCase() : 'RUS';
   const cfg = COUNTRIES[cCode];
+  const cElites = cfg.elites;
   let price = 450; // Базовая стоимость простого номера
-  const letters = (l1||'') + (l2||'') + (l3||'');
-  const isTripleLetters = (l1 === l2 && l2 === l3);
-  const isMirrorLetters = (l1 === l3 && l1 !== l2);
-  const isPairLetters = (l1 === l2 || l2 === l3) && !isTripleLetters;
+  const digits = String(num || '000').padStart(3, '0').slice(-3);
+  const c1 = String(l1 || '').toUpperCase();
+  const c2 = String(l2 || '').toUpperCase();
+  const c3 = String(l3 || '').toUpperCase();
+  const letters = c1 + c2 + c3;
+  const isTripleLetters = (c1 !== '' && c1 === c2 && c2 === c3);
+  const isSameLetters = isTripleLetters;
+  const isMirrorLetters = (c1 !== '' && c1 === c3 && c1 !== c2);
+  const isPairLetters = (c1 !== '' && (c1 === c2 || c2 === c3) && !isTripleLetters);
 
   if (cCode === 'RUS') {
     // 1. Престижные буквенные серии
     if (ELITES.includes(letters)) {
-      if (letters === 'ЕКХ' && num === '011') return 12000000;
-      if (num === '777') price += 5000000;
-      else if (num[0] === num[1] && num[1] === num[2]) price += 2000000;
-      else if (num === '001') price += 1200000;
+      if (letters === 'ЕКХ' && digits === '011') return 12000000;
+      if (digits === '777') price += 5000000;
+      else if (digits[0] === digits[1] && digits[1] === digits[2]) price += 2000000;
+      else if (digits === '001') price += 1200000;
       else price += 400000;
     }
     if (letters === 'ЕКХ') price += 1500000;
@@ -200,56 +323,89 @@ function priceOfPlate(l1,l2,l3,num,reg,country='RUS') {
     if (letters === 'СКР') price += 700000;
     if (letters === 'УУУ') price += 600000;
   } else {
-    if (cfg.elites.includes(letters)) {
-      if (num === '777') price += 5000000;
-      else if (num[0] === num[1] && num[1] === num[2]) price += 2000000;
-      else if (num === '001') price += 1500000;
+    if (cElites.includes(letters)) {
+      if (digits === '777') price += 5000000;
+      else if (digits[0] === digits[1] && digits[1] === digits[2]) price += 2000000;
+      else if (digits === '001') price += 1500000;
       else price += 450000;
     }
     if (cCode === 'KZ') {
       if (letters === 'VIP' || letters === 'AAA') price += 1500000;
       else if (['ZZZ','QQQ','AST','ALA','HAN'].includes(letters)) price += 950000;
-      else if (cfg.elites.includes(letters)) price += 650000;
+      else if (cElites.includes(letters)) price += 650000;
     } else if (cCode === 'USA') {
       if (['USA','VIP','FBI','CIA'].includes(letters)) price += 1600000;
       else if (['NYC','LAX','MIA','GTA','CEO','GOD','WIN'].includes(letters)) price += 1100000;
-      else if (cfg.elites.includes(letters)) price += 750000;
+      else if (cElites.includes(letters)) price += 750000;
     } else if (cCode === 'UAE') {
-      if (['DXB','UAE','SHK','VIP'].includes(letters)) price += 2000000;
+      if (['DXB','UAE','SHK','VIP','AUH'].includes(letters)) price += 2000000;
       else if (['AAA','CEO','OIL','GLD'].includes(letters)) price += 1400000;
-      else if (cfg.elites.includes(letters)) price += 850000;
+      else if (cElites.includes(letters)) price += 850000;
     }
   }
 
   // 2. Структура букв
-  if (isTripleLetters) price += 350000;
-  else if (isMirrorLetters) price += 1800;
-  else if (isPairLetters) price += 1200;
+  if (cCode === 'UAE') {
+    if (cElites.includes(letters)) {
+      price += 500000;
+      if (isSameLetters && digits === '001') price += 3500000;
+    } else if (isSameLetters) {
+      price += 280000;
+    } else if (['A', 'D', 'S', 'V', 'X', 'Z', 'M', 'K'].includes(c1)) {
+      price += 120000;
+    }
+  } else {
+    if (isTripleLetters) price += 350000;
+    else if (isMirrorLetters) price += 1800;
+    else if (isPairLetters) price += 1200;
+  }
 
   // 3. Комбинации цифр
-  if (num[0] === num[1] && num[1] === num[2]) {
-    price += (num === '777' ? 750000 : 320000);
-  } else if (num === '001') {
-    price += 350000;
-  } else if (num === '007') {
-    price += 120000;
-  } else if (num.startsWith('00')) {
-    price += 35000;
-  } else if (num.endsWith('00')) {
-    price += 25000;
-  } else if (['123','234','345','456','567','678','789','987','876','765','654','543','432','321'].includes(num)) {
-    price += 20000;
-  } else if (['010','020','030','040','050','060','070','080','090'].includes(num)) {
-    price += 2000;
-  } else if (num[0] === num[2]) {
-    price += 1600;
+  if (cCode === 'UAE') {
+    if (digits === '001') {
+      price += 2500000;
+    } else if (/^00[2-9]$/.test(digits)) {
+      price += (digits === '007' ? 1500000 : 1200000);
+    } else if (/^0([1-9])\1$/.test(digits)) {
+      price += (digits === '077' ? 650000 : 450000);
+    } else if (/^0[1-9]0$/.test(digits)) {
+      price += 180000;
+    } else if (/^0[1-9][1-9]$/.test(digits)) {
+      price += 50000;
+    } else if (digits[0] === digits[1] && digits[1] === digits[2]) {
+      price += (digits === '777' ? 750000 : 320000);
+    } else if (digits.endsWith('00')) {
+      price += 25000;
+    } else if (['123','234','345','456','567','678','789','987','876','765','654','543','432','321'].includes(digits)) {
+      price += 20000;
+    } else if (digits[0] === digits[2]) {
+      price += 1600;
+    }
+  } else {
+    if (digits[0] === digits[1] && digits[1] === digits[2]) {
+      price += (digits === '777' ? 750000 : 320000);
+    } else if (digits === '001') {
+      price += 350000;
+    } else if (digits === '007') {
+      price += 120000;
+    } else if (digits.startsWith('00')) {
+      price += 35000;
+    } else if (digits.endsWith('00')) {
+      price += 25000;
+    } else if (['123','234','345','456','567','678','789','987','876','765','654','543','432','321'].includes(digits)) {
+      price += 20000;
+    } else if (['010','020','030','040','050','060','070','080','090'].includes(digits)) {
+      price += 2000;
+    } else if (digits[0] === digits[2]) {
+      price += 1600;
+    }
   }
 
   // 4. Регионы (символическая надбавка за столичные регионы + синергия с элитой)
   if (cCode === 'RUS') {
     if (['777','77','99','799','797'].includes(reg)) {
       price += 250;
-      if (num === '777') price += 500000;
+      if (digits === '777') price += 500000;
       if (isTripleLetters) price += 50000;
     } else if (['78','98','178','198'].includes(reg)) {
       price += 200;
@@ -265,27 +421,24 @@ function priceOfPlate(l1,l2,l3,num,reg,country='RUS') {
   if (cCode === 'KZ') {
     if (['01','02','17'].includes(regUp)) {
       price += 500;
-      if (num === '777' || num === '001' || num === '010' || num === '020') price += 500000;
-      if (isTripleLetters || cfg.elites.includes(letters)) price += 60000;
+      if (digits === '777' || digits === '001' || digits === '010' || digits === '020') price += 500000;
+      if (isTripleLetters || cElites.includes(letters)) price += 60000;
     } else {
       price += 200;
     }
   } else if (cCode === 'USA') {
     if (['CA','NY','FL','TX','NV'].includes(regUp)) {
       price += 800;
-      if (num === '777' || num === '001' || num === '007') price += 550000;
-      if (isTripleLetters || cfg.elites.includes(letters)) price += 80000;
+      if (digits === '777' || digits === '001' || digits === '007') price += 550000;
+      if (isTripleLetters || cElites.includes(letters)) price += 80000;
     } else {
       price += 300;
     }
   } else if (cCode === 'UAE') {
-    if (/^00[1-9]$/.test(num)) {
-      price += (num === '001' ? 3000000 : 950000);
-    }
     if (['DXB','AUH','1','2'].includes(regUp)) {
       price += 1500;
-      if (/^00[1-9]$/.test(num) || num === '777') price += 750000;
-      if (isTripleLetters || cfg.elites.includes(letters)) price += 150000;
+      if (/^00[1-9]$/.test(digits) || digits === '777') price += 750000;
+      if (isTripleLetters || cElites.includes(letters)) price += 150000;
     } else {
       price += 500;
     }
@@ -632,4 +785,4 @@ function makeOnlineTransactionUpdate(loaded, action, key, data, now) {
     getReason() {return reason;}
   };
 }
-module.exports={COOKIE,TTL,MAX_MONEY,STARTING_BALANCE,COUNTRIES,keyOf,pinHash,checkPin,migrateLegacyPin,sign,verify,cookie,sessionCookie,safePlate,safeCar,safeCars,money,sanitizedProfile,mutate,makeOnlineTransactionUpdate,freshAccount,priceOfPlate,rarityOfPrice,secureRoll,draftOf,getUaePlateDisplayParts,formatPlateText};
+module.exports={COOKIE,TTL,MAX_MONEY,STARTING_BALANCE,COUNTRIES,keyOf,pinHash,checkPin,migrateLegacyPin,sign,verify,cookie,sessionCookie,safePlate,parsePlate,safeCar,safeCars,money,sanitizedProfile,mutate,makeOnlineTransactionUpdate,freshAccount,priceOfPlate,rarityOfPrice,secureRoll,draftOf,getUaePlateDisplayParts,formatPlateText};

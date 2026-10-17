@@ -320,4 +320,99 @@ test('Frontend cases adapt prices and plate pools by country and support dedicat
   assert.match(uaeMiniHtml, />1</);
 });
 
+test('parsePlate and priceOfPlate support authentic formatted KZ, USA, and UAE strings', () => {
+  const kzParsed = c.parsePlate('777 AAA | 01 KZ');
+  assert.ok(kzParsed);
+  assert.equal(kzParsed.country, 'KZ');
+  assert.equal(kzParsed.l1, 'A');
+  assert.equal(kzParsed.l2, 'A');
+  assert.equal(kzParsed.l3, 'A');
+  assert.equal(kzParsed.digits, '777');
+  assert.equal(kzParsed.region, '01');
+  assert.equal(c.priceOfPlate(kzParsed), c.priceOfPlate('A', 'A', 'A', '777', '01', 'KZ'));
+  assert.ok(c.priceOfPlate(kzParsed) > 10000000);
 
+  const usaParsed = c.parsePlate('VIP-777 | CA USA');
+  assert.ok(usaParsed);
+  assert.equal(usaParsed.country, 'USA');
+  assert.equal(usaParsed.l1, 'V');
+  assert.equal(usaParsed.l2, 'I');
+  assert.equal(usaParsed.l3, 'P');
+  assert.equal(usaParsed.digits, '777');
+  assert.equal(usaParsed.region, 'CA');
+  assert.equal(c.priceOfPlate(usaParsed), c.priceOfPlate('V', 'I', 'P', '777', 'CA', 'USA'));
+  assert.ok(c.priceOfPlate(usaParsed) > 20000000);
+
+  const uaeD1 = c.parsePlate('D 1 | DXB UAE');
+  assert.ok(uaeD1);
+  assert.equal(uaeD1.country, 'UAE');
+  assert.equal(uaeD1.l1, 'D');
+  assert.equal(uaeD1.l2, 'X');
+  assert.equal(uaeD1.l3, 'Z');
+  assert.equal(uaeD1.digits, '001');
+  assert.equal(uaeD1.region, 'DXB');
+  assert.ok(c.priceOfPlate(uaeD1) > 5000000, `Expected D 1 | DXB UAE > 5,000,000, got ${c.priceOfPlate(uaeD1)}`);
+
+  const uaeD7 = c.parsePlate('D 7 | DXB UAE');
+  assert.ok(uaeD7);
+  assert.equal(uaeD7.digits, '007');
+  assert.ok(c.priceOfPlate(uaeD7) > 10000000);
+  assert.ok(c.priceOfPlate(uaeD1) > c.priceOfPlate(uaeD7));
+
+  const uaeD77 = c.parsePlate('D 77 | DXB UAE');
+  assert.ok(uaeD77);
+  assert.equal(uaeD77.digits, '077');
+  assert.ok(c.priceOfPlate(uaeD77) > 3000000);
+  assert.ok(c.priceOfPlate(uaeD7) > c.priceOfPlate(uaeD77));
+
+  const uaeAA777 = c.parsePlate('AA 777 | DXB UAE');
+  assert.ok(uaeAA777);
+  assert.equal(uaeAA777.l1, 'A');
+  assert.equal(uaeAA777.l2, 'A');
+  assert.equal(uaeAA777.l3, 'A');
+  assert.equal(uaeAA777.digits, '777');
+  assert.equal(uaeAA777.region, 'DXB');
+  assert.equal(c.priceOfPlate(uaeAA777), c.priceOfPlate('A', 'A', 'A', '777', 'DXB', 'UAE'));
+  assert.ok(c.priceOfPlate(uaeAA777) > 10000000);
+});
+
+test('UAE 1-digit and 2-digit plates receive Dubai auction pricing and rarity, and ignore hidden l2/l3 mirror/pair letters', () => {
+  // 1-digit ('005' -> '5') and 2-digit ('077' -> '77') UAE plates get high-value pricing & rarity
+  assert.equal(c.formatPlateText('D', 'X', 'Z', '005', 'DXB', 'UAE'), 'D 5 | DXB UAE');
+  assert.equal(c.formatPlateText('D', 'X', 'Z', '077', 'DXB', 'UAE'), 'D 77 | DXB UAE');
+
+  const uae1Digit = c.priceOfPlate('D', 'X', 'Z', '005', 'DXB', 'UAE');
+  const uae2DigitTwin = c.priceOfPlate('D', 'X', 'Z', '077', 'DXB', 'UAE');
+  const uae2DigitRound = c.priceOfPlate('D', 'X', 'Z', '020', 'DXB', 'UAE');
+  const uae2DigitOther = c.priceOfPlate('D', 'X', 'Z', '023', 'DXB', 'UAE');
+  const uae3DigitPlain = c.priceOfPlate('D', 'X', 'Z', '124', 'DXB', 'UAE');
+
+  assert.ok(uae1Digit > 10000000, `Expected 1-digit UAE plate ('005') > 10M, got ${uae1Digit}`);
+  assert.equal(c.rarityOfPrice(uae1Digit), 'БЛАТНОЙ');
+
+  assert.ok(uae2DigitTwin > 3000000, `Expected 2-digit twin UAE plate ('077') > 3M, got ${uae2DigitTwin}`);
+  assert.ok(['Крутой', 'БЛАТНОЙ'].includes(c.rarityOfPrice(uae2DigitTwin)));
+
+  assert.ok(uae1Digit > uae2DigitTwin);
+  assert.ok(uae2DigitTwin > uae2DigitRound);
+  assert.ok(uae2DigitRound > uae2DigitOther);
+  assert.ok(uae2DigitOther > uae3DigitPlain);
+
+  // Two UAE plates with the same visible 1-letter code (['D','A','D'] vs ['D','X','Z']) produce the exact same price
+  assert.equal(
+    c.formatPlateText('D', 'A', 'D', '005', 'DXB', 'UAE'),
+    c.formatPlateText('D', 'X', 'Z', '005', 'DXB', 'UAE')
+  );
+  assert.equal(
+    c.priceOfPlate('D', 'A', 'D', '005', 'DXB', 'UAE'),
+    c.priceOfPlate('D', 'X', 'Z', '005', 'DXB', 'UAE')
+  );
+  assert.equal(
+    c.priceOfPlate(['D', 'A', 'D'], '077', 'DXB', 'UAE'),
+    c.priceOfPlate(['D', 'X', 'Z'], '077', 'DXB', 'UAE')
+  );
+  assert.equal(
+    c.priceOfPlate('D', 'A', 'D', '124', 'SHJ', 'UAE'),
+    c.priceOfPlate('D', 'X', 'Z', '124', 'SHJ', 'UAE')
+  );
+});

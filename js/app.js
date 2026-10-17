@@ -548,9 +548,41 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 plateBox.dataset.emirateEn = uaeMeta.en;
                 plateBox.dataset.emirateAr = uaeMeta.ar;
             }
+
+            const regionBox = (typeof plateBox.querySelector === 'function' && plateBox.querySelector('.plate-region'))
+                || (typeof document.querySelector === 'function' && document.querySelector('#plate-box .plate-region, .plate-region'))
+                || (document.getElementById('region') && document.getElementById('region').parentElement);
+            if (regionBox) {
+                if (c === 'UAE') {
+                    if (typeof regionBox.setAttribute === 'function') {
+                        regionBox.setAttribute('data-emirate-en', uaeMeta.en);
+                        regionBox.setAttribute('data-emirate-ar', uaeMeta.ar);
+                    }
+                    if (regionBox.dataset && typeof regionBox.dataset === 'object') {
+                        regionBox.dataset.emirateEn = uaeMeta.en;
+                        regionBox.dataset.emirateAr = uaeMeta.ar;
+                    }
+                } else {
+                    if (typeof regionBox.removeAttribute === 'function') {
+                        regionBox.removeAttribute('data-emirate-en');
+                        regionBox.removeAttribute('data-emirate-ar');
+                    }
+                    if (regionBox.dataset && typeof regionBox.dataset === 'object') {
+                        delete regionBox.dataset.emirateEn;
+                        delete regionBox.dataset.emirateAr;
+                    }
+                }
+            }
+
             syncPlateBoxCellsLayout();
         }
-        if (typeof window !== 'undefined') window.updatePlateBoxMeta = updatePlateBoxMeta;
+        function syncPlateCountryDOM(country = currentCountry, reg = currentReg) {
+            updatePlateBoxMeta(country, reg);
+        }
+        if (typeof window !== 'undefined') {
+            window.updatePlateBoxMeta = updatePlateBoxMeta;
+            window.syncPlateCountryDOM = syncPlateCountryDOM;
+        }
 
         function getMiniPlateCountryClass(plateText) {
             const raw = String(plateText || '').trim().toUpperCase();
@@ -3231,7 +3263,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 if (hasNumbers && hasLetters && newNum !== '---' && Array.isArray(newLetters)) {
                     const price = getCalculatedPrice(newLetters[0], newLetters[1], newLetters[2], newNum, params.region || existingDraft.reg || currentReg || cfg.defaultReg, countryCode);
                     const r = getRarity(price);
-                    if (['Редкий', 'Супер редкий', 'Эпический', 'Легендарный', 'БЛАТНОЙ', 'Крутой'].includes(r?.text)) {
+                    if (['Редкий', 'Супер редкий', 'Эпический', 'Легендарный', 'БЛАТНОЙ', 'Крутой', 'Мифический', 'МИФИЧЕСКИЙ'].includes(r?.text)) {
                         nextPity = 0;
                     }
                 }
@@ -4096,27 +4128,61 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 }
 
                 // 2. Структура букв
-                if (isTripleLetters) price += Math.round(350000 * mult);
-                else if (isMirrorLetters) price += Math.round(1800 * mult);
-                else if (isPairLetters) price += Math.round(1200 * mult);
+                if (code === 'UAE') {
+                    // В UAE отображается 1-буквенный код (l1) или 2-буквенный VIP-код (AA..ZZ при l1===l2===l3).
+                    // Скрытые l2 и l3 при 1-буквенном коде не должны менять цену одинаково выглядящих номеров.
+                    if (cElites.includes(letters)) {
+                        price += Math.round((isTripleLetters && num === '001' ? 3500000 : 500000) * mult);
+                    } else if (isTripleLetters) {
+                        price += Math.round(280000 * mult);
+                    } else if (['A', 'D', 'S', 'V', 'X', 'Z', 'M', 'K'].includes(l1)) {
+                        price += Math.round(120000 * mult);
+                    }
+                } else {
+                    if (isTripleLetters) price += Math.round(350000 * mult);
+                    else if (isMirrorLetters) price += Math.round(1800 * mult);
+                    else if (isPairLetters) price += Math.round(1200 * mult);
+                }
 
                 // 3. Комбинации цифр
-                if (num[0] === num[1] && num[1] === num[2]) {
-                    price += Math.round((num === '777' ? 750000 : 320000) * mult);
-                } else if (num === '001') {
-                    price += Math.round(350000 * mult);
-                } else if (num === '007') {
-                    price += Math.round(120000 * mult);
-                } else if (num.startsWith('00')) {
-                    price += Math.round(35000 * mult);
-                } else if (num.endsWith('00')) {
-                    price += Math.round(25000 * mult);
-                } else if (['123','234','345','456','567','678','789','987','876','765','654','543','432','321'].includes(num)) {
-                    price += Math.round(20000 * mult);
-                } else if (['010','020','030','040','050','060','070','080','090'].includes(num)) {
-                    price += Math.round(2000 * mult);
-                } else if (num[0] === num[2]) {
-                    price += Math.round(1600 * mult);
+                if (code === 'UAE') {
+                    if (num === '001') {
+                        price += Math.round((350000 + 2500000) * mult);
+                    } else if (/^00[2-9]$/.test(num)) {
+                        price += Math.round((num === '007' ? 1500000 : 1200000) * mult);
+                    } else if (num[0] === num[1] && num[1] === num[2]) {
+                        price += Math.round((num === '777' ? 750000 : 320000) * mult);
+                    } else if (/^0([1-9])\1$/.test(num)) {
+                        price += Math.round((num === '077' ? 650000 : 450000) * mult);
+                    } else if (/^0[1-9]0$/.test(num)) {
+                        price += Math.round(180000 * mult);
+                    } else if (/^0[1-9][1-9]$/.test(num)) {
+                        price += Math.round(50000 * mult);
+                    } else if (num.endsWith('00')) {
+                        price += Math.round(25000 * mult);
+                    } else if (['123','234','345','456','567','678','789','987','876','765','654','543','432','321'].includes(num)) {
+                        price += Math.round(20000 * mult);
+                    } else if (num[0] === num[2]) {
+                        price += Math.round(1600 * mult);
+                    }
+                } else {
+                    if (num[0] === num[1] && num[1] === num[2]) {
+                        price += Math.round((num === '777' ? 750000 : 320000) * mult);
+                    } else if (num === '001') {
+                        price += Math.round(350000 * mult);
+                    } else if (num === '007') {
+                        price += Math.round(120000 * mult);
+                    } else if (num.startsWith('00')) {
+                        price += Math.round(35000 * mult);
+                    } else if (num.endsWith('00')) {
+                        price += Math.round(25000 * mult);
+                    } else if (['123','234','345','456','567','678','789','987','876','765','654','543','432','321'].includes(num)) {
+                        price += Math.round(20000 * mult);
+                    } else if (['010','020','030','040','050','060','070','080','090'].includes(num)) {
+                        price += Math.round(2000 * mult);
+                    } else if (num[0] === num[2]) {
+                        price += Math.round(1600 * mult);
+                    }
                 }
 
                 // 4. Престижные регионы / штаты / эмираты
@@ -4448,6 +4514,30 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         function executeCellSpin(targets, finalValues, onFinish) {
             initAudio();
             isSpinning = true;
+
+            if (String(currentCountry || 'RUS').toUpperCase() === 'UAE' && Array.isArray(targets) && finalValues) {
+                const fL1 = (finalValues['cell-l1'] ?? finalValues.l1) ?? currentL1;
+                const fL2 = (finalValues['cell-l2'] ?? finalValues.l2) ?? currentL2;
+                const fL3 = (finalValues['cell-l3'] ?? finalValues.l3) ?? currentL3;
+                const uaeDoubleCode = Boolean(fL1 && fL1 !== '-' && fL1 === fL2 && fL2 === fL3);
+
+                if (finalValues['cell-l3'] !== undefined || finalValues.l3 !== undefined) {
+                    setCellChar('cell-l3', fL3);
+                }
+                if (!uaeDoubleCode && (finalValues['cell-l2'] !== undefined || finalValues.l2 !== undefined)) {
+                    setCellChar('cell-l2', fL2);
+                }
+
+                const visibleTargets = targets.filter(id => {
+                    if (id === 'cell-l3') return false;
+                    if (id === 'cell-l2' && !uaeDoubleCode) return false;
+                    return true;
+                });
+                if (visibleTargets.length > 0) {
+                    targets = visibleTargets;
+                }
+            }
+
             syncPlateBoxCellsLayout();
 
             const animStyleSelect = document.getElementById('anim-style-select');
@@ -4526,6 +4616,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 });
 
                 isSpinning = false;
+                syncPlateCountryDOM(currentCountry, currentReg);
                 syncPlateBoxCellsLayout();
                 checkCanSaveButton();
                 saveProgress();
@@ -6590,9 +6681,10 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 list.innerHTML = '<div style="color: var(--text-dim); text-align: center; padding: 20px;">В инвентаре нет номеров</div>';
             } else {
                 inventory.forEach((item, invIndex) => {
+                    const rarityLabel = (item.rarity && typeof item.rarity === 'object') ? (item.rarity.text || 'Обычный') : (item.rarity || 'Обычный');
                     list.innerHTML += `
                         <div style="background: rgba(255,255,255,0.05); border: 1px solid var(--border-subtle); padding: 10px 14px; border-radius: var(--radius-sm); display: flex; justify-content: space-between; align-items: center;">
-                            <div><b style="color: white">${escapeHtml(item.text)}</b><br><small style="color:var(--text-dim);">${Number(item.price || 0).toLocaleString('ru-RU')} ₽</small></div>
+                            <div><span style="display:inline-flex;align-items:center;gap:8px;flex-wrap:wrap;"><span class="${getMiniPlateCountryClass(item.text)}">${renderMiniPlateInnerHtml(item.text)}</span> <small>(${escapeHtml(rarityLabel)})</small></span><br><small style="color:var(--text-dim);">${Number(item.price || 0).toLocaleString('ru-RU')} ₽</small></div>
                             <button class="btn btn-green" style="width: auto; padding: 6px 14px; font-size:12px; margin: 0;" onclick="attachPlate(${invIndex})">Выбрать</button>
                         </div>`;
                 });
@@ -7815,14 +7907,24 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             { id: 'drift_combo_5', icon: '⚡', name: 'Комбо-Мастер x5', desc: 'Достичь комбо x5 в дрифте', reward: 150000, titleReward: null, check: () => (Number(achievements.driftMaxCombo || 0) >= 5 || Number(racePlayer?.driftCombo || 0) >= 5) },
             { id: 'total_drift_50k', icon: '🏆', name: 'Дрифт Легенда', desc: 'Набрать 50 000 очков дрифта суммарно', reward: 300000, titleReward: 'drift_legend', check: () => (Number(achievements.driftTotalScore || 0) >= 50000) },
             { id: 'drag_champ', icon: '🏁', name: 'Король Дрэга', desc: 'Выиграть 3 дрэг-заезда на 1/4 мили', reward: 120000, titleReward: 'drag_king', check: () => (achievements.dragWins >= 3) },
-            { id: 'plate_777', icon: '🎰', name: 'Три топора', desc: 'Выбить номер с 777 в тексте', reward: 200000, titleReward: null, check: () => inventory.some(p => String(p.text).includes('777')) },
+            { id: 'plate_777', icon: '🎰', name: 'Три топора', desc: 'Выбить номер с 777 в тексте', reward: 200000, titleReward: null, check: () => {
+                const allPlates = [...(inventory || []), ...((myCars || []).map(c => c && c.plate).filter(Boolean))];
+                return allPlates.some(p => {
+                    const mainPart = String(p?.text || p || '').split('|')[0] || '';
+                    return /(?:^|\D)777(?:\D|$)/.test(mainPart);
+                });
+            }},
             { id: 'blatnoy_plate', icon: '⭐', name: 'Блатная Серия', desc: 'Иметь спецсерию (АМР, ЕКХ, ААА, ВОР, ХХХ, VIP, DXB, SHK) в гараже', reward: 200000, titleReward: 'authority', check: () => {
                 const allPlates = [...(inventory || []), ...((myCars || []).map(c => c && c.plate).filter(Boolean))];
                 return allPlates.some(p => {
                     const raw = String(p?.text || p || '').trim();
+                    const mainPart = (raw.split('|')[0] || '').trim();
                     const m = raw.match(/^([А-ЯЁA-Z])\s*\d{3}\s*([А-ЯЁA-Z]{2})/i);
-                    const letters = m ? (m[1] + m[2]).toUpperCase() : raw.replace(/[^А-ЯЁA-Z]/gi, '').slice(0, 3).toUpperCase();
-                    return /^(АМР|ЕКХ|ААА|ВОР|ХХХ|VIP|DXB|SHK|UAE|USA|FBI|ZZZ|QQQ)$/i.test(letters);
+                    const letters = m ? (m[1] + m[2]).toUpperCase() : mainPart.replace(/[^А-ЯЁA-Z]/gi, '').slice(0, 3).toUpperCase();
+                    if (/^(АМР|ЕКХ|ААА|ВОР|ХХХ|ООО|МММ|ССС|СКР|УУУ|VIP|DXB|SHK|UAE|USA|FBI|ZZZ|QQQ|AST|ALA|NYC|LAX|MIA)$/i.test(letters)) return true;
+                    if (/^(\d)\1\1\s+([A-Z])\2\2\s*\|/i.test(raw) || /^(?:00[1-9]|\d00)\s+(?:VIP|KZ|AST|ALA|SHY|ZZZ|AAA|XXX|NNN|SSS)\s*\|/i.test(raw)) return true;
+                    if (/\|\s*[A-Z0-9]{1,3}\s+UAE$/i.test(raw) && (/^[A-Z]{1,2}\s+[1-9]\s*\|/i.test(raw) || /^[A-Z]{1,2}\s+([1-9])\1{1,2}\s*\|/i.test(raw) || /^([A-Z])\1\s+\d{1,3}\s*\|/i.test(raw))) return true;
+                    return false;
                 });
             }},
             { id: 'styling_master', icon: '🎨', name: 'Кастом-мастер', desc: 'Установить цвет и неон на автомобиль', reward: 60000, titleReward: null, check: () => myCars.some(c => c.styling?.neon && c.styling.neon !== 'none') },
@@ -8436,7 +8538,12 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             const carsEl = document.getElementById('pv-cars');
             if (carsEl) carsEl.innerText = player.carsCount || 0;
             const plateEl = document.getElementById('pv-best-plate');
-            if (plateEl) plateEl.innerText = player.bestPlate || '—';
+            if (plateEl) {
+                plateEl.innerText = player.bestPlate || '—';
+                if (player.bestPlate && player.bestPlate !== '—') {
+                    plateEl.innerHTML = `<span class="${getMiniPlateCountryClass(player.bestPlate)}">${renderMiniPlateInnerHtml(player.bestPlate)}</span>`;
+                }
+            }
 
             let lastSeenText = 'только что';
             if (player.updatedAt) {

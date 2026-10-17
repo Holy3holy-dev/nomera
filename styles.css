@@ -482,7 +482,7 @@
         /* 🇷🇺 РЕАЛИСТИЧНЫЙ АВТОМОБИЛЬНЫЙ НОМЕР РОССИИ (ГОСТ Р 50577-93 ТИП 1) */
         .plate-stage {
             position: relative;
-            padding: 20px 0 10px 0;
+            padding: 28px 0 10px 0;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -1198,6 +1198,9 @@
             color: #090d16;
             font-family: system-ui, -apple-system, "Segoe UI", Tahoma, sans-serif;
         }
+        .plate-container.country-uae .plate-region[data-emirate-ar]::before {
+            content: attr(data-emirate-ar);
+        }
         .plate-container.country-uae .plate-region::after {
             content: "DUBAI";
             font-size: 13px;
@@ -1206,6 +1209,9 @@
             line-height: 1.1;
             color: #090d16;
             margin-top: 2px;
+        }
+        .plate-container.country-uae .plate-region[data-emirate-en]::after {
+            content: attr(data-emirate-en);
         }
         .plate-container.country-uae[data-reg="AUH"] .plate-region {
             background: linear-gradient(180deg, #dc2626 0%, #991b1b 100%);
@@ -1252,6 +1258,24 @@
         .plate-container.country-uae[data-reg="RAK"] .plate-region::after {
             content: "R.A.K.";
             font-size: 12px;
+            letter-spacing: 1px;
+        }
+        .plate-container.country-uae[data-reg="FUJ"] .plate-region::before {
+            content: "الفجيرة";
+            font-size: 15px;
+        }
+        .plate-container.country-uae[data-reg="FUJ"] .plate-region::after {
+            content: "FUJAIRAH";
+            font-size: 9.5px;
+            letter-spacing: 0.6px;
+        }
+        .plate-container.country-uae[data-reg="UAQ"] .plate-region::before {
+            content: "أم القيوين";
+            font-size: 12px;
+        }
+        .plate-container.country-uae[data-reg="UAQ"] .plate-region::after {
+            content: "U.A.Q.";
+            font-size: 8px;
             letter-spacing: 1px;
         }
         .plate-container.country-uae .plate-region #region {
@@ -1424,7 +1448,7 @@
         .plate-container.glow-legendary .plate-cell { border-color: transparent; text-shadow: 0 1px 0 rgba(255,255,255,0.92), 0 0 20px rgba(245, 158, 11, 0.65); }
         .plate-container.glow-blatnoy .plate-cell { border-color: transparent; text-shadow: 0 1px 0 rgba(255,255,255,0.92), 0 0 22px rgba(255, 46, 76, 0.75), 0 0 8px #ffd700; }
 
-        .plate-container.has-rarity-drop::after {
+        .plate-container:not(.country-usa).has-rarity-drop::after {
             animation: plateShimmerSweep 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
         }
         @keyframes plateShimmerSweep {
@@ -1443,7 +1467,7 @@
 
         .rarity-label {
             position: absolute;
-            top: 4px;
+            top: 0px;
             left: 50%;
             transform: translateX(-50%);
             font-size: 11px;
@@ -1451,7 +1475,7 @@
             border-radius: var(--radius-full);
             font-weight: 800;
             text-transform: uppercase;
-            z-index: 10;
+            z-index: 15;
             letter-spacing: 0.8px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.7);
             white-space: nowrap;
