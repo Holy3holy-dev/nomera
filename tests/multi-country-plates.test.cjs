@@ -727,3 +727,167 @@ describe('3D Vehicle Bumper License Plates (RUS / KZ / USA / UAE)', () => {
   });
 });
 
+describe('Collector Book & Car-Plate Synergy (RUS / KZ / USA / UAE)', () => {
+  test('NomeraRaceEconomy.getCarPlateSynergy & performance() calculate all 6 country/style synergies and boost race rewards', () => {
+    delete require.cache[require.resolve('../js/race-economy.js')];
+    const NomeraRaceEconomy = require('../js/race-economy.js');
+
+    assert.equal(typeof NomeraRaceEconomy.getCarPlateSynergy, 'function');
+
+    // 1. Mercedes-Benz G63 AMG «Гелик» + 'D 1 | DXB UAE' -> uae_royal (bonusPct: 35, mult: 0.35)
+    const uaeRoyal = NomeraRaceEconomy.getCarPlateSynergy(
+      { name: 'Mercedes-Benz G63 AMG «Гелик»', plate: { text: 'D 1 | DXB UAE' } }
+    );
+    assert.ok(uaeRoyal, 'Expected uae_royal synergy for Gelik + D 1 | DXB UAE');
+    assert.equal(uaeRoyal.id, 'uae_royal');
+    assert.equal(uaeRoyal.bonusPct, 35);
+    assert.equal(uaeRoyal.mult, 0.35);
+
+    // Compare performance() with a non-synergy car carrying the exact same plate & rarity
+    const baseStats = { speed: 260, accel: 4.5, handling: 7.5, rewardMult: 10 };
+    const plateObj = { text: 'D 1 | DXB UAE', rarity: { text: 'БЛАТНОЙ' } };
+    const gelikPerf = NomeraRaceEconomy.performance(baseStats, {
+      name: 'Mercedes-Benz G63 AMG «Гелик»',
+      condition: 100,
+      upgrades: { engine: 0, handling: 0, economy: 0, nitro: 0 },
+      plate: plateObj
+    });
+    const nonSynergyPerf = NomeraRaceEconomy.performance(baseStats, {
+      name: 'Hyundai Solaris',
+      condition: 100,
+      upgrades: { engine: 0, handling: 0, economy: 0, nitro: 0 },
+      plate: plateObj
+    });
+    assert.ok(
+      gelikPerf.rewardMult > nonSynergyPerf.rewardMult,
+      `Expected synergy car rewardMult (${gelikPerf.rewardMult}) > non-synergy car rewardMult (${nonSynergyPerf.rewardMult})`
+    );
+    assert.equal(
+      gelikPerf.plateBonus,
+      nonSynergyPerf.plateBonus + 35,
+      `Expected plateBonus to increase by +35 (got ${gelikPerf.plateBonus} vs ${nonSynergyPerf.plateBonus})`
+    );
+
+    // 2. Toyota Camry 3.5 + '777 VIP | 01 KZ' -> kz_vip (bonusPct: 25)
+    const kzVip = NomeraRaceEconomy.getCarPlateSynergy('Toyota Camry 3.5', '777 VIP | 01 KZ');
+    assert.ok(kzVip, 'Expected kz_vip synergy for Toyota Camry 3.5 + 777 VIP | 01 KZ');
+    assert.equal(kzVip.id, 'kz_vip');
+    assert.equal(kzVip.bonusPct, 25);
+    assert.equal(kzVip.mult, 0.25);
+
+    // 3. BMW M5 F90 Competition + 'А 777 МР | 77 RUS' -> rus_kortezh (bonusPct: 25)
+    const rusKortezh = NomeraRaceEconomy.getCarPlateSynergy('BMW M5 F90 Competition', 'А 777 МР | 77 RUS');
+    assert.ok(rusKortezh, 'Expected rus_kortezh synergy for BMW M5 F90 Competition + А 777 МР | 77 RUS');
+    assert.equal(rusKortezh.id, 'rus_kortezh');
+    assert.equal(rusKortezh.bonusPct, 25);
+    assert.equal(rusKortezh.mult, 0.25);
+
+    // 4. Porsche 911 Turbo S + 'VIP 777 | CA USA' -> usa_highway (bonusPct: 22)
+    const usaHighway = NomeraRaceEconomy.getCarPlateSynergy('Porsche 911 Turbo S', 'VIP 777 | CA USA');
+    assert.ok(usaHighway, 'Expected usa_highway synergy for Porsche 911 Turbo S + VIP 777 | CA USA');
+    assert.equal(usaHighway.id, 'usa_highway');
+    assert.equal(usaHighway.bonusPct, 22);
+    assert.equal(usaHighway.mult, 0.22);
+
+    // 5. Toyota Mark II Tourer V + 'А 777 АА | 77 RUS' -> jdm_legend (bonusPct: 20)
+    const jdmLegend = NomeraRaceEconomy.getCarPlateSynergy('Toyota Mark II Tourer V', 'А 777 АА | 77 RUS');
+    assert.ok(jdmLegend, 'Expected jdm_legend synergy for Toyota Mark II Tourer V + А 777 АА | 77 RUS');
+    assert.equal(jdmLegend.id, 'jdm_legend');
+    assert.equal(jdmLegend.bonusPct, 20);
+    assert.equal(jdmLegend.mult, 0.20);
+
+    // 6. Lada Priora БПАН + 'А 001 АА | 05 RUS' -> oper_bpan (bonusPct: 18)
+    const operBpan = NomeraRaceEconomy.getCarPlateSynergy('Lada Priora БПАН', 'А 001 АА | 05 RUS');
+    assert.ok(operBpan, 'Expected oper_bpan synergy for Lada Priora БПАН + А 001 АА | 05 RUS');
+    assert.equal(operBpan.id, 'oper_bpan');
+    assert.equal(operBpan.bonusPct, 18);
+    assert.equal(operBpan.mult, 0.18);
+
+    // Non-matching combination returns null
+    assert.equal(NomeraRaceEconomy.getCarPlateSynergy('Hyundai Solaris', 'В 124 ЕК | 77 RUS'), null);
+    assert.equal(NomeraRaceEconomy.getCarPlateSynergy('BMW M5 F90 Competition', ''), null);
+  });
+
+  test('COLLECTOR_SETS & claimCollectorSet complete world_passport, uae_sheikh_set, and synergy_master and prevent double-claim', () => {
+    const { createApp } = require('./helpers/create-app.cjs');
+    const app = createApp();
+
+    const evalCollectorSet = (setId) => app.run(`(() => {
+      const sets = typeof COLLECTOR_SETS !== 'undefined' ? COLLECTOR_SETS : (window.COLLECTOR_SETS || []);
+      const s = sets.find(x => x.id === ${JSON.stringify(setId)});
+      if (!s) return null;
+      if (typeof evaluateCollectorSet === 'function') return evaluateCollectorSet(s);
+      if (typeof getCollectorSetStatus === 'function') return getCollectorSetStatus(s);
+      if (typeof s.evaluate === 'function') return s.evaluate();
+      if (typeof s.check === 'function') {
+        const res = s.check();
+        return typeof res === 'object' && res !== null ? res : { completed: Boolean(res) };
+      }
+      return null;
+    })()`);
+
+    assert.ok(app.run('Array.isArray(COLLECTOR_SETS) && COLLECTOR_SETS.length >= 8'), 'COLLECTOR_SETS must be defined with at least 8 sets');
+    assert.equal(typeof app.run('claimCollectorSet'), 'function');
+
+    // 1. world_passport: incomplete with only RUS plate -> cannot claim
+    app.run(`
+      balance = 100000;
+      inventory = [{ id: 'p_rus', text: 'А 123 ВС | 77 RUS', price: 5000, country: 'RUS' }];
+    `);
+    assert.equal(evalCollectorSet('world_passport').completed, false);
+    app.run("claimCollectorSet('world_passport')");
+    assert.equal(app.run('balance'), 100000, 'Incomplete world_passport set must not credit reward');
+
+    // Populate inventory with 4 plates across RUS, KZ, USA, UAE -> completes world_passport (+250,000 ₽ once)
+    app.run(`
+      inventory = [
+        { id: 'p_rus', text: 'А 123 ВС | 77 RUS', price: 5000, country: 'RUS' },
+        { id: 'p_kz', text: '123 ABC | 01 KZ', price: 9000, country: 'KZ' },
+        { id: 'p_usa', text: 'ABC 123 | CA USA', price: 18000, country: 'USA' },
+        { id: 'p_uae', text: 'B 123 | DXB UAE', price: 40000, country: 'UAE' }
+      ];
+    `);
+    const wpStatus = evalCollectorSet('world_passport');
+    assert.ok(wpStatus && wpStatus.completed, 'world_passport set must be completed with RUS, KZ, USA, UAE plates');
+
+    app.run("claimCollectorSet('world_passport')");
+    assert.equal(app.run('balance'), 100000 + 250000, 'claimCollectorSet(world_passport) must credit +250,000 ₽');
+
+    // Second call must be blocked (no double-claim)
+    app.run("claimCollectorSet('world_passport')");
+    assert.equal(app.run('balance'), 100000 + 250000, 'Second claimCollectorSet(world_passport) must not double-credit');
+
+    // 2. uae_sheikh_set: 1-digit UAE plate ('D 7 | DXB UAE') completes set and claims +1,200,000 ₽
+    assert.equal(evalCollectorSet('uae_sheikh_set').completed, false, 'Plain 3-digit UAE plate B 123 must not complete uae_sheikh_set');
+    app.run(`
+      inventory.push({ id: 'p_uae_sheikh', text: 'D 7 | DXB UAE', price: 15000000, country: 'UAE' });
+    `);
+    const sheikhStatus = evalCollectorSet('uae_sheikh_set');
+    assert.ok(sheikhStatus && sheikhStatus.completed, 'D 7 | DXB UAE must complete uae_sheikh_set');
+
+    const balBeforeSheikh = app.run('balance');
+    app.run("claimCollectorSet('uae_sheikh_set')");
+    assert.equal(app.run('balance'), balBeforeSheikh + 1200000, 'claimCollectorSet(uae_sheikh_set) must credit +1,200,000 ₽');
+    app.run("claimCollectorSet('uae_sheikh_set')");
+    assert.equal(app.run('balance'), balBeforeSheikh + 1200000, 'Second claimCollectorSet(uae_sheikh_set) must not double-credit');
+
+    // 3. synergy_master: having 2 synergy-matched cars in myCars completes synergy_master
+    app.run(`
+      myCars = [
+        { name: 'Mercedes-Benz G63 AMG «Гелик»', basePrice: 18000000, plate: { text: 'D 1 | DXB UAE', price: 25000000 } }
+      ];
+    `);
+    assert.equal(evalCollectorSet('synergy_master').completed, false, '1 synergy car is not enough for synergy_master');
+
+    app.run(`
+      myCars.push({ name: 'Toyota Camry 3.5', basePrice: 2800000, plate: { text: '777 VIP | 01 KZ', price: 12000000 } });
+    `);
+    const synMasterStatus = evalCollectorSet('synergy_master');
+    assert.ok(synMasterStatus && synMasterStatus.completed, '2 synergy-matched cars in myCars must complete synergy_master');
+
+    const balBeforeSyn = app.run('balance');
+    app.run("claimCollectorSet('synergy_master')");
+    assert.equal(app.run('balance'), balBeforeSyn + 850000, 'claimCollectorSet(synergy_master) must credit +850,000 ₽');
+  });
+});
+

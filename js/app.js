@@ -6161,6 +6161,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                         <p>Инвентарь пуст. Сохраняйте номера в генераторе или открывайте кейсы!</p>
                     </div>`;
                 updateBadge();
+                if (typeof renderCollectorBook === 'function') renderCollectorBook();
                 return;
             }
 
@@ -6183,6 +6184,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             });
             list.innerHTML = html;
             updateBadge();
+            if (typeof renderCollectorBook === 'function') renderCollectorBook();
         }
 
         function sellPlate(index) {
@@ -6326,6 +6328,44 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             }
         }
 
+        function getCarPlateSynergy(carOrName, plateTextOrObj) {
+            if (typeof NomeraRaceEconomy !== 'undefined' && typeof NomeraRaceEconomy.getCarPlateSynergy === 'function') {
+                return NomeraRaceEconomy.getCarPlateSynergy(carOrName, plateTextOrObj);
+            }
+            return null;
+        }
+        window.getCarPlateSynergy = getCarPlateSynergy;
+
+        function getCarSynergyHint(carName) {
+            const name = String(carName || '').trim();
+            if (['Bugatti Chiron Super Sport', 'Koenigsegg Jesko Attack', 'Ferrari SF90 Stradale', 'Rolls-Royce Cullinan', 'Lamborghini Huracan Performante'].includes(name)) {
+                return '💡 Синергия: номера UAE (+25..35% ₽) или АМР/ЕКХ 77 RUS (+25% ₽)';
+            }
+            if (name === 'Mercedes-Benz G63 AMG «Гелик»') {
+                return '💡 Синергия: АМР/ЕКХ 77 RUS (+25% ₽), UAE (+25% ₽) или VIP KZ (+25% ₽)';
+            }
+            if (name === 'Porsche 911 Turbo S') {
+                return '💡 Синергия: номера UAE (+25% ₽ в гонках)';
+            }
+            if (name === 'Porsche Cayenne Turbo GT') {
+                return '💡 Синергия: спецсерии АМР/ЕКХ/ООО или 77/97/99 RUS (+25% ₽)';
+            }
+            if (['Toyota Camry 3.5', 'Toyota Land Cruiser 300', 'BMW M5 F90 Competition'].includes(name)) {
+                return '💡 Синергия: 001/777/VIP KZ (+25% ₽) или АМР/ЕКХ 77 RUS (+25% ₽)';
+            }
+            if (['Tesla Model S Plaid', 'Dodge Challenger SRT Hellcat', 'Chevrolet Corvette C8 Z06', 'Ford Mustang Shelby GT500'].includes(name)) {
+                return '💡 Синергия: номера USA (+22% ₽ в гонках)';
+            }
+            if (['Toyota Mark II Tourer V', 'Nissan GT-R R35 Nismo', 'Nissan Silvia S15 Spec-R', 'Subaru Impreza WRX STI'].includes(name)) {
+                return '💡 Синергия: номера 777/888/001 или ВОСТОК 25/125 RUS (+20% ₽)';
+            }
+            if (['ВАЗ-2107 «Жигули»', 'ВАЗ-2109 «Девятка»', 'Lada Priora БПАН', 'Lada Vesta Sport', 'ГАЗ-24 «Волга»'].includes(name)) {
+                return '💡 Синергия: 001/777/ВОР/три буквы (+18% ₽ в гонках)';
+            }
+            return '💡 Синергия: подберите редкий госномер для бонуса в заездах';
+        }
+        window.getCarSynergyHint = getCarSynergyHint;
+
         function renderCars() {
             renderShopCars();
             let myCarsDiv = document.getElementById('my-cars');
@@ -6336,6 +6376,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 if (garage3DShowroom) garage3DShowroom.stop();
                 myCarsDiv.innerHTML = `<div class="empty-state"><div class="empty-state-icon">🏎️</div><p>В вашем гараже пока нет автомобилей. Выберите и купите автомобиль в автосалоне ниже!</p></div>`;
                 updateBadge();
+                if (typeof renderCollectorBook === 'function') renderCollectorBook();
                 return;
             }
 
@@ -6351,6 +6392,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 const carSellPrice = Math.floor(carBasePrice * 0.9);
 
                 let bumperHtml = '';
+                const synergyHint = getCarSynergyHint(car.name);
                 if (car.plate) {
                     let platePrice = Number.isFinite(Number(car.plate.price)) ? Math.max(0, Math.floor(Number(car.plate.price))) : 0;
                     let detachCost = Math.floor(platePrice * 0.1);
@@ -6359,6 +6401,10 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     let rHtml = r.text !== "Обычный"
                         ? `<span style="font-size: 9px; padding: 2px 8px; border-radius: var(--radius-full); background:${r.bg}; color:${r.color}; font-weight:800; margin-bottom: 6px; display: inline-block;">${escapeHtml(r.text)}</span>`
                         : '';
+                    const syn = getCarPlateSynergy(car.name, car.plate);
+                    const synHtml = syn
+                        ? `<div class="car-synergy-badge" style="margin-top:6px;display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:999px;background:linear-gradient(135deg,rgba(245,158,11,0.22),rgba(16,185,129,0.22));border:1px solid rgba(251,191,36,0.55);color:#fde68a;font-size:11px;font-weight:800;">${syn.icon} Синергия «${escapeHtml(syn.title)}» +${syn.bonusPct}% ₽ в гонках</div>`
+                        : (synergyHint ? `<div style="font-size:10px; color:var(--text-dim); margin-top:4px;">${escapeHtml(synergyHint)}</div>` : '');
 
                     bumperHtml = `
                         <div style="text-align: center; width: 100%;">
@@ -6366,6 +6412,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                             <div style="display: flex; justify-content: center;">
                                 <div class="mini-plate ${getMiniPlateCountryClass(car.plate.text)}">${renderMiniPlateInnerHtml(car.plate.text)}</div>
                             </div>
+                            ${synHtml}
                             <div style="font-size: 11px; color: var(--text-muted); margin-top: 6px;">
                                 Стоимость с номером: <b style="color: var(--accent-green);">${totalSellPrice.toLocaleString('ru-RU')} ₽</b>
                             </div>
@@ -6385,6 +6432,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 } else {
                     bumperHtml = `
                         <div style="color: var(--text-dim); font-size: 12px; text-align: center;">На автомобиле нет номера</div>
+                        ${synergyHint ? `<div style="font-size:10px; color:var(--text-dim); text-align: center; margin-top:4px;">${escapeHtml(synergyHint)}</div>` : ''}
                         <div style="display: flex; gap: 8px; width: 100%;">
                             <button class="btn btn-green" style="font-size: 12px; padding: 10px;" onclick="openAttachModal(${index})">
                                 🏷️ Повесить номер
@@ -6495,6 +6543,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             selectGarageCarForPodium(activeGarageCarIndex, true);
 
             updateBadge();
+            if (typeof renderCollectorBook === 'function') renderCollectorBook();
         }
 
         // Workshop operations: each action charges once, stores directly in the car record,
@@ -7421,7 +7470,11 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
             if (badgeEl) {
                 if (attachedPlateText) {
-                    badgeEl.innerHTML = `<div class="mini-plate ${getMiniPlateCountryClass(attachedPlateText)}" style="transform:scale(0.95);transform-origin:right center;">${renderMiniPlateInnerHtml(attachedPlateText)}</div><span style="font-size:10px;color:#38bdf8;font-weight:700;margin-left:4px;">🔍 3D бампер</span>`;
+                    const syn = getCarPlateSynergy(car.name, attachedPlateText);
+                    const synBadge = syn
+                        ? `<span class="car-synergy-badge" style="font-size:10px;color:#fbbf24;font-weight:800;margin-left:6px;background:rgba(245,158,11,0.18);padding:2px 7px;border-radius:999px;border:1px solid rgba(245,158,11,0.45);">${syn.icon} +${syn.bonusPct}%</span>`
+                        : '';
+                    badgeEl.innerHTML = `<div class="mini-plate ${getMiniPlateCountryClass(attachedPlateText)}" style="transform:scale(0.95);transform-origin:right center;">${renderMiniPlateInnerHtml(attachedPlateText)}</div><span style="font-size:10px;color:#38bdf8;font-weight:700;margin-left:4px;">🔍 3D бампер</span>${synBadge}`;
                     badgeEl.title = 'Нажмите, чтобы рассмотреть 3D-номер на бампере (Перед / Зад)';
                 } else {
                     badgeEl.innerHTML = `<span onclick="event.stopPropagation(); openAttachPlateModal(activeGarageCarIndex)" style="font-size:11px;padding:4px 10px;border-radius:8px;background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.3);color:#38bdf8;font-weight:700;">🏷️ + Повесить номер</span>`;
@@ -8016,6 +8069,315 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             { id: 'overtakes_50', icon: '🏎️', name: 'Шашечник', desc: 'Совершить 50 опасных обгонов суммарно', reward: 150000, titleReward: 'infiltrator', check: () => ((achievements.overtakesTotal || 0) >= 50) }
         ];
 
+        function getAllPlayerPlateStrings(overridePlates, overrideCars) {
+            if (overridePlates !== undefined && overridePlates !== null) {
+                const arr = Array.isArray(overridePlates) ? overridePlates : [overridePlates];
+                return arr
+                    .map(p => String(p?.text || p?.plate?.text || p || '').trim().toUpperCase())
+                    .filter(Boolean);
+            }
+            const invList = Array.isArray(inventory) ? inventory : [];
+            const carList = Array.isArray(overrideCars) ? overrideCars : (Array.isArray(myCars) ? myCars : []);
+            const combined = [
+                ...invList,
+                ...carList.map(c => c && (c.plate || c.attachedPlate)).filter(Boolean)
+            ];
+            return combined
+                .map(p => String(p?.text || p || '').trim().toUpperCase())
+                .filter(Boolean);
+        }
+
+        function somePlateMatches(plateTexts, predicate) {
+            const list = getAllPlayerPlateStrings(plateTexts);
+            return list.some(raw => {
+                const parts = raw.split('|');
+                const mainPart = (parts[0] || '').trim();
+                const regionPart = (parts[1] || '').trim();
+                const lettersOnly = mainPart.replace(/[^А-ЯЁA-Z]/gi, '').toUpperCase();
+                return Boolean(predicate(raw, mainPart, regionPart, lettersOnly));
+            });
+        }
+
+        const COLLECTOR_SETS = [
+            {
+                id: 'world_passport',
+                icon: '🌍',
+                name: 'Мировой паспорт (4 страны)',
+                desc: 'Собрать госномера всех четырёх держав: РФ, Казахстан, США и ОАЭ',
+                reward: 250000,
+                xpReward: 150,
+                slots: [
+                    { id: 'rus', label: 'RUS', hint: 'Госномер РФ', match: (plateTexts) => somePlateMatches(plateTexts, (raw) => /\bRUS$/i.test(raw) || !/\b(UAE|USA|KZ)$/i.test(raw)) },
+                    { id: 'kz', label: 'KZ', hint: 'Госномер Казахстана', match: (plateTexts) => somePlateMatches(plateTexts, (raw) => /\bKZ$/i.test(raw)) },
+                    { id: 'usa', label: 'USA', hint: 'Госномер США', match: (plateTexts) => somePlateMatches(plateTexts, (raw) => /\bUSA$/i.test(raw)) },
+                    { id: 'uae', label: 'UAE', hint: 'Госномер ОАЭ', match: (plateTexts) => somePlateMatches(plateTexts, (raw) => /\bUAE$/i.test(raw)) }
+                ]
+            },
+            {
+                id: 'rus_spec',
+                icon: '🚨',
+                name: 'Спецгараж Кремля (RUS)',
+                desc: 'Собрать правительственные и ведомственные серии АМР, ЕКХ и ООО/ААА/ВОР',
+                reward: 500000,
+                xpReward: 250,
+                slots: [
+                    { id: 'amr', label: 'АМР', hint: 'Серия АМР', match: (plateTexts) => somePlateMatches(plateTexts, (raw, mainPart, regionPart, lettersOnly) => /(АМР)/i.test(mainPart) || lettersOnly === 'АМР') },
+                    { id: 'ekh', label: 'ЕКХ', hint: 'Серия ЕКХ', match: (plateTexts) => somePlateMatches(plateTexts, (raw, mainPart, regionPart, lettersOnly) => /(ЕКХ)/i.test(mainPart) || lettersOnly === 'ЕКХ') },
+                    { id: 'ooo_aaa', label: 'ООО / ААА / ВОР', hint: 'Серия ООО, ААА, ВОР или СКР', match: (plateTexts) => somePlateMatches(plateTexts, (raw, mainPart, regionPart, lettersOnly) => /(ООО|ААА|ВОР|СКР)/i.test(mainPart) || /^(ООО|ААА|ВОР|СКР)$/i.test(lettersOnly)) }
+                ]
+            },
+            {
+                id: 'kz_elite',
+                icon: '🦅',
+                name: 'Астана-Алматы Элита (KZ)',
+                desc: 'Собрать элиту казахстанских госномеров Астаны и Алматы',
+                reward: 450000,
+                xpReward: 200,
+                slots: [
+                    { id: 'kz_01_02', label: '01 / 02 KZ', hint: 'Регион Астана (01 KZ) или Алматы (02 KZ)', match: (plateTexts) => somePlateMatches(plateTexts, (raw) => /\b0[12]\s+KZ$/i.test(raw)) },
+                    { id: 'kz_vip_letters', label: 'VIP / ZZZ / AAA KZ', hint: 'Спецсерия Казахстана', match: (plateTexts) => somePlateMatches(plateTexts, (raw, mainPart) => /\bKZ$/i.test(raw) && /\b(VIP|ZZZ|AAA|XXX|KZ|AST|ALA)\b/i.test(mainPart)) },
+                    { id: 'kz_vip_digits', label: '001–009 / 777 KZ', hint: 'Элитный цифровой номер KZ', match: (plateTexts) => somePlateMatches(plateTexts, (raw, mainPart) => /\bKZ$/i.test(raw) && /\b(00[1-9]|777|\d00)\b/.test(mainPart)) }
+                ]
+            },
+            {
+                id: 'usa_states',
+                icon: '🗽',
+                name: 'Американская классика (USA)',
+                desc: 'Собрать номера ключевых штатов США и элитные комбинации',
+                reward: 600000,
+                xpReward: 250,
+                slots: [
+                    { id: 'usa_any', label: 'Штат США (USA)', hint: 'Любой госномер США (CA / NY / FL / TX / NV)', match: (plateTexts) => somePlateMatches(plateTexts, (raw) => /\bUSA$/i.test(raw)) },
+                    { id: 'usa_vip', label: 'VIP USA (777 / 001 / 888)', hint: 'Элитный номер США с 777, 001, 888 или 999', match: (plateTexts) => somePlateMatches(plateTexts, (raw, mainPart) => /\bUSA$/i.test(raw) && /(777|888|999|001|VIP|USA)/.test(mainPart)) }
+                ]
+            },
+            {
+                id: 'uae_sheikh_set',
+                icon: '👑',
+                name: 'Золото Шейха (UAE)',
+                desc: 'Королевский короткий госномер ОАЭ (1–2 цифры или парный VIP-код)',
+                reward: 1200000,
+                xpReward: 400,
+                slots: [
+                    { id: 'uae_short', label: 'UAE Single/Double (1–2 цифры)', hint: 'Короткий номер ОАЭ (1–2 цифры или парные буквы)', match: (plateTexts) => somePlateMatches(plateTexts, (raw, mainPart) => /\bUAE$/i.test(raw) && (/^[A-Z]{1,2}\s+\d{1,2}$/i.test(mainPart.trim()) || /^([A-Z])\1\s+\d{1,3}$/i.test(mainPart.trim()))) }
+                ]
+            },
+            {
+                id: 'club_777',
+                icon: '🎰',
+                name: 'Три семёрки (777 Club)',
+                desc: 'Собрать культовые цифровые комбинации 777, 001 и 888/999',
+                reward: 777000,
+                xpReward: 300,
+                slots: [
+                    { id: '777', label: '777', hint: 'Номер с цифрами 777', match: (plateTexts) => somePlateMatches(plateTexts, (raw, mainPart) => /(?:^|\D)777(?:\D|$)/.test(mainPart)) },
+                    { id: '001', label: '001', hint: 'Номер с цифрами 001', match: (plateTexts) => somePlateMatches(plateTexts, (raw, mainPart) => /(?:^|\D)001(?:\D|$)/.test(mainPart)) },
+                    { id: '888_999', label: '888 / 999', hint: 'Номер с 888 или 999', match: (plateTexts) => somePlateMatches(plateTexts, (raw, mainPart) => /(?:^|\D)(888|999)(?:\D|$)/.test(mainPart)) }
+                ]
+            },
+            {
+                id: 'oper_bpan_set',
+                icon: '🔊',
+                name: 'Опер-Стиль & БПАН',
+                desc: 'Отечественная классика, блатные серии и активная синергия БПАН',
+                reward: 400000,
+                xpReward: 280,
+                slots: [
+                    { id: 'vaz_car', label: 'Автоваз / Волга в гараже', hint: 'Иметь ВАЗ-2107 «Жигули», ВАЗ-2109 «Девятка», Lada Priora БПАН, Lada Vesta Sport или ГАЗ-24 «Волга» в гараже', match: (plateTexts, cars) => (Array.isArray(cars) ? cars : (myCars || [])).some(c => ['ВАЗ-2107 «Жигули»', 'ВАЗ-2109 «Девятка»', 'Lada Priora БПАН', 'Lada Vesta Sport', 'ГАЗ-24 «Волга»'].includes(c?.name)) },
+                    { id: 'vor_xxx', label: 'ВОР / ХХХ / АУЕ / 001', hint: 'Блатная или уличная серия', match: (plateTexts) => somePlateMatches(plateTexts, (raw, mainPart, regionPart, lettersOnly) => /(ВОР|ХХХ|АУЕ|ОМР|КРА|001|777)/i.test(mainPart) || /^(ВОР|ХХХ|АУЕ|ОМР|КРА)$/i.test(lettersOnly)) },
+                    { id: 'bpan_synergy', label: 'Синергия БПАН', hint: 'Установить синергирующий номер на ВАЗ/Приору/Весту/Волгу в гараже', match: (plateTexts, cars) => (Array.isArray(cars) ? cars : (myCars || [])).some(c => getCarPlateSynergy(c?.name, c?.plate)?.id === 'oper_bpan') }
+                ]
+            },
+            {
+                id: 'synergy_master',
+                icon: '🏆',
+                name: 'Мастер Синергии (Гараж мечты)',
+                desc: 'Собрать в гараже минимум 2 автомобиля с активными синергиями номеров',
+                reward: 850000,
+                xpReward: 350,
+                slots: [
+                    { id: 'syn_1', label: '1-я активная синергия', hint: 'Хотя бы 1 машина в гараже с активной синергией номера', match: (plateTexts, cars) => (Array.isArray(cars) ? cars : (myCars || [])).filter(c => !!getCarPlateSynergy(c?.name, c?.plate)).length >= 1 },
+                    { id: 'syn_2', label: '2 активные синергии', hint: 'Хотя бы 2 машины в гараже с активной синергией номера', match: (plateTexts, cars) => (Array.isArray(cars) ? cars : (myCars || [])).filter(c => !!getCarPlateSynergy(c?.name, c?.plate)).length >= 2 }
+                ]
+            }
+        ];
+        window.COLLECTOR_SETS = COLLECTOR_SETS;
+
+        const SYNERGY_GUIDE_RULES = [
+            { id: 'uae_royal', icon: '👑', title: 'Королевский Гараж Дубая', bonusPct: 35, carsLabel: 'Bugatti Chiron, Koenigsegg Jesko, Ferrari SF90, Rolls-Royce Cullinan, Lamborghini Huracan', platesLabel: 'Короткие VIP-номера ОАЭ (1–2 цифры, UAE)' },
+            { id: 'rus_kortezh', icon: '🚨', title: 'Спецсвязь / Кортеж РФ', bonusPct: 25, carsLabel: 'Mercedes-Benz G63 AMG «Гелик», BMW M5 F90, Porsche Cayenne, Cullinan, Land Cruiser 300, Camry 3.5', platesLabel: 'Серии АМР, ЕКХ, ААА, ООО, СКР, ФСБ, КРА или 77/97/99/777/999 RUS' },
+            { id: 'uae_sheikh', icon: '🌴', title: 'Кортеж Шейха ОАЭ', bonusPct: 25, carsLabel: 'Гиперкары, Rolls-Royce Cullinan, Huracan, Porsche 911 Turbo S, G63 AMG «Гелик»', platesLabel: 'Любой госномер ОАЭ (UAE)' },
+            { id: 'kz_vip', icon: '🦅', title: 'Астана VIP Кортеж', bonusPct: 25, carsLabel: 'Toyota Camry 3.5, Toyota Land Cruiser 300, G63 AMG «Гелик», BMW M5 F90', platesLabel: 'Номера KZ с 001–009, 777, X00 или сериями VIP, ZZZ, AAA, XXX, AST, ALA' },
+            { id: 'usa_highway', icon: '🗽', title: 'Хайвей Перехватчик США', bonusPct: 22, carsLabel: 'Tesla Model S Plaid, Dodge Hellcat, Corvette C8 Z06, Mustang Shelby GT500', platesLabel: 'Любой госномер США (USA)' },
+            { id: 'jdm_legend', icon: '⛩️', title: 'Легенда Токио / JDM', bonusPct: 20, carsLabel: 'Toyota Mark II Tourer V, Nissan GT-R R35 Nismo, Nissan Silvia S15 Spec-R, Subaru Impreza WRX STI', platesLabel: 'Цифры 777/888/999/001/100 или регионы 25/125/27/65/41 RUS' },
+            { id: 'oper_bpan', icon: '🔊', title: 'Опер-Стиль / БПАН', bonusPct: 18, carsLabel: 'ВАЗ-2107 «Жигули», ВАЗ-2109 «Девятка», Lada Priora БПАН, Lada Vesta Sport, ГАЗ-24 «Волга»', platesLabel: 'Цифры 001/005/007/666/777/999/095/009, серии ВОР/ХХХ/АУЕ/ОМР/КРА или три одинаковые буквы' }
+        ];
+
+        function evaluateCollectorSet(setOrId, overridePlates, overrideCars) {
+            const set = typeof setOrId === 'string'
+                ? COLLECTOR_SETS.find(s => s.id === setOrId)
+                : setOrId;
+            if (!set || !Array.isArray(set.slots)) {
+                return { completed: false, current: 0, target: 0, claimed: false, slotResults: [] };
+            }
+            const plateTexts = getAllPlayerPlateStrings(overridePlates, overrideCars);
+            const cars = Array.isArray(overrideCars) ? overrideCars : (Array.isArray(myCars) ? myCars : []);
+            const slotResults = set.slots.map(slot => {
+                const isMatched = Boolean(slot.match(plateTexts, cars));
+                return { ...slot, isMatched };
+            });
+            const current = slotResults.filter(s => s.isMatched).length;
+            const target = slotResults.length;
+            const completed = target > 0 && current >= target;
+            const claimed = Boolean(achievements && achievements.collectorSetsClaimed && achievements.collectorSetsClaimed[set.id]);
+            return { completed, current, target, claimed, slotResults };
+        }
+        window.evaluateCollectorSet = evaluateCollectorSet;
+
+        function renderCollectorBook() {
+            if (!achievements || typeof achievements !== 'object') return;
+            if (!achievements.collectorSetsClaimed || typeof achievements.collectorSetsClaimed !== 'object') {
+                achievements.collectorSetsClaimed = {};
+            }
+
+            const plateTexts = getAllPlayerPlateStrings();
+            const cars = Array.isArray(myCars) ? myCars : [];
+            let totalSlots = 0;
+            let matchedSlots = 0;
+            let completedSets = 0;
+            let unclaimedCompletedSets = 0;
+
+            const evaluatedSets = COLLECTOR_SETS.map(set => {
+                const evalRes = evaluateCollectorSet(set, plateTexts, cars);
+                totalSlots += evalRes.target;
+                matchedSlots += evalRes.current;
+                if (evalRes.completed) completedSets++;
+                if (evalRes.completed && !evalRes.claimed) unclaimedCompletedSets++;
+                return { ...set, slotResults: evalRes.slotResults, isComplete: evalRes.completed, isClaimed: evalRes.claimed };
+            });
+
+            const badgeEl = document.getElementById('collector-book-badge');
+            if (badgeEl) {
+                badgeEl.style.display = unclaimedCompletedSets > 0 ? 'inline-block' : 'none';
+            }
+
+            const activeSynergyCars = cars
+                .map(c => ({ car: c, syn: getCarPlateSynergy(c?.name, c?.plate) }))
+                .filter(item => !!item.syn);
+
+            const pct = totalSlots > 0 ? Math.round((matchedSlots / totalSlots) * 100) : 0;
+            const summaryEl = document.getElementById('collector-book-summary');
+            if (summaryEl) {
+                summaryEl.innerHTML = `
+                    <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;width:100%;">
+                        <div>
+                            <div style="font-size:14px;font-weight:800;color:#fff;">📘 Книга коллекционера: <span id="collector-book-progress-text" style="color:#fbbf24;">${completedSets} / ${COLLECTOR_SETS.length} сетов (${matchedSlots}/${totalSlots} слотов)</span></div>
+                            <div style="font-size:11px;color:var(--text-muted);margin-top:3px;">Собирайте тематические сеты госномеров разных стран и активируйте синергию «Авто + Номер» в гараже</div>
+                        </div>
+                        <div style="font-size:12px;font-weight:800;color:#34d399;background:rgba(16,185,129,0.14);border:1px solid rgba(16,185,129,0.35);padding:6px 12px;border-radius:999px;">
+                            ⚡ Активных синергий в гараже: <span id="collector-book-synergy-count">${activeSynergyCars.length}</span>
+                        </div>
+                    </div>
+                    <div style="width:100%;height:8px;background:rgba(255,255,255,0.08);border-radius:999px;overflow:hidden;margin-top:8px;">
+                        <div id="collector-book-bar-fill" style="height:100%;width:${pct}%;background:linear-gradient(90deg,#f59e0b,#10b981);transition:width 0.3s ease;"></div>
+                    </div>
+                `;
+            }
+
+            const listEl = document.getElementById('collector-book-list');
+            if (listEl) {
+                listEl.innerHTML = evaluatedSets.map(set => {
+                    const matchedInSet = set.slotResults.filter(s => s.isMatched).length;
+                    const slotsHtml = set.slotResults.map(s => `
+                        <span class="collector-slot-chip ${s.isMatched ? 'matched' : ''}" title="${escapeHtml(s.hint)}" style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:700;background:${s.isMatched ? 'rgba(16,185,129,0.18)' : 'rgba(255,255,255,0.05)'};border:1px solid ${s.isMatched ? 'rgba(16,185,129,0.5)' : 'rgba(255,255,255,0.12)'};color:${s.isMatched ? '#34d399' : 'var(--text-dim)'};">
+                            <span>${s.isMatched ? '✓' : '○'}</span>
+                            <span>${escapeHtml(s.label)}</span>
+                        </span>
+                    `).join('');
+
+                    let actionHtml = '';
+                    if (set.isClaimed) {
+                        actionHtml = `<div style="margin-top:10px;font-size:11px;font-weight:800;color:#34d399;">✓ Сет собран и награда получена</div>`;
+                    } else if (set.isComplete) {
+                        actionHtml = `<button type="button" class="btn btn-gold" style="margin-top:10px;width:100%;padding:9px 14px;font-size:12px;font-weight:800;box-shadow:0 0 18px rgba(245,158,11,0.35);" onclick="claimCollectorSet('${set.id}')">🎁 Забрать награду (+${set.reward.toLocaleString('ru-RU')} ₽)</button>`;
+                    } else {
+                        actionHtml = `<div style="margin-top:8px;font-size:11px;color:var(--text-dim);">Прогресс сета: ${matchedInSet} из ${set.slots.length}</div>`;
+                    }
+
+                    return `
+                        <div class="collector-set-card ${set.isComplete ? 'completed' : ''} ${set.isClaimed ? 'claimed' : ''}" style="background:rgba(15,23,42,0.75);border:1px solid ${set.isComplete ? 'rgba(251,191,36,0.5)' : 'rgba(255,255,255,0.1)'};border-radius:14px;padding:14px;">
+                            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
+                                <div style="display:flex;align-items:center;gap:10px;">
+                                    <div style="font-size:24px;">${set.icon}</div>
+                                    <div>
+                                        <div style="font-size:14px;font-weight:800;color:#fff;">${escapeHtml(set.name)}</div>
+                                        <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">${escapeHtml(set.desc)}</div>
+                                    </div>
+                                </div>
+                                <span style="font-size:11px;font-weight:800;color:#fbbf24;background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.35);padding:3px 8px;border-radius:999px;white-space:nowrap;">+${set.reward.toLocaleString('ru-RU')} ₽ · +${set.xpReward} XP</span>
+                            </div>
+                            <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;">
+                                ${slotsHtml}
+                            </div>
+                            ${actionHtml}
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            const guideEl = document.getElementById('collector-synergy-guide');
+            if (guideEl) {
+                guideEl.innerHTML = SYNERGY_GUIDE_RULES.map(rule => {
+                    const activeMatch = activeSynergyCars.find(item => item.syn.id === rule.id);
+                    return `
+                        <div class="collector-synergy-row ${activeMatch ? 'active' : ''}" style="padding:10px 12px;border-radius:12px;background:${activeMatch ? 'rgba(16,185,129,0.12)' : 'rgba(255,255,255,0.03)'};border:1px solid ${activeMatch ? 'rgba(16,185,129,0.4)' : 'rgba(255,255,255,0.08)'};display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
+                            <div>
+                                <div style="font-size:13px;font-weight:800;color:#fff;">${rule.icon} ${escapeHtml(rule.title)} <span style="color:#fbbf24;margin-left:6px;">+${rule.bonusPct}% ₽ в гонках</span></div>
+                                <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">🏎️ Авто: ${escapeHtml(rule.carsLabel)}</div>
+                                <div style="font-size:11px;color:var(--text-dim);margin-top:1px;">🏷️ Номера: ${escapeHtml(rule.platesLabel)}</div>
+                            </div>
+                            <span style="font-size:11px;font-weight:800;padding:3px 9px;border-radius:999px;background:${activeMatch ? 'rgba(16,185,129,0.2)' : 'rgba(255,255,255,0.06)'};color:${activeMatch ? '#34d399' : 'var(--text-dim)'};">
+                                ${activeMatch ? `✓ Активно (${escapeHtml(activeMatch.car.name)})` : 'Не активировано'}
+                            </span>
+                        </div>
+                    `;
+                }).join('');
+            }
+        }
+        window.renderCollectorBook = renderCollectorBook;
+
+        function claimCollectorSet(setId) {
+            const set = COLLECTOR_SETS.find(s => s.id === setId);
+            if (!set) return false;
+            if (!achievements.collectorSetsClaimed || typeof achievements.collectorSetsClaimed !== 'object') {
+                achievements.collectorSetsClaimed = {};
+            }
+            if (achievements.collectorSetsClaimed[setId]) return false;
+
+            const evalRes = evaluateCollectorSet(set);
+            if (!evalRes.completed) {
+                notifyUser('Соберите все элементы сета, чтобы забрать награду!', 'info');
+                return false;
+            }
+
+            achievements.collectorSetsClaimed[setId] = Date.now();
+            creditPlayerBalance(set.reward, 'Коллекционный сет: ' + set.name);
+            if (typeof addExp === 'function') addExp(set.xpReward);
+            if (typeof triggerLegendaryEffect === 'function') triggerLegendaryEffect();
+            if (typeof playCashSound === 'function') playCashSound();
+            notifyUser('📚 Сет «' + set.name + '» собран! +' + set.reward.toLocaleString('ru-RU') + ' ₽ и +' + set.xpReward + ' XP!', 'success');
+            if (typeof saveProgress === 'function') saveProgress();
+            renderCollectorBook();
+            return true;
+        }
+        window.claimCollectorSet = claimCollectorSet;
+
+        function openCollectorBook() {
+            if (typeof navigateToTab === 'function') navigateToTab('inventory');
+            switchCollectionTab('album');
+        }
+        window.openCollectorBook = openCollectorBook;
+
         function checkAchievements() {
             ACHIEVEMENTS_CATALOG.forEach(ach => {
                 if (!achievements[ach.id] && ach.check()) {
@@ -8026,6 +8388,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 }
             });
             renderAchievements();
+            if (typeof renderCollectorBook === 'function') renderCollectorBook();
         }
 
         function renderAchievements() {
@@ -8051,16 +8414,21 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         function switchCollectionTab(tab) {
             activeCollectionTab = tab;
             const btnPlates = document.getElementById('btn-col-plates');
+            const btnAlbum = document.getElementById('btn-col-album');
             const btnAchieve = document.getElementById('btn-col-achieve');
             const subPlates = document.getElementById('col-subtab-plates');
+            const subAlbum = document.getElementById('col-subtab-album');
             const subAchieve = document.getElementById('col-subtab-achieve');
 
             if (btnPlates) btnPlates.classList.toggle('active', tab === 'plates');
+            if (btnAlbum) btnAlbum.classList.toggle('active', tab === 'album');
             if (btnAchieve) btnAchieve.classList.toggle('active', tab === 'achieve');
             if (subPlates) subPlates.classList.toggle('hidden', tab !== 'plates');
+            if (subAlbum) subAlbum.classList.toggle('hidden', tab !== 'album');
             if (subAchieve) subAchieve.classList.toggle('hidden', tab !== 'achieve');
 
             if (tab === 'achieve') renderAchievements();
+            else if (tab === 'album') renderCollectorBook();
             else renderInventory();
         }
 
@@ -12251,7 +12619,8 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             const ownedCarObj = carIndex < 0 ? null : myCars[carIndex];
             const isOwned = !!ownedCarObj;
             const baseStats = carRaceStats[selectedRaceCarName] || carRaceStats["ВАЗ-2107 «Жигули»"];
-            const stats = NomeraRaceEconomy.performance(baseStats, ownedCarObj);
+            const perfCar = ownedCarObj ? Object.assign({ name: selectedRaceCarName }, ownedCarObj) : null;
+            const stats = NomeraRaceEconomy.performance(baseStats, perfCar);
 
             const titleEl = document.getElementById('race-car-title');
             const badgeEl = document.getElementById('race-car-badge');
@@ -12279,7 +12648,10 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     const bonusBadge = stats.plateBonus > 0
                         ? `<span style="font-size: 11px; margin-left: 6px; color: #fbbf24; font-weight: 700; background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.4); padding: 2px 6px; border-radius: 4px;">✨ +${stats.plateBonus}% ₽</span>`
                         : '';
-                    plateSlot.innerHTML = `<span class="${getMiniPlateCountryClass(ownedCarObj.plate.text)}" style="font-size: 13px; padding: 2px 8px;">${renderMiniPlateInnerHtml(ownedCarObj.plate.text)}</span>${bonusBadge}`;
+                    const synergyBadge = stats.synergyTitle
+                        ? `<span class="car-synergy-badge" style="font-size: 11px; margin-left: 6px; color: #fde68a; font-weight: 800; background: linear-gradient(135deg, rgba(245, 158, 11, 0.25), rgba(16, 185, 129, 0.25)); border: 1px solid rgba(251, 191, 36, 0.55); padding: 2px 8px; border-radius: 999px;">${stats.synergyIcon || '🔥'} ${escapeHtml(stats.synergyTitle)} (+${stats.synergyBonus}%)</span>`
+                        : '';
+                    plateSlot.innerHTML = `<span class="${getMiniPlateCountryClass(ownedCarObj.plate.text)}" style="font-size: 13px; padding: 2px 8px;">${renderMiniPlateInnerHtml(ownedCarObj.plate.text)}</span>${bonusBadge}${synergyBadge}`;
                 } else if (isOwned) {
                     plateSlot.innerHTML = `<span style="font-size: 11px; color: var(--text-dim);">Без госномера</span>`;
                 } else {
@@ -16055,6 +16427,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             if (element) { element.classList.add('active'); element.setAttribute('aria-selected', 'true'); }
             if (tabId === 'cases' && typeof selectCaseCountry === 'function') {
                 selectCaseCountry(currentCaseCountry || currentCountry || 'RUS', true);
+            }
+            if (tabId === 'collection' && typeof renderCollectorBook === 'function') {
+                renderCollectorBook();
             }
             if (tabId === 'leaderboard') renderLeaderboard();
             if (tabId === 'multiplayer') {

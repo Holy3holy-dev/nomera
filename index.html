@@ -61,6 +61,137 @@
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
     <link rel="stylesheet" href="./styles.css?v=4249e1f016b6">
+    <style>
+        /* Collector's Book («Книга коллекционера») & Car-Plate Synergy UI */
+        .collector-book-summary {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.14) 0%, rgba(255, 46, 76, 0.1) 50%, rgba(15, 23, 42, 0.88) 100%);
+            border: 1px solid rgba(245, 158, 11, 0.38);
+            border-radius: var(--radius-md, 16px);
+            padding: 16px 18px;
+            margin-bottom: 16px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(10px);
+        }
+
+        .collector-book-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 12px;
+        }
+
+        .collector-set-card {
+            background: rgba(25, 14, 18, 0.86);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid var(--border-subtle, #3a151b);
+            border-radius: var(--radius-md, 15px);
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            gap: 10px;
+            position: relative;
+            transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .collector-set-card:hover {
+            transform: translateY(-2px);
+            border-color: var(--border-active, #74222f);
+            box-shadow: 0 10px 24px rgba(0, 0, 0, 0.45);
+        }
+
+        .collector-set-card.completed {
+            border-color: rgba(16, 185, 129, 0.55);
+            background: linear-gradient(160deg, rgba(16, 185, 129, 0.1) 0%, rgba(25, 14, 18, 0.92) 100%);
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.14);
+        }
+
+        .collector-set-card.claimable {
+            border-color: #fbbf24 !important;
+            background: linear-gradient(160deg, rgba(245, 158, 11, 0.18) 0%, rgba(25, 14, 18, 0.95) 100%);
+            box-shadow: 0 0 22px rgba(245, 158, 11, 0.4), inset 0 0 12px rgba(251, 191, 36, 0.12);
+            animation: collectorClaimGlow 1.6s infinite alternate ease-in-out;
+        }
+
+        @keyframes collectorClaimGlow {
+            from { box-shadow: 0 0 14px rgba(245, 158, 11, 0.3), inset 0 0 8px rgba(251, 191, 36, 0.08); }
+            to { box-shadow: 0 0 26px rgba(251, 191, 36, 0.65), inset 0 0 14px rgba(251, 191, 36, 0.18); }
+        }
+
+        .collector-progress-track {
+            width: 100%;
+            height: 7px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 999px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .collector-progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #f59e0b 0%, #10b981 100%);
+            border-radius: 999px;
+            transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .collector-matched-plates {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            align-items: center;
+            min-height: 30px;
+            padding: 6px 8px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            border: 1px dashed rgba(255, 255, 255, 0.12);
+        }
+
+        .collector-matched-plates .mini-plate {
+            font-size: 10px;
+            padding: 2px 5px;
+        }
+
+        .collector-set-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+            padding-top: 8px;
+            border-top: 1px solid rgba(255, 255, 255, 0.07);
+            margin-top: auto;
+        }
+
+        .car-synergy-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 9px;
+            border-radius: 999px;
+            font-size: 10.5px;
+            font-weight: 800;
+            letter-spacing: 0.3px;
+            color: #fef08a;
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.24) 0%, rgba(14, 165, 233, 0.24) 100%);
+            border: 1px solid rgba(251, 191, 36, 0.65);
+            box-shadow: 0 0 14px rgba(245, 158, 11, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            white-space: nowrap;
+            line-height: 1.2;
+        }
+
+        @media (max-width: 480px) {
+            .collector-book-grid {
+                grid-template-columns: 1fr;
+            }
+            .collector-book-summary {
+                padding: 12px 14px;
+            }
+        }
+    </style>
 </head>
 <body>
     <svg class="icon-sprite" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><defs><symbol id="icon-plate" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M7 10h5m-5 4h5m4-4v4"/></symbol><symbol id="icon-collection" viewBox="0 0 24 24"><rect x="4" y="7" width="16" height="13" rx="2"/><path d="M8 7V4h8v3m-8 5h8m-8 4h5"/></symbol><symbol id="icon-garage" viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v10H3zM7 21V12h10v9m-10-5h10"/></symbol><symbol id="icon-race" viewBox="0 0 24 24"><path d="M5 21V3m0 1h6l2 2h7v10h-7l-2-2H5m6-10v10m2-8v10"/></symbol><symbol id="icon-case" viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="14" rx="2"/><path d="M12 7v14M3 12h18m-9-5C4 7 5 1 8 3l4 4m0 0c8 0 7-6 4-4z"/></symbol><symbol id="icon-rating" viewBox="0 0 24 24"><path d="M7 3h10v5a5 5 0 01-10 0zm10 2h4v3a4 4 0 01-4 4M7 5H3v3a4 4 0 004 4m5 1v5m-4 3h8m-6-3h4"/></symbol><symbol id="icon-online" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><ellipse cx="12" cy="12" rx="4" ry="9"/><path d="M3 12h18"/></symbol><symbol id="icon-profile" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M5 21v-2a7 7 0 0114 0v2"/></symbol><symbol id="icon-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3M5 5l2 2m10 10l2 2M5 19l2-2M17 7l2-2"/></symbol></defs></svg>
@@ -314,6 +445,7 @@
                     <div class="summary-stat"><strong id="collection-stat">0</strong><span>номеров</span></div>
                     <div class="summary-stat"><strong id="garage-stat">1</strong><span>в гараже</span></div>
                     <button class="text-action" onclick="navigateToTab('garage')">В гараж ↗</button>
+                    <button class="text-action" onclick="openCollectorBook()" style="margin-top:4px;">📘 Книга коллекционера ↗</button>
                 </div>
                 <div class="race-invite">
                     <span class="eyebrow">ГОНКА</span>
@@ -335,6 +467,7 @@
 
                 <div class="market-type-nav" style="margin-bottom: 14px;">
                     <button class="market-type-btn active" id="btn-col-plates" onclick="switchCollectionTab('plates')">🎒 Номера</button>
+                    <button class="market-type-btn" id="btn-col-album" onclick="switchCollectionTab('album')">📘 Книга коллекционера <span id="collector-book-badge" style="background:linear-gradient(135deg,#f59e0b,#ea580c);color:#fff;font-size:10px;padding:1px 6px;border-radius:999px;margin-left:4px;display:none;">!</span></button>
                     <button class="market-type-btn" id="btn-col-achieve" onclick="switchCollectionTab('achieve')">🏆 Достижения (Ачивки)</button>
                 </div>
 
@@ -344,6 +477,12 @@
                         <button class="btn btn-close" style="font-size: 11px; padding: 6px 12px; width: auto; margin: 0;" onclick="sellAllPlates('all')">💸 Продать ВСЕ номера</button>
                     </div>
                     <div class="inventory-grid" id="inventory-list"></div>
+                </div>
+
+                <div id="col-subtab-album" class="hidden">
+                    <div id="collector-book-summary" class="collector-book-summary"></div>
+                    <div id="collector-book-list" class="collector-book-grid"></div>
+                    <div id="collector-synergy-guide" style="margin-top: 18px;"></div>
                 </div>
 
                 <div id="col-subtab-achieve" class="hidden">
@@ -1695,7 +1834,7 @@
     <script src="./js/security.js?v=ed845ef69db6"></script>
     <script src="./js/storage.js?v=327dc7592b84"></script>
     <script src="./js/race-records.js?v=eaeaf8e59fc2"></script>
-    <script src="./js/race-economy.js?v=3be50de54c84"></script>
+    <script src="./js/race-economy.js?v=621d9ed845b9"></script>
     <script src="./js/audio.js?v=bca765d74412"></script>
     <script src="./js/vendor/three.min.js"></script>
     <script>
@@ -1713,6 +1852,6 @@
     </script>
     <script src="./js/race-effects.js?v=6883d3af7d80"></script>
     <script src="./js/car-3d.js?v=163a8501dee9"></script>
-    <script src="./js/app.js?v=e8919e98cc6e"></script>
+    <script src="./js/app.js?v=00c4790e4086"></script>
 </body>
 </html>
