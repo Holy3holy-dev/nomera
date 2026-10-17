@@ -6351,6 +6351,18 @@
             return this.options.autoRotate;
         }
 
+        rotateBy(angleDelta = 0.45) {
+            this.targetAngleY += angleDelta;
+            this.cameraAngleY += angleDelta;
+            this.updateCameraPosition();
+            this.needsRender = true;
+            if (!this.active) this.start();
+            if (this.renderer && this.scene && this.camera) {
+                this.renderer.render(this.scene, this.camera);
+                this.needsRender = false;
+            }
+        }
+
         updateLightsRigPositions() {
             const activeModel = this.glbCar || this.proceduralCar || this.carGroup;
             if (!activeModel || !this.THREE) return;
@@ -6670,6 +6682,11 @@
                         if (totalDx > 12 || totalDy > 12) {
                             this.touchLockedDir = (totalDy >= totalDx * 0.6) ? 'vertical' : 'horizontal';
                         }
+                    } else if (this.touchLockedDir === 'horizontal' && totalDy > totalDx * 0.8 && totalDy > 14) {
+                        // Dynamically release to vertical scroll if the user shifts to scrolling down the page
+                        this.touchLockedDir = 'vertical';
+                        this.isDragging = false;
+                        return;
                     }
 
                     if (this.touchLockedDir === 'vertical') {
@@ -8334,180 +8351,235 @@
             const THREE = this.THREE;
             const group = new THREE.Group();
 
-            const glassMat = new THREE.MeshStandardMaterial({
-                color: 0x0f172a,
-                roughness: 0.1,
-                metalness: 0.9,
-                transparent: true,
-                opacity: 0.85
-            });
+            const colors = ['#1e3a8a', '#374151', '#d97706', '#059669', '#b91c1c', '#f8fafc', '#18181b', '#94a3b8', '#ca8a04', '#475569'];
+            const bodyColor = (type === 'police') ? '#f8fafc' : colors[Math.floor(Math.random() * colors.length)];
 
-            const wheelMat = new THREE.MeshStandardMaterial({ color: 0x111827, roughness: 0.8 });
-            const chromeMat = new THREE.MeshStandardMaterial({ color: 0xd1d5db, roughness: 0.2, metalness: 0.9 });
-            const headlightMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
-            const taillightMat = new THREE.MeshStandardMaterial({ color: 0xef4444, emissive: 0xdc2626, emissiveIntensity: 1.4 });
-
-            const colors = [0x1e3a8a, 0x374151, 0xd97706, 0x059669, 0xb91c1c, 0xf8fafc, 0x475569];
-            const bodyColor = (type === 'police') ? 0xf8fafc : colors[Math.floor(Math.random() * colors.length)];
-            const bodyMat = new THREE.MeshStandardMaterial({
-                color: bodyColor,
-                roughness: 0.28,
-                metalness: 0.65
-            });
-
-            if (type === 'truck') {
-                // Heavy Truck (KAMAZ / Scania Box Freight)
-                const cabW = 2.4, cabL = 2.2, cabH = 2.8;
-                const cabGeo = new THREE.BoxGeometry(cabW, cabH, cabL);
-                const cab = new THREE.Mesh(cabGeo, bodyMat);
-                cab.position.set(0, cabH * 0.5 + 0.35, cabL * 0.5 + 1.8);
-                group.add(cab);
-
-                // Windshield
-                const ws = new THREE.Mesh(new THREE.BoxGeometry(cabW * 0.9, cabH * 0.35, 0.1), glassMat);
-                ws.position.set(0, cabH * 0.65 + 0.35, cabL + 1.8);
-                group.add(ws);
-
-                // Freight Cargo Box
-                const boxW = 2.5, boxL = 6.2, boxH = 3.2;
-                const boxGeo = new THREE.BoxGeometry(boxW, boxH, boxL);
-                const boxMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.6 });
-                const freightBox = new THREE.Mesh(boxGeo, boxMat);
-                freightBox.position.set(0, boxH * 0.5 + 0.5, -boxL * 0.5 + 1.6);
-                group.add(freightBox);
-
-                // Taillights
-                [-0.9, 0.9].forEach(side => {
-                    const tl = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.2, 0.1), taillightMat);
-                    tl.position.set(side, 0.6, -boxL + 1.6);
-                    group.add(tl);
-                });
-
-                // Headlights
-                [-0.9, 0.9].forEach(side => {
-                    const hl = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.25, 0.1), headlightMat);
-                    hl.position.set(side, 0.7, cabL + 1.8);
-                    group.add(hl);
-                });
-
-                group.userData.halfWidth = 1.35;
-                group.userData.halfLength = 4.4;
-            } else if (type === 'suv') {
-                // Large SUV (Land Cruiser 300 / G63 style)
-                const W = 2.05, L = 4.8, H = 1.65;
-                const lower = new THREE.Mesh(new THREE.BoxGeometry(W, H * 0.6, L), bodyMat);
-                lower.position.y = H * 0.3 + 0.32;
-                group.add(lower);
-
-                const cabin = new THREE.Mesh(new THREE.BoxGeometry(W * 0.92, H * 0.55, L * 0.6), bodyMat);
-                cabin.position.set(0, H * 0.75 + 0.32, -L * 0.08);
-                group.add(cabin);
-
-                const cabinGlass = new THREE.Mesh(new THREE.BoxGeometry(W * 0.93, H * 0.48, L * 0.58), glassMat);
-                cabinGlass.position.set(0, H * 0.75 + 0.32, -L * 0.08);
-                group.add(cabinGlass);
-
-                // Taillights
-                [-0.8, 0.8].forEach(side => {
-                    const tl = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.25, 0.08), taillightMat);
-                    tl.position.set(side, H * 0.5 + 0.32, -L * 0.505);
-                    group.add(tl);
-                });
-
-                // Headlights
-                [-0.8, 0.8].forEach(side => {
-                    const hl = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.22, 0.08), headlightMat);
-                    hl.position.set(side, H * 0.5 + 0.32, L * 0.505);
-                    group.add(hl);
-                });
-
-                group.userData.halfWidth = 1.05;
-                group.userData.halfLength = 2.45;
-            } else {
-                // Sedan / Hatchback (Lada / Solaris / Camry)
-                const W = 1.85, L = 4.4, H = 1.35;
-                const lower = new THREE.Mesh(new THREE.BoxGeometry(W, H * 0.52, L), bodyMat);
-                lower.position.y = H * 0.26 + 0.28;
-                group.add(lower);
-
-                const cabin = new THREE.Mesh(new THREE.BoxGeometry(W * 0.88, H * 0.55, L * 0.52), bodyMat);
-                cabin.position.set(0, H * 0.65 + 0.28, -L * 0.05);
-                group.add(cabin);
-
-                const cabinGlass = new THREE.Mesh(new THREE.BoxGeometry(W * 0.89, H * 0.50, L * 0.50), glassMat);
-                cabinGlass.position.set(0, H * 0.65 + 0.28, -L * 0.05);
-                group.add(cabinGlass);
-
-                // Police specific markings & SGU flasher
-                if (type === 'police') {
-                    const stripe = new THREE.Mesh(new THREE.BoxGeometry(W * 1.01, 0.18, L * 0.8), new THREE.MeshBasicMaterial({ color: 0x1d4ed8 }));
-                    stripe.position.y = H * 0.38 + 0.28;
-                    group.add(stripe);
-
-                    // SGU roof flasher bar
-                    const sguBar = new THREE.Mesh(new THREE.BoxGeometry(W * 0.65, 0.08, 0.18), new THREE.MeshBasicMaterial({ color: 0x0f172a }));
-                    sguBar.position.set(0, H + 0.32, -L * 0.05);
-                    group.add(sguBar);
-
-                    const sguRed = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.10, 0.16), new THREE.MeshBasicMaterial({ color: 0xef4444 }));
-                    sguRed.position.set(-0.25, H + 0.37, -L * 0.05);
-                    group.add(sguRed);
-                    group.userData.policeRed = sguRed;
-
-                    const sguBlue = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.10, 0.16), new THREE.MeshBasicMaterial({ color: 0x3b82f6 }));
-                    sguBlue.position.set(0.25, H + 0.37, -L * 0.05);
-                    group.add(sguBlue);
-                    group.userData.policeBlue = sguBlue;
-
-                    // Dynamic flashing point light for SGU pursuit
-                    const sguLight = new THREE.PointLight(0xef4444, 0, 16, 2.0);
-                    sguLight.position.set(0, H + 0.55, -L * 0.05);
-                    group.add(sguLight);
-                    group.userData.policeLight = sguLight;
-                }
-
-                // Taillights
-                [-0.72, 0.72].forEach(side => {
-                    const tl = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.18, 0.08), taillightMat);
-                    tl.position.set(side, H * 0.42 + 0.28, -L * 0.504);
-                    group.add(tl);
-                });
-
-                // Headlights
-                [-0.72, 0.72].forEach(side => {
-                    const hl = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.18, 0.08), headlightMat);
-                    hl.position.set(side, H * 0.42 + 0.28, L * 0.504);
-                    group.add(hl);
-                });
-
-                group.userData.halfWidth = 0.95;
-                group.userData.halfLength = 2.25;
-            }
-
-            // Wheels
-            const wheelRadius = 0.32;
-            const wheelWidth = 0.24;
-            const halfW = group.userData.halfWidth * 0.95;
-            const halfL = group.userData.halfLength * 0.65;
+            group.userData.type = type;
             group.userData.wheels = [];
 
-            [-halfW, halfW].forEach(wx => {
-                [-halfL, halfL].forEach(wz => {
-                    const wheelGeo = new THREE.CylinderGeometry(wheelRadius, wheelRadius, wheelWidth, 16);
-                    wheelGeo.rotateZ(Math.PI / 2);
-                    const wheel = new THREE.Mesh(wheelGeo, wheelMat);
-                    wheel.position.set(wx, wheelRadius, wz);
-                    group.add(wheel);
-                    group.userData.wheels.push(wheel);
+            if (type === 'truck') {
+                // High-detail Freight Truck (KAMAZ / Scania style)
+                const truckGroup = new THREE.Group();
+                truckGroup.name = 'DetailedTruck';
 
-                    // Hubcap
-                    const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.14, wheelWidth * 1.05, 12), chromeMat);
-                    cap.rotateZ(Math.PI / 2);
-                    cap.position.set(wx, wheelRadius, wz);
-                    group.add(cap);
-                    group.userData.wheels.push(cap);
+                const cabMat = new THREE.MeshStandardMaterial({ color: bodyColor, roughness: 0.35, metalness: 0.55 });
+                const boxMat = new THREE.MeshStandardMaterial({ color: 0xcccccc, roughness: 0.7, metalness: 0.2 });
+                const darkMat = new THREE.MeshStandardMaterial({ color: 0x1f2937, roughness: 0.8 });
+                const chromeMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.18, metalness: 0.85 });
+                const glassMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.1, metalness: 0.9, transparent: true, opacity: 0.85 });
+                const headlightMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+                const taillightMat = new THREE.MeshStandardMaterial({ color: 0xef4444, emissive: 0xdc2626, emissiveIntensity: 1.5 });
+                const amberMat = new THREE.MeshBasicMaterial({ color: 0xf59e0b });
+
+                // 1. Truck Cab (curved aerodynamic front)
+                const cabW = 2.4, cabH = 2.6, cabL = 2.1;
+                const cab = new THREE.Mesh(new THREE.BoxGeometry(cabW, cabH, cabL), cabMat);
+                cab.position.set(0, cabH * 0.5 + 0.42, cabL * 0.5 + 1.8);
+                truckGroup.add(cab);
+
+                // Windshield (tilted forward)
+                const ws = new THREE.Mesh(new THREE.BoxGeometry(cabW * 0.88, cabH * 0.38, 0.08), glassMat);
+                ws.position.set(0, cabH * 0.68 + 0.42, cabL + 1.81);
+                truckGroup.add(ws);
+
+                // Side windows and mirrors
+                [-cabW * 0.5 - 0.01, cabW * 0.5 + 0.01].forEach(x => {
+                    const sw = new THREE.Mesh(new THREE.BoxGeometry(0.04, cabH * 0.34, cabL * 0.45), glassMat);
+                    sw.position.set(x, cabH * 0.68 + 0.42, cabL * 0.65 + 1.8);
+                    truckGroup.add(sw);
+
+                    const mirror = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.38, 0.18), darkMat);
+                    mirror.position.set(x + (x > 0 ? 0.14 : -0.14), cabH * 0.65 + 0.42, cabL + 1.6);
+                    truckGroup.add(mirror);
                 });
-            });
+
+                // Front Chrome Grille
+                const grille = new THREE.Mesh(new THREE.BoxGeometry(cabW * 0.72, cabH * 0.32, 0.06), chromeMat);
+                grille.position.set(0, cabH * 0.26 + 0.42, cabL + 1.81);
+                truckGroup.add(grille);
+
+                // Heavy Bumper
+                const bumper = new THREE.Mesh(new THREE.BoxGeometry(cabW * 1.02, 0.35, 0.30), darkMat);
+                bumper.position.set(0, 0.52, cabL + 1.82);
+                truckGroup.add(bumper);
+
+                // Headlights on Bumper
+                [-0.85, 0.85].forEach(side => {
+                    const hl = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.20, 0.06), headlightMat);
+                    hl.position.set(side, 0.54, cabL + 1.98);
+                    truckGroup.add(hl);
+                });
+
+                // Sun visor over windshield
+                const visor = new THREE.Mesh(new THREE.BoxGeometry(cabW * 0.94, 0.16, 0.32), darkMat);
+                visor.position.set(0, cabH + 0.36, cabL + 1.85);
+                visor.rotation.x = 0.25;
+                truckGroup.add(visor);
+
+                // Vertical Exhaust Stack behind cab
+                const exhaust = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 2.8, 12), chromeMat);
+                exhaust.position.set(cabW * 0.42, 1.9, 1.85);
+                truckGroup.add(exhaust);
+
+                // Chassis Rails
+                const chassis = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.28, 8.4), darkMat);
+                chassis.position.set(0, 0.48, -0.9);
+                truckGroup.add(chassis);
+
+                // Aluminum Fuel Tank on side
+                const tank = new THREE.Mesh(new THREE.CylinderGeometry(0.30, 0.30, 1.8, 16), chromeMat);
+                tank.rotation.z = Math.PI / 2;
+                tank.position.set(-1.05, 0.50, 0.4);
+                truckGroup.add(tank);
+
+                // Freight Box (Corrugated Container)
+                const boxW = 2.55, boxL = 6.4, boxH = 3.0;
+                const freightBox = new THREE.Mesh(new THREE.BoxGeometry(boxW, boxH, boxL), boxMat);
+                freightBox.position.set(0, boxH * 0.5 + 0.65, -boxL * 0.5 + 1.6);
+                truckGroup.add(freightBox);
+
+                // Amber reflective hazard stripe on container
+                const hazardStrip = new THREE.Mesh(new THREE.BoxGeometry(boxW * 1.01, 0.14, boxL * 1.002), amberMat);
+                hazardStrip.position.set(0, 0.72, -boxL * 0.5 + 1.6);
+                truckGroup.add(hazardStrip);
+
+                // Rear Taillights
+                [-0.95, 0.95].forEach(side => {
+                    const tl = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.20, 0.08), taillightMat);
+                    tl.position.set(side, 0.62, -boxL + 1.58);
+                    truckGroup.add(tl);
+                });
+
+                // Truck Wheels (Front axle + Dual rear axles = 6 wheels)
+                const wheelPositions = [
+                    { x: -1.08, y: 0.48, z: 2.8, isFront: true },
+                    { x: 1.08, y: 0.48, z: 2.8, isFront: true },
+                    { x: -1.08, y: 0.48, z: -2.4, isFront: false },
+                    { x: 1.08, y: 0.48, z: -2.4, isFront: false },
+                    { x: -1.08, y: 0.48, z: -3.8, isFront: false },
+                    { x: 1.08, y: 0.48, z: -3.8, isFront: false }
+                ];
+                wheelPositions.forEach(wp => {
+                    const wGroup = new THREE.Group();
+                    wGroup.position.set(wp.x, wp.y, wp.z);
+
+                    const tire = new THREE.Mesh(
+                        new THREE.CylinderGeometry(0.48, 0.48, wp.isFront ? 0.28 : 0.45, 16),
+                        darkMat
+                    );
+                    tire.rotation.z = Math.PI / 2;
+                    wGroup.add(tire);
+
+                    const hub = new THREE.Mesh(
+                        new THREE.CylinderGeometry(0.24, 0.24, (wp.isFront ? 0.29 : 0.46), 12),
+                        chromeMat
+                    );
+                    hub.rotation.z = Math.PI / 2;
+                    wGroup.add(hub);
+
+                    wGroup.userData.isWheelSpinner = true;
+                    truckGroup.add(wGroup);
+                    group.userData.wheels.push(wGroup);
+                });
+
+                group.add(truckGroup);
+                group.userData.halfWidth = 1.35;
+                group.userData.halfLength = 4.4;
+            } else {
+                // Authentic detailed car models for Sedans, SUVs, and Police
+                let modelName;
+                if (type === 'suv') {
+                    const suvList = ['Toyota Land Cruiser 300', 'Mercedes-Benz G63 AMG «Гелик»'];
+                    modelName = suvList[Math.floor(Math.random() * suvList.length)];
+                    group.userData.halfWidth = 1.05;
+                    group.userData.halfLength = 2.45;
+                } else if (type === 'police') {
+                    modelName = 'ВАЗ-2107 «Жигули»';
+                    group.userData.halfWidth = 0.95;
+                    group.userData.halfLength = 2.25;
+                } else {
+                    const civilianList = [
+                        'ВАЗ-2107 «Жигули»',
+                        'ВАЗ-2109 «Девятка»',
+                        'Hyundai Solaris',
+                        'Volkswagen Polo',
+                        'Toyota Camry 3.5'
+                    ];
+                    modelName = civilianList[Math.floor(Math.random() * civilianList.length)];
+                    group.userData.halfWidth = 0.95;
+                    group.userData.halfLength = 2.25;
+                }
+
+                const styling = {
+                    color: bodyColor,
+                    tint: (type === 'police') ? 'clear' : (Math.random() > 0.4 ? 'medium' : 'stock'),
+                    wheels: (type === 'police') ? 'stamp' : (Math.random() > 0.5 ? 'stock' : 'torus')
+                };
+
+                const carModel = buildDetailedCarModel(THREE, modelName, styling);
+                if (carModel) {
+                    group.add(carModel);
+
+                    // Collect wheels for live rotation
+                    carModel.traverse(c => {
+                        if (c.userData && c.userData.isWheelSpinner) {
+                            group.userData.wheels.push(c);
+                        }
+                    });
+
+                    // Police livery & flashing SGU lightbar
+                    if (type === 'police') {
+                        const W = 1.82, H = 1.35, L = 4.3;
+
+                        // Blue DPS side stripes
+                        const stripeMat = new THREE.MeshBasicMaterial({ color: 0x1d4ed8 });
+                        const stripeL = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.16, L * 0.72), stripeMat);
+                        stripeL.position.set(-W * 0.5 - 0.01, 0.68, 0);
+                        carModel.add(stripeL);
+
+                        const stripeR = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.16, L * 0.72), stripeMat);
+                        stripeR.position.set(W * 0.5 + 0.01, 0.68, 0);
+                        carModel.add(stripeR);
+
+                        // Blue DPS hood badge
+                        const hoodStripe = new THREE.Mesh(new THREE.BoxGeometry(W * 0.6, 0.02, 0.22), stripeMat);
+                        hoodStripe.position.set(0, 0.76, L * 0.32);
+                        carModel.add(hoodStripe);
+
+                        // Roof SGU Bar Base
+                        const barBase = new THREE.Mesh(
+                            new THREE.BoxGeometry(W * 0.60, 0.07, 0.18),
+                            new THREE.MeshBasicMaterial({ color: 0x0f172a })
+                        );
+                        barBase.position.set(0, H + 0.08, -0.15);
+                        carModel.add(barBase);
+
+                        // Red lens (left)
+                        const sguRed = new THREE.Mesh(
+                            new THREE.BoxGeometry(0.24, 0.09, 0.16),
+                            new THREE.MeshBasicMaterial({ color: 0xef4444 })
+                        );
+                        sguRed.position.set(-0.25, H + 0.13, -0.15);
+                        carModel.add(sguRed);
+                        group.userData.policeRed = sguRed;
+
+                        // Blue lens (right)
+                        const sguBlue = new THREE.Mesh(
+                            new THREE.BoxGeometry(0.24, 0.09, 0.16),
+                            new THREE.MeshBasicMaterial({ color: 0x3b82f6 })
+                        );
+                        sguBlue.position.set(0.25, H + 0.13, -0.15);
+                        carModel.add(sguBlue);
+                        group.userData.policeBlue = sguBlue;
+
+                        // Flashing pursuit point light
+                        const sguLight = new THREE.PointLight(0xef4444, 0, 16, 2.0);
+                        sguLight.position.set(0, H + 0.35, -0.15);
+                        carModel.add(sguLight);
+                        group.userData.policeLight = sguLight;
+                    }
+                }
+            }
 
             return group;
         }
@@ -9846,8 +9918,8 @@
             // preventing lower HUD gauges (speedometer & nitro) from covering the bumper and plate.
             const accelLag = (!isHood && !isTopDown) ? ((this.keys && this.keys.gas) ? 0.30 : ((this.keys && this.keys.brake) ? -0.25 : 0)) : 0;
             const targetCamX = (isHood || isTopDown) ? state.x : state.x * 0.75;
-            const targetCamY = mode.offset.y + (isPortrait && !isHood && !isTopDown ? 0.45 : 0);
-            const targetCamZ = state.z + mode.offset.z - (isPortrait && !isHood && !isTopDown ? 0.35 : 0) - accelLag * Math.min(1.0, state.speed / 100);
+            const targetCamY = mode.offset.y + (isPortrait && !isHood && !isTopDown ? 0.85 : 0);
+            const targetCamZ = state.z + mode.offset.z - (isPortrait && !isHood && !isTopDown ? 1.05 : 0) - accelLag * Math.min(1.0, state.speed / 100);
 
             // 2. Smooth spring follow for camera position (glides smoothly across lanes without snapping)
             const posLerp = isHood ? 16.0 : (isTopDown ? 10.0 : 6.0);
@@ -9877,7 +9949,7 @@
             // diagonally across the screen when steering. In drift, adds gentle slide anticipation.
             const driftLookBias = (state.isDrifting && !isHood && !isTopDown) ? state.yawAngle * 0.16 : 0;
             const targetLookX = (isHood || isTopDown) ? state.x : (this.camPos.x * 0.82 + state.x * 0.18 + driftLookBias);
-            const targetLookY = mode.lookOffset.y - (isPortrait && !isHood && !isTopDown ? 0.20 : 0);
+            const targetLookY = mode.lookOffset.y - (isPortrait && !isHood && !isTopDown ? 0.45 : 0);
             const targetLookZ = state.z + mode.lookOffset.z;
 
             const lookLerp = (isHood || isTopDown) ? 16.0 : 6.5;

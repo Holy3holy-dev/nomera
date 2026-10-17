@@ -179,5 +179,51 @@ test('Visuals: All 25 vehicles have authentic 3D thumbnails pre-rendered and exp
         'getCarSpriteDataUrl must integrate with Car3DManager.getSideThumbnail');
 });
 
+test('Visuals & Gameplay: 3D race traffic vehicles use authentic models, spinning wheels, and detailed freight truck', () => {
+    const car3dJs = fs.readFileSync(path.join(__dirname, '../js/car-3d.js'), 'utf8');
+
+    // 1. Must use buildDetailedCarModel for sedans, SUVs, and police traffic
+    assert.ok(car3dJs.includes('const carModel = buildDetailedCarModel(THREE, modelName, styling);'),
+        'Traffic creation must construct authentic detailed 3D models');
+    assert.ok(car3dJs.includes('ВАЗ-2107 «Жигули»') && car3dJs.includes('Toyota Camry 3.5'),
+        'Traffic car selection must include realistic civilian sedans');
+
+    // 2. Freight truck must be a multi-part realistic freight truck model (not primitive box)
+    assert.ok(car3dJs.includes("truckGroup.name = 'DetailedTruck';"),
+        'Freight truck must construct a detailed multi-part model');
+    assert.ok(car3dJs.includes('isWheelSpinner'), 'Truck wheels must include live wheel spinners');
+
+    // 3. Wheels must be gathered for dynamic rotation
+    assert.ok(car3dJs.includes('group.userData.wheels.push(c);') || car3dJs.includes('group.userData.wheels.push(wGroup);'),
+        'Traffic wheels must be collected in userData.wheels for live driving rotation');
+});
+
+test('Mobile UI: Race top HUD and Mobile Page Scroll prevent collisions and hanging', () => {
+    const stylesCss = fs.readFileSync(path.join(__dirname, '../styles.css'), 'utf8');
+    const indexHtml = fs.readFileSync(path.join(__dirname, '../index.html'), 'utf8');
+    const appJs = fs.readFileSync(path.join(__dirname, '../js/app.js'), 'utf8');
+    const car3dJs = fs.readFileSync(path.join(__dirname, '../js/car-3d.js'), 'utf8');
+
+    // 1. Top HUD stats bar positioned on row 2 below header actions
+    assert.match(stylesCss, /body\.race-active \.race-3d-hud-top\s*\{[^}]*top:\s*max\(44px/s,
+        'race-3d-hud-top must be offset below header actions to avoid mobile button collisions');
+
+    // 2. HTML and body must use overflow-x: clip and touch-action: pan-y for 100% fluid mobile scrolling
+    assert.match(stylesCss, /html\s*\{[^}]*overflow-x:\s*clip;/s,
+        'html must declare overflow-x: clip to prevent breaking mobile viewport momentum scroll');
+    assert.match(stylesCss, /body\s*\{[^}]*touch-action:\s*pan-y;/s,
+        'body must declare touch-action: pan-y for native mobile scrolling');
+
+    // 3. Showroom touch gesture must dynamically yield to vertical scrolling
+    assert.ok(car3dJs.includes('this.touchLockedDir = \'vertical\';'),
+        'Showroom touch handling must dynamically release horizontal lock if vertical motion occurs');
+
+    // 4. Showroom rotateBy and quick turn buttons
+    assert.ok(car3dJs.includes('rotateBy(angleDelta = 0.45)'), 'Car3DShowroom must have rotateBy method');
+    assert.ok(appJs.includes('function rotateGarageShowroom(delta)'), 'app.js must provide rotateGarageShowroom');
+    assert.ok(indexHtml.includes('rotateGarageShowroom(-0.45)') && indexHtml.includes('rotateGarageShowroom(0.45)'),
+        'index.html must provide quick left/right turn buttons for mobile rotation without canvas touch');
+});
+
 
 

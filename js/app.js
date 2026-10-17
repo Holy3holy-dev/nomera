@@ -5769,6 +5769,13 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         }
         window.toggleGaragePodiumCollapse = toggleGaragePodiumCollapse;
 
+        function rotateGarageShowroom(delta) {
+            if (garage3DShowroom && typeof garage3DShowroom.rotateBy === 'function') {
+                garage3DShowroom.rotateBy(delta);
+            }
+        }
+        window.rotateGarageShowroom = rotateGarageShowroom;
+
         function selectGarageCarForPodium(index, fromRender) {
             if (!Array.isArray(myCars) || myCars.length === 0) return;
             index = Math.max(0, Math.min(index, myCars.length - 1));

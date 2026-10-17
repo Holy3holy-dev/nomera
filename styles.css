@@ -30,6 +30,11 @@
             -webkit-tap-highlight-color: transparent;
         }
 
+        html {
+            overflow-x: clip;
+            -webkit-text-size-adjust: 100%;
+        }
+
         body {
             font-family: var(--font-main);
             background-color: var(--bg-main);
@@ -41,7 +46,9 @@
             color: var(--text-main);
             text-align: center;
             user-select: none;
-            overflow-x: hidden;
+            overflow-x: clip;
+            -webkit-overflow-scrolling: touch;
+            touch-action: pan-y;
             min-height: 100vh;
             padding-bottom: 40px;
         }
@@ -3994,7 +4001,7 @@ body.race-active .race-3d-viewport-wrapper {
     }
     body.race-active .race-3d-hud-top {
         position: absolute;
-        top: max(6px, env(safe-area-inset-top));
+        top: max(44px, calc(env(safe-area-inset-top) + 38px));
         left: 50%;
         transform: translateX(-50%);
         display: flex;
@@ -4028,7 +4035,7 @@ body.race-active .race-3d-viewport-wrapper {
         margin-top: 1px;
     }
     body.race-active .race-3d-pursuit-box {
-        top: max(64px, calc(env(safe-area-inset-top) + 54px));
+        top: max(88px, calc(env(safe-area-inset-top) + 80px));
         padding: 3px 10px;
         min-width: 150px;
         max-width: 210px;
