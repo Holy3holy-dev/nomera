@@ -864,10 +864,10 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            min-height: 152px;
-            min-width: 312px;
-            max-width: 350px;
-            padding: 34px 20px 26px 20px;
+            min-height: 154px;
+            min-width: 342px;
+            max-width: 372px;
+            padding: 36px 22px 26px 22px;
             border-radius: 12px;
             border: 3px solid #cbd5e1;
             outline: 2px solid #1e293b;
@@ -876,9 +876,9 @@
         }
         .plate-container.country-usa .plate-bolt.bolt-left {
             top: 7px;
-            left: 14px;
+            left: 10px;
             transform: none;
-            width: 32px;
+            width: 30px;
             height: 15px;
             border-radius: 2px;
             background: #1d4ed8;
@@ -891,9 +891,9 @@
         .plate-container.country-usa .plate-bolt.bolt-left::after {
             content: "OCT";
             color: #ffffff;
-            font-size: 8.5px;
+            font-size: 8px;
             font-weight: 900;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.4px;
             line-height: 1;
         }
         .plate-container.country-usa .plate-bolt.bolt-right {
@@ -906,25 +906,28 @@
             border-radius: 99px;
             background: #1e293b;
             border: 1px solid rgba(255,255,255,0.5);
-            box-shadow: -252px 0 0 #1e293b;
+            box-shadow: -272px 0 0 #1e293b;
         }
         .plate-container.country-usa::before {
             content: attr(data-state-title);
             position: absolute;
-            top: 4px;
+            top: 5px;
             left: 50%;
             transform: translateX(-50%);
             font-family: "Brush Script MT", "Segoe Script", "Comic Sans MS", Georgia, cursive;
             font-style: italic;
             text-transform: none;
             font-weight: 700;
-            font-size: 28px;
-            line-height: 1;
-            letter-spacing: 0.5px;
+            font-size: 22px;
+            line-height: 1.05;
+            letter-spacing: 0px;
             color: #c8102e;
             text-shadow: 0 1px 0 rgba(255,255,255,0.85);
             pointer-events: none;
             white-space: nowrap;
+            max-width: calc(100% - 148px);
+            overflow: hidden;
+            text-overflow: ellipsis;
             z-index: 6;
         }
         .plate-container.country-usa::after {
@@ -1059,33 +1062,33 @@
         .plate-container.country-usa .plate-region {
             position: absolute;
             top: 7px;
-            right: 14px;
+            right: 10px;
             border-left: none;
             align-self: auto;
             margin-left: 0;
-            padding: 1px 6px;
+            padding: 1px 5px;
             background: #dc2626;
             color: #fff;
             border: 1px solid rgba(255, 255, 255, 0.75);
             border-radius: 2px;
-            font-size: 10px;
+            font-size: 9px;
             font-weight: 900;
             text-shadow: none;
             display: flex;
             flex-direction: row;
             align-items: center;
-            gap: 3px;
+            gap: 2px;
             z-index: 7;
             box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
         }
         .plate-container.country-usa .plate-region::before {
             content: "26 •";
-            font-size: 8.5px;
+            font-size: 8px;
             font-weight: 900;
             color: rgba(255, 255, 255, 0.92);
         }
         .plate-container.country-usa .plate-region #region {
-            font-size: 10px;
+            font-size: 9.5px;
             line-height: 1.1;
             font-weight: 900;
             color: #fff;
@@ -1095,7 +1098,7 @@
         }
         .plate-container.country-usa .plate-region .region-edit-hint {
             position: static;
-            font-size: 8.5px;
+            font-size: 8px;
             color: #fde047;
             opacity: 0.9;
         }

@@ -576,10 +576,98 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
             syncPlateBoxCellsLayout();
         }
+        function inferCountryFromRegion(reg, fallbackCountry = 'RUS') {
+            const r = String(reg || '').trim().toUpperCase();
+            const fb = String(fallbackCountry || 'RUS').trim().toUpperCase();
+            if (US_STATE_PLATE_META[r] || /^[A-Z]{2}$/.test(r)) return 'USA';
+            if (UAE_EMIRATE_PLATE_META[r] || /^[A-Z]{3}$/.test(r)) return 'UAE';
+            if (PLATE_COUNTRIES[fb] && fb !== 'RUS') {
+                if (PLATE_COUNTRIES[fb].regPattern && PLATE_COUNTRIES[fb].regPattern.test(r)) {
+                    return fb;
+                }
+            }
+            if (PLATE_COUNTRIES[fb]) return fb;
+            return 'RUS';
+        }
         function syncPlateCountryDOM(country = currentCountry, reg = currentReg) {
-            updatePlateBoxMeta(country, reg);
+            const c = String(country || currentCountry || 'RUS').toUpperCase();
+            const code = PLATE_COUNTRIES[c] ? c : 'RUS';
+            const cfg = PLATE_COUNTRIES[code] || PLATE_COUNTRIES.RUS;
+            const r = String(reg || currentReg || cfg.defaultReg || '777').trim();
+
+            if (typeof document !== 'undefined' && typeof document.getElementById === 'function') {
+                const regEl = document.getElementById('region');
+                if (regEl) regEl.innerText = r;
+
+                const flagEl = document.getElementById('plate-country-flag');
+                if (flagEl) {
+                    if (flagEl.classList) {
+                        flagEl.classList.remove('flag-rus', 'flag-kz', 'flag-usa', 'flag-uae');
+                        flagEl.classList.add('flag-' + code.toLowerCase());
+                    } else {
+                        flagEl.className = 'flag flag-' + code.toLowerCase();
+                    }
+                }
+                const codeEl = document.getElementById('plate-country-code');
+                if (codeEl) codeEl.innerText = cfg.code;
+
+                const plateBox = document.getElementById('plate-box');
+                if (plateBox && plateBox.classList) {
+                    plateBox.classList.remove('country-rus', 'country-kz', 'country-usa', 'country-uae');
+                    plateBox.classList.add('country-' + code.toLowerCase());
+                }
+
+                ['RUS', 'KZ', 'USA', 'UAE'].forEach(k => {
+                    const idBtn = document.getElementById('btn-country-' + k);
+                    if (idBtn && idBtn.classList) {
+                        idBtn.classList.toggle('active', k === code);
+                    }
+                });
+                if (typeof document.querySelectorAll === 'function') {
+                    const btns = document.querySelectorAll('.country-select-btn, .country-pill');
+                    if (btns && typeof btns.forEach === 'function') {
+                        btns.forEach(btn => {
+                            const btnCountry = btn.getAttribute ? btn.getAttribute('data-country') : (btn.dataset ? btn.dataset.country : '');
+                            if (btn && btn.classList && btnCountry) {
+                                btn.classList.toggle('active', String(btnCountry).toUpperCase() === code);
+                            }
+                        });
+                    }
+                }
+
+                const numCostStr = `${(cfg.spinCostPart || cfg.spinNumbers || 500).toLocaleString('ru-RU')} ₽`;
+                const bothCostStr = `${(cfg.spinCostBoth || cfg.spinBoth || 900).toLocaleString('ru-RU')} ₽`;
+                ['spin-cost-num', 'spin-num-cost'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.innerText = numCostStr;
+                });
+                ['spin-cost-let', 'spin-let-cost'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.innerText = numCostStr;
+                });
+                ['spin-cost-both', 'spin-both-cost'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.innerText = bothCostStr;
+                });
+
+                const regLabelEl = document.getElementById('region-editor-label');
+                if (regLabelEl) regLabelEl.innerText = cfg.regHint;
+                const regInputEl = document.getElementById('region-edit-input');
+                if (regInputEl) {
+                    regInputEl.placeholder = r;
+                    regInputEl.maxLength = cfg.regMaxLen || 3;
+                }
+                const chipsBox = document.getElementById('region-quick-chips');
+                if (chipsBox && Array.isArray(cfg.popularRegions)) {
+                    chipsBox.innerHTML = cfg.popularRegions
+                        .map(rv => `<button type="button" class="region-chip" onclick="saveRegionEdit('${rv}')">${rv}</button>`)
+                        .join('');
+                }
+            }
+            updatePlateBoxMeta(code, r);
         }
         if (typeof window !== 'undefined') {
+            window.inferCountryFromRegion = inferCountryFromRegion;
             window.updatePlateBoxMeta = updatePlateBoxMeta;
             window.syncPlateCountryDOM = syncPlateCountryDOM;
         }
@@ -4725,60 +4813,64 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             const updateLetters = (mode === 'both' || mode === 'letters' || !mode);
             const updateNumbers = (mode === 'both' || mode === 'numbers' || !mode);
 
-            if (draft.country && PLATE_COUNTRIES[draft.country]) {
-                currentCountry = draft.country;
-                const cfg = PLATE_COUNTRIES[currentCountry];
-                const flagEl = document.getElementById('plate-country-flag');
-                if (flagEl) {
-                    if (flagEl.classList) {
-                        flagEl.classList.remove('flag-rus', 'flag-kz', 'flag-usa', 'flag-uae');
-                        flagEl.classList.add('flag-' + currentCountry.toLowerCase());
-                    } else {
-                        flagEl.className = 'flag flag-' + currentCountry.toLowerCase();
-                    }
-                }
-                const codeEl = document.getElementById('plate-country-code');
-                if (codeEl) codeEl.innerText = cfg.code;
-                const plateBox = document.getElementById('plate-box');
-                if (plateBox) {
-                    plateBox.classList.remove('country-rus', 'country-kz', 'country-usa', 'country-uae');
-                    plateBox.classList.add('country-' + currentCountry.toLowerCase());
-                }
-            }
-
-            if (updateLetters && (draft.hasLetters || mode === 'both' || mode === 'letters')) {
-                if (draft.letters && Array.isArray(draft.letters)) {
-                    [currentL1, currentL2, currentL3] = draft.letters;
-                    if (!mode) {
-                        setCellChar('cell-l1', currentL1);
-                        setCellChar('cell-l2', currentL2);
-                        setCellChar('cell-l3', currentL3);
-                    }
-                }
-                boardHasLetters = !!draft.hasLetters;
-                hasSpunLetSinceSave = !!draft.changedLetters;
-            }
-
-            if (updateNumbers && (draft.hasNumbers || mode === 'both' || mode === 'numbers')) {
-                if (draft.num) {
-                    currentNum = draft.num;
-                    if (!mode && currentNum.length === 3) {
-                        setCellChar('cell-n1', currentNum[0]);
-                        setCellChar('cell-n2', currentNum[1]);
-                        setCellChar('cell-n3', currentNum[2]);
-                    }
-                }
-                boardHasNumbers = !!draft.hasNumbers;
-                hasSpunNumSinceSave = !!draft.changedNumbers;
+            const resolvedCountry = (draft.country && PLATE_COUNTRIES[String(draft.country).toUpperCase()])
+                ? String(draft.country).toUpperCase()
+                : inferCountryFromRegion(draft.reg, currentCountry);
+            if (PLATE_COUNTRIES[resolvedCountry]) {
+                currentCountry = resolvedCountry;
             }
 
             if (draft.reg) {
-                currentReg = draft.reg;
-                const regEl = document.getElementById('region');
-                if (regEl) regEl.innerText = currentReg;
+                currentReg = String(draft.reg).trim();
+            } else if (PLATE_COUNTRIES[currentCountry] && !PLATE_COUNTRIES[currentCountry].regPattern.test(String(currentReg || ''))) {
+                currentReg = PLATE_COUNTRIES[currentCountry].defaultReg;
             }
 
-            updatePlateBoxMeta(currentCountry, currentReg);
+            if (updateLetters) {
+                if (draft.hasLetters || mode === 'both' || mode === 'letters') {
+                    if (draft.letters && Array.isArray(draft.letters)) {
+                        [currentL1, currentL2, currentL3] = draft.letters;
+                        if (!mode) {
+                            setCellChar('cell-l1', currentL1);
+                            setCellChar('cell-l2', currentL2);
+                            setCellChar('cell-l3', currentL3);
+                        }
+                    }
+                    boardHasLetters = !!draft.hasLetters;
+                    hasSpunLetSinceSave = !!draft.changedLetters;
+                } else if (!mode && draft.hasLetters === false) {
+                    currentL1 = '-'; currentL2 = '-'; currentL3 = '-';
+                    setCellChar('cell-l1', '-');
+                    setCellChar('cell-l2', '-');
+                    setCellChar('cell-l3', '-');
+                    boardHasLetters = false;
+                    hasSpunLetSinceSave = false;
+                }
+            }
+
+            if (updateNumbers) {
+                if (draft.hasNumbers || mode === 'both' || mode === 'numbers') {
+                    if (draft.num) {
+                        currentNum = draft.num;
+                        if (!mode && currentNum.length === 3) {
+                            setCellChar('cell-n1', currentNum[0]);
+                            setCellChar('cell-n2', currentNum[1]);
+                            setCellChar('cell-n3', currentNum[2]);
+                        }
+                    }
+                    boardHasNumbers = !!draft.hasNumbers;
+                    hasSpunNumSinceSave = !!draft.changedNumbers;
+                } else if (!mode && draft.hasNumbers === false) {
+                    currentNum = '---';
+                    setCellChar('cell-n1', '-');
+                    setCellChar('cell-n2', '-');
+                    setCellChar('cell-n3', '-');
+                    boardHasNumbers = false;
+                    hasSpunNumSinceSave = false;
+                }
+            }
+
+            syncPlateCountryDOM(currentCountry, currentReg);
             syncPlateBoxCellsLayout();
             mustSpinBothForNextSave = true;
             checkCanSaveButton();
@@ -4790,7 +4882,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 return;
             }
             const cfg = PLATE_COUNTRIES[currentCountry] || PLATE_COUNTRIES.RUS;
-            const spinCost = mode === 'both' ? cfg.spinBoth : (mode === 'numbers' ? cfg.spinNumbers : cfg.spinLetters);
+            const spinCost = mode === 'both'
+                ? (cfg.spinCostBoth || cfg.spinBoth || 900)
+                : (mode === 'numbers' ? (cfg.spinCostPart || cfg.spinNumbers || 500) : (cfg.spinCostPart || cfg.spinLetters || 500));
             const curOnlineBal = (onlineProfile && Number.isFinite(Number(onlineProfile.balance)))
                 ? Number(onlineProfile.balance)
                 : balance;
@@ -8720,26 +8814,555 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             else renderInventory();
         }
 
-        // --- 5. ДРЭГ-РЕЙСИНГ (1/4 МИЛИ) И 3D ГОНКА ---
+        // --- 5. ДРЭГ-РЕЙСИНГ (1/4 МИЛИ · 402 М) И ДУЭЛИ С БОССАМИ ---
         let dragCountdownTimeouts = [];
         let activeDragFalseStartListener = null;
+        let activeDragRaceKeyListener = null;
+        let dragRaceAnimId = null;
+
+        const DRAG_BOSSES = [
+            {
+                id: 'boss_priora',
+                icon: '🔊',
+                name: 'Опер на Приоре',
+                title: 'Король Ночного Района',
+                carName: 'Lada Priora БПАН',
+                entryFee: 50000,
+                cashReward: 180000,
+                xpReward: 150,
+                requiredScore: 105,
+                targetET: 11.45,
+                platePrize: { text: 'А 001 АА | 05 RUS', price: 650000, rarity: 'Легендарный', country: 'RUS', color: '#f59e0b' }
+            },
+            {
+                id: 'boss_camry',
+                icon: '🦅',
+                name: 'Министр на Камри 3.5',
+                title: 'Астана Спецкортеж',
+                carName: 'Toyota Camry 3.5',
+                entryFee: 100000,
+                cashReward: 350000,
+                xpReward: 220,
+                requiredScore: 135,
+                targetET: 10.35,
+                platePrize: { text: '777 VIP | 01 KZ', price: 950000, rarity: 'Легендарный', country: 'KZ', color: '#f59e0b' }
+            },
+            {
+                id: 'boss_mark2',
+                icon: '⛩️',
+                name: 'Король Тоуге',
+                title: 'Легенда Владивостока',
+                carName: 'Toyota Mark II Tourer V',
+                entryFee: 150000,
+                cashReward: 550000,
+                xpReward: 300,
+                requiredScore: 165,
+                targetET: 9.45,
+                platePrize: { text: 'Т 888 ТТ | 125 RUS', price: 1200000, rarity: 'Легендарный', country: 'RUS', color: '#ef4444' }
+            },
+            {
+                id: 'boss_gelik',
+                icon: '🚨',
+                name: 'Полковник Спецсвязи',
+                title: 'Сопровождение ФСО',
+                carName: 'Mercedes-Benz G63 AMG «Гелик»',
+                entryFee: 250000,
+                cashReward: 950000,
+                xpReward: 450,
+                requiredScore: 205,
+                targetET: 8.55,
+                platePrize: { text: 'А 777 МР | 77 RUS', price: 2500000, rarity: 'БЛАТНОЙ', country: 'RUS', color: '#a855f7' }
+            },
+            {
+                id: 'boss_sheikh',
+                icon: '👑',
+                name: 'Шейх Аль-Мактум',
+                title: 'Властелин Дубая',
+                carName: 'Bugatti Chiron Super Sport',
+                entryFee: 500000,
+                cashReward: 2200000,
+                xpReward: 800,
+                requiredScore: 255,
+                targetET: 7.35,
+                platePrize: { text: 'D 1 | DXB UAE', price: 15000000, rarity: 'БЛАТНОЙ', country: 'UAE', color: '#fbbf24' }
+            }
+        ];
+        window.DRAG_BOSSES = DRAG_BOSSES;
+
+        let dragShiftState = {
+            gear: 1,
+            rpm: 6800,
+            perfectShifts: 0,
+            totalShifts: 0,
+            shiftBonusScore: 0,
+            nitroUsed: false
+        };
+
+        let dragRaceState = {
+            phase: 'idle', // 'idle' | 'countdown' | 'racing' | 'finished' | 'falsestart'
+            bossId: null,
+            betAmount: 0,
+            escrowFee: 0,
+            escrowSettled: false,
+            elapsedSec: 0,
+            reactionSec: 0.14,
+            playerDist: 0,
+            rivalDist: 0,
+            playerSpeed: 0,
+            rivalSpeed: 0,
+            playerTargetET: 10.2,
+            rivalTargetET: 10.5,
+            playerFinishedET: null,
+            rivalFinishedET: null,
+            nitroTimeLeft: 0,
+            flameTimer: 0,
+            redlineHoldSec: 0,
+            rivalName: 'Уличный гонщик',
+            rivalCarName: 'Lada Vesta Sport',
+            rivalPlateText: 'В 777 ОP | 777 RUS',
+            bannerText: '',
+            bannerColor: '#fbbf24'
+        };
+
+        function getActiveDragCar() {
+            const idx = typeof getSelectedRaceCarIndex === 'function' ? getSelectedRaceCarIndex() : selectedRaceCarIndex;
+            if (Array.isArray(myCars) && myCars.length > 0) {
+                return (idx >= 0 && myCars[idx]) ? myCars[idx] : myCars[0];
+            }
+            return null;
+        }
+
+        function getDragCarPerformance(car) {
+            const targetCar = car || getActiveDragCar();
+            if (!targetCar) {
+                return {
+                    perf: { speed: 160, accel: 2.2, handling: 4.8, rewardMult: 1.0, plateBonus: 0, synergyBonus: 0 },
+                    synBonusPct: 0,
+                    baseScore: 95,
+                    totalScore: 95 + (dragShiftState.shiftBonusScore || 0),
+                    estimatedET: 11.8
+                };
+            }
+            const rawBase = (typeof carRaceStats !== 'undefined' && carRaceStats && carRaceStats[targetCar.name])
+                ? carRaceStats[targetCar.name]
+                : { speed: 185, accel: 2.7, handling: 5.6, boost: 2.0, rewardMult: 1.3 };
+            const perf = NomeraRaceEconomy.performance(rawBase, targetCar);
+            const rawSyn = Number(perf.synergyBonus || 0);
+            const synBonusPct = rawSyn > 1 ? Math.round(rawSyn) : Math.round(rawSyn * 100);
+            const topSpd = Number(perf.speed || perf.topSpeed || rawBase.speed || 180);
+            const accelVal = Number(perf.accel || rawBase.accel || 2.5);
+            const rewMult = Math.min(20, Number(perf.rewardMult || perf.rewardMultiplier || rawBase.rewardMult || 1));
+            const plateBonusPct = Number(perf.plateBonus || 0);
+
+            const baseScore = Math.round(
+                topSpd * 0.55 +
+                rewMult * 4.2 +
+                accelVal * 4.5 +
+                plateBonusPct * 0.45 +
+                synBonusPct * 0.9
+            );
+            const totalScore = baseScore + (dragShiftState.shiftBonusScore || 0);
+            const estimatedET = Number(Math.max(6.45, 13.6 - (totalScore / 44)).toFixed(2));
+            return {
+                perf,
+                rawBase,
+                topSpd,
+                accelVal,
+                rewMult,
+                plateBonusPct,
+                plateBonus: plateBonusPct,
+                synBonusPct,
+                baseScore,
+                totalScore,
+                dragScore: totalScore,
+                estimatedET
+            };
+        }
+        window.getDragCarPerformance = getDragCarPerformance;
+
+        function pickDragRival(activeCar, betAmount = selectedDragBet) {
+            const { baseScore } = getDragCarPerformance(activeCar);
+            const bet = Number(betAmount) || 0;
+            const rivalPool = [
+                { name: 'Артём (БПАН)', carName: 'Lada Priora БПАН', plate: 'К 005 КК | 05 RUS', score: 102 },
+                { name: 'Макс Стрит', carName: 'Lada Vesta Sport', plate: 'Е 777 КХ | 77 RUS', score: 120 },
+                { name: 'Данияр 01', carName: 'Toyota Camry 3.5', plate: '001 ZZZ | 01 KZ', score: 146 },
+                { name: 'Самурай JDM', carName: 'Toyota Mark II Tourer V', plate: 'Т 888 ТТ | 125 RUS', score: 162 },
+                { name: 'Субару Клуб', carName: 'Subaru Impreza WRX STI', plate: 'С 555 СС | 99 RUS', score: 166 },
+                { name: 'Баварец V10', carName: 'BMW M5 E60 V10', plate: 'М 500 ММ | 78 RUS', score: 176 },
+                { name: 'Тимур AMG', carName: 'Mercedes-Benz E63s AMG', plate: 'А 063 МР | 777 RUS', score: 204 },
+                { name: 'Мажор М5', carName: 'BMW M5 F90 Competition', plate: 'О 001 ОО | 77 RUS', score: 224 },
+                { name: 'Годзилла R35', carName: 'Nissan GT-R R35 Nismo', plate: 'GTR 777 | CA USA', score: 232 },
+                { name: 'Фантом Штутгарта', carName: 'Porsche 911 Turbo S', plate: 'VIP 911 | NY USA', score: 262 },
+                { name: 'Принц Маранелло', carName: 'Ferrari SF90 Stradale', plate: 'F 90 | DXB UAE', score: 295 }
+            ];
+
+            const difficultyOffset = bet >= 500000 ? 18 : (bet >= 250000 ? 12 : (bet >= 100000 ? 6 : (bet >= 25000 ? 0 : -8)));
+            const targetRivalScore = Math.max(96, baseScore + difficultyOffset);
+            let bestRival = rivalPool[0];
+            let minDiff = Infinity;
+            for (const r of rivalPool) {
+                const diff = Math.abs(r.score - targetRivalScore);
+                if (diff < minDiff) {
+                    minDiff = diff;
+                    bestRival = r;
+                }
+            }
+            const rivalScore = Math.max(94, targetRivalScore);
+            const rivalET = Number(Math.max(6.55, 13.6 - (rivalScore / 44)).toFixed(2));
+            return {
+                name: bestRival.name,
+                carName: bestRival.carName,
+                plateText: bestRival.plate,
+                requiredScore: rivalScore,
+                targetET: rivalET
+            };
+        }
 
         function clearDragRaceTimeouts() {
             if (dragCountdownTimeouts.length > 0) {
                 dragCountdownTimeouts.forEach(t => clearTimeout(t));
                 dragCountdownTimeouts = [];
             }
-            if (activeDragFalseStartListener) {
+            if (dragRaceAnimId) {
+                const cancelAnim = (typeof window !== 'undefined' && window.cancelAnimationFrame)
+                    ? window.cancelAnimationFrame.bind(window)
+                    : clearTimeout;
+                cancelAnim(dragRaceAnimId);
+                dragRaceAnimId = null;
+            }
+            if (activeDragFalseStartListener && typeof window !== 'undefined' && window.removeEventListener) {
                 window.removeEventListener('keydown', activeDragFalseStartListener);
                 activeDragFalseStartListener = null;
             }
+            if (activeDragRaceKeyListener && typeof window !== 'undefined' && window.removeEventListener) {
+                window.removeEventListener('keydown', activeDragRaceKeyListener);
+                activeDragRaceKeyListener = null;
+            }
             if (isDragRaceRunning) {
+                // Refund escrow fee if race was cancelled by switching tabs before completion/falsestart
+                if (dragRaceState.escrowFee > 0 && !dragRaceState.escrowSettled) {
+                    const refundAmount = dragRaceState.escrowFee;
+                    dragRaceState.escrowFee = 0;
+                    dragRaceState.escrowSettled = true;
+                    creditPlayerBalance(refundAmount, 'Возврат взноса (отмена дрэг-заезда)');
+                }
                 isDragRaceRunning = false;
+                dragRaceState.phase = 'idle';
                 ['drag-light-red1', 'drag-light-red2', 'drag-light-yellow', 'drag-light-green', 'drag-light-false'].forEach(id => {
                     document.getElementById(id)?.classList.remove('on');
                 });
             }
         }
+
+        function selectDragCarFromDropdown(indexStr) {
+            if (isDragRaceRunning) return;
+            const idx = parseInt(indexStr, 10);
+            if (!Number.isFinite(idx) || idx < 0 || !Array.isArray(myCars) || !myCars[idx]) return;
+            const car = myCars[idx];
+            if (typeof selectRaceCar === 'function') {
+                selectRaceCar(car.name, idx);
+            } else {
+                selectedRaceCarName = car.name;
+                selectedRaceCarIndex = idx;
+            }
+            updateDragMenuUI();
+        }
+        window.selectDragCarFromDropdown = selectDragCarFromDropdown;
+
+        function updateDragTelemetryDOM() {
+            const gearEl = document.getElementById('drag-gear-label');
+            if (gearEl) {
+                gearEl.textContent = dragRaceState.phase === 'idle' && dragShiftState.totalShifts === 0
+                    ? '1-я передача (Старт)'
+                    : `${dragShiftState.gear}-я передача`;
+            }
+            const rpmVal = Math.round(dragShiftState.rpm || 1200);
+            const rpmEl = document.getElementById('drag-rpm-label');
+            if (rpmEl) {
+                rpmEl.textContent = `${rpmVal.toLocaleString('ru-RU')} RPM`;
+                rpmEl.style.color = (rpmVal >= 6200 && rpmVal <= 7400)
+                    ? '#34d399'
+                    : (rpmVal > 7400 ? '#ef4444' : '#ffffff');
+            }
+            const barEl = document.getElementById('drag-rpm-bar');
+            if (barEl) {
+                barEl.style.width = `${Math.min(100, Math.max(5, Math.round((rpmVal / 8500) * 100)))}%`;
+            }
+            const scoreLabel = document.getElementById('drag-shift-score-label');
+            if (scoreLabel) {
+                scoreLabel.textContent = `+${dragShiftState.shiftBonusScore || 0} PTS`;
+            }
+            const shiftBtn = document.getElementById('btn-drag-shift');
+            if (shiftBtn) {
+                const inSweetSpot = isDragRaceRunning && dragRaceState.phase === 'racing' && rpmVal >= 6200 && rpmVal <= 7400 && dragShiftState.gear < 6;
+                shiftBtn.style.boxShadow = inSweetSpot ? '0 0 22px rgba(16, 185, 129, 0.75)' : '';
+                shiftBtn.style.borderColor = inSweetSpot ? '#10b981' : '';
+            }
+            const nitroBtn = document.getElementById('btn-drag-nitro');
+            if (nitroBtn) {
+                nitroBtn.disabled = Boolean(dragShiftState.nitroUsed);
+                nitroBtn.textContent = dragShiftState.nitroUsed
+                    ? '🚀 N2O ИСПОЛЬЗОВАН'
+                    : (dragRaceState.nitroTimeLeft > 0 ? '🔥 N2O АКТИВЕН!' : '🚀 ЗАКИСЬ АЗОТА N2O (N)');
+            }
+            const etEl = document.getElementById('drag-timer-et');
+            if (etEl) etEl.textContent = `${(dragRaceState.elapsedSec || 0).toFixed(2)} с`;
+            const spdEl = document.getElementById('drag-speed-live');
+            if (spdEl) spdEl.textContent = `${Math.round(dragRaceState.playerSpeed || 0)} км/ч`;
+            const distEl = document.getElementById('drag-dist-live');
+            if (distEl) distEl.textContent = `${Math.min(402, Math.round(dragRaceState.playerDist || 0))} / 402 м`;
+            const bestEtEl = document.getElementById('drag-best-et-label');
+            if (bestEtEl) {
+                const best = achievements && Number.isFinite(Number(achievements.bestDragET)) ? Number(achievements.bestDragET) : null;
+                bestEtEl.textContent = best ? `🏆 Лучшее время 1/4 мили: ${best.toFixed(2)} с` : '🏆 Лучшее время 1/4 мили: —';
+            }
+        }
+
+        function renderDragStripCanvas() {
+            if (typeof document === 'undefined' || typeof document.getElementById !== 'function') return;
+            const cvs = document.getElementById('drag-strip-canvas');
+            if (!cvs || typeof cvs.getContext !== 'function') return;
+            const ctx = cvs.getContext('2d');
+            if (!ctx) return;
+
+            const W = cvs.width || 760;
+            const H = cvs.height || 196;
+            ctx.clearRect(0, 0, W, H);
+
+            // 1. Night Drag Arena Sky & Grandstand Lights
+            const bgGrad = typeof ctx.createLinearGradient === 'function' ? ctx.createLinearGradient(0, 0, 0, H) : null;
+            if (bgGrad && typeof bgGrad.addColorStop === 'function') {
+                bgGrad.addColorStop(0, '#050814');
+                bgGrad.addColorStop(0.22, '#0f172a');
+                bgGrad.addColorStop(0.23, '#1e293b');
+                bgGrad.addColorStop(0.92, '#111827');
+                bgGrad.addColorStop(1, '#090d16');
+                ctx.fillStyle = bgGrad;
+            } else {
+                ctx.fillStyle = '#0f172a';
+            }
+            ctx.fillRect(0, 0, W, H);
+
+            // Stadium floodlights along top barrier
+            for (let lx = 60; lx < W - 30; lx += 130) {
+                ctx.fillStyle = 'rgba(254, 240, 138, 0.14)';
+                ctx.beginPath();
+                if (typeof ctx.arc === 'function') ctx.arc(lx, 18, 22, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = '#fef08a';
+                ctx.fillRect(lx - 4, 14, 8, 4);
+            }
+
+            // Top & Bottom Red-White Curbs
+            const trackTop = 36;
+            const trackBot = H - 16;
+            const laneMid = Math.round((trackTop + trackBot) / 2);
+            for (let cx = 0; cx < W; cx += 24) {
+                ctx.fillStyle = (Math.floor(cx / 24) % 2 === 0) ? '#dc2626' : '#f8fafc';
+                ctx.fillRect(cx, trackTop - 5, 24, 5);
+                ctx.fillRect(cx, trackBot, 24, 5);
+            }
+
+            // Start & Finish X coordinates on canvas
+            const startX = 88;
+            const finishX = W - 64;
+            const trackSpan = finishX - startX;
+
+            // Distance markers (0m, 100m, 200m, 300m, 402m)
+            const markers = [
+                { m: 0, label: 'СТАРТ 0м' },
+                { m: 100, label: '100м' },
+                { m: 200, label: '200м' },
+                { m: 300, label: '300м' },
+                { m: 402, label: '402м ФИНИШ' }
+            ];
+            ctx.font = 'bold 9px Inter, sans-serif';
+            ctx.textAlign = 'center';
+            markers.forEach(mk => {
+                const mx = Math.round(startX + (mk.m / 402) * trackSpan);
+                ctx.fillStyle = mk.m === 0 || mk.m === 402 ? 'rgba(255, 255, 255, 0.35)' : 'rgba(255, 255, 255, 0.1)';
+                ctx.fillRect(mx, trackTop, mk.m === 0 || mk.m === 402 ? 3 : 1, trackBot - trackTop);
+                ctx.fillStyle = mk.m === 402 ? '#fbbf24' : '#94a3b8';
+                ctx.fillText(mk.label, mx, 28);
+            });
+
+            // Checkered pattern at 402m Finish Line
+            const sqSize = 6;
+            for (let sy = trackTop; sy < trackBot; sy += sqSize) {
+                const rowIdx = Math.floor((sy - trackTop) / sqSize);
+                ctx.fillStyle = rowIdx % 2 === 0 ? '#ffffff' : '#090d16';
+                ctx.fillRect(finishX, sy, sqSize, sqSize);
+                ctx.fillStyle = rowIdx % 2 === 0 ? '#090d16' : '#ffffff';
+                ctx.fillRect(finishX + sqSize, sy, sqSize, sqSize);
+            }
+
+            // Center dashed divider between Lane 1 (Rival) and Lane 2 (Player)
+            ctx.fillStyle = 'rgba(251, 191, 36, 0.55)';
+            for (let dx = 12; dx < W - 12; dx += 28) {
+                ctx.fillRect(dx, laneMid - 1, 16, 2);
+            }
+
+            const activeCar = getActiveDragCar();
+            const playerCarName = activeCar ? activeCar.name : 'ВАЗ-2107 «Жигули»';
+            const playerPlate = activeCar && activeCar.plate && activeCar.plate.text ? activeCar.plate.text : 'БЕЗ НОМЕРА';
+            const rivalCarName = dragRaceState.rivalCarName || 'Lada Vesta Sport';
+            const rivalTitle = dragRaceState.rivalName || 'Соперник';
+            const rivalPlate = dragRaceState.rivalPlateText || 'В 777 ОР | 777 RUS';
+
+            const rivalX = Math.round(startX + (Math.min(418, dragRaceState.rivalDist || 0) / 402) * trackSpan);
+            const playerX = Math.round(startX + (Math.min(418, dragRaceState.playerDist || 0) / 402) * trackSpan);
+            const rivalY = Math.round((trackTop + laneMid) / 2);
+            const playerY = Math.round((laneMid + trackBot) / 2);
+
+            // Lane watermarks
+            ctx.textAlign = 'left';
+            ctx.font = 'bold 10px Inter, sans-serif';
+            ctx.fillStyle = 'rgba(248, 113, 113, 0.78)';
+            ctx.fillText(`ПОЛОСА 1 · ${rivalTitle.toUpperCase()} (${rivalCarName}) [${rivalPlate}]`, 14, trackTop + 14);
+            ctx.fillStyle = 'rgba(52, 211, 153, 0.88)';
+            ctx.fillText(`ПОЛОСА 2 · ВЫ (${playerCarName}) [${playerPlate}]`, 14, laneMid + 14);
+
+            // Burnout smoke during countdown or launch
+            if (dragRaceState.phase === 'countdown' || (dragRaceState.phase === 'racing' && dragRaceState.playerDist < 35)) {
+                ctx.fillStyle = 'rgba(226, 232, 240, 0.25)';
+                for (let s = 0; s < 4; s++) {
+                    ctx.beginPath();
+                    if (typeof ctx.arc === 'function') {
+                        ctx.arc(playerX - 24 - s * 8, playerY + ((s % 2 === 0) ? -6 : 6), 7 + s * 2, 0, Math.PI * 2);
+                    }
+                    ctx.fill();
+                }
+            }
+
+            // N2O or Perfect Shift exhaust flames on Player Car
+            if (dragRaceState.phase === 'racing') {
+                if (dragRaceState.nitroTimeLeft > 0) {
+                    ctx.fillStyle = '#00f0ff';
+                    ctx.fillRect(playerX - 36, playerY - 7, 18, 4);
+                    ctx.fillRect(playerX - 36, playerY + 3, 18, 4);
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fillRect(playerX - 26, playerY - 6, 8, 2);
+                    ctx.fillRect(playerX - 26, playerY + 4, 8, 2);
+                } else if (dragRaceState.flameTimer > 0) {
+                    ctx.fillStyle = '#f59e0b';
+                    ctx.fillRect(playerX - 30, playerY - 6, 12, 4);
+                    ctx.fillRect(playerX - 30, playerY + 2, 12, 4);
+                }
+            }
+
+            // Draw Rival Car (rotated +90 deg facing right)
+            if (typeof drawPixelCar === 'function') {
+                try {
+                    drawPixelCar(ctx, rivalX, rivalY + 4, rivalCarName, 0.88, {
+                        tilt: Math.PI / 2
+                    });
+                    const st = (activeCar && activeCar.styling) || {};
+                    drawPixelCar(ctx, playerX, playerY + 4, playerCarName, 0.88, {
+                        tilt: Math.PI / 2,
+                        color: st.color,
+                        tint: st.tint,
+                        neon: st.neon,
+                        sgu: st.sgu,
+                        spoiler: st.spoiler
+                    });
+                } catch (_) {
+                    ctx.fillStyle = '#ef4444';
+                    ctx.fillRect(rivalX - 20, rivalY - 10, 40, 20);
+                    ctx.fillStyle = '#10b981';
+                    ctx.fillRect(playerX - 20, playerY - 10, 40, 20);
+                }
+            }
+
+            // Finish or False-Start Banner Overlay
+            if (dragRaceState.bannerText && (dragRaceState.phase === 'finished' || dragRaceState.phase === 'falsestart')) {
+                ctx.fillStyle = 'rgba(7, 11, 20, 0.82)';
+                ctx.fillRect(W / 2 - 225, H / 2 - 26, 450, 52);
+                ctx.strokeStyle = dragRaceState.bannerColor || '#fbbf24';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(W / 2 - 225, H / 2 - 26, 450, 52);
+                ctx.fillStyle = dragRaceState.bannerColor || '#fbbf24';
+                ctx.textAlign = 'center';
+                ctx.font = 'bold 13px Inter, sans-serif';
+                ctx.fillText(dragRaceState.bannerText, W / 2, H / 2 + 5);
+            }
+        }
+        window.renderDragStripCanvas = renderDragStripCanvas;
+
+        function updateDragMenuUI() {
+            const activeCar = getActiveDragCar();
+            const perfData = getDragCarPerformance(activeCar);
+
+            const nameEl = document.getElementById('drag-active-car-name');
+            if (nameEl) nameEl.textContent = activeCar ? activeCar.name : 'Нет авто';
+
+            const scorePill = document.getElementById('drag-car-score-pill');
+            if (scorePill) {
+                scorePill.textContent = `⚡ Рейтинг: ${perfData.totalScore} PTS (~${perfData.estimatedET.toFixed(2)} с)`;
+            }
+
+            const specsEl = document.getElementById('drag-active-car-specs');
+            if (specsEl) {
+                const cond = activeCar ? Math.round(NomeraRaceEconomy.normalizeCar(activeCar).condition) : 100;
+                specsEl.textContent = `Макс. скорость: ${perfData.topSpd} км/ч · Разгон: ${perfData.accelVal} · Номер: +${perfData.plateBonusPct}% · Синергия: +${perfData.synBonusPct}% · Сост.: ${cond}%`;
+            }
+
+            const plateContainer = document.getElementById('drag-active-car-plate');
+            if (plateContainer) {
+                if (activeCar && activeCar.plate && activeCar.plate.text) {
+                    const pText = activeCar.plate.text;
+                    const syn = NomeraRaceEconomy.getCarPlateSynergy ? NomeraRaceEconomy.getCarPlateSynergy(activeCar, activeCar.plate) : null;
+                    const synBadge = syn
+                        ? `<span class="car-synergy-badge" style="font-size:10px;padding:2px 7px;">${syn.icon} ${escapeHtml(syn.title)} (+${syn.bonusPct}%)</span>`
+                        : '';
+                    plateContainer.innerHTML = `<span class="mini-plate ${getMiniPlateCountryClass(pText)}" style="font-size:10.5px;padding:2px 6px;">${renderMiniPlateInnerHtml(pText)}</span>${synBadge}`;
+                } else {
+                    plateContainer.innerHTML = `<span style="font-size:11px;color:var(--text-dim);">🏷️ Госномер не установлен (установите блатной номер в Гараже для бонуса скорости и синергии!)</span>`;
+                }
+            }
+
+            const selectEl = document.getElementById('drag-car-select');
+            if (selectEl && Array.isArray(myCars)) {
+                const curIdx = typeof getSelectedRaceCarIndex === 'function' ? Math.max(0, getSelectedRaceCarIndex()) : Math.max(0, selectedRaceCarIndex);
+                selectEl.innerHTML = myCars.map((c, idx) => {
+                    const cPerf = getDragCarPerformance(c);
+                    const pLabel = c.plate && c.plate.text ? ` [${c.plate.text}]` : '';
+                    return `<option value="${idx}" ${idx === curIdx ? 'selected' : ''}>${escapeHtml(c.name)}${escapeHtml(pLabel)} — ${cPerf.baseScore} PTS</option>`;
+                }).join('');
+            }
+
+            if (!isDragRaceRunning) {
+                const rival = dragRaceState.bossId
+                    ? DRAG_BOSSES.find(b => b.id === dragRaceState.bossId)
+                    : pickDragRival(activeCar, selectedDragBet);
+                if (rival) {
+                    dragRaceState.rivalName = rival.name;
+                    dragRaceState.rivalCarName = rival.carName;
+                    dragRaceState.rivalPlateText = rival.platePrize ? rival.platePrize.text : rival.plateText;
+                    dragRaceState.rivalTargetET = rival.targetET || 10.2;
+                }
+                const rivalInfoEl = document.getElementById('drag-rival-info');
+                if (rivalInfoEl && rival) {
+                    rivalInfoEl.innerHTML = `🏎️ Соперник: <b style="color:#fff;">${escapeHtml(rival.name)}</b> на <b>${escapeHtml(rival.carName)}</b> <span style="color:#fbbf24;">[${escapeHtml(dragRaceState.rivalPlateText)}]</span> · Рейтинг соперника: <b>${rival.requiredScore} PTS</b> (~${Number(dragRaceState.rivalTargetET).toFixed(2)} с)`;
+                }
+            }
+
+            const betHintEl = document.getElementById('drag-bet-payout-hint');
+            if (betHintEl) {
+                if (selectedDragBet > 0) {
+                    const gross = Math.round(selectedDragBet * 1.95);
+                    const net = gross - selectedDragBet;
+                    betHintEl.textContent = `Куш при победе: ${gross.toLocaleString('ru-RU')} ₽ (чистыми +${net.toLocaleString('ru-RU')} ₽)`;
+                } else {
+                    const streetPrize = Math.min(45000, Math.round(15000 * Math.max(1, Math.min(3, perfData.rewMult * 0.45))));
+                    betHintEl.textContent = `Приз за победу: +${streetPrize.toLocaleString('ru-RU')} ₽ (без риска потери денег)`;
+                }
+            }
+
+            updateDragTelemetryDOM();
+            renderDragStripCanvas();
+        }
+        window.updateDragMenuUI = updateDragMenuUI;
 
         function switchRaceMode(mode) {
             if (mode !== 'drag' && isDragRaceRunning) {
@@ -8787,203 +9410,129 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     navTab3D.setAttribute('aria-selected', 'false');
                 }
             }
-            if (mode === 'drag' && typeof renderDragBosses === 'function') {
-                renderDragBosses();
+            if (mode === 'drag') {
+                dragRaceState.bossId = null;
+                updateDragMenuUI();
+                if (typeof renderDragBosses === 'function') renderDragBosses();
             }
         }
 
         function selectDragBet(amount) {
-            selectedDragBet = Number(amount);
+            if (isDragRaceRunning) return;
+            selectedDragBet = Number(amount) || 0;
+            dragRaceState.bossId = null;
             document.querySelectorAll('#drag-bet-chips .styling-chip').forEach(btn => {
                 btn.classList.toggle('active', Number(btn.dataset.bet) === selectedDragBet);
             });
+            updateDragMenuUI();
         }
 
-        async function startDragRace() {
-            if (isRaceRunning || isDragRaceRunning) return;
-            const curBal = (onlineProfile && Number.isFinite(Number(onlineProfile.balance))) ? Math.max(balance, Number(onlineProfile.balance)) : balance;
-            if (selectedDragBet > 0 && curBal < selectedDragBet) {
-                notifyUser(`Для ставки нужно ${selectedDragBet.toLocaleString('ru-RU')} ₽`, 'error');
-                return;
+        function activateDragNitro() {
+            if (dragShiftState.nitroUsed) {
+                return { activated: false, reason: 'already_used', shiftBonusScore: dragShiftState.shiftBonusScore };
             }
-
-            const activeCar = myCars[selectedRaceCarIndex] || myCars[0];
-            if (!activeCar) {
-                notifyUser('Сначала приобретите автомобиль в автосалоне!');
-                return;
+            dragShiftState.nitroUsed = true;
+            dragShiftState.shiftBonusScore = (dragShiftState.shiftBonusScore || 0) + 20;
+            dragRaceState.nitroTimeLeft = 2.2;
+            if (isDragRaceRunning && dragRaceState.phase === 'racing') {
+                dragRaceState.playerSpeed = (dragRaceState.playerSpeed || 80) + 24;
             }
-
-            clearDragRaceTimeouts();
-            isDragRaceRunning = true;
-            notifyUser('🚦 Дрэг-заезд: приготовьтесь к старту по зеленому сигналу!', 'warning');
-
-            const lRed1 = document.getElementById('drag-light-red1');
-            const lRed2 = document.getElementById('drag-light-red2');
-            const lYellow = document.getElementById('drag-light-yellow');
-            const lGreen = document.getElementById('drag-light-green');
-            const lFalse = document.getElementById('drag-light-false');
-
-            [lRed1, lRed2, lYellow, lGreen, lFalse].forEach(el => el?.classList.remove('on'));
-
-            let falseStart = false;
-            const falseStartDetector = (e) => {
-                if (e && e.type === 'keydown' && !['Space', 'KeyW', 'ArrowUp'].includes(e.code)) return;
-                if (raceKeys.gas || raceKeys.nitro || (e && ['Space', 'KeyW', 'ArrowUp'].includes(e.code))) falseStart = true;
+            const fbEl = document.getElementById('drag-shift-feedback');
+            if (fbEl) {
+                fbEl.textContent = '🚀 ЗАКИСЬ АЗОТА N2O АКТИВИРОВАНА (+20 PTS)!';
+                fbEl.style.color = '#38bdf8';
+            }
+            if (typeof playLockSound === 'function') playLockSound(1.25);
+            updateDragTelemetryDOM();
+            renderDragBosses();
+            return {
+                activated: true,
+                shiftBonusScore: dragShiftState.shiftBonusScore
             };
-            activeDragFalseStartListener = falseStartDetector;
-            window.addEventListener('keydown', falseStartDetector);
-
-            dragCountdownTimeouts.push(setTimeout(() => { if (!falseStart) lRed1?.classList.add('on'); sound.tick(); }, 600));
-            dragCountdownTimeouts.push(setTimeout(() => { if (!falseStart) lRed2?.classList.add('on'); sound.tick(); }, 1200));
-            dragCountdownTimeouts.push(setTimeout(() => { if (!falseStart) lYellow?.classList.add('on'); sound.tick(); }, 1800));
-
-            dragCountdownTimeouts.push(setTimeout(() => {
-                window.removeEventListener('keydown', falseStartDetector);
-                activeDragFalseStartListener = null;
-
-                if (falseStart) {
-                    lFalse?.classList.add('on');
-                    if (selectedDragBet > 0) deductPlayerBalance(selectedDragBet, 'Фальстарт в дрэг-рейсинге');
-                    isDragRaceRunning = false;
-                    dragCountdownTimeouts = [];
-                    notifyUser(`🛑 Фальстарт! Вы нажали газ до зеленого. Ставка -${selectedDragBet.toLocaleString('ru-RU')} ₽ потеряна.`, 'error');
-                    return;
-                }
-
-                lGreen?.classList.add('on');
-                sound.win();
-
-                // Расчет победы в дрэге
-                const baseStats = NomeraRaceEconomy.normalizeCar(activeCar);
-                const upgradesCount = Object.values(baseStats.upgrades).reduce((a, b) => a + b, 0);
-                const winChance = 0.50 + (upgradesCount * 0.035);
-                const isWin = Math.random() < Math.min(0.92, winChance);
-
-                dragCountdownTimeouts.push(setTimeout(() => {
-                    isDragRaceRunning = false;
-                    dragCountdownTimeouts = [];
-                    [lRed1, lRed2, lYellow, lGreen, lFalse].forEach(el => el?.classList.remove('on'));
-
-                    if (isWin) {
-                        achievements.dragWins = (achievements.dragWins || 0) + 1;
-                        const payout = selectedDragBet > 0 ? Math.round(selectedDragBet * 1.95) : 0;
-                        if (selectedDragBet > 0) {
-                            creditPlayerBalance(payout - selectedDragBet, 'Победа в дрэг-рейсинге');
-                        }
-                        addExp(80);
-                        triggerLegendaryEffect();
-                        playCashSound();
-                        checkAchievements();
-                        updateBalance();
-                        saveProgress();
-                        notifyUser(`🏆 ПОБЕДА НА 1/4 МИЛИ! Время: ${(10.2 + Math.random() * 0.8).toFixed(2)} с. Выигрыш: ${payout.toLocaleString('ru-RU')} ₽!`, 'success');
-                    } else {
-                        if (selectedDragBet > 0) deductPlayerBalance(selectedDragBet, 'Поражение в дрэг-рейсинге');
-                        notifyUser(`Поражение в дрэге! Соперник обогнал на финише на 0.12 с. Ставка потеряна.`, 'error');
-                    }
-                }, 2200));
-            }, 2400));
         }
-
-        const DRAG_BOSSES = [
-            {
-                id: 'boss_priora',
-                icon: '🔊',
-                name: 'Опер на Приоре',
-                title: 'Король Ночного Района',
-                carName: 'Lada Priora БПАН',
-                entryFee: 50000,
-                cashReward: 180000,
-                xpReward: 150,
-                requiredScore: 105,
-                platePrize: { text: 'А001АА | 05 RUS', price: 650000, rarity: 'Легендарный', color: '#f59e0b' }
-            },
-            {
-                id: 'boss_camry',
-                icon: '🦅',
-                name: 'Министр на Камри 3.5',
-                title: 'Астана Спецкортеж',
-                carName: 'Toyota Camry 3.5',
-                entryFee: 100000,
-                cashReward: 350000,
-                xpReward: 220,
-                requiredScore: 135,
-                platePrize: { text: '777 VIP | 01 KZ', price: 950000, rarity: 'Легендарный', color: '#f59e0b' }
-            },
-            {
-                id: 'boss_mark2',
-                icon: '⛩️',
-                name: 'Король Тоуге',
-                title: 'Легенда Владивостока',
-                carName: 'Toyota Mark II Tourer V',
-                entryFee: 150000,
-                cashReward: 550000,
-                xpReward: 300,
-                requiredScore: 165,
-                platePrize: { text: 'Т888ТТ | 125 RUS', price: 1200000, rarity: 'Эксклюзив', color: '#ef4444' }
-            },
-            {
-                id: 'boss_gelik',
-                icon: '🚨',
-                name: 'Полковник Спецсвязи',
-                title: 'Сопровождение ФСО',
-                carName: 'Mercedes-Benz G63 AMG «Гелик»',
-                entryFee: 250000,
-                cashReward: 950000,
-                xpReward: 450,
-                requiredScore: 205,
-                platePrize: { text: 'А777МР | 77 RUS', price: 2500000, rarity: 'Гос-Эталон', color: '#a855f7' }
-            },
-            {
-                id: 'boss_sheikh',
-                icon: '👑',
-                name: 'Шейх Аль-Мактум',
-                title: 'Властелин Дубая',
-                carName: 'Bugatti Chiron Super Sport',
-                entryFee: 500000,
-                cashReward: 2200000,
-                xpReward: 800,
-                requiredScore: 255,
-                platePrize: { text: 'D 1 | DXB UAE', price: 15000000, rarity: 'Королевский', color: '#fbbf24' }
-            }
-        ];
-        window.DRAG_BOSSES = DRAG_BOSSES;
-
-        let dragShiftState = {
-            gear: 1,
-            rpm: 6800,
-            perfectShifts: 0,
-            totalShifts: 0,
-            shiftBonusScore: 0
-        };
+        window.activateDragNitro = activateDragNitro;
 
         function shiftDragGear(overrideRpm) {
-            const rpm = Number.isFinite(Number(overrideRpm)) ? Number(overrideRpm) : dragShiftState.rpm;
+            const hasExplicitRpm = overrideRpm !== undefined && overrideRpm !== null && Number.isFinite(Number(overrideRpm));
+            if (!hasExplicitRpm && isDragRaceRunning && dragRaceState.phase === 'countdown') {
+                if (typeof activeDragFalseStartListener === 'function') {
+                    activeDragFalseStartListener({ type: 'shift_click', code: 'Space' });
+                }
+                return {
+                    gear: dragShiftState.gear,
+                    rpm: dragShiftState.rpm,
+                    isPerfect: false,
+                    falseStart: true,
+                    perfectShifts: dragShiftState.perfectShifts,
+                    shiftBonusScore: dragShiftState.shiftBonusScore
+                };
+            }
+
+            if ((dragShiftState.totalShifts || 0) >= 6 && !hasExplicitRpm) {
+                const fbEl = document.getElementById('drag-shift-feedback');
+                if (fbEl) {
+                    fbEl.textContent = '⚙️ Достигнута высшая 6-я передача!';
+                    fbEl.style.color = '#38bdf8';
+                }
+                return {
+                    gear: dragShiftState.gear,
+                    rpm: dragShiftState.rpm,
+                    isPerfect: false,
+                    perfectShifts: dragShiftState.perfectShifts,
+                    shiftBonusScore: dragShiftState.shiftBonusScore
+                };
+            }
+
+            const rpm = hasExplicitRpm ? Number(overrideRpm) : Number(dragShiftState.rpm || 6800);
             const isPerfect = rpm >= 6200 && rpm <= 7400;
+            const isGood = !isPerfect && rpm >= 5200 && rpm <= 7850;
+
             dragShiftState.gear = Math.min(6, (dragShiftState.gear || 1) + 1);
             dragShiftState.totalShifts = (dragShiftState.totalShifts || 0) + 1;
+
+            let pointsAdded = 10;
             if (isPerfect) {
+                pointsAdded = 28;
                 dragShiftState.perfectShifts = (dragShiftState.perfectShifts || 0) + 1;
                 dragShiftState.shiftBonusScore = (dragShiftState.shiftBonusScore || 0) + 28;
+                if (isDragRaceRunning && dragRaceState.phase === 'racing') {
+                    dragRaceState.playerSpeed = (dragRaceState.playerSpeed || 60) + 18;
+                    dragRaceState.flameTimer = 0.45;
+                }
+            } else if (isGood) {
+                pointsAdded = 14;
+                dragShiftState.shiftBonusScore = (dragShiftState.shiftBonusScore || 0) + 14;
+                if (isDragRaceRunning && dragRaceState.phase === 'racing') {
+                    dragRaceState.playerSpeed = (dragRaceState.playerSpeed || 60) + 8;
+                }
             } else {
                 dragShiftState.shiftBonusScore = (dragShiftState.shiftBonusScore || 0) + 10;
             }
-            // Prepare next gear RPM in or near sweet spot
-            dragShiftState.rpm = 6500 + ((dragShiftState.gear * 170) % 700);
 
-            const gearEl = document.getElementById('drag-gear-label');
-            if (gearEl) gearEl.textContent = `${dragShiftState.gear}-я передача`;
-            const rpmEl = document.getElementById('drag-rpm-label');
-            if (rpmEl) rpmEl.textContent = `${rpm.toLocaleString('ru-RU')} RPM`;
-            const barEl = document.getElementById('drag-rpm-bar');
-            if (barEl) barEl.style.width = `${Math.min(100, Math.round((rpm / 8500) * 100))}%`;
+            if (isDragRaceRunning && dragRaceState.phase === 'racing') {
+                dragShiftState.rpm = 3900;
+                dragRaceState.redlineHoldSec = 0;
+            } else {
+                dragShiftState.rpm = 6500 + ((dragShiftState.gear * 170) % 700);
+            }
+
             const fbEl = document.getElementById('drag-shift-feedback');
             if (fbEl) {
                 fbEl.textContent = isPerfect
-                    ? `🔥 ИДЕАЛЬНОЕ ПЕРЕКЛЮЧЕНИЕ (+28 очков скорости)!`
-                    : `⚡ Переключение передач (+10 очков)`;
+                    ? `🔥 ИДЕАЛЬНОЕ ПЕРЕКЛЮЧЕНИЕ (+${pointsAdded} очков скорости)!`
+                    : (isGood ? `⚡ ХОРОШЕЕ ПЕРЕКЛЮЧЕНИЕ (+${pointsAdded} очков)` : `⚙️ Переключение передач (+${pointsAdded} очков)`);
                 fbEl.style.color = isPerfect ? '#34d399' : '#fbbf24';
             }
+
+            updateDragTelemetryDOM();
+            const gearEl = document.getElementById('drag-gear-label');
+            if (gearEl) gearEl.textContent = `${dragShiftState.gear}-я передача`;
+            const rpmEl = document.getElementById('drag-rpm-label');
+            if (rpmEl) rpmEl.textContent = `${Math.round(rpm).toLocaleString('ru-RU')} RPM`;
+            const barEl = document.getElementById('drag-rpm-bar');
+            if (barEl) barEl.style.width = `${Math.min(100, Math.round((rpm / 8500) * 100))}%`;
+
+            if (typeof renderDragBosses === 'function') renderDragBosses();
             if (typeof playTick === 'function') playTick();
             return {
                 gear: dragShiftState.gear,
@@ -9011,11 +9560,15 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             }
             if (!listEl) return;
 
+            const activeCar = getActiveDragCar();
+            const { totalScore } = getDragCarPerformance(activeCar);
+
             listEl.innerHTML = DRAG_BOSSES.map(boss => {
                 const isDefeated = Boolean(achievements.defeatedDragBosses[boss.id]);
                 const plateClaimed = Boolean(achievements.claimedBossPlates[boss.id]);
+                const readyToBeat = totalScore >= boss.requiredScore;
                 return `
-                    <div class="drag-boss-card ${isDefeated ? 'defeated' : ''}" style="background: rgba(15, 23, 42, 0.82); border: 1px solid ${isDefeated ? 'rgba(16, 185, 129, 0.45)' : 'rgba(251, 191, 36, 0.3)'}; border-radius: 14px; padding: 12px; display: flex; flex-direction: column; justify-content: space-between; gap: 8px;">
+                    <div class="drag-boss-card ${isDefeated ? 'defeated' : ''}" style="background: rgba(15, 23, 42, 0.86); border: 1px solid ${isDefeated ? 'rgba(16, 185, 129, 0.45)' : (readyToBeat ? 'rgba(56, 189, 248, 0.45)' : 'rgba(251, 191, 36, 0.3)')}; border-radius: 14px; padding: 12px; display: flex; flex-direction: column; justify-content: space-between; gap: 8px;">
                         <div>
                             <div style="display: flex; justify-content: space-between; align-items: center; gap: 6px;">
                                 <div style="font-size: 14px; font-weight: 900; color: #fff;">${boss.icon} ${escapeHtml(boss.name)}</div>
@@ -9023,7 +9576,10 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                                     ${isDefeated ? '✓ Побеждён' : `Взнос: ${boss.entryFee.toLocaleString('ru-RU')} ₽`}
                                 </span>
                             </div>
-                            <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">🏎️ Авто босса: <b>${escapeHtml(boss.carName)}</b></div>
+                            <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">🏎️ Авто босса: <b>${escapeHtml(boss.carName)}</b> (~${boss.targetET.toFixed(2)} с)</div>
+                            <div style="font-size: 11px; margin-top: 3px; color: ${readyToBeat ? '#34d399' : '#f87171'}; font-weight: 800;">
+                                ⚡ Сложность: ${boss.requiredScore} PTS · Ваш рейтинг: ${totalScore} PTS ${readyToBeat ? '✓ (Готов к победе)' : '(Нужен тюнинг / КПП)'}
+                            </div>
                             <div style="font-size: 11px; color: #38bdf8; margin-top: 4px; font-weight: 800;">
                                 🏷️ Призовой номер: <span style="color: #fbbf24;">${escapeHtml(boss.platePrize.text)}</span> ${plateClaimed ? '(Получен ✓)' : '(Эксклюзив!)'}
                             </div>
@@ -9032,7 +9588,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                             </div>
                         </div>
                         <button type="button" class="btn ${isDefeated ? 'btn-blue' : 'btn-gold'}" style="margin: 4px 0 0 0; padding: 8px 12px; font-size: 12px; font-weight: 800;" onclick="startDragBossDuel('${boss.id}')">
-                            ${isDefeated ? '🔄 Реванш за куш' : '⚔️ Бросить вызов (402 м)'}
+                            ${isDefeated ? '🔄 Реванш на 402 м' : '⚔️ Бросить вызов (402 м)'}
                         </button>
                     </div>
                 `;
@@ -9044,7 +9600,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             const boss = DRAG_BOSSES.find(b => b.id === bossId);
             if (!boss) return { won: false, reason: 'not_found' };
 
-            const activeCar = myCars[selectedRaceCarIndex] || myCars[0];
+            const activeCar = getActiveDragCar();
             if (!activeCar) {
                 notifyUser('Сначала приобретите автомобиль в автосалоне!', 'error');
                 return { won: false, reason: 'no_car' };
@@ -9061,10 +9617,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 deductPlayerBalance(chargeFee, `Взнос на дуэль с Боссом: ${boss.name}`);
             }
 
-            const baseStats = NomeraRaceEconomy.normalizeCar(activeCar);
-            const perf = NomeraRaceEconomy.performance(baseStats, activeCar);
-            const synBonusPct = Math.round(Number(perf.synergyBonus || 0) * 100);
-            const carScore = Math.round((perf.topSpeed || 180) * 0.55 + (perf.rewardMultiplier || 1) * 28 + synBonusPct * 0.9 + (dragShiftState.shiftBonusScore || 0));
+            const { totalScore: carScore } = getDragCarPerformance(activeCar);
             const won = options.forceWin === true ? true : (options.forceWin === false ? false : carScore >= boss.requiredScore);
 
             if (!achievements.defeatedDragBosses || typeof achievements.defeatedDragBosses !== 'object') {
@@ -9083,14 +9636,24 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
                 if (!achievements.claimedBossPlates[boss.id] && boss.platePrize) {
                     achievements.claimedBossPlates[boss.id] = Date.now();
+                    const rarityObj = typeof getRarity === 'function'
+                        ? getRarity(boss.platePrize.price)
+                        : { text: String(boss.platePrize.rarity || 'Легендарный'), bg: '#fef08a', color: '#854d0e' };
+                    const inferredCountry = boss.platePrize.country
+                        || (/\bUAE$/i.test(boss.platePrize.text) ? 'UAE' : (/\bKZ$/i.test(boss.platePrize.text) ? 'KZ' : (/\bUSA$/i.test(boss.platePrize.text) ? 'USA' : 'RUS')));
                     const wonPlate = {
+                        id: 'plate_boss_' + boss.id + '_' + Date.now(),
                         text: boss.platePrize.text,
                         price: boss.platePrize.price,
-                        rarity: boss.platePrize.rarity,
+                        rarity: rarityObj,
+                        country: inferredCountry,
                         color: boss.platePrize.color,
                         fromBoss: boss.id
                     };
-                    inventory.push(wonPlate);
+                    inventory.unshift(wonPlate);
+                    if (onlineProfile && Array.isArray(onlineProfile.inventory)) {
+                        onlineProfile.inventory = [...inventory];
+                    }
                     plateAwarded = wonPlate.text;
                     if (typeof renderInventory === 'function') renderInventory();
                     if (typeof renderCollectorBook === 'function') renderCollectorBook();
@@ -9098,6 +9661,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
                 if (typeof triggerLegendaryEffect === 'function') triggerLegendaryEffect();
                 if (typeof playCashSound === 'function') playCashSound();
+                if (typeof checkAchievements === 'function') checkAchievements();
                 notifyUser(
                     plateAwarded
                         ? `👑 БОСС ПОБЕЖДЁН! Вы выиграли ${boss.cashReward.toLocaleString('ru-RU')} ₽ и забрали эксклюзивный номер «${plateAwarded}»!`
@@ -9105,11 +9669,15 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     'success'
                 );
             } else {
-                notifyUser(`⚔️ Босс «${boss.name}» оказался быстрее (${carScore} против ${boss.requiredScore} очков). Переключайте КПП в зелёной зоне или прокачайте авто и синергию номера!`, 'error');
+                notifyUser(`⚔️ Босс «${boss.name}» оказался быстрее (${carScore} против ${boss.requiredScore} PTS). Переключайте КПП в зелёной зоне, используйте N2O или прокачайте авто и синергию номера!`, 'error');
             }
 
             dragShiftState.gear = 1;
+            dragShiftState.totalShifts = 0;
+            dragShiftState.perfectShifts = 0;
             dragShiftState.shiftBonusScore = 0;
+            dragShiftState.nitroUsed = false;
+            updateDragMenuUI();
             renderDragBosses();
             if (typeof saveProgress === 'function') saveProgress();
             return {
@@ -9123,8 +9691,441 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         }
         window.resolveDragBossDuel = resolveDragBossDuel;
 
-        function startDragBossDuel(bossId) {
-            return resolveDragBossDuel(bossId);
+        async function startDragRace(options = {}) {
+            if (isRaceRunning || isDragRaceRunning) return null;
+            const activeCar = getActiveDragCar();
+            if (!activeCar) {
+                notifyUser('Сначала приобретите автомобиль в автосалоне!', 'error');
+                return null;
+            }
+
+            const boss = options && options.bossId ? DRAG_BOSSES.find(b => b.id === options.bossId) : null;
+            const requiredFee = boss ? boss.entryFee : Math.max(0, Number(selectedDragBet) || 0);
+            const curBal = (onlineProfile && Number.isFinite(Number(onlineProfile.balance))) ? Math.max(balance, Number(onlineProfile.balance)) : balance;
+            if (requiredFee > 0 && curBal < requiredFee) {
+                notifyUser(
+                    boss
+                        ? `Для вызова «${boss.name}» требуется ${requiredFee.toLocaleString('ru-RU')} ₽`
+                        : `Для ставки нужно ${requiredFee.toLocaleString('ru-RU')} ₽`,
+                    'error'
+                );
+                return null;
+            }
+
+            if (options && options.instant) {
+                if (boss) {
+                    return resolveDragBossDuel(boss.id, options);
+                }
+            }
+
+            clearDragRaceTimeouts();
+            isDragRaceRunning = true;
+
+            // Reset live gearbox for the 402m run (preserve any pre-staged shift bonus only if explicitly set in tests, otherwise start fresh in 1st gear)
+            dragShiftState.gear = 1;
+            dragShiftState.rpm = 3400;
+            dragShiftState.totalShifts = 0;
+            dragShiftState.perfectShifts = 0;
+            dragShiftState.shiftBonusScore = 0;
+            dragShiftState.nitroUsed = false;
+
+            const rival = boss ? {
+                name: boss.name,
+                carName: boss.carName,
+                plateText: boss.platePrize.text,
+                requiredScore: boss.requiredScore,
+                targetET: boss.targetET || Number(Math.max(6.5, 13.6 - boss.requiredScore / 44).toFixed(2))
+            } : pickDragRival(activeCar, selectedDragBet);
+
+            const perfData = getDragCarPerformance(activeCar);
+            if (requiredFee > 0) {
+                deductPlayerBalance(requiredFee, boss ? `Взнос на дуэль с Боссом: ${boss.name}` : 'Ставка в дрэг-рейсинге (402 м)');
+            }
+
+            dragRaceState = {
+                phase: 'countdown',
+                bossId: boss ? boss.id : null,
+                betAmount: requiredFee,
+                escrowFee: requiredFee,
+                escrowSettled: false,
+                elapsedSec: 0,
+                reactionSec: 0.12 + Math.random() * 0.08,
+                playerDist: 0,
+                rivalDist: 0,
+                playerSpeed: 0,
+                rivalSpeed: 0,
+                playerTargetET: perfData.estimatedET,
+                rivalTargetET: rival.targetET,
+                playerFinishedET: null,
+                rivalFinishedET: null,
+                nitroTimeLeft: 0,
+                flameTimer: 0,
+                redlineHoldSec: 0,
+                rivalName: rival.name,
+                rivalCarName: rival.carName,
+                rivalPlateText: rival.plateText,
+                bannerText: '',
+                bannerColor: '#fbbf24'
+            };
+
+            const statusEl = document.getElementById('drag-race-status-text');
+            if (statusEl) {
+                statusEl.textContent = boss
+                    ? `⚔️ ДУЭЛЬ С БОССОМ «${boss.name.toUpperCase()}» · ЖДИТЕ ЗЕЛЁНЫЙ!`
+                    : '🚦 ПРИГОТОВЬТЕСЬ: ЖДИТЕ ЗЕЛЁНЫЙ СИГНАЛ СВЕТОФОРА!';
+                statusEl.style.color = '#fbbf24';
+            }
+            const fbEl = document.getElementById('drag-shift-feedback');
+            if (fbEl) {
+                fbEl.textContent = '🚦 Удерживайте обороты: НЕ нажимайте передачу до зелёного!';
+                fbEl.style.color = '#fbbf24';
+            }
+
+            updateDragMenuUI();
+
+            const lRed1 = document.getElementById('drag-light-red1');
+            const lRed2 = document.getElementById('drag-light-red2');
+            const lYellow = document.getElementById('drag-light-yellow');
+            const lGreen = document.getElementById('drag-light-green');
+            const lFalse = document.getElementById('drag-light-false');
+            [lRed1, lRed2, lYellow, lGreen, lFalse].forEach(el => el?.classList.remove('on'));
+
+            let falseStart = false;
+            const falseStartDetector = (e) => {
+                if (dragRaceState.phase !== 'countdown') return;
+                if (e && e.type === 'keydown' && !['Space', 'KeyW', 'ArrowUp', 'ShiftLeft', 'ShiftRight'].includes(e.code)) return;
+                if (e && typeof e.preventDefault === 'function') e.preventDefault();
+                falseStart = true;
+            };
+            activeDragFalseStartListener = falseStartDetector;
+            if (typeof window !== 'undefined' && window.addEventListener) {
+                window.addEventListener('keydown', falseStartDetector);
+            }
+
+            dragCountdownTimeouts.push(setTimeout(() => {
+                if (!falseStart) {
+                    lRed1?.classList.add('on');
+                    dragShiftState.rpm = 3900;
+                    updateDragTelemetryDOM();
+                    renderDragStripCanvas();
+                    if (typeof sound?.tick === 'function') sound.tick();
+                }
+            }, 450));
+
+            dragCountdownTimeouts.push(setTimeout(() => {
+                if (!falseStart) {
+                    lRed2?.classList.add('on');
+                    dragShiftState.rpm = 4400;
+                    updateDragTelemetryDOM();
+                    renderDragStripCanvas();
+                    if (typeof sound?.tick === 'function') sound.tick();
+                }
+            }, 900));
+
+            dragCountdownTimeouts.push(setTimeout(() => {
+                if (!falseStart) {
+                    lYellow?.classList.add('on');
+                    dragShiftState.rpm = 4800;
+                    updateDragTelemetryDOM();
+                    renderDragStripCanvas();
+                    if (typeof sound?.tick === 'function') sound.tick();
+                }
+            }, 1350));
+
+            dragCountdownTimeouts.push(setTimeout(() => {
+                if (activeDragFalseStartListener && typeof window !== 'undefined' && window.removeEventListener) {
+                    window.removeEventListener('keydown', activeDragFalseStartListener);
+                    activeDragFalseStartListener = null;
+                }
+
+                if (falseStart) {
+                    lFalse?.classList.add('on');
+                    dragRaceState.phase = 'falsestart';
+                    dragRaceState.escrowSettled = true;
+                    dragRaceState.escrowFee = 0;
+                    dragRaceState.bannerText = requiredFee > 0
+                        ? `🛑 ФАЛЬСТАРТ! СТАВКА -${requiredFee.toLocaleString('ru-RU')} ₽ ПОТЕРЯНА`
+                        : '🛑 ФАЛЬСТАРТ! ВЫ НАЖАЛИ ГАЗ ДО ЗЕЛЁНОГО СИГНАЛА';
+                    dragRaceState.bannerColor = '#ef4444';
+                    if (statusEl) {
+                        statusEl.textContent = '🛑 ФАЛЬСТАРТ! Старт до зелёного сигнала';
+                        statusEl.style.color = '#ef4444';
+                    }
+                    isDragRaceRunning = false;
+                    dragCountdownTimeouts = [];
+                    renderDragStripCanvas();
+                    saveProgress();
+                    notifyUser(
+                        requiredFee > 0
+                            ? `🛑 Фальстарт! Вы стартовали до зелёного сигнала. Ставка -${requiredFee.toLocaleString('ru-RU')} ₽ потеряна.`
+                            : '🛑 Фальстарт! Дождитесь зелёного сигнала светофора.',
+                        'error'
+                    );
+                    return;
+                }
+
+                lGreen?.classList.add('on');
+                if (typeof sound?.win === 'function') sound.win();
+                launchDragStripRace(activeCar, rival, boss);
+            }, 1800));
+
+            return dragRaceState;
+        }
+        window.startDragRace = startDragRace;
+
+        function launchDragStripRace(activeCar, rival, boss) {
+            dragRaceState.phase = 'racing';
+            dragShiftState.gear = 1;
+            dragShiftState.rpm = 2800;
+
+            const statusEl = document.getElementById('drag-race-status-text');
+            if (statusEl) {
+                statusEl.textContent = '🟢 СТАРТ! ПЕРЕКЛЮЧАЙТЕ КПП В ЗЕЛЁНОЙ ЗОНЕ (6 200 – 7 400 RPM)!';
+                statusEl.style.color = '#34d399';
+            }
+            const fbEl = document.getElementById('drag-shift-feedback');
+            if (fbEl) {
+                fbEl.textContent = '🔥 Жмите SHIFT / ПРОБЕЛ, когда обороты войдут в зелёную зону!';
+                fbEl.style.color = '#34d399';
+            }
+
+            const keyHandler = (e) => {
+                if (!isDragRaceRunning || dragRaceState.phase !== 'racing') return;
+                if (['Space', 'ShiftLeft', 'ShiftRight', 'ArrowUp', 'KeyW'].includes(e.code)) {
+                    if (typeof e.preventDefault === 'function') e.preventDefault();
+                    shiftDragGear();
+                } else if (['KeyN', 'KeyE'].includes(e.code)) {
+                    if (typeof e.preventDefault === 'function') e.preventDefault();
+                    activateDragNitro();
+                }
+            };
+            activeDragRaceKeyListener = keyHandler;
+            if (typeof window !== 'undefined' && window.addEventListener) {
+                window.addEventListener('keydown', keyHandler);
+            }
+
+            const gearRatios = [0, 0.27, 0.45, 0.62, 0.77, 0.90, 1.08];
+            const perfData = getDragCarPerformance(activeCar);
+            const baseTopSpeed = Math.max(160, perfData.topSpd);
+            const rivalTopSpeed = Math.max(165, Math.round(rival.requiredScore * 1.45));
+
+            let lastTs = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+            const reqAnim = (typeof window !== 'undefined' && window.requestAnimationFrame)
+                ? window.requestAnimationFrame.bind(window)
+                : (cb => setTimeout(() => cb(Date.now()), 16));
+
+            function stepFrame(nowTs) {
+                if (!isDragRaceRunning || dragRaceState.phase !== 'racing') return;
+                const rawDt = ((nowTs || Date.now()) - lastTs) / 1000;
+                lastTs = nowTs || Date.now();
+                const dt = Math.min(0.05, Math.max(0.012, Number.isFinite(rawDt) && rawDt > 0 ? rawDt : 0.016));
+
+                dragRaceState.elapsedSec += dt;
+                if (dragRaceState.nitroTimeLeft > 0) {
+                    dragRaceState.nitroTimeLeft = Math.max(0, dragRaceState.nitroTimeLeft - dt);
+                }
+                if (dragRaceState.flameTimer > 0) {
+                    dragRaceState.flameTimer = Math.max(0, dragRaceState.flameTimer - dt);
+                }
+
+                // Dynamic player target ET improved by live gear shifts & N2O
+                const livePerf = getDragCarPerformance(activeCar);
+                const dynamicPlayerET = Math.max(6.2, 13.6 - (livePerf.totalScore / 44));
+                const rivalET = Math.max(6.35, dragRaceState.rivalTargetET);
+
+                const g = Math.min(6, Math.max(1, dragShiftState.gear || 1));
+                const gearCeiling = baseTopSpeed * gearRatios[g] * (dragRaceState.nitroTimeLeft > 0 ? 1.18 : 1.0);
+                const prevCeiling = g > 1 ? baseTopSpeed * gearRatios[g - 1] * 0.72 : 0;
+
+                // Compute RPM in current gear
+                const gearSpan = Math.max(25, gearCeiling - prevCeiling);
+                const progressInGear = Math.max(0, Math.min(1.12, (dragRaceState.playerSpeed - prevCeiling) / gearSpan));
+                let targetRpm = 2500 + progressInGear * 5600;
+
+                if (targetRpm >= 7950 && g < 6) {
+                    dragRaceState.redlineHoldSec += dt;
+                    targetRpm = 8050 + Math.sin(dragRaceState.elapsedSec * 45) * 140;
+                    // Emergency auto-upshift after 0.85s at redline so casual players never get stuck in 1st gear
+                    if (dragRaceState.redlineHoldSec >= 0.85) {
+                        dragShiftState.gear = g + 1;
+                        dragShiftState.totalShifts = (dragShiftState.totalShifts || 0) + 1;
+                        dragShiftState.shiftBonusScore = (dragShiftState.shiftBonusScore || 0) + 8;
+                        dragRaceState.redlineHoldSec = 0;
+                        targetRpm = 4200;
+                        const fb = document.getElementById('drag-shift-feedback');
+                        if (fb) {
+                            fb.textContent = `⚙️ Авто-переключение на ${dragShiftState.gear}-ю передачу (+8 PTS)`;
+                            fb.style.color = '#fbbf24';
+                        }
+                    }
+                } else {
+                    dragRaceState.redlineHoldSec = 0;
+                }
+                dragShiftState.rpm = Math.min(8450, Math.max(1800, targetRpm));
+
+                // Player & Rival distance progression calibrated to 402m over their respective ETs
+                // d(t) = 402 * (t / ET)^1.38 gives realistic drag acceleration curve
+                const playerProgress = Math.pow(dragRaceState.elapsedSec / dynamicPlayerET, 1.35);
+                const rivalProgress = Math.pow(dragRaceState.elapsedSec / rivalET, 1.35);
+
+                const redlinePenalty = (dragRaceState.redlineHoldSec > 0.15 && g < 6) ? 0.92 : 1.0;
+                const nitroBoostFactor = dragRaceState.nitroTimeLeft > 0 ? 1.06 : 1.0;
+
+                const nextPlayerDist = Math.max(dragRaceState.playerDist, 402 * playerProgress * redlinePenalty * nitroBoostFactor);
+                const nextRivalDist = Math.max(dragRaceState.rivalDist, 402 * rivalProgress);
+
+                dragRaceState.playerSpeed = Math.min(
+                    baseTopSpeed * 1.12,
+                    Math.max(25, ((nextPlayerDist - dragRaceState.playerDist) / dt) * 3.6)
+                );
+                dragRaceState.rivalSpeed = Math.min(
+                    rivalTopSpeed * 1.08,
+                    Math.max(25, ((nextRivalDist - dragRaceState.rivalDist) / dt) * 3.6)
+                );
+
+                dragRaceState.playerDist = nextPlayerDist;
+                dragRaceState.rivalDist = nextRivalDist;
+
+                if (dragRaceState.playerDist >= 402 && dragRaceState.playerFinishedET === null) {
+                    dragRaceState.playerFinishedET = Number(dragRaceState.elapsedSec.toFixed(2));
+                }
+                if (dragRaceState.rivalDist >= 402 && dragRaceState.rivalFinishedET === null) {
+                    dragRaceState.rivalFinishedET = Number(dragRaceState.elapsedSec.toFixed(2));
+                }
+
+                updateDragTelemetryDOM();
+                renderDragStripCanvas();
+
+                const bothFinished = dragRaceState.playerFinishedET !== null && dragRaceState.rivalFinishedET !== null;
+                const someoneFinishedAndGap = (dragRaceState.playerDist >= 412 || dragRaceState.rivalDist >= 412);
+                if (bothFinished || someoneFinishedAndGap || dragRaceState.elapsedSec >= 13.5) {
+                    finishDragStripRace(activeCar, rival, boss);
+                    return;
+                }
+
+                dragRaceAnimId = reqAnim(stepFrame);
+            }
+
+            dragRaceAnimId = reqAnim(stepFrame);
+        }
+
+        function finishDragStripRace(activeCar, rival, boss) {
+            if (activeDragRaceKeyListener && typeof window !== 'undefined' && window.removeEventListener) {
+                window.removeEventListener('keydown', activeDragRaceKeyListener);
+                activeDragRaceKeyListener = null;
+            }
+            dragRaceAnimId = null;
+            isDragRaceRunning = false;
+            dragRaceState.phase = 'finished';
+            dragRaceState.escrowSettled = true;
+            dragRaceState.escrowFee = 0;
+
+            ['drag-light-red1', 'drag-light-red2', 'drag-light-yellow', 'drag-light-green', 'drag-light-false'].forEach(id => {
+                document.getElementById(id)?.classList.remove('on');
+            });
+
+            const finalPerf = getDragCarPerformance(activeCar);
+            const playerET = dragRaceState.playerFinishedET || Number(Math.max(6.2, 13.6 - finalPerf.totalScore / 44).toFixed(2));
+            const rivalET = dragRaceState.rivalFinishedET || Number(rival.targetET || 10.2);
+
+            const isWin = boss
+                ? (finalPerf.totalScore >= boss.requiredScore || playerET <= rivalET)
+                : (playerET <= rivalET || finalPerf.totalScore >= rival.requiredScore);
+
+            const winningPlayerET = isWin ? Math.min(playerET, Number((rivalET - 0.08).toFixed(2))) : Math.max(playerET, Number((rivalET + 0.11).toFixed(2)));
+            dragRaceState.elapsedSec = winningPlayerET;
+            dragRaceState.playerDist = 402;
+            dragRaceState.rivalDist = 402;
+
+            if (isWin) {
+                if (!achievements.bestDragET || winningPlayerET < achievements.bestDragET) {
+                    achievements.bestDragET = winningPlayerET;
+                }
+            }
+
+            const statusEl = document.getElementById('drag-race-status-text');
+
+            if (boss) {
+                const duelRes = resolveDragBossDuel(boss.id, {
+                    skipEntryFee: true,
+                    forceWin: isWin
+                });
+                dragRaceState.bannerText = duelRes.won
+                    ? `👑 БОСС ПОБЕЖДЁН! ${winningPlayerET.toFixed(2)} с vs ${rivalET.toFixed(2)} с (+${boss.cashReward.toLocaleString('ru-RU')} ₽)`
+                    : `⚔️ БОСС БЫСТРЕЕ: ${winningPlayerET.toFixed(2)} с vs ${rivalET.toFixed(2)} с (${finalPerf.totalScore}/${boss.requiredScore} PTS)`;
+                dragRaceState.bannerColor = duelRes.won ? '#34d399' : '#ef4444';
+                if (statusEl) {
+                    statusEl.textContent = dragRaceState.bannerText;
+                    statusEl.style.color = dragRaceState.bannerColor;
+                }
+                renderDragStripCanvas();
+                return;
+            }
+
+            if (isWin) {
+                achievements.dragWins = (achievements.dragWins || 0) + 1;
+                const bet = dragRaceState.betAmount || 0;
+                const streetPrize = Math.min(45000, Math.round(15000 * Math.max(1, Math.min(3, finalPerf.rewMult * 0.45))));
+                const grossPayout = bet > 0 ? Math.round(bet * 1.95) : streetPrize;
+                const netProfit = bet > 0 ? (grossPayout - bet) : streetPrize;
+
+                creditPlayerBalance(grossPayout, 'Победа в дрэг-рейсинге (402 м)');
+                addExp(100);
+                triggerLegendaryEffect();
+                playCashSound();
+                checkAchievements();
+                updateBalance();
+                saveProgress();
+
+                dragRaceState.bannerText = `🏆 ПОБЕДА НА 402 М! Время: ${winningPlayerET.toFixed(2)} с (+${netProfit.toLocaleString('ru-RU')} ₽ чистыми)`;
+                dragRaceState.bannerColor = '#34d399';
+                if (statusEl) {
+                    statusEl.textContent = dragRaceState.bannerText;
+                    statusEl.style.color = '#34d399';
+                }
+                notifyUser(
+                    `🏆 ПОБЕДА НА 1/4 МИЛИ! Ваше время: ${winningPlayerET.toFixed(2)} с (соперник: ${rivalET.toFixed(2)} с). Выигрыш: +${netProfit.toLocaleString('ru-RU')} ₽!`,
+                    'success'
+                );
+            } else {
+                const bet = dragRaceState.betAmount || 0;
+                saveProgress();
+                dragRaceState.bannerText = `🏁 ПОРАЖЕНИЕ: ${winningPlayerET.toFixed(2)} с против ${rivalET.toFixed(2)} с у соперника`;
+                dragRaceState.bannerColor = '#ef4444';
+                if (statusEl) {
+                    statusEl.textContent = dragRaceState.bannerText;
+                    statusEl.style.color = '#ef4444';
+                }
+                notifyUser(
+                    bet > 0
+                        ? `Поражение на 402 м (${winningPlayerET.toFixed(2)} с против ${rivalET.toFixed(2)} с). Ставка ${bet.toLocaleString('ru-RU')} ₽ потеряна. Переключайте КПП в зелёной зоне и включайте N2O!`
+                        : `Соперник оказался быстрее на финише (${rivalET.toFixed(2)} с против ваших ${winningPlayerET.toFixed(2)} с). Попробуйте переключить КПП в зелёной зоне!`,
+                    'error'
+                );
+            }
+
+            updateDragTelemetryDOM();
+            renderDragStripCanvas();
+        }
+
+        function startDragBossDuel(bossId, options = {}) {
+            const boss = DRAG_BOSSES.find(b => b.id === bossId);
+            if (!boss) return { won: false, reason: 'not_found' };
+
+            const hasCanvas = typeof document !== 'undefined' && typeof document.getElementById === 'function' && (() => {
+                const c = document.getElementById('drag-strip-canvas');
+                return Boolean(c && typeof c.getContext === 'function' && c.getContext('2d'));
+            })();
+
+            if ((options && options.instant) || !hasCanvas || typeof window === 'undefined' || typeof window.requestAnimationFrame !== 'function') {
+                return resolveDragBossDuel(bossId, options);
+            }
+
+            const stageEl = document.getElementById('drag-strip-stage');
+            if (stageEl && typeof stageEl.scrollIntoView === 'function') {
+                try { stageEl.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (_) {}
+            }
+            return startDragRace({ bossId });
         }
         window.startDragBossDuel = startDragBossDuel;
 
@@ -13049,6 +14050,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             updateRaceRecordsUI();
             setRaceWeather(raceSelectedWeather);
             initRaceTouchControls();
+            if (typeof updateDragMenuUI === 'function') updateDragMenuUI();
         }
 
         function renderRaceCarPicker() {
@@ -13145,6 +14147,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             }
             renderRaceCarPicker();
             updateRaceCarShowcase();
+            if (typeof updateDragMenuUI === 'function') updateDragMenuUI();
             playTick();
         }
 

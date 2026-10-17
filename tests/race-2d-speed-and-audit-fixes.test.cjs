@@ -487,6 +487,7 @@ test('2D Race: Car does not drive by itself without gas, coasts to 0 km/h, and c
 
     for (let i = 0; i < 200; i++) {
         app.run(`
+            raceTraffic = [];
             racePlayer.nitro = 100;
             racePlayer.isNitroActive = true;
             racePlayer.isDrafting = true;

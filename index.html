@@ -60,7 +60,7 @@
     <!-- Подключение Firebase SDK для базы данных, аккаунтов и мультиплеера -->
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
-    <link rel="stylesheet" href="./styles.css?v=4249e1f016b6">
+    <link rel="stylesheet" href="./styles.css?v=be70cccb94ae">
     <style>
         /* Collector's Book («Книга коллекционера») & Car-Plate Synergy UI */
         .collector-book-summary {
@@ -332,19 +332,19 @@
 
             <!-- Выбор страны госномера -->
             <div class="plate-country-selector" id="plate-country-selector" role="group" aria-label="Страна госномера">
-                <button type="button" class="country-select-btn active" data-country="RUS" onclick="selectPlateCountry('RUS')">
+                <button type="button" class="country-select-btn active" id="btn-country-RUS" data-country="RUS" onclick="selectPlateCountry('RUS')">
                     <span class="country-btn-flag">🇷🇺</span>
                     <span class="country-btn-info"><strong>Россия</strong><small>База • спин 900 ₽</small></span>
                 </button>
-                <button type="button" class="country-select-btn" data-country="KZ" onclick="selectPlateCountry('KZ')">
+                <button type="button" class="country-select-btn" id="btn-country-KZ" data-country="KZ" onclick="selectPlateCountry('KZ')">
                     <span class="country-btn-flag">🇰🇿</span>
                     <span class="country-btn-info"><strong>Казахстан</strong><small>x1.8 • спин 1 800 ₽</small></span>
                 </button>
-                <button type="button" class="country-select-btn" data-country="USA" onclick="selectPlateCountry('USA')">
+                <button type="button" class="country-select-btn" id="btn-country-USA" data-country="USA" onclick="selectPlateCountry('USA')">
                     <span class="country-btn-flag">🇺🇸</span>
                     <span class="country-btn-info"><strong>США</strong><small>x3.5 • спин 3 500 ₽</small></span>
                 </button>
-                <button type="button" class="country-select-btn" data-country="UAE" onclick="selectPlateCountry('UAE')">
+                <button type="button" class="country-select-btn" id="btn-country-UAE" data-country="UAE" onclick="selectPlateCountry('UAE')">
                     <span class="country-btn-flag">🇦🇪</span>
                     <span class="country-btn-info"><strong>Дубай</strong><small>x8.0 • спин 9 000 ₽</small></span>
                 </button>
@@ -623,62 +623,111 @@
 
                 <!-- Меню Дрэг-рейсинга -->
                 <div id="drag-menu-container" class="hidden">
-                    <div class="section-header" style="text-align: center; display: block; margin-bottom: 14px;">
+                    <div class="section-header" style="text-align: center; display: block; margin-bottom: 12px;">
                         <div class="section-title" style="font-size: 18px; color: #fff; justify-content: center;">
                             🏁 Дрэг-рейсинг (402 м) & Битва с Боссами за Номера
                         </div>
                         <p style="font-size: 12px; color: var(--text-dim); margin: 4px 0 0 0;">
-                            Заезд на 1/4 мили. Переключайте передачи в зелёной зоне тахометра и забирайте эксклюзивные госномера Боссов!
+                            Стартуйте на зелёный сигнал, переключайте 6-ступенчатую КПП в зелёной зоне тахометра, прожимайте N2O и забирайте эксклюзивные госномера Боссов!
                         </p>
                     </div>
 
-                    <!-- Стартовая елка светофора -->
-                    <div class="drag-tree-container">
-                        <div class="drag-light red" id="drag-light-red1"></div>
-                        <div class="drag-light red" id="drag-light-red2"></div>
-                        <div class="drag-light yellow" id="drag-light-yellow"></div>
-                        <div class="drag-light green" id="drag-light-green"></div>
-                        <div class="drag-light false-start" id="drag-light-false"></div>
-                    </div>
-
-                    <!-- Интерактивная панель тахометра и переключения КПП в дрэге -->
-                    <div id="drag-telemetry-panel" style="background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 14px; padding: 12px; margin: 12px 0;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 12px;">
-                            <span style="color: var(--text-muted); font-weight: 700;">⚙️ КПП: <b id="drag-gear-label" style="color: #38bdf8;">N (Старт)</b> · Обороты: <b id="drag-rpm-label" style="color: #fff;">1 200 RPM</b></span>
-                            <span id="drag-shift-feedback" style="font-weight: 800; color: #34d399;">Идеальная зона: 6 200 – 7 400 RPM</span>
+                    <!-- Карточка выбранного авто и быстрый переключатель машины для Дрэга -->
+                    <div id="drag-car-summary-bar" style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.92), rgba(30, 41, 59, 0.85)); border: 1px solid rgba(56, 189, 248, 0.32); border-radius: 14px; padding: 12px 14px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                        <div style="display: flex; flex-direction: column; gap: 4px; min-width: 210px; flex: 1;">
+                            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                <span style="font-size: 11px; font-weight: 800; color: #38bdf8; text-transform: uppercase; letter-spacing: 0.5px;">🏎️ Ваше авто на старте:</span>
+                                <b id="drag-active-car-name" style="font-size: 14px; color: #fff;">ВАЗ-2107 «Жигули»</b>
+                                <span id="drag-car-score-pill" style="font-size: 11px; font-weight: 900; padding: 2px 9px; border-radius: 999px; background: rgba(16, 185, 129, 0.18); border: 1px solid rgba(16, 185, 129, 0.45); color: #34d399;">⚡ Рейтинг: 100 PTS</span>
+                            </div>
+                            <div id="drag-active-car-specs" style="font-size: 11.5px; color: var(--text-muted);">
+                                Макс. скорость: 160 км/ч · Разгон: 2.2 · Бонус номера: +0%
+                            </div>
+                            <div id="drag-active-car-plate" style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 2px;"></div>
                         </div>
-                        <div style="position: relative; width: 100%; height: 14px; background: rgba(255,255,255,0.08); border-radius: 999px; overflow: hidden;">
-                            <div style="position: absolute; left: 72%; width: 16%; top: 0; bottom: 0; background: rgba(16, 185, 129, 0.38); border-left: 2px solid #10b981; border-right: 2px solid #10b981;" title="Зелёная зона идеального переключения"></div>
-                            <div id="drag-rpm-bar" style="height: 100%; width: 15%; background: linear-gradient(90deg, #38bdf8, #10b981, #ef4444); transition: width 0.08s linear;"></div>
-                        </div>
-                        <div style="display: flex; gap: 8px; margin-top: 10px;">
-                            <button type="button" class="btn btn-blue" id="btn-drag-shift" onclick="shiftDragGear()" style="margin: 0; padding: 9px 14px; font-size: 12px; font-weight: 800;">⚡ ПЕРЕКЛЮЧИТЬ ПЕРЕДАЧУ (SHIFT UP)</button>
+                        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                            <label for="drag-car-select" style="font-size: 11px; font-weight: 700; color: var(--text-muted);">Сменить авто:</label>
+                            <select id="drag-car-select" class="control-select" style="min-width: 185px; height: 34px; font-size: 12px; font-weight: 700;" onchange="selectDragCarFromDropdown(this.value)"></select>
                         </div>
                     </div>
 
+                    <!-- Арена 402 м: Светофор (Christmas Tree), живая телеметрия и 2D-полоса дрэг-стрипа -->
+                    <div id="drag-strip-stage" style="background: #070b14; border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 16px; padding: 12px; margin-bottom: 12px; box-shadow: inset 0 2px 14px rgba(0, 0, 0, 0.7);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 10px;">
+                            <!-- Стартовая елка светофора -->
+                            <div class="drag-tree-container" style="margin: 0; padding: 6px 12px;">
+                                <div class="drag-light red" id="drag-light-red1" title="Отсчёт 1"></div>
+                                <div class="drag-light red" id="drag-light-red2" title="Отсчёт 2"></div>
+                                <div class="drag-light yellow" id="drag-light-yellow" title="Приготовиться (STAGE)"></div>
+                                <div class="drag-light green" id="drag-light-green" title="СТАРТ (GO!)"></div>
+                                <div class="drag-light false-start" id="drag-light-false" title="Фальстарт"></div>
+                            </div>
+
+                            <div id="drag-race-status-text" style="font-size: 12px; font-weight: 900; color: #fbbf24; letter-spacing: 0.4px; text-align: center; flex: 1; min-width: 180px;">
+                                🚦 ГОТОВ К СТАРТУ НА 402 М
+                            </div>
+
+                            <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap; font-variant-numeric: tabular-nums;">
+                                <span style="font-size: 11px; font-weight: 800; padding: 4px 8px; border-radius: 8px; background: rgba(255,255,255,0.06); color: #e2e8f0;">⏱️ <b id="drag-timer-et">0.00 с</b></span>
+                                <span style="font-size: 11px; font-weight: 800; padding: 4px 8px; border-radius: 8px; background: rgba(56,189,248,0.14); color: #38bdf8;">🚀 <b id="drag-speed-live">0 км/ч</b></span>
+                                <span style="font-size: 11px; font-weight: 800; padding: 4px 8px; border-radius: 8px; background: rgba(16,185,129,0.14); color: #34d399;">📏 <b id="drag-dist-live">0 / 402 м</b></span>
+                            </div>
+                        </div>
+
+                        <div style="position: relative; width: 100%; overflow: hidden; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.1); background: #050811;">
+                            <canvas id="drag-strip-canvas" width="760" height="196" style="width: 100%; height: auto; display: block;"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Интерактивная панель тахометра, переключения КПП и N2O в дрэге -->
+                    <div id="drag-telemetry-panel" style="background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 14px; padding: 12px 14px; margin: 12px 0;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 7px; font-size: 12px; flex-wrap: wrap; gap: 6px;">
+                            <span style="color: var(--text-muted); font-weight: 700;">⚙️ КПП: <b id="drag-gear-label" style="color: #38bdf8;">1-я передача</b> · Обороты: <b id="drag-rpm-label" style="color: #fff;">1 200 RPM</b> · Бонус КПП: <b id="drag-shift-score-label" style="color: #fbbf24;">+0 PTS</b></span>
+                            <span id="drag-shift-feedback" style="font-weight: 800; color: #34d399;">Идеальная зелёная зона: 6 200 – 7 400 RPM</span>
+                        </div>
+                        <div style="position: relative; width: 100%; height: 16px; background: rgba(255,255,255,0.08); border-radius: 999px; overflow: hidden; border: 1px solid rgba(255,255,255,0.12);">
+                            <div style="position: absolute; left: 72.9%; width: 14.2%; top: 0; bottom: 0; background: rgba(16, 185, 129, 0.42); border-left: 2px solid #10b981; border-right: 2px solid #10b981; z-index: 2;" title="Зелёная зона идеального переключения (6 200 – 7 400 RPM)"></div>
+                            <div style="position: absolute; left: 88%; right: 0; top: 0; bottom: 0; background: rgba(239, 68, 68, 0.28); border-left: 1px dashed #ef4444; z-index: 1;" title="Красная зона отсечки (7 500+ RPM)"></div>
+                            <div id="drag-rpm-bar" style="height: 100%; width: 15%; background: linear-gradient(90deg, #38bdf8 0%, #10b981 75%, #ef4444 100%); transition: width 0.05s linear;"></div>
+                        </div>
+                        <div style="display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap;">
+                            <button type="button" class="btn btn-blue" id="btn-drag-shift" onclick="shiftDragGear()" style="flex: 2; min-width: 200px; margin: 0; padding: 10px 14px; font-size: 12.5px; font-weight: 900;">⚡ ПЕРЕКЛЮЧИТЬ ПЕРЕДАЧУ (SHIFT / ПРОБЕЛ)</button>
+                            <button type="button" class="btn btn-gold" id="btn-drag-nitro" onclick="activateDragNitro()" style="flex: 1; min-width: 160px; margin: 0; padding: 10px 14px; font-size: 12px; font-weight: 900;">🚀 ЗАКИСЬ АЗОТА N2O (N)</button>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; margin-top: 7px; font-size: 11px; color: var(--text-dim);">
+                            <span>💡 Управление с клавиатуры: <b>Пробел / Shift / ↑</b> — переключить передачу, <b>N / E</b> — закись азота N2O</span>
+                            <span id="drag-best-et-label" style="color: #fbbf24; font-weight: 800;">🏆 Лучшее время 1/4 мили: —</span>
+                        </div>
+                    </div>
+
+                    <!-- Панель выбора ставки и запуска стандартного заезда -->
                     <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 14px; margin: 12px 0;">
-                        <div style="font-size: 13px; font-weight: 800; color: #fff; margin-bottom: 8px;">Стандартный заезд на ставку:</div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; margin-bottom: 8px;">
+                            <div style="font-size: 13px; font-weight: 800; color: #fff;">💰 Заезд на ставку (402 м против уличного соперника):</div>
+                            <span id="drag-bet-payout-hint" style="font-size: 11px; font-weight: 800; color: #34d399;">Приз за победу: +15 000 ₽ (без риска)</span>
+                        </div>
                         <div class="styling-options-row" id="drag-bet-chips">
                             <button type="button" class="styling-chip active" data-bet="0" onclick="selectDragBet(0)">0 ₽ (Тренировка)</button>
                             <button type="button" class="styling-chip" data-bet="25000" onclick="selectDragBet(25000)">25 000 ₽</button>
                             <button type="button" class="styling-chip" data-bet="100000" onclick="selectDragBet(100000)">100 000 ₽</button>
                             <button type="button" class="styling-chip" data-bet="250000" onclick="selectDragBet(250000)">250 000 ₽</button>
+                            <button type="button" class="styling-chip" data-bet="500000" onclick="selectDragBet(500000)">500 000 ₽</button>
                         </div>
-                        <div style="font-size: 11px; color: var(--text-muted); margin-top: 6px;" id="drag-rival-info">Соперник: Случайный гонщик из топа</div>
+                        <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 8px;" id="drag-rival-info">Соперник: подбирается под класс вашего авто</div>
                     </div>
 
-                    <button class="btn btn-green race-start-btn" onclick="startDragRace()">Начать заезд</button>
+                    <button class="btn btn-green race-start-btn" id="btn-start-drag-race" onclick="startDragRace()">🏁 Начать заезд на 402 м</button>
 
                     <!-- 👑 БИТВА С БОССАМИ ЗА ЭКСКЛЮЗИВНЫЕ ГОСНОМЕРА -->
                     <div id="drag-boss-section" style="margin-top: 18px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.1);">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
                             <div>
                                 <div style="font-size: 15px; font-weight: 900; color: #fbbf24;">👑 Дуэли с Боссами (Битва за Номера)</div>
-                                <div style="font-size: 11px; color: var(--text-muted);">Победите Босса на 402 м, чтобы забрать его уникальный госномер в свой инвентарь и крупный денежный куш!</div>
+                                <div style="font-size: 11px; color: var(--text-muted);">Вызовите Босса на 402 м или проведите мгновенный расчёт: победа приносит эксклюзивный госномер Босса в инвентарь и крупный денежный куш!</div>
                             </div>
                             <span id="drag-boss-progress-badge" style="font-size: 11px; font-weight: 800; color: #34d399; background: rgba(16,185,129,0.14); border: 1px solid rgba(16,185,129,0.35); padding: 4px 10px; border-radius: 999px;">Побеждено: 0 / 5</span>
                         </div>
-                        <div id="drag-boss-list" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px;"></div>
+                        <div id="drag-boss-list" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 10px;"></div>
                     </div>
                 </div>
 
@@ -1922,6 +1971,6 @@
     </script>
     <script src="./js/race-effects.js?v=6883d3af7d80"></script>
     <script src="./js/car-3d.js?v=e664997f934f"></script>
-    <script src="./js/app.js?v=65fbbc029d3c"></script>
+    <script src="./js/app.js?v=cf9bd0f81e0b"></script>
 </body>
 </html>

@@ -1002,6 +1002,89 @@ describe('Collector Book & Car-Plate Synergy (RUS / KZ / USA / UAE)', () => {
     assert.equal(duelRematch.won, true);
     assert.equal(duelRematch.plateAwarded, null, 'Rematch must not duplicate unique boss plate');
   });
+
+  test('syncServerDraft syncs country selector buttons, spin costs, and plate-box class, and Drag Racing rework calculates real car performance and valid Boss plate rarity', () => {
+    const { createApp } = require('./helpers/create-app.cjs');
+    const app = createApp();
+    app.run('playAsGuest()');
+
+    // 1. Verify syncServerDraft fixes country button / plate-box / spin cost desync when restoring a USA ('CA') draft while in RUS mode
+    app.run("selectPlateCountry('RUS')");
+    assert.equal(app.run('currentCountry'), 'RUS');
+
+    app.run(`syncServerDraft({
+      country: 'USA',
+      l1: 'V', l2: 'I', l3: 'P',
+      n1: '7', n2: '7', n3: '7',
+      reg: 'CA',
+      price: 450000
+    })`);
+
+    assert.equal(app.run('currentCountry'), 'USA', 'syncServerDraft must update currentCountry to USA');
+    assert.equal(app.run("document.getElementById('btn-country-USA').classList.contains('active')"), true, 'US button must have .active class');
+    assert.equal(app.run("document.getElementById('btn-country-RUS').classList.contains('active')"), false, 'RU button must not remain .active');
+    assert.equal(app.run("document.getElementById('plate-box').classList.contains('country-usa')"), true, '#plate-box must have country-usa class');
+    assert.match(app.run("document.getElementById('spin-cost-both').innerText"), /3\s*500\s*₽/, 'USA spin-cost-both must update to 3 500 ₽');
+    assert.match(app.run("document.getElementById('spin-cost-num').innerText"), /2\s*000\s*₽/, 'USA spin-cost-num must update to 2 000 ₽');
+
+    // Also verify inferCountryFromRegion fallback when draft.country is omitted
+    app.run("selectPlateCountry('RUS')");
+    app.run(`syncServerDraft({
+      l1: 'D', l2: 'D', l3: 'D',
+      n1: '0', n2: '0', n3: '1',
+      reg: 'DXB',
+      price: 25000000
+    })`);
+    assert.equal(app.run('currentCountry'), 'UAE', 'syncServerDraft must infer UAE from DXB region');
+    assert.equal(app.run("document.getElementById('btn-country-UAE').classList.contains('active')"), true, 'UAE button must have .active class');
+
+    // 2. Verify getDragCarPerformance uses real carRaceStats[car.name] and perf.speed/accel/rewardMult
+    const zhiguliPerf = app.run(`getDragCarPerformance({
+      name: 'ВАЗ-2107 «Жигули»',
+      condition: 100,
+      upgrades: { engine: 0, handling: 0, economy: 0, nitro: 0 }
+    })`);
+    const bugattiPerf = app.run(`getDragCarPerformance({
+      name: 'Bugatti Chiron Super Sport',
+      condition: 100,
+      upgrades: { engine: 5, handling: 5, economy: 5, nitro: 5 },
+      plate: { text: 'D 1 | DXB UAE', price: 25000000, rarity: getRarity(25000000) }
+    })`);
+
+    assert.ok(Number.isFinite(zhiguliPerf.dragScore) && zhiguliPerf.dragScore >= 90, `Zhiguli dragScore must be a finite number >= 90 (got ${zhiguliPerf.dragScore})`);
+    assert.ok(bugattiPerf.dragScore > zhiguliPerf.dragScore * 2.2, `Bugatti dragScore (${bugattiPerf.dragScore}) must be > 2.2x Zhiguli (${zhiguliPerf.dragScore})`);
+    assert.ok(bugattiPerf.estimatedET < zhiguliPerf.estimatedET - 3.0, `Bugatti 1/4 mile ET (${bugattiPerf.estimatedET}s) must be >3s faster than Zhiguli (${zhiguliPerf.estimatedET}s)`);
+
+    // 3. Verify Boss plate awarded by resolveDragBossDuel has a full rarity object { text, bg, color }, id, and country
+    app.run(`
+      balance = 500000;
+      myCars = [
+        { name: 'ВАЗ-2107 «Жигули»', basePrice: 120000, condition: 100, upgrades: { engine: 0, handling: 0, economy: 0, nitro: 0 } },
+        { name: 'Mercedes-Benz G63 AMG «Гелик»', basePrice: 18000000, condition: 100, upgrades: { engine: 5, handling: 5, economy: 5, nitro: 5 } }
+      ];
+      selectDragCarFromDropdown(1);
+    `);
+    assert.equal(app.run('selectedRaceCarName'), 'Mercedes-Benz G63 AMG «Гелик»', 'selectDragCarFromDropdown(1) must switch active race car');
+
+    const bossRes = app.run("resolveDragBossDuel('boss_gelik', { forceWin: true })");
+    assert.equal(bossRes.won, true);
+    assert.equal(bossRes.plateAwarded, 'А 777 МР | 77 RUS');
+
+    const wonPlateObj = app.run("inventory.find(p => p.text === 'А 777 МР | 77 RUS')");
+    assert.ok(wonPlateObj, 'Won Boss plate must exist in inventory');
+    assert.ok(wonPlateObj.id, 'Won Boss plate must have a unique id');
+    assert.equal(wonPlateObj.country, 'RUS', 'Won Boss plate must have country set');
+    assert.equal(typeof wonPlateObj.rarity, 'object', 'Won Boss plate rarity must be a { text, bg, color } object, not a string');
+    assert.ok(typeof wonPlateObj.rarity.text === 'string' && wonPlateObj.rarity.text.length > 0, 'Won Boss plate rarity.text must be populated');
+
+    // Equip the won Boss plate on the Gelik and verify it grants a real plateBonus in getDragCarPerformance
+    const gelikWithBossPlatePerf = app.run(`(() => {
+      myCars[1].plate = inventory.find(p => p.text === 'А 777 МР | 77 RUS');
+      return getDragCarPerformance(myCars[1]);
+    })()`);
+    assert.ok(gelikWithBossPlatePerf.plateBonus > 0, `Equipped Boss plate must grant >0% plateBonus (got ${gelikWithBossPlatePerf.plateBonus}%)`);
+  });
 });
+
 
 

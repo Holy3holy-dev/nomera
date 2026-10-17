@@ -11,9 +11,19 @@ function createApp({saved = null, denyStorage = false, cloud = null} = {}) {
         if (!ids.has(id)) return null;
         if (!elements.has(id)) {
             const span = { innerText:'', textContent:'' };
+            const classes = new Set();
             elements.set(id, {
                 id, style:{}, value:'', innerHTML:'', innerText:'', textContent:'', width:400,height:620,
-                classList:{add(){},remove(){},toggle(){},contains(){return false;}},
+                classList:{
+                    add(...c){ c.forEach(x => classes.add(x)); },
+                    remove(...c){ c.forEach(x => classes.delete(x)); },
+                    toggle(c, force){
+                        const next = force === undefined ? !classes.has(c) : Boolean(force);
+                        if (next) classes.add(c); else classes.delete(c);
+                        return next;
+                    },
+                    contains(c){ return classes.has(c); }
+                },
                 setAttribute(){}, dataset:{},
                 getContext:()=>ctx, addEventListener(){}, setPointerCapture(){},
                 appendChild(){}, querySelectorAll:()=>[], querySelector:(s)=>s==='.char-span'?span:null,
