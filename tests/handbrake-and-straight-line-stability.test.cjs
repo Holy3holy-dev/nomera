@@ -106,6 +106,7 @@ test('3D Race: Handbrake applies strong rear braking force (~85-110 km/h/s) and 
         engine.update(0.05);
     }
     assert.equal(engine.state.speed, 0, 'Handbrake held down must bring car speed to complete stop (0 km/h)');
+    engine.destroy();
 });
 
 test('3D Race: Handbrake cuts or dramatically overpowers engine acceleration when holding gas', () => {
@@ -121,6 +122,7 @@ test('3D Race: Handbrake cuts or dramatically overpowers engine acceleration whe
     assert.ok(engine.state.speed < initialSpeed, 'Handbrake must decelerate the car even when gas is held');
     const decelRate = (initialSpeed - engine.state.speed) / dt;
     assert.ok(decelRate >= 80, `Deceleration with gas (${decelRate.toFixed(1)} km/h/s) must overpower engine acceleration`);
+    engine.destroy();
 });
 
 test('3D Race: Handbrake spawns rear tire smoke and skid marks at speed', () => {
@@ -137,6 +139,7 @@ test('3D Race: Handbrake spawns rear tire smoke and skid marks at speed', () => 
 
     assert.ok(engine.vfx.activeSmoke.length >= 2, 'Handbrake at speed must spawn rear wheel tire smoke puffs');
     assert.ok(engine.vfx.activeSkids.length >= 2, 'Handbrake at speed must lay down rear wheel skid marks on asphalt');
+    engine.destroy();
 });
 
 test('3D Race: Straight-line stability tracks laser straight with zero phantom veering or swaying', () => {
@@ -161,6 +164,7 @@ test('3D Race: Straight-line stability tracks laser straight with zero phantom v
     assert.equal(engine.state.x, initialX, 'Car must maintain laser-straight lane position with steer neutral');
     assert.equal(engine.state.vx, 0, 'Lateral velocity must remain 0 when driving straight');
     assert.equal(engine.state.yawAngle, 0, 'Heading yawAngle must remain 0 straight forward');
+    engine.destroy();
 });
 
 test('3D Race: Straight-line stability rapidly damps residual lateral velocity and aligns yaw to 0', () => {
@@ -181,6 +185,7 @@ test('3D Race: Straight-line stability rapidly damps residual lateral velocity a
 
     assert.ok(Math.abs(engine.state.vx) < 0.01, 'Residual lateral velocity must be damped to 0');
     assert.ok(Math.abs(engine.state.yawAngle) < 0.005, 'Vehicle heading must align straight forward');
+    engine.destroy();
 });
 
 test('2D Race: Handbrake aggressively slows down car (~85-110 km/h/s) all the way to 0 km/h', () => {

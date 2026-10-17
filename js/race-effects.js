@@ -285,6 +285,7 @@
             this.sharedSkidGeo.rotateX(-Math.PI / 2); // Flat on XZ road surface
 
             const skidTex = createProceduralTexture('skidTexture', THREE);
+            this.skidTex = skidTex;
             this.sharedSkidMat = new THREE.MeshBasicMaterial({
                 color: 0x111114,
                 map: skidTex || null,
@@ -472,7 +473,17 @@
             const THREE = this.THREE;
             if (!THREE) return;
 
-            // Clean previous meshes if any
+            // Clean previous meshes and textures if any
+            [this.hlFlareTex, this.groundTex, this.flareTex, this.redGroundTex].forEach(tex => {
+                if (tex && typeof tex.dispose === 'function') {
+                    try { tex.dispose(); } catch (_) {}
+                }
+            });
+            this.hlFlareTex = null;
+            this.groundTex = null;
+            this.flareTex = null;
+            this.redGroundTex = null;
+
             if (this.headlightFlares) {
                 this.headlightFlares.forEach(f => {
                     try {
@@ -511,6 +522,17 @@
                     if (this.brakeGroundDecal.geometry && typeof this.brakeGroundDecal.geometry.dispose === 'function') this.brakeGroundDecal.geometry.dispose();
                     if (this.brakeGroundDecal.material && typeof this.brakeGroundDecal.material.dispose === 'function') this.brakeGroundDecal.material.dispose();
                 } catch (_) {}
+            }
+            if (this.headlightSpots && this._ownsHeadlightSpots) {
+                this.headlightSpots.forEach(spot => {
+                    try {
+                        if (spot.target && spot.target.parent) spot.target.parent.remove(spot.target);
+                        if (spot.parent) spot.parent.remove(spot);
+                    } catch (_) {}
+                });
+                if (this.engine && this.engine.playerHeadlights === this.headlightSpots) {
+                    this.engine.playerHeadlights = [];
+                }
             }
 
             this.headlightFlares = [];
@@ -559,6 +581,7 @@
 
                 // A. Clean, Bright Lens Flare Point on Vehicle Headlight Glass (Zero 3D Volumetric Wedge Meshes)
                 const hlFlareTex = createProceduralTexture('headlightFlare', THREE);
+                this.hlFlareTex = hlFlareTex;
                 [-1, 1].forEach((side) => {
                     const localP = side < 0 ? localHlL : localHlR;
                     const flareGeo = new THREE.PlaneGeometry(0.46, 0.46);
@@ -583,8 +606,10 @@
                 // B. Realistic Subtle Three.js SpotLight Angled Forward Down the Road
                 if (this.engine && Array.isArray(this.engine.playerHeadlights) && this.engine.playerHeadlights.length > 0) {
                     this.headlightSpots = this.engine.playerHeadlights;
+                    this._ownsHeadlightSpots = false;
                 } else {
                     this.headlightSpots = [];
+                    this._ownsHeadlightSpots = true;
                     [-1, 1].forEach((side) => {
                         const localP = side < 0 ? localHlL : localHlR;
                         const spot = new THREE.SpotLight(0xf8fafc, 2.0, 52, Math.PI / 6.5, 0.55, 1.2);
@@ -601,6 +626,7 @@
 
                 // C. Smooth, Soft Asphalt Ground Illumination Patch (Flat Quad with Soft Elliptical Alpha Gradient)
                 const groundTex = createProceduralTexture('headlightGround', THREE);
+                this.groundTex = groundTex;
                 [-1, 1].forEach((side) => {
                     const localP = side < 0 ? localHlL : localHlR;
                     const patchGeo = new THREE.PlaneGeometry(3.6, 26.0);
@@ -624,6 +650,7 @@
 
                 // D. Realistic Optical Brake Light Flares at Taillights
                 const flareTex = createProceduralTexture('brakeFlare', THREE);
+                this.flareTex = flareTex;
                 [-1, 1].forEach((side) => {
                     const localP = side < 0 ? localTlL : localTlR;
                     const flareGeo = new THREE.PlaneGeometry(0.75, 0.75);
@@ -645,6 +672,7 @@
 
                 // E. Dynamic Rear Brake Red Ground Wash Decal
                 const redGroundTex = createProceduralTexture('brakeGround', THREE);
+                this.redGroundTex = redGroundTex;
                 const redGroundGeo = new THREE.PlaneGeometry(4.2, 4.2);
                 redGroundGeo.rotateX(-Math.PI / 2);
                 const redGroundMat = new THREE.MeshBasicMaterial({
@@ -1197,6 +1225,34 @@
                 }
             });
 
+            // Dispose shared geometries and materials
+            [this.sharedSmokeGeo, this.sharedSparkGeo, this.sharedSkidGeo].forEach(geo => {
+                if (geo && typeof geo.dispose === 'function') {
+                    try { geo.dispose(); } catch (_) {}
+                }
+            });
+            [this.sharedSmokeMat, this.sharedSkidMat, ...(Array.isArray(this.sparkMats) ? this.sparkMats : [])].forEach(mat => {
+                if (mat && typeof mat.dispose === 'function') {
+                    try { mat.dispose(); } catch (_) {}
+                }
+            });
+            [this.skidTex, this.hlFlareTex, this.groundTex, this.flareTex, this.redGroundTex].forEach(tex => {
+                if (tex && typeof tex.dispose === 'function') {
+                    try { tex.dispose(); } catch (_) {}
+                }
+            });
+            this.sharedSmokeGeo = null;
+            this.sharedSmokeMat = null;
+            this.sharedSparkGeo = null;
+            this.sparkMats = null;
+            this.sharedSkidGeo = null;
+            this.sharedSkidMat = null;
+            this.skidTex = null;
+            this.hlFlareTex = null;
+            this.groundTex = null;
+            this.flareTex = null;
+            this.redGroundTex = null;
+
             if (this.headlightFlares) {
                 this.headlightFlares.forEach(f => {
                     try {
@@ -1229,16 +1285,30 @@
                     if (f.material && typeof f.material.dispose === 'function') f.material.dispose();
                 } catch (_) {}
             });
-            if (this.brakeGroundDecal && this.brakeGroundDecal.parent) {
+            if (this.brakeGroundDecal) {
                 try {
-                    this.brakeGroundDecal.parent.remove(this.brakeGroundDecal);
+                    if (this.brakeGroundDecal.parent) this.brakeGroundDecal.parent.remove(this.brakeGroundDecal);
                     if (this.brakeGroundDecal.geometry && typeof this.brakeGroundDecal.geometry.dispose === 'function') this.brakeGroundDecal.geometry.dispose();
                     if (this.brakeGroundDecal.material && typeof this.brakeGroundDecal.material.dispose === 'function') this.brakeGroundDecal.material.dispose();
                 } catch (_) {}
+                this.brakeGroundDecal = null;
+            }
+            if (this.headlightSpots) {
+                this.headlightSpots.forEach(spot => {
+                    try {
+                        if (spot.target && spot.target.parent) spot.target.parent.remove(spot.target);
+                        if (spot.parent) spot.parent.remove(spot);
+                    } catch (_) {}
+                });
             }
 
-            if (this.speedStreaksMesh && this.speedStreaksMesh.parent) {
-                try { this.speedStreaksMesh.parent.remove(this.speedStreaksMesh); } catch (_) {}
+            if (this.speedStreaksMesh) {
+                try {
+                    if (this.speedStreaksMesh.parent) this.speedStreaksMesh.parent.remove(this.speedStreaksMesh);
+                    if (this.speedStreaksMesh.geometry && typeof this.speedStreaksMesh.geometry.dispose === 'function') this.speedStreaksMesh.geometry.dispose();
+                    if (this.speedStreaksMesh.material && typeof this.speedStreaksMesh.material.dispose === 'function') this.speedStreaksMesh.material.dispose();
+                } catch (_) {}
+                this.speedStreaksMesh = null;
             }
 
             if (this.speedVignetteEl && this.speedVignetteEl.parentNode) {

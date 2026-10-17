@@ -202,7 +202,7 @@ function rarityOfPrice(p){
 function secureRoll(mode, pity = 0){
   if(!['both','numbers','letters'].includes(mode))throw Error('Неверный тип спина');
   const choose=arr=>arr[crypto.randomInt(arr.length)];
-  const pityNum = Number.isSafeInteger(pity) && pity > 0 ? Math.min(200, pity) : 0;
+  const pityNum = Math.min(120, Math.max(0, Math.floor(Number(pity) || 0)));
   const luckBonus = Math.min(200, Math.floor(pityNum * 3));
 
   let forceTier = null;
@@ -294,6 +294,14 @@ function secureRoll(mode, pity = 0){
   };
 }
 function draftOf(a){return a?.draft&&typeof a.draft==='object'?a.draft:{num:'---',letters:['-','-','-'],reg:'777',hasNumbers:false,hasLetters:false,changedNumbers:false,changedLetters:false,pityCounter:0};}
+function migrateLegacyPin(account, pin) {
+  if (!account || typeof account !== 'object') return null;
+  const hashed = pinHash(pin);
+  account.pinHash = hashed;
+  delete account.pin;
+  delete account.password;
+  return { pinHash: hashed, pin: null, password: null };
+}
 function sanitizedProfile(a){return {nickname:a.nickname, balance:a.balance, inventory:a.inventory||[], myCars:a.myCars||[], playerLevel:a.playerLevel||1, playerExp:a.playerExp||0, updatedAt:a.updatedAt||0, draft:a.draft||null, avatarData:typeof a.avatarData==='string'?a.avatarData:''};}
 function mutate(state, action, key, data, now=Date.now()) {
   if (!state || typeof state!=='object') state={};
@@ -312,7 +320,10 @@ function mutate(state, action, key, data, now=Date.now()) {
     const draft={...draftOf(a),reg:data.region};
     if(roll.num!==null){draft.num=roll.num;draft.hasNumbers=true;draft.changedNumbers=true;}
     if(roll.letters!==null){draft.letters=roll.letters;draft.hasLetters=true;draft.changedLetters=true;}
-    let nextPity = (draft.pityCounter || 0) + (roll.mode === 'both' ? 1 : 0);
+    const basePity = (a.draft && typeof a.draft.pityCounter === 'number' && a.draft.pityCounter > 0)
+      ? Math.min(120, Math.max(0, Math.floor(a.draft.pityCounter)))
+      : Math.min(120, Math.max(0, Math.floor(Number(data?.pity) || (draft.pityCounter || 0))));
+    let nextPity = basePity + (roll.mode === 'both' ? 1 : 0);
     if (draft.hasNumbers && draft.hasLetters && draft.num !== '---' && Array.isArray(draft.letters)) {
       const p = priceOfPlate(draft.letters[0], draft.letters[1], draft.letters[2], draft.num, data.region);
       const r = rarityOfPrice(p);
@@ -444,4 +455,4 @@ function makeOnlineTransactionUpdate(loaded, action, key, data, now) {
     getReason() {return reason;}
   };
 }
-module.exports={COOKIE,TTL,MAX_MONEY,STARTING_BALANCE,keyOf,pinHash,checkPin,sign,verify,cookie,sessionCookie,safePlate,safeCar,safeCars,money,sanitizedProfile,mutate,makeOnlineTransactionUpdate,freshAccount,priceOfPlate,rarityOfPrice,secureRoll,draftOf};
+module.exports={COOKIE,TTL,MAX_MONEY,STARTING_BALANCE,keyOf,pinHash,checkPin,migrateLegacyPin,sign,verify,cookie,sessionCookie,safePlate,safeCar,safeCars,money,sanitizedProfile,mutate,makeOnlineTransactionUpdate,freshAccount,priceOfPlate,rarityOfPrice,secureRoll,draftOf};

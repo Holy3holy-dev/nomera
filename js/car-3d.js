@@ -1039,7 +1039,9 @@
                 oldFP.visible = true;
                 const newFP = createLicensePlate(THREE, text, true);
                 while (oldFP.children.length > 0) {
-                    oldFP.remove(oldFP.children[0]);
+                    const oldChild = oldFP.children[0];
+                    disposeObject3D(oldChild);
+                    oldFP.remove(oldChild);
                 }
                 while (newFP.children.length > 0) {
                     oldFP.add(newFP.children[0]);
@@ -1056,7 +1058,9 @@
                 oldRP.visible = true;
                 const newRP = createLicensePlate(THREE, text, false);
                 while (oldRP.children.length > 0) {
-                    oldRP.remove(oldRP.children[0]);
+                    const oldChild = oldRP.children[0];
+                    disposeObject3D(oldChild);
+                    oldRP.remove(oldChild);
                 }
                 while (newRP.children.length > 0) {
                     oldRP.add(newRP.children[0]);
@@ -4441,7 +4445,7 @@
 
     const rawGLBCache = new Map();
     const inFlightGLBPromises = new Map();
-    const NOMERA_MODEL_CACHE_NAME = 'nomera-glb-cache-v1';
+    const NOMERA_MODEL_CACHE_NAME = 'nomera-glb-cache-v2'; // upgraded from nomera-glb-cache-v1
 
     async function fetchCachedGLBBuffer(modelUrl) {
         if (!modelUrl) return null;
@@ -4457,15 +4461,20 @@
                 }
                 const response = await fetch(modelUrl);
                 if (response && response.ok) {
+                    const cacheClone = typeof response.clone === 'function' ? response.clone() : null;
                     const buffer = await response.arrayBuffer();
                     try {
-                        const cacheResponse = new Response(buffer.slice(0), {
-                            headers: {
-                                'Content-Type': 'model/gltf-binary',
-                                'Content-Length': String(buffer.byteLength)
-                            }
-                        });
-                        cache.put(absUrl, cacheResponse).catch(() => {});
+                        if (cacheClone) {
+                            cache.put(absUrl, cacheClone).catch(() => {});
+                        } else {
+                            const cacheResponse = new Response(buffer.slice(0), {
+                                headers: {
+                                    'Content-Type': 'model/gltf-binary',
+                                    'Content-Length': String(buffer.byteLength)
+                                }
+                            });
+                            cache.put(absUrl, cacheResponse).catch(() => {});
+                        }
                     } catch (_) {}
                     return buffer;
                 }
@@ -4487,19 +4496,17 @@
             loader.setDRACOLoader(draco);
         }
         if (typeof window !== 'undefined' && window.MeshoptDecoder) {
-            if (window.MeshoptDecoder.ready) {
+            loader.setMeshoptDecoder(window.MeshoptDecoder);
+            if (window.MeshoptDecoder.ready && typeof window.MeshoptDecoder.ready.then === 'function') {
                 window.MeshoptDecoder.ready.then(() => {
                     loader.setMeshoptDecoder(window.MeshoptDecoder);
-                }).catch(() => {
-                    loader.setMeshoptDecoder(window.MeshoptDecoder);
-                });
-            } else {
-                loader.setMeshoptDecoder(window.MeshoptDecoder);
+                }).catch(() => {});
             }
         }
         THREE._nomeraGLTFLoader = loader;
         return loader;
     }
+    const createConfiguredGLTFLoader = getGLTFLoader;
 
     function createVinylCanvasTexture(THREE, vinylType, carColorHex) {
         if (!THREE || !vinylType || vinylType === 'none') return null;
@@ -4648,7 +4655,7 @@
             if (carId === 'gaz24' && (mn === 'rubber' || ms.includes('rubber') || ms.includes('tire'))) return true;
             if (carId === 'priora' && (mn === 'priora_wheel2' || ms.includes('wheel2'))) return true;
             if (carId === 'vesta' && (ms.includes('tire') || ms.includes('rubber') || (mn === 'plastic' && ms.includes('wheel')) || (mn === 'chern' && ms.includes('koles')))) return true;
-            if (carId === 'solaris' && (mn === 'camrytire' || ms.includes('tire'))) return true;
+            if (carId === 'solaris' && (mn === 'camrytire' || mn.includes('wheel_rubber') || ms.includes('tire'))) return true;
             if (carId === 'polo' && (ms.includes('tire') || ms.includes('tyre') || (ms.includes('wheel') && mn.includes('base')))) return true;
             if (carId === 'mark2' && (mn === 'rezina' || (mn === 'black' && (ms.includes('wheel') || ms.includes('tire'))))) return true;
             if (carId === 'm5e60' && (mn === 'tire' || ms.includes('tire'))) return true;
@@ -4724,13 +4731,13 @@
             if (carId === 'gaz24' && (mn === 'orange_plastic' || mn === 'headlight' || mn === 'reverse_lights' || mn === 'tail_lights' || mn === 'reflector')) return true;
             if (carId === 'priora' && (mn === 'priora_optik_rear' || mn === 'priora_red')) return true;
             if (carId === 'vesta' && (mn === 'fari' || mn === 'peredfar' || mn === 'svetplas' || mn === 'stopar')) return true;
-            if (carId === 'solaris' && (mn === 'orangeglass' || mn === 'redglass')) return true;
+            if (carId === 'solaris' && (mn === 'orangeglass' || mn === 'redglass' || mn.includes('front_lamps') || mn.includes('brakelights_red'))) return true;
             if (carId === 'polo' && (mn.includes('lighta_material1') || mn === 'red_glass')) return true;
             if (carId === 'mark2' && (mn === 'red1' || mn === 'red2' || mn === 'orange')) return true;
-            if (carId === 'm5e60' && (mn.includes('wire_060110190') || mn.includes('wire_087225143') || mn.includes('wire_135110008'))) return true;
+            if (carId === 'm5e60' && (mn.includes('wire_060110190') || mn.includes('wire_087225143') || mn.includes('wire_135110008') || mn.includes('taillight_reflector'))) return true;
             if (carId === 'silvia' && mn.includes('lights1mtl')) return true;
             if (carId === 'camry' && (ms.includes('weideng_red_plastic') || ms.includes('weideng_map_c'))) return true;
-            if (carId === 'lc300' && (mn.includes('tmi_glass_light') || mn.includes('tmi_light'))) return true;
+            if (carId === 'lc300' && (mn.includes('tmi_glass_light') || mn.includes('tmi_light') || mn.includes('chromered_squarepattern'))) return true;
             if (carId === 'e63' && (mn === 'bulb' || mn === 'rear_bulb' || mn === 'bulb_red' || ms.includes('bulb'))) return true;
             if (carId === 'rs6' && mn.includes('mat_lights.001')) return true;
             if (carId === 'm5f90' && (ms.includes('headlight') || mn.includes('material_706') || mn.includes('material_701') || mn.includes('material_707') || mn.includes('material_708'))) return true;
@@ -4874,7 +4881,7 @@
             if (carId === 'solaris' && (mn === 'clearglass' || mn === 'windowglass' || mn === 'darkglass')) return true;
             if (carId === 'polo' && (mn.includes('window_material1') || ms.includes('window_geo') || ms.includes('windowinside'))) return true;
             if (carId === 'mark2' && (mn === 'glass' || mn.includes('window') || mn.includes('glass'))) return true;
-            if (carId === 'm5e60' && (mn === 'glass' || mn === 'glass_toit' || mn === 'r_glass')) return true;
+            if (carId === 'm5e60' && (mn === 'glass' || mn === 'glass_toit' || mn === 'r_glass' || mn.includes('bmw_e30_m3_lens'))) return true;
             if (carId === 'silvia' && mn.includes('windows1mtl')) return true;
             if (carId === 'camry' && (ms.includes('d_glass') || ms.includes('weideng_glass_light'))) return true;
             if (carId === 'lc300' && mn === 'tmi_glass_011') return true;
@@ -4926,13 +4933,13 @@
             if (carId === 'gaz24' && (mn === 'wheel' || mn === 'steel')) return true;
             if (carId === 'priora' && mn === 'priora_wheel5') return true;
             if (carId === 'vesta' && (mn === 'disk' || ms.includes('wheel_disk'))) return true;
-            if (carId === 'solaris' && (mn === 'camryrim' || mn === 'hubcaps')) return true;
+            if (carId === 'solaris' && (mn === 'camryrim' || mn === 'hubcaps' || (mn === 'metal' && ms.includes('wheel')))) return true;
             if (carId === 'polo' && mn.includes('3dwheel1a_material1')) return true;
             if (carId === 'mark2' && (mn === 'chrome' || mn === 'chrome2') && (ms.includes('wheel') || ms.includes('rim') || ms === 'object_3' || ms === 'object_4' || ms === 'object_5')) return true;
-            if (carId === 'm5e60' && mn === 'alum') return true;
+            if (carId === 'm5e60' && (mn === 'alum' || mn.includes('bmw_e30_m3_rim'))) return true;
             if (carId === 'silvia' && mn === 'rim1mtl') return true;
             if (carId === 'camry' && (mn.includes('metal_r') || ms.includes('hub_metal') || (mn === 'metal' && ms.includes('hub')))) return true;
-            if (carId === 'lc300' && mn.includes('rimmi_changea_rim')) return true;
+            if (carId === 'lc300' && (mn.includes('rimmi_changea_rim') || mn.includes('aluminiumbrushed_wheel'))) return true;
             if (carId === 'e63' && (mn === 'metallic_rim' || ms.includes('metallic rim'))) return true;
             if (carId === 'rs6' && mn.includes('audi_rs3sedanrewardrecycled_2023_wheel1a')) return true;
             if (carId === 'm5f90' && ms.includes('wheel') && !ms.includes('tyre')) return true;
@@ -4990,13 +4997,13 @@
             if (carId === 'gaz24') return mn === 'paint_new' || mn === 'paint' || mn === 'body' || mn === 'black_paint';
             if (carId === 'priora') return mn.includes('priora_skin') || mn.includes('priora_mirr') || mn === 'carpaint' || mn.includes('paint');
             if (carId === 'vesta') return mn === 'kuzov' || ms.includes('kuzov_kuzov_0');
-            if (carId === 'solaris') return mn === 'carpaint' || mn.includes('carpaint');
+            if (carId === 'solaris') return mn === 'carpaint' || mn.includes('carpaint') || mn === 'varnish';
             if (carId === 'polo') return mn.includes('golfgti_2014paint');
             if (carId === 'mark2') return mn === 'metall' || mn.includes('paint');
-            if (carId === 'm5e60') return mn === 'body' || ms.includes('body_body');
+            if (carId === 'm5e60') return mn === 'body' || ms.includes('body_body') || mn.includes('paint');
             if (carId === 'silvia') return mn === 'meshpart1mtl' || mn.includes('lodarearbumpermmext1');
             if (carId === 'camry') return mn === 'carpaint' || ms.includes('carpaint');
-            if (carId === 'lc300') return mn === 'phong1' || mn.includes('1350010001');
+            if (carId === 'lc300') return mn === 'phong1' || mn.includes('1350010001') || mn === 'palettematerial001' || (mn.includes('plasticdiffuse') && ms.includes('primitive0'));
             if (carId === 'gtr') return mn === 'bodycolor';
             if (carId === 'e63') return mn === 'body' || ms === 'body_body_0';
             if (carId === 'rs6') return mn.includes('rs3_2018_base') || (mn === 'material' && ms === 'car');
@@ -5145,7 +5152,7 @@
 
                     // 4. Lights (Headlights, Taillights, Indicators)
                     if (role === 'light') {
-                        if (mName.includes('taillight') || matName.includes('red') || matName.includes('ruby') || mName === 'object_20' || matName === 'material_17' || matName === 'stopar' || (carId === 'vaz2109' && matName.toLowerCase() === 'standardmater5')) {
+                        if (mName.includes('taillight') || matName.includes('taillight') || matName.includes('red') || matName.includes('ruby') || mName === 'object_20' || matName === 'material_17' || matName === 'stopar' || (carId === 'vaz2109' && matName.toLowerCase() === 'standardmater5')) {
                             return mats.taillightRed;
                         }
                         if (carId === 'vaz2109' && matName.toLowerCase() === 'standardmater3') {
@@ -5221,14 +5228,26 @@
         });
 
         // Clean up previous accessories before attaching new ones
-        const oldSpoiler = modelRoot.getObjectByName('GLB_SpoilerGroup');
-        if (oldSpoiler) modelRoot.remove(oldSpoiler);
+        const oldSpoiler = modelRoot.getObjectByName('GLB_SpoilerGroup') || modelRoot.getObjectByName('GLB_Spoiler');
+        if (oldSpoiler) {
+            disposeObject3D(oldSpoiler);
+            modelRoot.remove(oldSpoiler);
+        }
         const oldSgu = modelRoot.getObjectByName('SGUGroup');
-        if (oldSgu) modelRoot.remove(oldSgu);
+        if (oldSgu) {
+            disposeObject3D(oldSgu);
+            modelRoot.remove(oldSgu);
+        }
         const oldNeon = modelRoot.getObjectByName('GLB_NeonTubes');
-        if (oldNeon) modelRoot.remove(oldNeon);
-        const oldUndertray = modelRoot.getObjectByName('ChassisUndertray');
-        if (oldUndertray) modelRoot.remove(oldUndertray);
+        if (oldNeon) {
+            disposeObject3D(oldNeon);
+            modelRoot.remove(oldNeon);
+        }
+        const oldUndertray = modelRoot.getObjectByName('ChassisUndertray') || modelRoot.getObjectByName('GLB_Undertray');
+        if (oldUndertray) {
+            disposeObject3D(oldUndertray);
+            modelRoot.remove(oldUndertray);
+        }
 
         // Compute world bounding box for accessories placement
         modelRoot.updateMatrixWorld(true);
@@ -5760,6 +5779,10 @@
                 });
             }
         } catch (_) {}
+    }
+
+    function disposeObject3D(obj) {
+        deepDispose(obj);
     }
 
     // =========================================================================
@@ -6904,7 +6927,7 @@
                         this.podiumRingMat.color = rCol;
                     }
                     if (this.carGroup) {
-                        const nGroup = this.carGroup.getObjectByName('NeonGroup');
+                        const nGroup = this.carGroup.getObjectByName('NeonGroup') || this.carGroup.getObjectByName('GLB_NeonTubes');
                         if (nGroup) {
                             nGroup.traverse(m => {
                                 if (m.material) {
@@ -7289,6 +7312,9 @@
             this.width = container.clientWidth || 800;
             this.height = container.clientHeight || 500;
             this.isRunning = false;
+            this._destroyed = false;
+            this.engineTremorRoll = 0;
+            this.onGameOver = options.onGameOver || null;
             this.animFrameId = null;
             this.lastTime = 0;
             this._loopBound = this.loop.bind(this);
@@ -8740,6 +8766,7 @@
         }
 
         start(config = {}) {
+            this._destroyed = false;
             this.mode = config.mode || 'circuit';
             this.carName = config.carName || 'ВАЗ-2107 «Жигули»';
             this.styling = Object.assign({}, config.styling || {});
@@ -8770,6 +8797,7 @@
             this.state.driftScore = 0;
             this.state.driftCurrentScore = 0;
             this.state.driftCombo = 1;
+            this.state.maxDriftCombo = 1;
             this.state.driftDuration = 0;
             this.state.isDrifting = false;
             this.state.isNitroActive = false;
@@ -8778,6 +8806,8 @@
             this.state.overtakeCombo = 0;
             this.state.overtakeComboTimer = 0;
             this.state.damageTaken = 0;
+            this.state.crashed = false;
+            this.state.finished = false;
             this.state.bodyRoll = 0;
             this.state.rollVelocity = 0;
             this.state.pitchSquat = 0;
@@ -8893,7 +8923,7 @@
             let syncLoaded = false;
             try {
                 loadCarModel(THREE, this.carName, this.styling, (model) => {
-                    if (!model) return;
+                    if (this._destroyed || !model) return;
                     syncLoaded = true;
                     if (this.playerCar) {
                         try {
@@ -9258,8 +9288,9 @@
                 this.animFrameId = requestAnimationFrame(this._loopBound);
                 return;
             }
-            const dt = Math.min((timestamp - this.lastTime) / 1000, 0.05);
-            this.lastTime = timestamp;
+            const now = (typeof timestamp === 'number' && Number.isFinite(timestamp)) ? timestamp : performance.now();
+            const dt = Math.min(Math.max(0, (now - (this.lastTime || now)) / 1000), 0.05);
+            this.lastTime = now;
 
             this.update(dt);
             this.render();
@@ -9277,8 +9308,17 @@
                 state.invulnerableTimer = Math.max(0, state.invulnerableTimer - dt);
             }
 
+            const hasFuel = state.fuelCurrent === undefined || state.fuelCurrent > 0;
+            const gasActive = !!(keys.gas && hasFuel);
+            const nitroActive = !!(keys.nitro && state.nitroLevel > 0 && hasFuel);
+            if (!hasFuel) {
+                state.targetSpeed = 0;
+                state.isNitroActive = false;
+                state.nitroActive = false;
+            }
+
             // 1. NITRO BOOST HANDLING
-            if (keys.nitro && state.nitroLevel > 0) {
+            if (nitroActive) {
                 state.isNitroActive = true;
                 state.nitroLevel = Math.max(0, state.nitroLevel - 30 * dt);
 
@@ -9313,7 +9353,7 @@
                     this.playerNitroLight.intensity = 0;
                 }
                 // Slow passive nitro recharge when driving fast or drifting
-                if (!keys.nitro && state.speed > 60) {
+                if (!keys.nitro && hasFuel && state.speed > 60) {
                     state.nitroLevel = Math.min(100, state.nitroLevel + (state.isDrifting ? 12 : 5) * dt);
                 }
             }
@@ -9351,7 +9391,7 @@
             // Dynamic RPM calculation
             const activeGw = gearWindows[Math.min(gearWindows.length - 1, (state.gear || 1) - 1)];
             const gearProg = Math.min(1.0, Math.max(0.0, (state.speed - activeGw.min) / (activeGw.max - activeGw.min || 1)));
-            const targetRpm = state.idleRpm + gearProg * (state.maxRpm - state.idleRpm) * 0.90 + (keys.gas ? (state.maxRpm * 0.10) : 0);
+            const targetRpm = state.idleRpm + gearProg * (state.maxRpm - state.idleRpm) * 0.90 + (gasActive ? (state.maxRpm * 0.10) : 0);
             state.rpm = (state.rpm || state.idleRpm) + (targetRpm - (state.rpm || state.idleRpm)) * Math.min(1.0, 16.0 * dt);
 
             // Shift torque interruption
@@ -9367,7 +9407,7 @@
             if (isHandbrake) {
                 // Handbrake applies strong rear braking force (~85-110 km/h per second deceleration)
                 handbrakeBite = 92 + Math.min(18, (state.speed / 100) * 12);
-                if (keys.gas) {
+                if (gasActive) {
                     // Holding gas while pulling handbrake: cut / dramatically overpower engine acceleration
                     netAccel = 0;
                 }
@@ -9382,7 +9422,7 @@
                 if (!state.wasHandbraking && state.speed > 25) {
                     if (this.options.onSound) this.options.onSound('drift');
                 }
-            } else if (keys.gas) {
+            } else if (gasActive) {
                 state.gasHoldTime = (state.gasHoldTime || 0) + dt;
                 // High low-gear wheel torque (hypercar launch feeling)
                 const gearTorque = Math.max(0.70, 1.45 - ((state.gear || 1) - 1) * 0.11);
@@ -9409,8 +9449,8 @@
                 const coastingDrag = 9.0 + Math.pow(state.speed / 100, 2) * 4.2;
                 state.speed = Math.max(0, state.speed - coastingDrag * dt);
             }
-            if (!keys.gas || isHandbrake) state.gasHoldTime = 0;
-            state.prevGas = !!keys.gas && !isHandbrake;
+            if (!gasActive || isHandbrake) state.gasHoldTime = 0;
+            state.prevGas = !!gasActive && !isHandbrake;
             state.wasBraking = !!keys.brake;
             state.wasHandbraking = isHandbrake;
 
@@ -9420,7 +9460,7 @@
             let targetPitch = 0.0;
             if (isHandbrake) {
                 targetPitch = Math.min(0.055, 0.035 + (handbrakeBite / 120.0) * 0.015);
-            } else if (keys.gas) {
+            } else if (gasActive) {
                 targetPitch = -Math.min(0.062, 0.038 + (netAccel / 75.0) * 0.020 + (state.isNitroActive ? 0.012 : 0.0));
             } else if (keys.brake) {
                 targetPitch = Math.min(0.072, 0.048 + (brakeBite / 140.0) * 0.020 + (state.speed > 120 ? 0.008 : 0.0));
@@ -9499,17 +9539,23 @@
                     speed: state.speed,
                     seconds: dt,
                     consumption: state.fuelConsumption,
-                    gas: keys.gas,
+                    gas: gasActive,
                     nitro: state.isNitroActive,
                     drafting: false
                 });
                 state.fuelLiters += burned;
                 state.fuelCurrent = Math.max(0, state.fuelCurrent - burned);
-                if (state.fuelCurrent <= 0 && state.speed <= 5) {
-                    this.stop();
-                    if (this.options.onGameOver) this.options.onGameOver('fuel', this.getState());
-                    return;
+            }
+            if (state.fuelCurrent !== undefined && state.fuelCurrent <= 0 && state.speed <= 5 && !state.crashed && !state.finished) {
+                this.isRunning = false;
+                this.stop();
+                if (this.sound) {
+                    if (typeof this.sound.stopEngine === 'function') this.sound.stopEngine();
+                    if (typeof this.sound.stopSiren === 'function') this.sound.stopSiren();
                 }
+                if (typeof this.onGameOver === 'function') this.onGameOver('fuel', this.getState());
+                else if (this.options && typeof this.options.onGameOver === 'function') this.options.onGameOver('fuel', this.getState());
+                return;
             }
 
             // 5. STEERING, HANDBRAKE, TIRE GRIP & DRIFT MECHANICS
@@ -9528,7 +9574,7 @@
 
             // Steering authority: tied to forward rolling motion and throttle. Car cannot steer sideways on the spot when stationary!
             const speedSteerAuthority = Math.min(1.0, Math.max(0, state.speed / 18));
-            const throttleSteerAuthority = keys.gas ? 1.0 : (state.speed > 5 ? Math.min(1.0, 0.40 + (state.speed / 50) * 0.60) : 0);
+            const throttleSteerAuthority = gasActive ? 1.0 : (state.speed > 5 ? Math.min(1.0, 0.40 + (state.speed / 50) * 0.60) : 0);
             const effectiveSteerAuthority = speedSteerAuthority * throttleSteerAuthority;
 
             // 2. TIRE GRIP & SLIP ANGLE (Pacejka-inspired curve)
@@ -9602,6 +9648,10 @@
             if (isDriftingNow) {
                 state.isDrifting = true;
                 state.driftDuration += dt;
+                state.driftCombo = Math.min(5, 1 + Math.floor(state.driftDuration / 1.8));
+                if (state.driftCombo > (state.maxDriftCombo || 1)) {
+                    state.maxDriftCombo = state.driftCombo;
+                }
 
                 // Realistic slip-angle yaw: smoothly rotate body into drift direction
                 const slipRatio = Math.max(-1, Math.min(1, state.vx / (lateralMax || 1)));
@@ -9635,14 +9685,17 @@
                     const normalTurnYaw = steerInput * Math.min(0.20, (Math.abs(state.vx) / lateralMax) * 0.18);
                     state.yawAngle += (normalTurnYaw - state.yawAngle) * Math.min(1, 8 * dt);
                 }
-                if (state.driftCurrentScore > 30) {
-                    const bankedCash = Math.round(state.driftCurrentScore * 4.0 * state.rewardMult);
-                    state.earnedCash += bankedCash;
-                    if (this.options.onPopup) {
-                        this.options.onPopup(`🌪️ ЗАНОС: +${Math.round(state.driftCurrentScore)} PTS (+${bankedCash.toLocaleString('ru-RU')} ₽)`, '#fbbf24');
+                if (state.driftDuration > 0 || state.driftCurrentScore > 0) {
+                    if (state.driftCurrentScore > 30) {
+                        const bankedCash = Math.round(state.driftCurrentScore * 4.0 * state.rewardMult);
+                        state.earnedCash += bankedCash;
+                        if (this.options.onPopup) {
+                            this.options.onPopup(`🌪️ ЗАНОС: +${Math.round(state.driftCurrentScore)} PTS (+${bankedCash.toLocaleString('ru-RU')} ₽)`, '#fbbf24');
+                        }
+                        if (this.options.onSound) this.options.onSound('cash');
                     }
-                    if (this.options.onSound) this.options.onSound('cash');
                     state.driftCurrentScore = 0;
+                    state.driftDuration = 0;
                     state.driftCombo = 1;
                 }
             }
@@ -9680,7 +9733,7 @@
                 state.suspensionVelocityY = (state.suspensionVelocityY || 0) + 0.08;
 
                 // Progressive scrape damage and tactile screen shake
-                state.damageTaken += 1.8 * dt * 10;
+                state.damageTaken = Math.min(100, (state.damageTaken || 0) + 1.8 * dt * 10);
                 state.shakeAmount = Math.min(0.55, (state.shakeAmount || 0) + 0.12);
 
                 // Streams of sparks sliding along the contact flank
@@ -9690,6 +9743,7 @@
                 if (state.isDrifting) {
                     if (this.options.onPopup) this.options.onPopup('💥 ДРИФТ СОРВАН!', '#ef4444');
                     state.driftCurrentScore = 0;
+                    state.driftDuration = 0;
                     state.driftCombo = 1;
                     state.isDrifting = false;
                 }
@@ -9699,6 +9753,21 @@
                 if (state.scrapeTimer <= 0) {
                     if (this.options.onSound) this.options.onSound('scrape');
                     state.scrapeTimer = 0.22;
+                }
+
+                if (state.damageTaken >= 100 && !state.crashed) {
+                    state.crashed = true;
+                    state.speed = 0;
+                    this.isRunning = false;
+                    this.stop();
+                    if (this.sound) {
+                        if (typeof this.sound.stopEngine === 'function') this.sound.stopEngine();
+                        if (typeof this.sound.stopSiren === 'function') this.sound.stopSiren();
+                    }
+                    if (this.options && this.options.onPopup) this.options.onPopup('💥 АВТОМОБИЛЬ РАЗБИТ В ТОТАЛ!', '#ef4444');
+                    if (typeof this.onGameOver === 'function') this.onGameOver(true, this.getState());
+                    else if (this.options && typeof this.options.onGameOver === 'function') this.options.onGameOver(true, this.getState());
+                    return;
                 }
             } else {
                 if (state.scrapeTimer > 0) state.scrapeTimer -= dt;
@@ -9721,6 +9790,7 @@
             const redlineTremor = redlineProg * 0.0032 * Math.sin(state.time * 72);
             const engineTremorY = idleTremor + redlineTremor;
             const engineTremorRoll = (idleTremor + redlineTremor) * 0.75;
+            this.engineTremorRoll = engineTremorRoll;
 
             // 5b. SUSPENSION REBOUND & ROAD FEEL (Damped Spring-Damper Response)
             const speedFactor = Math.min(1.0, state.speed / 35);
@@ -9839,6 +9909,7 @@
 
             // 7. TRAFFIC VEHICLES AI, OVERTAKES & COLLISIONS
             this.updateTraffic(dt);
+            if (!this.isRunning || state.crashed || state.isBusted) return;
 
             // 8. HIGHWAY ROAD CHUNKS RECYCLING
             this.updateRoadChunks();
@@ -9876,7 +9947,7 @@
             const state = this.state;
             let minPoliceDist = 999;
 
-            this.trafficCars.forEach(car => {
+            this.trafficCars.forEach((car, idx) => {
                 const u = car.userData;
 
                 // 0. Handle wrecked / spinning police cars (after successful player takedown)
@@ -9891,14 +9962,41 @@
                         u.policeLight.intensity = Math.max(0, u.policeLight.intensity - 3 * dt);
                     }
                     if (car.position.z < state.z - 45 || u.wreckTimer <= 0) {
-                        car.position.set(0, -999, 0);
+                        car.position.y = -999;
                         u.isWrecked = false;
+                        u.wrecked = false;
                         u.speed = 0;
+                        u.respawnTimer = 4.5;
                     }
                     return;
                 }
 
-                if (car.position.y < -500) return;
+                if (car.position.y < -500) {
+                    if (u.type === 'police') {
+                        if (state.wantedStars > 0) {
+                            u.respawnTimer = (u.respawnTimer !== undefined ? u.respawnTimer : 3.0) - dt;
+                            if (u.respawnTimer <= 0) {
+                                const lanes = this.trafficLanes || [-6.375, -2.125, 2.125, 6.375];
+                                const newLane = Math.floor(Math.random() * lanes.length);
+                                u.isWrecked = false;
+                                u.wrecked = false;
+                                u.wreckTimer = 0;
+                                u.hitCooldown = 0;
+                                u.laneIndex = newLane;
+                                u.targetX = lanes[newLane];
+                                car.rotation.set(0, 0, 0);
+                                car.position.set(lanes[newLane], 0, state.z + 55 + idx * 15);
+                                u.speed = Math.max(120, state.speed * 0.95);
+                            } else {
+                                return;
+                            }
+                        } else {
+                            return;
+                        }
+                    } else {
+                        return;
+                    }
+                }
 
                 // 0b. Realistic traffic interaction: vehicles do not pass through each other like ghosts
                 for (let j = 0; j < this.trafficCars.length; j++) {
@@ -9926,7 +10024,7 @@
                                 if (this.options.onSound) this.options.onSound('scrape');
                                 u.speed = Math.max(45, u.speed - 25 * dt);
                             }
-                        } else if (!u.isTruck) {
+                        } else if (u.type !== 'truck') {
                             // Civilian traffic smooth speed matching and queuing
                             if (u.speed > ou.speed) {
                                 u.speed = Math.max(ou.speed * 0.95, u.speed - 26 * dt);
@@ -10083,22 +10181,24 @@
                 if (dx < lateralClearance && Math.abs(dz) < longitudinalClearance) {
                     // 💥 TAKEDOWN MECHANIC FOR POLICE: Player CAN ram & knock out pursuit cars!
                     if (u.type === 'police' && !u.isWrecked) {
-                        const isNitroActive = !!(this.keys && this.keys.nitro);
+                        const isNitroActive = !!(state.isNitroActive || state.nitroActive || (this.keys && this.keys.nitro));
                         const isFastRam = state.speed > 80;
                         const isHardSideHit = Math.abs(state.vx) > 0.35 || (this.keys && (this.keys.left || this.keys.right));
                         const isOvertakeRam = (state.speed - u.speed) > 5;
                         const isDirectRam = dz > -1.0 && state.speed > 60;
+                        const isTakedown = (state.wantedStars > 0 || isNitroActive) && (isNitroActive || isFastRam || isHardSideHit || isOvertakeRam || isDirectRam);
 
-                        if (isNitroActive || isFastRam || isHardSideHit || isOvertakeRam || isDirectRam) {
+                        if (isTakedown) {
                             // TAKEDOWN! СБИТ ЭКИПАЖ ДПС!
                             u.isWrecked = true;
+                            u.wrecked = true;
                             u.wreckTimer = 2.8;
                             u.wreckSpinVx = (car.position.x >= state.x ? 9.5 : -9.5);
                             u.speed = Math.max(0, u.speed - 120);
 
                             // Player takes minimal impact damage instead of instant crash
                             state.speed = Math.max(50, state.speed - 10);
-                            state.damageTaken += 1.0;
+                            state.damageTaken = Math.min(100, (state.damageTaken || 0) + 1.0);
                             state.shakeAmount = 0.65;
 
                             // Huge sparks and sound
@@ -10112,8 +10212,9 @@
                                 this.options.onSound('crash');
                             }
 
-                            // Reward player with escape boost
-                            if (state.wantedStars > 1) {
+                            if (state.wantedStars === 0) {
+                                this.addWantedStars(1, 'Таран экипажа ДПС');
+                            } else if (state.wantedStars > 1) {
                                 state.wantedStars = Math.max(1, state.wantedStars - 1);
                             }
                             state.escapeTimer = Math.max(1.0, state.escapeTimer - 3.0);
@@ -10127,7 +10228,10 @@
                         return;
                     }
 
-                    const isRearEndHit = dz > -1.5;
+                    const playerHalfW = 0.95;
+                    const playerHalfL = 2.2;
+                    const isAlongsideSideswipe = dx > (playerHalfW + trafficHalfW) * 0.68 && Math.abs(dz) < (playerHalfL + trafficHalfL) * 0.78;
+                    const isRearEndHit = !isAlongsideSideswipe && dz > -1.5;
                     if (isRearEndHit && speedDiff > 35 && u.type !== 'police') {
                         // High-speed direct rear-end collision: DAMAGE BUFFER & MOMENTUM EXCHANGE!
                         const ramPushDir = (car.position.x >= state.x ? 1 : -1);
@@ -10151,7 +10255,7 @@
 
                         // 3. Player progressive deceleration & damage buffer
                         const dmg = (u.type === 'truck') ? 32 : 25;
-                        state.damageTaken = (state.damageTaken || 0) + dmg;
+                        state.damageTaken = Math.min(100, (state.damageTaken || 0) + dmg);
                         state.shakeAmount = 1.0;
                         state.invulnerableTimer = 1.2;
                         state.speed = Math.max(45, state.speed * 0.48);
@@ -10160,11 +10264,19 @@
                         this.spawnSparks((state.x + car.position.x) * 0.5, 0.8, state.z + 1.0, 48);
                         if (this.options.onSound) this.options.onSound('crash');
 
-                        if (state.damageTaken >= 100) {
+                        if (state.damageTaken >= 100 && !state.crashed) {
                             // Totaled after multiple severe crashes
+                            state.crashed = true;
+                            state.speed = 0;
+                            this.isRunning = false;
                             this.stop();
+                            if (this.sound) {
+                                if (typeof this.sound.stopEngine === 'function') this.sound.stopEngine();
+                                if (typeof this.sound.stopSiren === 'function') this.sound.stopSiren();
+                            }
                             if (this.options.onPopup) this.options.onPopup('💥 АВТОМОБИЛЬ РАЗБИТ В ТОТАЛ!', '#ef4444');
-                            if (this.options.onGameOver) this.options.onGameOver(true, this.getState());
+                            if (typeof this.onGameOver === 'function') this.onGameOver(true, this.getState());
+                            else if (this.options.onGameOver) this.options.onGameOver(true, this.getState());
                             return;
                         } else {
                             if (this.options.onPopup) {
@@ -10198,7 +10310,7 @@
                         // 4. Progressive deceleration proportional to angle and speed delta
                         const speedLoss = Math.min(22, 6 + Math.abs(speedDiff) * 0.12);
                         state.speed = state.speed > 0 ? Math.max(18, state.speed - speedLoss) : 0;
-                        state.damageTaken = (state.damageTaken || 0) + 2.5;
+                        state.damageTaken = Math.min(100, (state.damageTaken || 0) + 2.5);
 
                         // 5. Tactical screen shake scaled to impact momentum
                         state.shakeAmount = Math.min(0.75, 0.35 + Math.abs(state.vx || 0) * 0.05);
@@ -10208,6 +10320,21 @@
                         this.spawnSparks((state.x + car.position.x) * 0.5, 0.5, state.z + 0.5, 26);
                         if (this.options.onPopup) this.options.onPopup('⚡ БОКОВОЙ ТАРАН!', '#f59e0b');
                         if (this.options.onSound) this.options.onSound('scrape');
+
+                        if (state.damageTaken >= 100 && !state.crashed) {
+                            state.crashed = true;
+                            state.speed = 0;
+                            this.isRunning = false;
+                            this.stop();
+                            if (this.sound) {
+                                if (typeof this.sound.stopEngine === 'function') this.sound.stopEngine();
+                                if (typeof this.sound.stopSiren === 'function') this.sound.stopSiren();
+                            }
+                            if (this.options.onPopup) this.options.onPopup('💥 АВТОМОБИЛЬ РАЗБИТ В ТОТАЛ!', '#ef4444');
+                            if (typeof this.onGameOver === 'function') this.onGameOver(true, this.getState());
+                            else if (this.options.onGameOver) this.options.onGameOver(true, this.getState());
+                            return;
+                        }
                     }
                 }
 
@@ -10215,10 +10342,12 @@
                 const recycleBehindZ = (u.type === 'police' && state.wantedStars > 0) ? (state.z - 75) : (state.z - 35);
                 if (car.position.z < recycleBehindZ) {
                     if (u.type === 'police' && state.wantedStars > 0) {
-                        // Outrun police car despawns behind and does NOT jump right in front of player
-                        car.position.set(0, -999, 0);
+                        // Outrun police car despawns behind and respawns after cooldown
+                        car.position.y = -999;
                         u.isWrecked = false;
+                        u.wrecked = false;
                         u.speed = 0;
+                        u.respawnTimer = 2.0;
                         return;
                     }
                     const newLane = (u.type === 'truck') ? (Math.random() < 0.8 ? 3 : 2) : Math.floor(Math.random() * 4);
@@ -10309,7 +10438,8 @@
                         state.isBusted = true;
                         this.stop();
                         if (this.options.onSound) this.options.onSound('busted');
-                        if (this.options.onGameOver) this.options.onGameOver('busted', this.getState());
+                        if (typeof this.onGameOver === 'function') this.onGameOver('busted', this.getState());
+                        else if (this.options.onGameOver) this.options.onGameOver('busted', this.getState());
                         return;
                     }
                 } else {
@@ -10548,11 +10678,12 @@
                     this.renderer.setSize(w, h, false);
                 }
             };
+            this._onOrientationChange = () => {
+                setTimeout(() => { if (this._onResize) this._onResize(); }, 120);
+            };
             if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
                 window.addEventListener('resize', this._onResize);
-                window.addEventListener('orientationchange', () => {
-                    setTimeout(() => { if (this._onResize) this._onResize(); }, 120);
-                });
+                window.addEventListener('orientationchange', this._onOrientationChange);
             }
             if (typeof ResizeObserver !== 'undefined' && this.container) {
                 try {
@@ -10569,6 +10700,7 @@
         }
 
         destroy() {
+            this._destroyed = true;
             this.stop();
             if (this._resizeObserver) {
                 try { this._resizeObserver.disconnect(); } catch (_) {}
@@ -10583,6 +10715,9 @@
             }
             if (this._onResize && typeof window !== 'undefined' && typeof window.removeEventListener === 'function') {
                 window.removeEventListener('resize', this._onResize);
+            }
+            if (this._onOrientationChange && typeof window !== 'undefined' && typeof window.removeEventListener === 'function') {
+                window.removeEventListener('orientationchange', this._onOrientationChange);
             }
             if (this.vfx) {
                 try { this.vfx.destroy(); } catch (_) {}
@@ -10639,7 +10774,8 @@
         formatPlateComponents,
         detectVehicleLightPositions,
         clearThumbnailQueue,
-        deepDispose
+        deepDispose,
+        disposeObject3D
     };
 }));
 

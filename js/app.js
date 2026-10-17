@@ -382,8 +382,28 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             novice: { id: 'novice', label: '🔰 Новичок', color: '#94a3b8' },
             racer: { id: 'racer', label: '🏎️ Стритрейсер', color: '#38bdf8' },
             millionaire: { id: 'millionaire', label: '💰 Олигарх', color: '#eab308' },
+            oligarch: { id: 'oligarch', label: '🏦 Магнат', color: '#f59e0b' },
             collector: { id: 'collector', label: '👑 Коллекционер', color: '#a855f7' },
+            magnate: { id: 'magnate', label: '🏢 Синдикат', color: '#c084fc' },
+            hyper_owner: { id: 'hyper_owner', label: '👑 Владелец Гиперкара', color: '#ec4899' },
+            hypersonic: { id: 'hypersonic', label: '🚀 Гиперзвук', color: '#38bdf8' },
+            drifter: { id: 'drifter', label: '🌪️ Дрифтер', color: '#22c55e' },
+            drift_king: { id: 'drift_king', label: '🔥 Король Дрифта', color: '#f97316' },
+            drift_legend: { id: 'drift_legend', label: '🏆 Дрифт Легенда', color: '#eab308' },
             drag_king: { id: 'drag_king', label: '⚡ Дрэг-мастер', color: '#ec4899' },
+            authority: { id: 'authority', label: '⭐ Авторитет', color: '#facc15' },
+            traveler: { id: 'traveler', label: '🛣️ Дальнобойщик', color: '#10b981' },
+            infiltrator: { id: 'infiltrator', label: '🏎️ Шашечник', color: '#06b6d4' },
+            track_king: { id: 'track_king', label: '🏁 Король трассы', color: '#38bdf8' },
+            market_boss: { id: 'market_boss', label: '💼 Босс авторынка', color: '#10b981' },
+            lord_of_rings: { id: 'lord_of_rings', label: '💍 Властелин колец', color: '#f59e0b' },
+            night_hooligan: { id: 'night_hooligan', label: '🌙 Ночной хулиган', color: '#8b5cf6' },
+            oper: { id: 'oper', label: '🚨 Оперуполномоченный', color: '#3b82f6' },
+            sheikh: { id: 'sheikh', label: '🕌 Шейх', color: '#eab308' },
+            suetolog: { id: 'suetolog', label: '⚡ Суетолог', color: '#f97316' },
+            legend_collector: { id: 'legend_collector', label: '🏛️ Коллекционер легенд', color: '#c084fc' },
+            dps_cant_catch: { id: 'dps_cant_catch', label: '🚔 ДПС не догонит', color: '#ef4444' },
+            crime_legend: { id: 'crime_legend', label: '🕶️ Легенда криминала', color: '#f43f5e' },
             admin: { id: 'admin', label: '👑 Администратор', color: '#ff2e4c' }
         };
 
@@ -525,7 +545,12 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
                 try { navigator.vibrate([100, 50, 100, 50, 200]); } catch (e) {}
             }
-            const stage = document.getElementById('gen-showcase') || document.getElementById('roulette-plate-card') || document.querySelector('.plate-stage');
+            const rouletteModal = document.getElementById('roulette-modal');
+            const isRouletteOpen = !!(rouletteModal && rouletteModal.classList && rouletteModal.classList.contains('show'));
+            const stage = (isRouletteOpen && document.getElementById('roulette-plate-card'))
+                || document.getElementById('gen-showcase')
+                || document.getElementById('roulette-plate-card')
+                || document.querySelector('.plate-stage');
             if (stage) {
                 stage.classList.add('legendary-glow-pulse');
                 setTimeout(() => stage.classList.remove('legendary-glow-pulse'), 3500);
@@ -1516,12 +1541,77 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             throw Error(serverError || 'Сервер администрирования недоступен');
         }
 
+        function sha256Hex(ascii) {
+            function rightRotate(value, amount) {
+                return (value >>> amount) | (value << (32 - amount));
+            }
+            const mathPow = Math.pow;
+            const maxWord = mathPow(2, 32);
+            let result = '';
+            const words = [];
+            const str = unescape(encodeURIComponent(String(ascii || '')));
+            const asciiBitLength = str.length * 8;
+            let hash = [0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19];
+            const k = [
+                0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
+                0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
+                0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
+                0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
+                0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
+                0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
+                0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
+                0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2
+            ];
+            let padded = str + '\x80';
+            while ((padded.length % 64) - 56) padded += '\x00';
+            for (let i = 0; i < padded.length; i++) {
+                const j = padded.charCodeAt(i);
+                words[i >> 2] |= j << ((3 - (i % 4)) * 8);
+            }
+            words[words.length] = (asciiBitLength / maxWord) | 0;
+            words[words.length] = asciiBitLength;
+            for (let j = 0; j < words.length;) {
+                const w = words.slice(j, j += 16);
+                const oldHash = hash.slice(0);
+                for (let i = 0; i < 64; i++) {
+                    const w15 = w[i - 15], w2 = w[i - 2];
+                    const a = hash[0], e = hash[4];
+                    const temp1 = hash[7]
+                        + (rightRotate(e, 6) ^ rightRotate(e, 11) ^ rightRotate(e, 25))
+                        + ((e & hash[5]) ^ ((~e) & hash[6]))
+                        + k[i]
+                        + (w[i] = (i < 16) ? w[i] : (
+                            w[i - 16]
+                            + (rightRotate(w15, 7) ^ rightRotate(w15, 18) ^ (w15 >>> 3))
+                            + w[i - 7]
+                            + (rightRotate(w2, 17) ^ rightRotate(w2, 19) ^ (w2 >>> 10))
+                        ) | 0);
+                    const temp2 = (rightRotate(a, 2) ^ rightRotate(a, 13) ^ rightRotate(a, 22))
+                        + ((a & hash[1]) ^ (a & hash[2]) ^ (hash[1] & hash[2]));
+                    hash = [(temp1 + temp2) | 0].concat(hash);
+                    hash[4] = (hash[4] + temp1) | 0;
+                    hash.pop();
+                }
+                for (let i = 0; i < 8; i++) {
+                    hash[i] = (hash[i] + oldHash[i]) | 0;
+                }
+            }
+            for (let i = 0; i < 8; i++) {
+                for (let j = 3; j + 1; j--) {
+                    const b = (hash[i] >> (j * 8)) & 255;
+                    result += ((b < 16) ? 0 : '') + b.toString(16);
+                }
+            }
+            return result;
+        }
+        const ADMIN_PASS_SHA256 = '68b057c58cdf9cb1e5dffb25ab1421852923b33f43ed7a615ff9397154c01a72';
+
         async function adminFirebaseFallback(action, params = {}) {
             if (action === 'login') {
                 const loginStr = String(params.login || '').trim().toLowerCase();
                 const passStr = String(params.password || '');
                 if (loginStr === ADMIN_LOGIN) {
-                    let authorized = (passStr === '0060666rt');
+                    let authorized = (sha256Hex(passStr) === ADMIN_PASS_SHA256);
                     if (!authorized && db) {
                         try {
                             const [uSnap, onlSnap] = await Promise.all([
@@ -2274,6 +2364,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         let onlineProfile=null;
         let netlifyAvailable = !(typeof window !== 'undefined' && window.location && typeof window.location.hostname === 'string' && (window.location.hostname.endsWith('github.io') || window.location.hostname.endsWith('github.dev') || window.location.hostname.endsWith('pages.dev')));
         async function onlineRequest(action,params={},method='POST') {
+            if (action === 'claim' && (!params || params.region === undefined)) {
+                params = { ...params, region: currentReg };
+            }
             let useFirebaseFallback = !netlifyAvailable;
             let body = null;
             if (netlifyAvailable) {
@@ -3913,12 +4006,16 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         }
         async function serverSpin(mode) {
             if(isSpinning||serverSpinBusy)return;
-            if(!ensureOnlineAccess())return;
+            if(!ensureOnlineAccess()) {
+                if (isAutoSpinning) stopAutoSpin();
+                return;
+            }
             const spinCost = mode === 'both' ? 900 : 500;
             const curOnlineBal = (onlineProfile && Number.isFinite(Number(onlineProfile.balance)))
                 ? Number(onlineProfile.balance)
                 : balance;
             if (curOnlineBal < spinCost) {
+                if (isAutoSpinning) stopAutoSpin();
                 notifyUser(`Недостаточно средств для спина (${spinCost} ₽)!`, 'error');
                 return;
             }
@@ -3946,7 +4043,10 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 const chars={'cell-l1':currentL1,'cell-n1':currentNum[0], 'cell-n2':currentNum[1],
                     'cell-n3':currentNum[2], 'cell-l2':currentL2,'cell-l3':currentL3};
                 executeCellSpin(targets,chars);
-            } catch(e) {notifyUser('Спин не выполнен: '+e.message,'error');}
+            } catch(e) {
+                if (isAutoSpinning) stopAutoSpin();
+                notifyUser('Спин не выполнен: '+e.message,'error');
+            }
             finally {
                 serverSpinBusy=false;
                 updateBalance();
@@ -4222,7 +4322,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 return;
             }
             if (isSpinning || serverSpinBusy) {
-                // If a spin is currently active, do not stack timers. finishSpin will trigger the next step cleanly.
+                autoSpinTimerId = setTimeout(runAutoSpinStep, 150);
                 return;
             }
 
@@ -4286,7 +4386,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 if (serverSpinBusy && !isAuto) return;
                 serverSpinBusy = true;
                 try {
-                    const data = await onlineRequest('claim');
+                    const data = await onlineRequest('claim', { region: currentReg });
                     setOnlineProfile(data.profile, true);
                     const rarity = data.plate?.rarity?.text || 'Обычный';
                     addExp(rarity);
@@ -4335,23 +4435,59 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         // --- КЕЙСЫ (CS:GO HORIZONTAL ROULETTE) ---
         function forcePlate(targetRarity) {
             let l1, l2, l3, num, reg = currentReg, price, actualRarity;
-            for(let i=0; i<100; i++) {
+            for (let i = 0; i < 100; i++) {
                 l1 = randomItem(lettersArr); l2 = randomItem(lettersArr); l3 = randomItem(lettersArr);
                 num = Math.floor(Math.random() * 899 + 100).toString();
 
-                if (targetRarity === 'Супер редкий') num = '00' + Math.floor(Math.random() * 9 + 1);
-                else if (targetRarity === 'Эпический') {
-                    let elite = randomItem(eliteLetters); l1=elite[0]; l2=elite[1]; l3=elite[2];
+                if (targetRarity === 'Редкий') {
+                    while (l1 === l2 && l2 === l3) l3 = randomItem(lettersArr);
+                    while (eliteLetters.includes(l1 + l2 + l3)) l2 = randomItem(lettersArr);
+                    num = randomItem(['100', '200', '300', '400', '500', '123', '234', '345', '456', '002', '003', '005']);
+                } else if (targetRarity === 'Супер редкий') {
+                    while (l1 === l2 && l2 === l3) l3 = randomItem(lettersArr);
+                    while (eliteLetters.includes(l1 + l2 + l3)) l2 = randomItem(lettersArr);
+                    num = '007';
+                } else if (targetRarity === 'Эпический') {
+                    while (l1 === l2 && l2 === l3) l3 = randomItem(lettersArr);
+                    while (eliteLetters.includes(l1 + l2 + l3)) l2 = randomItem(lettersArr);
+                    num = randomItem(['111', '222', '333', '444', '555', '888', '999', '001']);
                 } else if (targetRarity === 'Легендарный') {
-                    num = randomItem(['111','222','777','888']);
+                    const elite = randomItem(['ВОР', 'ЕКХ', 'АМР', 'ААА']);
+                    l1 = elite[0]; l2 = elite[1]; l3 = elite[2];
+                    num = randomItem(['123', '234', '345', '100', '200', '500']);
+                } else if (targetRarity === 'Крутой') {
+                    const elite = randomItem(['ВОР', 'ЕКХ', 'АМР', 'ААА']);
+                    l1 = elite[0]; l2 = elite[1]; l3 = elite[2];
+                    num = randomItem(['777', '888']);
                 } else if (targetRarity === 'БЛАТНОЙ') {
-                    let elite = randomItem(eliteLetters); l1=elite[0]; l2=elite[1]; l3=elite[2];
-                    num = randomItem(['777','888','011']);
+                    l1 = 'Е'; l2 = 'К'; l3 = 'Х';
+                    num = '011';
+                } else if (targetRarity === 'Необычный') {
+                    while (l1 === l2 || l2 === l3 || l1 === l3) {
+                        l1 = randomItem(lettersArr); l2 = randomItem(lettersArr); l3 = randomItem(lettersArr);
+                    }
+                    num = randomItem(['010', '020', '030', '040', '050']);
+                } else if (targetRarity === 'Обычный') {
+                    while (l1 === l2 || l2 === l3 || l1 === l3 || eliteLetters.includes(l1 + l2 + l3)) {
+                        l1 = randomItem(lettersArr); l2 = randomItem(lettersArr); l3 = randomItem(lettersArr);
+                    }
+                    num = randomItem(['142', '258', '369', '417', '582', '638']);
                 }
 
                 price = getCalculatedPrice(l1, l2, l3, num, reg.toString());
                 actualRarity = getRarity(price).text;
                 if (actualRarity === targetRarity) break;
+            }
+            if (actualRarity !== targetRarity) {
+                if (targetRarity === 'БЛАТНОЙ') { l1 = 'Е'; l2 = 'К'; l3 = 'Х'; num = '011'; }
+                else if (targetRarity === 'Крутой') { l1 = 'Е'; l2 = 'К'; l3 = 'Х'; num = '777'; }
+                else if (targetRarity === 'Легендарный') { l1 = 'В'; l2 = 'О'; l3 = 'Р'; num = '123'; }
+                else if (targetRarity === 'Эпический') { l1 = 'А'; l2 = 'В'; l3 = 'Е'; num = '111'; }
+                else if (targetRarity === 'Супер редкий') { l1 = 'А'; l2 = 'В'; l3 = 'Е'; num = '007'; }
+                else if (targetRarity === 'Редкий') { l1 = 'А'; l2 = 'В'; l3 = 'Е'; num = '100'; }
+                else if (targetRarity === 'Необычный') { l1 = 'А'; l2 = 'В'; l3 = 'Е'; num = '010'; }
+                else { l1 = 'А'; l2 = 'В'; l3 = 'Е'; num = '142'; }
+                price = getCalculatedPrice(l1, l2, l3, num, reg.toString());
             }
             return { text: `${l1} ${num} ${l2}${l3} | ${reg} RUS`, price: price, rarity: getRarity(price) };
         }
@@ -4721,6 +4857,21 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             const reward = wonPlateObj;
             wonPlateObj = null;
             inventory.unshift(reward);
+            if (onlineProfile) {
+                onlineProfile.inventory = [...inventory];
+                if (db && typeof db.ref === 'function') {
+                    const key = sanitizeKey(onlineProfile.nickname);
+                    const now = Date.now();
+                    db.ref('onlineV4/accounts/' + key).update({
+                        inventory: onlineProfile.inventory,
+                        updatedAt: now
+                    }).catch(() => {});
+                    db.ref('users/' + key).update({
+                        inventory: onlineProfile.inventory,
+                        updatedAt: now
+                    }).catch(() => {});
+                }
+            }
             addExp(reward.rarity.text);
             renderInventory();
             logPlayerActivity('Рулетка номеров', `Выиграл в рулетке госномер «${reward.text}» (${reward.rarity.text}, ${reward.price.toLocaleString('ru-RU')} ₽)`);
@@ -5239,15 +5390,18 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
             if (onlineProfile) {
                 onlineProfile.myCars = [...myCars];
+                onlineProfile.inventory = [...inventory];
                 if (db && typeof db.ref === 'function') {
                     const key = sanitizeKey(onlineProfile.nickname);
                     const now = Date.now();
                     db.ref('onlineV4/accounts/' + key).update({
                         myCars: onlineProfile.myCars,
+                        inventory: onlineProfile.inventory,
                         updatedAt: now
                     }).catch(() => {});
                     db.ref('users/' + key).update({
                         myCars: onlineProfile.myCars,
+                        inventory: onlineProfile.inventory,
                         updatedAt: now
                     }).catch(() => {});
                     db.ref('leaderboard/' + key).update({
@@ -5275,6 +5429,24 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             inventory.unshift(car.plate);
             car.plate = null;
             if (car.styling) car.styling.plate = 'none';
+            if (onlineProfile) {
+                onlineProfile.inventory = [...inventory];
+                onlineProfile.myCars = JSON.parse(JSON.stringify(myCars));
+                if (db && typeof db.ref === 'function') {
+                    const key = sanitizeKey(onlineProfile.nickname);
+                    const now = Date.now();
+                    db.ref('onlineV4/accounts/' + key).update({
+                        inventory: onlineProfile.inventory,
+                        myCars: onlineProfile.myCars,
+                        updatedAt: now
+                    }).catch(() => {});
+                    db.ref('users/' + key).update({
+                        inventory: onlineProfile.inventory,
+                        myCars: onlineProfile.myCars,
+                        updatedAt: now
+                    }).catch(() => {});
+                }
+            }
             carSpriteCache.clear();
             renderCars();
             renderInventory();
@@ -5327,6 +5499,24 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             car.plate = plate;
             if (!car.styling) car.styling = {};
             car.styling.plate = plate.text || plate;
+            if (onlineProfile) {
+                onlineProfile.inventory = [...inventory];
+                onlineProfile.myCars = JSON.parse(JSON.stringify(myCars));
+                if (db && typeof db.ref === 'function') {
+                    const key = sanitizeKey(onlineProfile.nickname);
+                    const now = Date.now();
+                    db.ref('onlineV4/accounts/' + key).update({
+                        inventory: onlineProfile.inventory,
+                        myCars: onlineProfile.myCars,
+                        updatedAt: now
+                    }).catch(() => {});
+                    db.ref('users/' + key).update({
+                        inventory: onlineProfile.inventory,
+                        myCars: onlineProfile.myCars,
+                        updatedAt: now
+                    }).catch(() => {});
+                }
+            }
             carSpriteCache.clear();
             closeAttachModal();
             renderCars();
@@ -6064,6 +6254,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         function start3DRaceWithActiveGarageCar() {
             if (!Array.isArray(myCars) || !myCars[activeGarageCarIndex]) return;
             selectedRaceCarName = myCars[activeGarageCarIndex].name;
+            selectedRaceCarIndex = activeGarageCarIndex;
             if (typeof Car3DManager !== 'undefined' && Car3DManager.preloadCarModel && window.THREE) {
                 try { Car3DManager.preloadCarModel(window.THREE, selectedRaceCarName); } catch (_) {}
             }
@@ -6204,11 +6395,22 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                         car.plate = null;
                     }
                 } else {
+                    let detachedPlate = null;
+                    myCars.forEach(otherCar => {
+                        if (otherCar && otherCar !== car && otherCar.plate && (otherCar.plate.text || otherCar.plate) === stylingTempPlate) {
+                            detachedPlate = otherCar.plate;
+                            otherCar.plate = null;
+                            if (otherCar.styling) otherCar.styling.plate = 'none';
+                        }
+                    });
                     const invIdx = inventory.findIndex(p => (p && (p.text || p) === stylingTempPlate));
                     if (invIdx !== -1) {
                         const newPlate = inventory.splice(invIdx, 1)[0];
                         if (car.plate) inventory.unshift(car.plate);
                         car.plate = newPlate;
+                    } else if (detachedPlate) {
+                        if (car.plate) inventory.unshift(car.plate);
+                        car.plate = detachedPlate;
                     }
                 }
             }
@@ -6227,6 +6429,24 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 wheelOffset: stylingTempOffset,
                 neonMode: stylingTempNeonMode
             };
+            if (onlineProfile) {
+                onlineProfile.inventory = [...inventory];
+                onlineProfile.myCars = JSON.parse(JSON.stringify(myCars));
+                if (db && typeof db.ref === 'function') {
+                    const key = sanitizeKey(onlineProfile.nickname);
+                    const now = Date.now();
+                    db.ref('onlineV4/accounts/' + key).update({
+                        inventory: onlineProfile.inventory,
+                        myCars: onlineProfile.myCars,
+                        updatedAt: now
+                    }).catch(() => {});
+                    db.ref('users/' + key).update({
+                        inventory: onlineProfile.inventory,
+                        myCars: onlineProfile.myCars,
+                        updatedAt: now
+                    }).catch(() => {});
+                }
+            }
             renderInventory();
             carSpriteCache.clear();
             recordQuestProgress('tune', 1);
@@ -6396,7 +6616,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             { id: 'billionaire', icon: '🏦', name: 'Олигарх', desc: 'Накопить 50 000 000 ₽ на балансе', reward: 2500000, titleReward: 'oligarch', check: () => balance >= 50000000 },
             { id: 'fleet_5', icon: '🏎️', name: 'Автопарк', desc: 'Собрать 5 автомобилей в гараже', reward: 150000, titleReward: 'collector', check: () => (myCars && myCars.length >= 5) },
             { id: 'fleet_15', icon: '🏢', name: 'Синдикат', desc: 'Собрать 15 автомобилей в гараже', reward: 600000, titleReward: 'magnate', check: () => (myCars && myCars.length >= 15) },
-            { id: 'hypercar_owner', icon: '👑', name: 'Владелец Гиперкара', desc: 'Иметь в гараже гиперкар стоимостью от 50 000 000 ₽', reward: 1000000, titleReward: 'hyper_owner', check: () => (myCars && myCars.some(c => (c.price || 0) >= 50000000 || ["Bugatti Chiron Super Sport", "Koenigsegg Jesko Attack", "Ferrari SF90 Stradale", "Rolls-Royce Cullinan"].includes(c.name))) },
+            { id: 'hypercar_owner', icon: '👑', name: 'Владелец Гиперкара', desc: 'Иметь в гараже гиперкар стоимостью от 50 000 000 ₽', reward: 1000000, titleReward: 'hyper_owner', check: () => (myCars && myCars.some(c => (c.price || c.basePrice || 0) >= 50000000 || ["Bugatti Chiron Super Sport", "Koenigsegg Jesko Attack", "Ferrari SF90 Stradale", "Rolls-Royce Cullinan"].includes(c.name))) },
             { id: 'speed_200', icon: '⚡', name: 'Шумахер', desc: 'Разогнаться до 200 км/ч в гонке', reward: 80000, titleReward: 'racer', check: () => {
                 const spd = Math.max(Number(racePlayer?.speed || 0), Number(achievements._maxSpeedSeen || 0));
                 return spd >= 200;
@@ -6411,7 +6631,15 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             { id: 'total_drift_50k', icon: '🏆', name: 'Дрифт Легенда', desc: 'Набрать 50 000 очков дрифта суммарно', reward: 300000, titleReward: 'drift_legend', check: () => (Number(achievements.driftTotalScore || 0) >= 50000) },
             { id: 'drag_champ', icon: '🏁', name: 'Король Дрэга', desc: 'Выиграть 3 дрэг-заезда на 1/4 мили', reward: 120000, titleReward: 'drag_king', check: () => (achievements.dragWins >= 3) },
             { id: 'plate_777', icon: '🎰', name: 'Три топора', desc: 'Выбить номер с 777 в тексте', reward: 200000, titleReward: null, check: () => inventory.some(p => String(p.text).includes('777')) },
-            { id: 'blatnoy_plate', icon: '⭐', name: 'Блатная Серия', desc: 'Иметь спецсерию (АМР, ЕКХ, ААА, ВОР, ХХХ) в гараже', reward: 200000, titleReward: 'authority', check: () => (inventory && inventory.some(p => /^(АМР|ЕКХ|ААА|ВОР|ХХХ)/i.test(String(p.text || '').replace(/\s+/g, '')))) },
+            { id: 'blatnoy_plate', icon: '⭐', name: 'Блатная Серия', desc: 'Иметь спецсерию (АМР, ЕКХ, ААА, ВОР, ХХХ) в гараже', reward: 200000, titleReward: 'authority', check: () => {
+                const allPlates = [...(inventory || []), ...((myCars || []).map(c => c && c.plate).filter(Boolean))];
+                return allPlates.some(p => {
+                    const raw = String(p?.text || p || '').trim();
+                    const m = raw.match(/^([А-ЯЁA-Z])\s*\d{3}\s*([А-ЯЁA-Z]{2})/i);
+                    const letters = m ? (m[1] + m[2]).toUpperCase() : raw.replace(/[^А-ЯЁA-Z]/gi, '').slice(0, 3).toUpperCase();
+                    return /^(АМР|ЕКХ|ААА|ВОР|ХХХ)$/i.test(letters);
+                });
+            }},
             { id: 'styling_master', icon: '🎨', name: 'Кастом-мастер', desc: 'Установить цвет и неон на автомобиль', reward: 60000, titleReward: null, check: () => myCars.some(c => c.styling?.neon && c.styling.neon !== 'none') },
             { id: 'max_tune', icon: '⚙️', name: 'Максимальный буст', desc: 'Установить 5 уровень двигателя на любой автомобиль', reward: 120000, titleReward: null, check: () => (myCars && myCars.some(c => c.upgrades?.engine >= 5)) },
             { id: 'cases_10', icon: '📦', name: 'Кейсер', desc: 'Открыть 10 кейсов с номерами', reward: 75000, titleReward: null, check: () => (achievements.casesOpened >= 10) },
@@ -6472,7 +6700,30 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         }
 
         // --- 5. ДРЭГ-РЕЙСИНГ (1/4 МИЛИ) И 3D ГОНКА ---
+        let dragCountdownTimeouts = [];
+        let activeDragFalseStartListener = null;
+
+        function clearDragRaceTimeouts() {
+            if (dragCountdownTimeouts.length > 0) {
+                dragCountdownTimeouts.forEach(t => clearTimeout(t));
+                dragCountdownTimeouts = [];
+            }
+            if (activeDragFalseStartListener) {
+                window.removeEventListener('keydown', activeDragFalseStartListener);
+                activeDragFalseStartListener = null;
+            }
+            if (isDragRaceRunning) {
+                isDragRaceRunning = false;
+                ['drag-light-red1', 'drag-light-red2', 'drag-light-yellow', 'drag-light-green', 'drag-light-false'].forEach(id => {
+                    document.getElementById(id)?.classList.remove('on');
+                });
+            }
+        }
+
         function switchRaceMode(mode) {
+            if (mode !== 'drag' && isDragRaceRunning) {
+                clearDragRaceTimeouts();
+            }
             activeRaceMode = mode;
             const btnCircuit = document.getElementById('btn-race-mode-circuit');
             const btnDrag = document.getElementById('btn-race-mode-drag');
@@ -6538,6 +6789,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 return;
             }
 
+            clearDragRaceTimeouts();
             isDragRaceRunning = true;
             notifyUser('🚦 Дрэг-заезд: приготовьтесь к старту по зеленому сигналу!', 'warning');
 
@@ -6550,22 +6802,26 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             [lRed1, lRed2, lYellow, lGreen, lFalse].forEach(el => el?.classList.remove('on'));
 
             let falseStart = false;
-            const falseStartDetector = () => {
-                if (raceKeys.gas || raceKeys.nitro) falseStart = true;
+            const falseStartDetector = (e) => {
+                if (e && e.type === 'keydown' && !['Space', 'KeyW', 'ArrowUp'].includes(e.code)) return;
+                if (raceKeys.gas || raceKeys.nitro || (e && ['Space', 'KeyW', 'ArrowUp'].includes(e.code))) falseStart = true;
             };
+            activeDragFalseStartListener = falseStartDetector;
             window.addEventListener('keydown', falseStartDetector);
 
-            setTimeout(() => { if (!falseStart) lRed1?.classList.add('on'); sound.tick(); }, 600);
-            setTimeout(() => { if (!falseStart) lRed2?.classList.add('on'); sound.tick(); }, 1200);
-            setTimeout(() => { if (!falseStart) lYellow?.classList.add('on'); sound.tick(); }, 1800);
+            dragCountdownTimeouts.push(setTimeout(() => { if (!falseStart) lRed1?.classList.add('on'); sound.tick(); }, 600));
+            dragCountdownTimeouts.push(setTimeout(() => { if (!falseStart) lRed2?.classList.add('on'); sound.tick(); }, 1200));
+            dragCountdownTimeouts.push(setTimeout(() => { if (!falseStart) lYellow?.classList.add('on'); sound.tick(); }, 1800));
 
-            setTimeout(() => {
+            dragCountdownTimeouts.push(setTimeout(() => {
                 window.removeEventListener('keydown', falseStartDetector);
+                activeDragFalseStartListener = null;
 
                 if (falseStart) {
                     lFalse?.classList.add('on');
                     if (selectedDragBet > 0) deductPlayerBalance(selectedDragBet, 'Фальстарт в дрэг-рейсинге');
                     isDragRaceRunning = false;
+                    dragCountdownTimeouts = [];
                     notifyUser(`🛑 Фальстарт! Вы нажали газ до зеленого. Ставка -${selectedDragBet.toLocaleString('ru-RU')} ₽ потеряна.`, 'error');
                     return;
                 }
@@ -6579,8 +6835,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 const winChance = 0.50 + (upgradesCount * 0.035);
                 const isWin = Math.random() < Math.min(0.92, winChance);
 
-                setTimeout(() => {
+                dragCountdownTimeouts.push(setTimeout(() => {
                     isDragRaceRunning = false;
+                    dragCountdownTimeouts = [];
                     [lRed1, lRed2, lYellow, lGreen, lFalse].forEach(el => el?.classList.remove('on'));
 
                     if (isWin) {
@@ -6600,8 +6857,8 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                         if (selectedDragBet > 0) deductPlayerBalance(selectedDragBet, 'Поражение в дрэг-рейсинге');
                         notifyUser(`Поражение в дрэге! Соперник обогнал на финише на 0.12 с. Ставка потеряна.`, 'error');
                     }
-                }, 2200);
-            }, 2400);
+                }, 2200));
+            }, 2400));
         }
 
         // --- 6. АВТОРЫНОК (ПРОДАЖА И ПОКУПКА АВТОМОБИЛЕЙ) ---
@@ -10262,7 +10519,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 lbl.textContent = labels[raceSelectedWeather] || labels['auto'];
             }
             if (typeof document !== 'undefined') {
-                const btns = document.querySelectorAll('.race-weather-btn');
+                const btns = document.querySelectorAll('.race-weather-btn[data-weather]');
                 btns.forEach(btn => {
                     if (btn.getAttribute('data-weather') === raceSelectedWeather) {
                         btn.classList.add('active');
@@ -11105,7 +11362,13 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             setTimeout(() => el.classList.remove('show'), 700);
         }
 
+        let raceGameOverModalTimeout = null;
+
         function startRaceWithCar(name, index = -1) {
+            if (raceGameOverModalTimeout) {
+                clearTimeout(raceGameOverModalTimeout);
+                raceGameOverModalTimeout = null;
+            }
             if (isRaceRunning) {
                 if (activeRaceMode === '3d') {
                     exit3DRaceGame();
@@ -11143,6 +11406,10 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         let car3DRacingEngine = null;
 
         function start3DRaceGame() {
+            if (raceGameOverModalTimeout) {
+                clearTimeout(raceGameOverModalTimeout);
+                raceGameOverModalTimeout = null;
+            }
             if (typeof Car3DManager === 'undefined' || typeof window.THREE === 'undefined' || !Car3DManager.Car3DRacingEngine || (typeof Car3DManager.isWebGLAvailable === 'function' && !Car3DManager.isWebGLAvailable())) {
                 notifyUser('3D режим недоступен на этом устройстве. Переключаем на 2D...', 'info');
                 switchRaceMode('circuit');
@@ -11650,6 +11917,10 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
         // Запуск гонки
         function startRaceGame() {
+            if (raceGameOverModalTimeout) {
+                clearTimeout(raceGameOverModalTimeout);
+                raceGameOverModalTimeout = null;
+            }
             if (activeRaceMode === '3d') {
                 start3DRaceGame();
                 return;
@@ -11679,9 +11950,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 vx: 0,
                 tilt: 0,
                 yawAngle: 0,
-                speed: 70,
-                peakSpeed: 70,
-                targetSpeed: stats.speed * 0.7,
+                speed: 0,
+                peakSpeed: 0,
+                targetSpeed: 0,
                 maxSpeed: stats.speed,
                 accel: stats.accel,
                 handling: stats.handling,
@@ -11914,9 +12185,11 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             }
 
             // 4. Управление продольной скоростью
-            let topSpd = racePlayer.maxSpeed;
-            if (racePlayer.isNitroActive) topSpd *= stats.nitroSpeedBonus || 1.35;
-            if (racePlayer.isDrafting) topSpd += 28; // слипстрим дает прирост скорости!
+            const rawMaxSpd = racePlayer.maxSpeed || racePlayer.targetSpeed || stats.speed || 180;
+            let baseTopSpd = Math.min(380, rawMaxSpd);
+            let topSpd = baseTopSpd;
+            if (racePlayer.isNitroActive) topSpd = Math.min(415, baseTopSpd * Math.min(1.22, stats.nitroSpeedBonus || 1.18));
+            if (racePlayer.isDrafting) topSpd = Math.min(425, topSpd + 15); // слипстрим дает прирост скорости!
 
             const isHandbrake = !!raceKeys.drift;
             const isGasActive = (raceKeys.gas || (raceAutoGasEnabled && !raceKeys.brake && !raceKeys.drift)) && !isHandbrake;
@@ -11925,9 +12198,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             } else if (isGasActive) {
                 racePlayer.targetSpeed = topSpd;
             } else if (raceKeys.brake) {
-                racePlayer.targetSpeed = 50;
+                racePlayer.targetSpeed = 0;
             } else {
-                racePlayer.targetSpeed = topSpd * 0.75;
+                racePlayer.targetSpeed = 0;
             }
 
             // Звук перепускного клапана турбины (Blow-Off Valve) при сбросе газа на скорости
@@ -11970,11 +12243,18 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             racePlayer.wasGasActive = isGasActive;
             racePlayer.wasNitroActive = racePlayer.isNitroActive;
 
-            const accelMultiplier = (racePlayer.isNitroActive ? 2.5 : 1) * (racePlayer.isDrafting ? 1.6 : 1);
-            const accelRate = (racePlayer.accel * 28) * accelMultiplier;
+            const speedRatio = Math.min(1, Math.max(0, racePlayer.speed / Math.max(1, topSpd)));
+            const dragCurve = Math.max(0.28, 1 - 0.65 * Math.pow(speedRatio, 1.35));
+            const accelMultiplier = (racePlayer.isNitroActive ? 1.65 : 1) * (racePlayer.isDrafting ? 1.25 : 1);
+            const accelRate = (racePlayer.accel * 8.5) * accelMultiplier * dragCurve;
 
             if (isHandbrake) {
                 // Handbrake directly decelerates down to 0 km/h, overpowering engine throttle
+            } else if (raceKeys.brake) {
+                racePlayer.speed = Math.max(0, racePlayer.speed - 80 * dt);
+            } else if (!isGasActive) {
+                const coastDecel = 22 + racePlayer.speed * 0.08;
+                racePlayer.speed = Math.max(0, racePlayer.speed - coastDecel * dt);
             } else if (racePlayer.speed < racePlayer.targetSpeed) {
                 racePlayer.speed = Math.min(racePlayer.targetSpeed, racePlayer.speed + accelRate * dt);
             } else if (racePlayer.speed > racePlayer.targetSpeed) {
@@ -12278,9 +12558,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     if (racePlayer.driftComboTimer <= 0) {
                         if (racePlayer.driftCurrentScore > 30) {
                             const bankedPoints = Math.round(racePlayer.driftCurrentScore);
-                            const bankedCash = Math.round(bankedPoints * 1.5 * (stats.rewardMult || 1.0));
-                            racePlayer.earnedCash += bankedCash;
-                            showRacePopup(`🌪️ ЗАНОС: +${bankedPoints} PTS (+${bankedCash.toLocaleString('ru-RU')} ₽)`, '#fbbf24');
+                            showRacePopup(`🌪️ ЗАНОС: +${bankedPoints} PTS`, '#fbbf24');
                             if (typeof sound?.cash === 'function') sound.cash();
                             if (typeof sound?.haptic === 'function') sound.haptic('win');
                             checkAchievements();
@@ -12294,8 +12572,10 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             }
 
             // Срыв дрифта при ударе о стену
-            if (racePlayer.isOnWall && racePlayer.driftCurrentScore > 30) {
-                showRacePopup("💥 ДРИФТ СОРВАН!", "#ef4444");
+            if (racePlayer.isOnWall && (racePlayer.driftCurrentScore > 0 || racePlayer.isDrifting)) {
+                if (racePlayer.driftCurrentScore > 30) {
+                    showRacePopup("💥 ДРИФТ СОРВАН!", "#ef4444");
+                }
                 racePlayer.driftCurrentScore = 0;
                 racePlayer.driftCombo = 1;
                 racePlayer.driftDuration = 0;
@@ -13087,6 +13367,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                         const bounty = stars * 25000;
                         const xpBonus = stars * 20;
                         racePlayer.earnedCash += bounty;
+                        if (typeof addExp === 'function') addExp(xpBonus);
                         racePlayer.wantedStars = 0;
                         racePlayer.escapeTimer = 0;
                         if (typeof sound?.setSiren === 'function') sound.setSiren(false);
@@ -13361,6 +13642,8 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             if (play3D) play3D.classList.add('hidden');
             const play2D = document.getElementById('race-play-container');
             if (play2D) play2D.classList.add('hidden');
+            const menuContainer = document.getElementById('race-menu-container');
+            if (menuContainer) menuContainer.classList.remove('hidden');
 
             const driftBonus = Math.round((racePlayer.driftScore || 0) * 0.8 * (racePlayer.tunedStats?.rewardMult || 1.0));
             const gross = racePlayer.earnedCash + driftBonus;
@@ -13449,7 +13732,12 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 }
             }
             activeRaceCar = null;
-            setTimeout(() => document.getElementById('race-gameover-modal').classList.add('show'), 300);
+            if (raceGameOverModalTimeout) clearTimeout(raceGameOverModalTimeout);
+            raceGameOverModalTimeout = setTimeout(() => {
+                raceGameOverModalTimeout = null;
+                if (isRaceRunning) return;
+                document.getElementById('race-gameover-modal')?.classList.add('show');
+            }, 300);
         }
 
         // Кэшированные градиенты для Canvas 60 FPS (предотвращение аллокаций памяти и GC фризов)
@@ -14309,7 +14597,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             ctx.lineWidth = 1;
             ctx.stroke();
 
-            ctx.fillStyle = "var(--accent-green)";
+            ctx.fillStyle = "#10b981";
             ctx.font = "900 14px sans-serif";
             ctx.textAlign = "right";
             const netPreview = NomeraRaceEconomy.settle(racePlayer.earnedCash, racePlayer.fuelLiters || 0, balance);
@@ -14363,6 +14651,23 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         }
 
         function switchTab(tabId, element, raceMode) {
+            if (tabId !== 'generator' && isAutoSpinning) {
+                stopAutoSpin();
+            }
+            if (tabId !== 'racegame') {
+                if (raceGameOverModalTimeout) {
+                    clearTimeout(raceGameOverModalTimeout);
+                    raceGameOverModalTimeout = null;
+                }
+                if (typeof clearDragRaceTimeouts === 'function') clearDragRaceTimeouts();
+                if (isRaceRunning) exitRaceGame();
+                const play2D = document.getElementById('race-play-container');
+                if (play2D) play2D.classList.add('hidden');
+                const play3D = document.getElementById('race-3d-play-container');
+                if (play3D) play3D.classList.add('hidden');
+                const menuContainer = document.getElementById('race-menu-container');
+                if (menuContainer) menuContainer.classList.remove('hidden');
+            }
             document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
             document.querySelectorAll('.nav-tab').forEach(el => { el.classList.remove('active'); el.setAttribute('aria-selected', 'false'); });
             const target = document.getElementById(tabId);
@@ -14387,7 +14692,6 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             } else {
                 if (garage3DShowroom) garage3DShowroom.stop();
             }
-            if (tabId !== 'racegame' && isRaceRunning) exitRaceGame();
 
             if (typeof updatePlayerPresence === 'function') {
                 const tabNames = {

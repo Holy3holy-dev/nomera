@@ -19,6 +19,7 @@
             const hadActive = activeNitroVoices.length > 0;
             if (hadActive) {
                 const now = context.currentTime;
+                const fadeTime = Math.max(0.01, Number.isFinite(smooth) ? smooth : 0.06);
                 activeNitroVoices.forEach(voice => {
                     try {
                         const env = voice.envelope;
@@ -27,12 +28,20 @@
                                 env.gain.cancelScheduledValues(now);
                             }
                             if (env.gain.setTargetAtTime) {
-                                env.gain.setTargetAtTime(0.0001, now, Math.max(0.01, smooth * 0.5));
+                                env.gain.setTargetAtTime(0.0001, now, Math.max(0.01, fadeTime * 0.5));
                             } else if (env.gain.linearRampToValueAtTime) {
-                                env.gain.linearRampToValueAtTime(0.0001, now + smooth);
+                                env.gain.linearRampToValueAtTime(0.0001, now + fadeTime);
                             } else if (env.gain.setValueAtTime) {
-                                env.gain.setValueAtTime(0.0001, now + smooth);
+                                env.gain.setValueAtTime(0.0001, now + fadeTime);
                             }
+                        }
+                        if (voice.osc && typeof voice.osc.stop === 'function') {
+                            try { voice.osc.stop(now + fadeTime + 0.02); } catch (_) {}
+                            voices.delete(voice.osc);
+                        }
+                        if (voice.source && typeof voice.source.stop === 'function') {
+                            try { voice.source.stop(now + fadeTime + 0.02); } catch (_) {}
+                            voices.delete(voice.source);
                         }
                     } catch (_) {}
                 });
@@ -143,8 +152,8 @@
                     }
                 }
                 unlocked = true;
-                if (context.state !== 'running' && context.resume) {
-                    Promise.resolve(context.resume()).catch(() => { unlocked = false; });
+                if (context.state !== 'running' && typeof context.resume === 'function') {
+                    Promise.resolve(context.resume()).catch(() => {});
                 }
                 return true;
             } catch (_) {
@@ -157,6 +166,11 @@
 
         function tone(freq, duration, gain = 0.12, delay = 0, type = 'sine', endFreq = freq) {
             if (!unlocked || !context || context.state === 'suspended' || level() <= 0 || voices.size >= 24) return null;
+            duration = Math.max(0.01, Number.isFinite(duration) ? duration : 0.1);
+            freq = Math.max(20, Number.isFinite(freq) ? freq : 440);
+            endFreq = Math.max(1, Number.isFinite(endFreq) ? endFreq : freq);
+            delay = Math.max(0, Number.isFinite(delay) ? delay : 0);
+            gain = Number.isFinite(gain) ? Math.max(0.0001, gain) : 0.12;
             try {
                 const osc = context.createOscillator(), envelope = context.createGain();
                 const start = context.currentTime + delay;
@@ -193,7 +207,11 @@
 
         // Procedural noise layer for authentic friction, aerodynamic rushing, and pressure bursts
         function noiseBurst({ duration = 0.25, gain = 0.08, delay = 0, filterType = 'bandpass', filterFreq = 1200, filterEndFreq = null, filterQ = 1.5 } = {}) {
-            if (!unlocked || !context || context.state === 'suspended' || level() <= 0) return null;
+            if (!unlocked || !context || context.state === 'suspended' || level() <= 0 || voices.size >= 24) return null;
+            duration = Math.max(0.01, Number.isFinite(duration) ? duration : 0.1);
+            filterFreq = Math.max(20, Number.isFinite(filterFreq) ? filterFreq : 1000);
+            delay = Math.max(0, Number.isFinite(delay) ? delay : 0);
+            gain = Number.isFinite(gain) ? Math.max(0.0001, gain) : 0.08;
             const buffer = getNoiseBuffer();
             if (!buffer || typeof context.createBufferSource !== 'function') return null;
             try {
@@ -225,11 +243,13 @@
                 filter.connect(envelope);
                 envelope.connect(master);
 
-                source.start(start);
-                source.stop(start + duration + 0.02);
+                voices.add(source);
                 source.onended = () => {
+                    voices.delete(source);
                     try { source.disconnect(); filter.disconnect(); envelope.disconnect(); } catch (_) {}
                 };
+                source.start(start);
+                source.stop(start + duration + 0.02);
                 return { source, filter, envelope };
             } catch (_) {
                 return null;
@@ -240,7 +260,15 @@
             stopNitro(0.04, false);
             lastEngineNitroState = false;
             if (!engine) return;
-            engine.nodes.forEach(node => { try { node.stop(); node.disconnect(); } catch (_) {} });
+            engine.nodes.forEach(node => {
+                if (!node) return;
+                if (typeof node.stop === 'function') {
+                    try { node.stop(); } catch (_) {}
+                }
+                if (typeof node.disconnect === 'function') {
+                    try { node.disconnect(); } catch (_) {}
+                }
+            });
             try {
                 if (engine.saturator?.disconnect) engine.saturator.disconnect();
                 if (engine.intakeFilter?.disconnect) engine.intakeFilter.disconnect();
@@ -254,9 +282,21 @@
         function stopSiren() {
             if (!siren) return;
             try {
-                siren.nodes.forEach(node => { try { node.stop(); node.disconnect(); } catch (_) {} });
-                siren.gain.disconnect();
-                if (siren.filter?.disconnect) siren.filter.disconnect();
+                siren.nodes.forEach(node => {
+                    if (!node) return;
+                    if (typeof node.stop === 'function') {
+                        try { node.stop(); } catch (_) {}
+                    }
+                    if (typeof node.disconnect === 'function') {
+                        try { node.disconnect(); } catch (_) {}
+                    }
+                });
+                if (typeof siren.gain?.disconnect === 'function') {
+                    try { siren.gain.disconnect(); } catch (_) {}
+                }
+                if (typeof siren.filter?.disconnect === 'function') {
+                    try { siren.filter.disconnect(); } catch (_) {}
+                }
             } catch (_) {}
             siren = null;
         }
@@ -765,7 +805,15 @@
                 stopNitro(0.02, false);
                 stopEngine();
                 stopSiren();
-                voices.forEach(node => { try { node.stop(); } catch (_) {} });
+                voices.forEach(node => {
+                    if (typeof node?.stop === 'function') {
+                        try { node.stop(); } catch (_) {}
+                    }
+                    if (typeof node?.disconnect === 'function') {
+                        try { node.disconnect(); } catch (_) {}
+                    }
+                });
+                voices.clear();
                 if (context?.suspend) Promise.resolve(context.suspend()).catch(() => {});
             }
         };

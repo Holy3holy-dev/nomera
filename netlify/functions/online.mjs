@@ -45,7 +45,7 @@ async function handle(request,context={}){
   }
   const action=request.method==='GET'?new URL(request.url).searchParams.get('action'):data.action;
   try{
-    const db=await getDb();
+    const db=context.db||await getDb();
     if(action==='public'&&request.method==='GET'){
       const [marketSnap,chatSnap]=await Promise.all([db.ref('onlineV4/market').orderByChild('createdAt').limitToLast(100).once('value'),db.ref('onlineV4/chat').limitToLast(40).once('value')]);
       return output(200,{ok:true,market:marketSnap.val()||{},chat:Object.values(chatSnap.val()||{}).sort((a,b)=>(a.timestamp||0)-(b.timestamp||0))});
@@ -82,7 +82,10 @@ async function handle(request,context={}){
       const valid = a && ((a.pinHash && checkPin(data.pin,a.pinHash)) || (a.pin && a.pin === data.pin) || (a.password && a.password === data.pin));
       if(!valid)return output(401,{ok:false,error:'Неверный никнейм или PIN'});
       if(!a.pinHash && pinHash) {
-        try { await db.ref('onlineV4/accounts/'+key).update({ pinHash: pinHash(data.pin) }); } catch (_) {}
+        const patch = core.migrateLegacyPin ? core.migrateLegacyPin(a, data.pin) : { pinHash: pinHash(data.pin), pin: null, password: null };
+        delete a.pin;
+        delete a.password;
+        try { await db.ref('onlineV4/accounts/'+key).update(patch); } catch (_) {}
       }
       await gateRef.remove();
       return output(200,{ok:true,profile:profileOf(a)},sessionCookie(sign(secret,{role:'player',key,exp:Date.now()+core.TTL})));
@@ -97,16 +100,20 @@ async function handle(request,context={}){
       return output(200,{ok:true,profile:profileOf(a),key});
     }
     if(request.method!=='POST'||!['sell','buy','cancel','chat','roll','claim','syncGarage','setRegion','spend'].includes(action))return output(400,{ok:false,error:'Неизвестное действие'});
-    const txnInput={...data,lotId:action==='sell'?'lot_'+uniqueId():data.lotId,
-      plateId:action==='claim'?'plate_'+uniqueId():data.plateId,
-      roll:action==='roll'?core.secureRoll(data.mode, Number(data.pity || 0)):undefined,
-      messageId:'msg_'+String(Date.now()).padStart(13,'0')+'_'+uniqueId()};
     // A fresh Admin SDK instance may invoke a parent transaction with a locally cached null.
     // Load the authoritative parent first, and distinguish an expired/deleted account
     // from that initial empty cache. Otherwise chat/sales can fail with 'Account not found'.
     const stateRef=db.ref('onlineV4');
     const current=(await stateRef.once('value')).val();
-    if(!current?.accounts?.[key])return output(401,{ok:false,error:'Сессия устарела или аккаунт удалён. Войдите заново'},sessionCookie('',0));
+    const account=current?.accounts?.[key];
+    if(!account)return output(401,{ok:false,error:'Сессия устарела или аккаунт удалён. Войдите заново'},sessionCookie('',0));
+    const spinPity=(account.draft&&typeof account.draft.pityCounter==='number'&&account.draft.pityCounter>0)
+      ? Math.min(120,Math.max(0,Math.floor(account.draft.pityCounter)))
+      : Math.min(120,Math.max(0,Math.floor(Number(data?.pity)||0)));
+    const txnInput={...data,pity:spinPity,lotId:action==='sell'?'lot_'+uniqueId():data.lotId,
+      plateId:action==='claim'?'plate_'+uniqueId():data.plateId,
+      roll:action==='roll'?core.secureRoll(data.mode, spinPity):undefined,
+      messageId:'msg_'+String(Date.now()).padStart(13,'0')+'_'+uniqueId()};
     const update=core.makeOnlineTransactionUpdate(current,action,key,txnInput,Date.now());
     const tx=await stateRef.transaction(update.update,undefined,false);
     if(!tx.committed)return output(409,{ok:false,error:update.getReason()||'Операция не выполнена, повторите попытку'});

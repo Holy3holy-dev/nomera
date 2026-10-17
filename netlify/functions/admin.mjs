@@ -160,7 +160,14 @@ async function givePlate(db,key,plateText) {
   },undefined,false);
   if (!result.committed) throw Error('Не удалось добавить номер');
 }
-async function handle(event) {
+async function readRefSnap(ref) {
+  return typeof ref.get === 'function' ? await ref.get() : await ref.once('value');
+}
+function snapHasData(snap) {
+  if (!snap) return false;
+  return typeof snap.exists === 'function' ? snap.exists() : Boolean(typeof snap.val === 'function' ? snap.val() : snap);
+}
+async function handle(event, context = {}) {
   const method=(event.httpMethod||'').toUpperCase();
   if (method!=='GET' && method!=='POST') return json(405,{ok:false,error:'Метод не поддерживается'});
   if (!sameOrigin(event)) return json(403,{ok:false,error:'Недопустимый источник запроса'});
@@ -176,7 +183,7 @@ async function handle(event) {
   if (action==='login' && method==='POST') {
     if (input.login!=='h3h'||typeof input.password!=='string'||input.password.length>128) return json(401,{ok:false,error:'Неверные данные для входа'});
     try {
-      const db=await getDb();
+      const db=context.db||await getDb();
       const id=clientId(event,secret);
       // A transaction serializes attempts by IP; locked clients never get a new session.
       const permitted=await gateLogin(db,id,false);
@@ -193,7 +200,7 @@ async function handle(event) {
   if(action==='logout' && method==='POST') return json(200,{ok:true},sessionCookie('',0));
   if(!authorized) return json(401,{ok:false,error:'Требуется вход администратора'});
   try {
-    const db=await getDb();
+    const db=context.db||await getDb();
     if(action==='users' && method==='GET') {
       // Both legacy and newly registered online-only players belong in the admin roster.
       const [legacySnap,onlineSnap]=await Promise.all([
@@ -259,22 +266,29 @@ async function handle(event) {
         const newNick=String(input.newNickname||'').trim();
         if(!newNick||newNick.length<2||newNick.length>40) throw Error('Никнейм от 2 до 40 символов');
         const newKey=keyFromPlayer(newNick);
-        const userSnap=await db.ref('users/'+key).once('value');
-        if(userSnap.exists()){
+        if(newKey!==key){
+          const targetRef=db.ref('onlineV4/accounts/'+newKey);
+          const existingOnl=typeof targetRef.get==='function'?await targetRef.get():await targetRef.once('value');
+          if(snapHasData(existingOnl)) throw new Error('Ник уже занят');
+          const existingUsr=await readRefSnap(db.ref('users/'+newKey));
+          if(snapHasData(existingUsr)) throw new Error('Ник уже занят');
+        }
+        const userSnap=await readRefSnap(db.ref('users/'+key));
+        if(snapHasData(userSnap)){
           const val=userSnap.val();
           val.nickname=newNick; val.updatedAt=Date.now();
           if(key!==newKey){ await db.ref('users/'+newKey).set(val); await db.ref('users/'+key).remove(); }
           else { await db.ref('users/'+key).update({nickname:newNick,updatedAt:Date.now()}); }
         }
-        const onlSnap=await db.ref('onlineV4/accounts/'+key).once('value');
-        if(onlSnap.exists()){
+        const onlSnap=await readRefSnap(db.ref('onlineV4/accounts/'+key));
+        if(snapHasData(onlSnap)){
           const val=onlSnap.val();
           val.nickname=newNick; val.updatedAt=Date.now();
           if(key!==newKey){ await db.ref('onlineV4/accounts/'+newKey).set(val); await db.ref('onlineV4/accounts/'+key).remove(); }
           else { await db.ref('onlineV4/accounts/'+key).update({nickname:newNick,updatedAt:Date.now()}); }
         }
-        const lbSnap=await db.ref('leaderboard/'+key).once('value');
-        if(lbSnap.exists()){
+        const lbSnap=await readRefSnap(db.ref('leaderboard/'+key));
+        if(snapHasData(lbSnap)){
           const val=lbSnap.val();
           val.nickname=newNick; val.updatedAt=Date.now();
           if(key!==newKey){ await db.ref('leaderboard/'+newKey).set(val); await db.ref('leaderboard/'+key).remove(); }
@@ -284,8 +298,8 @@ async function handle(event) {
       }
       case 'deleteUser': {
         if(key==='h3h') throw Error('Главный профиль нельзя удалить');
-        const marketSnap = await db.ref('onlineV4/market').once('value').catch(() => null);
-        if (marketSnap && marketSnap.exists()) {
+        const marketSnap = await readRefSnap(db.ref('onlineV4/market')).catch(() => null);
+        if (snapHasData(marketSnap)) {
           const market = marketSnap.val() || {};
           const toRemove = Object.keys(market).filter(id => market[id]?.sellerKey === key);
           await Promise.all(toRemove.map(id => db.ref('onlineV4/market/' + id).remove().catch(() => {})));
@@ -294,6 +308,7 @@ async function handle(event) {
         await db.ref('users/'+key).remove();
         await db.ref('leaderboard/'+key).remove();
         await db.ref('online/'+key).remove();
+        await db.ref('presence/'+key).remove();
         auditData={key,deleted:true}; break;
       }
       case 'broadcast': {
@@ -308,7 +323,7 @@ async function handle(event) {
     return json(200,{ok:true, ...(confirmedBalance === undefined ? {} : {balance:confirmedBalance})});
   } catch (e) {
     console.error('Admin action failed:',action,e.message);
-    return json(400,{ok:false,error: /ключ игрока|сумма|формат номера|баланс|каталоге|нельзя удалить|до 120/.test(e.message)?e.message:'Не удалось выполнить действие. Проверьте доступ к базе.'});
+    return json(400,{ok:false,error: /ключ игрока|сумма|формат номера|баланс|каталоге|нельзя удалить|до 120|символов|not found|already|invalid|required|занят|найден/i.test(e.message)?e.message:'Не удалось выполнить действие. Проверьте доступ к базе.'});
   }
 }
 // Modern Netlify Functions entrypoint. This removes legacy Lambda's 4 KB env cap.
@@ -326,7 +341,7 @@ export default async function admin(request, context = {}) {
   };
   let legacy;
   try {
-    legacy = await handle(event);
+    legacy = await handle(event, context);
   } catch (e) {
     console.error('Admin server failed', e.message);
     legacy = json(500, {ok:false, error:'Внутренняя ошибка сервера'});
