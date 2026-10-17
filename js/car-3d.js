@@ -6663,28 +6663,40 @@
                 if (e.touches.length === 1) {
                     const cx = e.touches[0].clientX;
                     const cy = e.touches[0].clientY;
+                    const totalDx = Math.abs(cx - this.touchStartX);
+                    const totalDy = Math.abs(cy - this.touchStartY);
+
                     if (!this.touchLockedDir) {
-                        const dx = Math.abs(cx - this.touchStartX);
-                        const dy = Math.abs(cy - this.touchStartY);
-                        if (dx > 7 || dy > 7) {
-                            this.touchLockedDir = (dy > dx) ? 'vertical' : 'horizontal';
+                        if (totalDx > 12 || totalDy > 12) {
+                            this.touchLockedDir = (totalDy >= totalDx * 0.6) ? 'vertical' : 'horizontal';
                         }
                     }
+
                     if (this.touchLockedDir === 'vertical') {
                         // User wants to scroll the page vertically past the 3D podium
                         // Do NOT call e.preventDefault(), do NOT drag the car
                         this.isDragging = false;
                         return;
                     }
+
                     if (this.touchLockedDir === 'horizontal') {
                         if (e.cancelable) e.preventDefault();
-                        if (!this.isDragging) {
-                            this.isDragging = true;
-                            this.prevPointerX = cx;
-                            this.prevPointerY = cy;
-                            if (!this.active) this.start();
+                        const deltaX = cx - this.prevPointerX;
+                        this.prevPointerX = cx;
+                        this.prevPointerY = cy;
+
+                        this.isDragging = true;
+                        const vx = -deltaX * 0.0075;
+                        this.dragVelX = vx;
+                        this.cameraAngleY += vx;
+                        this.targetAngleY = this.cameraAngleY;
+                        this.updateCameraPosition();
+                        this.needsRender = true;
+                        if (!this.active) this.start();
+                        if (this.renderer && this.scene && this.camera) {
+                            this.renderer.render(this.scene, this.camera);
+                            this.needsRender = false;
                         }
-                        this._onPointerMove(e);
                     }
                 }
             };
@@ -6703,9 +6715,9 @@
             window.addEventListener('mouseup', this._onPointerUp);
 
             dom.addEventListener('touchstart', this._onTouchStart, { passive: true });
-            window.addEventListener('touchmove', this._onTouchMove, { passive: false });
-            window.addEventListener('touchend', this._onTouchEnd);
-            window.addEventListener('touchcancel', this._onTouchEnd);
+            dom.addEventListener('touchmove', this._onTouchMove, { passive: false });
+            dom.addEventListener('touchend', this._onTouchEnd, { passive: true });
+            dom.addEventListener('touchcancel', this._onTouchEnd, { passive: true });
 
             dom.addEventListener('wheel', this._onWheel, { passive: false });
             window.addEventListener('resize', this._onResize);
@@ -6918,6 +6930,13 @@
                 }
                 if (this._onTouchStart) {
                     try { dom.removeEventListener('touchstart', this._onTouchStart); } catch (_) {}
+                }
+                if (this._onTouchMove) {
+                    try { dom.removeEventListener('touchmove', this._onTouchMove); } catch (_) {}
+                }
+                if (this._onTouchEnd) {
+                    try { dom.removeEventListener('touchend', this._onTouchEnd); } catch (_) {}
+                    try { dom.removeEventListener('touchcancel', this._onTouchEnd); } catch (_) {}
                 }
                 if (this._onWheel) {
                     try { dom.removeEventListener('wheel', this._onWheel); } catch (_) {}

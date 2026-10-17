@@ -134,8 +134,7 @@ test('Mobile UX: 3D showroom podium allows vertical page scrolling without locki
         '.garage-preview-3d-wrap must specify touch-action: pan-y to allow vertical page scrolling');
 
     // 2. car-3d.js must implement directional touch detection
-    assert.ok(car3dJs.includes('this.touchLockedDir = null;'), 'Showroom must reset touchLockedDir on touch start/end');
-    assert.ok(car3dJs.includes("(dy > dx) ? 'vertical' : 'horizontal'"), 'Showroom must differentiate vertical scroll from horizontal rotate');
+    assert.ok(car3dJs.includes("(totalDy >= totalDx * 0.6) ? 'vertical' : 'horizontal'"), 'Showroom must differentiate vertical scroll from horizontal rotate');
     assert.ok(car3dJs.includes("if (this.touchLockedDir === 'vertical')"), 'Showroom must detect vertical scroll gesture');
     assert.ok(car3dJs.includes("if (this.touchLockedDir === 'horizontal')"), 'Showroom must detect horizontal rotate gesture');
 

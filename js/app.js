@@ -5740,6 +5740,35 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         }
         window.initGarage3DShowroom = initGarage3DShowroom;
 
+        function toggleGaragePodiumCollapse(forceOpen = null) {
+            const stage = document.getElementById('garage-preview-stage');
+            const switchBar = document.getElementById('garage-view-switch');
+            const icon = document.getElementById('garage-podium-toggle-icon');
+            const label = document.getElementById('garage-podium-toggle-label');
+            if (!stage) return;
+            const currentlyCollapsed = stage.style.display === 'none';
+            const shouldOpen = (forceOpen !== null) ? forceOpen : currentlyCollapsed;
+            if (shouldOpen) {
+                stage.style.display = 'block';
+                if (switchBar) switchBar.style.display = 'flex';
+                if (icon) icon.textContent = '▲';
+                if (label) label.textContent = 'Свернуть 3D';
+                if (garage3DShowroom) {
+                    garage3DShowroom.resize();
+                    garage3DShowroom.start();
+                }
+            } else {
+                stage.style.display = 'none';
+                if (switchBar) switchBar.style.display = 'none';
+                if (icon) icon.textContent = '▼';
+                if (label) label.textContent = 'Развернуть 3D';
+                if (garage3DShowroom) {
+                    garage3DShowroom.stop();
+                }
+            }
+        }
+        window.toggleGaragePodiumCollapse = toggleGaragePodiumCollapse;
+
         function selectGarageCarForPodium(index, fromRender) {
             if (!Array.isArray(myCars) || myCars.length === 0) return;
             index = Math.max(0, Math.min(index, myCars.length - 1));

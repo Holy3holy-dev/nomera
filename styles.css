@@ -4482,6 +4482,14 @@ body.race-active .race-3d-viewport-wrapper {
     min-height: 240px;
 }
 
+.garage-preview-stage,
+.garage-preview-3d-wrap,
+.garage-preview-3d-wrap canvas,
+#styling-preview-3d-wrap,
+#styling-preview-3d-wrap canvas {
+    touch-action: pan-y !important;
+}
+
 .garage-preview-3d-wrap {
     width: 100%;
     height: 380px;
@@ -4510,6 +4518,12 @@ body.race-active .race-3d-viewport-wrapper {
 .my-car-card.active-podium-card {
     border-color: rgba(59, 130, 246, 0.8) !important;
     box-shadow: 0 0 18px rgba(59, 130, 246, 0.35) !important;
+}
+
+@media (max-width: 768px) {
+    body {
+        background-attachment: scroll !important;
+    }
 }
 
 @media (max-width: 600px) {
