@@ -534,18 +534,61 @@
                             <div class="showroom-loading-text" id="garage-3d-loader-text">⏳ Загрузка 3D модели...</div>
                         </div>
 
-                        <!-- Интерактивный тулбар 3D осмотра в гараже (Двери, Капот, Багажник, Фары, Сигнал) -->
-                        <div class="showroom-interact-toolbar" id="garage-showroom-toolbar" style="display: flex;">
+                        <!-- Интерактивный тулбар 3D осмотра в гараже (Двери, Капот, Багажник, Фары, Сигнал, ФСО, Пневма, Погода, Постер) -->
+                        <div class="showroom-interact-toolbar" id="garage-showroom-toolbar" style="display: flex; flex-wrap: wrap;">
                             <button type="button" class="showroom-interact-btn" id="btn-gshow-doors" onclick="toggleGarageDoors()" title="Распахнуть двери">🚪 Двери</button>
                             <button type="button" class="showroom-interact-btn" id="btn-gshow-hood" onclick="toggleGarageHood()" title="Открыть капот (двигатель)">⚙️ Капот</button>
                             <button type="button" class="showroom-interact-btn" id="btn-gshow-trunk" onclick="toggleGarageTrunk()" title="Открыть багажник">🔊 Багажник</button>
                             <button type="button" class="showroom-interact-btn" id="btn-gshow-lights" onclick="toggleGarageHeadlights()" title="Включить фары">💡 Фары</button>
                             <button type="button" class="showroom-interact-btn" id="btn-gshow-horn" onclick="triggerGarageHorn()" title="Подать звуковой сигнал / СГУ">📢 Сигнал</button>
                             <button type="button" class="showroom-interact-btn showroom-tool-btn" id="garage-view-plate" onclick="toggleGaragePlateView()" title="Крупный план 3D-номера на бампере">🏷️ 3D Номер</button>
+                            <button type="button" class="showroom-interact-btn showroom-tool-btn" id="btn-gshow-fso" onclick="toggleGarageFso()" title="Стробоскопы ФСО, мигалка и крякалка СГУ">🚨 ФСО / СГУ</button>
+                            <button type="button" class="showroom-interact-btn showroom-tool-btn" id="btn-gshow-pneumo" onclick="cycleGaragePneumo()" title="Пневмоподвеска (Штатная / Спорт / БПАН)">💨 Пневма: Штатная</button>
+                            <button type="button" class="showroom-interact-btn showroom-tool-btn" id="btn-gshow-env" onclick="cycleGarageEnvironment()" title="Атмосфера 3D-шоурума (Студия / Ночь / Закат / Ливень)">🌦️ Подиум: Студия</button>
+                            <button type="button" class="showroom-interact-btn showroom-tool-btn" id="btn-gshow-photo" onclick="captureGaragePhotoPoster()" title="Создать коллекционный 3D-постер автомобиля с госномером">📸 Постер</button>
                         </div>
 
                         <div id="garage-3d-hint" class="garage-3d-hint">
                             ↔️ Свайп влево/вправо или кнопки ◀ ▶ — вращение авто · ↕️ Свайп вверх/вниз — прокрутка страницы
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 💼 ПАССИВНЫЙ БИЗНЕС: VIP-КОРТЕЖ И ПРОКАТ АВТОПАРКА -->
+                <div class="garage-fleet-card" id="garage-fleet-card" style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.9), rgba(30, 41, 59, 0.85)); border: 1px solid rgba(251, 191, 36, 0.35); border-radius: 16px; padding: 16px; margin-bottom: 18px; box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap;">
+                        <div>
+                            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                <span style="background: linear-gradient(135deg, #f59e0b, #d97706); color: #090d16; font-size: 10px; font-weight: 900; padding: 3px 8px; border-radius: 999px; text-transform: uppercase;">БИЗНЕС АВТОПАРКА</span>
+                                <b style="font-size: 16px; color: #fff;">💼 VIP-Кортеж и Прокат автопарка</b>
+                            </div>
+                            <p style="font-size: 12px; color: var(--text-muted); margin: 4px 0 0 0;">
+                                Ваши машины и установленные на них блатные госномера (особенно с активной синергией) приносят пассивную выручку каждую минуту.
+                            </p>
+                        </div>
+                        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                            <div style="text-align: right; background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.35); border-radius: 12px; padding: 6px 12px;">
+                                <div style="font-size: 10px; color: var(--text-muted); text-transform: uppercase;">Доход автопарка</div>
+                                <div id="fleet-income-rate" style="font-size: 14px; font-weight: 900; color: #34d399;">+0 ₽ / мин</div>
+                            </div>
+                            <div style="text-align: right; background: rgba(245, 158, 11, 0.14); border: 1px solid rgba(245, 158, 11, 0.4); border-radius: 12px; padding: 6px 12px;">
+                                <div style="font-size: 10px; color: var(--text-muted); text-transform: uppercase;">В кассе проката</div>
+                                <div id="fleet-vault-amount" style="font-size: 14px; font-weight: 900; color: #fbbf24;">0 ₽</div>
+                            </div>
+                            <button type="button" class="btn btn-gold" id="btn-claim-fleet" onclick="claimFleetIncome()" style="width: auto; margin: 0; padding: 10px 16px; font-size: 12px; font-weight: 800;">
+                                💰 Собрать выручку
+                            </button>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 12px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.08);">
+                        <div style="display: flex; gap: 6px; flex-wrap: wrap;" id="fleet-mode-chips">
+                            <button type="button" class="styling-chip active" data-fleet-mode="cortezh" onclick="setFleetOperationMode('cortezh')">🚨 Спецкортеж (Стабильно)</button>
+                            <button type="button" class="styling-chip" data-fleet-mode="dubai_vip" onclick="setFleetOperationMode('dubai_vip')">👑 Дубай VIP-Прокат (+15% для Люкс/UAE)</button>
+                            <button type="button" class="styling-chip" data-fleet-mode="tokyo_show" onclick="setFleetOperationMode('tokyo_show')">⛩️ Автошоу & Дрифт-Такси (+15% для JDM/БПАН)</button>
+                        </div>
+                        <div id="fleet-breakdown-summary" style="font-size: 11px; color: var(--text-dim);">
+                            Машин на линии: <b id="fleet-active-cars-count" style="color:#fff;">0</b> · Бонус синергии: <b id="fleet-synergy-bonus-text" style="color:#34d399;">+0%</b>
                         </div>
                     </div>
                 </div>
@@ -572,7 +615,7 @@
                 <!-- Переключатель режима заездов: Трасса / Дрэг / 3D -->
                 <div class="market-type-nav" style="margin-bottom: 14px;">
                     <button class="market-type-btn" id="btn-race-mode-circuit" onclick="switchRaceMode('circuit')">Шоссе (2D)</button>
-                    <button class="market-type-btn" id="btn-race-mode-drag" onclick="switchRaceMode('drag')">Дрэг (402 м)</button>
+                    <button class="market-type-btn" id="btn-race-mode-drag" onclick="switchRaceMode('drag')">🏁 Дрэг 402 м & Боссы</button>
                     <button class="market-type-btn active" id="btn-race-mode-3d" onclick="switchRaceMode('3d')" style="position: relative; border-color: rgba(255, 46, 76, 0.45); font-weight: 800;">
                         🏎️ 3D Шоссе (Вид сзади) <span style="background: linear-gradient(135deg, #ef4444, #f59e0b); color: #fff; font-size: 8px; padding: 2px 6px; border-radius: 999px; margin-left: 4px; vertical-align: middle;">HOT</span>
                     </button>
@@ -582,10 +625,10 @@
                 <div id="drag-menu-container" class="hidden">
                     <div class="section-header" style="text-align: center; display: block; margin-bottom: 14px;">
                         <div class="section-title" style="font-size: 18px; color: #fff; justify-content: center;">
-                            Дрэг-рейсинг (402 м)
+                            🏁 Дрэг-рейсинг (402 м) & Битва с Боссами за Номера
                         </div>
                         <p style="font-size: 12px; color: var(--text-dim); margin: 4px 0 0 0;">
-                            Заезд на 1/4 мили. Старт по сигналу светофора.
+                            Заезд на 1/4 мили. Переключайте передачи в зелёной зоне тахометра и забирайте эксклюзивные госномера Боссов!
                         </p>
                     </div>
 
@@ -598,8 +641,23 @@
                         <div class="drag-light false-start" id="drag-light-false"></div>
                     </div>
 
+                    <!-- Интерактивная панель тахометра и переключения КПП в дрэге -->
+                    <div id="drag-telemetry-panel" style="background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 14px; padding: 12px; margin: 12px 0;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 12px;">
+                            <span style="color: var(--text-muted); font-weight: 700;">⚙️ КПП: <b id="drag-gear-label" style="color: #38bdf8;">N (Старт)</b> · Обороты: <b id="drag-rpm-label" style="color: #fff;">1 200 RPM</b></span>
+                            <span id="drag-shift-feedback" style="font-weight: 800; color: #34d399;">Идеальная зона: 6 200 – 7 400 RPM</span>
+                        </div>
+                        <div style="position: relative; width: 100%; height: 14px; background: rgba(255,255,255,0.08); border-radius: 999px; overflow: hidden;">
+                            <div style="position: absolute; left: 72%; width: 16%; top: 0; bottom: 0; background: rgba(16, 185, 129, 0.38); border-left: 2px solid #10b981; border-right: 2px solid #10b981;" title="Зелёная зона идеального переключения"></div>
+                            <div id="drag-rpm-bar" style="height: 100%; width: 15%; background: linear-gradient(90deg, #38bdf8, #10b981, #ef4444); transition: width 0.08s linear;"></div>
+                        </div>
+                        <div style="display: flex; gap: 8px; margin-top: 10px;">
+                            <button type="button" class="btn btn-blue" id="btn-drag-shift" onclick="shiftDragGear()" style="margin: 0; padding: 9px 14px; font-size: 12px; font-weight: 800;">⚡ ПЕРЕКЛЮЧИТЬ ПЕРЕДАЧУ (SHIFT UP)</button>
+                        </div>
+                    </div>
+
                     <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 14px; margin: 12px 0;">
-                        <div style="font-size: 13px; font-weight: 800; color: #fff; margin-bottom: 8px;">Выберите ставку заезда:</div>
+                        <div style="font-size: 13px; font-weight: 800; color: #fff; margin-bottom: 8px;">Стандартный заезд на ставку:</div>
                         <div class="styling-options-row" id="drag-bet-chips">
                             <button type="button" class="styling-chip active" data-bet="0" onclick="selectDragBet(0)">0 ₽ (Тренировка)</button>
                             <button type="button" class="styling-chip" data-bet="25000" onclick="selectDragBet(25000)">25 000 ₽</button>
@@ -610,6 +668,18 @@
                     </div>
 
                     <button class="btn btn-green race-start-btn" onclick="startDragRace()">Начать заезд</button>
+
+                    <!-- 👑 БИТВА С БОССАМИ ЗА ЭКСКЛЮЗИВНЫЕ ГОСНОМЕРА -->
+                    <div id="drag-boss-section" style="margin-top: 18px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.1);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
+                            <div>
+                                <div style="font-size: 15px; font-weight: 900; color: #fbbf24;">👑 Дуэли с Боссами (Битва за Номера)</div>
+                                <div style="font-size: 11px; color: var(--text-muted);">Победите Босса на 402 м, чтобы забрать его уникальный госномер в свой инвентарь и крупный денежный куш!</div>
+                            </div>
+                            <span id="drag-boss-progress-badge" style="font-size: 11px; font-weight: 800; color: #34d399; background: rgba(16,185,129,0.14); border: 1px solid rgba(16,185,129,0.35); padding: 4px 10px; border-radius: 999px;">Побеждено: 0 / 5</span>
+                        </div>
+                        <div id="drag-boss-list" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px;"></div>
+                    </div>
                 </div>
 
                 <!-- Меню выбора авто и рекордов (Кольцевая трасса) -->
@@ -1834,7 +1904,7 @@
     <script src="./js/security.js?v=ed845ef69db6"></script>
     <script src="./js/storage.js?v=327dc7592b84"></script>
     <script src="./js/race-records.js?v=eaeaf8e59fc2"></script>
-    <script src="./js/race-economy.js?v=621d9ed845b9"></script>
+    <script src="./js/race-economy.js?v=1acf834a5662"></script>
     <script src="./js/audio.js?v=bca765d74412"></script>
     <script src="./js/vendor/three.min.js"></script>
     <script>
@@ -1851,7 +1921,7 @@
         }
     </script>
     <script src="./js/race-effects.js?v=6883d3af7d80"></script>
-    <script src="./js/car-3d.js?v=163a8501dee9"></script>
-    <script src="./js/app.js?v=00c4790e4086"></script>
+    <script src="./js/car-3d.js?v=e664997f934f"></script>
+    <script src="./js/app.js?v=65fbbc029d3c"></script>
 </body>
 </html>

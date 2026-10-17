@@ -124,6 +124,7 @@
             title,
             icon,
             mult,
+            bonusMultiplier: mult,
             bonusPct: Math.round(mult * 100)
         });
 

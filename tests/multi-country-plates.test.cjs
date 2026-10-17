@@ -889,5 +889,119 @@ describe('Collector Book & Car-Plate Synergy (RUS / KZ / USA / UAE)', () => {
     app.run("claimCollectorSet('synergy_master')");
     assert.equal(app.run('balance'), balBeforeSyn + 850000, 'claimCollectorSet(synergy_master) must credit +850,000 ₽');
   });
+
+  test('3D Showroom FSO Strobes, Pneumo Stance, Weather Environment, and Photo Poster work end-to-end', () => {
+    const { Car3DManager } = setup3DPlateTestEnv();
+
+    const container = {
+      clientWidth: 400,
+      clientHeight: 260,
+      style: {},
+      innerHTML: '',
+      appendChild() {},
+      getBoundingClientRect: () => ({ width: 400, height: 260 })
+    };
+    const showroom = Car3DManager.createShowroom(container, { showPodium: true });
+    showroom.setCar('Mercedes-Benz G63 AMG «Гелик»', { plate: 'А777МР | 77 RUS' });
+
+    // 1. FSO Strobes & Roof Beacon
+    assert.equal(showroom.fsoActive, false, 'FSO strobes start disabled');
+    const fsoOn = showroom.toggleFsoStrobes();
+    assert.equal(fsoOn, true, 'toggleFsoStrobes enables FSO strobes');
+    assert.ok(showroom.fsoGroup && showroom.fsoGroup.visible, 'ShowroomFsoGroup must be created and visible');
+    showroom.updateFsoRig(10); // phase 0 -> Left strobe ON
+    assert.ok(showroom.fsoPointL.intensity > 0, 'Left FSO point light flashes on phase 0');
+    showroom.updateFsoRig(230); // phase 4 -> Right strobe ON
+    assert.ok(showroom.fsoPointR.intensity > 0, 'Right FSO point light flashes on phase 4');
+    const fsoOff = showroom.toggleFsoStrobes(false);
+    assert.equal(fsoOff, false, 'toggleFsoStrobes(false) disables FSO strobes');
+
+    // 2. Pneumatic Suspension (Stock -> Sport -> BPAN -> Stock)
+    const sportStance = showroom.cyclePneumoStance();
+    assert.equal(sportStance.mode, 'sport', 'First cyclePneumoStance switches to sport');
+    assert.ok(sportStance.offsetY < -0.03, 'Sport stance lowers body Y');
+
+    const bpanStance = showroom.cyclePneumoStance();
+    assert.equal(bpanStance.mode, 'bpan', 'Second cyclePneumoStance switches to bpan');
+    assert.ok(bpanStance.offsetY < sportStance.offsetY, 'BPAN stance lowers body Y further than sport');
+    assert.ok(bpanStance.camberDeg < -4, 'BPAN stance applies negative wheel camber');
+
+    const stockStance = showroom.cyclePneumoStance();
+    assert.equal(stockStance.mode, 'stock', 'Third cyclePneumoStance returns to stock');
+    assert.equal(stockStance.offsetY, 0, 'Stock stance restores 0 offset');
+
+    // 3. Showroom Weather / Environment Themes (studio -> night -> sunset -> rain -> studio)
+    assert.equal(showroom.cycleEnvironmentTheme(), 'night');
+    assert.equal(showroom.headlightsOn, true, 'Night theme automatically turns on headlights');
+    assert.equal(showroom.cycleEnvironmentTheme(), 'sunset');
+    assert.equal(showroom.cycleEnvironmentTheme(), 'rain');
+    assert.ok(showroom.rainGroup && showroom.rainGroup.visible, 'Rain theme enables 3D falling rain particles');
+    showroom.updateRainRig();
+    assert.equal(showroom.cycleEnvironmentTheme(), 'studio');
+
+    // 4. 3D Photo Studio Poster Capture
+    const poster = showroom.capturePhotoPoster({
+      carName: 'Mercedes-Benz G63 AMG «Гелик»',
+      plateText: 'А777МР | 77 RUS',
+      synergyTitle: 'Спецсвязь / Кортеж РФ (+25% ₽)',
+      priceText: '20 500 000 ₽'
+    });
+    assert.equal(poster.width, 1280);
+    assert.equal(poster.height, 720);
+    assert.equal(poster.carName, 'Mercedes-Benz G63 AMG «Гелик»');
+    assert.equal(poster.plateText, 'А777МР | 77 RUS');
+    assert.ok(String(poster.dataUrl).startsWith('data:image/png'), 'Poster must produce PNG dataUrl');
+    showroom.destroy();
+  });
+
+  test('1-on-1 Drag Boss Duels & VIP Fleet Passive Business award exclusive Boss plates and fleet cash', () => {
+    const { createApp } = require('./helpers/create-app.cjs');
+    const app = createApp();
+    app.run('playAsGuest()');
+
+    // 1. VIP Fleet Passive Business calculation & collection
+    app.run(`
+      balance = 500000;
+      myCars = [
+        { name: 'Mercedes-Benz G63 AMG «Гелик»', basePrice: 18000000, plate: { text: 'D 1 | DXB UAE', price: 25000000 } },
+        { name: 'Toyota Camry 3.5', basePrice: 2800000, plate: { text: '777 VIP | 01 KZ', price: 12000000 } }
+      ];
+      achievements.fleetVault = 0;
+    `);
+    const statsCortezh = app.run("calculateFleetStats()");
+    assert.equal(statsCortezh.activeCarsCount, 2);
+    assert.equal(statsCortezh.synergyCarsCount, 2);
+    assert.ok(statsCortezh.totalPerMin > 100000, 'High-value synergy fleet must generate substantial passive income per min');
+
+    app.run("setFleetOperationMode('dubai_vip')");
+    const statsDubai = app.run("calculateFleetStats()");
+    assert.ok(statsDubai.totalPerMin > statsCortezh.totalPerMin, 'dubai_vip mode boosts UAE/KZ luxury fleet income');
+
+    const accrued = app.run('tickFleetIncome(60)');
+    assert.equal(accrued, statsDubai.totalPerMin, '60 seconds of tickFleetIncome accrues 1 minute of fleet income');
+
+    const balBeforeFleet = app.run('balance');
+    const claimed = app.run('claimFleetIncome()');
+    assert.equal(claimed, accrued, 'claimFleetIncome returns accrued vault cash');
+    assert.equal(app.run('balance'), balBeforeFleet + accrued, 'claimFleetIncome credits player balance');
+    assert.equal(app.run('achievements.fleetVault'), 0, 'claimFleetIncome resets fleetVault to 0');
+
+    // 2. Drag Tachometer Gear Shifting & 1-on-1 Boss Duels
+    const shiftRes = app.run('shiftDragGear(6800)');
+    assert.equal(shiftRes.isPerfect, true, '6800 RPM is inside the 6200-7400 green zone');
+    assert.ok(shiftRes.shiftBonusScore >= 28, 'Perfect shift awards +28 bonus score');
+
+    const invBeforeBoss = app.run('inventory.length');
+    const duelRes = app.run("resolveDragBossDuel('boss_sheikh', { forceWin: true })");
+    assert.equal(duelRes.won, true, 'Boss duel against Sheikh must succeed');
+    assert.equal(duelRes.plateAwarded, 'D 1 | DXB UAE', 'First victory against Sheikh awards exclusive D 1 | DXB UAE plate');
+    assert.equal(app.run('inventory.length'), invBeforeBoss + 1, 'Exclusive Boss plate is added to player inventory');
+
+    // Rematch awards cash but does not duplicate the exclusive boss plate
+    const duelRematch = app.run("resolveDragBossDuel('boss_sheikh', { forceWin: true })");
+    assert.equal(duelRematch.won, true);
+    assert.equal(duelRematch.plateAwarded, null, 'Rematch must not duplicate unique boss plate');
+  });
 });
+
 

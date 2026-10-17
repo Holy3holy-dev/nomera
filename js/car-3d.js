@@ -7549,6 +7549,12 @@
             this.targetTrunkAngle = 0;
 
             this.headlightsOn = false;
+            this.fsoActive = false;
+            this.stanceMode = 'stock';
+            this.stanceOffsetY = 0;
+            this.targetStanceOffsetY = 0;
+            this.stanceCamberRad = 0;
+            this.envTheme = 'studio';
 
             // Interactive capabilities (doors, hood, trunk, headlights)
             this.capabilities = {
@@ -7667,6 +7673,7 @@
                 roughness: 0.16,
                 metalness: 0.70
             });
+            this.podiumDiscMat = discMat;
             const disc = new THREE.Mesh(discGeo, discMat);
             disc.position.y = -0.04;
             this.podiumGroup.add(disc);
@@ -7884,6 +7891,14 @@
             } else if (this.proceduralCar) {
                 this.proceduralCar.visible = true;
                 this.carGroup = this.proceduralCar;
+            }
+            if (this.currentStyling && this.currentStyling.stanceMode && this.currentStyling.stanceMode !== this.stanceMode) {
+                this.setPneumoStance(this.currentStyling.stanceMode);
+            } else {
+                this.applyStanceToActiveCar();
+            }
+            if (this.fsoActive) {
+                this.ensureFsoRig();
             }
         }
 
@@ -8356,7 +8371,371 @@
                 doorsOpen: this.doorsOpen,
                 hoodOpen: this.hoodOpen,
                 trunkOpen: this.trunkOpen,
-                headlightsOn: this.headlightsOn
+                headlightsOn: this.headlightsOn,
+                fsoActive: this.fsoActive,
+                stanceMode: this.stanceMode,
+                envTheme: this.envTheme
+            };
+        }
+
+        ensureFsoRig() {
+            const THREE = this.THREE;
+            if (!THREE || !this.scene) return;
+            if (!this.fsoGroup) {
+                this.fsoGroup = new THREE.Group();
+                this.fsoGroup.name = 'ShowroomFsoGroup';
+
+                const podGeo = new THREE.BoxGeometry(0.11, 0.045, 0.04);
+                this.fsoMatL = new THREE.MeshBasicMaterial({ color: 0xe0f2fe });
+                this.fsoMatR = new THREE.MeshBasicMaterial({ color: 0xe0f2fe });
+
+                this.fsoPodL = new THREE.Mesh(podGeo, this.fsoMatL);
+                this.fsoPodR = new THREE.Mesh(podGeo, this.fsoMatR);
+                this.fsoPodL.position.set(-0.22, 0.56, 2.12);
+                this.fsoPodR.position.set(0.22, 0.56, 2.12);
+
+                this.fsoPointL = new THREE.PointLight(0x93c5fd, 0, 6.5, 1.5);
+                this.fsoPointR = new THREE.PointLight(0x93c5fd, 0, 6.5, 1.5);
+                this.fsoPointL.position.set(-0.22, 0.56, 2.22);
+                this.fsoPointR.position.set(0.22, 0.56, 2.22);
+
+                // Magnetic VIP Roof Beacon (blue/red special signal dome)
+                const baseGeo = new THREE.CylinderGeometry(0.075, 0.085, 0.025, 16);
+                const baseMat = new THREE.MeshStandardMaterial({ color: 0x111827, roughness: 0.3, metalness: 0.8 });
+                this.roofBeaconBase = new THREE.Mesh(baseGeo, baseMat);
+                this.roofBeaconBase.position.set(0.24, 1.42, 0.08);
+
+                const domeGeo = new THREE.CylinderGeometry(0.062, 0.072, 0.075, 16);
+                this.roofBeaconMat = new THREE.MeshBasicMaterial({ color: 0x2563eb, transparent: true, opacity: 0.92 });
+                this.roofBeaconDome = new THREE.Mesh(domeGeo, this.roofBeaconMat);
+                this.roofBeaconDome.position.set(0.24, 1.465, 0.08);
+
+                this.roofBeaconLight = new THREE.PointLight(0x2563eb, 0, 7.5, 1.5);
+                this.roofBeaconLight.position.set(0.24, 1.55, 0.08);
+
+                this.fsoGroup.add(this.fsoPodL);
+                this.fsoGroup.add(this.fsoPodR);
+                this.fsoGroup.add(this.fsoPointL);
+                this.fsoGroup.add(this.fsoPointR);
+                this.fsoGroup.add(this.roofBeaconBase);
+                this.fsoGroup.add(this.roofBeaconDome);
+                this.fsoGroup.add(this.roofBeaconLight);
+                this.fsoGroup.visible = false;
+                this.scene.add(this.fsoGroup);
+            }
+
+            // Align FSO pods & roof beacon to current vehicle bounding box / light rig
+            const activeModel = this.glbCar || this.proceduralCar || this.carGroup;
+            if (activeModel) {
+                try {
+                    const carId = (activeModel.userData && activeModel.userData.carId) || identifyCarModel(this.currentCarName);
+                    const lightPos = detectVehicleLightPositions(activeModel, carId, THREE);
+                    const fsoY = Math.max(0.38, lightPos.hlL.y - 0.03) + (this.stanceOffsetY || 0);
+                    const fsoZ = lightPos.hlL.z + 0.02;
+                    const fsoX = Math.max(0.16, Math.abs(lightPos.hlL.x) * 0.38);
+                    this.fsoPodL.position.set(-fsoX, fsoY, fsoZ);
+                    this.fsoPodR.position.set(fsoX, fsoY, fsoZ);
+                    this.fsoPointL.position.set(-fsoX, fsoY, fsoZ + 0.12);
+                    this.fsoPointR.position.set(fsoX, fsoY, fsoZ + 0.12);
+
+                    const box = new THREE.Box3().setFromObject(activeModel);
+                    const roofY = (Number.isFinite(box.max.y) && box.max.y > 0.8 ? box.max.y : 1.38);
+                    this.roofBeaconBase.position.set(0.22, roofY + 0.01, 0.05);
+                    this.roofBeaconDome.position.set(0.22, roofY + 0.055, 0.05);
+                    this.roofBeaconLight.position.set(0.22, roofY + 0.14, 0.05);
+                } catch (_) {}
+            }
+        }
+
+        toggleFsoStrobes(forceState) {
+            this.fsoActive = typeof forceState === 'boolean' ? forceState : !this.fsoActive;
+            this.ensureFsoRig();
+            if (this.fsoGroup) {
+                this.fsoGroup.visible = this.fsoActive;
+                if (!this.fsoActive) {
+                    if (this.fsoPointL) this.fsoPointL.intensity = 0;
+                    if (this.fsoPointR) this.fsoPointR.intensity = 0;
+                    if (this.roofBeaconLight) this.roofBeaconLight.intensity = 0;
+                } else {
+                    this.updateFsoRig(typeof performance !== 'undefined' ? performance.now() : Date.now());
+                }
+            }
+            this.needsRender = true;
+            if (!this.active) this.start();
+            return this.fsoActive;
+        }
+
+        updateFsoRig(time) {
+            if (!this.fsoActive || !this.fsoGroup) return;
+            const phase = Math.floor((time || 0) / 55) % 8;
+            // Double-burst alternating pattern: Left flashes on 0, 2; Right flashes on 4, 6
+            const leftOn = phase === 0 || phase === 2;
+            const rightOn = phase === 4 || phase === 6;
+
+            if (this.fsoPodL) this.fsoPodL.visible = true;
+            if (this.fsoPodR) this.fsoPodR.visible = true;
+            if (this.fsoMatL) this.fsoMatL.color.setHex(leftOn ? 0xffffff : 0x1e293b);
+            if (this.fsoMatR) this.fsoMatR.color.setHex(rightOn ? 0xffffff : 0x1e293b);
+            if (this.fsoPointL) this.fsoPointL.intensity = leftOn ? 5.2 : 0;
+            if (this.fsoPointR) this.fsoPointR.intensity = rightOn ? 5.2 : 0;
+
+            // Roof beacon alternates blue / red high-intensity police strobe
+            const beaconPhase = Math.floor((time || 0) / 110) % 4;
+            const isBlue = beaconPhase === 0;
+            const isRed = beaconPhase === 2;
+            if (this.roofBeaconMat) {
+                this.roofBeaconMat.color.setHex(isRed ? 0xff1e38 : (isBlue ? 0x2563eb : 0x1e3a8a));
+            }
+            if (this.roofBeaconLight) {
+                this.roofBeaconLight.color.setHex(isRed ? 0xff1e38 : 0x2563eb);
+                this.roofBeaconLight.intensity = (isBlue || isRed) ? 4.5 : 0.4;
+            }
+            this.needsRender = true;
+        }
+
+        setPneumoStance(mode) {
+            const normalized = ['stock', 'sport', 'bpan'].includes(mode) ? mode : 'stock';
+            this.stanceMode = normalized;
+            if (normalized === 'sport') {
+                this.targetStanceOffsetY = -0.048;
+                this.stanceCamberRad = -0.048;
+            } else if (normalized === 'bpan') {
+                this.targetStanceOffsetY = -0.096;
+                this.stanceCamberRad = -0.098;
+            } else {
+                this.targetStanceOffsetY = 0;
+                this.stanceCamberRad = 0;
+            }
+            this.stanceOffsetY = this.targetStanceOffsetY;
+            this.applyStanceToActiveCar();
+            if (this.fsoActive) this.ensureFsoRig();
+            this.needsRender = true;
+            if (!this.active) this.start();
+            return {
+                mode: this.stanceMode,
+                offsetY: this.stanceOffsetY,
+                camberDeg: Math.round((this.stanceCamberRad * 180) / Math.PI * 10) / 10
+            };
+        }
+
+        cyclePneumoStance() {
+            const order = ['stock', 'sport', 'bpan'];
+            const nextIdx = (order.indexOf(this.stanceMode) + 1) % order.length;
+            return this.setPneumoStance(order[nextIdx]);
+        }
+
+        applyStanceToActiveCar() {
+            const applyToModel = (model) => {
+                if (!model) return;
+                if (model.userData._baseStanceY === undefined) {
+                    model.userData._baseStanceY = model.position.y || 0;
+                }
+                model.position.y = model.userData._baseStanceY + (this.stanceOffsetY || 0);
+                model.userData.stanceMode = this.stanceMode;
+                model.userData.stanceOffsetY = this.stanceOffsetY;
+                model.userData.stanceCamberRad = this.stanceCamberRad;
+
+                // Apply negative camber tilt to wheel nodes while keeping wheels grounded
+                model.traverse(node => {
+                    if (!node || node === model) return;
+                    const nm = String(node.name || '').toLowerCase();
+                    const isWheel = (node.userData && node.userData.isWheel) || /^(wheel|tire|rim)_/i.test(nm) || /wheel_fl|wheel_fr|wheel_rl|wheel_rr/i.test(nm);
+                    if (isWheel) {
+                        if (node.userData._baseWheelY === undefined) {
+                            node.userData._baseWheelY = node.position.y || 0;
+                        }
+                        if (node.userData._baseWheelRotZ === undefined) {
+                            node.userData._baseWheelRotZ = node.rotation.z || 0;
+                        }
+                        node.position.y = node.userData._baseWheelY - (this.stanceOffsetY || 0);
+                        const sideSign = (node.position.x < 0 || /_fl|_rl|left/i.test(nm)) ? -1 : 1;
+                        node.rotation.z = node.userData._baseWheelRotZ + sideSign * (this.stanceCamberRad || 0);
+                    }
+                });
+            };
+            if (this.glbCar) applyToModel(this.glbCar);
+            if (this.proceduralCar && this.proceduralCar !== this.glbCar) applyToModel(this.proceduralCar);
+            if (this.carGroup && this.carGroup !== this.glbCar && this.carGroup !== this.proceduralCar) applyToModel(this.carGroup);
+        }
+
+        ensureRainRig() {
+            const THREE = this.THREE;
+            if (!THREE || !this.scene) return;
+            if (!this.rainGroup) {
+                this.rainGroup = new THREE.Group();
+                this.rainGroup.name = 'ShowroomRainGroup';
+                const dropGeo = new THREE.CylinderGeometry(0.004, 0.004, 0.26, 4);
+                const dropMat = new THREE.MeshBasicMaterial({
+                    color: 0xbae6fd,
+                    transparent: true,
+                    opacity: 0.45
+                });
+                for (let i = 0; i < 64; i++) {
+                    const drop = new THREE.Mesh(dropGeo, dropMat);
+                    const angle = (i / 64) * Math.PI * 2 + (i % 7) * 0.3;
+                    const radius = 0.4 + ((i * 17) % 24) * 0.1;
+                    drop.position.set(
+                        Math.cos(angle) * radius,
+                        ((i * 29) % 30) * 0.1,
+                        Math.sin(angle) * radius
+                    );
+                    drop.userData.fallSpeed = 0.065 + (i % 5) * 0.012;
+                    this.rainGroup.add(drop);
+                }
+                this.rainGroup.visible = false;
+                this.scene.add(this.rainGroup);
+            }
+        }
+
+        updateRainRig() {
+            if (this.envTheme !== 'rain' || !this.rainGroup || !this.rainGroup.visible) return;
+            this.rainGroup.children.forEach(drop => {
+                drop.position.y -= (drop.userData.fallSpeed || 0.07);
+                if (drop.position.y < 0.05) {
+                    drop.position.y = 2.8 + Math.random() * 0.4;
+                }
+            });
+            this.needsRender = true;
+        }
+
+        setEnvironmentTheme(theme) {
+            const validThemes = ['studio', 'night', 'sunset', 'rain'];
+            const nextTheme = validThemes.includes(theme) ? theme : 'studio';
+            this.envTheme = nextTheme;
+            this.ensureRainRig();
+
+            if (this.rainGroup) {
+                this.rainGroup.visible = nextTheme === 'rain';
+            }
+
+            if (nextTheme === 'night') {
+                if (this.ambientLight) { this.ambientLight.color.setHex(0x3b82f6); this.ambientLight.intensity = 0.22; }
+                if (this.keyLight) { this.keyLight.color.setHex(0x93c5fd); this.keyLight.intensity = 0.58; }
+                if (this.fillLight) { this.fillLight.color.setHex(0x6366f1); this.fillLight.intensity = 0.40; }
+                if (this.rimLight) { this.rimLight.color.setHex(0xec4899); this.rimLight.intensity = 1.15; }
+                if (this.podiumDiscMat) { this.podiumDiscMat.color.setHex(0x070a14); this.podiumDiscMat.roughness = 0.10; this.podiumDiscMat.metalness = 0.82; }
+                if (this.podiumRingMat) { this.podiumRingMat.color.setHex(0xa855f7); }
+                if (!this.headlightsOn) this.toggleHeadlights();
+            } else if (nextTheme === 'sunset') {
+                if (this.ambientLight) { this.ambientLight.color.setHex(0xfed7aa); this.ambientLight.intensity = 0.45; }
+                if (this.keyLight) { this.keyLight.color.setHex(0xf97316); this.keyLight.intensity = 1.65; }
+                if (this.fillLight) { this.fillLight.color.setHex(0xa855f7); this.fillLight.intensity = 0.65; }
+                if (this.rimLight) { this.rimLight.color.setHex(0xfbbf24); this.rimLight.intensity = 1.25; }
+                if (this.podiumDiscMat) { this.podiumDiscMat.color.setHex(0x1c1219); this.podiumDiscMat.roughness = 0.14; this.podiumDiscMat.metalness = 0.75; }
+                if (this.podiumRingMat) { this.podiumRingMat.color.setHex(0xf59e0b); }
+            } else if (nextTheme === 'rain') {
+                if (this.ambientLight) { this.ambientLight.color.setHex(0x94a3b8); this.ambientLight.intensity = 0.30; }
+                if (this.keyLight) { this.keyLight.color.setHex(0xbae6fd); this.keyLight.intensity = 0.85; }
+                if (this.fillLight) { this.fillLight.color.setHex(0x38bdf8); this.fillLight.intensity = 0.50; }
+                if (this.rimLight) { this.rimLight.color.setHex(0xe0f2fe); this.rimLight.intensity = 1.05; }
+                if (this.podiumDiscMat) { this.podiumDiscMat.color.setHex(0x060b14); this.podiumDiscMat.roughness = 0.03; this.podiumDiscMat.metalness = 0.94; }
+                if (this.podiumRingMat) { this.podiumRingMat.color.setHex(0x0ea5e9); }
+                if (!this.headlightsOn) this.toggleHeadlights();
+            } else {
+                if (this.ambientLight) { this.ambientLight.color.setHex(0xffffff); this.ambientLight.intensity = 0.42; }
+                if (this.keyLight) { this.keyLight.color.setHex(0xffffff); this.keyLight.intensity = 1.20; }
+                if (this.fillLight) { this.fillLight.color.setHex(0xa5c4d4); this.fillLight.intensity = 0.55; }
+                if (this.rimLight) { this.rimLight.color.setHex(0xffffff); this.rimLight.intensity = 0.85; }
+                if (this.podiumDiscMat) { this.podiumDiscMat.color.setHex(0x0f1422); this.podiumDiscMat.roughness = 0.16; this.podiumDiscMat.metalness = 0.70; }
+                if (this.podiumRingMat) { this.podiumRingMat.color.setHex(0x38bdf8); }
+            }
+
+            this.needsRender = true;
+            if (!this.active) this.start();
+            return this.envTheme;
+        }
+
+        cycleEnvironmentTheme() {
+            const order = ['studio', 'night', 'sunset', 'rain'];
+            const nextIdx = (order.indexOf(this.envTheme || 'studio') + 1) % order.length;
+            return this.setEnvironmentTheme(order[nextIdx]);
+        }
+
+        capturePhotoPoster(meta = {}) {
+            if (this.renderer && this.scene && this.camera) {
+                try { this.renderer.render(this.scene, this.camera); } catch (_) {}
+            }
+            const carName = String(meta.carName || this.currentCarName || 'Автомобиль');
+            const plateText = String(meta.plateText || (this.currentStyling && this.currentStyling.plate) || 'БЕЗ НОМЕРА');
+            const synergyTitle = String(meta.synergyTitle || '');
+            const priceText = String(meta.priceText || '');
+            const width = 1280;
+            const height = 720;
+            let dataUrl = 'data:image/png;base64,';
+
+            if (typeof document !== 'undefined' && document.createElement) {
+                const canvas = document.createElement('canvas');
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                if (ctx) {
+                    const grad = ctx.createLinearGradient(0, 0, 0, height);
+                    if (this.envTheme === 'sunset') {
+                        grad.addColorStop(0, '#2e1035');
+                        grad.addColorStop(0.55, '#7c2d12');
+                        grad.addColorStop(1, '#090d16');
+                    } else if (this.envTheme === 'night') {
+                        grad.addColorStop(0, '#040711');
+                        grad.addColorStop(0.6, '#0f172a');
+                        grad.addColorStop(1, '#020409');
+                    } else if (this.envTheme === 'rain') {
+                        grad.addColorStop(0, '#0b1528');
+                        grad.addColorStop(0.6, '#1e293b');
+                        grad.addColorStop(1, '#060a12');
+                    } else {
+                        grad.addColorStop(0, '#0f172a');
+                        grad.addColorStop(0.6, '#1e293b');
+                        grad.addColorStop(1, '#090d16');
+                    }
+                    ctx.fillStyle = grad;
+                    ctx.fillRect(0, 0, width, height);
+
+                    if (this.renderer && this.renderer.domElement) {
+                        try {
+                            ctx.drawImage(this.renderer.domElement, 0, 0, width, height - 110);
+                        } catch (_) {}
+                    }
+
+                    // Bottom glassmorphic collector banner
+                    ctx.fillStyle = 'rgba(9, 13, 22, 0.92)';
+                    ctx.fillRect(0, height - 120, width, 120);
+                    ctx.fillStyle = '#f59e0b';
+                    ctx.fillRect(0, height - 120, width, 3);
+
+                    ctx.fillStyle = '#ffffff';
+                    ctx.font = 'bold 32px sans-serif';
+                    ctx.fillText(carName, 40, height - 68);
+
+                    ctx.fillStyle = '#38bdf8';
+                    ctx.font = 'bold 22px monospace';
+                    ctx.fillText('🏷️ ' + plateText, 40, height - 28);
+
+                    if (synergyTitle) {
+                        ctx.fillStyle = '#34d399';
+                        ctx.font = 'bold 20px sans-serif';
+                        ctx.fillText('⚡ ' + synergyTitle, 460, height - 28);
+                    }
+                    if (priceText) {
+                        ctx.fillStyle = '#fbbf24';
+                        ctx.font = 'bold 28px sans-serif';
+                        ctx.fillText(priceText, width - 340, height - 50);
+                    }
+                    try {
+                        dataUrl = canvas.toDataURL('image/png');
+                    } catch (_) {}
+                }
+            }
+
+            return {
+                width,
+                height,
+                dataUrl,
+                carName,
+                plateText,
+                synergyTitle,
+                theme: this.envTheme || 'studio',
+                stanceMode: this.stanceMode || 'stock',
+                fsoActive: Boolean(this.fsoActive)
             };
         }
 
@@ -8648,7 +9027,13 @@
                     this.needsRender = true;
                 }
 
-                // SGU Strobe Lights Live Flashing Animation disabled per user request
+                // Live FSO Strobes, Roof Beacon & Rain Animation
+                if (this.fsoActive) {
+                    this.updateFsoRig(time);
+                }
+                if (this.envTheme === 'rain') {
+                    this.updateRainRig();
+                }
 
                 // Dynamic Neon Modes: Rainbow / Pulse
                 if (this.currentStyling.neonMode === 'rainbow') {
@@ -12653,6 +13038,7 @@
     return {
         isWebGLAvailable,
         Car3DShowroom,
+        createShowroom: (container, options) => new Car3DShowroom(container, options),
         Car3DRacingEngine,
         RaceEffectsManager: RaceEffectsManagerClass,
         buildDetailedCarModel,

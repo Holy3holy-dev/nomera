@@ -6366,8 +6366,130 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         }
         window.getCarSynergyHint = getCarSynergyHint;
 
+        function calculateFleetStats(overrideCars, overrideMode) {
+            const cars = Array.isArray(overrideCars) ? overrideCars : (Array.isArray(myCars) ? myCars : []);
+            const mode = String(overrideMode || (achievements && achievements.fleetMode) || 'cortezh');
+            let totalPerMin = 0;
+            let synergyCarsCount = 0;
+            let totalSynergyPct = 0;
+
+            cars.forEach(car => {
+                if (!car) return;
+                const template = carsData.find(c => c.name === car.name) || {};
+                const baseVal = Math.max(150000, Number(car.basePrice || car.price || template.price || 500000));
+                const baseCarPerMin = Math.max(2500, Math.round(baseVal * 0.004));
+
+                let mult = 1.0;
+                const platePrice = Number(car.plate && car.plate.price) || 0;
+                if (platePrice > 0) {
+                    mult += Math.min(1.2, Math.max(0.12, platePrice / 1200000));
+                }
+
+                const syn = getCarPlateSynergy(car.name, car.plate);
+                if (syn && Number(syn.bonusMultiplier) > 0) {
+                    synergyCarsCount++;
+                    const synPct = Math.round(Number(syn.bonusMultiplier) * 100);
+                    totalSynergyPct += synPct;
+                    mult += Number(syn.bonusMultiplier) * 1.5;
+                }
+
+                const plateRaw = String(car.plate?.text || car.plate || '').toUpperCase();
+                if (mode === 'dubai_vip') {
+                    const isLuxOrUae = baseVal >= 10000000 || /\b(UAE|KZ)$/.test(plateRaw);
+                    mult *= isLuxOrUae ? 1.20 : 1.05;
+                } else if (mode === 'tokyo_show') {
+                    const isJdmOrBpan = (syn && (syn.id === 'jdm_legend' || syn.id === 'oper_bpan')) || /Mark II|GT-R|Silvia|Impreza|Priora|ВАЗ|Vesta|Волга/i.test(String(car.name || ''));
+                    mult *= isJdmOrBpan ? 1.20 : 1.05;
+                } else {
+                    mult *= 1.10;
+                }
+
+                totalPerMin += Math.round(baseCarPerMin * mult);
+            });
+
+            return {
+                mode,
+                activeCarsCount: cars.length,
+                synergyCarsCount,
+                totalSynergyPct,
+                totalPerMin,
+                totalPerHour: totalPerMin * 60
+            };
+        }
+        window.calculateFleetStats = calculateFleetStats;
+
+        function renderFleetBusiness() {
+            if (!achievements || typeof achievements !== 'object') return;
+            if (!Number.isFinite(Number(achievements.fleetVault))) achievements.fleetVault = 0;
+            if (!achievements.fleetMode) achievements.fleetMode = 'cortezh';
+
+            const stats = calculateFleetStats();
+            const rateEl = document.getElementById('fleet-income-rate');
+            if (rateEl) rateEl.textContent = `+${stats.totalPerMin.toLocaleString('ru-RU')} ₽ / мин`;
+
+            const vaultEl = document.getElementById('fleet-vault-amount');
+            if (vaultEl) vaultEl.textContent = `${Math.floor(Number(achievements.fleetVault || 0)).toLocaleString('ru-RU')} ₽`;
+
+            const countEl = document.getElementById('fleet-active-cars-count');
+            if (countEl) countEl.textContent = String(stats.activeCarsCount);
+
+            const synEl = document.getElementById('fleet-synergy-bonus-text');
+            if (synEl) synEl.textContent = `+${stats.totalSynergyPct}% (${stats.synergyCarsCount} авто)`;
+
+            document.querySelectorAll('#fleet-mode-chips .styling-chip').forEach(btn => {
+                btn.classList.toggle('active', btn.getAttribute('data-fleet-mode') === stats.mode);
+            });
+        }
+        window.renderFleetBusiness = renderFleetBusiness;
+
+        function setFleetOperationMode(mode) {
+            const valid = ['cortezh', 'dubai_vip', 'tokyo_show'];
+            if (!valid.includes(mode)) return false;
+            if (achievements && typeof achievements === 'object') {
+                achievements.fleetMode = mode;
+            }
+            renderFleetBusiness();
+            if (typeof playTick === 'function') playTick();
+            return true;
+        }
+        window.setFleetOperationMode = setFleetOperationMode;
+
+        function tickFleetIncome(secondsElapsed = 1) {
+            if (!achievements || typeof achievements !== 'object') return 0;
+            if (!Number.isFinite(Number(achievements.fleetVault))) achievements.fleetVault = 0;
+            const stats = calculateFleetStats();
+            if (stats.totalPerMin <= 0) return Number(achievements.fleetVault);
+            const delta = Math.max(1, Math.round((stats.totalPerMin / 60) * Math.max(0.1, Number(secondsElapsed) || 1)));
+            const maxCap = Math.max(500000, stats.totalPerMin * 240);
+            achievements.fleetVault = Math.min(maxCap, Math.floor(Number(achievements.fleetVault || 0)) + delta);
+            const vaultEl = document.getElementById('fleet-vault-amount');
+            if (vaultEl) vaultEl.textContent = `${achievements.fleetVault.toLocaleString('ru-RU')} ₽`;
+            return achievements.fleetVault;
+        }
+        window.tickFleetIncome = tickFleetIncome;
+
+        function claimFleetIncome() {
+            if (!achievements || typeof achievements !== 'object') return 0;
+            const vault = Math.floor(Number(achievements.fleetVault || 0));
+            if (vault <= 0) {
+                notifyUser('В кассе автопарка пока нет накопленной выручки. Подождите немного или добавьте авто в гараж!', 'info');
+                return 0;
+            }
+            achievements.fleetVault = 0;
+            creditPlayerBalance(vault, 'Выручка VIP-проката автопарка');
+            const xpGain = Math.min(300, Math.max(15, Math.round(vault / 15000)));
+            if (typeof addExp === 'function') addExp(xpGain);
+            if (typeof playCashSound === 'function') playCashSound();
+            notifyUser(`💼 Выручка автопарка собрана: +${vault.toLocaleString('ru-RU')} ₽ и +${xpGain} XP!`, 'success');
+            if (typeof saveProgress === 'function') saveProgress();
+            renderFleetBusiness();
+            return vault;
+        }
+        window.claimFleetIncome = claimFleetIncome;
+
         function renderCars() {
             renderShopCars();
+            renderFleetBusiness();
             let myCarsDiv = document.getElementById('my-cars');
 
             if (myCars.length === 0) {
@@ -7640,6 +7762,172 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         }
         window.triggerGarageHorn = triggerGarageHorn;
 
+        function playSguQuackSound() {
+            if (sound && typeof sound.sgu === 'function') {
+                try { sound.sgu(); } catch (_) {}
+            } else if (sound && typeof sound.horn === 'function') {
+                try { sound.horn({ sgu: true, truck: false }); } catch (_) {}
+            }
+            try {
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                if (!AudioCtx) return;
+                const ctx = window._nomeraSguCtx || (window._nomeraSguCtx = new AudioCtx());
+                if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+                const now = ctx.currentTime;
+                const osc = ctx.createOscillator();
+                const mod = ctx.createOscillator();
+                const modGain = ctx.createGain();
+                const outGain = ctx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(145, now);
+                osc.frequency.exponentialRampToValueAtTime(320, now + 0.09);
+                osc.frequency.setValueAtTime(135, now + 0.11);
+                osc.frequency.exponentialRampToValueAtTime(290, now + 0.22);
+                mod.type = 'square';
+                mod.frequency.setValueAtTime(58, now);
+                modGain.gain.setValueAtTime(65, now);
+                outGain.gain.setValueAtTime(0.14, now);
+                outGain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+                mod.connect(modGain);
+                modGain.connect(osc.frequency);
+                osc.connect(outGain);
+                outGain.connect(ctx.destination);
+                osc.start(now);
+                mod.start(now);
+                osc.stop(now + 0.26);
+                mod.stop(now + 0.26);
+            } catch (_) {}
+        }
+        window.playSguQuackSound = playSguQuackSound;
+
+        function playPneumoValveSound() {
+            try {
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                if (!AudioCtx) return;
+                const ctx = window._nomeraSguCtx || (window._nomeraSguCtx = new AudioCtx());
+                if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+                const now = ctx.currentTime;
+                const bufferSize = Math.floor(ctx.sampleRate * 0.28);
+                const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) {
+                    data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (ctx.sampleRate * 0.08));
+                }
+                const noise = ctx.createBufferSource();
+                noise.buffer = buffer;
+                const filter = ctx.createBiquadFilter();
+                filter.type = 'bandpass';
+                filter.frequency.setValueAtTime(2400, now);
+                filter.Q.setValueAtTime(1.8, now);
+                const gain = ctx.createGain();
+                gain.gain.setValueAtTime(0.18, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.27);
+                noise.connect(filter);
+                filter.connect(gain);
+                gain.connect(ctx.destination);
+                noise.start(now);
+            } catch (_) {}
+        }
+        window.playPneumoValveSound = playPneumoValveSound;
+
+        function toggleGarageFso(forceState) {
+            if (!garage3DShowroom || typeof garage3DShowroom.toggleFsoStrobes !== 'function') return false;
+            const isOn = garage3DShowroom.toggleFsoStrobes(forceState);
+            const btn = document.getElementById('btn-gshow-fso');
+            if (btn) btn.classList.toggle('active', isOn);
+            const car = myCars[activeGarageCarIndex];
+            if (car) {
+                if (!car.styling || typeof car.styling !== 'object') car.styling = {};
+                car.styling.fsoStrobes = isOn;
+            }
+            if (isOn) {
+                playSguQuackSound();
+                notifyUser('🚨 Спецсигналы ФСО и проблесковый маячок включены!', 'info');
+            } else if (typeof playTick === 'function') {
+                playTick();
+            }
+            return isOn;
+        }
+        window.toggleGarageFso = toggleGarageFso;
+
+        function cycleGaragePneumo(targetMode) {
+            if (!garage3DShowroom) return null;
+            const res = (typeof targetMode === 'string' && typeof garage3DShowroom.setPneumoStance === 'function')
+                ? garage3DShowroom.setPneumoStance(targetMode)
+                : (typeof garage3DShowroom.cyclePneumoStance === 'function' ? garage3DShowroom.cyclePneumoStance() : null);
+            if (!res) return null;
+            const labels = {
+                stock: '💨 Пневма: Штатная',
+                sport: '💨 Пневма: Спорт (-48 мм)',
+                bpan: '💨 Пневма: БПАН (-96 мм)'
+            };
+            const btn = document.getElementById('btn-gshow-pneumo');
+            if (btn) {
+                btn.textContent = labels[res.mode] || '💨 Пневма';
+                btn.classList.toggle('active', res.mode !== 'stock');
+            }
+            const car = myCars[activeGarageCarIndex];
+            if (car) {
+                if (!car.styling || typeof car.styling !== 'object') car.styling = {};
+                car.styling.stanceMode = res.mode;
+                if (typeof saveProgress === 'function') saveProgress();
+            }
+            playPneumoValveSound();
+            return res;
+        }
+        window.cycleGaragePneumo = cycleGaragePneumo;
+
+        function cycleGarageEnvironment(targetTheme) {
+            if (!garage3DShowroom) return 'studio';
+            const theme = (typeof targetTheme === 'string' && typeof garage3DShowroom.setEnvironmentTheme === 'function')
+                ? garage3DShowroom.setEnvironmentTheme(targetTheme)
+                : (typeof garage3DShowroom.cycleEnvironmentTheme === 'function' ? garage3DShowroom.cycleEnvironmentTheme() : 'studio');
+            const labels = {
+                studio: '🌦️ Подиум: Студия',
+                night: '🌙 Подиум: Ночь',
+                sunset: '🌅 Подиум: Закат',
+                rain: '🌧️ Подиум: Ливень'
+            };
+            const btn = document.getElementById('btn-gshow-env');
+            if (btn) {
+                btn.textContent = labels[theme] || '🌦️ Подиум';
+                btn.classList.toggle('active', theme !== 'studio');
+            }
+            if (typeof playTick === 'function') playTick();
+            return theme;
+        }
+        window.cycleGarageEnvironment = cycleGarageEnvironment;
+
+        function captureGaragePhotoPoster() {
+            if (!garage3DShowroom || typeof garage3DShowroom.capturePhotoPoster !== 'function') return null;
+            const car = myCars[activeGarageCarIndex] || myCars[0] || { name: 'Автомобиль', price: 0 };
+            const plateText = car.plate ? (car.plate.text || String(car.plate)) : 'БЕЗ НОМЕРА';
+            const syn = getCarPlateSynergy(car.name, car.plate);
+            const synergyTitle = syn ? `${syn.title} (+${Math.round(Number(syn.bonusMultiplier || 0) * 100)}% ₽)` : '';
+            const totalValuation = Number(car.basePrice || car.price || 0) + Number(car.plate?.price || 0);
+            const poster = garage3DShowroom.capturePhotoPoster({
+                carName: car.name,
+                plateText,
+                synergyTitle,
+                priceText: totalValuation > 0 ? `${totalValuation.toLocaleString('ru-RU')} ₽` : ''
+            });
+            if (poster && poster.dataUrl && typeof document !== 'undefined') {
+                try {
+                    const a = document.createElement('a');
+                    a.href = poster.dataUrl;
+                    a.download = `nomera-poster-${String(car.name || 'car').replace(/[^a-zA-Zа-яА-Я0-9_-]+/g, '_')}.png`;
+                    if (document.body) {
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                    }
+                } catch (_) {}
+            }
+            notifyUser(`📸 Коллекционный 3D-постер «${car.name}» (${plateText}) создан!`, 'success');
+            return poster;
+        }
+        window.captureGaragePhotoPoster = captureGaragePhotoPoster;
+
         function openStylingForActiveGarageCar() {
             openStylingModal(activeGarageCarIndex, '3d');
         }
@@ -8499,6 +8787,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     navTab3D.setAttribute('aria-selected', 'false');
                 }
             }
+            if (mode === 'drag' && typeof renderDragBosses === 'function') {
+                renderDragBosses();
+            }
         }
 
         function selectDragBet(amount) {
@@ -8593,6 +8884,249 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 }, 2200));
             }, 2400));
         }
+
+        const DRAG_BOSSES = [
+            {
+                id: 'boss_priora',
+                icon: '🔊',
+                name: 'Опер на Приоре',
+                title: 'Король Ночного Района',
+                carName: 'Lada Priora БПАН',
+                entryFee: 50000,
+                cashReward: 180000,
+                xpReward: 150,
+                requiredScore: 105,
+                platePrize: { text: 'А001АА | 05 RUS', price: 650000, rarity: 'Легендарный', color: '#f59e0b' }
+            },
+            {
+                id: 'boss_camry',
+                icon: '🦅',
+                name: 'Министр на Камри 3.5',
+                title: 'Астана Спецкортеж',
+                carName: 'Toyota Camry 3.5',
+                entryFee: 100000,
+                cashReward: 350000,
+                xpReward: 220,
+                requiredScore: 135,
+                platePrize: { text: '777 VIP | 01 KZ', price: 950000, rarity: 'Легендарный', color: '#f59e0b' }
+            },
+            {
+                id: 'boss_mark2',
+                icon: '⛩️',
+                name: 'Король Тоуге',
+                title: 'Легенда Владивостока',
+                carName: 'Toyota Mark II Tourer V',
+                entryFee: 150000,
+                cashReward: 550000,
+                xpReward: 300,
+                requiredScore: 165,
+                platePrize: { text: 'Т888ТТ | 125 RUS', price: 1200000, rarity: 'Эксклюзив', color: '#ef4444' }
+            },
+            {
+                id: 'boss_gelik',
+                icon: '🚨',
+                name: 'Полковник Спецсвязи',
+                title: 'Сопровождение ФСО',
+                carName: 'Mercedes-Benz G63 AMG «Гелик»',
+                entryFee: 250000,
+                cashReward: 950000,
+                xpReward: 450,
+                requiredScore: 205,
+                platePrize: { text: 'А777МР | 77 RUS', price: 2500000, rarity: 'Гос-Эталон', color: '#a855f7' }
+            },
+            {
+                id: 'boss_sheikh',
+                icon: '👑',
+                name: 'Шейх Аль-Мактум',
+                title: 'Властелин Дубая',
+                carName: 'Bugatti Chiron Super Sport',
+                entryFee: 500000,
+                cashReward: 2200000,
+                xpReward: 800,
+                requiredScore: 255,
+                platePrize: { text: 'D 1 | DXB UAE', price: 15000000, rarity: 'Королевский', color: '#fbbf24' }
+            }
+        ];
+        window.DRAG_BOSSES = DRAG_BOSSES;
+
+        let dragShiftState = {
+            gear: 1,
+            rpm: 6800,
+            perfectShifts: 0,
+            totalShifts: 0,
+            shiftBonusScore: 0
+        };
+
+        function shiftDragGear(overrideRpm) {
+            const rpm = Number.isFinite(Number(overrideRpm)) ? Number(overrideRpm) : dragShiftState.rpm;
+            const isPerfect = rpm >= 6200 && rpm <= 7400;
+            dragShiftState.gear = Math.min(6, (dragShiftState.gear || 1) + 1);
+            dragShiftState.totalShifts = (dragShiftState.totalShifts || 0) + 1;
+            if (isPerfect) {
+                dragShiftState.perfectShifts = (dragShiftState.perfectShifts || 0) + 1;
+                dragShiftState.shiftBonusScore = (dragShiftState.shiftBonusScore || 0) + 28;
+            } else {
+                dragShiftState.shiftBonusScore = (dragShiftState.shiftBonusScore || 0) + 10;
+            }
+            // Prepare next gear RPM in or near sweet spot
+            dragShiftState.rpm = 6500 + ((dragShiftState.gear * 170) % 700);
+
+            const gearEl = document.getElementById('drag-gear-label');
+            if (gearEl) gearEl.textContent = `${dragShiftState.gear}-я передача`;
+            const rpmEl = document.getElementById('drag-rpm-label');
+            if (rpmEl) rpmEl.textContent = `${rpm.toLocaleString('ru-RU')} RPM`;
+            const barEl = document.getElementById('drag-rpm-bar');
+            if (barEl) barEl.style.width = `${Math.min(100, Math.round((rpm / 8500) * 100))}%`;
+            const fbEl = document.getElementById('drag-shift-feedback');
+            if (fbEl) {
+                fbEl.textContent = isPerfect
+                    ? `🔥 ИДЕАЛЬНОЕ ПЕРЕКЛЮЧЕНИЕ (+28 очков скорости)!`
+                    : `⚡ Переключение передач (+10 очков)`;
+                fbEl.style.color = isPerfect ? '#34d399' : '#fbbf24';
+            }
+            if (typeof playTick === 'function') playTick();
+            return {
+                gear: dragShiftState.gear,
+                rpm,
+                isPerfect,
+                perfectShifts: dragShiftState.perfectShifts,
+                shiftBonusScore: dragShiftState.shiftBonusScore
+            };
+        }
+        window.shiftDragGear = shiftDragGear;
+
+        function renderDragBosses() {
+            if (!achievements || typeof achievements !== 'object') return;
+            if (!achievements.defeatedDragBosses || typeof achievements.defeatedDragBosses !== 'object') {
+                achievements.defeatedDragBosses = {};
+            }
+            if (!achievements.claimedBossPlates || typeof achievements.claimedBossPlates !== 'object') {
+                achievements.claimedBossPlates = {};
+            }
+            const listEl = document.getElementById('drag-boss-list');
+            const badgeEl = document.getElementById('drag-boss-progress-badge');
+            const defeatedCount = DRAG_BOSSES.filter(b => Boolean(achievements.defeatedDragBosses[b.id])).length;
+            if (badgeEl) {
+                badgeEl.textContent = `Побеждено: ${defeatedCount} / ${DRAG_BOSSES.length}`;
+            }
+            if (!listEl) return;
+
+            listEl.innerHTML = DRAG_BOSSES.map(boss => {
+                const isDefeated = Boolean(achievements.defeatedDragBosses[boss.id]);
+                const plateClaimed = Boolean(achievements.claimedBossPlates[boss.id]);
+                return `
+                    <div class="drag-boss-card ${isDefeated ? 'defeated' : ''}" style="background: rgba(15, 23, 42, 0.82); border: 1px solid ${isDefeated ? 'rgba(16, 185, 129, 0.45)' : 'rgba(251, 191, 36, 0.3)'}; border-radius: 14px; padding: 12px; display: flex; flex-direction: column; justify-content: space-between; gap: 8px;">
+                        <div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; gap: 6px;">
+                                <div style="font-size: 14px; font-weight: 900; color: #fff;">${boss.icon} ${escapeHtml(boss.name)}</div>
+                                <span style="font-size: 10px; font-weight: 800; padding: 2px 7px; border-radius: 999px; background: ${isDefeated ? 'rgba(16,185,129,0.2)' : 'rgba(245,158,11,0.16)'}; color: ${isDefeated ? '#34d399' : '#fbbf24'};">
+                                    ${isDefeated ? '✓ Побеждён' : `Взнос: ${boss.entryFee.toLocaleString('ru-RU')} ₽`}
+                                </span>
+                            </div>
+                            <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">🏎️ Авто босса: <b>${escapeHtml(boss.carName)}</b></div>
+                            <div style="font-size: 11px; color: #38bdf8; margin-top: 4px; font-weight: 800;">
+                                🏷️ Призовой номер: <span style="color: #fbbf24;">${escapeHtml(boss.platePrize.text)}</span> ${plateClaimed ? '(Получен ✓)' : '(Эксклюзив!)'}
+                            </div>
+                            <div style="font-size: 11px; color: #34d399; margin-top: 2px; font-weight: 700;">
+                                💰 Награда за победу: +${boss.cashReward.toLocaleString('ru-RU')} ₽ · +${boss.xpReward} XP
+                            </div>
+                        </div>
+                        <button type="button" class="btn ${isDefeated ? 'btn-blue' : 'btn-gold'}" style="margin: 4px 0 0 0; padding: 8px 12px; font-size: 12px; font-weight: 800;" onclick="startDragBossDuel('${boss.id}')">
+                            ${isDefeated ? '🔄 Реванш за куш' : '⚔️ Бросить вызов (402 м)'}
+                        </button>
+                    </div>
+                `;
+            }).join('');
+        }
+        window.renderDragBosses = renderDragBosses;
+
+        function resolveDragBossDuel(bossId, options = {}) {
+            const boss = DRAG_BOSSES.find(b => b.id === bossId);
+            if (!boss) return { won: false, reason: 'not_found' };
+
+            const activeCar = myCars[selectedRaceCarIndex] || myCars[0];
+            if (!activeCar) {
+                notifyUser('Сначала приобретите автомобиль в автосалоне!', 'error');
+                return { won: false, reason: 'no_car' };
+            }
+
+            const chargeFee = options.skipEntryFee ? 0 : boss.entryFee;
+            const curBal = (onlineProfile && Number.isFinite(Number(onlineProfile.balance))) ? Math.max(balance, Number(onlineProfile.balance)) : balance;
+            if (chargeFee > 0 && curBal < chargeFee) {
+                notifyUser(`Для вызова «${boss.name}» требуется ${chargeFee.toLocaleString('ru-RU')} ₽`, 'error');
+                return { won: false, reason: 'insufficient_funds' };
+            }
+
+            if (chargeFee > 0) {
+                deductPlayerBalance(chargeFee, `Взнос на дуэль с Боссом: ${boss.name}`);
+            }
+
+            const baseStats = NomeraRaceEconomy.normalizeCar(activeCar);
+            const perf = NomeraRaceEconomy.performance(baseStats, activeCar);
+            const synBonusPct = Math.round(Number(perf.synergyBonus || 0) * 100);
+            const carScore = Math.round((perf.topSpeed || 180) * 0.55 + (perf.rewardMultiplier || 1) * 28 + synBonusPct * 0.9 + (dragShiftState.shiftBonusScore || 0));
+            const won = options.forceWin === true ? true : (options.forceWin === false ? false : carScore >= boss.requiredScore);
+
+            if (!achievements.defeatedDragBosses || typeof achievements.defeatedDragBosses !== 'object') {
+                achievements.defeatedDragBosses = {};
+            }
+            if (!achievements.claimedBossPlates || typeof achievements.claimedBossPlates !== 'object') {
+                achievements.claimedBossPlates = {};
+            }
+
+            let plateAwarded = null;
+            if (won) {
+                achievements.dragWins = (achievements.dragWins || 0) + 1;
+                achievements.defeatedDragBosses[boss.id] = Date.now();
+                creditPlayerBalance(boss.cashReward, `Победа над Боссом дрэга: ${boss.name}`);
+                if (typeof addExp === 'function') addExp(boss.xpReward);
+
+                if (!achievements.claimedBossPlates[boss.id] && boss.platePrize) {
+                    achievements.claimedBossPlates[boss.id] = Date.now();
+                    const wonPlate = {
+                        text: boss.platePrize.text,
+                        price: boss.platePrize.price,
+                        rarity: boss.platePrize.rarity,
+                        color: boss.platePrize.color,
+                        fromBoss: boss.id
+                    };
+                    inventory.push(wonPlate);
+                    plateAwarded = wonPlate.text;
+                    if (typeof renderInventory === 'function') renderInventory();
+                    if (typeof renderCollectorBook === 'function') renderCollectorBook();
+                }
+
+                if (typeof triggerLegendaryEffect === 'function') triggerLegendaryEffect();
+                if (typeof playCashSound === 'function') playCashSound();
+                notifyUser(
+                    plateAwarded
+                        ? `👑 БОСС ПОБЕЖДЁН! Вы выиграли ${boss.cashReward.toLocaleString('ru-RU')} ₽ и забрали эксклюзивный номер «${plateAwarded}»!`
+                        : `🏆 Победа в реванше над «${boss.name}»! Выигрыш: +${boss.cashReward.toLocaleString('ru-RU')} ₽!`,
+                    'success'
+                );
+            } else {
+                notifyUser(`⚔️ Босс «${boss.name}» оказался быстрее (${carScore} против ${boss.requiredScore} очков). Переключайте КПП в зелёной зоне или прокачайте авто и синергию номера!`, 'error');
+            }
+
+            dragShiftState.gear = 1;
+            dragShiftState.shiftBonusScore = 0;
+            renderDragBosses();
+            if (typeof saveProgress === 'function') saveProgress();
+            return {
+                won,
+                bossId: boss.id,
+                carScore,
+                requiredScore: boss.requiredScore,
+                cashReward: won ? boss.cashReward : 0,
+                plateAwarded
+            };
+        }
+        window.resolveDragBossDuel = resolveDragBossDuel;
+
+        function startDragBossDuel(bossId) {
+            return resolveDragBossDuel(bossId);
+        }
+        window.startDragBossDuel = startDragBossDuel;
 
         // --- 6. АВТОРЫНОК (ПРОДАЖА И ПОКУПКА АВТОМОБИЛЕЙ) ---
         function openSellCarModal(carIndex) {
@@ -16428,7 +16962,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             if (tabId === 'cases' && typeof selectCaseCountry === 'function') {
                 selectCaseCountry(currentCaseCountry || currentCountry || 'RUS', true);
             }
-            if (tabId === 'collection' && typeof renderCollectorBook === 'function') {
+            if ((tabId === 'inventory' || tabId === 'collection') && typeof renderCollectorBook === 'function') {
                 renderCollectorBook();
             }
             if (tabId === 'leaderboard') renderLeaderboard();
@@ -16447,6 +16981,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             if (tabId === 'garage') {
                 try { preloadUserGarageModels(); } catch (_) {}
                 initGarage3DShowroom();
+                if (typeof renderFleetBusiness === 'function') renderFleetBusiness();
             } else {
                 if (garage3DShowroom) garage3DShowroom.stop();
             }
