@@ -266,9 +266,117 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         let isAutoSpinning = false;
         const lettersArr = ['А', 'В', 'Е', 'К', 'М', 'Н', 'О', 'Р', 'С', 'Т', 'У', 'Х'];
         const eliteLetters = ['ААА', 'АМР', 'ВВВ', 'ВОР', 'ТТТ', 'ХХХ', 'ККК', 'ЕКХ', 'АЕО', 'ООО', 'ССС', 'МММ', 'СКР', 'УУУ'];
+        const PLATE_COUNTRIES = {
+            RUS: {
+                code: 'RUS',
+                name: 'Россия',
+                flagEmoji: '🇷🇺',
+                flag: '🇷🇺',
+                defaultReg: '777',
+                defaultRegion: '777',
+                spinCostBoth: 900,
+                spinCostPart: 500,
+                spinBoth: 900,
+                spinNumbers: 500,
+                spinLetters: 500,
+                basePrice: 450,
+                priceMult: 1.0,
+                regPattern: /^\d{2,3}$/,
+                regionRegex: /^\d{2,3}$/,
+                regHint: 'Код региона РФ (2–3 цифры)',
+                regionHint: 'Регион должен содержать 2 или 3 цифры',
+                regMaxLen: 3,
+                popularRegions: ['777', '77', '99', '78', '178', '16', '95', '23', '50', '05'],
+                letters: ['А', 'В', 'Е', 'К', 'М', 'Н', 'О', 'Р', 'С', 'Т', 'У', 'Х'],
+                eliteSeries: ['ААА', 'АМР', 'ВВВ', 'ВОР', 'ТТТ', 'ХХХ', 'ККК', 'ЕКХ', 'АЕО', 'ООО', 'ССС', 'МММ', 'СКР', 'УУУ'],
+                eliteLetters: ['ААА', 'АМР', 'ВВВ', 'ВОР', 'ТТТ', 'ХХХ', 'ККК', 'ЕКХ', 'АЕО', 'ООО', 'ССС', 'МММ', 'СКР', 'УУУ']
+            },
+            KZ: {
+                code: 'KZ',
+                name: 'Казахстан',
+                flagEmoji: '🇰🇿',
+                flag: '🇰🇿',
+                defaultReg: '01',
+                defaultRegion: '01',
+                spinCostBoth: 1800,
+                spinCostPart: 1000,
+                spinBoth: 1800,
+                spinNumbers: 1000,
+                spinLetters: 1000,
+                basePrice: 800,
+                priceMult: 1.8,
+                regPattern: /^(?:0[1-9]|1[0-9]|20|\d{2})$/,
+                regionRegex: /^(?:0[1-9]|1[0-9]|20|\d{2})$/,
+                regHint: 'Код региона РК (01–20, напр. 01 Астана, 02 Алматы)',
+                regionHint: 'Регион Казахстана должен содержать 2 цифры (например 01 или 02)',
+                regMaxLen: 2,
+                popularRegions: ['01', '02', '13', '17', '05', '07', '09', '16', '03', '10'],
+                letters: ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'],
+                eliteSeries: ['AAA', 'VIP', 'ZZZ', 'QQQ', 'GGG', 'NNN', 'MMM', 'SSS', 'XXX', 'LLL', 'KZ', 'AST', 'ALA', 'HAN'],
+                eliteLetters: ['AAA', 'VIP', 'ZZZ', 'QQQ', 'GGG', 'NNN', 'MMM', 'SSS', 'XXX', 'LLL', 'KZ', 'AST', 'ALA', 'HAN']
+            },
+            USA: {
+                code: 'USA',
+                name: 'США',
+                flagEmoji: '🇺🇸',
+                flag: '🇺🇸',
+                defaultReg: 'CA',
+                defaultRegion: 'CA',
+                spinCostBoth: 3500,
+                spinCostPart: 2000,
+                spinBoth: 3500,
+                spinNumbers: 2000,
+                spinLetters: 2000,
+                basePrice: 1500,
+                priceMult: 3.5,
+                regPattern: /^(?:[A-Z]{2}|\d{2,3})$/i,
+                regionRegex: /^(?:[A-Z]{2}|\d{2,3})$/i,
+                regHint: 'Штат США (CA, NY, FL, TX, NV, IL)',
+                regionHint: 'Укажите код штата США (2 буквы, например CA, NY, FL, TX)',
+                regMaxLen: 3,
+                popularRegions: ['CA', 'NY', 'FL', 'TX', 'NV', 'IL', 'WA', 'MI', 'GA', 'NJ'],
+                letters: ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'J', 'K', 'L', 'M', 'N', 'P', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'],
+                eliteSeries: ['USA', 'VIP', 'NYC', 'LAX', 'MIA', 'GTA', 'FBI', 'CIA', 'CEO', 'GOD', 'WIN', 'XXX', 'AAA', 'ACE'],
+                eliteLetters: ['USA', 'VIP', 'NYC', 'LAX', 'MIA', 'GTA', 'FBI', 'CIA', 'CEO', 'GOD', 'WIN', 'XXX', 'AAA', 'ACE']
+            },
+            UAE: {
+                code: 'UAE',
+                name: 'Дубай (ОАЭ)',
+                flagEmoji: '🇦🇪',
+                flag: '🇦🇪',
+                defaultReg: 'DXB',
+                defaultRegion: 'DXB',
+                spinCostBoth: 9000,
+                spinCostPart: 5000,
+                spinBoth: 9000,
+                spinNumbers: 5000,
+                spinLetters: 5000,
+                basePrice: 3600,
+                priceMult: 8.0,
+                regPattern: /^(?:DXB|AUH|SHJ|AJM|RAK|FUJ|UAQ|[A-Z]{1,3}|\d{1,3})$/i,
+                regionRegex: /^(?:DXB|AUH|SHJ|AJM|RAK|FUJ|UAQ|[A-Z]{1,3}|\d{1,3})$/i,
+                regHint: 'Эмират / код (DXB, AUH, SHJ или 01–99)',
+                regionHint: 'Укажите эмират (DXB, AUH, SHJ) или код (01–99)',
+                regMaxLen: 3,
+                popularRegions: ['DXB', 'AUH', 'SHJ', 'AJM', 'RAK', 'FUJ', '01', '05', '77', '99'],
+                letters: ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'],
+                eliteSeries: ['DXB', 'UAE', 'SHK', 'VIP', 'AAA', 'ZZZ', 'FFF', 'GGG', 'RRR', 'SSS', 'XXX', 'CEO', 'OIL', 'GLD'],
+                eliteLetters: ['DXB', 'UAE', 'SHK', 'VIP', 'AAA', 'ZZZ', 'FFF', 'GGG', 'RRR', 'SSS', 'XXX', 'CEO', 'OIL', 'GLD']
+            }
+        };
+        if (typeof window !== 'undefined') window.PLATE_COUNTRIES = PLATE_COUNTRIES;
+        let currentCountry = 'RUS';
         let currentL1 = '-', currentL2 = '-', currentL3 = '-';
         let currentNum = '---';
         let currentReg = '777';
+
+        function getMiniPlateCountryClass(plateText) {
+            const raw = String(plateText || '').trim().toUpperCase();
+            if (/\bUAE$/.test(raw)) return 'mini-plate country-uae';
+            if (/\bUSA$/.test(raw)) return 'mini-plate country-usa';
+            if (/\bKZ$/.test(raw)) return 'mini-plate country-kz';
+            return 'mini-plate country-rus';
+        }
 
         let hasSpunLetSinceSave = false;
         let hasSpunNumSinceSave = false;
@@ -566,7 +674,12 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
         function updatePlateGlow(rarityText) {
             const plateBox = document.getElementById('plate-box');
-            plateBox.className = 'plate-container';
+            if (!plateBox) return;
+            const cCode = String(currentCountry || 'RUS').toLowerCase();
+            plateBox.className = 'plate-container country-' + cCode;
+            if (plateBox.classList && typeof plateBox.classList.add === 'function') {
+                plateBox.classList.add('country-' + cCode);
+            }
             if (rarityText === "Необычный") plateBox.classList.add('glow-uncommon');
             else if (rarityText === "Редкий") plateBox.classList.add('glow-rare');
             else if (rarityText === "Супер редкий") plateBox.classList.add('glow-super');
@@ -2365,7 +2478,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         let netlifyAvailable = !(typeof window !== 'undefined' && window.location && typeof window.location.hostname === 'string' && (window.location.hostname.endsWith('github.io') || window.location.hostname.endsWith('github.dev') || window.location.hostname.endsWith('pages.dev')));
         async function onlineRequest(action,params={},method='POST') {
             if (action === 'claim' && (!params || params.region === undefined)) {
-                params = { ...params, region: currentReg };
+                params = { ...params, region: currentReg, country: currentCountry };
+            } else if (action === 'claim' && params && params.country === undefined) {
+                params = { ...params, country: currentCountry };
             }
             let useFirebaseFallback = !netlifyAvailable;
             let body = null;
@@ -2759,16 +2874,20 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
             if (action === 'roll') {
                 if (!onlineProfile) throw Error('Требуется вход');
-                const cost = params.mode === 'both' ? 900 : 500;
+                const countryCode = String(params.country || onlineProfile.draft?.country || currentCountry || 'RUS').toUpperCase();
+                const cfg = PLATE_COUNTRIES[countryCode] || PLATE_COUNTRIES.RUS;
+                const cost = params.mode === 'both' ? cfg.spinCostBoth : cfg.spinCostPart;
                 const effectiveBal = Number.isFinite(Number(onlineProfile.balance)) ? Number(onlineProfile.balance) : balance;
                 if (effectiveBal < cost) throw Error('Недостаточно средств для спина');
                 const newBal = effectiveBal - cost;
                 const userKey = sanitizeKey(onlineProfile.nickname);
+                const defLetter = cfg.letters[0] || 'А';
 
                 const existingDraft = (onlineProfile.draft && typeof onlineProfile.draft === 'object') ? onlineProfile.draft : {
-                    letters: [currentL1 !== '-' ? currentL1 : 'А', currentL2 !== '-' ? currentL2 : 'А', currentL3 !== '-' ? currentL3 : 'А'],
+                    letters: [currentL1 !== '-' ? currentL1 : defLetter, currentL2 !== '-' ? currentL2 : defLetter, currentL3 !== '-' ? currentL3 : defLetter],
                     num: currentNum !== '---' ? currentNum : '111',
-                    reg: params.region || currentReg || '77',
+                    reg: params.region || currentReg || cfg.defaultReg,
+                    country: countryCode,
                     hasNumbers: boardHasNumbers,
                     hasLetters: boardHasLetters,
                     changedNumbers: hasSpunNumSinceSave,
@@ -2776,7 +2895,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 };
 
                 let newNum = existingDraft.num;
-                let newLetters = Array.isArray(existingDraft.letters) ? [...existingDraft.letters] : ['А', 'А', 'А'];
+                let newLetters = Array.isArray(existingDraft.letters) ? [...existingDraft.letters] : [defLetter, defLetter, defLetter];
                 let hasNumbers = !!existingDraft.hasNumbers;
                 let hasLetters = !!existingDraft.hasLetters;
                 let changedNumbers = !!existingDraft.changedNumbers;
@@ -2800,16 +2919,16 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                         else if (pityCounterBoth >= 65) forceTier = 'epic';
                         else if (pityCounterBoth >= 25) forceTier = 'rare';
                     }
-                    newLetters = generateLuckyLettersLocal(forceTier, pityCounterBoth);
+                    newLetters = generateLuckyLettersLocal(forceTier, pityCounterBoth, countryCode);
                     hasLetters = true;
                     changedLetters = true;
                 }
 
                 let nextPity = (existingDraft.pityCounter || pityCounterBoth || 0) + (params.mode === 'both' ? 1 : 0);
                 if (hasNumbers && hasLetters && newNum !== '---' && Array.isArray(newLetters)) {
-                    const price = getCalculatedPrice(newLetters[0], newLetters[1], newLetters[2], newNum, params.region || existingDraft.reg || currentReg || '77');
+                    const price = getCalculatedPrice(newLetters[0], newLetters[1], newLetters[2], newNum, params.region || existingDraft.reg || currentReg || cfg.defaultReg, countryCode);
                     const r = getRarity(price);
-                    if (['Редкий', 'Супер редкий', 'Эпический', 'Легендарный', 'БЛАТНОЙ'].includes(r?.text)) {
+                    if (['Редкий', 'Супер редкий', 'Эпический', 'Легендарный', 'БЛАТНОЙ', 'Крутой'].includes(r?.text)) {
                         nextPity = 0;
                     }
                 }
@@ -2817,7 +2936,8 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 const draft = {
                     letters: newLetters,
                     num: newNum,
-                    reg: params.region || existingDraft.reg || currentReg || '77',
+                    reg: params.region || existingDraft.reg || currentReg || cfg.defaultReg,
+                    country: countryCode,
                     hasNumbers,
                     hasLetters,
                     changedNumbers,
@@ -2840,11 +2960,14 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             if (action === 'setRegion') {
                 if (!onlineProfile) throw Error('Требуется вход');
                 const userKey = sanitizeKey(onlineProfile.nickname);
-                const reg = String(params.region || '').trim();
-                if (!/^\d{2,3}$/.test(reg)) throw Error('Неверный регион');
-                const draft = { ...((onlineProfile.draft && typeof onlineProfile.draft === 'object') ? onlineProfile.draft : {}), reg };
+                const countryCode = String(params.country || onlineProfile.draft?.country || currentCountry || 'RUS').toUpperCase();
+                const cfg = PLATE_COUNTRIES[countryCode] || PLATE_COUNTRIES.RUS;
+                const rawReg = String(params.region || '').trim();
+                const reg = (countryCode === 'USA' || countryCode === 'UAE') ? rawReg.toUpperCase() : rawReg;
+                if (!cfg.regPattern.test(reg)) throw Error('Неверный регион');
+                const draft = { ...((onlineProfile.draft && typeof onlineProfile.draft === 'object') ? onlineProfile.draft : {}), reg, country: cfg.code };
                 onlineProfile.draft = draft;
-                await db.ref('onlineV4/accounts/' + userKey + '/draft').update({ reg, updatedAt: Date.now() }).catch(() => {});
+                await db.ref('onlineV4/accounts/' + userKey + '/draft').update({ reg, country: cfg.code, updatedAt: Date.now() }).catch(() => {});
                 return { ok: true, profile: onlineProfile, draft };
             }
 
@@ -2855,6 +2978,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     letters: [currentL1, currentL2, currentL3],
                     num: currentNum,
                     reg: currentReg,
+                    country: currentCountry,
                     hasNumbers: boardHasNumbers,
                     hasLetters: boardHasLetters,
                     changedNumbers: hasSpunNumSinceSave,
@@ -2863,10 +2987,14 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 if (!draft.hasNumbers || !draft.hasLetters || !draft.changedNumbers || !draft.changedLetters) {
                     throw Error('Сначала прокрутите цифры и буквы');
                 }
-                const reg = (typeof params.region === 'string' && /^\d{2,3}$/.test(params.region)) ? params.region : (draft.reg || currentReg || '777');
+                const countryCode = String(params.country || draft.country || currentCountry || 'RUS').toUpperCase();
+                const cfg = PLATE_COUNTRIES[countryCode] || PLATE_COUNTRIES.RUS;
+                const rawParamReg = typeof params.region === 'string' ? params.region.trim() : '';
+                const normParamReg = (countryCode === 'USA' || countryCode === 'UAE') ? rawParamReg.toUpperCase() : rawParamReg;
+                const reg = (normParamReg && cfg.regPattern.test(normParamReg)) ? normParamReg : (draft.reg || currentReg || cfg.defaultReg);
                 const [l1, l2, l3] = draft.letters;
-                const plateText = `${l1} ${draft.num} ${l2}${l3} | ${reg} RUS`;
-                const price = typeof getCalculatedPrice === 'function' ? getCalculatedPrice(l1, l2, l3, draft.num, reg) : (typeof calculatePrice === 'function' ? calculatePrice() : 2500);
+                const plateText = `${l1} ${draft.num} ${l2}${l3} | ${reg} ${cfg.code}`;
+                const price = typeof getCalculatedPrice === 'function' ? getCalculatedPrice(l1, l2, l3, draft.num, reg, cfg.code) : (typeof calculatePrice === 'function' ? calculatePrice() : 2500);
                 const r = typeof getRarity === 'function' ? getRarity(price) : { text: 'Обычный' };
                 const plate = {
                     id: 'plate_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
@@ -2878,6 +3006,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 const updatedDraft = {
                     ...draft,
                     reg,
+                    country: cfg.code,
                     changedNumbers: false,
                     changedLetters: false
                 };
@@ -3351,7 +3480,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
                 if (lot.type === 'car') {
                     const car = lot.car;
-                    const plateHtml = car.plate ? `<div class="mini-plate" style="font-size:13px; padding:3px 8px; margin-top:4px;">${escapeHtml(car.plate.text)}</div>` : '<small style="color:var(--text-dim);">Без номера</small>';
+                    const plateHtml = car.plate ? `<div class="mini-plate ${getMiniPlateCountryClass(car.plate.text)}" style="font-size:13px; padding:3px 8px; margin-top:4px;">${escapeHtml(car.plate.text)}</div>` : '<small style="color:var(--text-dim);">Без номера</small>';
                     const stylingBadge = car.styling?.neon && car.styling.neon !== 'none' ? `<span style="font-size:9px; color:${car.styling.neon}; font-weight:800; margin-left:4px;">💡 НЕОН</span>` : '';
 
                     html += `
@@ -3403,7 +3532,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                             </div>
 
                             <div style="text-align:center; margin: 4px 0;">
-                                <div class="mini-plate" style="font-size:18px; padding:6px 12px; border-width:2px; display:inline-block;">${escapeHtml(plate.text)}</div>
+                                <div class="mini-plate ${getMiniPlateCountryClass(plate.text)}" style="font-size:18px; padding:6px 12px; border-width:2px; display:inline-block;">${escapeHtml(plate.text)}</div>
                             </div>
 
                             <div class="market-price-tag">
@@ -3600,12 +3729,80 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         }
 
         // --- ЛОГИКА РАСЧЕТА ЦЕНЫ И РЕДКОСТИ ---
-        function getCalculatedPrice(l1, l2, l3, num, reg) {
-            let price = 450;
+        function getCalculatedPrice(l1, l2, l3, num, reg, country = currentCountry) {
+            const code = String(country || 'RUS').toUpperCase();
             let letters = (l1 || '') + (l2 || '') + (l3 || '');
             const isTripleLetters = (l1 === l2 && l2 === l3);
             const isMirrorLetters = (l1 === l3 && l1 !== l2);
             const isPairLetters = (l1 === l2 || l2 === l3) && !isTripleLetters;
+
+            if (code !== 'RUS' && PLATE_COUNTRIES[code]) {
+                const cfg = PLATE_COUNTRIES[code];
+                let price = cfg.basePrice || 600;
+                const mult = code === 'UAE' ? 2.2 : (code === 'USA' ? 1.6 : 1.3);
+                const cElites = cfg.eliteLetters || [];
+
+                // 1. Престижные серии страны
+                if (cElites.includes(letters)) {
+                    if (code === 'UAE' && letters === 'SHK' && num === '001') return 25000000;
+                    if (code === 'UAE' && letters === 'DXB' && num === '777') return 18000000;
+                    if (code === 'USA' && letters === 'VIP' && num === '001') return 16000000;
+                    if (code === 'USA' && letters === 'USA' && num === '777') return 14000000;
+                    if (code === 'KZ' && letters === 'VIP' && num === '777') return 14000000;
+                    if (code === 'KZ' && letters === 'ZZZ' && num === '001') return 12000000;
+
+                    if (num === '777') price += Math.round(5000000 * mult);
+                    else if (num[0] === num[1] && num[1] === num[2]) price += Math.round(2000000 * mult);
+                    else if (num === '001') price += Math.round(1200000 * mult);
+                    else price += Math.round(400000 * mult);
+
+                    if (['SHK', 'DXB', 'UAE', 'VIP', 'USA', 'FBI', 'ZZZ', 'QQQ', 'AAA'].includes(letters)) {
+                        price += Math.round(1300000 * mult);
+                    } else {
+                        price += Math.round(750000 * mult);
+                    }
+                }
+
+                // 2. Структура букв
+                if (isTripleLetters) price += Math.round(350000 * mult);
+                else if (isMirrorLetters) price += Math.round(1800 * mult);
+                else if (isPairLetters) price += Math.round(1200 * mult);
+
+                // 3. Комбинации цифр
+                if (num[0] === num[1] && num[1] === num[2]) {
+                    price += Math.round((num === '777' ? 750000 : 320000) * mult);
+                } else if (num === '001') {
+                    price += Math.round(350000 * mult);
+                } else if (num === '007') {
+                    price += Math.round(120000 * mult);
+                } else if (num.startsWith('00')) {
+                    price += Math.round(35000 * mult);
+                } else if (num.endsWith('00')) {
+                    price += Math.round(25000 * mult);
+                } else if (['123','234','345','456','567','678','789','987','876','765','654','543','432','321'].includes(num)) {
+                    price += Math.round(20000 * mult);
+                } else if (['010','020','030','040','050','060','070','080','090'].includes(num)) {
+                    price += Math.round(2000 * mult);
+                } else if (num[0] === num[2]) {
+                    price += Math.round(1600 * mult);
+                }
+
+                // 4. Престижные регионы / штаты / эмираты
+                const regStr = String(reg || '').toUpperCase();
+                if (
+                    (code === 'KZ' && ['01', '02', '77'].includes(regStr)) ||
+                    (code === 'USA' && ['CA', 'NY', 'FL', 'NV', 'TX'].includes(regStr)) ||
+                    (code === 'UAE' && ['DXB', 'AUH'].includes(regStr))
+                ) {
+                    price += Math.round(500 * mult);
+                    if (num === '777' || num === '001') price += Math.round(500000 * mult);
+                    if (isTripleLetters) price += Math.round(60000 * mult);
+                }
+
+                return price;
+            }
+
+            let price = 450;
 
             // 1. Престижные серии
             if (eliteLetters.includes(letters)) {
@@ -3666,7 +3863,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         }
 
         function calculatePrice() {
-            return getCalculatedPrice(currentL1, currentL2, currentL3, currentNum, currentReg);
+            return getCalculatedPrice(currentL1, currentL2, currentL3, currentNum, currentReg, currentCountry);
         }
 
         function getRarity(price) {
@@ -3684,6 +3881,101 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             return arr[Math.floor(Math.random() * arr.length)];
         }
 
+        function selectPlateCountry(countryCode) {
+            if (isSpinning || serverSpinBusy) return;
+            const code = String(countryCode || 'RUS').toUpperCase();
+            const cfg = PLATE_COUNTRIES[code];
+            if (!cfg) return;
+            currentCountry = code;
+            currentReg = cfg.defaultReg || cfg.defaultRegion;
+
+            const regEl = document.getElementById('region');
+            if (regEl) regEl.innerText = currentReg;
+            const flagEl = document.getElementById('plate-country-flag');
+            if (flagEl) {
+                if (flagEl.classList) {
+                    flagEl.classList.remove('flag-rus', 'flag-kz', 'flag-usa', 'flag-uae');
+                    flagEl.classList.add('flag-' + code.toLowerCase());
+                } else {
+                    flagEl.className = 'flag flag-' + code.toLowerCase();
+                }
+            }
+            const codeEl = document.getElementById('plate-country-code');
+            if (codeEl) codeEl.innerText = cfg.code;
+
+            const plateBox = document.getElementById('plate-box');
+            if (plateBox) {
+                plateBox.classList.remove('country-rus', 'country-kz', 'country-usa', 'country-uae');
+                plateBox.classList.add('country-' + code.toLowerCase());
+            }
+
+            if (typeof document !== 'undefined' && typeof document.querySelectorAll === 'function') {
+                const btns = document.querySelectorAll('.country-select-btn, .country-pill');
+                if (btns && typeof btns.forEach === 'function') {
+                    btns.forEach(btn => {
+                        const btnCountry = btn.getAttribute ? btn.getAttribute('data-country') : (btn.dataset ? btn.dataset.country : '');
+                        if (btn.classList) {
+                            btn.classList.toggle('active', String(btnCountry).toUpperCase() === code);
+                        }
+                    });
+                }
+            }
+
+            const numCostStr = `${cfg.spinCostPart.toLocaleString('ru-RU')} ₽`;
+            const bothCostStr = `${cfg.spinCostBoth.toLocaleString('ru-RU')} ₽`;
+            ['spin-cost-num', 'spin-num-cost'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.innerText = numCostStr;
+            });
+            ['spin-cost-let', 'spin-let-cost'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.innerText = numCostStr;
+            });
+            ['spin-cost-both', 'spin-both-cost'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.innerText = bothCostStr;
+            });
+
+            const regLabelEl = document.getElementById('region-editor-label');
+            if (regLabelEl) regLabelEl.innerText = cfg.regHint;
+            const regInputEl = document.getElementById('region-edit-input');
+            if (regInputEl) {
+                regInputEl.placeholder = currentReg;
+                regInputEl.maxLength = cfg.regMaxLen || 3;
+            }
+            const chipsBox = document.getElementById('region-quick-chips');
+            if (chipsBox && Array.isArray(cfg.popularRegions)) {
+                chipsBox.innerHTML = cfg.popularRegions
+                    .map(r => `<button type="button" class="region-chip" onclick="saveRegionEdit('${r}')">${r}</button>`)
+                    .join('');
+            }
+
+            if (!cfg.letters.includes(currentL1) || !cfg.letters.includes(currentL2) || !cfg.letters.includes(currentL3)) {
+                currentL1 = cfg.letters[0];
+                currentL2 = cfg.letters[0];
+                currentL3 = cfg.letters[0];
+                if (boardHasLetters) {
+                    setCellChar('cell-l1', currentL1);
+                    setCellChar('cell-l2', currentL2);
+                    setCellChar('cell-l3', currentL3);
+                }
+            }
+
+            if (onlineProfile) {
+                if (onlineProfile.draft && typeof onlineProfile.draft === 'object') {
+                    onlineProfile.draft.reg = currentReg;
+                    onlineProfile.draft.country = currentCountry;
+                }
+                onlineRequest('setRegion', { region: currentReg, country: currentCountry }).catch(() => {});
+            }
+
+            checkCanSaveButton();
+            notifyUser(`Выбран стандарт номеров: ${cfg.flagEmoji} ${cfg.name} (${cfg.code})`, 'info');
+        }
+        if (typeof window !== 'undefined') {
+            window.selectPlateCountry = selectPlateCountry;
+        }
+
         function changeRegion() {
             if (isSpinning) return;
             const input = document.getElementById('region-edit-input');
@@ -3697,8 +3989,14 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         function saveRegionEdit(customVal) {
             const input = document.getElementById('region-edit-input');
             const editor = document.getElementById('region-editor');
-            const next = String(customVal !== undefined ? customVal : (input ? input.value : '')).trim();
-            if (!/^\d{2,3}$/.test(next)) { notifyUser('Регион должен содержать 2 или 3 цифры', 'error'); return; }
+            const rawNext = String(customVal !== undefined ? customVal : (input ? input.value : '')).trim();
+            const cfg = PLATE_COUNTRIES[currentCountry] || PLATE_COUNTRIES.RUS;
+            const next = currentCountry === 'RUS' ? rawNext : rawNext.toUpperCase();
+            if (currentCountry === 'RUS') {
+                if (!/^\d{2,3}$/.test(next)) { notifyUser('Регион должен содержать 2 или 3 цифры', 'error'); return; }
+            } else {
+                if (!cfg.regionRegex.test(next)) { notifyUser(cfg.regionHint, 'error'); return; }
+            }
             currentReg = next;
             const regEl = document.getElementById('region');
             if (regEl) regEl.innerText = currentReg;
@@ -3706,8 +4004,10 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             if (onlineProfile) {
                 if (onlineProfile.draft && typeof onlineProfile.draft === 'object') {
                     onlineProfile.draft.reg = next;
+                    if (currentCountry !== 'RUS') onlineProfile.draft.country = currentCountry;
                 }
-                onlineRequest('setRegion', { region: currentReg }).catch(() => {});
+                const payload = currentCountry === 'RUS' ? { region: currentReg } : { region: currentReg, country: currentCountry };
+                onlineRequest('setRegion', payload).catch(() => {});
             }
             checkCanSaveButton();
             notifyUser(`Регион изменён: ${currentReg}`, 'success');
@@ -3889,7 +4189,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                         playWinJingle(r.text);
                         if (typeof sound?.haptic === 'function') sound.haptic('win');
                     }
-                    const curPlateText = `${currentL1} ${currentNum} ${currentL2}${currentL3} | ${currentReg} RUS`;
+                    const curPlateText = `${currentL1} ${currentNum} ${currentL2}${currentL3} | ${currentReg} ${currentCountry}`;
                     logPlayerActivity('Крутит номер', `Выпал госномер «${curPlateText}» (${escapeHtml(r.text)}, ${finalPrice.toLocaleString('ru-RU')} ₽)`);
                     recordQuestProgress('spins', 1);
                     checkAchievements();
@@ -3929,8 +4229,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 if (now - lastTickTime >= 48) {
                     lastTickTime = now;
                     playTick();
+                    const activeLettersPool = (PLATE_COUNTRIES[currentCountry] && PLATE_COUNTRIES[currentCountry].letters) || lettersArr;
                     activeCells.forEach(id => {
-                        if (id.startsWith('cell-l')) setCellChar(id, randomItem(lettersArr));
+                        if (id.startsWith('cell-l')) setCellChar(id, randomItem(activeLettersPool));
                         else setCellChar(id, Math.floor(Math.random() * 10).toString());
                     });
                 }
@@ -3968,6 +4269,20 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             if(!draft)return;
             const updateLetters = (mode === 'both' || mode === 'letters' || !mode);
             const updateNumbers = (mode === 'both' || mode === 'numbers' || !mode);
+
+            if (draft.country && PLATE_COUNTRIES[draft.country]) {
+                currentCountry = draft.country;
+                const cfg = PLATE_COUNTRIES[currentCountry];
+                const flagEl = document.getElementById('plate-country-flag');
+                if (flagEl) flagEl.innerText = cfg.flag;
+                const codeEl = document.getElementById('plate-country-code');
+                if (codeEl) codeEl.innerText = cfg.code;
+                const plateBox = document.getElementById('plate-box');
+                if (plateBox) {
+                    plateBox.classList.remove('country-rus', 'country-kz', 'country-usa', 'country-uae');
+                    plateBox.classList.add('country-' + currentCountry.toLowerCase());
+                }
+            }
 
             if (updateLetters && (draft.hasLetters || mode === 'both' || mode === 'letters')) {
                 if (draft.letters && Array.isArray(draft.letters)) {
@@ -4010,7 +4325,8 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 if (isAutoSpinning) stopAutoSpin();
                 return;
             }
-            const spinCost = mode === 'both' ? 900 : 500;
+            const cfg = PLATE_COUNTRIES[currentCountry] || PLATE_COUNTRIES.RUS;
+            const spinCost = mode === 'both' ? cfg.spinBoth : (mode === 'numbers' ? cfg.spinNumbers : cfg.spinLetters);
             const curOnlineBal = (onlineProfile && Number.isFinite(Number(onlineProfile.balance)))
                 ? Number(onlineProfile.balance)
                 : balance;
@@ -4029,7 +4345,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 } else if (mode === 'letters') {
                     pityCounterLet++;
                 }
-                const data=await onlineRequest('roll',{mode,region:currentReg,pity:pityCounterBoth});
+                const data=await onlineRequest('roll',{mode,region:currentReg,pity:pityCounterBoth,country:currentCountry});
                 if (data.draft && typeof data.draft.pityCounter === 'number') {
                     pityCounterBoth = data.draft.pityCounter;
                 }
@@ -4134,22 +4450,29 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             return Math.floor(Math.random() * 1000).toString().padStart(3, '0');
         }
 
-        function generateLuckyLettersLocal(forceTier, pity = 0) {
+        function generateLuckyLettersLocal(forceTier, pity = 0, country = currentCountry) {
+            const cfg = PLATE_COUNTRIES[country] || PLATE_COUNTRIES.RUS;
+            const pool = cfg.letters || lettersArr;
+            const elites = cfg.eliteLetters || eliteLetters;
+
             if (forceTier === 'legendary') {
-                const elite = randomItem(['ААА', 'АМР', 'ВОР', 'ЕКХ', 'ООО', 'ССС', 'МММ', 'СКР']);
+                const topElites = country === 'RUS'
+                    ? ['ААА', 'АМР', 'ВОР', 'ЕКХ', 'ООО', 'ССС', 'МММ', 'СКР']
+                    : elites;
+                const elite = randomItem(topElites);
                 return [elite[0], elite[1], elite[2]];
             }
             if (forceTier === 'epic') {
                 if (Math.random() < 0.6) {
-                    const elite = randomItem(eliteLetters);
+                    const elite = randomItem(elites);
                     return [elite[0], elite[1], elite[2]];
                 }
-                const l = randomItem(lettersArr);
+                const l = randomItem(pool);
                 return [l, l, l];
             }
             if (forceTier === 'rare') {
-                const l1 = randomItem(lettersArr);
-                const l2 = randomItem(lettersArr);
+                const l1 = randomItem(pool);
+                const l2 = randomItem(pool);
                 return [l1, l2, l1];
             }
 
@@ -4157,29 +4480,31 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             const roll = Math.floor(Math.random() * 1000);
             const eliteCutoff = Math.min(15, 4 + Math.floor(luckBonus * 0.05));
             if (roll < eliteCutoff) {
-                const elite = randomItem(eliteLetters);
+                const elite = randomItem(elites);
                 return [elite[0], elite[1], elite[2]];
             }
             const tripleCutoff = Math.min(35, 12 + Math.floor(luckBonus * 0.15));
             if (roll < tripleCutoff) {
-                const l = randomItem(lettersArr);
+                const l = randomItem(pool);
                 return [l, l, l];
             }
             const mirrorCutoff = Math.min(70, 30 + Math.floor(luckBonus * 0.3));
             if (roll < mirrorCutoff) {
-                const l1 = randomItem(lettersArr);
-                const l2 = randomItem(lettersArr);
+                const l1 = randomItem(pool);
+                const l2 = randomItem(pool);
                 return [l1, l2, l1];
             }
-            return [randomItem(lettersArr), randomItem(lettersArr), randomItem(lettersArr)];
+            return [randomItem(pool), randomItem(pool), randomItem(pool)];
         }
 
         // --- ВАРИАНТЫ ПРОКРУТОК ---
         function spinNumbers() {
             if(onlineProfile)return serverSpin('numbers');
             if (isSpinning) return;
-            if (balance < 500) return notifyUser("Недостаточно средств для спина цифр (500 ₽)!");
-            deductPlayerBalance(500, 'Спин цифр');
+            const cfg = PLATE_COUNTRIES[currentCountry] || PLATE_COUNTRIES.RUS;
+            const cost = cfg.spinNumbers || 500;
+            if (balance < cost) return notifyUser(`Недостаточно средств для спина цифр (${cost} ₽)!`);
+            deductPlayerBalance(cost, 'Спин цифр');
 
             pityCounterNum++;
             let n;
@@ -4203,17 +4528,19 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         function spinLetters() {
             if(onlineProfile)return serverSpin('letters');
             if (isSpinning) return;
-            if (balance < 500) return notifyUser("Недостаточно средств для спина букв (500 ₽)!");
-            deductPlayerBalance(500, 'Спин букв');
+            const cfg = PLATE_COUNTRIES[currentCountry] || PLATE_COUNTRIES.RUS;
+            const cost = cfg.spinLetters || 500;
+            if (balance < cost) return notifyUser(`Недостаточно средств для спина букв (${cost} ₽)!`);
+            deductPlayerBalance(cost, 'Спин букв');
 
             pityCounterLet++;
             let l1, l2, l3;
             if (pityCounterLet >= currentPityTargetLet) {
                 pityCounterLet = 0;
-                let elite = randomItem(eliteLetters);
+                let elite = randomItem(cfg.eliteLetters || eliteLetters);
                 l1 = elite[0]; l2 = elite[1]; l3 = elite[2];
             } else {
-                let letArr = generateLuckyLettersLocal(null, pityCounterLet);
+                let letArr = generateLuckyLettersLocal(null, pityCounterLet, currentCountry);
                 l1 = letArr[0]; l2 = letArr[1]; l3 = letArr[2];
             }
 
@@ -4230,8 +4557,10 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         function spinBoth() {
             if(onlineProfile)return serverSpin('both');
             if (isSpinning) return;
-            if (balance < 900) return notifyUser("Недостаточно средств для полного спина (900 ₽)!");
-            deductPlayerBalance(900, 'Полный спин');
+            const cfg = PLATE_COUNTRIES[currentCountry] || PLATE_COUNTRIES.RUS;
+            const cost = cfg.spinBoth || 900;
+            if (balance < cost) return notifyUser(`Недостаточно средств для полного спина (${cost} ₽)!`);
+            deductPlayerBalance(cost, 'Полный спин');
 
             pityCounterBoth++;
             let forceTier = null;
@@ -4240,7 +4569,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             else if (pityCounterBoth >= 25) forceTier = 'rare';
 
             let n = generateLuckyNumberLocal(forceTier, pityCounterBoth);
-            let letArr = generateLuckyLettersLocal(forceTier, pityCounterBoth);
+            let letArr = generateLuckyLettersLocal(forceTier, pityCounterBoth, currentCountry);
             let l1 = letArr[0], l2 = letArr[1], l3 = letArr[2];
 
             currentNum = n;
@@ -4317,7 +4646,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             const curBal = (onlineProfile && typeof onlineProfile.balance === 'number')
                 ? Number(onlineProfile.balance)
                 : balance;
-            if (curBal < 900) {
+            const cfg = PLATE_COUNTRIES[currentCountry] || PLATE_COUNTRIES.RUS;
+            const reqBal = cfg.spinBoth || 900;
+            if (curBal < reqBal) {
                 stopAutoSpin('Авто-спин остановлен: на активном кошельке недостаточно денег!');
                 return;
             }
@@ -4354,11 +4685,11 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 finally{serverSpinBusy=false;}
                 return;
             }
-            let pText = `${currentL1} ${currentNum} ${currentL2}${currentL3} | ${currentReg} RUS`;
+            let pText = `${currentL1} ${currentNum} ${currentL2}${currentL3} | ${currentReg} ${currentCountry}`;
             let price = calculatePrice();
             let r = getRarity(price);
 
-            inventory.unshift({ text: pText, price: price, rarity: r });
+            inventory.unshift({ text: pText, price: price, rarity: r, country: currentCountry });
             addExp(r.text);
 
             hasSpunLetSinceSave = false;
@@ -4386,7 +4717,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 if (serverSpinBusy && !isAuto) return;
                 serverSpinBusy = true;
                 try {
-                    const data = await onlineRequest('claim', { region: currentReg });
+                    const data = await onlineRequest('claim', { region: currentReg, country: currentCountry });
                     setOnlineProfile(data.profile, true);
                     const rarity = data.plate?.rarity?.text || 'Обычный';
                     addExp(rarity);
@@ -4413,7 +4744,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 return;
             }
 
-            let pText = `${currentL1} ${currentNum} ${currentL2}${currentL3} | ${currentReg} RUS`;
+            let pText = `${currentL1} ${currentNum} ${currentL2}${currentL3} | ${currentReg} ${currentCountry}`;
             let price = calculatePrice();
             let r = getRarity(price);
 
@@ -4433,63 +4764,70 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         }
 
         // --- КЕЙСЫ (CS:GO HORIZONTAL ROULETTE) ---
-        function forcePlate(targetRarity) {
+        function forcePlate(targetRarity, country = currentCountry) {
+            const cfg = PLATE_COUNTRIES[country] || PLATE_COUNTRIES.RUS;
+            const pool = cfg.letters || lettersArr;
+            const elites = cfg.eliteLetters || eliteLetters;
             let l1, l2, l3, num, reg = currentReg, price, actualRarity;
             for (let i = 0; i < 100; i++) {
-                l1 = randomItem(lettersArr); l2 = randomItem(lettersArr); l3 = randomItem(lettersArr);
+                l1 = randomItem(pool); l2 = randomItem(pool); l3 = randomItem(pool);
                 num = Math.floor(Math.random() * 899 + 100).toString();
 
                 if (targetRarity === 'Редкий') {
-                    while (l1 === l2 && l2 === l3) l3 = randomItem(lettersArr);
-                    while (eliteLetters.includes(l1 + l2 + l3)) l2 = randomItem(lettersArr);
+                    while (l1 === l2 && l2 === l3) l3 = randomItem(pool);
+                    while (elites.includes(l1 + l2 + l3)) l2 = randomItem(pool);
                     num = randomItem(['100', '200', '300', '400', '500', '123', '234', '345', '456', '002', '003', '005']);
                 } else if (targetRarity === 'Супер редкий') {
-                    while (l1 === l2 && l2 === l3) l3 = randomItem(lettersArr);
-                    while (eliteLetters.includes(l1 + l2 + l3)) l2 = randomItem(lettersArr);
+                    while (l1 === l2 && l2 === l3) l3 = randomItem(pool);
+                    while (elites.includes(l1 + l2 + l3)) l2 = randomItem(pool);
                     num = '007';
                 } else if (targetRarity === 'Эпический') {
-                    while (l1 === l2 && l2 === l3) l3 = randomItem(lettersArr);
-                    while (eliteLetters.includes(l1 + l2 + l3)) l2 = randomItem(lettersArr);
+                    while (l1 === l2 && l2 === l3) l3 = randomItem(pool);
+                    while (elites.includes(l1 + l2 + l3)) l2 = randomItem(pool);
                     num = randomItem(['111', '222', '333', '444', '555', '888', '999', '001']);
                 } else if (targetRarity === 'Легендарный') {
-                    const elite = randomItem(['ВОР', 'ЕКХ', 'АМР', 'ААА']);
+                    const elite = randomItem(country === 'RUS' ? ['ВОР', 'ЕКХ', 'АМР', 'ААА'] : elites);
                     l1 = elite[0]; l2 = elite[1]; l3 = elite[2];
                     num = randomItem(['123', '234', '345', '100', '200', '500']);
                 } else if (targetRarity === 'Крутой') {
-                    const elite = randomItem(['ВОР', 'ЕКХ', 'АМР', 'ААА']);
+                    const elite = randomItem(country === 'RUS' ? ['ВОР', 'ЕКХ', 'АМР', 'ААА'] : elites);
                     l1 = elite[0]; l2 = elite[1]; l3 = elite[2];
                     num = randomItem(['777', '888']);
                 } else if (targetRarity === 'БЛАТНОЙ') {
-                    l1 = 'Е'; l2 = 'К'; l3 = 'Х';
-                    num = '011';
+                    if (country === 'UAE') { l1 = 'S'; l2 = 'H'; l3 = 'K'; num = '001'; }
+                    else if (country === 'USA') { l1 = 'V'; l2 = 'I'; l3 = 'P'; num = '001'; }
+                    else if (country === 'KZ') { l1 = 'V'; l2 = 'I'; l3 = 'P'; num = '777'; }
+                    else { l1 = 'Е'; l2 = 'К'; l3 = 'Х'; num = '011'; }
                 } else if (targetRarity === 'Необычный') {
                     while (l1 === l2 || l2 === l3 || l1 === l3) {
-                        l1 = randomItem(lettersArr); l2 = randomItem(lettersArr); l3 = randomItem(lettersArr);
+                        l1 = randomItem(pool); l2 = randomItem(pool); l3 = randomItem(pool);
                     }
                     num = randomItem(['010', '020', '030', '040', '050']);
                 } else if (targetRarity === 'Обычный') {
-                    while (l1 === l2 || l2 === l3 || l1 === l3 || eliteLetters.includes(l1 + l2 + l3)) {
-                        l1 = randomItem(lettersArr); l2 = randomItem(lettersArr); l3 = randomItem(lettersArr);
+                    while (l1 === l2 || l2 === l3 || l1 === l3 || elites.includes(l1 + l2 + l3)) {
+                        l1 = randomItem(pool); l2 = randomItem(pool); l3 = randomItem(pool);
                     }
                     num = randomItem(['142', '258', '369', '417', '582', '638']);
                 }
 
-                price = getCalculatedPrice(l1, l2, l3, num, reg.toString());
+                price = getCalculatedPrice(l1, l2, l3, num, reg.toString(), country);
                 actualRarity = getRarity(price).text;
                 if (actualRarity === targetRarity) break;
             }
             if (actualRarity !== targetRarity) {
-                if (targetRarity === 'БЛАТНОЙ') { l1 = 'Е'; l2 = 'К'; l3 = 'Х'; num = '011'; }
-                else if (targetRarity === 'Крутой') { l1 = 'Е'; l2 = 'К'; l3 = 'Х'; num = '777'; }
-                else if (targetRarity === 'Легендарный') { l1 = 'В'; l2 = 'О'; l3 = 'Р'; num = '123'; }
-                else if (targetRarity === 'Эпический') { l1 = 'А'; l2 = 'В'; l3 = 'Е'; num = '111'; }
-                else if (targetRarity === 'Супер редкий') { l1 = 'А'; l2 = 'В'; l3 = 'Е'; num = '007'; }
-                else if (targetRarity === 'Редкий') { l1 = 'А'; l2 = 'В'; l3 = 'Е'; num = '100'; }
-                else if (targetRarity === 'Необычный') { l1 = 'А'; l2 = 'В'; l3 = 'Е'; num = '010'; }
-                else { l1 = 'А'; l2 = 'В'; l3 = 'Е'; num = '142'; }
-                price = getCalculatedPrice(l1, l2, l3, num, reg.toString());
+                const defLetters = country === 'RUS' ? ['А', 'В', 'Е'] : ['A', 'B', 'E'];
+                const eliteTop = country === 'UAE' ? ['S', 'H', 'K'] : (country === 'RUS' ? ['Е', 'К', 'Х'] : ['V', 'I', 'P']);
+                if (targetRarity === 'БЛАТНОЙ') { [l1, l2, l3] = eliteTop; num = country === 'KZ' ? '777' : (country === 'RUS' ? '011' : '001'); }
+                else if (targetRarity === 'Крутой') { [l1, l2, l3] = eliteTop; num = '777'; }
+                else if (targetRarity === 'Легендарный') { [l1, l2, l3] = eliteTop; num = '123'; }
+                else if (targetRarity === 'Эпический') { [l1, l2, l3] = defLetters; num = '111'; }
+                else if (targetRarity === 'Супер редкий') { [l1, l2, l3] = defLetters; num = '007'; }
+                else if (targetRarity === 'Редкий') { [l1, l2, l3] = defLetters; num = '100'; }
+                else if (targetRarity === 'Необычный') { [l1, l2, l3] = defLetters; num = '010'; }
+                else { [l1, l2, l3] = defLetters; num = '142'; }
+                price = getCalculatedPrice(l1, l2, l3, num, reg.toString(), country);
             }
-            return { text: `${l1} ${num} ${l2}${l3} | ${reg} RUS`, price: price, rarity: getRarity(price) };
+            return { text: `${l1} ${num} ${l2}${l3} | ${reg} ${country}`, price: price, rarity: getRarity(price), country };
         }
 
         function getCarRarity(price) {
@@ -4959,7 +5297,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                             ${rarityHTML}
                             <span class="inv-card-price">${Number(item.price || 0).toLocaleString('ru-RU')} ₽</span>
                         </div>
-                        <div class="mini-plate">${escapeHtml(item.text)}</div>
+                        <div class="mini-plate ${getMiniPlateCountryClass(item.text)}">${escapeHtml(item.text)}</div>
                         <button class="btn btn-close" style="padding:8px 12px; width:100%;" onclick="sellPlate(${index})">Продать (+${Number(item.price||0).toLocaleString('ru-RU')} ₽)</button>
                     </div>`;
             });
@@ -5146,7 +5484,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                         <div style="text-align: center; width: 100%;">
                             ${rHtml}
                             <div style="display: flex; justify-content: center;">
-                                <div class="mini-plate">${escapeHtml(car.plate.text)}</div>
+                                <div class="mini-plate ${getMiniPlateCountryClass(car.plate.text)}">${escapeHtml(car.plate.text)}</div>
                             </div>
                             <div style="font-size: 11px; color: var(--text-muted); margin-top: 6px;">
                                 Стоимость с номером: <b style="color: var(--accent-green);">${totalSellPrice.toLocaleString('ru-RU')} ₽</b>
@@ -6631,13 +6969,13 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             { id: 'total_drift_50k', icon: '🏆', name: 'Дрифт Легенда', desc: 'Набрать 50 000 очков дрифта суммарно', reward: 300000, titleReward: 'drift_legend', check: () => (Number(achievements.driftTotalScore || 0) >= 50000) },
             { id: 'drag_champ', icon: '🏁', name: 'Король Дрэга', desc: 'Выиграть 3 дрэг-заезда на 1/4 мили', reward: 120000, titleReward: 'drag_king', check: () => (achievements.dragWins >= 3) },
             { id: 'plate_777', icon: '🎰', name: 'Три топора', desc: 'Выбить номер с 777 в тексте', reward: 200000, titleReward: null, check: () => inventory.some(p => String(p.text).includes('777')) },
-            { id: 'blatnoy_plate', icon: '⭐', name: 'Блатная Серия', desc: 'Иметь спецсерию (АМР, ЕКХ, ААА, ВОР, ХХХ) в гараже', reward: 200000, titleReward: 'authority', check: () => {
+            { id: 'blatnoy_plate', icon: '⭐', name: 'Блатная Серия', desc: 'Иметь спецсерию (АМР, ЕКХ, ААА, ВОР, ХХХ, VIP, DXB, SHK) в гараже', reward: 200000, titleReward: 'authority', check: () => {
                 const allPlates = [...(inventory || []), ...((myCars || []).map(c => c && c.plate).filter(Boolean))];
                 return allPlates.some(p => {
                     const raw = String(p?.text || p || '').trim();
                     const m = raw.match(/^([А-ЯЁA-Z])\s*\d{3}\s*([А-ЯЁA-Z]{2})/i);
                     const letters = m ? (m[1] + m[2]).toUpperCase() : raw.replace(/[^А-ЯЁA-Z]/gi, '').slice(0, 3).toUpperCase();
-                    return /^(АМР|ЕКХ|ААА|ВОР|ХХХ)$/i.test(letters);
+                    return /^(АМР|ЕКХ|ААА|ВОР|ХХХ|VIP|DXB|SHK|UAE|USA|FBI|ZZZ|QQQ)$/i.test(letters);
                 });
             }},
             { id: 'styling_master', icon: '🎨', name: 'Кастом-мастер', desc: 'Установить цвет и неон на автомобиль', reward: 60000, titleReward: null, check: () => myCars.some(c => c.styling?.neon && c.styling.neon !== 'none') },

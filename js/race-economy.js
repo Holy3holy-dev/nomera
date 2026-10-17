@@ -52,6 +52,11 @@
         else if (rarityText === 'Супер редкий') plateMult = 1.10;
         else if (rarityText === 'Редкий') plateMult = 1.05;
 
+        const plateText = String(car?.plate?.text || '').trim().toUpperCase();
+        if (/\bUAE$/.test(plateText)) plateMult += 0.08;
+        else if (/\bUSA$/.test(plateText)) plateMult += 0.05;
+        else if (/\bKZ$/.test(plateText)) plateMult += 0.03;
+
         return {
             ...baseStats,
             speed: Math.round(baseStats.speed * (1 + upgrades.engine * 0.055) * health),

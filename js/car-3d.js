@@ -582,46 +582,65 @@
         return group;
     }
 
-    // Russian License Plate parser & formatter
+    // Multi-country License Plate parser & formatter (RUS, KZ, USA, UAE)
     function formatPlateComponents(rawText) {
         if (!rawText || rawText === 'none' || rawText === 'null') {
-            return { main: 'А 777 АА', region: '77', isNone: true };
+            return { main: 'А 777 АА', region: '77', country: 'RUS', isNone: true };
         }
         let str = String(rawText).trim();
+        const defaultRegionForCountry = (c) => {
+            if (c === 'KZ') return '01';
+            if (c === 'USA') return 'CA';
+            if (c === 'UAE') return 'DXB';
+            return '77';
+        };
+
         if (str.includes('|')) {
             const parts = str.split('|');
             const main = parts[0].trim();
-            const regStr = parts[1].trim();
-            const regMatch = regStr.match(/\d+/);
-            const region = regMatch ? regMatch[0] : '77';
-            return { main: main || 'А 777 АА', region: region, isNone: false };
+            const regStr = parts.slice(1).join(' ').trim();
+            const countryMatch = regStr.match(/\b(RUS|KZ|USA|UAE)\b/i);
+            const country = countryMatch ? countryMatch[1].toUpperCase() : 'RUS';
+            const regClean = regStr.replace(/\b(RUS|KZ|USA|UAE)\b/ig, '').trim();
+            const regMatch = regClean.match(/[A-ZА-Я0-9]{1,5}/i);
+            const region = regMatch ? regMatch[0].toUpperCase() : defaultRegionForCountry(country);
+            return { main: main || 'А 777 АА', region, country, isNone: false };
         }
-        // Match plates with 1-2 letters, 1-4 digits, 1-2 letters, 2-3 digits region (e.g. А777АА77, В2109АЗ63)
-        const m = str.match(/^([А-ЯA-Z]{1,2})\s*(\d{1,4})\s*([А-ЯA-Z]{1,2})\s*(\d{2,3})$/i);
+
+        let country = 'RUS';
+        const trailingCountry = str.match(/\s+\b(RUS|KZ|USA|UAE)\b$/i);
+        if (trailingCountry) {
+            country = trailingCountry[1].toUpperCase();
+            str = str.slice(0, trailingCountry.index).trim();
+        }
+
+        // Match plates with 1-2 letters, 1-4 digits, 1-2 letters, and 2-3 char alphanumeric/numeric region
+        const m = str.match(/^([А-ЯA-Z]{1,2})\s*(\d{1,4})\s*([А-ЯA-Z]{1,2})\s+([A-ZА-Я0-9]{2,3})$/i) ||
+                  str.match(/^([А-ЯA-Z]{1,2})\s*(\d{1,4})\s*([А-ЯA-Z]{1,2})\s*(\d{2,3})$/i);
         if (m) {
             const l1 = m[1].toUpperCase();
             const digits = m[2];
             const l2 = m[3].toUpperCase();
-            const reg = m[4];
-            return { main: `${l1} ${digits} ${l2}`, region: reg, isNone: false };
+            const reg = m[4].toUpperCase();
+            return { main: `${l1} ${digits} ${l2}`, region: reg, country, isNone: false };
         }
         // Match standard Russian plate prefix
-        const m2 = str.match(/^([А-ЯA-Z]?)\s*(\d{1,3})\s*([А-ЯA-Z]{0,2})\s*(\d{2,3})?/i);
+        const m2 = str.match(/^([А-ЯA-Z]?)\s*(\d{1,3})\s*([А-ЯA-Z]{0,2})\s*(\d{2,3})?$/i);
         if (m2 && m2[2]) {
             const l1 = (m2[1] || 'А').toUpperCase();
             const digits = m2[2].padStart(3, '0');
             const l2 = (m2[3] || 'АА').toUpperCase();
-            const reg = m2[4] || '77';
-            return { main: `${l1} ${digits} ${l2}`, region: reg, isNone: false };
+            const reg = m2[4] || defaultRegionForCountry(country);
+            return { main: `${l1} ${digits} ${l2}`, region: reg, country, isNone: false };
         }
         const spaceIdx = str.lastIndexOf(' ');
-        if (spaceIdx > 0 && /^\d{2,3}$/.test(str.slice(spaceIdx + 1))) {
-            return { main: str.slice(0, spaceIdx).toUpperCase(), region: str.slice(spaceIdx + 1), isNone: false };
+        if (spaceIdx > 0 && /^(\d{2,3}|CA|NY|FL|TX|NV|DXB|AUH|SHJ)$/i.test(str.slice(spaceIdx + 1))) {
+            return { main: str.slice(0, spaceIdx).toUpperCase(), region: str.slice(spaceIdx + 1).toUpperCase(), country, isNone: false };
         }
-        return { main: str.slice(0, 9).toUpperCase(), region: '77', isNone: false };
+        return { main: str.slice(0, 9).toUpperCase(), region: defaultRegionForCountry(country), country, isNone: false };
     }
 
-    // Russian License Plate (A 777 AA | 77 RUS) with high-res crisp canvas texture & tricolor flag
+    // Multi-country 3D License Plate (RUS, KZ, USA, UAE) with high-res crisp canvas texture & flags
     function createLicensePlate(THREE, text = 'А 777 АА | 77 RUS', isFront = true) {
         const group = new THREE.Group();
         group.name = isFront ? 'FrontLicensePlate' : 'RearLicensePlate';
@@ -629,10 +648,12 @@
 
         if (text === null || text === 'none' || text === false) {
             group.visible = false;
+            group.userData.plateCountry = 'RUS';
             return group;
         }
 
         const comp = formatPlateComponents(text);
+        group.userData.plateCountry = comp.country || 'RUS';
         if (comp.isNone) {
             group.visible = false;
             return group;
@@ -648,48 +669,192 @@
                 canvas.height = 128;
                 const ctx = canvas.getContext('2d');
                 if (ctx) {
-                    // 1. White Crisp Background
-                    ctx.fillStyle = '#f8fafc';
-                    ctx.fillRect(0, 0, 512, 128);
-
-                    // 2. Outer Embossed Black Border
-                    ctx.strokeStyle = '#090d16';
-                    ctx.lineWidth = 8;
-                    ctx.strokeRect(6, 6, 500, 116);
-
-                    // 3. Region Divider
-                    ctx.beginPath();
-                    ctx.moveTo(384, 8);
-                    ctx.lineTo(384, 120);
-                    ctx.lineWidth = 5;
-                    ctx.stroke();
-
-                    // 4. Main Plate Text
-                    ctx.fillStyle = '#090d16';
+                    const country = comp.country || 'RUS';
                     const mainText = comp.main;
-                    const fontSize = mainText.length > 9 ? 56 : 68;
-                    ctx.font = `bold ${fontSize}px "Inter", "Arial Black", sans-serif`;
-                    ctx.textAlign = 'center';
-                    ctx.textBaseline = 'middle';
-                    ctx.fillText(mainText, 196, 68);
+                    const regCode = comp.region;
 
-                    // 5. Region Digits
-                    const regDigits = comp.region;
-                    const regFontSize = regDigits.length > 2 ? 40 : 48;
-                    ctx.font = `bold ${regFontSize}px "Inter", "Arial Black", sans-serif`;
-                    ctx.fillText(regDigits, 448, 46);
+                    if (country === 'USA') {
+                        // Authentic US License Plate (California / State Gold & Navy style)
+                        if (typeof ctx.createLinearGradient === 'function') {
+                            const grad = ctx.createLinearGradient(0, 0, 0, 128);
+                            grad.addColorStop(0, '#fffbeb');
+                            grad.addColorStop(1, '#fef3c7');
+                            ctx.fillStyle = grad;
+                        } else {
+                            ctx.fillStyle = '#fef3c7';
+                        }
+                        ctx.fillRect(0, 0, 512, 128);
 
-                    // 6. RUS & Russian Flag
-                    ctx.font = '800 22px "Inter", sans-serif';
-                    ctx.fillText('RUS', 426, 98);
+                        // Deep Navy Border
+                        ctx.strokeStyle = '#1e293b';
+                        ctx.lineWidth = 8;
+                        ctx.strokeRect(6, 6, 500, 116);
 
-                    const fx = 456, fy = 86, fw = 38, fh = 22;
-                    ctx.fillStyle = '#ffffff';
-                    ctx.fillRect(fx, fy, fw, 7.2);
-                    ctx.fillStyle = '#2563eb';
-                    ctx.fillRect(fx, fy + 7.2, fw, 7.2);
-                    ctx.fillStyle = '#dc2626';
-                    ctx.fillRect(fx, fy + 14.4, fw, 7.6);
+                        // Mini US Stars & Stripes flag on top-left
+                        const fx = 20, fy = 16, fw = 42, fh = 24;
+                        ctx.fillStyle = '#dc2626';
+                        ctx.fillRect(fx, fy, fw, fh);
+                        ctx.fillStyle = '#ffffff';
+                        ctx.fillRect(fx, fy + 4, fw, 4);
+                        ctx.fillRect(fx, fy + 12, fw, 4);
+                        ctx.fillRect(fx, fy + 20, fw, 4);
+                        ctx.fillStyle = '#1e3a8a';
+                        ctx.fillRect(fx, fy, 18, 13);
+
+                        // Top State Header Banner
+                        const stateNames = {
+                            CA: 'CALIFORNIA',
+                            NY: 'NEW YORK',
+                            FL: 'FLORIDA',
+                            TX: 'TEXAS',
+                            NV: 'NEVADA'
+                        };
+                        const headerLabel = stateNames[regCode] || (`USA • ${regCode}`);
+                        ctx.fillStyle = '#b91c1c';
+                        ctx.font = '900 22px "Inter", "Arial Black", sans-serif';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillText(headerLabel, 256, 26);
+
+                        // Top-right State + USA badge
+                        ctx.fillStyle = '#1e3a8a';
+                        ctx.font = '800 18px "Inter", sans-serif';
+                        ctx.fillText(`${regCode} • USA`, 450, 26);
+
+                        // Main Plate Characters centered
+                        ctx.fillStyle = '#0f172a';
+                        const fontSize = mainText.length > 9 ? 54 : 66;
+                        ctx.font = `bold ${fontSize}px "Inter", "Arial Black", sans-serif`;
+                        ctx.fillText(mainText, 256, 78);
+                    } else if (country === 'UAE') {
+                        // Authentic Dubai / UAE RTA Luxury Plate
+                        ctx.fillStyle = '#ffffff';
+                        ctx.fillRect(0, 0, 512, 128);
+
+                        // Sleek Black Outer Border + Royal Gold Inner Border
+                        ctx.strokeStyle = '#090d16';
+                        ctx.lineWidth = 8;
+                        ctx.strokeRect(6, 6, 500, 116);
+                        ctx.strokeStyle = '#d97706';
+                        ctx.lineWidth = 3;
+                        ctx.strokeRect(13, 13, 486, 102);
+
+                        // Vertical Divider
+                        ctx.strokeStyle = '#090d16';
+                        ctx.beginPath();
+                        ctx.moveTo(376, 10);
+                        ctx.lineTo(376, 118);
+                        ctx.lineWidth = 5;
+                        ctx.stroke();
+
+                        // Main Plate Text
+                        ctx.fillStyle = '#090d16';
+                        const fontSize = mainText.length > 9 ? 54 : 66;
+                        ctx.font = `bold ${fontSize}px "Inter", "Arial Black", sans-serif`;
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillText(mainText, 192, 68);
+
+                        // Right Panel: Emirate Header (DUBAI / DXB / AUH)
+                        const emirateLabel = regCode === 'DXB' ? 'DUBAI' : regCode;
+                        ctx.fillStyle = '#b45309';
+                        ctx.font = '900 22px "Inter", "Arial Black", sans-serif';
+                        ctx.fillText(emirateLabel, 440, 34);
+
+                        ctx.fillStyle = '#090d16';
+                        ctx.font = '800 20px "Inter", sans-serif';
+                        ctx.fillText(regCode, 440, 62);
+
+                        // UAE label & 4-color UAE flag
+                        ctx.font = '800 18px "Inter", sans-serif';
+                        ctx.fillText('UAE', 412, 98);
+
+                        const fx = 444, fy = 86, fw = 42, fh = 22;
+                        ctx.fillStyle = '#16a34a';
+                        ctx.fillRect(fx + 11, fy, fw - 11, 7.3);
+                        ctx.fillStyle = '#ffffff';
+                        ctx.fillRect(fx + 11, fy + 7.3, fw - 11, 7.3);
+                        ctx.fillStyle = '#090d16';
+                        ctx.fillRect(fx + 11, fy + 14.6, fw - 11, 7.4);
+                        ctx.fillStyle = '#dc2626';
+                        ctx.fillRect(fx, fy, 11, fh);
+                    } else if (country === 'KZ') {
+                        // Kazakhstan (KZ) Plate with Sky-Blue & Gold Sun Flag
+                        ctx.fillStyle = '#f8fafc';
+                        ctx.fillRect(0, 0, 512, 128);
+
+                        ctx.strokeStyle = '#090d16';
+                        ctx.lineWidth = 8;
+                        ctx.strokeRect(6, 6, 500, 116);
+
+                        ctx.beginPath();
+                        ctx.moveTo(384, 8);
+                        ctx.lineTo(384, 120);
+                        ctx.lineWidth = 5;
+                        ctx.stroke();
+
+                        ctx.fillStyle = '#090d16';
+                        const fontSize = mainText.length > 9 ? 56 : 68;
+                        ctx.font = `bold ${fontSize}px "Inter", "Arial Black", sans-serif`;
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillText(mainText, 196, 68);
+
+                        const regFontSize = regCode.length > 2 ? 40 : 48;
+                        ctx.font = `bold ${regFontSize}px "Inter", "Arial Black", sans-serif`;
+                        ctx.fillText(regCode, 448, 46);
+
+                        ctx.font = '800 22px "Inter", sans-serif';
+                        ctx.fillText('KZ', 420, 98);
+
+                        const fx = 450, fy = 85, fw = 42, fh = 24;
+                        ctx.fillStyle = '#0ea5e9';
+                        ctx.fillRect(fx, fy, fw, fh);
+                        ctx.fillStyle = '#fbbf24';
+                        if (typeof ctx.arc === 'function') {
+                            ctx.beginPath();
+                            ctx.arc(fx + fw / 2, fy + fh / 2, 6, 0, Math.PI * 2);
+                            ctx.fill();
+                        } else {
+                            ctx.fillRect(fx + 15, fy + 6, 12, 12);
+                        }
+                    } else {
+                        // Russian (RUS) Default Plate
+                        ctx.fillStyle = '#f8fafc';
+                        ctx.fillRect(0, 0, 512, 128);
+
+                        ctx.strokeStyle = '#090d16';
+                        ctx.lineWidth = 8;
+                        ctx.strokeRect(6, 6, 500, 116);
+
+                        ctx.beginPath();
+                        ctx.moveTo(384, 8);
+                        ctx.lineTo(384, 120);
+                        ctx.lineWidth = 5;
+                        ctx.stroke();
+
+                        ctx.fillStyle = '#090d16';
+                        const fontSize = mainText.length > 9 ? 56 : 68;
+                        ctx.font = `bold ${fontSize}px "Inter", "Arial Black", sans-serif`;
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillText(mainText, 196, 68);
+
+                        const regFontSize = regCode.length > 2 ? 40 : 48;
+                        ctx.font = `bold ${regFontSize}px "Inter", "Arial Black", sans-serif`;
+                        ctx.fillText(regCode, 448, 46);
+
+                        ctx.font = '800 22px "Inter", sans-serif';
+                        ctx.fillText('RUS', 426, 98);
+
+                        const fx = 456, fy = 86, fw = 38, fh = 22;
+                        ctx.fillStyle = '#ffffff';
+                        ctx.fillRect(fx, fy, fw, 7.2);
+                        ctx.fillStyle = '#2563eb';
+                        ctx.fillRect(fx, fy + 7.2, fw, 7.2);
+                        ctx.fillStyle = '#dc2626';
+                        ctx.fillRect(fx, fy + 14.4, fw, 7.6);
+                    }
 
                     const tex = new THREE.CanvasTexture(canvas);
                     tex.generateMipmaps = true;
@@ -713,6 +878,7 @@
                     group.add(back);
 
                     group.userData.plateText = text;
+                    group.userData.plateCountry = country;
                     return group;
                 }
             } catch (_) {}
@@ -731,6 +897,7 @@
         group.add(frame);
 
         group.userData.plateText = text;
+        group.userData.plateCountry = comp.country || 'RUS';
         return group;
     }
 
@@ -1047,6 +1214,7 @@
                     oldFP.add(newFP.children[0]);
                 }
                 oldFP.userData.plateText = text;
+                oldFP.userData.plateCountry = newFP.userData.plateCountry;
                 if (oldFP.parent && oldFP.name === 'GLB_FrontLicensePlate') {
                     const localF = worldFront.clone();
                     oldFP.parent.worldToLocal(localF);
@@ -1066,6 +1234,7 @@
                     oldRP.add(newRP.children[0]);
                 }
                 oldRP.userData.plateText = text;
+                oldRP.userData.plateCountry = newRP.userData.plateCountry;
                 if (oldRP.parent && oldRP.name === 'GLB_RearLicensePlate') {
                     const localR = worldRear.clone();
                     oldRP.parent.worldToLocal(localR);

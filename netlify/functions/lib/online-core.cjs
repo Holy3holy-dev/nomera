@@ -57,7 +57,7 @@ function sessionCookie(tok,maxAge=86400){return `${COOKIE}=${tok}; HttpOnly; Sec
 function safePlate(raw,id){
   if (!raw || typeof raw!=='object'||Array.isArray(raw)) throw Error('Неверный номер');
   const text=String(raw.text||'');
-  if (text.length>36 || !/^[АВЕКМНОРСТУХ] \d{3} [АВЕКМНОРСТУХ]{2} \| \d{2,3} RUS$/u.test(text)) throw Error('Неверный формат номера');
+  if (text.length>36 || !/^[АВЕКМНОРСТУХA-Z] \d{3} [АВЕКМНОРСТУХA-Z]{2} \| [A-Z0-9]{1,3} (?:RUS|KZ|USA|UAE)$/u.test(text)) throw Error('Неверный формат номера');
   const price=Number.isSafeInteger(raw.price) && raw.price>=0 && raw.price<=MAX_MONEY ? raw.price : 1000;
   return {id, text, price, rarity:{text:typeof raw.rarity?.text==='string'?raw.rarity.text.slice(0,30):'Обычный'}};
 }
@@ -123,30 +123,97 @@ function money(v){if(!Number.isSafeInteger(v) ||v<0||v>MAX_MONEY) throw Error('�
 const LETTERS = ['А','В','Е','К','М','Н','О','Р','С','Т','У','Х'];
 const ELITES = ['ААА','АМР','ВВВ','ВОР','ТТТ','ХХХ','ККК','ЕКХ','АЕО','ООО','ССС','МММ','СКР','УУУ'];
 
-function priceOfPlate(l1,l2,l3,num,reg) {
+const COUNTRIES = {
+  RUS: {
+    code: 'RUS',
+    spinCostBoth: 900,
+    spinCostPart: 500,
+    priceMult: 1.0,
+    regRegex: /^\d{2,3}$/,
+    defaultReg: '777',
+    letters: LETTERS,
+    elites: ELITES
+  },
+  KZ: {
+    code: 'KZ',
+    spinCostBoth: 1800,
+    spinCostPart: 1000,
+    priceMult: 1.8,
+    regRegex: /^(?:0[1-9]|1[0-9]|20|\d{2})$/,
+    defaultReg: '01',
+    letters: 'ABCDEFGHKLMNOPQRSTUVWXYZ'.split(''),
+    elites: ['AAA','VIP','ZZZ','QQQ','GGG','NNN','MMM','SSS','XXX','LLL','AST','ALA','HAN']
+  },
+  USA: {
+    code: 'USA',
+    spinCostBoth: 3500,
+    spinCostPart: 2000,
+    priceMult: 3.5,
+    regRegex: /^(?:[A-Z]{2}|\d{2,3})$/i,
+    defaultReg: 'CA',
+    letters: 'ABCDEFGHJKLMNPRSTUVWXYZ'.split(''),
+    elites: ['USA','VIP','NYC','LAX','MIA','GTA','FBI','CIA','CEO','GOD','WIN','XXX','AAA']
+  },
+  UAE: {
+    code: 'UAE',
+    spinCostBoth: 9000,
+    spinCostPart: 5000,
+    priceMult: 8.0,
+    regRegex: /^(?:DXB|AUH|SHJ|AJM|RAK|FUJ|UAQ|[A-Z]{1,3}|\d{1,3})$/i,
+    defaultReg: 'DXB',
+    letters: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split(''),
+    elites: ['DXB','UAE','SHK','VIP','AAA','ZZZ','FFF','GGG','RRR','SSS','XXX','CEO','OIL','GLD']
+  }
+};
+
+function priceOfPlate(l1,l2,l3,num,reg,country='RUS') {
+  const cCode = (country && COUNTRIES[String(country).toUpperCase()]) ? String(country).toUpperCase() : 'RUS';
+  const cfg = COUNTRIES[cCode];
   let price = 450; // Базовая стоимость простого номера
   const letters = (l1||'') + (l2||'') + (l3||'');
   const isTripleLetters = (l1 === l2 && l2 === l3);
   const isMirrorLetters = (l1 === l3 && l1 !== l2);
   const isPairLetters = (l1 === l2 || l2 === l3) && !isTripleLetters;
 
-  // 1. Престижные буквенные серии
-  if (ELITES.includes(letters)) {
-    if (letters === 'ЕКХ' && num === '011') return 12000000;
-    if (num === '777') price += 5000000;
-    else if (num[0] === num[1] && num[1] === num[2]) price += 2000000;
-    else if (num === '001') price += 1200000;
-    else price += 400000;
+  if (cCode === 'RUS') {
+    // 1. Престижные буквенные серии
+    if (ELITES.includes(letters)) {
+      if (letters === 'ЕКХ' && num === '011') return 12000000;
+      if (num === '777') price += 5000000;
+      else if (num[0] === num[1] && num[1] === num[2]) price += 2000000;
+      else if (num === '001') price += 1200000;
+      else price += 400000;
+    }
+    if (letters === 'ЕКХ') price += 1500000;
+    if (letters === 'АМР') price += 1500000;
+    if (letters === 'ВОР') price += 1000000;
+    if (letters === 'ООО') price += 850000;
+    if (letters === 'ААА') price += 1200000;
+    if (letters === 'МММ') price += 750000;
+    if (letters === 'ССС') price += 650000;
+    if (letters === 'СКР') price += 700000;
+    if (letters === 'УУУ') price += 600000;
+  } else {
+    if (cfg.elites.includes(letters)) {
+      if (num === '777') price += 5000000;
+      else if (num[0] === num[1] && num[1] === num[2]) price += 2000000;
+      else if (num === '001') price += 1500000;
+      else price += 450000;
+    }
+    if (cCode === 'KZ') {
+      if (letters === 'VIP' || letters === 'AAA') price += 1500000;
+      else if (['ZZZ','QQQ','AST','ALA','HAN'].includes(letters)) price += 950000;
+      else if (cfg.elites.includes(letters)) price += 650000;
+    } else if (cCode === 'USA') {
+      if (['USA','VIP','FBI','CIA'].includes(letters)) price += 1600000;
+      else if (['NYC','LAX','MIA','GTA','CEO','GOD','WIN'].includes(letters)) price += 1100000;
+      else if (cfg.elites.includes(letters)) price += 750000;
+    } else if (cCode === 'UAE') {
+      if (['DXB','UAE','SHK','VIP'].includes(letters)) price += 2000000;
+      else if (['AAA','CEO','OIL','GLD'].includes(letters)) price += 1400000;
+      else if (cfg.elites.includes(letters)) price += 850000;
+    }
   }
-  if (letters === 'ЕКХ') price += 1500000;
-  if (letters === 'АМР') price += 1500000;
-  if (letters === 'ВОР') price += 1000000;
-  if (letters === 'ООО') price += 850000;
-  if (letters === 'ААА') price += 1200000;
-  if (letters === 'МММ') price += 750000;
-  if (letters === 'ССС') price += 650000;
-  if (letters === 'СКР') price += 700000;
-  if (letters === 'УУУ') price += 600000;
 
   // 2. Структура букв
   if (isTripleLetters) price += 350000;
@@ -173,19 +240,52 @@ function priceOfPlate(l1,l2,l3,num,reg) {
   }
 
   // 4. Регионы (символическая надбавка за столичные регионы + синергия с элитой)
-  if (['777','77','99','799','797'].includes(reg)) {
-    price += 250;
-    if (num === '777') price += 500000;
-    if (isTripleLetters) price += 50000;
-  } else if (['78','98','178','198'].includes(reg)) {
-    price += 200;
-  } else if (reg === '95') {
-    price += 200;
-  } else if (reg === '16' || reg === '116' || reg === '716') {
-    price += 150;
+  if (cCode === 'RUS') {
+    if (['777','77','99','799','797'].includes(reg)) {
+      price += 250;
+      if (num === '777') price += 500000;
+      if (isTripleLetters) price += 50000;
+    } else if (['78','98','178','198'].includes(reg)) {
+      price += 200;
+    } else if (reg === '95') {
+      price += 200;
+    } else if (reg === '16' || reg === '116' || reg === '716') {
+      price += 150;
+    }
+    return price;
   }
 
-  return price;
+  const regUp = String(reg || '').toUpperCase();
+  if (cCode === 'KZ') {
+    if (['01','02','17'].includes(regUp)) {
+      price += 500;
+      if (num === '777' || num === '001' || num === '010' || num === '020') price += 500000;
+      if (isTripleLetters || cfg.elites.includes(letters)) price += 60000;
+    } else {
+      price += 200;
+    }
+  } else if (cCode === 'USA') {
+    if (['CA','NY','FL','TX','NV'].includes(regUp)) {
+      price += 800;
+      if (num === '777' || num === '001' || num === '007') price += 550000;
+      if (isTripleLetters || cfg.elites.includes(letters)) price += 80000;
+    } else {
+      price += 300;
+    }
+  } else if (cCode === 'UAE') {
+    if (/^00[1-9]$/.test(num)) {
+      price += (num === '001' ? 3000000 : 950000);
+    }
+    if (['DXB','AUH','1','2'].includes(regUp)) {
+      price += 1500;
+      if (/^00[1-9]$/.test(num) || num === '777') price += 750000;
+      if (isTripleLetters || cfg.elites.includes(letters)) price += 150000;
+    } else {
+      price += 500;
+    }
+  }
+
+  return Math.round(price * cfg.priceMult);
 }
 
 function rarityOfPrice(p){
@@ -199,8 +299,12 @@ function rarityOfPrice(p){
   return 'Обычный';
 }
 
-function secureRoll(mode, pity = 0){
+function secureRoll(mode, pity = 0, country = 'RUS'){
   if(!['both','numbers','letters'].includes(mode))throw Error('Неверный тип спина');
+  const cCode = (country && COUNTRIES[String(country).toUpperCase()]) ? String(country).toUpperCase() : 'RUS';
+  const cfg = COUNTRIES[cCode];
+  const letterPool = cfg.letters;
+  const elitePool = cfg.elites;
   const choose=arr=>arr[crypto.randomInt(arr.length)];
   const pityNum = Math.min(120, Math.max(0, Math.floor(Number(pity) || 0)));
   const luckBonus = Math.min(200, Math.floor(pityNum * 3));
@@ -250,50 +354,54 @@ function secureRoll(mode, pity = 0){
 
   function generateLuckyLetters() {
     if (forceTier === 'legendary') {
-      const elite = choose(['ААА','АМР','ВОР','ЕКХ','ООО','ССС','МММ','СКР']);
+      const topElites = cCode === 'RUS'
+        ? ['ААА','АМР','ВОР','ЕКХ','ООО','ССС','МММ','СКР']
+        : elitePool.slice(0, 8);
+      const elite = choose(topElites);
       return [elite[0], elite[1], elite[2]];
     }
     if (forceTier === 'epic') {
       if (crypto.randomInt(100) < 60) {
-        const elite = choose(ELITES);
+        const elite = choose(elitePool);
         return [elite[0], elite[1], elite[2]];
       }
-      const l = choose(LETTERS);
+      const l = choose(letterPool);
       return [l, l, l];
     }
     if (forceTier === 'rare') {
-      const l1 = choose(LETTERS);
-      const l2 = choose(LETTERS);
+      const l1 = choose(letterPool);
+      const l2 = choose(letterPool);
       return [l1, l2, l1];
     }
 
     const roll = crypto.randomInt(1000);
     const eliteCutoff = Math.min(15, 4 + Math.floor(luckBonus * 0.05));
     if (roll < eliteCutoff) {
-      const elite = choose(ELITES);
+      const elite = choose(elitePool);
       return [elite[0], elite[1], elite[2]];
     }
     const tripleCutoff = Math.min(35, 12 + Math.floor(luckBonus * 0.15));
     if (roll < tripleCutoff) {
-      const l = choose(LETTERS);
+      const l = choose(letterPool);
       return [l, l, l];
     }
     const mirrorCutoff = Math.min(70, 30 + Math.floor(luckBonus * 0.3));
     if (roll < mirrorCutoff) {
-      const l1 = choose(LETTERS);
-      const l2 = choose(LETTERS);
+      const l1 = choose(letterPool);
+      const l2 = choose(letterPool);
       return [l1, l2, l1];
     }
-    return [choose(LETTERS), choose(LETTERS), choose(LETTERS)];
+    return [choose(letterPool), choose(letterPool), choose(letterPool)];
   }
 
   return {
     mode,
+    country: cfg.code,
     num: mode === 'letters' ? null : generateLuckyNumber(),
     letters: mode === 'numbers' ? null : generateLuckyLetters()
   };
 }
-function draftOf(a){return a?.draft&&typeof a.draft==='object'?a.draft:{num:'---',letters:['-','-','-'],reg:'777',hasNumbers:false,hasLetters:false,changedNumbers:false,changedLetters:false,pityCounter:0};}
+function draftOf(a){return a?.draft&&typeof a.draft==='object'?a.draft:{num:'---',letters:['-','-','-'],reg:'777',country:'RUS',hasNumbers:false,hasLetters:false,changedNumbers:false,changedLetters:false,pityCounter:0};}
 function migrateLegacyPin(account, pin) {
   if (!account || typeof account !== 'object') return null;
   const hashed = pinHash(pin);
@@ -311,13 +419,28 @@ function mutate(state, action, key, data, now=Date.now()) {
   if (!a) throw Error('Аккаунт не найден');
   if(action==='roll') {
     const roll=data.roll;
-    const cost=roll?.mode==='both'?900:500;
+    const country = (data?.country && COUNTRIES[String(data.country).toUpperCase()])
+      ? String(data.country).toUpperCase()
+      : (data?.roll?.country && COUNTRIES[data.roll.country] ? data.roll.country : 'RUS');
+    const cfg = COUNTRIES[country];
+    const cost = roll?.mode === 'both' ? cfg.spinCostBoth : cfg.spinCostPart;
     if(!roll||!['both','numbers','letters'].includes(roll.mode)
       || (roll.num!==null && !/^\d{3}$/.test(roll.num))
-      || (roll.letters!==null && (!Array.isArray(roll.letters)||roll.letters.length!==3||roll.letters.some(l=>!LETTERS.includes(l)))))throw Error('Неверный тип спина');
-    if(!/^\d{2,3}$/.test(data.region))throw Error('Неверный регион');
+      || (roll.letters!==null && (!Array.isArray(roll.letters)||roll.letters.length!==3||roll.letters.some(l=>!cfg.letters.includes(l)))))throw Error('Неверный тип спина');
+    if(typeof data.region !== 'string' || !cfg.regRegex.test(data.region))throw Error('Неверный регион');
     if(a.balance<cost)throw Error('Недостаточно денег на онлайн-кошельке');
-    const draft={...draftOf(a),reg:data.region};
+    const reg = data.region.toUpperCase();
+    const prevDraft = draftOf(a);
+    const countryChanged = (prevDraft.country || 'RUS') !== country;
+    const draft={...prevDraft, reg, country};
+    if (countryChanged) {
+      draft.num = '---';
+      draft.letters = ['-','-','-'];
+      draft.hasNumbers = false;
+      draft.hasLetters = false;
+      draft.changedNumbers = false;
+      draft.changedLetters = false;
+    }
     if(roll.num!==null){draft.num=roll.num;draft.hasNumbers=true;draft.changedNumbers=true;}
     if(roll.letters!==null){draft.letters=roll.letters;draft.hasLetters=true;draft.changedLetters=true;}
     const basePity = (a.draft && typeof a.draft.pityCounter === 'number' && a.draft.pityCounter > 0)
@@ -325,9 +448,9 @@ function mutate(state, action, key, data, now=Date.now()) {
       : Math.min(120, Math.max(0, Math.floor(Number(data?.pity) || (draft.pityCounter || 0))));
     let nextPity = basePity + (roll.mode === 'both' ? 1 : 0);
     if (draft.hasNumbers && draft.hasLetters && draft.num !== '---' && Array.isArray(draft.letters)) {
-      const p = priceOfPlate(draft.letters[0], draft.letters[1], draft.letters[2], draft.num, data.region);
+      const p = priceOfPlate(draft.letters[0], draft.letters[1], draft.letters[2], draft.num, reg, country);
       const r = rarityOfPrice(p);
-      if (['Редкий', 'Супер редкий', 'Эпический', 'Легендарный', 'БЛАТНОЙ'].includes(r)) {
+      if (['Редкий', 'Супер редкий', 'Эпический', 'Легендарный', 'Крутой', 'БЛАТНОЙ'].includes(r)) {
         nextPity = 0;
       }
     }
@@ -339,20 +462,28 @@ function mutate(state, action, key, data, now=Date.now()) {
     if (a.balance < amount) throw Error('Недостаточно денег на онлайн-кошельке');
     accounts[key] = { ...a, balance: a.balance - amount, updatedAt: now };
   } else if(action==='setRegion') {
-    if(!data?.region || !/^\d{2,3}$/.test(data.region)) throw Error('Неверный регион');
-    const draft={...draftOf(a), reg:data.region};
+    const country = (data?.country && COUNTRIES[String(data.country).toUpperCase()])
+      ? String(data.country).toUpperCase()
+      : (a.draft?.country && COUNTRIES[a.draft.country] ? a.draft.country : 'RUS');
+    const cfg = COUNTRIES[country];
+    if(!data?.region || typeof data.region !== 'string' || !cfg.regRegex.test(data.region)) throw Error('Неверный регион');
+    const draft={...draftOf(a), reg:data.region.toUpperCase(), country};
     accounts[key]={...a, draft, updatedAt:now};
   } else if(action==='claim') {
     const draft=draftOf(a);
+    const country = (data?.country && COUNTRIES[String(data.country).toUpperCase()])
+      ? String(data.country).toUpperCase()
+      : (draft.country && COUNTRIES[draft.country] ? draft.country : 'RUS');
+    const cfg = COUNTRIES[country];
     if(!draft.hasNumbers||!draft.hasLetters||!draft.changedNumbers||!draft.changedLetters)throw Error('Сначала прокрутите цифры и буквы');
     if((a.inventory||[]).length>=1000)throw Error('Инвентарь заполнен');
-    if(!/^[0-9]{3}$/.test(draft.num)||!Array.isArray(draft.letters)||draft.letters.length!==3||draft.letters.some(l=>!LETTERS.includes(l)))throw Error('Неверный номер');
+    if(!/^[0-9]{3}$/.test(draft.num)||!Array.isArray(draft.letters)||draft.letters.length!==3||draft.letters.some(l=>!cfg.letters.includes(l)))throw Error('Неверный номер');
     const [l1,l2,l3]=draft.letters;
-    const reg=(typeof data?.region==='string'&&/^\d{2,3}$/.test(data.region))?data.region:(draft.reg||'777');
-    const text=`${l1} ${draft.num} ${l2}${l3} | ${reg} RUS`;
-    const price=priceOfPlate(l1,l2,l3,draft.num,reg);
+    const reg=(typeof data?.region==='string'&&cfg.regRegex.test(data.region))?data.region.toUpperCase():(draft.reg&&cfg.regRegex.test(draft.reg)?String(draft.reg).toUpperCase():cfg.defaultReg);
+    const text=`${l1} ${draft.num} ${l2}${l3} | ${reg} ${country}`;
+    const price=priceOfPlate(l1,l2,l3,draft.num,reg,country);
     const plate=safePlate({text,price,rarity:{text:rarityOfPrice(price)}},data.plateId);
-    accounts[key]={...a,inventory:[plate,...(a.inventory||[])],draft:{...draft,reg,changedNumbers:false,changedLetters:false},updatedAt:now};
+    accounts[key]={...a,inventory:[plate,...(a.inventory||[])],draft:{...draft,reg,country,changedNumbers:false,changedLetters:false},updatedAt:now};
   } else if (action==='sell') {
     const price=money(data.price);
     if (price<1000) throw Error('Минимальная цена 1 000 ₽');
@@ -455,4 +586,4 @@ function makeOnlineTransactionUpdate(loaded, action, key, data, now) {
     getReason() {return reason;}
   };
 }
-module.exports={COOKIE,TTL,MAX_MONEY,STARTING_BALANCE,keyOf,pinHash,checkPin,migrateLegacyPin,sign,verify,cookie,sessionCookie,safePlate,safeCar,safeCars,money,sanitizedProfile,mutate,makeOnlineTransactionUpdate,freshAccount,priceOfPlate,rarityOfPrice,secureRoll,draftOf};
+module.exports={COOKIE,TTL,MAX_MONEY,STARTING_BALANCE,COUNTRIES,keyOf,pinHash,checkPin,migrateLegacyPin,sign,verify,cookie,sessionCookie,safePlate,safeCar,safeCars,money,sanitizedProfile,mutate,makeOnlineTransactionUpdate,freshAccount,priceOfPlate,rarityOfPrice,secureRoll,draftOf};
