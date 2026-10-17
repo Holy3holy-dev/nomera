@@ -311,9 +311,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 regionHint: 'Регион Казахстана должен содержать 2 цифры (например 01 или 02)',
                 regMaxLen: 2,
                 popularRegions: ['01', '02', '13', '17', '05', '07', '09', '16', '03', '10'],
-                letters: ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'],
-                eliteSeries: ['AAA', 'VIP', 'ZZZ', 'QQQ', 'GGG', 'NNN', 'MMM', 'SSS', 'XXX', 'LLL', 'KZ', 'AST', 'ALA', 'HAN'],
-                eliteLetters: ['AAA', 'VIP', 'ZZZ', 'QQQ', 'GGG', 'NNN', 'MMM', 'SSS', 'XXX', 'LLL', 'KZ', 'AST', 'ALA', 'HAN']
+                letters: ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'],
+                eliteSeries: ['AAA', 'VIP', 'ZZZ', 'QQQ', 'GGG', 'NNN', 'MMM', 'SSS', 'XXX', 'LLL', 'KZZ', 'AST', 'ALA', 'HAN'],
+                eliteLetters: ['AAA', 'VIP', 'ZZZ', 'QQQ', 'GGG', 'NNN', 'MMM', 'SSS', 'XXX', 'LLL', 'KZZ', 'AST', 'ALA', 'HAN']
             },
             USA: {
                 code: 'USA',
@@ -335,7 +335,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 regionHint: 'Укажите код штата США (2 буквы, например CA, NY, FL, TX)',
                 regMaxLen: 3,
                 popularRegions: ['CA', 'NY', 'FL', 'TX', 'NV', 'IL', 'WA', 'MI', 'GA', 'NJ'],
-                letters: ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'J', 'K', 'L', 'M', 'N', 'P', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'],
+                letters: ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'],
                 eliteSeries: ['USA', 'VIP', 'NYC', 'LAX', 'MIA', 'GTA', 'FBI', 'CIA', 'CEO', 'GOD', 'WIN', 'XXX', 'AAA', 'ACE'],
                 eliteLetters: ['USA', 'VIP', 'NYC', 'LAX', 'MIA', 'GTA', 'FBI', 'CIA', 'CEO', 'GOD', 'WIN', 'XXX', 'AAA', 'ACE']
             },
@@ -6637,15 +6637,17 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
         function detachPlate(index) {
             let car = myCars[index];
-            if (!car || !car.plate) return;
-            let cost = Math.floor(Number(car.plate.price || 0) * 0.1);
+            if (!car || (!car.plate && !car.attachedPlate)) return;
+            const plateObj = car.plate || (typeof car.attachedPlate === 'object' ? car.attachedPlate : { text: String(car.attachedPlate), price: 0, rarity: 'Обычный' });
+            let cost = Math.floor(Number(plateObj.price || 0) * 0.1);
             if (!Number.isFinite(cost) || cost < 0) cost = 0;
             if (cost > 0 && !deductPlayerBalance(cost, 'Снятие номера с автомобиля')) {
                 return notifyUser(`Не хватает денег на снятие! Нужно ${cost.toLocaleString('ru-RU')} ₽`, 'warning');
             }
             playCashSound();
-            inventory.unshift(car.plate);
+            inventory.unshift(plateObj);
             car.plate = null;
+            car.attachedPlate = null;
             if (car.styling) car.styling.plate = 'none';
             if (onlineProfile) {
                 onlineProfile.inventory = [...inventory];
@@ -6669,6 +6671,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             renderCars();
             renderInventory();
             saveProgress();
+            if (garage3DShowroom) {
+                selectGarageCarForPodium(activeGarageCarIndex);
+            }
             if (typeof syncCloudGarage === 'function') syncCloudGarage(true);
             notifyUser('Госномер успешно снят и возвращён в инвентарь!', 'success');
         }
@@ -6691,6 +6696,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             }
             document.getElementById('attach-modal').classList.add('show');
         }
+        const openAttachPlateModal = openAttachModal;
+        window.openAttachModal = openAttachModal;
+        window.openAttachPlateModal = openAttachModal;
 
         function closeAttachModal() {
             document.getElementById('attach-modal').classList.remove('show');
@@ -6699,9 +6707,11 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
         function attachPlate(invIndex) {
             if (currentCarIndexForAttach === -1 || !myCars[currentCarIndexForAttach]) return;
-            let car = myCars[currentCarIndexForAttach];
+            const attachedCarIdx = currentCarIndexForAttach;
+            let car = myCars[attachedCarIdx];
             let plate = inventory[invIndex];
             if (!car || !plate) return;
+            const plateStr = plate.text || plate;
 
             // Detach this plate if it was previously attached to any other car
             myCars.forEach(otherCar => {
@@ -6709,6 +6719,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     ((otherCar.plate.id && plate.id && otherCar.plate.id === plate.id) ||
                      (otherCar.plate.text && plate.text && otherCar.plate.text === plate.text))) {
                     otherCar.plate = null;
+                    otherCar.attachedPlate = null;
                     if (otherCar.styling) otherCar.styling.plate = 'none';
                 }
             });
@@ -6716,8 +6727,10 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             inventory.splice(invIndex, 1);
             if (car.plate) inventory.unshift(car.plate);
             car.plate = plate;
+            car.attachedPlate = plateStr;
             if (!car.styling) car.styling = {};
-            car.styling.plate = plate.text || plate;
+            car.styling.plate = plateStr;
+            activeGarageCarIndex = attachedCarIdx;
             if (onlineProfile) {
                 onlineProfile.inventory = [...inventory];
                 onlineProfile.myCars = JSON.parse(JSON.stringify(myCars));
@@ -6741,8 +6754,12 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             renderCars();
             renderInventory();
             saveProgress();
+            if (garage3DShowroom) {
+                selectGarageCarForPodium(activeGarageCarIndex);
+                setGarageViewMode('plate_front');
+            }
             if (typeof syncCloudGarage === 'function') syncCloudGarage(true);
-            notifyUser(`Госномер «${plate.text || plate}» успешно установлен на ${car.name}!`, 'success');
+            notifyUser(`Госномер «${plateStr}» успешно установлен на ${car.name}!`, 'success');
         }
 
         // ============================================================
@@ -6772,7 +6789,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         function setStylingViewMode(mode) {
             let preset = mode || 'isometric';
             if (preset === '3d') preset = 'isometric';
-            stylingViewMode = (mode === 'top' || mode === 'side' || mode === 'front' || mode === 'rear') ? mode : '3d';
+            stylingViewMode = (mode === 'top' || mode === 'side' || mode === 'front' || mode === 'rear' || mode === 'plate_front' || mode === 'plate_rear' || mode === 'svg') ? mode : '3d';
 
             const btnSide = document.getElementById('btn-view-side');
             const btnTop = document.getElementById('btn-view-top');
@@ -6780,21 +6797,27 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             const btnRear = document.getElementById('btn-view-rear');
             const btn3D = document.getElementById('btn-view-3d');
             const btnIso = document.getElementById('btn-view-isometric');
+            const btnPlate = document.getElementById('styling-view-plate');
 
             const isIso = (preset === 'isometric' || mode === '3d');
+            const isPlateView = (preset === 'plate_front' || preset === 'plate_rear');
             if (btnSide) btnSide.classList.toggle('active', preset === 'side');
             if (btnTop) btnTop.classList.toggle('active', preset === 'top');
             if (btnFront) btnFront.classList.toggle('active', preset === 'front');
             if (btnRear) btnRear.classList.toggle('active', preset === 'rear');
             if (btn3D) btn3D.classList.toggle('active', isIso);
             if (btnIso) btnIso.classList.toggle('active', isIso);
+            if (btnPlate) {
+                btnPlate.classList.toggle('active', isPlateView);
+                btnPlate.textContent = preset === 'plate_rear' ? '🏷️ Номер (Зад)' : (preset === 'plate_front' ? '🏷️ Номер (Перед)' : '🏷️ 3D Номер');
+            }
 
             const cvs = document.getElementById('styling-preview-canvas');
             const wrap3D = document.getElementById('styling-preview-3d-wrap');
             const hint3D = document.getElementById('styling-3d-hint');
             const toolbar3D = document.getElementById('showroom-toolbar');
 
-            if (typeof Car3DManager !== 'undefined' && Car3DManager.isWebGLAvailable()) {
+            if (stylingViewMode !== 'svg' && typeof Car3DManager !== 'undefined' && Car3DManager.isWebGLAvailable()) {
                 if (cvs) cvs.style.display = 'none';
                 if (wrap3D) wrap3D.style.display = 'block';
                 if (hint3D) hint3D.style.display = 'block';
@@ -6850,6 +6873,14 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 updateStylingModalPreview();
             }
         }
+        window.setStylingViewMode = setStylingViewMode;
+
+        function toggleShowroomPlateView() {
+            const nextMode = (stylingViewMode === 'plate_front') ? 'plate_rear' : 'plate_front';
+            setStylingViewMode(nextMode);
+            playTick();
+        }
+        window.toggleShowroomPlateView = toggleShowroomPlateView;
 
         function toggleShowroomAutoRotate() {
             if (!car3DShowroom) return;
@@ -6906,7 +6937,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             stylingTempWheels = car.styling.wheels || 'stock';
             stylingTempSuspension = car.styling.suspension || 'stock';
             stylingTempSgu = car.styling.sgu || 'none';
-            stylingTempPlate = car.plate ? (car.plate.text || car.plate) : 'none';
+            stylingTempPlate = (car.plate && (car.plate.text || car.plate)) || (car.attachedPlate && (car.attachedPlate.text || car.attachedPlate)) || 'none';
             stylingTempCamber = car.styling.camber ?? 0;
             stylingTempOffset = car.styling.wheelOffset ?? 0;
             stylingTempNeonMode = car.styling.neonMode || 'solid';
@@ -7142,7 +7173,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         window.toggleShowroomDoors = toggleShowroomDoors;
 
         function toggleShowroomHood() {
-            if (stylingViewMode !== '3d') {
+            if (stylingViewMode === 'svg') {
                 setStylingViewMode('3d');
             }
             if (!car3DShowroom) {
@@ -7175,7 +7206,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         window.toggleShowroomHood = toggleShowroomHood;
 
         function toggleShowroomTrunk() {
-            if (stylingViewMode !== '3d') {
+            if (stylingViewMode === 'svg') {
                 setStylingViewMode('3d');
             }
             if (!car3DShowroom) {
@@ -7208,7 +7239,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         window.toggleShowroomTrunk = toggleShowroomTrunk;
 
         function toggleShowroomHeadlights() {
-            if (stylingViewMode !== '3d') {
+            if (stylingViewMode === 'svg') {
                 setStylingViewMode('3d');
             }
             if (!car3DShowroom) {
@@ -7325,6 +7356,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 garage3DShowroom.resize();
                 garage3DShowroom.start();
             }
+            window.garageShowroom = garage3DShowroom;
 
             selectGarageCarForPodium(activeGarageCarIndex, false);
         }
@@ -7379,8 +7411,23 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
             const titleEl = document.getElementById('garage-3d-car-title');
             const catEl = document.getElementById('garage-3d-car-category');
+            const badgeEl = document.getElementById('garage-3d-car-plate-badge');
             if (titleEl) titleEl.textContent = '🏎️ ' + car.name;
             if (catEl) catEl.textContent = carCategory;
+
+            const attachedPlateText = (car.plate && (car.plate.text || car.plate)) ||
+                (car.attachedPlate && (car.attachedPlate.text || car.attachedPlate)) ||
+                (car.styling && car.styling.plate && car.styling.plate !== 'none' ? car.styling.plate : '');
+
+            if (badgeEl) {
+                if (attachedPlateText) {
+                    badgeEl.innerHTML = `<div class="mini-plate ${getMiniPlateCountryClass(attachedPlateText)}" style="transform:scale(0.95);transform-origin:right center;">${renderMiniPlateInnerHtml(attachedPlateText)}</div><span style="font-size:10px;color:#38bdf8;font-weight:700;margin-left:4px;">🔍 3D бампер</span>`;
+                    badgeEl.title = 'Нажмите, чтобы рассмотреть 3D-номер на бампере (Перед / Зад)';
+                } else {
+                    badgeEl.innerHTML = `<span onclick="event.stopPropagation(); openAttachPlateModal(activeGarageCarIndex)" style="font-size:11px;padding:4px 10px;border-radius:8px;background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.3);color:#38bdf8;font-weight:700;">🏷️ + Повесить номер</span>`;
+                    badgeEl.title = 'Нажмите, чтобы выбрать и повесить госномер на этот автомобиль';
+                }
+            }
 
             // Highlight card in #my-cars list
             document.querySelectorAll('.my-car-card').forEach((card, i) => {
@@ -7389,7 +7436,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
             if (garage3DShowroom) {
                 const effectiveStyling = Object.assign({}, car.styling || {}, {
-                    plate: car.plate ? (car.plate.text || car.plate) : 'none'
+                    plate: attachedPlateText || 'none'
                 });
                 garage3DShowroom.setCar(car.name, effectiveStyling, () => {
                     updateGarageButtonsState();
@@ -7403,20 +7450,26 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         function setGarageViewMode(mode) {
             let preset = mode || 'isometric';
             if (preset === '3d') preset = 'isometric';
-            garageViewMode = (mode === 'top' || mode === 'side' || mode === 'front' || mode === 'rear') ? mode : '3d';
+            garageViewMode = (mode === 'top' || mode === 'side' || mode === 'front' || mode === 'rear' || mode === 'plate_front' || mode === 'plate_rear') ? mode : '3d';
 
             const btnSide = document.getElementById('btn-gview-side');
             const btnTop = document.getElementById('btn-gview-top');
             const btnFront = document.getElementById('btn-gview-front');
             const btnRear = document.getElementById('btn-gview-rear');
             const btn3D = document.getElementById('btn-gview-3d');
+            const btnPlate = document.getElementById('garage-view-plate');
 
             const isIso = (preset === 'isometric' || mode === '3d');
+            const isPlateView = (garageViewMode === 'plate_front' || garageViewMode === 'plate_rear');
             if (btnSide) btnSide.classList.toggle('active', preset === 'side');
             if (btnTop) btnTop.classList.toggle('active', preset === 'top');
             if (btnFront) btnFront.classList.toggle('active', preset === 'front');
             if (btnRear) btnRear.classList.toggle('active', preset === 'rear');
             if (btn3D) btn3D.classList.toggle('active', isIso);
+            if (btnPlate) {
+                btnPlate.classList.toggle('active', isPlateView);
+                btnPlate.textContent = garageViewMode === 'plate_rear' ? '🏷️ Номер (Зад)' : (garageViewMode === 'plate_front' ? '🏷️ Номер (Перед)' : '🏷️ 3D Номер');
+            }
 
             if (garage3DShowroom) {
                 garage3DShowroom.setViewPreset(garageViewMode);
@@ -7425,6 +7478,17 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             playTick();
         }
         window.setGarageViewMode = setGarageViewMode;
+
+        function toggleGaragePlateView() {
+            const car = Array.isArray(myCars) ? myCars[activeGarageCarIndex] : null;
+            const attachedPlateText = car ? ((car.plate && (car.plate.text || car.plate)) || (car.attachedPlate && (car.attachedPlate.text || car.attachedPlate)) || (car.styling && car.styling.plate && car.styling.plate !== 'none' ? car.styling.plate : '')) : '';
+            const nextMode = (garageViewMode === 'plate_front') ? 'plate_rear' : 'plate_front';
+            setGarageViewMode(nextMode);
+            if (!attachedPlateText && typeof openAttachPlateModal === 'function' && typeof event !== 'undefined' && event && event.currentTarget && event.currentTarget.id === 'garage-3d-car-plate-badge') {
+                openAttachPlateModal(activeGarageCarIndex);
+            }
+        }
+        window.toggleGaragePlateView = toggleGaragePlateView;
 
         function resetGarageCamera() {
             if (garage3DShowroom) {
@@ -7565,14 +7629,14 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 </button>
             `;
 
-            const equippedPlateText = car.plate ? (car.plate.text || car.plate) : null;
+            const equippedPlateText = (car.plate && (car.plate.text || car.plate)) || (car.attachedPlate && (car.attachedPlate.text || car.attachedPlate)) || null;
             if (equippedPlateText) {
                 const isActive = (stylingTempPlate === equippedPlateText);
                 chipsHtml += `
                     <button type="button" class="styling-chip ${isActive ? 'active' : ''}" 
-                            style="border-color: ${isActive ? '#38bdf8' : 'rgba(56,189,248,0.4)'}; background: ${isActive ? 'rgba(56,189,248,0.2)' : 'transparent'}; font-weight: bold;" 
+                            style="border-color: ${isActive ? '#38bdf8' : 'rgba(56,189,248,0.4)'}; background: ${isActive ? 'rgba(56,189,248,0.2)' : 'transparent'}; font-weight: bold; display: inline-flex; align-items: center; gap: 4px;" 
                             onclick="selectStylingPlate(${jsArg(equippedPlateText)})">
-                        🏷️ ${escapeHtml(equippedPlateText)} (установлен)
+                        <span class="mini-plate ${getMiniPlateCountryClass(equippedPlateText)}" style="transform:scale(0.82);display:inline-flex;vertical-align:middle;margin-right:4px;pointer-events:none;">${renderMiniPlateInnerHtml(equippedPlateText)}</span> <span>(установлен)</span>
                     </button>
                 `;
             }
@@ -7584,9 +7648,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     const isActive = (stylingTempPlate === text);
                     chipsHtml += `
                         <button type="button" class="styling-chip ${isActive ? 'active' : ''}" 
-                                style="border-color: ${isActive ? '#22c55e' : 'rgba(255,255,255,0.15)'}; font-weight: bold;" 
+                                style="border-color: ${isActive ? '#22c55e' : 'rgba(255,255,255,0.15)'}; font-weight: bold; display: inline-flex; align-items: center; gap: 4px;" 
                                 onclick="selectStylingPlate(${jsArg(text)})">
-                            🏷️ ${escapeHtml(text)}
+                            <span class="mini-plate ${getMiniPlateCountryClass(text)}" style="transform:scale(0.82);display:inline-flex;vertical-align:middle;margin-right:4px;pointer-events:none;">${renderMiniPlateInnerHtml(text)}</span>
                         </button>
                     `;
                 });
@@ -7600,11 +7664,17 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         function selectStylingPlate(plateText) {
             stylingTempPlate = plateText || 'none';
             renderStylingPlateChips();
-            if (stylingViewMode === '3d' && car3DShowroom && typeof car3DShowroom.updatePlate === 'function') {
-                car3DShowroom.updatePlate(stylingTempPlate);
+            if (stylingViewMode !== 'svg' && car3DShowroom && typeof car3DShowroom.updatePlate === 'function') {
+                const car = (stylingActiveCarIndex >= 0 && myCars[stylingActiveCarIndex]) ? myCars[stylingActiveCarIndex] : null;
+                const st = (car && car.styling) ? car.styling : {};
+                car3DShowroom.updatePlate(stylingTempPlate, st.plateFrame, st.plateStyle);
+                if (stylingTempPlate && stylingTempPlate !== 'none' && stylingViewMode === '3d' && typeof car3DShowroom.setViewPreset === 'function') {
+                    car3DShowroom.setViewPreset('plate_front');
+                }
             }
             updateStylingModalPreview();
         }
+        window.selectStylingPlate = selectStylingPlate;
 
         async function confirmApplyStyling() {
             const car = myCars[stylingActiveCarIndex];
@@ -7664,19 +7734,21 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             }
 
             // License plate update from styling modal (inventory synced)
-            const prevPlateText = car.plate ? (car.plate.text || car.plate) : 'none';
+            const prevPlateText = (car.plate && (car.plate.text || car.plate)) || (car.attachedPlate && (car.attachedPlate.text || car.attachedPlate)) || 'none';
             if (stylingTempPlate !== prevPlateText) {
                 if (stylingTempPlate === 'none') {
                     if (car.plate) {
                         inventory.unshift(car.plate);
                         car.plate = null;
                     }
+                    car.attachedPlate = null;
                 } else {
                     let detachedPlate = null;
                     myCars.forEach(otherCar => {
                         if (otherCar && otherCar !== car && otherCar.plate && (otherCar.plate.text || otherCar.plate) === stylingTempPlate) {
                             detachedPlate = otherCar.plate;
                             otherCar.plate = null;
+                            otherCar.attachedPlate = null;
                             if (otherCar.styling) otherCar.styling.plate = 'none';
                         }
                     });
@@ -7685,13 +7757,16 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                         const newPlate = inventory.splice(invIdx, 1)[0];
                         if (car.plate) inventory.unshift(car.plate);
                         car.plate = newPlate;
+                        car.attachedPlate = newPlate.text || newPlate;
                     } else if (detachedPlate) {
                         if (car.plate) inventory.unshift(car.plate);
                         car.plate = detachedPlate;
+                        car.attachedPlate = detachedPlate.text || detachedPlate;
                     }
                 }
             }
 
+            const finalPlateStr = (car.plate && (car.plate.text || car.plate)) || (car.attachedPlate && (car.attachedPlate.text || car.attachedPlate)) || 'none';
             car.styling = {
                 color: stylingTempColor,
                 tint: stylingTempTint,
@@ -7701,7 +7776,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 wheels: stylingTempWheels,
                 suspension: stylingTempSuspension,
                 sgu: stylingTempSgu,
-                plate: car.plate ? (car.plate.text || car.plate) : 'none',
+                plate: finalPlateStr,
                 camber: stylingTempCamber,
                 wheelOffset: stylingTempOffset,
                 neonMode: stylingTempNeonMode
@@ -7731,6 +7806,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             playCashSound();
             renderCars();
             saveProgress();
+            if (garage3DShowroom) {
+                selectGarageCarForPodium(activeGarageCarIndex);
+            }
             if (typeof syncCloudGarage === 'function') syncCloudGarage(true);
             closeStylingModal();
             notifyUser(`Стайлинг применён! Списано ${cost.toLocaleString('ru-RU')} ₽.`, 'success');
@@ -11657,7 +11735,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 wheels: stylingTempWheels,
                 suspension: stylingTempSuspension,
                 sgu: stylingTempSgu
-            }, { view: stylingViewMode === '3d' ? 'side' : stylingViewMode });
+            }, { view: stylingViewMode === 'plate_front' ? 'front' : (stylingViewMode === 'plate_rear' ? 'rear' : (stylingViewMode === '3d' ? 'side' : stylingViewMode)) });
         }
 
 

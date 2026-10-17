@@ -365,6 +365,7 @@
                             <span class="garage-3d-badge">3D ГАРАЖ</span>
                             <b class="garage-3d-car-name" id="garage-3d-car-title">🏎️ Выберите автомобиль</b>
                             <span class="car-category-pill" id="garage-3d-car-category" style="margin-left: 6px;">Спорт</span>
+                            <div id="garage-3d-car-plate-badge" style="cursor:pointer; display:inline-flex; align-items:center; margin-left:6px;" onclick="toggleGaragePlateView()" title="Нажмите, чтобы рассмотреть 3D-номер на бампере"></div>
                         </div>
                         <div class="garage-3d-header-actions">
                             <button type="button" class="btn btn-secondary" id="btn-garage-podium-toggle" onclick="toggleGaragePodiumCollapse()" title="Свернуть / развернуть 3D подиум" style="padding: 6px 10px; font-size: 11px;">
@@ -401,6 +402,7 @@
                             <button type="button" class="showroom-interact-btn" id="btn-gshow-trunk" onclick="toggleGarageTrunk()" title="Открыть багажник">🔊 Багажник</button>
                             <button type="button" class="showroom-interact-btn" id="btn-gshow-lights" onclick="toggleGarageHeadlights()" title="Включить фары">💡 Фары</button>
                             <button type="button" class="showroom-interact-btn" id="btn-gshow-horn" onclick="triggerGarageHorn()" title="Подать звуковой сигнал / СГУ">📢 Сигнал</button>
+                            <button type="button" class="showroom-interact-btn showroom-tool-btn" id="garage-view-plate" onclick="toggleGaragePlateView()" title="Крупный план 3D-номера на бампере">🏷️ 3D Номер</button>
                         </div>
 
                         <div id="garage-3d-hint" class="garage-3d-hint">
@@ -1468,6 +1470,7 @@
                             <button type="button" class="showroom-interact-btn" id="btn-show-trunk" onclick="toggleShowroomTrunk()" title="Открыть багажник (музыка)">🔊 Багажник</button>
                             <button type="button" class="showroom-interact-btn" id="btn-show-lights" onclick="toggleShowroomHeadlights()" title="Включить фары">💡 Фары</button>
                             <button type="button" class="showroom-interact-btn" id="btn-show-horn" onclick="triggerShowroomHorn()" title="Проверить сигнал / СГУ">📢 Сигнал</button>
+                            <button type="button" class="showroom-interact-btn showroom-tool-btn" id="styling-view-plate" onclick="toggleShowroomPlateView()" title="Крупный план 3D-номера на бампере">🏷️ 3D Номер</button>
                         </div>
 
                         <div id="styling-3d-hint" style="display: none; position: absolute; bottom: 8px; left: 0; right: 0; font-size: 10px; color: #94a3b8; pointer-events: none; text-shadow: 0 1px 3px rgba(0,0,0,0.8);">
@@ -1709,7 +1712,7 @@
         }
     </script>
     <script src="./js/race-effects.js?v=6883d3af7d80"></script>
-    <script src="./js/car-3d.js?v=ff94592879e8"></script>
-    <script src="./js/app.js?v=1e2945782a8e"></script>
+    <script src="./js/car-3d.js?v=163a8501dee9"></script>
+    <script src="./js/app.js?v=e8919e98cc6e"></script>
 </body>
 </html>

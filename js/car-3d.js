@@ -601,17 +601,28 @@
         };
         const buildNormalized = (rawMain, region, country) => {
             const c = (country || 'RUS').toUpperCase();
-            const reg = (region || defaultRegionForCountry(c)).toUpperCase();
+            let reg = (region || defaultRegionForCountry(c)).toUpperCase();
             const rawLetters = ((rawMain || '').match(/[A-ZА-ЯЁ]/gi) || []).join('').toUpperCase();
             const rawDigits = ((rawMain || '').match(/\d/g) || []).join('');
 
             if (c === 'UAE') {
-                const authUae = String(rawMain || '').trim().match(/^([A-Z]{1,2})\s+(\d{1,5})$/i);
+                const trimmedMain = String(rawMain || '').trim();
+                const prefEmirateMatch = trimmedMain.match(/^(DXB|AUH|SHJ|AJM|RAK|FUJ|UAQ)\s+([A-Z0-9]{1,2})\s+(\d{1,5})$/i);
+                const authUae = trimmedMain.match(/^([A-Z]{1,2}|0?[1-9]|1\d|20)\s+(\d{1,5})$/i);
+                const isRegAuhNumeric = /^(?:0?[1-9]|1\d|20)$/.test(reg);
                 let uaeCode = 'D';
                 let uaeDigits = '1';
-                if (authUae) {
+
+                if (prefEmirateMatch) {
+                    reg = prefEmirateMatch[1].toUpperCase();
+                    uaeCode = prefEmirateMatch[2].toUpperCase();
+                    uaeDigits = prefEmirateMatch[3].replace(/^0+/, '') || '0';
+                } else if (authUae) {
                     uaeCode = authUae[1].toUpperCase();
                     uaeDigits = authUae[2].replace(/^0+/, '') || '0';
+                    if (/^(?:0?[1-9]|1\d|20)$/.test(uaeCode) && (!region || reg === 'DXB')) {
+                        reg = 'AUH';
+                    }
                 } else {
                     if (rawLetters.length >= 3) {
                         uaeCode = (rawLetters[0] === rawLetters[1] && rawLetters[1] === rawLetters[2])
@@ -619,11 +630,21 @@
                             : rawLetters[0];
                     } else if (rawLetters.length >= 1) {
                         uaeCode = rawLetters.slice(0, 2);
+                    } else if (isRegAuhNumeric) {
+                        uaeCode = reg;
                     } else {
                         uaeCode = reg === 'AUH' ? 'B' : 'D';
                     }
                     uaeDigits = (rawDigits ? rawDigits.slice(0, 5).replace(/^0+/, '') : '1') || '1';
                 }
+
+                if (isRegAuhNumeric) {
+                    if (!/^(?:0?[1-9]|1\d|20)$/.test(uaeCode) && (!rawLetters || uaeCode === 'D' || uaeCode === 'B')) {
+                        uaeCode = reg;
+                    }
+                    reg = 'AUH';
+                }
+
                 return {
                     main: `${uaeCode} ${uaeDigits}`,
                     letters: uaeCode,
@@ -674,10 +695,14 @@
             str = str.slice(0, trailingCountry.index).trim();
         }
 
-        // Match UAE authentic RTA format without pipe: "D 1 DXB" or "AA 777 AUH"
-        const mUae = str.match(/^([A-Z]{1,2}\s+\d{1,5})\s+(DXB|AUH|SHJ|AJM|RAK)$/i);
+        // Match UAE authentic RTA format without pipe: "D 1 DXB", "AA 777 AUH", "DXB A 7777"
+        const mUae = str.match(/^([A-Z0-9]{1,2}\s+\d{1,5})\s+(DXB|AUH|SHJ|AJM|RAK|FUJ|UAQ)$/i);
         if (mUae) {
             return buildNormalized(mUae[1], mUae[2], 'UAE');
+        }
+        const mUaePref = str.match(/^(DXB|AUH|SHJ|AJM|RAK|FUJ|UAQ)\s+([A-Z0-9]{1,2}\s+\d{1,5})$/i);
+        if (mUaePref) {
+            return buildNormalized(mUaePref[2], mUaePref[1], 'UAE');
         }
 
         // Match L NNN LL + region
@@ -692,7 +717,7 @@
             return buildNormalized(mAuth[1], mAuth[2], country);
         }
         const spaceIdx = str.lastIndexOf(' ');
-        if (spaceIdx > 0 && /^(\d{2,3}|CA|NY|FL|TX|NV|DXB|AUH|SHJ|AJM|RAK)$/i.test(str.slice(spaceIdx + 1))) {
+        if (spaceIdx > 0 && /^(\d{2,3}|CA|NY|FL|TX|NV|DXB|AUH|SHJ|AJM|RAK|FUJ|UAQ)$/i.test(str.slice(spaceIdx + 1))) {
             return buildNormalized(str.slice(0, spaceIdx), str.slice(spaceIdx + 1), country);
         }
         // Match standard Russian plate prefix
@@ -708,12 +733,35 @@
     }
 
     // Multi-country 3D License Plate (RUS, KZ, USA, UAE) with high-res crisp canvas texture & flags
-    function createLicensePlate(THREE, text = 'А 777 АА | 77 RUS', isFront = true) {
+    function createLicensePlate(arg0, arg1 = 'А 777 АА | 77 RUS', arg2 = true, arg3 = 'none', arg4 = 'classic') {
+        let THREE, text, isFront, frameStyle, plateStyle;
+        if (arg0 && typeof arg0 === 'object' && typeof arg0.Group === 'function') {
+            THREE = arg0;
+            text = arg1 !== undefined ? arg1 : 'А 777 АА | 77 RUS';
+            isFront = arg2 !== undefined ? arg2 : true;
+            frameStyle = arg3 || 'none';
+            plateStyle = arg4 || 'classic';
+        } else {
+            THREE = (typeof globalThis !== 'undefined' && globalThis.THREE) || (typeof window !== 'undefined' && window.THREE) || null;
+            text = arg0 !== undefined ? arg0 : 'А 777 АА | 77 RUS';
+            isFront = arg1 !== undefined && typeof arg1 === 'boolean' ? arg1 : true;
+            frameStyle = (typeof arg2 === 'string' ? arg2 : arg3) || 'none';
+            plateStyle = (typeof arg3 === 'string' && typeof arg2 === 'string' ? arg3 : arg4) || 'classic';
+        }
+
+        if (typeof text === 'object' && text !== null) {
+            if (text.frame || text.frameStyle) frameStyle = text.frame || text.frameStyle;
+            if (text.style || text.plateStyle) plateStyle = text.style || text.plateStyle;
+            text = text.text !== undefined ? text.text : '';
+        }
+
         const group = new THREE.Group();
         group.name = isFront ? 'FrontLicensePlate' : 'RearLicensePlate';
         group.userData.isLicensePlate = true;
+        group.userData.frameStyle = frameStyle;
+        group.userData.plateStyle = plateStyle;
 
-        if (text === null || text === 'none' || text === false) {
+        if (text === null || text === 'none' || text === false || text === '') {
             group.visible = false;
             group.userData.plateCountry = 'RUS';
             return group;
@@ -731,6 +779,15 @@
         const isUSA = country === 'USA';
         const plateW = isUSA ? 0.36 : 0.52;
         const plateH = isUSA ? 0.18 : 0.115;
+
+        // Frame material color matching frameStyle: gold #d4af37, carbon #1e293b, chrome #e2e8f0, neon #00f2fe, or classic #111827
+        const fStyle = String(frameStyle || 'none').toLowerCase();
+        const frameColorHex = fStyle === 'gold' ? 0xd4af37
+            : (fStyle === 'carbon' ? 0x1e293b
+                : (fStyle === 'chrome' ? 0xe2e8f0
+                    : (fStyle === 'neon' ? 0x00f2fe : 0x111827)));
+        const frameRoughness = fStyle === 'chrome' ? 0.12 : (fStyle === 'gold' ? 0.22 : (fStyle === 'carbon' ? 0.38 : 0.65));
+        const frameMetalness = fStyle === 'chrome' ? 0.92 : (fStyle === 'gold' ? 0.85 : (fStyle === 'carbon' ? 0.45 : 0.20));
 
         if (typeof document !== 'undefined') {
             try {
@@ -922,9 +979,31 @@
                             ctx.fillText('dmv.ca.gov', 256, 226);
                         }
                     } else if (country === 'UAE') {
-                        // Official RTA Dubai & Abu Dhabi Plate (512x128)
-                        const uaeCode = comp.uaeCode || letters || 'D';
-                        const uaeDigits = comp.uaeDigits || digits || '1';
+                        // Official RTA Dubai, Abu Dhabi & All 7 UAE Emirates Plate (512x128)
+                        let emirateKey = String(regCode || 'DXB').toUpperCase();
+                        let codePart = String(comp.uaeCode || letters || (emirateKey === 'AUH' ? '5' : 'D')).toUpperCase();
+                        const numStr = String(comp.uaeDigits || digits || '1');
+
+                        // Map numeric 01..20 category codes to AUH while preserving category number in codePart
+                        if (/^(?:0?[1-9]|1\d|20)$/.test(emirateKey)) {
+                            codePart = emirateKey;
+                            emirateKey = 'AUH';
+                        } else if (/^(?:0?[1-9]|1\d|20)$/.test(codePart)) {
+                            emirateKey = 'AUH';
+                        }
+
+                        const UAE_EMIRATE_META = {
+                            DXB: { en: 'DUBAI', ar: 'دبي', accent: '#090d16' },
+                            AUH: { en: 'A.D', ar: 'أبوظبي', accent: '#dc2626' },
+                            SHJ: { en: 'SHARJAH', ar: 'الشارقة', accent: '#090d16' },
+                            AJM: { en: 'AJMAN', ar: 'عجمان', accent: '#090d16' },
+                            RAK: { en: 'R.A.K.', ar: 'رأس الخيمة', accent: '#090d16' },
+                            FUJ: { en: 'FUJAIRAH', ar: 'الفجيرة', accent: '#991b1b' },
+                            UAQ: { en: 'U.A.Q.', ar: 'أم القيوين', accent: '#1e293b' }
+                        };
+                        const emirateMeta = UAE_EMIRATE_META[emirateKey] || UAE_EMIRATE_META.DXB;
+                        const isVipShortNum = numStr.length <= 2;
+                        const digitFontPx = numStr.length === 1 ? 98 : (isVipShortNum ? 94 : 86);
 
                         if (typeof ctx.createLinearGradient === 'function') {
                             const grad = ctx.createLinearGradient(0, 0, 0, 128);
@@ -939,8 +1018,8 @@
                         ctx.textAlign = 'center';
                         ctx.textBaseline = 'middle';
 
-                        if (regCode === 'AUH') {
-                            // Abu Dhabi (AUH): Red left band (x = 10..86, #dc2626) with white A.D / أبوظبي
+                        if (emirateKey === 'AUH') {
+                            // Abu Dhabi (AUH): Crimson/Red left band (x = 10..86, #dc2626) with white A.D / أبوظبي and category codePart
                             ctx.fillStyle = '#dc2626';
                             ctx.fillRect(10, 10, 76, 108);
                             ctx.fillStyle = '#ffffff';
@@ -949,10 +1028,10 @@
                             ctx.font = 'bold 20px sans-serif';
                             ctx.fillText('أبوظبي', 48, 84);
 
-                            // Code letter at x = 136, y = 66
+                            // Category number (01..20) or code letter at x = 136, y = 66
                             ctx.fillStyle = '#090d16';
                             ctx.font = '900 48px "Inter", "Arial Black", sans-serif';
-                            ctx.fillText(uaeCode, 136, 66);
+                            ctx.fillText(codePart, 136, 66);
 
                             // Sleek Black Outer Border
                             ctx.strokeStyle = '#090d16';
@@ -966,24 +1045,25 @@
                             ctx.lineWidth = 5;
                             ctx.stroke();
 
-                            // Huge embossed uaeDigits at x = 344, y = 68
+                            // Prominent centered UAE number (extra-bold for 1-digit and 2-digit VIP plates)
                             ctx.fillStyle = '#090d16';
-                            ctx.font = '900 86px "Inter", "Arial Black", sans-serif';
-                            ctx.fillText(uaeDigits, 344, 68);
+                            ctx.font = `900 ${digitFontPx}px "Inter", "Arial Black", sans-serif`;
+                            ctx.fillText(numStr, 344, 68);
                         } else {
-                            // Dubai (DXB) and other Emirates (SHJ, AJM, RAK) RTA layout
-                            const emirateTitle = regCode === 'SHJ' ? 'SHARJAH' : (regCode === 'AJM' ? 'AJMAN' : (regCode === 'RAK' ? 'R.A.K' : 'DUBAI'));
-                            const emirateArabic = regCode === 'SHJ' ? 'الشارقة' : (regCode === 'AJM' ? 'عجمان' : (regCode === 'RAK' ? 'رأس الخيمة' : 'دبي'));
+                            // Dubai (DXB), Sharjah (SHJ), Ajman (AJM), Ras Al Khaimah (RAK), Fujairah (FUJ), Umm Al Quwain (UAQ)
+                            const emirateTitle = emirateMeta.en;
+                            const emirateArabic = emirateMeta.ar;
 
-                            // Left compartment (x = 10..188): Top-left DUBAI & Arabic دبي, and RTA Code Letter on x = 148, y = 66
-                            ctx.fillStyle = '#090d16';
-                            ctx.font = '900 22px "Inter", "Arial Black", sans-serif';
+                            // Left compartment (x = 10..188): Top-left Emirate EN & Arabic, and RTA Code Letter on x = 148, y = 66
+                            ctx.fillStyle = emirateMeta.accent || '#090d16';
+                            ctx.font = emirateTitle.length >= 7 ? '900 19px "Inter", "Arial Black", sans-serif' : '900 22px "Inter", "Arial Black", sans-serif';
                             ctx.fillText(emirateTitle, 64, 40);
                             ctx.font = 'bold 26px sans-serif';
                             ctx.fillText(emirateArabic, 64, 82);
 
+                            ctx.fillStyle = '#090d16';
                             ctx.font = '900 54px "Inter", "Arial Black", sans-serif';
-                            ctx.fillText(uaeCode, 148, 66);
+                            ctx.fillText(codePart, 148, 66);
 
                             // Sleek Black Outer Border
                             ctx.strokeStyle = '#090d16';
@@ -997,10 +1077,10 @@
                             ctx.lineWidth = 5;
                             ctx.stroke();
 
-                            // Right compartment (x = 198..500): Huge embossed RTA Digits at x = 348, y = 68
+                            // Right compartment (x = 198..500): Huge embossed RTA Digits (extra-bold for 1-digit and 2-digit VIP numbers)
                             ctx.fillStyle = '#090d16';
-                            ctx.font = '900 88px "Inter", "Arial Black", sans-serif';
-                            ctx.fillText(uaeDigits, 348, 68);
+                            ctx.font = `900 ${digitFontPx}px "Inter", "Arial Black", sans-serif`;
+                            ctx.fillText(numStr, 348, 68);
                         }
                     } else if (country === 'KZ') {
                         // Kazakhstan (СТ РК 986-2012) Authentic Plate (512x128)
@@ -1130,22 +1210,44 @@
                     const tex = new THREE.CanvasTexture(canvas);
                     tex.generateMipmaps = true;
                     tex.minFilter = THREE.LinearMipmapLinearFilter;
+                    tex.anisotropy = 8;
 
                     const meshGeo = new THREE.PlaneGeometry(plateW, plateH);
                     if (!isFront) meshGeo.rotateY(Math.PI);
                     const meshMat = new THREE.MeshStandardMaterial({
                         map: tex,
-                        roughness: 0.25,
-                        metalness: 0.15
+                        emissive: new THREE.Color(0xffffff),
+                        emissiveMap: tex,
+                        emissiveIntensity: 0.28,
+                        roughness: 0.22,
+                        metalness: 0.12,
+                        polygonOffset: true,
+                        polygonOffsetFactor: -2,
+                        polygonOffsetUnits: -2
                     });
                     const plateMesh = new THREE.Mesh(meshGeo, meshMat);
+                    plateMesh.position.z = isFront ? 0.009 : -0.009;
                     plateMesh.userData.isLicensePlate = true;
                     group.add(plateMesh);
+
+                    const frameRimGeo = new THREE.BoxGeometry(plateW + 0.014, plateH + 0.014, 0.014);
+                    const frameRimMat = new THREE.MeshStandardMaterial({
+                        color: frameColorHex,
+                        roughness: frameRoughness,
+                        metalness: frameMetalness,
+                        emissive: fStyle === 'neon' ? new THREE.Color(0x00f2fe) : new THREE.Color(0x000000),
+                        emissiveIntensity: fStyle === 'neon' ? 0.65 : 0
+                    });
+                    const frameRim = new THREE.Mesh(frameRimGeo, frameRimMat);
+                    frameRim.position.z = isFront ? -0.003 : 0.003;
+                    frameRim.userData.isLicensePlate = true;
+                    group.add(frameRim);
 
                     const backGeo = new THREE.BoxGeometry(plateW + 0.02, plateH + 0.02, 0.012);
                     const backMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.7 });
                     const back = new THREE.Mesh(backGeo, backMat);
-                    back.position.z = isFront ? -0.007 : 0.007;
+                    back.position.z = isFront ? -0.006 : 0.006;
+                    back.userData.isLicensePlate = true;
                     group.add(back);
 
                     group.userData.plateText = text;
@@ -1156,16 +1258,38 @@
         }
 
         const plateGeo = new THREE.BoxGeometry(plateW, plateH, 0.015);
-        const plateMat = new THREE.MeshStandardMaterial({ color: 0xfdfdfd, roughness: 0.2, metalness: 0.1 });
+        const plateMat = new THREE.MeshStandardMaterial({
+            color: 0xfdfdfd,
+            emissive: new THREE.Color(0xffffff),
+            emissiveIntensity: 0.22,
+            roughness: 0.22,
+            metalness: 0.12,
+            polygonOffset: true,
+            polygonOffsetFactor: -2,
+            polygonOffsetUnits: -2
+        });
         const mesh = new THREE.Mesh(plateGeo, plateMat);
+        mesh.position.z = isFront ? 0.009 : -0.009;
         mesh.userData.isLicensePlate = true;
         group.add(mesh);
 
-        const frameGeo = new THREE.BoxGeometry(plateW + 0.02, plateH + 0.02, 0.012);
-        const frameMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.7 });
+        const frameGeo = new THREE.BoxGeometry(plateW + 0.014, plateH + 0.014, 0.014);
+        const frameMat = new THREE.MeshStandardMaterial({
+            color: frameColorHex,
+            roughness: frameRoughness,
+            metalness: frameMetalness
+        });
         const frame = new THREE.Mesh(frameGeo, frameMat);
         frame.position.z = isFront ? -0.003 : 0.003;
+        frame.userData.isLicensePlate = true;
         group.add(frame);
+
+        const backGeo = new THREE.BoxGeometry(plateW + 0.02, plateH + 0.02, 0.012);
+        const backMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.7 });
+        const back = new THREE.Mesh(backGeo, backMat);
+        back.position.z = isFront ? -0.006 : 0.006;
+        back.userData.isLicensePlate = true;
+        group.add(back);
 
         group.userData.plateText = text;
         group.userData.plateCountry = country;
@@ -1390,21 +1514,87 @@
         }
     }
 
-    // Universal License Plate attacher/updater for procedural & GLTF 3D models
-    function applyLicensePlateToModel(THREE, modelRoot, plateText) {
-        if (!modelRoot) return;
+    function isIgnoredPlateRaycastNode(node, rootNode) {
+        let cur = node;
+        while (cur && cur !== rootNode) {
+            if (cur.userData && (cur.userData.isLicensePlate || cur.userData.isOpenOnlyLiner)) {
+                return true;
+            }
+            const n = cur.name || '';
+            if (
+                n === 'LicensePlate_Front' ||
+                n === 'LicensePlate_Rear' ||
+                n === 'FrontLicensePlate' ||
+                n === 'RearLicensePlate' ||
+                n === 'GLB_FrontLicensePlate' ||
+                n === 'GLB_RearLicensePlate' ||
+                n === 'LicensePlatesGroup' ||
+                n === 'GLB_SpoilerGroup' ||
+                n === 'GLB_Spoiler' ||
+                n === 'SpoilerGroup' ||
+                n === 'NeonGroup' ||
+                n === 'GLB_NeonTubes' ||
+                n === 'SGUGroup' ||
+                n === 'EngineBayGroup' ||
+                n === 'SubwooferGroup' ||
+                n === 'Door_CavityGroup' ||
+                n === 'ChassisUndertray' ||
+                n === 'GLB_Undertray' ||
+                n === 'ShowroomHeadlightCones' ||
+                n === 'ShowroomHeadlightFlares' ||
+                n === 'ShowroomTaillightFlares' ||
+                n === 'HeadlightsGroup'
+            ) {
+                return true;
+            }
+            cur = cur.parent;
+        }
+        return false;
+    }
 
-        let text = (typeof plateText === 'object' && plateText) ? plateText.text : plateText;
-        const isNone = (text === null || text === 'none' || text === false || text === '');
+    // Universal License Plate attacher/updater for procedural & GLTF 3D models
+    function applyLicensePlateToModel(arg0, arg1, arg2, arg3 = 'none', arg4 = 'classic') {
+        let THREE, modelRoot, plateText, frameStyle, plateStyle;
+        if (arg0 && (typeof arg0.Group === 'function' || typeof arg0.Box3 === 'function' || typeof arg0.Vector3 === 'function')) {
+            THREE = arg0;
+            modelRoot = arg1;
+            plateText = arg2;
+            frameStyle = arg3 !== undefined ? arg3 : 'none';
+            plateStyle = arg4 !== undefined ? arg4 : 'classic';
+        } else {
+            THREE = (typeof window !== 'undefined' && window.THREE)
+                ? window.THREE
+                : (typeof global !== 'undefined' && global.THREE ? global.THREE : null);
+            modelRoot = arg0;
+            plateText = arg1;
+            frameStyle = arg2 !== undefined ? arg2 : 'none';
+            plateStyle = arg3 !== undefined ? arg3 : 'classic';
+        }
+        if (!THREE || !modelRoot) return;
+
+        let text = (typeof plateText === 'object' && plateText !== null) ? plateText.text : plateText;
+        if (typeof plateText === 'object' && plateText !== null) {
+            if (plateText.frameStyle && (!frameStyle || frameStyle === 'none')) frameStyle = plateText.frameStyle;
+            if (plateText.plateStyle && (!plateStyle || plateStyle === 'classic')) plateStyle = plateText.plateStyle;
+        }
+        const fStyle = frameStyle || 'none';
+        const pStyle = plateStyle || 'classic';
+
+        if (!modelRoot.userData) modelRoot.userData = {};
+        modelRoot.userData.plateText = text;
+        modelRoot.userData.frameStyle = fStyle;
+        modelRoot.userData.plateStyle = pStyle;
+
+        const isNone = (text === null || text === 'none' || text === false || text === '' || text === undefined);
 
         // 1. Search for existing plates
         let frontPlates = [];
         let rearPlates = [];
         modelRoot.traverse(child => {
-            if (child.name === 'FrontLicensePlate' || child.name === 'GLB_FrontLicensePlate') {
+            if (child.name === 'FrontLicensePlate' || child.name === 'GLB_FrontLicensePlate' || child.name === 'LicensePlate_Front') {
                 frontPlates.push(child);
             }
-            if (child.name === 'RearLicensePlate' || child.name === 'GLB_RearLicensePlate') {
+            if (child.name === 'RearLicensePlate' || child.name === 'GLB_RearLicensePlate' || child.name === 'LicensePlate_Rear') {
                 rearPlates.push(child);
             }
         });
@@ -1422,17 +1612,21 @@
             return;
         }
 
-        // Compute model dimensions & bounds ignoring interactive rig and accessories
+        // Compute model dimensions & bounds including interactive body panels (Hood_Pivot / Trunk_Pivot)
         modelRoot.updateMatrixWorld(true);
         const box = new THREE.Box3();
+        const bodyMeshes = [];
         modelRoot.traverse(child => {
             if (child.isMesh && child.visible && child.geometry) {
-                if (isIgnoredAccessoryOrRigNode(child, modelRoot)) return;
+                if (isIgnoredPlateRaycastNode(child, modelRoot)) return;
                 const n = String(child.name || '').toLowerCase();
                 if (!n.includes('licenseplate') && !n.includes('spoiler') && !n.includes('neon') && !n.includes('sgu')) {
                     const mb = new THREE.Box3().setFromObject(child);
                     if (mb.max.y - mb.min.y > 0.05) {
                         box.union(mb);
+                    }
+                    if (!n.includes('wheel') && !n.includes('tire') && !n.includes('tyre') && !n.includes('caliper') && !n.includes('brake') && !n.includes('plate')) {
+                        bodyMeshes.push(child);
                     }
                 }
             }
@@ -1446,7 +1640,7 @@
         // Check if model contains built-in plate nodes (e.g. vaz2107, bmw_m4, etc.)
         let existingFP = null, existingRP = null;
         modelRoot.traverse(child => {
-            if (!child.name || isIgnoredAccessoryOrRigNode(child, modelRoot)) return;
+            if (!child.name || isIgnoredPlateRaycastNode(child, modelRoot)) return;
             const n = child.name.toLowerCase();
             if ((n.includes('plate_01') || n.includes('reg plate (front)') || n.includes('plate_f') || n.includes('licenseplate_front')) && !existingFP) {
                 existingFP = child;
@@ -1460,6 +1654,16 @@
         const isSuper = (carId === 'sf90' || carId === 'huracan' || carId === 'jesko' || carId === 'porsche911') || size.y < 1.25;
 
         let frontY, rearY, frontZ, rearZ;
+        const raycaster = (typeof THREE.Raycaster === 'function') ? new THREE.Raycaster() : null;
+        const raycastMeshes = bodyMeshes.filter(c => {
+            if (!c || !c.material) return false;
+            if (Array.isArray(c.material) && c.geometry && Array.isArray(c.geometry.groups)) {
+                return c.geometry.groups.every(g => Boolean(c.material[g.materialIndex]));
+            }
+            return true;
+        });
+        const sampleXOffsets = [-0.16, 0, 0.16];
+        const sampleYOffsets = [-0.03, 0, 0.03];
 
         if (existingFP) {
             const b = new THREE.Box3().setFromObject(existingFP);
@@ -1473,25 +1677,42 @@
                                       : (box.min.y + Math.max(0.40, Math.min(0.52, size.y * 0.31))));
 
             let bestFZ = -Infinity;
-            const v = new THREE.Vector3();
             const minZThresh = box.min.z + size.z * 0.65;
-            modelRoot.traverse(c => {
-                if (!c.isMesh || !c.geometry) return;
-                if (isIgnoredAccessoryOrRigNode(c, modelRoot)) return;
-                const n = String(c.name || '').toLowerCase();
-                if (n.includes('wheel') || n.includes('tire') || n.includes('plate') || n.includes('spoiler') || n.includes('neon') || n.includes('sgu')) return;
-                const attr = c.geometry.attributes.position;
-                if (!attr) return;
+
+            if (raycaster && raycastMeshes.length > 0) {
+                const rayDirF = new THREE.Vector3(0, 0, -1);
+                for (const dx of sampleXOffsets) {
+                    for (const dy of sampleYOffsets) {
+                        raycaster.set(new THREE.Vector3(center.x + dx, frontY + dy, box.max.z + 1.0), rayDirF);
+                        const hits = raycaster.intersectObjects(raycastMeshes, false);
+                        if (hits && hits.length > 0) {
+                            const hitZ = hits[0].point.z;
+                            if (hitZ > minZThresh && hitZ > bestFZ) {
+                                bestFZ = hitZ;
+                            }
+                        }
+                    }
+                }
+            }
+
+            const v = new THREE.Vector3();
+            for (let m = 0; m < bodyMeshes.length; m++) {
+                const c = bodyMeshes[m];
+                const attr = c.geometry && c.geometry.attributes && c.geometry.attributes.position;
+                if (!attr) continue;
                 const mw = c.matrixWorld;
                 for (let i = 0; i < attr.count; i++) {
                     v.fromBufferAttribute(attr, i);
                     v.applyMatrix4(mw);
-                    if (Math.abs(v.x - center.x) < 0.35 && Math.abs(v.y - frontY) < 0.14 && v.z > minZThresh) {
+                    if (Math.abs(v.x - center.x) < 0.42 && Math.abs(v.y - frontY) < 0.16 && v.z > minZThresh) {
                         if (v.z > bestFZ) bestFZ = v.z;
                     }
                 }
-            });
-            frontZ = isFinite(bestFZ) ? bestFZ + 0.008 : box.max.z - 0.012;
+            }
+
+            const minFrontSurfaceZ = box.max.z - (size.z * 0.035);
+            const resolvedFZ = isFinite(bestFZ) ? Math.max(bestFZ, minFrontSurfaceZ) : box.max.z;
+            frontZ = resolvedFZ + 0.016;
         }
 
         if (existingRP) {
@@ -1506,25 +1727,42 @@
                                      : (box.min.y + Math.max(0.52, Math.min(0.66, size.y * 0.40))));
 
             let bestRZ = Infinity;
-            const v = new THREE.Vector3();
             const maxZThresh = box.min.z + size.z * 0.35;
-            modelRoot.traverse(c => {
-                if (!c.isMesh || !c.geometry) return;
-                if (isIgnoredAccessoryOrRigNode(c, modelRoot)) return;
-                const n = String(c.name || '').toLowerCase();
-                if (n.includes('wheel') || n.includes('tire') || n.includes('plate') || n.includes('spoiler') || n.includes('neon') || n.includes('sgu')) return;
-                const attr = c.geometry.attributes.position;
-                if (!attr) return;
+
+            if (raycaster && raycastMeshes.length > 0) {
+                const rayDirR = new THREE.Vector3(0, 0, 1);
+                for (const dx of sampleXOffsets) {
+                    for (const dy of sampleYOffsets) {
+                        raycaster.set(new THREE.Vector3(center.x + dx, rearY + dy, box.min.z - 1.0), rayDirR);
+                        const hits = raycaster.intersectObjects(raycastMeshes, false);
+                        if (hits && hits.length > 0) {
+                            const hitZ = hits[0].point.z;
+                            if (hitZ < maxZThresh && hitZ < bestRZ) {
+                                bestRZ = hitZ;
+                            }
+                        }
+                    }
+                }
+            }
+
+            const v = new THREE.Vector3();
+            for (let m = 0; m < bodyMeshes.length; m++) {
+                const c = bodyMeshes[m];
+                const attr = c.geometry && c.geometry.attributes && c.geometry.attributes.position;
+                if (!attr) continue;
                 const mw = c.matrixWorld;
                 for (let i = 0; i < attr.count; i++) {
                     v.fromBufferAttribute(attr, i);
                     v.applyMatrix4(mw);
-                    if (Math.abs(v.x - center.x) < 0.35 && Math.abs(v.y - rearY) < 0.14 && v.z < maxZThresh) {
+                    if (Math.abs(v.x - center.x) < 0.42 && Math.abs(v.y - rearY) < 0.16 && v.z < maxZThresh) {
                         if (v.z < bestRZ) bestRZ = v.z;
                     }
                 }
-            });
-            rearZ = isFinite(bestRZ) ? bestRZ - 0.008 : box.min.z + 0.012;
+            }
+
+            const maxRearSurfaceZ = box.min.z + (size.z * 0.035);
+            const resolvedRZ = isFinite(bestRZ) ? Math.min(bestRZ, maxRearSurfaceZ) : box.min.z;
+            rearZ = resolvedRZ - 0.016;
         }
 
         const worldFront = new THREE.Vector3(center.x, frontY, frontZ);
@@ -1534,7 +1772,7 @@
         if (frontPlates.length > 0 || rearPlates.length > 0) {
             frontPlates.forEach(oldFP => {
                 oldFP.visible = true;
-                const newFP = createLicensePlate(THREE, text, true);
+                const newFP = createLicensePlate(THREE, text, true, fStyle, pStyle);
                 while (oldFP.children.length > 0) {
                     const oldChild = oldFP.children[0];
                     disposeObject3D(oldChild);
@@ -1543,9 +1781,12 @@
                 while (newFP.children.length > 0) {
                     oldFP.add(newFP.children[0]);
                 }
+                oldFP.userData.isLicensePlate = true;
                 oldFP.userData.plateText = text;
                 oldFP.userData.plateCountry = newFP.userData.plateCountry;
-                if (oldFP.parent && oldFP.name === 'GLB_FrontLicensePlate') {
+                oldFP.userData.frameStyle = fStyle;
+                oldFP.userData.plateStyle = pStyle;
+                if (oldFP.parent && (oldFP.name === 'GLB_FrontLicensePlate' || oldFP.name === 'LicensePlate_Front')) {
                     const localF = worldFront.clone();
                     oldFP.parent.worldToLocal(localF);
                     oldFP.position.copy(localF);
@@ -1554,7 +1795,7 @@
 
             rearPlates.forEach(oldRP => {
                 oldRP.visible = true;
-                const newRP = createLicensePlate(THREE, text, false);
+                const newRP = createLicensePlate(THREE, text, false, fStyle, pStyle);
                 while (oldRP.children.length > 0) {
                     const oldChild = oldRP.children[0];
                     disposeObject3D(oldChild);
@@ -1563,9 +1804,12 @@
                 while (newRP.children.length > 0) {
                     oldRP.add(newRP.children[0]);
                 }
+                oldRP.userData.isLicensePlate = true;
                 oldRP.userData.plateText = text;
                 oldRP.userData.plateCountry = newRP.userData.plateCountry;
-                if (oldRP.parent && oldRP.name === 'GLB_RearLicensePlate') {
+                oldRP.userData.frameStyle = fStyle;
+                oldRP.userData.plateStyle = pStyle;
+                if (oldRP.parent && (oldRP.name === 'GLB_RearLicensePlate' || oldRP.name === 'LicensePlate_Rear')) {
                     const localR = worldRear.clone();
                     oldRP.parent.worldToLocal(localR);
                     oldRP.position.copy(localR);
@@ -1575,14 +1819,14 @@
         }
 
         // 3. Attach fresh GLB plates flush to front and rear bumper surfaces
-        const fp = createLicensePlate(THREE, text, true);
+        const fp = createLicensePlate(THREE, text, true, fStyle, pStyle);
         fp.name = 'GLB_FrontLicensePlate';
         const localFront = worldFront.clone();
         modelRoot.worldToLocal(localFront);
         fp.position.copy(localFront);
         modelRoot.add(fp);
 
-        const rp = createLicensePlate(THREE, text, false);
+        const rp = createLicensePlate(THREE, text, false, fStyle, pStyle);
         rp.name = 'GLB_RearLicensePlate';
         const localRear = worldRear.clone();
         modelRoot.worldToLocal(localRear);
@@ -4617,7 +4861,7 @@
 
         // Apply license plate if specified in styling (or hide if 'none'/null)
         if (styling && styling.plate !== undefined) {
-            applyLicensePlateToModel(THREE, spec.root, styling.plate);
+            applyLicensePlateToModel(THREE, spec.root, styling.plate, styling.frameStyle || 'none', styling.plateStyle || 'classic');
         }
 
         // Tuning: Spoilers
@@ -6783,9 +7027,9 @@
         // Interactive Doors, Hood, Engine Bay, Trunk, and Subwoofer Rig for all GLB Models
         ensureGLBInteractiveRig(THREE, modelRoot, styling, carId, mats, styledPaint);
 
-        // Russian License Plates
+        // Multi-country License Plates
         const plateVal = (styling && styling.plate !== undefined) ? styling.plate : 'А 777 АА | 77 RUS';
-        applyLicensePlateToModel(THREE, modelRoot, plateVal);
+        applyLicensePlateToModel(THREE, modelRoot, plateVal, styling.frameStyle || 'none', styling.plateStyle || 'classic');
 
         // Aerodynamic Undercarriage Undertray (for specific models requiring undercarriage sealing, e.g. SF90)
         if (carId === 'sf90') {
@@ -7260,6 +7504,7 @@
                 minDistance: 2.2,
                 maxDistance: 6.8
             }, options);
+            this.minDistance = this.options.minDistance;
 
             this.width = this.container.clientWidth || 320;
             this.height = this.container.clientHeight || 200;
@@ -7506,6 +7751,8 @@
                 this.updateCapabilities();
                 this.updateLightsRigPositions();
                 this.updateHeadlightsState();
+                this.needsRender = true;
+                if (!this.active) this.start();
                 return;
             }
 
@@ -7604,7 +7851,13 @@
                             }
                         });
                         if (this.currentStyling && this.currentStyling.plate !== undefined) {
-                            applyLicensePlateToModel(THREE, this.proceduralCar, this.currentStyling.plate);
+                            applyLicensePlateToModel(
+                                THREE,
+                                this.proceduralCar,
+                                this.currentStyling.plate,
+                                this.currentStyling.frameStyle || 'none',
+                                this.currentStyling.plateStyle || 'classic'
+                            );
                         }
                         applyInteractiveAnglesToModel(this.proceduralCar, this.doorAngle, this.hoodAngle, this.trunkAngle);
                         this.scene.add(this.proceduralCar);
@@ -7634,24 +7887,32 @@
             }
         }
 
-        updatePlate(plateText) {
+        updatePlate(plateText, frameStyle, plateStyle) {
             this.currentStyling.plate = plateText;
+            if (frameStyle !== undefined) this.currentStyling.frameStyle = frameStyle;
+            if (plateStyle !== undefined) this.currentStyling.plateStyle = plateStyle;
+            const fStyle = this.currentStyling.frameStyle || 'none';
+            const pStyle = this.currentStyling.plateStyle || 'classic';
             if (this.proceduralCar && this.THREE) {
-                applyLicensePlateToModel(this.THREE, this.proceduralCar, plateText);
+                applyLicensePlateToModel(this.THREE, this.proceduralCar, plateText, fStyle, pStyle);
             }
             if (this.glbCar && this.THREE) {
-                applyLicensePlateToModel(this.THREE, this.glbCar, plateText);
+                applyLicensePlateToModel(this.THREE, this.glbCar, plateText, fStyle, pStyle);
             }
             if (this.carGroup && this.THREE) {
-                applyLicensePlateToModel(this.THREE, this.carGroup, plateText);
+                applyLicensePlateToModel(this.THREE, this.carGroup, plateText, fStyle, pStyle);
             }
             this.needsRender = true;
         }
 
         updateStyling(styling = {}) {
             Object.assign(this.currentStyling, styling);
-            if (styling.plate !== undefined && this.THREE) {
-                this.updatePlate(styling.plate);
+            if ((styling.plate !== undefined || styling.frameStyle !== undefined || styling.plateStyle !== undefined) && this.THREE) {
+                this.updatePlate(
+                    this.currentStyling.plate !== undefined ? this.currentStyling.plate : 'А 777 АА | 77 RUS',
+                    this.currentStyling.frameStyle,
+                    this.currentStyling.plateStyle
+                );
             }
             const carId = identifyCarModel(this.currentCarName);
             if (this.glbCar && GLB_MODEL_MAP[carId]) {
@@ -7814,6 +8075,18 @@
                     this.targetAngleX = 0.12;
                     this.targetDistance = 4.2;
                     this.targetCenterY = 0.50;
+                    break;
+                case 'plate_front':
+                    this.targetAngleY = 0;
+                    this.targetAngleX = 0.08;
+                    this.targetDistance = Math.max(this.minDistance || this.options.minDistance || 2.2, 4.2 * 0.72);
+                    this.targetCenterY = 0.44;
+                    break;
+                case 'plate_rear':
+                    this.targetAngleY = Math.PI;
+                    this.targetAngleX = 0.08;
+                    this.targetDistance = Math.max(this.minDistance || this.options.minDistance || 2.2, 4.2 * 0.72);
+                    this.targetCenterY = 0.48;
                     break;
                 case 'side':
                     this.targetAngleY = Math.PI / 2;
@@ -10130,6 +10403,29 @@
                     group.userData.wheels.push(wGroup);
                 });
 
+                const trafficPlatesPool = [
+                    'А 777 АА | 77 RUS',
+                    'Е 001 КХ | 777 RUS',
+                    'В 555 ОО | 97 RUS',
+                    '777 AAA | 02 KZ',
+                    '001 VIP | 01 KZ',
+                    'SPD 777 | CA USA',
+                    'GTR 001 | NY USA',
+                    'DXB A 7777 | UAE',
+                    'AUH 1 88 | UAE',
+                    'SHJ 3 555 | UAE'
+                ];
+                const truckPlateText = trafficPlatesPool[Math.floor(Math.random() * trafficPlatesPool.length)];
+                const truckFP = createLicensePlate(THREE, truckPlateText, true, 'classic', 'classic');
+                truckFP.name = 'FrontLicensePlate';
+                truckFP.position.set(0, 0.44, 2.75 + cabL * 0.5 + 0.30);
+                truckGroup.add(truckFP);
+
+                const truckRP = createLicensePlate(THREE, truckPlateText, false, 'classic', 'classic');
+                truckRP.name = 'RearLicensePlate';
+                truckRP.position.set(0, 0.44, -2.4 - boxL * 0.502 - 0.08);
+                truckGroup.add(truckRP);
+
                 group.add(truckGroup);
                 group.userData.halfWidth = 1.35;
                 group.userData.halfLength = 4.8;
@@ -10166,10 +10462,27 @@
                     group.userData.halfLength = 2.25;
                 }
 
+                const trafficPlateSamples = [
+                    'А 777 АА | 77 RUS',
+                    'М 555 ММ | 97 RUS',
+                    'Х 100 ХХ | 777 RUS',
+                    '777 AAA | 02 KZ',
+                    '888 ZZZ | 01 KZ',
+                    'SPD 777 | CA USA',
+                    'VIP 001 | NY USA',
+                    'DXB A 7777 | UAE',
+                    'D 7 | DXB UAE',
+                    'AUH 01 99 | UAE'
+                ];
+                const randomTrafficPlate = (type === 'police')
+                    ? 'А 001 МР | 97 RUS'
+                    : trafficPlateSamples[Math.floor(Math.random() * trafficPlateSamples.length)];
+
                 const styling = {
                     color: bodyColor,
                     tint: (type === 'police') ? 'clear' : (Math.random() > 0.4 ? 'medium' : 'stock'),
-                    wheels: (type === 'police') ? 'stamp' : (Math.random() > 0.5 ? 'stock' : 'torus')
+                    wheels: (type === 'police') ? 'stamp' : (Math.random() > 0.5 ? 'stock' : 'torus'),
+                    plate: randomTrafficPlate
                 };
 
                 const carModel = buildDetailedCarModel(THREE, modelName, styling);
@@ -10412,11 +10725,19 @@
             }, 60);
         }
 
-        setPlayerPlate(plateText) {
+        setPlayerPlate(plateText, frameStyle, plateStyle) {
             if (!this.styling) this.styling = {};
             this.styling.plate = plateText;
+            if (frameStyle !== undefined) this.styling.frameStyle = frameStyle;
+            if (plateStyle !== undefined) this.styling.plateStyle = plateStyle;
             if (this.playerCar && this.THREE) {
-                applyLicensePlateToModel(this.THREE, this.playerCar, plateText);
+                applyLicensePlateToModel(
+                    this.THREE,
+                    this.playerCar,
+                    plateText,
+                    this.styling.frameStyle || 'none',
+                    this.styling.plateStyle || 'classic'
+                );
             }
         }
 
@@ -10444,7 +10765,13 @@
                     }
                     this.playerCar = model;
                     if (this.styling && this.styling.plate !== undefined) {
-                        applyLicensePlateToModel(THREE, this.playerCar, this.styling.plate);
+                        applyLicensePlateToModel(
+                            THREE,
+                            this.playerCar,
+                            this.styling.plate,
+                            this.styling.frameStyle || 'none',
+                            this.styling.plateStyle || 'classic'
+                        );
                     }
                     this.playerCar.position.set(this.state.x, (this.state.downforceY || 0), this.state.z);
                     this.playerCar.updateMatrixWorld(true);
@@ -10465,7 +10792,13 @@
                     if (immediateModel) {
                         this.playerCar = immediateModel;
                         if (this.styling && this.styling.plate !== undefined) {
-                            applyLicensePlateToModel(THREE, this.playerCar, this.styling.plate);
+                            applyLicensePlateToModel(
+                                THREE,
+                                this.playerCar,
+                                this.styling.plate,
+                                this.styling.frameStyle || 'none',
+                                this.styling.plateStyle || 'classic'
+                            );
                         }
                         this.playerCar.position.set(this.state.x, 0, this.state.z);
                         if (this.scene) {

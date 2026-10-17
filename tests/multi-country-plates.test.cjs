@@ -416,3 +416,314 @@ test('UAE 1-digit and 2-digit plates receive Dubai auction pricing and rarity, a
     c.priceOfPlate('D', 'X', 'Z', '124', 'SHJ', 'UAE')
   );
 });
+
+const { describe } = test;
+
+function setup3DPlateTestEnv() {
+  const drawnTexts = [];
+
+  function makeMockCanvas() {
+    const ctxTarget = {
+      fillStyle: '#ffffff',
+      strokeStyle: '#000000',
+      font: '16px sans-serif',
+      lineWidth: 1,
+      textAlign: 'center',
+      textBaseline: 'middle'
+    };
+    const ctx = new Proxy(ctxTarget, {
+      get(target, prop) {
+        if (prop in target) return target[prop];
+        if (prop === 'fillText' || prop === 'strokeText') {
+          return (str, x, y) => {
+            drawnTexts.push({ text: String(str), x, y });
+          };
+        }
+        if (prop === 'measureText') {
+          return (str) => ({ width: String(str || '').length * 14 });
+        }
+        if (prop === 'createLinearGradient' || prop === 'createRadialGradient') {
+          return () => ({ addColorStop() {} });
+        }
+        return () => {};
+      },
+      set(target, prop, value) {
+        target[prop] = value;
+        return true;
+      }
+    });
+
+    return {
+      width: 512,
+      height: 128,
+      style: {},
+      classList: { add() {}, remove() {}, contains() { return false; }, toggle() {} },
+      getContext: () => ctx,
+      addEventListener() {},
+      removeEventListener() {},
+      appendChild() {},
+      removeChild() {},
+      innerHTML: ''
+    };
+  }
+
+  const domElementMock = makeMockCanvas();
+  global.window = global;
+  global.self = global;
+  global.addEventListener = () => {};
+  global.removeEventListener = () => {};
+  global.document = {
+    createElement: () => makeMockCanvas(),
+    createElementNS: () => makeMockCanvas(),
+    getElementById: () => domElementMock,
+    querySelectorAll: () => [],
+    addEventListener: () => {},
+    removeEventListener: () => {},
+    head: { appendChild: () => {} }
+  };
+  Object.defineProperty(global, 'navigator', {
+    value: { userAgent: 'NodeTest' },
+    writable: true,
+    configurable: true
+  });
+  global.requestAnimationFrame = (cb) => {
+    const t = setTimeout(() => cb(Date.now()), 16);
+    if (t && t.unref) t.unref();
+    return t;
+  };
+  global.cancelAnimationFrame = (id) => clearTimeout(id);
+
+  const THREE = require('../js/vendor/three.min.js');
+  THREE.WebGLRenderer = class MockRenderer {
+    constructor() {
+      this.domElement = makeMockCanvas();
+      this.shadowMap = { enabled: false };
+      this.debug = { checkShaderErrors: false };
+    }
+    setPixelRatio() {}
+    setSize() {}
+    render() {}
+    compile() {}
+    getRenderTarget() { return null; }
+    setRenderTarget() {}
+    getClearColor() { return new THREE.Color(0x000000); }
+    dispose() {}
+    forceContextLoss() {}
+  };
+  global.THREE = THREE;
+
+  delete require.cache[require.resolve('../js/car-3d.js')];
+  const Car3DManager = require('../js/car-3d.js');
+
+  return { THREE, Car3DManager, drawnTexts };
+}
+
+describe('3D Vehicle Bumper License Plates (RUS / KZ / USA / UAE)', () => {
+  test('createLicensePlate builds authentic 3D plate groups with country dimensions, z-separation, and emissiveMap', () => {
+    const { THREE, Car3DManager, drawnTexts } = setup3DPlateTestEnv();
+
+    const getPlateFaceAndBack = (plateGroup) => {
+      const meshes = plateGroup.children.filter(c => c && c.isMesh);
+      const plateMesh = meshes.find(m => m.material && m.material.map) || meshes[0] || null;
+      const backMesh = meshes.length > 1 ? meshes[meshes.length - 1] : null;
+      return { plateMesh, backMesh };
+    };
+
+    const getMeshDims = (mesh) => {
+      const params = (mesh && mesh.geometry && mesh.geometry.parameters) || {};
+      if (params.width && params.height) {
+        return { w: params.width, h: params.height };
+      }
+      const b = new THREE.Box3().setFromObject(mesh);
+      const s = b.getSize(new THREE.Vector3());
+      return { w: s.x, h: s.y };
+    };
+
+    // 1. Russian GOST plate ('А 777 АА | 77') -> standard Euro dimensions
+    const rusPlate = Car3DManager.createLicensePlate('А 777 АА | 77', true, 'gold', 'classic');
+    assert.ok(rusPlate && rusPlate.isGroup, 'RUS plate must be a THREE.Group');
+    assert.equal(rusPlate.userData.isLicensePlate, true);
+    assert.equal(rusPlate.userData.plateText, 'А 777 АА | 77');
+    assert.equal(rusPlate.userData.frameStyle, 'gold');
+    assert.equal(rusPlate.userData.plateStyle, 'classic');
+
+    const { plateMesh: rusFace } = getPlateFaceAndBack(rusPlate);
+    const rusDims = getMeshDims(rusFace);
+    assert.ok(rusDims.w >= 0.47 && rusDims.w <= 0.53, `Expected Euro width ~0.48-0.52m, got ${rusDims.w}`);
+    assert.ok(rusDims.h >= 0.105 && rusDims.h <= 0.12, `Expected Euro height ~0.11-0.115m, got ${rusDims.h}`);
+
+    // 2. Kazakhstan plate ('777 AAA | 02 KZ') -> standard Euro dimensions
+    const kzPlate = Car3DManager.createLicensePlate('777 AAA | 02 KZ', false, 'carbon', 'classic');
+    assert.ok(kzPlate && kzPlate.isGroup, 'KZ plate must be a THREE.Group');
+    assert.equal(kzPlate.userData.isLicensePlate, true);
+    assert.equal(kzPlate.userData.plateText, '777 AAA | 02 KZ');
+    assert.equal(kzPlate.userData.frameStyle, 'carbon');
+    assert.equal(kzPlate.userData.plateStyle, 'classic');
+    const { plateMesh: kzFace } = getPlateFaceAndBack(kzPlate);
+    const kzDims = getMeshDims(kzFace);
+    assert.ok(kzDims.w >= 0.47 && kzDims.w <= 0.53, `Expected KZ Euro width ~0.48-0.52m, got ${kzDims.w}`);
+    assert.ok(kzDims.h >= 0.105 && kzDims.h <= 0.12, `Expected KZ Euro height ~0.11-0.115m, got ${kzDims.h}`);
+
+    // 3. USA plate ('SPD 777 | CA USA') -> 2:1 North American dimensions (0.36 x 0.18)
+    const usaPlate = Car3DManager.createLicensePlate('SPD 777 | CA USA', true, 'chrome', 'classic');
+    assert.ok(usaPlate && usaPlate.isGroup, 'USA plate must be a THREE.Group');
+    assert.equal(usaPlate.userData.isLicensePlate, true);
+    assert.equal(usaPlate.userData.plateText, 'SPD 777 | CA USA');
+    assert.equal(usaPlate.userData.frameStyle, 'chrome');
+    assert.equal(usaPlate.userData.plateStyle, 'classic');
+    const { plateMesh: usaFace } = getPlateFaceAndBack(usaPlate);
+    const usaDims = getMeshDims(usaFace);
+    assert.ok(Math.abs(usaDims.w - 0.36) < 0.01, `Expected USA width 0.36m, got ${usaDims.w}`);
+    assert.ok(Math.abs(usaDims.h - 0.18) < 0.01, `Expected USA height 0.18m, got ${usaDims.h}`);
+
+    // 4. UAE plates ('DXB A 7', 'AUH 01 88 | UAE', 'FUJ M 555 | UAE', 'UAQ B 123 | UAE')
+    const uaeCases = [
+      { text: 'DXB A 7', expectedHeader: /DUBAI|دبي/i },
+      { text: 'AUH 01 88 | UAE', expectedHeader: /A\.D|ABU DHABI|أبوظبي/i },
+      { text: 'FUJ M 555 | UAE', expectedHeader: /FUJAIRAH|الفجيرة/i },
+      { text: 'UAQ B 123 | UAE', expectedHeader: /U\.A\.Q|أم القيوين/i }
+    ];
+    for (const { text: uaeText, expectedHeader } of uaeCases) {
+      drawnTexts.length = 0;
+      const uaePlate = Car3DManager.createLicensePlate(uaeText, true, 'neon', 'classic');
+      assert.ok(uaePlate && uaePlate.isGroup, `UAE plate (${uaeText}) must be a THREE.Group`);
+      assert.equal(uaePlate.userData.isLicensePlate, true);
+      assert.equal(uaePlate.userData.plateText, uaeText);
+      assert.equal(uaePlate.userData.frameStyle, 'neon');
+      assert.equal(uaePlate.userData.plateStyle, 'classic');
+      assert.ok(
+        drawnTexts.some(d => expectedHeader.test(d.text)),
+        `UAE plate (${uaeText}) must render emirate header matching ${expectedHeader}, got: ${drawnTexts.map(d => d.text).join(', ')}`
+      );
+
+      const { plateMesh, backMesh } = getPlateFaceAndBack(uaePlate);
+      assert.ok(plateMesh && backMesh, `UAE plate (${uaeText}) must have face mesh and backing mesh`);
+      const zSep = Math.abs(plateMesh.position.z - backMesh.position.z);
+      assert.ok(
+        zSep >= 0.01,
+        `Expected non-zero z-separation >= 0.01m between plateMesh (${plateMesh.position.z}) and backing (${backMesh.position.z}) to prevent z-fighting, got ${zSep}`
+      );
+      assert.ok(
+        plateMesh.material && plateMesh.material.emissiveMap,
+        `UAE plate (${uaeText}) material must include emissiveMap for night-race visibility`
+      );
+    }
+  });
+
+  test('applyLicensePlateToModel mounts front and rear plates outside bumpers even with Trunk_Pivot rig and wide front bumper triangles', () => {
+    const { THREE, Car3DManager } = setup3DPlateTestEnv();
+
+    const findFrontPlate = (carGroup) => (
+      carGroup.getObjectByName('LicensePlate_Front') ||
+      carGroup.getObjectByName('GLB_FrontLicensePlate') ||
+      carGroup.getObjectByName('FrontLicensePlate')
+    );
+
+    const findRearPlate = (carGroup) => (
+      carGroup.getObjectByName('LicensePlate_Rear') ||
+      carGroup.getObjectByName('GLB_RearLicensePlate') ||
+      carGroup.getObjectByName('RearLicensePlate')
+    );
+
+    // Construct a 3D car model with:
+    // - Wide front bumper triangles across x = ±0.55 at z = 2.10 (no vertices inside |x| < 0.35)
+    // - A recessed inner radiator grille at z = 1.50 (with vertices at |x| = 0.20)
+    // - Rear trunk/bumper mesh inside GLB_InteractiveRig -> Trunk_Pivot extending to z = -2.10
+    const carGroup = new THREE.Group();
+    carGroup.userData.carId = 'm5f90';
+
+    // Wide front outer bumper at z = 2.00..2.10 with vertices only at x = ±0.55
+    const frontOuterBumper = new THREE.Mesh(
+      new THREE.BoxGeometry(1.10, 0.70, 0.10),
+      new THREE.MeshStandardMaterial({ name: 'body' })
+    );
+    frontOuterBumper.name = 'FrontOuterBumper';
+    frontOuterBumper.position.set(0, 0.45, 2.05); // max.z = 2.10
+    carGroup.add(frontOuterBumper);
+
+    // Recessed inner grille at z = 1.45..1.55 with vertices at x = ±0.20, y = 0.45 ± 0.08
+    const recessedGrille = new THREE.Mesh(
+      new THREE.BoxGeometry(0.40, 0.16, 0.10),
+      new THREE.MeshStandardMaterial({ name: 'grille' })
+    );
+    recessedGrille.name = 'RecessedInnerGrille';
+    recessedGrille.position.set(0, 0.45, 1.50); // max.z = 1.55
+    carGroup.add(recessedGrille);
+
+    // Mid cabin body from z = -1.20 to z = 1.50
+    const cabinBody = new THREE.Mesh(
+      new THREE.BoxGeometry(1.80, 1.35, 2.70),
+      new THREE.MeshStandardMaterial({ name: 'body' })
+    );
+    cabinBody.name = 'MainCabinBody';
+    cabinBody.position.set(0, 0.70, 0.15);
+    carGroup.add(cabinBody);
+
+    // Rear bumper & trunk inside GLB_InteractiveRig -> Trunk_Pivot extending to z = -2.10
+    const interactiveRig = new THREE.Group();
+    interactiveRig.name = 'GLB_InteractiveRig';
+    interactiveRig.userData.isInteractiveRigNode = true;
+
+    const trunkPivot = new THREE.Group();
+    trunkPivot.name = 'Trunk_Pivot';
+    trunkPivot.userData.isInteractiveRigNode = true;
+
+    const rearBumperMesh = new THREE.Mesh(
+      new THREE.BoxGeometry(1.10, 0.75, 0.60),
+      new THREE.MeshStandardMaterial({ name: 'body' })
+    );
+    rearBumperMesh.name = 'RearTrunkBumper_trunk';
+    rearBumperMesh.position.set(0, 0.55, -1.80); // min.z = -2.10
+    trunkPivot.add(rearBumperMesh);
+    interactiveRig.add(trunkPivot);
+    carGroup.add(interactiveRig);
+
+    carGroup.updateMatrixWorld(true);
+
+    // 1. Mount UAE plate
+    Car3DManager.applyLicensePlateToModel(carGroup, 'D 1 | DXB UAE', 'gold', 'classic');
+
+    const frontPlate = findFrontPlate(carGroup);
+    const rearPlate = findRearPlate(carGroup);
+
+    assert.ok(frontPlate, 'Front license plate must be mounted on carGroup');
+    assert.ok(rearPlate, 'Rear license plate must be mounted on carGroup');
+    assert.equal(frontPlate.visible, true);
+    assert.equal(rearPlate.visible, true);
+
+    assert.ok(
+      frontPlate.position.z > 2.05,
+      `Front plate must sit OUTSIDE the outer front bumper (expected z > 2.05, got ${frontPlate.position.z.toFixed(3)}, never buried in recessed grille at z = 1.5)`
+    );
+    assert.ok(
+      rearPlate.position.z < -2.05,
+      `Rear plate must sit OUTSIDE the rear bumper inside Trunk_Pivot (expected z < -2.05, got ${rearPlate.position.z.toFixed(3)})`
+    );
+
+    // 2. Calling applyLicensePlateToModel(carGroup, '') hides both plates
+    Car3DManager.applyLicensePlateToModel(carGroup, '');
+    assert.equal(frontPlate.visible, false, 'Front plate must be hidden when plateText is empty');
+    assert.equal(rearPlate.visible, false, 'Rear plate must be hidden when plateText is empty');
+
+    // 3. Calling again with a new country plate replaces them cleanly without duplicate plate nodes
+    Car3DManager.applyLicensePlateToModel(carGroup, 'SPD 777 | CA USA', 'chrome', 'classic');
+    const frontPlateAfter = findFrontPlate(carGroup);
+    const rearPlateAfter = findRearPlate(carGroup);
+
+    assert.ok(frontPlateAfter && frontPlateAfter.visible, 'Front plate must be visible again after mounting USA plate');
+    assert.ok(rearPlateAfter && rearPlateAfter.visible, 'Rear plate must be visible again after mounting USA plate');
+    assert.equal(frontPlateAfter.userData.plateText, 'SPD 777 | CA USA');
+    assert.equal(rearPlateAfter.userData.plateText, 'SPD 777 | CA USA');
+    assert.equal(frontPlateAfter.userData.frameStyle, 'chrome');
+    assert.equal(rearPlateAfter.userData.frameStyle, 'chrome');
+
+    let plateGroupCount = 0;
+    carGroup.traverse((node) => {
+      if (node !== carGroup && node.isGroup && node.userData && node.userData.isLicensePlate) {
+        plateGroupCount++;
+      }
+    });
+    assert.equal(plateGroupCount, 2, `Expected exactly 2 license plate groups (front & rear) without duplicates, got ${plateGroupCount}`);
+  });
+});
+

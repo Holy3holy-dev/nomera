@@ -242,7 +242,7 @@ const COUNTRIES = {
     priceMult: 1.8,
     regRegex: /^(?:0[1-9]|1[0-9]|20|\d{2})$/,
     defaultReg: '01',
-    letters: 'ABCDEFGHKLMNOPQRSTUVWXYZ'.split(''),
+    letters: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split(''),
     elites: ['AAA','VIP','ZZZ','QQQ','GGG','NNN','MMM','SSS','XXX','LLL','AST','ALA','HAN']
   },
   USA: {
@@ -252,7 +252,7 @@ const COUNTRIES = {
     priceMult: 3.5,
     regRegex: /^(?:[A-Z]{2}|\d{2,3})$/i,
     defaultReg: 'CA',
-    letters: 'ABCDEFGHJKLMNPRSTUVWXYZ'.split(''),
+    letters: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split(''),
     elites: ['USA','VIP','NYC','LAX','MIA','GTA','FBI','CIA','CEO','GOD','WIN','XXX','AAA']
   },
   UAE: {
@@ -611,8 +611,9 @@ function mutate(state, action, key, data, now=Date.now()) {
       : (data?.roll?.country && COUNTRIES[data.roll.country] ? data.roll.country : 'RUS');
     const cfg = COUNTRIES[country];
     const cost = roll?.mode === 'both' ? cfg.spinCostBoth : cfg.spinCostPart;
+    const numRegex = country === 'UAE' ? /^\d{1,3}$/ : /^\d{3}$/;
     if(!roll||!['both','numbers','letters'].includes(roll.mode)
-      || (roll.num!==null && !/^\d{3}$/.test(roll.num))
+      || (roll.num!==null && !numRegex.test(roll.num))
       || (roll.letters!==null && (!Array.isArray(roll.letters)||roll.letters.length!==3||roll.letters.some(l=>!cfg.letters.includes(l)))))throw Error('Неверный тип спина');
     if(typeof data.region !== 'string' || !cfg.regRegex.test(data.region))throw Error('Неверный регион');
     if(a.balance<cost)throw Error('Недостаточно денег на онлайн-кошельке');
