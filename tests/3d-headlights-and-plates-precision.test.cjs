@@ -288,3 +288,107 @@ test('detectVehicleLightPositions correctly splits symmetric combined meshes and
     });
 });
 
+test('Audi RS6, Nissan Silvia, and Lada Vesta face forward (+Z) with headlights & front plate at +Z and taillights & rear plate at -Z', async () => {
+    const { THREE, Car3DManager } = setupTestContext();
+    const cars = [
+        { id: 'vesta', name: 'Lada Vesta Sport', file: 'vesta.glb', length: 4.35 },
+        { id: 'silvia', name: 'Nissan Silvia S15', file: 'nissan_370z.glb', length: 4.55 },
+        { id: 'rs6', name: 'Audi RS6 Avant', file: 'rs3.glb', length: 4.75 }
+    ];
+
+    // 1. Verify procedural models face forward (+Z)
+    for (const c of cars) {
+        const carModel = Car3DManager.buildDetailedCarModel(THREE, c.name, { plate: 'А 777 АА | 77 RUS' });
+        const lights = Car3DManager.detectVehicleLightPositions(carModel, c.id, THREE);
+
+        assert.ok(lights.hlL.z > 1.2, `${c.id} headlights must be at front (+Z), got ${lights.hlL.z}`);
+        assert.ok(lights.tlL.z < -1.2, `${c.id} taillights must be at rear (-Z), got ${lights.tlL.z}`);
+
+        const fp = carModel.getObjectByName('FrontLicensePlate') || carModel.getObjectByName('GLB_FrontLicensePlate');
+        const rp = carModel.getObjectByName('RearLicensePlate') || carModel.getObjectByName('GLB_RearLicensePlate');
+
+        assert.ok(fp, `${c.id} front license plate must exist`);
+        assert.ok(rp, `${c.id} rear license plate must exist`);
+        assert.ok(fp.position.z > 1.5, `${c.id} front plate must be on front bumper (+Z), got ${fp.position.z}`);
+        assert.ok(rp.position.z < -1.5, `${c.id} rear plate must be on rear bumper (-Z), got ${rp.position.z}`);
+    }
+
+    // 2. Verify authentic GLB models with setupModel normalization (vesta & silvia)
+    require('../js/vendor/GLTFLoader.js');
+    const GLTFLoader = THREE.GLTFLoader;
+    const loader = new GLTFLoader();
+
+    for (const c of cars.filter(item => item.file !== 'rs3.glb')) {
+        const filePath = path.join(__dirname, '..', 'assets', 'models', c.file);
+        if (!fs.existsSync(filePath)) continue;
+
+        const buf = fs.readFileSync(filePath);
+        await new Promise((resolve, reject) => {
+            loader.parse(buf.buffer, '', (gltf) => {
+                try {
+                    const scene = gltf.scene;
+                    const toRemove = [];
+                    scene.traverse(node => {
+                        if (/shadow.*plane|ground.*shadow|floor.*shadow|shadow_plane|obj_shadow/i.test(node.name)) {
+                            toRemove.push(node);
+                        }
+                    });
+                    toRemove.forEach(node => { if (node.parent) node.parent.remove(node); });
+
+                    scene.updateMatrixWorld(true);
+                    let box = new THREE.Box3().setFromObject(scene);
+                    let size = box.getSize(new THREE.Vector3());
+
+                    if (size.x > size.z * 1.15) {
+                        scene.rotation.y = Math.PI / 2;
+                        scene.updateMatrixWorld(true);
+                        box = new THREE.Box3().setFromObject(scene);
+                        size = box.getSize(new THREE.Vector3());
+                    }
+
+                    // 180° rotation alignment for backwards-facing models
+                    if (c.id === 'vaz2109' || c.id === 'sf90' || c.id === 'rs6' || c.id === 'silvia' || c.id === 'vesta') {
+                        scene.rotation.y += Math.PI;
+                        scene.updateMatrixWorld(true);
+                        box = new THREE.Box3().setFromObject(scene);
+                        size = box.getSize(new THREE.Vector3());
+                    }
+
+                    const scaleFactor = c.length / (size.z || 1);
+                    scene.scale.setScalar(scaleFactor);
+                    scene.updateMatrixWorld(true);
+
+                    const scaledBox = new THREE.Box3().setFromObject(scene);
+                    const scaledCenter = scaledBox.getCenter(new THREE.Vector3());
+                    scene.position.x = -scaledCenter.x;
+                    scene.position.z = -scaledCenter.z;
+                    scene.position.y = -scaledBox.min.y;
+
+                    const modelGroup = new THREE.Group();
+                    modelGroup.userData.carId = c.id;
+                    modelGroup.add(scene);
+                    modelGroup.updateMatrixWorld(true);
+
+                    Car3DManager.applyStylingToGLTF(THREE, modelGroup, { plate: 'А 777 АА | 77 RUS' }, c.id);
+
+                    const lights = Car3DManager.detectVehicleLightPositions(modelGroup, c.id, THREE);
+                    const fp = modelGroup.getObjectByName('GLB_FrontLicensePlate');
+                    const rp = modelGroup.getObjectByName('GLB_RearLicensePlate');
+
+                    assert.ok(lights.hlL.z > 1.5, `${c.id} GLB headlights must face forward (+Z), got ${lights.hlL.z.toFixed(2)}`);
+                    assert.ok(lights.tlL.z < -1.5, `${c.id} GLB taillights must face rearward (-Z), got ${lights.tlL.z.toFixed(2)}`);
+                    assert.ok(fp, `${c.id} GLB front plate must exist`);
+                    assert.ok(rp, `${c.id} GLB rear plate must exist`);
+                    assert.ok(fp.position.z > 1.8, `${c.id} GLB front plate must be on front bumper (+Z), got ${fp.position.z.toFixed(2)}`);
+                    assert.ok(rp.position.z < -1.8, `${c.id} GLB rear plate must be on rear bumper (-Z), got ${rp.position.z.toFixed(2)}`);
+                    assert.ok(fp.position.z > rp.position.z + 3.5, `${c.id} Front plate Z must be > rear plate Z`);
+                    resolve();
+                } catch (err) {
+                    reject(err);
+                }
+            }, reject);
+        });
+    }
+});
+
+

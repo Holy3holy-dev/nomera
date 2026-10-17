@@ -39,6 +39,11 @@ const CARS_TO_RENDER = [
     { id: 'jesko', name: 'Koenigsegg Jesko Attack' }
 ];
 
+const requestedCars = process.argv.slice(2).filter(arg => !arg.startsWith('-'));
+const CARS = (requestedCars.length > 0)
+    ? CARS_TO_RENDER.filter(c => requestedCars.includes(c.id))
+    : CARS_TO_RENDER;
+
 let savedCount = 0;
 
 const server = http.createServer((req, res) => {
@@ -54,7 +59,7 @@ const server = http.createServer((req, res) => {
                 const filePath = path.join(THUMB_DIR, `${carId}.png`);
                 fs.writeFileSync(filePath, Buffer.from(base64Data, 'base64'));
                 savedCount++;
-                console.log(`[${savedCount}/${CARS_TO_RENDER.length}] Saved thumbnail: ${carId}.png (${Math.round(base64Data.length * 0.75 / 1024)} KB)`);
+                console.log(`[${savedCount}/${CARS.length}] Saved thumbnail: ${carId}.png (${Math.round(base64Data.length * 0.75 / 1024)} KB)`);
                 res.writeHead(200, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ ok: true }));
             } catch (err) {
@@ -95,7 +100,7 @@ const server = http.createServer((req, res) => {
     <div id="container" style="width: 440px; height: 240px; border: 1px solid #333; margin-top: 10px;"></div>
 
     <script>
-        const cars = ${JSON.stringify(CARS_TO_RENDER)};
+        const cars = ${JSON.stringify(CARS)};
         const statusEl = document.getElementById('status');
 
         async function run() {

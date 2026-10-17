@@ -856,22 +856,28 @@
             const speed = state.speed || 0;
             const isGas = keys && keys.gas;
             const isBrake = keys && keys.brake;
+            const isHandbrake = !!(keys && (keys.drift || keys.handbrake));
             const isDrifting = !!state.isDrifting;
             const hasLateralSlide = Math.abs(state.vx || 0) > 1.0 && speed > 20;
 
-            const isBurnout = isGas && speed < 32 && (state.rpm > 2800 || speed < 12);
+            const isBurnout = isGas && !isHandbrake && speed < 32 && (state.rpm > 2800 || speed < 12);
             const isHardBrakingLock = isBrake && speed > 35;
+            const isHandbrakingLock = isHandbrake && speed > 15;
             const isDriftSlide = isDrifting || hasLateralSlide;
 
             this.isBurnout = isBurnout;
-            this.isHardDrifting = isDriftSlide;
+            this.isHardDrifting = isDriftSlide || isHandbrakingLock;
 
             // Spawn smoke puffs based on triggers
             if (this.smokeTimer >= 0.038) {
                 this.smokeTimer = 0;
                 const wheels = this.getWheelWorldPositions();
 
-                if (isBurnout) {
+                if (isHandbrakingLock) {
+                    // Intense tire smoke billows from rear wheels while handbraking at speed
+                    this.spawnSmokePuff(wheels.rl, { maxScale: 2.2, baseOpacity: 0.60, vy: 0.85 });
+                    this.spawnSmokePuff(wheels.rr, { maxScale: 2.2, baseOpacity: 0.60, vy: 0.85 });
+                } else if (isBurnout) {
                     // Standing or rolling burnout: dense white clouds from rear wheels
                     this.spawnSmokePuff(wheels.rl, { maxScale: 2.4, baseOpacity: 0.60, vy: 0.9 });
                     this.spawnSmokePuff(wheels.rr, { maxScale: 2.4, baseOpacity: 0.60, vy: 0.9 });
@@ -1081,18 +1087,20 @@
             const speed = state.speed || 0;
             const isGas = keys && keys.gas;
             const isBrake = keys && keys.brake;
+            const isHandbrake = !!(keys && (keys.drift || keys.handbrake));
             const isDrifting = !!state.isDrifting;
             const hasLateralSlide = Math.abs(state.vx || 0) > 1.1 && speed > 22;
 
-            const isBurnout = isGas && speed < 28 && (state.rpm > 2800 || speed < 12);
+            const isBurnout = isGas && !isHandbrake && speed < 28 && (state.rpm > 2800 || speed < 12);
             const isBrakeLock = isBrake && speed > 26;
+            const isHandbrakeLock = isHandbrake && speed > 15;
             const isSlide = isDrifting || hasLateralSlide;
 
-            const shouldSkid = isBurnout || isBrakeLock || isSlide;
+            const shouldSkid = isBurnout || isBrakeLock || isSlide || isHandbrakeLock;
 
             if (shouldSkid) {
                 const wheels = this.getWheelWorldPositions();
-                const skidIntensity = (isDrifting ? 1.0 : (isBrakeLock ? 0.9 : 0.85));
+                const skidIntensity = (isDrifting ? 1.0 : (isHandbrakeLock ? 0.95 : (isBrakeLock ? 0.9 : 0.85)));
 
                 this.emitSkidSegment(wheels.rl, 'rl', skidIntensity);
                 this.emitSkidSegment(wheels.rr, 'rr', skidIntensity);

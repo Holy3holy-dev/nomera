@@ -100,13 +100,14 @@ test('VAZ-2107 GLTF loader setup does not flip vaz2107 by Math.PI and preserves 
     const car3dCode = fs.readFileSync(path.join(__dirname, '../js/car-3d.js'), 'utf8');
 
     // Ensure vaz2107 is excluded from the Math.PI rotation around line 5429
+    const rotationMatch = car3dCode.match(/if\s*\(([^)]+)\)\s*\{\s*clonedScene\.rotation\.y\s*\+=\s*Math\.PI/);
     assert.ok(
-        !car3dCode.includes("carId === 'vaz2107' || carId === 'vaz2109' || carId === 'sf90'"),
+        rotationMatch && !rotationMatch[1].includes('vaz2107'),
         "vaz2107 must NOT be in the Math.PI rotation check that turns it backward towards camera"
     );
     assert.ok(
-        car3dCode.includes("if (carId === 'vaz2109' || carId === 'sf90')"),
-        "Only vaz2109 and sf90 should have Math.PI rotation applied"
+        car3dCode.includes("if (carId === 'vaz2109' || carId === 'sf90' || carId === 'rs6' || carId === 'silvia' || carId === 'vesta')"),
+        "vaz2109, sf90, rs6, silvia, and vesta should have Math.PI rotation applied"
     );
 });
 
@@ -164,4 +165,53 @@ test('Nitro exhaust flames are streamlined, realistic, and use additive blending
     assert.ok(engine.playerNitroFlames.every(f => !f.visible), 'Flames must turn off immediately when nitro is released');
 
     engine.destroy();
+});
+
+test('Audi RS6, Nissan Silvia, and Lada Vesta forward alignment and lighting/exhaust visuals in 3D race', () => {
+    const { THREE, Car3DManager } = setupTestContext();
+    const mockContainer = { clientWidth: 800, clientHeight: 500, style: {}, appendChild: () => {}, removeChild: () => {} };
+
+    const cars = [
+        { name: 'Audi RS6 Avant', id: 'rs6' },
+        { name: 'Nissan Silvia S15 Spec-R', id: 'silvia' },
+        { name: 'Lada Vesta Sport', id: 'vesta' }
+    ];
+
+    cars.forEach(carInfo => {
+        const engine = new Car3DManager.Car3DRacingEngine(mockContainer, {});
+        engine.start({
+            carName: carInfo.name,
+            performance: { speed: 220, accel: 3.8 }
+        });
+
+        // 1. Headlights: verify forward position (+Z) and aiming down the highway (+Z)
+        assert.ok(engine.playerHeadlights.length >= 2, `${carInfo.id} must have at least 2 headlights`);
+        engine.playerHeadlights.forEach((hl, i) => {
+            assert.ok(hl.position.z > 0.8, `${carInfo.id} headlight #${i} origin must be in front half (+Z), got ${hl.position.z}`);
+            assert.ok(hl.target.position.z > hl.position.z + 20, `${carInfo.id} headlight #${i} target must aim down highway (+Z), got ${hl.target.position.z}`);
+        });
+
+        // 2. Brake light: verify positioned at the rear (-Z)
+        assert.ok(engine.playerBrakeLight, `${carInfo.id} must have playerBrakeLight`);
+        assert.ok(engine.playerBrakeLight.position.z < -1.2, `${carInfo.id} brake light must be at rear (-Z), got ${engine.playerBrakeLight.position.z}`);
+
+        // 3. Exhaust nitro and backfire flames: verify positioned at rear (-Z) and pointing rearward
+        assert.ok(engine.playerNitroFlames.length >= 2, `${carInfo.id} must have nitro flames`);
+        engine.playerNitroFlames.forEach((flame, i) => {
+            assert.ok(flame.position.z < -1.5, `${carInfo.id} nitro flame #${i} must be at rear bumper (-Z), got ${flame.position.z}`);
+        });
+
+        assert.ok(engine.playerBackfireFlames.length >= 2, `${carInfo.id} must have backfire flames`);
+        engine.playerBackfireFlames.forEach((bf, i) => {
+            assert.ok(bf.position.z < -1.5, `${carInfo.id} backfire flame #${i} must be at rear bumper (-Z), got ${bf.position.z}`);
+        });
+
+        // Test nitro activation
+        engine.keys.nitro = true;
+        engine.update(0.05);
+        assert.ok(engine.state.isNitroActive, `${carInfo.id} nitro must activate`);
+        assert.ok(engine.playerNitroFlames.every(f => f.visible), `${carInfo.id} nitro flames must be visible`);
+
+        engine.destroy();
+    });
 });

@@ -551,38 +551,104 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             else plateBox.classList.add('glow-none');
         }
 
-        // --- ИНИЦИАЛИЗАЦИЯ, ХРАНИЛИЩЕ И ОБЛАКО FIREBASE ---
-        window.onload = function() {
-            refreshSoundUI();
-            showSaveStatus(saveStatus);
-            document.querySelectorAll('.touch-btn').forEach(button => {
-                button.addEventListener('pointerdown', event => {
-                    if (typeof button.setPointerCapture === 'function' && event.pointerId !== undefined) {
-                        try { button.setPointerCapture(event.pointerId); } catch (_) {}
-                    }
-                    if (typeof event.preventDefault === 'function') event.preventDefault();
-                });
-                button.addEventListener('lostpointercapture', () => {
-                    const key = button.id.replace('btn-touch-', '');
-                    setRaceKey(key, false);
-                });
-            });
-            document.addEventListener('touchcancel', resetRaceKeys);
+        function isTouchOrMobileDevice() {
+            if (typeof window === 'undefined') return false;
+            return ('ontouchstart' in window) ||
+                   (typeof navigator !== 'undefined' && navigator.maxTouchPoints > 0) ||
+                   (typeof window.matchMedia === 'function' && (
+                       window.matchMedia('(pointer: coarse)').matches ||
+                       window.matchMedia('(hover: none)').matches ||
+                       window.matchMedia('(max-width: 1024px)').matches
+                   )) ||
+                   (window.innerWidth <= 1024);
+        }
+        window.isTouchOrMobileDevice = isTouchOrMobileDevice;
 
-            // Прямое управление касанием / перетаскиванием по экрану холста трассы
-            const raceCanvas = document.getElementById('race-canvas');
-            if (raceCanvas && typeof raceCanvas.addEventListener === 'function') {
+        function syncMobileTouchControlsVisibility() {
+            if (typeof document === 'undefined') return;
+            const touch3D = document.getElementById('race-3d-touch-controls');
+            if (touch3D && isTouchOrMobileDevice()) {
+                touch3D.classList.add('touch-enabled');
+                const btnText = document.getElementById('btn-toggle-touch-text');
+                if (btnText) btnText.textContent = 'Скрыть руль';
+            }
+        }
+        window.syncMobileTouchControlsVisibility = syncMobileTouchControlsVisibility;
+
+        function bindTouchButtons() {
+            if (typeof document === 'undefined' || typeof document.querySelectorAll !== 'function') return;
+            document.querySelectorAll('.touch-btn').forEach(button => {
+                if (!button || typeof button.addEventListener !== 'function' || button._touchBound) return;
+                button._touchBound = true;
+
+                const parseBtnKey = (btn) => {
+                    const id = btn.id || '';
+                    const match = id.match(/^btn-(?:3d-)?touch-(.+)$/);
+                    return match ? match[1] : '';
+                };
+
+                const key = parseBtnKey(button);
+                if (!key) return;
+
+                const is3D = button.id && button.id.startsWith('btn-3d-');
+
+                const onDown = (e) => {
+                    if (typeof button.setPointerCapture === 'function' && e.pointerId !== undefined) {
+                        try { button.setPointerCapture(e.pointerId); } catch (_) {}
+                    }
+                    if (e && e.cancelable && typeof e.preventDefault === 'function') e.preventDefault();
+                    if (is3D) {
+                        handle3DTouchControl(e, key, true);
+                    } else {
+                        handleTouchControl(e, key, true);
+                    }
+                };
+
+                const onUp = (e) => {
+                    if (typeof button.releasePointerCapture === 'function' && e && e.pointerId !== undefined) {
+                        try { button.releasePointerCapture(e.pointerId); } catch (_) {}
+                    }
+                    if (e && e.cancelable && typeof e.preventDefault === 'function') e.preventDefault();
+                    if (is3D) {
+                        handle3DTouchControl(e, key, false);
+                    } else {
+                        handleTouchControl(e, key, false);
+                    }
+                };
+
+                button.addEventListener('pointerdown', onDown);
+                button.addEventListener('pointerup', onUp);
+                button.addEventListener('pointercancel', onUp);
+                button.addEventListener('pointerleave', onUp);
+                button.addEventListener('lostpointercapture', onUp);
+            });
+        }
+        window.bindTouchButtons = bindTouchButtons;
+
+        function initCanvasDirectTouchSteering() {
+            if (typeof document === 'undefined') return;
+
+            // 1. Прямое управление рулением на холсте 2D трассы (тач / свайп влево-вправо)
+            const raceCanvas = typeof document.getElementById === 'function' ? document.getElementById('race-canvas') : null;
+            const raceCanvasWrapper = (typeof document.querySelector === 'function') ? document.querySelector('.race-canvas-wrapper') : null;
+            const target2D = (raceCanvasWrapper && typeof raceCanvasWrapper.addEventListener === 'function')
+                ? raceCanvasWrapper
+                : ((raceCanvas && typeof raceCanvas.addEventListener === 'function') ? raceCanvas : null);
+
+            if (target2D && typeof target2D.addEventListener === 'function' && !target2D._boundCanvasSteer) {
+                target2D._boundCanvasSteer = true;
                 let canvasSteerPointerId = null;
-                const updateCanvasSteer = (e) => {
-                    if (typeof raceCanvas.getBoundingClientRect !== 'function') return;
-                    const rect = raceCanvas.getBoundingClientRect();
+
+                const update2DSteer = (e) => {
+                    if (typeof target2D.getBoundingClientRect !== 'function') return;
+                    const rect = target2D.getBoundingClientRect();
                     const clientX = e.clientX ?? (e.touches && e.touches[0] ? e.touches[0].clientX : null);
                     if (clientX === null || !rect.width) return;
-                    const relX = clientX - rect.left;
-                    if (relX < rect.width * 0.44) {
+                    const relX = (clientX - rect.left) / rect.width;
+                    if (relX < 0.44) {
                         setRaceKey('left', true);
                         setRaceKey('right', false);
-                    } else if (relX > rect.width * 0.56) {
+                    } else if (relX > 0.56) {
                         setRaceKey('right', true);
                         setRaceKey('left', false);
                     } else {
@@ -590,35 +656,123 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                         setRaceKey('right', false);
                     }
                 };
-                raceCanvas.addEventListener('pointerdown', (e) => {
-                    if (!isRaceRunning) return;
+
+                const onDown2D = (e) => {
+                    if (!isRaceRunning || activeRaceMode === '3d') return;
+                    if (e.target && typeof e.target.closest === 'function' && e.target.closest('button, .touch-btn, .btn, .touch-actions-bar, .touch-cluster')) return;
                     canvasSteerPointerId = e.pointerId;
-                    if (typeof raceCanvas.setPointerCapture === 'function' && e.pointerId !== undefined) {
-                        try { raceCanvas.setPointerCapture(e.pointerId); } catch (_) {}
+                    if (typeof target2D.setPointerCapture === 'function' && e.pointerId !== undefined) {
+                        try { target2D.setPointerCapture(e.pointerId); } catch (_) {}
                     }
-                    updateCanvasSteer(e);
-                    if (typeof e.preventDefault === 'function') e.preventDefault();
-                });
-                raceCanvas.addEventListener('pointermove', (e) => {
-                    if (canvasSteerPointerId !== null && isRaceRunning) {
-                        updateCanvasSteer(e);
-                        if (typeof e.preventDefault === 'function') e.preventDefault();
+                    if (e.pointerId !== undefined) activeRacePointers.set(e.pointerId, 'steer');
+                    update2DSteer(e);
+                    if (typeof sound?.haptic === 'function') sound.haptic('light');
+                    if (e.cancelable && typeof e.preventDefault === 'function') e.preventDefault();
+                };
+
+                const onMove2D = (e) => {
+                    if (canvasSteerPointerId !== null && canvasSteerPointerId === e.pointerId && isRaceRunning && activeRaceMode !== '3d') {
+                        update2DSteer(e);
+                        if (e.cancelable && typeof e.preventDefault === 'function') e.preventDefault();
                     }
-                });
-                const releaseCanvasSteer = (e) => {
-                    if (canvasSteerPointerId !== null) {
-                        canvasSteerPointerId = null;
-                        if (typeof raceCanvas.releasePointerCapture === 'function' && e && e.pointerId !== undefined) {
-                            try { raceCanvas.releasePointerCapture(e.pointerId); } catch (_) {}
+                };
+
+                const onRelease2D = (e) => {
+                    if (canvasSteerPointerId !== null && (e.pointerId === undefined || e.pointerId === canvasSteerPointerId)) {
+                        if (typeof target2D.releasePointerCapture === 'function' && e && e.pointerId !== undefined) {
+                            try { target2D.releasePointerCapture(e.pointerId); } catch (_) {}
                         }
+                        if (e && e.pointerId !== undefined) activeRacePointers.delete(e.pointerId);
+                        canvasSteerPointerId = null;
+                        setRaceKey('left', false);
+                        setRaceKey('right', false);
+                        if (e && e.cancelable && typeof e.preventDefault === 'function') e.preventDefault();
+                    }
+                };
+
+                target2D.addEventListener('pointerdown', onDown2D);
+                target2D.addEventListener('pointermove', onMove2D);
+                target2D.addEventListener('pointerup', onRelease2D);
+                target2D.addEventListener('pointercancel', onRelease2D);
+                target2D.addEventListener('lostpointercapture', onRelease2D);
+            }
+
+            // 2. Прямое управление рулением на вьюпорте 3D гонки (тач / свайп влево-вправо)
+            const viewport3D = typeof document.getElementById === 'function' ? document.getElementById('race-3d-viewport-wrapper') : null;
+            if (viewport3D && typeof viewport3D.addEventListener === 'function' && !viewport3D._boundCanvasSteer) {
+                viewport3D._boundCanvasSteer = true;
+                let steer3DPointerId = null;
+
+                const update3DSteer = (e) => {
+                    if (typeof viewport3D.getBoundingClientRect !== 'function') return;
+                    const rect = viewport3D.getBoundingClientRect();
+                    const clientX = e.clientX ?? (e.touches && e.touches[0] ? e.touches[0].clientX : null);
+                    if (clientX === null || !rect.width) return;
+                    const relX = (clientX - rect.left) / rect.width;
+                    if (relX < 0.44) {
+                        setRaceKey('left', true);
+                        setRaceKey('right', false);
+                    } else if (relX > 0.56) {
+                        setRaceKey('right', true);
+                        setRaceKey('left', false);
+                    } else {
                         setRaceKey('left', false);
                         setRaceKey('right', false);
                     }
                 };
-                raceCanvas.addEventListener('pointerup', releaseCanvasSteer);
-                raceCanvas.addEventListener('pointercancel', releaseCanvasSteer);
-                raceCanvas.addEventListener('lostpointercapture', releaseCanvasSteer);
+
+                const onDown3D = (e) => {
+                    if (!isRaceRunning || activeRaceMode !== '3d') return;
+                    if (e.target && typeof e.target.closest === 'function' && e.target.closest('button, .touch-btn, .btn, .touch-actions-bar, .touch-cluster')) return;
+                    steer3DPointerId = e.pointerId;
+                    if (typeof viewport3D.setPointerCapture === 'function' && e.pointerId !== undefined) {
+                        try { viewport3D.setPointerCapture(e.pointerId); } catch (_) {}
+                    }
+                    if (e.pointerId !== undefined) activeRacePointers.set(e.pointerId, 'steer');
+                    update3DSteer(e);
+                    if (typeof sound?.haptic === 'function') sound.haptic('light');
+                    if (e.cancelable && typeof e.preventDefault === 'function') e.preventDefault();
+                };
+
+                const onMove3D = (e) => {
+                    if (steer3DPointerId !== null && steer3DPointerId === e.pointerId && isRaceRunning && activeRaceMode === '3d') {
+                        update3DSteer(e);
+                        if (e.cancelable && typeof e.preventDefault === 'function') e.preventDefault();
+                    }
+                };
+
+                const onRelease3D = (e) => {
+                    if (steer3DPointerId !== null && (e.pointerId === undefined || e.pointerId === steer3DPointerId)) {
+                        if (typeof viewport3D.releasePointerCapture === 'function' && e && e.pointerId !== undefined) {
+                            try { viewport3D.releasePointerCapture(e.pointerId); } catch (_) {}
+                        }
+                        if (e && e.pointerId !== undefined) activeRacePointers.delete(e.pointerId);
+                        steer3DPointerId = null;
+                        setRaceKey('left', false);
+                        setRaceKey('right', false);
+                        if (e && e.cancelable && typeof e.preventDefault === 'function') e.preventDefault();
+                    }
+                };
+
+                viewport3D.addEventListener('pointerdown', onDown3D);
+                viewport3D.addEventListener('pointermove', onMove3D);
+                viewport3D.addEventListener('pointerup', onRelease3D);
+                viewport3D.addEventListener('pointercancel', onRelease3D);
+                viewport3D.addEventListener('lostpointercapture', onRelease3D);
             }
+        }
+        window.initCanvasDirectTouchSteering = initCanvasDirectTouchSteering;
+
+        // --- ИНИЦИАЛИЗАЦИЯ, ХРАНИЛИЩЕ И ОБЛАКО FIREBASE ---
+        window.onload = function() {
+            refreshSoundUI();
+            showSaveStatus(saveStatus);
+            bindTouchButtons();
+            initCanvasDirectTouchSteering();
+            syncMobileTouchControlsVisibility();
+            document.addEventListener('touchcancel', resetRaceKeys);
+            window.addEventListener('resize', syncMobileTouchControlsVisibility);
+            window.addEventListener('orientationchange', syncMobileTouchControlsVisibility);
 
             // Тактильный виброотклик на клики по кнопкам интерфейса
             document.addEventListener('click', (e) => {
@@ -10639,6 +10793,20 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             if (btn3d && btn3d.classList && typeof btn3d.classList.toggle === 'function') {
                 btn3d.classList.toggle('pressed', !!active);
             }
+            if (key === 'left' || key === 'right') {
+                const leftActive = !!raceKeys.left;
+                const rightActive = !!raceKeys.right;
+                document.querySelectorAll('.steer-left-indicator').forEach(el => {
+                    if (el.classList && typeof el.classList.toggle === 'function') {
+                        el.classList.toggle('active', leftActive);
+                    }
+                });
+                document.querySelectorAll('.steer-right-indicator').forEach(el => {
+                    if (el.classList && typeof el.classList.toggle === 'function') {
+                        el.classList.toggle('active', rightActive);
+                    }
+                });
+            }
         }
 
         function resetRaceKeys() {
@@ -10646,6 +10814,11 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             Object.keys(raceKeys).forEach(key => {
                 raceKeys[key] = false;
                 updateTouchBtnUI(key, false);
+            });
+            document.querySelectorAll('.steer-feedback-indicator').forEach(el => {
+                if (el.classList && typeof el.classList.remove === 'function') {
+                    el.classList.remove('active');
+                }
             });
             if (car3DRacingEngine && typeof car3DRacingEngine.resetKeys === 'function') {
                 car3DRacingEngine.resetKeys();
@@ -10698,7 +10871,8 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                         if (typeof sound?.haptic === 'function') sound.haptic('nitro');
                     }
                 } else if (key === 'drift') {
-                    if (typeof sound?.drift === 'function') sound.drift();
+                    if (typeof sound?.handbrake === 'function') sound.handbrake();
+                    else if (typeof sound?.drift === 'function') sound.drift();
                     if (typeof sound?.haptic === 'function') sound.haptic('medium');
                 } else if (key === 'brake') {
                     if (typeof sound?.brake === 'function') sound.brake();
@@ -10715,6 +10889,8 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
         function initRaceTouchControls() {
             if (typeof document === 'undefined') return;
+            bindTouchButtons();
+            initCanvasDirectTouchSteering();
             const steerZone = document.getElementById('touch-steer-zone');
             if (steerZone && !steerZone._boundSteer) {
                 steerZone._boundSteer = true;
@@ -10816,6 +10992,11 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
             // 2. РУЧНИК НА ОТДЕЛЬНУЮ КЛАВИШУ: Пробел (Space), а также X, Ctrl
             if (code === 'Space' || key === ' ' || key === 'space' || code === 'KeyX' || key === 'x' || key === 'ч' || code === 'ControlLeft' || code === 'ControlRight' || key === 'control') {
+                if (!raceKeys.drift) {
+                    if (typeof sound?.handbrake === 'function') sound.handbrake();
+                    else if (typeof sound?.drift === 'function') sound.drift();
+                    if (typeof sound?.haptic === 'function') sound.haptic('medium');
+                }
                 raceKeys.drift = true;
                 if (car3DRacingEngine && activeRaceMode === '3d') car3DRacingEngine.setKey('drift', true);
                 e.preventDefault();
@@ -11190,6 +11371,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     },
                     onSound: (name) => {
                         if (name === 'drift' && typeof sound?.drift === 'function') sound.drift();
+                        if (name === 'handbrake' && typeof sound?.handbrake === 'function') sound.handbrake();
                         if (name === 'nitro' && typeof sound?.nitro === 'function') sound.nitro();
                         if (name === 'nearMiss' && typeof sound?.nearMiss === 'function') sound.nearMiss();
                         if (name === 'crash' && typeof sound?.crash === 'function') sound.crash();
@@ -11234,13 +11416,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     }
                 }, 80);
                 init3DRaceTouchControls();
-                const isTouchOrMobile = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) || (window.innerWidth <= 900);
-                if (isTouchOrMobile) {
-                    const touchEl = document.getElementById('race-3d-touch-controls');
-                    if (touchEl) touchEl.classList.add('touch-enabled');
-                    const btnText = document.getElementById('btn-toggle-touch-text');
-                    if (btnText) btnText.textContent = 'Скрыть руль';
-                }
+                syncMobileTouchControlsVisibility();
             } catch (err) {
                 console.error('Failed to initialize 3D race engine:', err);
                 isRaceRunning = false;
@@ -11409,6 +11585,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
         function init3DRaceTouchControls() {
             if (typeof document === 'undefined') return;
+            bindTouchButtons();
+            initCanvasDirectTouchSteering();
+            syncMobileTouchControlsVisibility();
             const steerZone = document.getElementById('touch-3d-steer-zone');
             if (steerZone && !steerZone._boundSteer) {
                 steerZone._boundSteer = true;
@@ -11739,8 +11918,11 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             if (racePlayer.isNitroActive) topSpd *= stats.nitroSpeedBonus || 1.35;
             if (racePlayer.isDrafting) topSpd += 28; // слипстрим дает прирост скорости!
 
-            const isGasActive = raceKeys.gas || (raceAutoGasEnabled && !raceKeys.brake && !raceKeys.drift);
-            if (isGasActive) {
+            const isHandbrake = !!raceKeys.drift;
+            const isGasActive = (raceKeys.gas || (raceAutoGasEnabled && !raceKeys.brake && !raceKeys.drift)) && !isHandbrake;
+            if (isHandbrake) {
+                racePlayer.targetSpeed = 0;
+            } else if (isGasActive) {
                 racePlayer.targetSpeed = topSpd;
             } else if (raceKeys.brake) {
                 racePlayer.targetSpeed = 50;
@@ -11791,7 +11973,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             const accelMultiplier = (racePlayer.isNitroActive ? 2.5 : 1) * (racePlayer.isDrafting ? 1.6 : 1);
             const accelRate = (racePlayer.accel * 28) * accelMultiplier;
 
-            if (racePlayer.speed < racePlayer.targetSpeed) {
+            if (isHandbrake) {
+                // Handbrake directly decelerates down to 0 km/h, overpowering engine throttle
+            } else if (racePlayer.speed < racePlayer.targetSpeed) {
                 racePlayer.speed = Math.min(racePlayer.targetSpeed, racePlayer.speed + accelRate * dt);
             } else if (racePlayer.speed > racePlayer.targetSpeed) {
                 racePlayer.speed = Math.max(racePlayer.targetSpeed, racePlayer.speed - 60 * dt);
@@ -11845,7 +12029,6 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             // 5. Инерция руления, ручник и дрифт
             const isDriftMode = raceCurrentMode === 'drift';
             const driftMult = stats.driftFactor || (isDriftMode ? 1.65 : 1.35);
-            const isHandbrake = !!raceKeys.drift;
             const maxLateral = racePlayer.handling * 42 * (isHandbrake ? (1 + (driftMult - 1) * 0.7) : 1);
             const steerRate = racePlayer.handling * 185 * (isHandbrake ? 1.4 : 1);
 
@@ -11883,9 +12066,11 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 racePlayer.vx = Math.max(-maxLateral, Math.min(maxLateral, racePlayer.vx + oversteerPush));
             }
 
-            // Торможение при ручнике
+            // Торможение при ручнике: агрессивное замедление (~85-110 км/ч в секунду) до полной остановки (0 км/ч)
             if (isHandbrake) {
-                racePlayer.speed = Math.max(25, racePlayer.speed - 35 * dt);
+                const handbrakeDecel = 95 + Math.min(15, (racePlayer.speed / 100) * 10);
+                const extraBrake = raceKeys.brake ? 35 : 0;
+                racePlayer.speed = Math.max(0, racePlayer.speed - (handbrakeDecel + extraBrake) * dt);
             }
 
             racePlayer.x += racePlayer.vx * dt;
@@ -12119,14 +12304,39 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 racePlayer.isCounterSteering = false;
             }
 
-            // 6. Генерация следов шин при резком торможении
-            const isSkidding = Math.abs(racePlayer.vx) > (maxLateral * 0.55) || (raceKeys.brake && racePlayer.speed > 80);
+            // 6. Генерация следов шин при резком торможении и ручнике
+            const isSkidding = Math.abs(racePlayer.vx) > (maxLateral * 0.55) || (raceKeys.brake && racePlayer.speed > 80) || (isHandbrake && racePlayer.speed > 15);
             if (isSkidding && !isDriftingNow) {
-                raceSkidmarks.push({
-                    x: racePlayer.x,
-                    y: racePlayer.y + 16,
-                    life: 0.95
-                });
+                const cosYaw = Math.cos(racePlayer.yawAngle || 0);
+                const sinYaw = Math.sin(racePlayer.yawAngle || 0);
+                const rlx = racePlayer.x + (-9 * cosYaw - 14 * sinYaw);
+                const rly = racePlayer.y + (-9 * sinYaw + 14 * cosYaw);
+                const rrx = racePlayer.x + (9 * cosYaw - 14 * sinYaw);
+                const rry = racePlayer.y + (9 * sinYaw + 14 * cosYaw);
+
+                raceSkidmarks.push({ x: rlx, y: rly, life: 0.95 });
+                raceSkidmarks.push({ x: rrx, y: rry, life: 0.95 });
+
+                if (isHandbrake && racePlayer.speed > 15) {
+                    const nowMs = performance.now();
+                    if (nowMs - lastDriftScreechTime > 320) {
+                        lastDriftScreechTime = nowMs;
+                        if (typeof sound?.drift === 'function') sound.drift();
+                        if (typeof sound?.haptic === 'function') sound.haptic('light');
+                    }
+                    for (let smk = 0; smk < 2; smk++) {
+                        const wx = smk === 0 ? rlx : rrx;
+                        const wy = smk === 0 ? rly : rry;
+                        raceDriftSmoke.push({
+                            x: wx + (Math.random() - 0.5) * 4,
+                            y: wy + (Math.random() - 0.5) * 4,
+                            vx: (racePlayer.vx * 0.22) + (Math.random() - 0.5) * 16,
+                            vy: 20 + Math.random() * 30,
+                            size: 3.5 + Math.random() * 4.0,
+                            life: 0.65
+                        });
+                    }
+                }
             }
 
             // Обновление следов шин
@@ -12498,10 +12708,38 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                         }
                     }
 
+                    // Уступаем дорогу быстро приближающемуся сзади авто (особенно в скоростном левом ряду)
+                    if (!t.isTruck && !t.isPolice && !t.isCone && !t.yieldedFastApproach && !t.yieldedSgu) {
+                        const dy = (racePlayer.y || 470) - t.y; // dy > 0: игрок позади машины t на экране
+                        const speedDelta = racePlayer.speed - t.speed;
+                        if (dy > 35 && dy < 230 && Math.abs(t.x - racePlayer.x) < 36 && speedDelta > 28) {
+                            const canGoRight = t.laneIdx < 3;
+                            const yieldLane = canGoRight ? t.laneIdx + 1 : Math.max(0, t.laneIdx - 1);
+                            const candX = lanes[yieldLane];
+                            let laneClear = true;
+                            for (let other of raceTraffic) {
+                                if (other !== t && Math.abs(other.x - candX) < 28 && Math.abs(other.y - t.y) < 75) {
+                                    laneClear = false;
+                                    break;
+                                }
+                            }
+                            if (laneClear) {
+                                t.yieldedFastApproach = true;
+                                t.laneIdx = yieldLane;
+                                t.targetX = candX;
+                                t.blinker = canGoRight ? 'right' : 'left';
+                                t.blinkerTimer = 0.35; // информирует поворотником перед маневром
+                                t.changeLaneCooldown = 5.0;
+                            }
+                        }
+                    }
+
                     if (obstacleAhead) {
-                        // Притормаживаем перед машиной впереди
+                        // Плавное торможение перед машиной впереди вместо резкого удара по тормозам
                         if (t.speed > obstacleAhead.speed) {
-                            t.speed = Math.max(45, t.speed - 65 * dt);
+                            const gap = obstacleAhead.y - t.y; // дистанция (15..95)
+                            const decel = Math.min(48, Math.max(16, (t.speed - obstacleAhead.speed) * (gap < 35 ? 1.6 : 0.95)));
+                            t.speed = Math.max(obstacleAhead.speed * 0.95, t.speed - decel * dt);
                             t.isBraking = true;
                         }
 
@@ -12536,7 +12774,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                                 t.laneIdx = chosenL;
                                 t.targetX = lanes[chosenL];
                                 t.blinker = (chosenL < curL ? 'left' : 'right');
-                                t.blinkerTimer = 0.4;
+                                t.blinkerTimer = 0.45;
                                 t.changeLaneCooldown = 4.5 + Math.random() * 3.5;
                             }
                         }
@@ -12569,7 +12807,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                                     t.laneIdx = desiredL;
                                     t.targetX = candX;
                                     t.blinker = (desiredL < curL ? 'left' : 'right');
-                                    t.blinkerTimer = 0.45;
+                                    t.blinkerTimer = 0.50; // подаем сигнал заранее перед маневром
                                     t.changeLaneCooldown = 6.0 + Math.random() * 4.0;
                                 }
                             }
@@ -12724,19 +12962,23 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                                 color: Math.random() < 0.5 ? '#ef4444' : '#38bdf8'
                             });
                         }
-                    } else if (dx >= 12 && !t.isTruck) {
+                    } else if (dx >= 10 && !t.isTruck) {
                         // БОКОВОЙ КОНТАКТ (SIDE SCRAPE) с легковым авто!
-                        // Отскок в сторону, искры от трения металла, потеря скорости вместо смерти
+                        // Отскок в сторону, расталкивание трафика в соседний ряд, искры от трения металла, умеренное замедление вместо смерти
                         const pushDir = racePlayer.x < t.x ? -1 : 1;
-                        racePlayer.x += pushDir * 16;
-                        racePlayer.vx = pushDir * -130;
-                        racePlayer.speed = Math.max(50, racePlayer.speed - 28);
+                        racePlayer.x += pushDir * 14;
+                        racePlayer.vx = pushDir * -110;
+                        t.x += (pushDir > 0 ? 1 : -1) * -18;
+                        t.targetX = Math.max(65, Math.min(335, t.x));
+                        t.tilt = (pushDir > 0 ? 1 : -1) * -0.12;
+
+                        racePlayer.speed = Math.max(50, racePlayer.speed - 16);
                         racePlayer.invulnerableTimer = 0.6; // 0.6 сек неуязвимости
                         racePlayer.combo = 1;
-                        racePlayer.damageTaken += 3.5;
+                        racePlayer.damageTaken = (racePlayer.damageTaken || 0) + 2.5;
                         triggerScreenShake();
                         playTick();
-                        showRacePopup("⚡ БОКОВОЙ ТАРАН! -28 км/ч", "#f59e0b");
+                        showRacePopup("⚡ БОКОВОЙ ТАРАН! -16 км/ч", "#f59e0b");
 
                         // Поток искр
                         for (let s = 0; s < 18; s++) {
@@ -12749,15 +12991,18 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                                 color: Math.random() < 0.6 ? '#fbbf24' : '#ffffff'
                             });
                         }
-                    } else if (!t.isTruck && (racePlayer.damageTaken || 0) < 75) {
-                        // ТЯЖЕЛЫЙ УДАР С ПОВРЕЖДЕНИЕМ КАРКАСА (вместо мгновенного завершения заезда)
-                        racePlayer.speed = Math.max(40, racePlayer.speed * 0.45);
-                        racePlayer.damageTaken = (racePlayer.damageTaken || 0) + 25;
+                    } else if ((racePlayer.damageTaken || 0) < 70) {
+                        // ТЯЖЕЛЫЙ УДАР С ПОВРЕЖДЕНИЕМ КАРКАСА (включая фуры и лобовые тычки с защитным буфером)
+                        const dmg = t.isTruck ? 38 : 25;
+                        racePlayer.damageTaken = (racePlayer.damageTaken || 0) + dmg;
+                        racePlayer.speed = Math.max(40, racePlayer.speed * 0.48);
                         racePlayer.invulnerableTimer = 1.0;
+                        t.y -= (t.isTruck ? 30 : 60);
+                        t.speed = Math.min(140, t.speed + 20);
                         triggerScreenShake();
-                        showRacePopup(`⚠️ АВАРИЯ! КАРКАС -25%! [${Math.round(racePlayer.damageTaken)}%]`, "#ef4444");
+                        showRacePopup(`⚠️ АВАРИЯ! КАРКАС -${dmg}%! [${Math.min(100, Math.round(racePlayer.damageTaken))}%]`, "#ef4444");
                         playTick();
-                        for (let s = 0; s < 20; s++) {
+                        for (let s = 0; s < 24; s++) {
                             raceSparks.push({
                                 x: (racePlayer.x + t.x) / 2,
                                 y: racePlayer.y + (Math.random() - 0.5) * 20,
@@ -12767,8 +13012,12 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                                 color: '#ef4444'
                             });
                         }
+                        if (racePlayer.damageTaken >= 100) {
+                            triggerRaceCrash();
+                            return;
+                        }
                     } else {
-                        // ЛОБОВОЙ ТАРАН ИЛИ СТОЛКНОВЕНИЕ С ТЯЖЕЛОЙ ФУРОЙ
+                        // ЛОБОВОЙ ТАРАН ИЛИ ТОТАЛЬНЫЙ КРАШ ПРИ ПРЕВЫШЕНИИ ЗАПАСА ПРОЧНОСТИ
                         triggerRaceCrash();
                         return;
                     }
@@ -12862,19 +13111,49 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             if (raceCurrentMode === 'drift' && Math.random() < 0.45) return;
 
             const lanes = [95, 165, 235, 305];
-            const laneIdx = Math.floor(Math.random() * lanes.length);
-            const laneX = lanes[laneIdx];
 
             // На высокой скорости спавним машины дальше по трассе, давая нормальное окно реакции
             const curSpd = racePlayer ? (racePlayer.speed || 70) : 70;
             const spawnY = curSpd > 160 ? -100 - Math.min(180, (curSpd - 160) * 0.85) : -60;
+
+            // 1. ПРЕДОТВРАЩЕНИЕ НЕПРОХОДИМЫХ СТЕНОК (Roadblocks):
+            // Проверяем, сколько полос уже перекрыто машинами в диапазоне spawnY (+-95 px)
+            const blockedLanes = new Set();
+            for (let t of raceTraffic) {
+                if (Math.abs(t.y - spawnY) < 95) {
+                    const lIdx = lanes.findIndex(lx => Math.abs((t.targetX || t.x) - lx) < 28);
+                    if (lIdx !== -1) blockedLanes.add(lIdx);
+                }
+            }
+            // Гарантируем свободный проезд: если 3 полосы уже перекрыты в этом створе, не спавним 4-ю
+            if (blockedLanes.size >= 3) {
+                return;
+            }
+
+            // 2. СБАЛАНСИРОВАННЫЙ ВЫБОР ПОЛОСЫ:
+            // Оцениваем количество машин на активном участке по каждой полосе
+            const laneCounts = [0, 0, 0, 0];
+            for (let t of raceTraffic) {
+                if (t.y > -220 && t.y < 520) {
+                    const lIdx = lanes.findIndex(lx => Math.abs((t.targetX || t.x) - lx) < 28);
+                    if (lIdx !== -1) laneCounts[lIdx]++;
+                }
+            }
+
+            const availableLanes = [0, 1, 2, 3].filter(l => !blockedLanes.has(l));
+            if (availableLanes.length === 0) return;
+
+            // Предпочитаем наименее загруженные полосы для равномерного распределения трафика
+            availableLanes.sort((a, b) => (laneCounts[a] || 0) - (laneCounts[b] || 0));
+            const laneIdx = (Math.random() < 0.70) ? availableLanes[0] : availableLanes[Math.floor(Math.random() * availableLanes.length)];
+            const laneX = lanes[laneIdx];
 
             for (let t of raceTraffic) {
                 if (Math.abs(t.x - laneX) < 32 && Math.abs(t.y - spawnY) < 130) return;
             }
 
             // При 4+ звёздах розыска периодически выставляется кордон / блокпост ДПС
-            if ((racePlayer?.wantedStars || 0) >= 4 && Math.random() < 0.22) {
+            if ((racePlayer?.wantedStars || 0) >= 4 && Math.random() < 0.20 && blockedLanes.size === 0) {
                 const blockLane1 = Math.floor(Math.random() * 3);
                 const blockLane2 = blockLane1 + 1;
                 [blockLane1, blockLane2].forEach(lIdx => {
@@ -12902,17 +13181,23 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
             const policeBonus = (racePlayer?.wantedStars || 0) * 0.09;
             const roll = Math.random();
-            if (roll < 0.12) {
-                // Длинномер КАМАЗ: медленный (65-80 км/ч), держится в правых рядах
-                const truckLane = Math.random() < 0.7 ? (Math.random() < 0.5 ? 2 : 3) : laneIdx;
+            if (roll < 0.14) {
+                // Длинномер КАМАЗ / Фургон: медленный тяжелый трафик (60-80 км/ч), держится в правых рядах (3 или 2)
+                const truckLane = (!blockedLanes.has(3) && Math.random() < 0.8) ? 3 : (!blockedLanes.has(2) ? 2 : (laneIdx > 1 ? laneIdx : 3));
+                const truckX = lanes[truckLane];
+                for (let t of raceTraffic) {
+                    if (Math.abs(t.x - truckX) < 32 && Math.abs(t.y - (spawnY - 35)) < 130) return;
+                }
+                const isVan = Math.random() < 0.35;
+                const truckSpeed = isVan ? 68 + Math.random() * 12 : 60 + Math.random() * 15; // 60-80 км/ч
                 raceTraffic.push({
-                    x: lanes[truckLane],
+                    x: truckX,
                     y: spawnY - 35,
                     laneIdx: truckLane,
-                    targetX: lanes[truckLane],
-                    speed: 65 + Math.random() * 15,
-                    targetSpeed: 75,
-                    name: "КАМАЗ / Фура",
+                    targetX: truckX,
+                    speed: truckSpeed,
+                    targetSpeed: truckSpeed + 6,
+                    name: isVan ? "Газель / Фургон" : "КАМАЗ / Фура",
                     isTruck: true,
                     isPolice: false,
                     isCone: false,
@@ -12922,13 +13207,13 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     changeLaneCooldown: 999,
                     overtaken: false
                 });
-            } else if (roll < (0.22 + policeBonus)) {
+            } else if (roll < (0.23 + policeBonus)) {
                 // Патруль ДПС с мигалками (при активном розыске ускоряется на перехват с учетом звезд)
                 const isPursuit = (racePlayer?.wantedStars || 0) > 0;
                 const maxSpdByStars = [95, 140, 170, 195, 215, 230];
                 const maxPursuitSpd = maxSpdByStars[Math.min(5, racePlayer?.wantedStars || 1)] || 170;
-                const spd = isPursuit ? Math.max(110, Math.min(maxPursuitSpd * 0.9, curSpd * 0.92)) : 85 + Math.random() * 20;
-                const tgtSpd = isPursuit ? Math.min(maxPursuitSpd, Math.max(120, curSpd + 6)) : 95;
+                const spd = isPursuit ? Math.max(110, Math.min(maxPursuitSpd * 0.9, curSpd * 0.92)) : 88 + Math.random() * 20;
+                const tgtSpd = isPursuit ? Math.min(maxPursuitSpd, Math.max(120, curSpd + 6)) : 100;
                 raceTraffic.push({
                     x: laneX,
                     y: spawnY,
@@ -12947,7 +13232,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     changeLaneCooldown: 2.2 + Math.random() * 2.5,
                     overtaken: false
                 });
-            } else if (roll < (0.29 + policeBonus * 0.5)) {
+            } else if (roll < (0.28 + policeBonus * 0.5)) {
                 // Дорожные работы (конус)
                 raceTraffic.push({
                     x: laneX,
@@ -12967,9 +13252,41 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     overtaken: false
                 });
             } else {
-                // Обычный трафик: распределяем скорость по полосе (в левых быстрее!)
-                const randCar = carsData[Math.floor(Math.random() * carsData.length)].name;
-                const baseSpeed = 120 - laneIdx * 15 + (Math.random() - 0.5) * 20;
+                // РЕАЛИСТИЧНАЯ ИЕРАРХИЯ СКОРОСТЕЙ ПО ПОЛОСАМ:
+                // Левый ряд (lane 0): 120-140 км/ч (быстрые седаны и спорткары)
+                // Средне-левый (lane 1): 95-115 км/ч (крейсерский поток)
+                // Средне-правый (lane 2): 85-100 км/ч (умеренный поток)
+                // Правый (lane 3): 60-80 км/ч (медленные авто и коммерческий транспорт)
+                let baseSpeed;
+                if (laneIdx === 0) {
+                    baseSpeed = 120 + Math.random() * 20; // 120-140 км/ч
+                } else if (laneIdx === 1) {
+                    baseSpeed = 96 + Math.random() * 18;  // 96-114 км/ч
+                } else if (laneIdx === 2) {
+                    baseSpeed = 85 + Math.random() * 15;  // 85-100 км/ч
+                } else {
+                    baseSpeed = 65 + Math.random() * 15;  // 65-80 км/ч
+                }
+
+                // Модели автомобилей, соответствующие динамике полосы
+                let randCar;
+                if (laneIdx === 0) {
+                    const fastPool = ['Toyota Camry 3.5', 'BMW M5 F90', 'Mercedes-Benz E63 AMG', 'Audi RS6 Avant', 'Porsche 911 GT3 RS'];
+                    randCar = fastPool[Math.floor(Math.random() * fastPool.length)];
+                } else if (laneIdx === 1) {
+                    const midFastPool = ['Toyota Camry 3.5', 'Hyundai Solaris', 'Volkswagen Polo', 'Lada Vesta Sport', 'Toyota Land Cruiser 300'];
+                    randCar = midFastPool[Math.floor(Math.random() * midFastPool.length)];
+                } else if (laneIdx === 2) {
+                    const standardPool = ['Hyundai Solaris', 'Volkswagen Polo', 'Lada Priora', 'ВАЗ-2109 «Девятка»'];
+                    randCar = standardPool[Math.floor(Math.random() * standardPool.length)];
+                } else {
+                    const slowPool = ['ВАЗ-2107 «Жигули»', 'ВАЗ-2109 «Девятка»', 'ГАЗ-24 «Волга»', 'Lada Priora'];
+                    randCar = slowPool[Math.floor(Math.random() * slowPool.length)];
+                }
+                if (typeof carsData !== 'undefined' && Array.isArray(carsData) && carsData.length > 0 && !carsData.some(c => c.name === randCar)) {
+                    randCar = carsData[Math.floor(Math.random() * carsData.length)].name;
+                }
+
                 raceTraffic.push({
                     x: laneX,
                     y: spawnY,

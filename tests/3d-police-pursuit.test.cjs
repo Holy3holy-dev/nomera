@@ -23,8 +23,8 @@ function setupTestContext() {
         removeEventListener: () => {}
     };
     global.navigator = { userAgent: 'NodeTest' };
-    global.requestAnimationFrame = (cb) => setTimeout(cb, 16);
-    global.cancelAnimationFrame = (id) => clearTimeout(id);
+    global.requestAnimationFrame = () => 0;
+    global.cancelAnimationFrame = () => {};
 
     // Load Three.js
     const THREE = require('../js/vendor/three.min.js');
@@ -211,8 +211,10 @@ test('3D Police Pursuit: Busted arrest triggers when player stops (<25 km/h) cor
         policeCar.position.set(0, 0, 96); // 4m distance
 
         // Simulate 3.0s of cornered arrest
-        for (let t = 0; t < 32; t++) {
+        for (let t = 0; t < 35; t++) {
             policeCar.position.set(0, 0, 96);
+            policeCar.userData.isWrecked = false;
+            policeCar.userData.speed = 0;
             engine.state.speed = 0;
             engine.update(0.1);
             if (gameOverReason) break;

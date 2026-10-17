@@ -11,30 +11,48 @@
         const voices = new Set();
         let activeNitroVoices = [];
         let lastNitroTime = -Infinity;
+        let lastHandbrakeTime = -Infinity;
         let lastEngineNitroState = false;
 
-        function stopNitro(smooth = 0.06) {
-            if (!context || !activeNitroVoices.length) return;
-            const now = context.currentTime;
-            activeNitroVoices.forEach(voice => {
-                try {
-                    const env = voice.envelope;
-                    if (env && env.gain) {
-                        if (env.gain.cancelScheduledValues) {
-                            env.gain.cancelScheduledValues(now);
+        function stopNitro(smooth = 0.06, playBlowOff = true) {
+            if (!context) return;
+            const hadActive = activeNitroVoices.length > 0;
+            if (hadActive) {
+                const now = context.currentTime;
+                activeNitroVoices.forEach(voice => {
+                    try {
+                        const env = voice.envelope;
+                        if (env && env.gain) {
+                            if (env.gain.cancelScheduledValues) {
+                                env.gain.cancelScheduledValues(now);
+                            }
+                            if (env.gain.setTargetAtTime) {
+                                env.gain.setTargetAtTime(0.0001, now, Math.max(0.01, smooth * 0.5));
+                            } else if (env.gain.linearRampToValueAtTime) {
+                                env.gain.linearRampToValueAtTime(0.0001, now + smooth);
+                            } else if (env.gain.setValueAtTime) {
+                                env.gain.setValueAtTime(0.0001, now + smooth);
+                            }
                         }
-                        if (env.gain.setTargetAtTime) {
-                            env.gain.setTargetAtTime(0.0001, now, Math.max(0.01, smooth * 0.5));
-                        } else if (env.gain.linearRampToValueAtTime) {
-                            env.gain.linearRampToValueAtTime(0.0001, now + smooth);
-                        } else if (env.gain.setValueAtTime) {
-                            env.gain.setValueAtTime(0.0001, now + smooth);
-                        }
-                    }
-                } catch (_) {}
-            });
-            activeNitroVoices = [];
-            lastNitroTime = -Infinity;
+                    } catch (_) {}
+                });
+                activeNitroVoices = [];
+                lastNitroTime = -Infinity;
+
+                if (playBlowOff && unlocked && context.state !== 'suspended' && level() > 0) {
+                    // Clean, crisp blow-off gas release upon key release without any pops or clicks
+                    noiseBurst({
+                        duration: 0.22,
+                        gain: 0.12,
+                        filterType: 'bandpass',
+                        filterFreq: 3200,
+                        filterEndFreq: 1400,
+                        filterQ: 2.2
+                    });
+                    tone(2100, 0.11, 0.08, 0, 'triangle', 720);
+                    tone(1420, 0.07, 0.05, 0.02, 'sine', 480);
+                }
+            }
         }
 
         function registerNitroVoice(voice) {
@@ -219,7 +237,7 @@
         }
 
         function stopEngine() {
-            stopNitro(0.04);
+            stopNitro(0.04, false);
             lastEngineNitroState = false;
             if (!engine) return;
             engine.nodes.forEach(node => { try { node.stop(); node.disconnect(); } catch (_) {} });
@@ -285,7 +303,7 @@
             try {
                 // Smooth cutoff when nitro is released / depleted
                 if (lastEngineNitroState && !nitro) {
-                    stopNitro(0.06);
+                    stopNitro(0.06, true);
                 }
                 lastEngineNitroState = !!nitro;
 
@@ -441,7 +459,7 @@
                     engine: typeof next.engine === 'boolean' ? next.engine : prefs.engine
                 };
                 if (master) param(master.gain, level() * 0.65, context.currentTime);
-                if (!prefs.engine || !level()) { stopEngine(); stopSiren(); stopNitro(0.02); }
+                if (!prefs.engine || !level()) { stopEngine(); stopSiren(); stopNitro(0.02, false); }
                 return {...prefs};
             },
             preferences: () => ({...prefs}),
@@ -477,7 +495,7 @@
             },
             nitro(active = true) {
                 if (active === false) {
-                    stopNitro(0.06);
+                    stopNitro(0.06, true);
                     return;
                 }
                 if (!unlocked || !context || context.state === 'suspended' || level() <= 0) return;
@@ -487,49 +505,130 @@
                 if (now - lastNitroTime < 0.22) return;
                 lastNitroTime = now;
 
-                // 1. Authentic crisp nitrous oxide purge valve hiss ("tssshhhhh")
-                // High-pressure solenoid release spray (crisp decompression)
-                const hiss = noiseBurst({
-                    duration: 0.46,
-                    gain: 0.16,
+                // 1. INSTANT HIGH-PRESSURE PNEUMATIC PURGE BURST ("TSSSHHH-POW!") ON TRIGGER
+                // High-pressure cryogenic solenoid release spray (sharp decompression hiss)
+                const purgeSpray = noiseBurst({
+                    duration: 0.42,
+                    gain: 0.22,
                     filterType: 'bandpass',
-                    filterFreq: 2750,
-                    filterEndFreq: 1800,
-                    filterQ: 1.3
+                    filterFreq: 3800,
+                    filterEndFreq: 1900,
+                    filterQ: 2.2
                 });
-                registerNitroVoice(hiss);
+                registerNitroVoice(purgeSpray);
 
-                // Intake aerodynamic air-rush expansion surge
+                // Solenoid valve snap transient (metallic click)
+                const purgeSnap = tone(2400, 0.045, 0.12, 0, 'triangle', 820);
+                registerNitroVoice(purgeSnap);
+
+                // Visceral kinetic detonation punch ("-POW!"): sub-bass cylinder pressure punch
+                const subPunch = tone(108, 0.32, 0.32, 0, 'triangle', 44);
+                registerNitroVoice(subPunch);
+
+                // Mid-frequency cylinder combustion slam
+                const midPunch = tone(220, 0.16, 0.22, 0, 'sawtooth', 68);
+                registerNitroVoice(midPunch);
+
+                // 2. TWIN-TURBO COMPRESSOR SPOOL/WHINE THAT RISES RAPIDLY IN PITCH
+                // Primary compressor impeller spool (screaming turbine whine)
+                const turboSpool1 = tone(680, 0.62, 0.10, 0.015, 'sine', 2100);
+                registerNitroVoice(turboSpool1);
+
+                // Secondary twin-turbo harmonic overtone whine
+                const turboSpool2 = tone(1020, 0.58, 0.07, 0.025, 'triangle', 2850);
+                registerNitroVoice(turboSpool2);
+
+                // Aerodynamic compressor intake rush
                 const intakeRush = noiseBurst({
-                    duration: 0.50,
-                    gain: 0.11,
-                    delay: 0.012,
+                    duration: 0.55,
+                    gain: 0.14,
+                    delay: 0.02,
                     filterType: 'bandpass',
-                    filterFreq: 920,
-                    filterEndFreq: 1380,
-                    filterQ: 1.1
+                    filterFreq: 1050,
+                    filterEndFreq: 2600,
+                    filterQ: 1.8
                 });
                 registerNitroVoice(intakeRush);
 
-                // 2. Deep, punchy combustion impact thump (sub-bass cylinder pressure punch)
-                // Solid 74 Hz thump settling into warm 52 Hz combustion resonance without unnatural sine drops
-                const punch = tone(74, 0.38, 0.22, 0, 'triangle', 52);
-                registerNitroVoice(punch);
+                // 3. DEEP RESONANT COMBUSTION AFTERBURNER ROAR WITH RICH BASS HARMONIC SATURATION WHILE HELD
+                // Sub-bass afterburner combustion fundamental
+                const afterburner = tone(54, 0.72, 0.26, 0.01, 'triangle', 72);
+                registerNitroVoice(afterburner);
 
-                // 3. Warm exhaust manifold resonance (muscular automotive growl under nitrous load)
-                const exhaust = tone(98, 0.48, 0.13, 0.010, 'triangle', 134);
-                registerNitroVoice(exhaust);
+                // Saturated exhaust manifold growl
+                const exhaustGrowl = tone(118, 0.68, 0.20, 0.015, 'sawtooth', 156);
+                registerNitroVoice(exhaustGrowl);
 
-                // 4. Rich low-end turbo intake whoosh (smooth air spooling surge)
-                const turbo = tone(152, 0.44, 0.09, 0.022, 'sine', 218);
-                registerNitroVoice(turbo);
+                // Throaty air expansion roar
+                const airExpansion = tone(168, 0.64, 0.15, 0.02, 'triangle', 224);
+                registerNitroVoice(airExpansion);
             },
-            stopNitro() { stopNitro(0.06); },
+            stopNitro(smooth = 0.06) { stopNitro(smooth, true); },
             brake() {
                 // High-performance brake pad bite & rotor friction
-                noiseBurst({ duration: 0.15, gain: 0.06, filterType: 'bandpass', filterFreq: 1600, filterEndFreq: 850, filterQ: 2.2 });
-                tone(340, 0.14, 0.08, 0, 'triangle', 140);
-                tone(680, 0.08, 0.05, 0.02, 'sine', 260);
+                noiseBurst({ duration: 0.16, gain: 0.08, filterType: 'bandpass', filterFreq: 1750, filterEndFreq: 900, filterQ: 2.2 });
+                tone(360, 0.14, 0.09, 0, 'triangle', 160);
+                tone(720, 0.09, 0.06, 0.015, 'sine', 280);
+                tone(180, 0.15, 0.07, 0.01, 'triangle', 75);
+            },
+            handbrake() {
+                if (!unlocked || !context || context.state === 'suspended' || level() <= 0) return;
+                const now = context.currentTime;
+                // Debounce rapid re-triggering within 250ms
+                if (now - lastHandbrakeTime < 0.25) return;
+                lastHandbrakeTime = now;
+
+                // 1. AUDIBLE MECHANICAL CABLE RATCHET ENGAGEMENT CLICK-CLACK ("krr-chk!")
+                // Tooth 1 click (initial pull tension)
+                tone(1350, 0.022, 0.11, 0, 'triangle', 920);
+                // Tooth 2 click (cable ratchet slide)
+                tone(1620, 0.024, 0.13, 0.024, 'triangle', 1100);
+                // Pawl solid mechanical lock latch ("-chk!")
+                tone(2150, 0.038, 0.15, 0.052, 'triangle', 780);
+                tone(420, 0.048, 0.14, 0.054, 'sawtooth', 160); // metallic chassis latch thud
+                // Metallic cable tension ping
+                tone(860, 0.065, 0.09, 0.058, 'sine', 380);
+
+                // Mechanical ratchet friction noise
+                noiseBurst({
+                    duration: 0.065,
+                    gain: 0.09,
+                    filterType: 'bandpass',
+                    filterFreq: 2600,
+                    filterEndFreq: 1400,
+                    filterQ: 2.2
+                });
+
+                // 2. ASPHALT TIRE FRICTION BITE / SCREECH ("skrrr-eech!")
+                // Calipers clamp rear axle, instantly biting asphalt (~0.068s delay)
+                const delay = 0.068;
+
+                // Deep asphalt rubber friction grain
+                noiseBurst({
+                    duration: 0.34,
+                    gain: 0.13,
+                    delay,
+                    filterType: 'bandpass',
+                    filterFreq: 1100,
+                    filterEndFreq: 750,
+                    filterQ: 1.8
+                });
+
+                // High friction asphalt bite screech
+                noiseBurst({
+                    duration: 0.28,
+                    gain: 0.10,
+                    delay: delay + 0.015,
+                    filterType: 'bandpass',
+                    filterFreq: 2100,
+                    filterEndFreq: 1550,
+                    filterQ: 2.4
+                });
+
+                // Tonal rubber shear resonance (violent asphalt friction slide)
+                tone(820, 0.28, 0.11, delay, 'sawtooth', 660);
+                tone(1380, 0.22, 0.07, delay + 0.012, 'triangle', 1120);
+                tone(460, 0.30, 0.10, delay, 'triangle', 280);
             },
             scrape() {
                 // Textured guardrail / asphalt scrape (satisfies >= 2 created nodes in tests)
@@ -550,17 +649,49 @@
                 tone((1380 + rnd * 1.2) * s, 0.16, 0.045 * s, 0.015, 'triangle', (1260 + rnd * 1.2) * s);
                 tone((1950 + rnd * 1.5) * s, 0.11, 0.025 * s, 0.025, 'sine', (1780 + rnd * 1.5) * s);
             },
-            horn() {
-                // European automotive dual-tone horn (A4 440Hz + C#5 554Hz)
-                tone(440, 0.24, 0.14, 0, 'triangle', 432);
-                tone(554, 0.24, 0.12, 0, 'sawtooth', 544);
+            horn(options = {}) {
+                if (options === 'sgu' || options?.sgu) {
+                    this.sgu();
+                    return;
+                }
+                if (options === 'truck' || options?.truck) {
+                    this.airBrake();
+                    return;
+                }
+                if (!unlocked || !context || context.state === 'suspended' || level() <= 0) return;
+
+                // Rich, authentic automotive dual-tone horn (Hella-style dual tone ~410 Hz & 495 Hz with warm chassis body resonance)
+                // 1. Diaphragm electrical contact bite transient
+                noiseBurst({
+                    duration: 0.05,
+                    gain: 0.07,
+                    filterType: 'bandpass',
+                    filterFreq: 1450,
+                    filterEndFreq: 950,
+                    filterQ: 2.0
+                });
+
+                // 2. Warm chassis body sub-resonance (~205 Hz, octave sub-harmonic)
+                tone(205, 0.28, 0.10, 0, 'triangle', 202);
+
+                // 3. Low tone fundamental (~410 Hz) - rich body
+                tone(410, 0.28, 0.18, 0, 'triangle', 407);
+
+                // 4. High tone fundamental (~495 Hz) - brass horn trumpet bite
+                tone(495, 0.28, 0.16, 0, 'sawtooth', 491);
+
+                // 5. 2nd harmonics for brass acoustic richness
+                tone(820, 0.24, 0.07, 0.005, 'triangle', 814);
+                tone(990, 0.24, 0.06, 0.005, 'sine', 982);
             },
             sgu() {
-                // VIP / Police SGU strobe electronic chirp
+                // VIP / Police SGU strobe electronic spec-wail / airhorn chirp
                 tone(175, 0.22, 0.26, 0, 'sawtooth', 170);
                 tone(350, 0.22, 0.18, 0, 'triangle', 340);
                 tone(525, 0.20, 0.12, 0, 'sawtooth', 510);
+                tone(700, 0.18, 0.08, 0.01, 'triangle', 680);
                 tone(88, 0.24, 0.18, 0, 'triangle', 82);
+                noiseBurst({ duration: 0.18, gain: 0.10, filterType: 'bandpass', filterFreq: 1850, filterEndFreq: 920, filterQ: 1.8 });
             },
             airBrake() {
                 // Pneumatic truck brake air dump
@@ -630,9 +761,8 @@
             },
             stopEngine,
             updateEngine,
-            stopNitro,
             suspend() {
-                stopNitro(0.02);
+                stopNitro(0.02, false);
                 stopEngine();
                 stopSiren();
                 voices.forEach(node => { try { node.stop(); } catch (_) {} });
