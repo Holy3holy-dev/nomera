@@ -85,3 +85,27 @@ test('Point 7: Garage, Salon, and Race Picker use lightweight 3D side snapshots 
     assert.ok(appJs.includes('Car3DManager.renderSideThumbnail(carItem.name, carStyling, (url)'), 'Race picker cars must trigger offscreen side snapshot');
     assert.ok(stylesCss.includes('.car-3d-thumb'), 'styles.css must include .car-3d-thumb style');
 });
+
+test('Bugfix: Auto-spin reliable stopping, timer isolation, and programmatic sale guards', () => {
+    const appJs = fs.readFileSync(path.join(__dirname, '../js/app.js'), 'utf8');
+    assert.ok(appJs.includes('function stopAutoSpin('), 'Must provide dedicated stopAutoSpin function to avoid inverter toggle race');
+    assert.ok(appJs.includes('clearTimeout(autoSpinTimerId)'), 'Must clear autoSpinTimerId to prevent runaway spins over valuable plates');
+    assert.ok(appJs.includes('sellCurrentPlate(isAuto = false)'), 'sellCurrentPlate must accept isAuto flag');
+    assert.ok(appJs.includes('if (btnSave && btnSave.disabled) return;'), 'sellCurrentPlate must only block manual clicks when btnSave is disabled');
+});
+
+test('Bugfix: 3D road seamless continuity and car visual fixes', () => {
+    const car3dJs = fs.readFileSync(path.join(__dirname, '../js/car-3d.js'), 'utf8');
+    // Road chunks must not have shearing offsets
+    assert.ok(car3dJs.includes('chunk.position.x = 0;'), 'Road chunks must remain centered on X axis to prevent shearing tears');
+    assert.ok(car3dJs.includes('chunk.rotation.y = 0;'), 'Road chunks must not rotate individually to prevent diagonal gaps');
+
+    // Factory authentic car colors and alignment
+    assert.ok(car3dJs.includes('function getDefaultCarColor('), 'Must provide authentic factory car colors');
+    assert.ok(car3dJs.includes("vaz2107: 0x991b1b"), 'vaz2107 must default to iconic cherry red');
+    assert.ok(car3dJs.includes("carId === 'vaz2107' || carId === 'vaz2109'"), 'vaz2107 must face forward down the road');
+
+    // 3D Thumbnail 3/4 perspective
+    assert.ok(car3dJs.includes('camDist * 0.90'), 'Thumbnail camera must use 3/4 perspective to reveal car depth');
+});
+

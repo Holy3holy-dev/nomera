@@ -3642,16 +3642,22 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     if (isAutoSpinning) {
                         const isStopTier = finalPrice >= 80000 || ['Супер редкий', 'Эпический', 'Легендарный', 'Крутой', 'БЛАТНОЙ', 'Мифический'].includes(r.text);
                         if (isStopTier) {
-                            toggleAutoSpin();
+                            // Stop auto-spin on high rarity tier: toggleAutoSpin()
+                            stopAutoSpin();
                             notifyUser(`🔥 Выбит ценный номер «${curPlateText}» (${r.text}, ${finalPrice.toLocaleString('ru-RU')} ₽)! Авто-прокрутка остановлена.`, 'success');
                         } else {
                             const turbo = document.getElementById('turbo-toggle');
                             const nextDelay = (turbo && turbo.checked) ? 120 : 450;
-                            Promise.resolve(sellCurrentPlate()).catch(err => {
+                            // Auto-spin auto-sell: sellCurrentPlate()
+                            Promise.resolve(sellCurrentPlate(true)).catch(err => {
                                 console.warn('Auto-spin auto-sell error:', err);
                             }).finally(() => {
                                 if (isAutoSpinning) {
-                                    setTimeout(runAutoSpinStep, nextDelay);
+                                    if (autoSpinTimerId) {
+                                        clearTimeout(autoSpinTimerId);
+                                        autoSpinTimerId = null;
+                                    }
+                                    autoSpinTimerId = setTimeout(runAutoSpinStep, nextDelay);
                                 }
                             });
                         }
@@ -3993,37 +3999,68 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         }
 
         let autoSpinRemaining = Infinity;
-        function toggleAutoSpin() {
-            isAutoSpinning = !isAutoSpinning;
+        let autoSpinTimerId = null;
+
+        function stopAutoSpin(msg = null) {
+            if (autoSpinTimerId) {
+                clearTimeout(autoSpinTimerId);
+                autoSpinTimerId = null;
+            }
+            isAutoSpinning = false;
+            autoSpinRemaining = 0;
             const btn = document.getElementById('btn-auto-spin');
+            if (btn) {
+                btn.innerText = "🔄 Авто: ВЫКЛ";
+                btn.classList.remove('active');
+            }
+            if (msg) notifyUser(msg, 'info');
+        }
+
+        function startAutoSpin() {
+            if (autoSpinTimerId) {
+                clearTimeout(autoSpinTimerId);
+                autoSpinTimerId = null;
+            }
+            isAutoSpinning = true;
             const select = document.getElementById('auto-spin-count');
+            const countVal = select ? select.value : 'Infinity';
+            autoSpinRemaining = countVal === 'Infinity' ? Infinity : (parseInt(countVal, 10) || 10);
+            const btn = document.getElementById('btn-auto-spin');
+            if (btn) {
+                btn.innerText = Number.isFinite(autoSpinRemaining) ? `🔄 Авто: ${autoSpinRemaining}` : "🔄 Авто: ВКЛ";
+                btn.classList.add('active');
+            }
+            runAutoSpinStep();
+        }
+
+        function toggleAutoSpin() {
             if (isAutoSpinning) {
-                const countVal = select ? select.value : 'Infinity';
-                autoSpinRemaining = countVal === 'Infinity' ? Infinity : (parseInt(countVal, 10) || 10);
-                if (btn) {
-                    btn.innerText = Number.isFinite(autoSpinRemaining) ? `🔄 Авто: ${autoSpinRemaining}` : "🔄 Авто: ВКЛ";
-                    btn.classList.add('active');
-                }
-                runAutoSpinStep();
+                stopAutoSpin();
             } else {
-                autoSpinRemaining = 0;
-                if (btn) {
-                    btn.innerText = "🔄 Авто: ВЫКЛ";
-                    btn.classList.remove('active');
-                }
+                startAutoSpin();
             }
         }
 
         function runAutoSpinStep() {
             if (!isAutoSpinning) return;
+            if (autoSpinTimerId) {
+                clearTimeout(autoSpinTimerId);
+                autoSpinTimerId = null;
+            }
             if (Number.isFinite(autoSpinRemaining) && autoSpinRemaining <= 0) {
-                toggleAutoSpin();
-                notifyUser('Авто-прокрутка завершена!', 'info');
+                stopAutoSpin('Авто-прокрутка завершена!');
                 return;
             }
-            if (isSpinning || serverSpinBusy) { setTimeout(runAutoSpinStep, 150); return; }
-            if ((onlineProfile ? Number(onlineProfile.balance) : balance) < 900) {
-                toggleAutoSpin(); notifyUser('Авто-спин остановлен: на активном кошельке недостаточно денег!', 'error'); return;
+            const curBal = (onlineProfile && typeof onlineProfile.balance === 'number')
+                ? Number(onlineProfile.balance)
+                : balance;
+            if (curBal < 900) {
+                stopAutoSpin('Авто-спин остановлен: на активном кошельке недостаточно денег!');
+                return;
+            }
+            if (isSpinning || serverSpinBusy) {
+                // If a spin is currently active, do not stack timers. finishSpin will trigger the next step cleanly.
+                return;
             }
 
             if (Number.isFinite(autoSpinRemaining)) {
@@ -4073,14 +4110,17 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             notifyUser(`Номер "${pText}" сохранен в инвентарь!`);
         }
 
-        async function sellCurrentPlate() {
-            if (!boardHasLetters || !boardHasNumbers || isSpinning) return;
-            if (!onlineProfile && mustSpinBothForNextSave && (!hasSpunLetSinceSave || !hasSpunNumSinceSave)) return;
-            const btnSave = document.getElementById('btn-save');
-            if (btnSave && btnSave.disabled) return;
+        async function sellCurrentPlate(isAuto = false) {
+            if (!boardHasLetters || !boardHasNumbers) return;
+            if (isSpinning && !isAuto) return;
+            if (!isAuto) {
+                if (!onlineProfile && mustSpinBothForNextSave && (!hasSpunLetSinceSave || !hasSpunNumSinceSave)) return;
+                const btnSave = document.getElementById('btn-save');
+                if (btnSave && btnSave.disabled) return;
+            }
 
             if (onlineProfile) {
-                if (serverSpinBusy) return;
+                if (serverSpinBusy && !isAuto) return;
                 serverSpinBusy = true;
                 try {
                     const data = await onlineRequest('claim');

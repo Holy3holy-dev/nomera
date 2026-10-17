@@ -88,9 +88,43 @@
         return 'modern_sedan';
     }
 
+    // Factory authentic colors for Russian and imported car icons
+    function getDefaultCarColor(name = '', id = '') {
+        const carId = id || identifyCarModel(name);
+        const map = {
+            vaz2107: 0x991b1b,    // Ruby cherry red (iconic Zhiguli)
+            vaz2109: 0x475569,    // Wet asphalt metallic
+            gaz24: 0x0f172a,      // Deep black KGB Volga
+            priora: 0x18181b,     // Obsidian black
+            solaris: 0xf8fafc,    // Crystal white
+            vesta: 0xdc2626,      // Sport red
+            polo: 0x64748b,       // Silver metallic
+            mark2: 0xf8fafc,      // Pearl white
+            subaru: 0x1d4ed8,     // WRX rally blue
+            m5e60: 0x334155,      // Anthracite grey
+            silvia: 0x0ea5e9,     // Brilliant drift cyan
+            camry: 0x0f172a,      // Executive black
+            lc300: 0xf8fafc,      // Pearl white
+            gtr: 0xf8fafc,        // Nismo pearl white
+            e63: 0x1e293b,        // Selenite grey
+            rs6: 0x475569,        // Nardo grey
+            m5f90: 0x0284c7,      // Marina Bay blue
+            m8: 0x1e1b4b,         // Sonic dark navy
+            g63: 0x09090b,        // Magno night black
+            porsche911: 0xeab308, // Racing yellow
+            huracan: 0x22c55e,    // Verde mantis green
+            cullinan: 0x111827,   // Midnight sapphire
+            sf90: 0xef4444,       // Rosso Corsa red
+            chiron: 0x1e3a8a,     // Bugatti racing blue
+            jesko: 0xe2e8f0       // Crystal white
+        };
+        return map[carId] || 0x2563eb;
+    }
+
     // Material library factory
-    function createCarMaterials(THREE, styling = {}) {
-        const bodyHex = parseColor(styling.color, 0xefefef);
+    function createCarMaterials(THREE, styling = {}, carName = '', carId = '') {
+        const defColor = getDefaultCarColor(carName, carId);
+        const bodyHex = parseColor(styling.color || defColor, defColor);
 
         // Body Paint (high-gloss automotive clearcoat simulation)
         const paint = new (THREE.MeshPhysicalMaterial || THREE.MeshStandardMaterial)({
@@ -4048,8 +4082,8 @@
         const root = new THREE.Group();
         root.name = 'CarRoot_' + encodeURIComponent(carName);
 
-        const mats = createCarMaterials(THREE, styling);
         const carId = identifyCarModel(carName);
+        const mats = createCarMaterials(THREE, styling, carName, carId);
 
         // Suspension ride height offset & Stance tuning
         let suspensionOffsetY = 0;
@@ -4409,16 +4443,26 @@
         if (typeof window !== 'undefined' && window.caches && typeof window.fetch === 'function') {
             try {
                 const cache = await window.caches.open(NOMERA_MODEL_CACHE_NAME);
-                const matched = await cache.match(modelUrl);
+                const absUrl = (typeof window.location !== 'undefined' && window.location.href)
+                    ? new URL(modelUrl, window.location.href).href
+                    : modelUrl;
+                const matched = (await cache.match(absUrl)) || (await cache.match(modelUrl));
                 if (matched) {
                     return await matched.arrayBuffer();
                 }
                 const response = await fetch(modelUrl);
                 if (response && response.ok) {
+                    const buffer = await response.arrayBuffer();
                     try {
-                        cache.put(modelUrl, response.clone()).catch(() => {});
+                        const cacheResponse = new Response(buffer.slice(0), {
+                            headers: {
+                                'Content-Type': 'model/gltf-binary',
+                                'Content-Length': String(buffer.byteLength)
+                            }
+                        });
+                        cache.put(absUrl, cacheResponse).catch(() => {});
                     } catch (_) {}
-                    return await response.arrayBuffer();
+                    return buffer;
                 }
             } catch (_) {}
         }
@@ -4574,8 +4618,9 @@
     }
 
     function applyStylingToGLTF(THREE, modelRoot, styling = {}, carId = '') {
-        const bodyColorHex = parseColor(styling.color, 0xefefef);
-        const mats = createCarMaterials(THREE, styling);
+        const defColor = getDefaultCarColor('', carId);
+        const bodyColorHex = parseColor(styling.color || defColor, defColor);
+        const mats = createCarMaterials(THREE, styling, '', carId);
 
         let suspensionOffsetY = 0;
         if (typeof styling.rideHeight === 'number') suspensionOffsetY = styling.rideHeight;
@@ -5376,7 +5421,7 @@
                 }
 
                 // 3. Align car forward facing along +Z
-                if (carId === 'vaz2109' || carId === 'sf90') {
+                if (carId === 'vaz2107' || carId === 'vaz2109' || carId === 'sf90') {
                     clonedScene.rotation.y += Math.PI;
                     clonedScene.updateMatrixWorld(true);
                     box = new THREE.Box3().setFromObject(clonedScene);
@@ -7024,7 +7069,11 @@
                 const carLength = Math.max(3.8, finalBox.max.z - finalBox.min.z);
                 const camDist = Math.max(8.2, carLength * 1.88);
 
-                offscreenCamera.position.set(camDist, targetY, 0);
+                // Dynamic 3D 3/4 perspective to reveal car bodywork, hood, wheels and front styling
+                const camX = camDist * 0.90;
+                const camY = targetY + carHeight * 0.32;
+                const camZ = carLength * 0.40;
+                offscreenCamera.position.set(camX, camY, camZ);
                 offscreenCamera.lookAt(0, targetY, 0);
 
                 offscreenRenderer.render(offscreenScene, offscreenCamera);
@@ -9676,21 +9725,13 @@
 
         updateRoadChunks() {
             const state = this.state;
-            const curve = this.roadCurve || 0;
             this.roadChunks.forEach(chunk => {
                 if (chunk.position.z < state.z - 50) {
                     chunk.position.z = this.highestChunkZ + this.chunkLength;
                     this.highestChunkZ = chunk.position.z;
                 }
-                const dz = chunk.position.z - state.z;
-                if (dz > 0 && Math.abs(curve) > 0.05) {
-                    const curveOffset = curve * Math.pow(Math.min(3.5, dz / 45), 2) * 1.5;
-                    chunk.position.x = curveOffset;
-                    chunk.rotation.y = -curve * Math.min(1.0, dz / 80) * 0.25;
-                } else {
-                    chunk.position.x = 0;
-                    chunk.rotation.y = 0;
-                }
+                chunk.position.x = 0;
+                chunk.rotation.y = 0;
             });
         }
 
