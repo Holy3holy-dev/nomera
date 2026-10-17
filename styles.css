@@ -3753,31 +3753,59 @@ body.race-active .race-3d-viewport-wrapper {
 
 /* Mobile Portrait Adaptation (<= 600px) */
 @media screen and (max-width: 600px) {
-    body.race-active .main-container {
-        padding: 4px 6px;
-        height: 100dvh;
-        max-height: 100dvh;
-        overflow: hidden;
+    body.race-active {
+        padding: 0 !important;
+        margin: 0 !important;
+        height: 100dvh !important;
+        max-height: 100dvh !important;
+        overflow: hidden !important;
     }
+    body.race-active .main-container {
+        padding: 0 !important;
+        margin: 0 !important;
+        width: 100vw !important;
+        max-width: 100vw !important;
+        height: 100dvh !important;
+        max-height: 100dvh !important;
+        overflow: hidden !important;
+    }
+    body.race-active #racegame,
     body.race-active #racegame > .section-box {
-        padding: 0;
-        margin: 0;
-        border: none;
-        background: transparent;
-        height: 100%;
-        display: flex;
-        flex-direction: column;
-        overflow: hidden;
+        padding: 0 !important;
+        margin: 0 !important;
+        border: none !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        width: 100vw !important;
+        max-width: 100vw !important;
+        height: 100% !important;
+        overflow: hidden !important;
     }
     body.race-active #race-3d-play-container {
-        height: 100%;
-        min-height: 0;
+        position: relative !important;
+        width: 100vw !important;
+        max-width: 100vw !important;
+        height: 100dvh !important;
+        max-height: 100dvh !important;
+        margin: 0 !important;
+        overflow: hidden !important;
+    }
+    body.race-active .race-3d-viewport-wrapper {
+        position: absolute !important;
+        inset: 0 !important;
+        width: 100vw !important;
+        height: 100dvh !important;
+        max-height: 100dvh !important;
+        border-radius: 0 !important;
+        border: none !important;
+        box-shadow: none !important;
+        margin: 0 !important;
     }
     body.race-active .race-header-hud {
         position: absolute !important;
-        top: max(6px, env(safe-area-inset-top)) !important;
-        left: max(8px, env(safe-area-inset-left)) !important;
-        right: max(8px, env(safe-area-inset-right)) !important;
+        top: max(8px, env(safe-area-inset-top)) !important;
+        left: max(10px, env(safe-area-inset-left)) !important;
+        right: max(10px, env(safe-area-inset-right)) !important;
         z-index: 30 !important;
         pointer-events: none !important;
         display: flex !important;
@@ -3787,88 +3815,139 @@ body.race-active .race-3d-viewport-wrapper {
         margin: 0 !important;
         background: transparent !important;
         border: none !important;
-        height: 28px !important;
-        min-height: 28px !important;
+        height: 32px !important;
+        min-height: 32px !important;
     }
     body.race-active .race-header-hud > * {
         pointer-events: auto !important;
     }
     body.race-active .race-header-actions {
         display: flex !important;
-        gap: 4px !important;
+        gap: 5px !important;
         align-items: center !important;
         flex-wrap: nowrap !important;
         flex-shrink: 0 !important;
     }
     body.race-active .race-hud-action-btn {
-        padding: 4px 6px !important;
-        font-size: 10px !important;
-        border-radius: 6px !important;
+        padding: 5px 8px !important;
+        font-size: 11px !important;
+        border-radius: 8px !important;
+        background: rgba(10, 15, 29, 0.85) !important;
+        backdrop-filter: blur(8px) !important;
+        border: 1px solid rgba(255, 255, 255, 0.2) !important;
     }
     body.race-active .race-hud-close-btn {
-        padding: 4px 8px !important;
+        padding: 5px 10px !important;
+        font-size: 11px !important;
+        border-radius: 8px !important;
+        background: rgba(239, 68, 68, 0.35) !important;
+        backdrop-filter: blur(8px) !important;
+        border: 1px solid rgba(239, 68, 68, 0.6) !important;
+    }
+    body.race-active .race-3d-hud-overlay {
+        position: absolute !important;
+        inset: 0 !important;
+        padding: 0 !important;
+        pointer-events: none !important;
+        z-index: 20 !important;
+    }
+    body.race-active .race-3d-hud-top {
+        position: absolute !important;
+        top: max(44px, calc(env(safe-area-inset-top) + 38px)) !important;
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 6px !important;
+        z-index: 28 !important;
+        pointer-events: none !important;
+        flex-wrap: nowrap !important;
+        margin: 0 !important;
+        width: calc(100vw - 20px) !important;
+        max-width: 440px !important;
+    }
+    body.race-active .race-3d-hud-stat {
+        flex: 1 1 0 !important;
+        min-width: 0 !important;
+        padding: 3px 6px !important;
+        gap: 4px !important;
+        border-radius: 8px !important;
+        background: rgba(10, 15, 29, 0.85) !important;
+        backdrop-filter: blur(8px) !important;
+        border: 1px solid rgba(255, 255, 255, 0.15) !important;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5) !important;
+    }
+    body.race-active .race-3d-stat-icon {
+        font-size: 12px !important;
+    }
+    body.race-active .race-3d-stat-lbl {
+        font-size: 7.5px !important;
+        letter-spacing: 0.3px !important;
+    }
+    body.race-active .race-3d-stat-val {
         font-size: 10px !important;
-        border-radius: 6px !important;
+        font-weight: 800 !important;
     }
-    body.race-active .race-3d-viewport-wrapper {
-        min-height: 240px;
-        height: 100%;
-        max-height: calc(100dvh - 155px);
-        border-radius: 12px;
+    body.race-active .race-3d-pursuit-box {
+        top: max(88px, calc(env(safe-area-inset-top) + 80px)) !important;
+        padding: 3px 10px !important;
+        min-width: 150px !important;
+        max-width: 210px !important;
+        z-index: 35 !important;
     }
-    .race-3d-hud-overlay {
-        padding: 40px 8px 8px 8px;
+    body.race-active .race-3d-hud-bottom {
+        position: absolute !important;
+        bottom: max(68px, calc(env(safe-area-inset-bottom) + 64px)) !important;
+        left: max(10px, env(safe-area-inset-left)) !important;
+        right: max(10px, env(safe-area-inset-right)) !important;
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: flex-end !important;
+        pointer-events: none !important;
+        z-index: 22 !important;
+        padding: 0 !important;
     }
-    .race-3d-hud-top {
-        gap: 6px;
+    body.race-active .race-3d-speedo-box,
+    body.race-active .race-3d-nitro-box {
+        min-width: 90px !important;
+        max-width: 115px !important;
+        padding: 4px 8px !important;
+        border-radius: 10px !important;
+        background: rgba(10, 15, 29, 0.85) !important;
+        backdrop-filter: blur(8px) !important;
+        border: 1px solid rgba(255, 255, 255, 0.15) !important;
+        gap: 2px !important;
+        pointer-events: auto !important;
     }
-    .race-3d-hud-stat {
-        padding: 4px 8px;
-        gap: 6px;
-        border-radius: 8px;
+    body.race-active .race-3d-speed-num {
+        font-size: 20px !important;
     }
-    .race-3d-stat-icon {
-        font-size: 13px;
+    body.race-active .race-3d-gear-badge {
+        font-size: 8px !important;
+        padding: 1px 4px !important;
     }
-    .race-3d-stat-lbl {
-        font-size: 8px;
+    body.race-active .race-3d-speed-unit {
+        font-size: 8px !important;
     }
-    .race-3d-stat-val {
-        font-size: 11px;
+    body.race-active .race-3d-nitro-header span:first-child {
+        font-size: 8.5px !important;
     }
-    .race-3d-hud-bottom {
-        padding: 0 4px;
-        gap: 8px;
-        align-items: flex-end;
-    }
-    .race-3d-speedo-box,
-    .race-3d-nitro-box {
-        min-width: 92px;
-        padding: 4px 8px;
-        border-radius: 10px;
-        background: rgba(10, 15, 29, 0.8);
-        gap: 2px;
-    }
-    .race-3d-speed-num {
-        font-size: 22px;
-    }
-    .race-3d-gear-badge {
-        font-size: 8.5px;
-        padding: 1px 4px;
-    }
-    .race-3d-speed-unit {
-        font-size: 8px;
-    }
-    .race-3d-nitro-header span:first-child {
+    body.race-active .race-3d-nitro-header span:last-child {
         font-size: 9px !important;
     }
-    .race-3d-nitro-header span:last-child {
-        font-size: 9.5px !important;
-    }
-    .race-touch-controls {
-        margin: 6px auto 0 auto;
-        gap: 6px;
-        padding-bottom: max(6px, env(safe-area-inset-bottom));
+    body.race-active .race-touch-controls {
+        position: absolute !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+        padding-bottom: max(6px, env(safe-area-inset-bottom)) !important;
+        pointer-events: none !important;
+        z-index: 25 !important;
     }
     .touch-btn {
         min-height: 50px;
