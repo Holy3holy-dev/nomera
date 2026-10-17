@@ -26,6 +26,11 @@
 }(typeof self !== 'undefined' ? self : this, function () {
     'use strict';
 
+    let RaceEffectsManagerClass = (typeof RaceEffectsManager !== 'undefined') ? RaceEffectsManager : null;
+    if (!RaceEffectsManagerClass && typeof require === 'function') {
+        try { RaceEffectsManagerClass = require('./race-effects.js'); } catch (_) {}
+    }
+
     function isWebGLAvailable() {
         if (typeof process !== 'undefined' && process.versions && process.versions.node) return true;
         try {
@@ -7360,8 +7365,15 @@
                 overtakeComboTimer: 0,
                 damageTaken: 0,
                 bodyRoll: 0,
+                rollVelocity: 0,
                 pitchSquat: 0,
+                pitchVelocity: 0,
                 yawAngle: 0,
+                yawVelocity: 0,
+                steerAngle: 0,
+                suspensionY: 0,
+                suspensionVelocityY: 0,
+                scrapeTimer: 0,
                 sguTimer: 0,
                 sguActive: false,
                 shakeAmount: 0,
@@ -7458,6 +7470,15 @@
 
             // Spawn traffic vehicles
             this.initTraffic();
+
+            // Initialize 3D Visual Effects System (VFX Specialist)
+            if (RaceEffectsManagerClass) {
+                try {
+                    this.vfx = new RaceEffectsManagerClass(this);
+                } catch (vfxErr) {
+                    console.warn('RaceEffectsManager init error:', vfxErr);
+                }
+            }
         }
 
         getWeatherPreset(key) {
@@ -7750,6 +7771,9 @@
             }
 
             this.applyWeatherMaterials(preset);
+            if (this.vfx && typeof this.vfx.setWeather === 'function') {
+                this.vfx.setWeather(activeKey);
+            }
             return activeKey;
         }
 
@@ -8624,10 +8648,16 @@
             this.state.overtakeComboTimer = 0;
             this.state.damageTaken = 0;
             this.state.bodyRoll = 0;
+            this.state.rollVelocity = 0;
             this.state.pitchSquat = 0;
             this.state.pitchVelocity = 0;
             this.state.downforceY = 0;
             this.state.yawAngle = 0;
+            this.state.yawVelocity = 0;
+            this.state.steerAngle = 0;
+            this.state.suspensionY = 0;
+            this.state.suspensionVelocityY = 0;
+            this.state.scrapeTimer = 0;
             this.state.shakeAmount = 0;
 
             // Police pursuit & wanted state reset
@@ -8991,6 +9021,10 @@
                         this.playerSteerWheels.push(c);
                     }
                 });
+
+                if (this.vfx && typeof this.vfx.onCarLoaded === 'function') {
+                    this.vfx.onCarLoaded(this.playerCar);
+                }
             } catch (err) {
                 console.warn('setupCarLightingAndFX non-critical error:', err);
             }
@@ -9149,6 +9183,8 @@
             if (state.shiftShock > 0) state.shiftShock = Math.max(0, state.shiftShock - dt);
 
             // Throttle & Braking
+            let netAccel = 0;
+            let brakeBite = 0;
             if (keys.gas) {
                 state.gasHoldTime = (state.gasHoldTime || 0) + dt;
                 // High low-gear wheel torque (hypercar launch feeling)
@@ -9156,13 +9192,15 @@
                 // Realistic aerodynamic drag (proportional to v^2)
                 const aeroDrag = Math.pow(state.speed / 100, 2) * 1.85;
                 const rawAccel = state.accel * gearTorque * (state.isNitroActive ? 1.70 : 1.0) * shiftTorque;
-                const netAccel = Math.max(3.0, rawAccel - aeroDrag);
+                netAccel = Math.max(3.0, rawAccel - aeroDrag);
                 state.speed = Math.min(targetMaxSpeed, state.speed + netAccel * dt);
             } else if (keys.brake) {
                 if (!state.wasBraking && state.speed > 60) {
                     if (this.options.onSound) this.options.onSound('brake');
                 }
-                const brakeBite = 105 + (state.speed / 100) * 20;
+                // Air-brake wing adds high-speed aero braking resistance (>100 km/h)
+                const aeroAirBrake = (state.speed > 100) ? Math.pow(state.speed / 120, 2) * 8.0 : 0;
+                brakeBite = 105 + (state.speed / 100) * 20 + aeroAirBrake;
                 state.speed = Math.max(0, state.speed - brakeBite * dt);
             } else {
                 // Natural engine braking & aerodynamic coasting drag
@@ -9178,17 +9216,26 @@
             state.prevGas = !!keys.gas;
             state.wasBraking = !!keys.brake;
 
-            // Spring-damper suspension model for pitch (rear squat on acceleration, nose-dive on braking)
-            const targetPitch = keys.gas ? -0.042 : (keys.brake ? 0.055 : 0.0);
-            const springK = 48.0;
-            const damperC = 10.5;
+            // 1. WEIGHT TRANSFER & BODY DYNAMICS (Dynamic Chassis Pitch & Squat)
+            // Dynamic chassis pitch (rear squat on hard acceleration, nose dive under heavy braking)
+            // Scaled dynamically by instantaneous longitudinal acceleration / brake bite
+            let targetPitch = 0.0;
+            if (keys.gas) {
+                targetPitch = -Math.min(0.062, 0.038 + (netAccel / 75.0) * 0.020 + (state.isNitroActive ? 0.012 : 0.0));
+            } else if (keys.brake) {
+                targetPitch = Math.min(0.072, 0.048 + (brakeBite / 140.0) * 0.020 + (state.speed > 120 ? 0.008 : 0.0));
+            } else {
+                targetPitch = Math.min(0.012, Math.pow(state.speed / 160, 2) * 0.010);
+            }
+            const springK = 50.0;
+            const damperC = 11.0;
             const pitchForce = (targetPitch - (state.pitchSquat || 0)) * springK - (state.pitchVelocity || 0) * damperC;
             state.pitchVelocity = (state.pitchVelocity || 0) + pitchForce * dt;
             state.pitchSquat = (state.pitchSquat || 0) + state.pitchVelocity * dt;
             state.pitchSquat = Math.max(-0.065, Math.min(0.075, state.pitchSquat));
 
-            // Aerodynamic high-speed downforce (chassis lowers to ground)
-            state.downforceY = -Math.min(0.035, Math.pow(state.speed / 380, 2) * 0.035);
+            // Aerodynamic high-speed downforce (chassis lowers to ground and stabilizes rear axle)
+            state.downforceY = -Math.min(0.038, Math.pow(state.speed / 380, 2) * 0.038);
 
             // Taillight emissive intensity & dynamic brake light on braking
             const isBraking = !!keys.brake;
@@ -9265,13 +9312,16 @@
                 }
             }
 
-            // 5. STEERING, HANDBRAKE & DRIFT MECHANICS
+            // 5. STEERING, HANDBRAKE, TIRE GRIP & DRIFT MECHANICS
             const isHandbrake = !!keys.drift;
             const isDriftMode = this.mode === 'drift';
             const driftMult = state.driftFactor || (isDriftMode ? 1.6 : 1.35);
-            // High-speed steering stability: heavier feel and high directional stability at 200+ km/h
+
+            // 4. AERODYNAMICS & TOP SPEED (Downforce stabilizes rear axle at speeds over 200 km/h)
             const speedStability = Math.max(0.68, 1.0 - (state.speed / 380) * 0.32);
-            const lateralMax = (state.handling * 2.8 * speedStability) * (isHandbrake ? (1 + (driftMult - 1) * 0.7) : 1.0);
+            const highSpeedDownforceStabilization = state.speed > 200 ? Math.min(0.35, Math.pow((state.speed - 200) / 160, 1.4) * 0.35) : 0;
+            const downforceGripMult = 1.0 + Math.min(0.22, Math.pow(state.speed / 380, 2) * 0.22);
+            const lateralMax = (state.handling * 2.8 * speedStability * downforceGripMult) * (isHandbrake ? (1 + (driftMult - 1) * 0.7) : 1.0);
 
             let steerInput = 0;
             if (keys.left) steerInput += 1;  // In Three.js with camera facing +Z: +X moves to screen LEFT
@@ -9282,12 +9332,31 @@
             const throttleSteerAuthority = keys.gas ? 1.0 : (state.speed > 5 ? Math.min(1.0, 0.40 + (state.speed / 50) * 0.60) : 0);
             const effectiveSteerAuthority = speedSteerAuthority * throttleSteerAuthority;
 
+            // 2. TIRE GRIP & SLIP ANGLE (Pacejka-inspired curve)
+            // Kinematic travel heading vs steering wheel angle
+            const travelHeading = Math.atan2(state.vx, Math.max(2.5, forwardSpeedMps));
+            const steerAngleRad = steerInput * 0.32;
+            const slipAngle = steerAngleRad - travelHeading;
+
+            // Pacejka Magic Formula normalized lateral curve: Fy = D * sin(C * atan(B*a - E*(B*a - atan(B*a))))
+            const B_pacejka = 9.5;
+            const C_pacejka = 1.35;
+            const D_pacejka = 1.0;
+            const E_pacejka = -0.12;
+            const Ba = B_pacejka * slipAngle;
+            const pacejkaGrip = D_pacejka * Math.sin(C_pacejka * Math.atan(Ba - E_pacejka * (Ba - Math.atan(Ba))));
+
             if (steerInput !== 0 && effectiveSteerAuthority > 0) {
                 state.vx += steerInput * lateralMax * 4.2 * effectiveSteerAuthority * dt;
                 state.vx = Math.max(-lateralMax, Math.min(lateralMax, state.vx));
             } else {
                 const lateralDecay = effectiveSteerAuthority < 0.05 ? 14.0 : 7.5;
                 state.vx *= Math.max(0, 1 - lateralDecay * dt);
+            }
+
+            // High-speed aerodynamic stabilization: dampens high-speed lateral twitchiness above 200 km/h
+            if (highSpeedDownforceStabilization > 0 && Math.abs(steerInput) === 0 && !isHandbrake) {
+                state.vx *= Math.max(0, 1 - highSpeedDownforceStabilization * 4.2 * dt);
             }
 
             // Dynamic Touge & Highway curves
@@ -9364,27 +9433,63 @@
             // Apply lateral movement
             state.x += state.vx * dt;
 
-            // Guardrail Collision Boundaries (-8.2 to +8.2)
+            // 6. GUARDRAIL & COLLISION PHYSICS (Tangential Sliding & Velocity Deflection)
             const roadLimit = 8.2;
             if (state.x < -roadLimit || state.x > roadLimit) {
-                state.x = Math.max(-roadLimit, Math.min(roadLimit, state.x));
-                state.vx = -state.vx * 0.35;
-                state.speed = Math.max(10, state.speed * 0.75);
-                state.damageTaken += 2.5;
-                state.shakeAmount = 0.45;
-                this.spawnSparks(state.x, 0.4, state.z, 15);
+                const wallSide = state.x > 0 ? 1 : -1;
+                state.x = wallSide * roadLimit;
+
+                // Tangential velocity deflection: soft inward deflection impulse (elastic restitution ~0.18)
+                const impactVx = Math.abs(state.vx);
+                state.vx = -wallSide * Math.max(0.35, impactVx * 0.18);
+
+                // Tangential sliding friction along barrier: continuous progressive deceleration rather than dead stop
+                const scrapeFriction = 24.0 + impactVx * 10.0;
+                state.speed = Math.max(15, state.speed - scrapeFriction * dt);
+
+                // Deflection alignment: barrier torques car body parallel to guardrail
+                state.yawAngle += (0 - state.yawAngle) * Math.min(1.0, 14.0 * dt);
+                state.yawVelocity = 0;
+
+                // Body roll leans slightly against guardrail
+                state.bodyRoll = wallSide * 0.032;
+
+                // Suspension shock impulse
+                state.suspensionVelocityY = (state.suspensionVelocityY || 0) + 0.08;
+
+                // Progressive scrape damage and tactile screen shake
+                state.damageTaken += 1.8 * dt * 10;
+                state.shakeAmount = Math.min(0.55, (state.shakeAmount || 0) + 0.12);
+
+                // Streams of sparks sliding along the contact flank
+                const sparkCount = Math.min(14, Math.max(4, Math.floor(state.speed / 28)));
+                this.spawnSparks(state.x, 0.45, state.z - 0.6, sparkCount);
+
                 if (state.isDrifting) {
                     if (this.options.onPopup) this.options.onPopup('💥 ДРИФТ СОРВАН!', '#ef4444');
                     state.driftCurrentScore = 0;
                     state.driftCombo = 1;
                     state.isDrifting = false;
                 }
-                if (this.options.onSound) this.options.onSound('scrape');
+
+                // Tangential scrape sound cadence
+                state.scrapeTimer = (state.scrapeTimer || 0) - dt;
+                if (state.scrapeTimer <= 0) {
+                    if (this.options.onSound) this.options.onSound('scrape');
+                    state.scrapeTimer = 0.22;
+                }
+            } else {
+                if (state.scrapeTimer > 0) state.scrapeTimer -= dt;
             }
 
-            // Body roll tilt: car chassis leans gently outwards into turn with realistic suspension damping
-            const targetBodyRoll = Math.max(-0.065, Math.min(0.065, state.vx * 0.0045));
-            state.bodyRoll = (state.bodyRoll || 0) + (targetBodyRoll - (state.bodyRoll || 0)) * Math.min(1.0, 9.0 * dt);
+            // 1b. DYNAMIC ROLL DURING CORNERING (2nd-Order Spring-Damper Suspension Response)
+            const targetBodyRoll = Math.max(-0.062, Math.min(0.062, state.vx * 0.0045));
+            const rollSpringK = 54.0;
+            const rollDamperC = 11.5;
+            const rollForce = (targetBodyRoll - (state.bodyRoll || 0)) * rollSpringK - (state.rollVelocity || 0) * rollDamperC;
+            state.rollVelocity = (state.rollVelocity || 0) + rollForce * dt;
+            state.bodyRoll = (state.bodyRoll || 0) + state.rollVelocity * dt;
+            state.bodyRoll = Math.max(-0.065, Math.min(0.065, state.bodyRoll));
 
             state.time = (state.time || 0) + dt;
 
@@ -9395,8 +9500,26 @@
             const engineTremorY = idleTremor + redlineTremor;
             const engineTremorRoll = (idleTremor + redlineTremor) * 0.75;
 
-            // Subtle asphalt expansion joint and road heave
-            const roadHeave = (Math.sin(state.z * 0.14) * 0.005 + Math.sin(state.z * 0.36) * 0.003) * Math.min(1.0, state.speed / 35);
+            // 5b. SUSPENSION REBOUND & ROAD FEEL (Damped Spring-Damper Response)
+            const speedFactor = Math.min(1.0, state.speed / 35);
+            // Road surface profile: undulating asphalt waves + bridge expansion joints + rumble strips
+            const wave1 = Math.sin(state.z * 0.14) * 0.0045;
+            const wave2 = Math.sin(state.z * 0.38) * 0.0025;
+            // Periodic highway slab / expansion joint seams (every 85 meters)
+            const jointPhase = (state.z % 85.0);
+            const jointImpulse = (jointPhase > 0 && jointPhase < 1.4 && state.speed > 25) ? -0.008 * Math.sin((jointPhase / 1.4) * Math.PI) : 0;
+            // Highway shoulder rumble strips on edges (|x| > 6.8m)
+            const onRumbleStrip = Math.abs(state.x) > 6.8 && Math.abs(state.x) <= 8.2;
+            const rumbleStripVibe = (onRumbleStrip && state.speed > 30) ? Math.sin(state.z * 3.2) * 0.006 * Math.min(1.0, state.speed / 45) : 0;
+            const roadSurfaceY = (wave1 + wave2 + jointImpulse + rumbleStripVibe) * speedFactor;
+
+            // 2nd-order suspension spring-damper vertical dynamics
+            const suspSpringK = 135.0;
+            const suspDamperC = 17.5;
+            const suspForce = (roadSurfaceY - (state.suspensionY || 0)) * suspSpringK - (state.suspensionVelocityY || 0) * suspDamperC;
+            state.suspensionVelocityY = (state.suspensionVelocityY || 0) + suspForce * dt;
+            state.suspensionY = (state.suspensionY || 0) + state.suspensionVelocityY * dt;
+            state.suspensionY = Math.max(-0.038, Math.min(0.038, state.suspensionY));
 
             // Glowing hot brake discs under heavy deceleration
             if (keys.brake && state.speed > 70) {
@@ -9457,7 +9580,7 @@
 
             // 6. UPDATE PLAYER CAR 3D MESH
             if (this.playerCar) {
-                this.playerCar.position.set(state.x, (state.downforceY || 0) + engineTremorY + roadHeave, state.z);
+                this.playerCar.position.set(state.x, (state.downforceY || 0) + engineTremorY + (state.suspensionY || 0), state.z);
                 this.playerCar.rotation.set(state.pitchSquat, state.yawAngle, state.bodyRoll + engineTremorRoll);
 
                 // Rotate dedicated procedural wheel spinners around local hub axis
@@ -9470,12 +9593,13 @@
                     });
                 }
 
-                // Smooth front-wheel steering angle
+                // 3. INERTIA & STEERING MOMENTUM (Front wheel visual steering vs chassis yaw delay)
                 if (this.playerSteerWheels && this.playerSteerWheels.length > 0) {
                     const targetSteerAngle = steerInput * 0.32;
+                    state.steerAngle = (state.steerAngle || 0) + (targetSteerAngle - (state.steerAngle || 0)) * Math.min(1.0, 22.0 * dt);
                     this.playerSteerWheels.forEach(w => {
                         const baseY = w.userData.baseRotY || 0;
-                        w.rotation.y = baseY + targetSteerAngle;
+                        w.rotation.y = baseY + state.steerAngle;
                     });
                 }
 
@@ -9494,7 +9618,10 @@
             // 8. HIGHWAY ROAD CHUNKS RECYCLING
             this.updateRoadChunks();
 
-            // 9. SMOKE & SPARK PARTICLES UPDATE
+            // 9. SMOKE & SPARK PARTICLES & MODULAR VFX UPDATE
+            if (this.vfx && typeof this.vfx.update === 'function') {
+                this.vfx.update(dt);
+            }
             this.updateSmokeParticles(dt);
 
             // Spark particles update
@@ -9967,9 +10094,12 @@
             this.camRoll = (this.camRoll || 0) + (targetRoll - (this.camRoll || 0)) * Math.min(1.0, 5.0 * dt);
             this.camera.rotateZ(this.camRoll);
 
-            // 6. Dynamic FOV warp with speed & nitro
+            // 6. Dynamic FOV warp with speed & nitro + high-speed hypersonic expansion (250+ km/h)
             const speedRatio = Math.min(1.0, state.speed / state.maxSpeed);
-            const targetFov = mode.fov + (speedRatio * 14) + (state.isNitroActive ? 7 : 0);
+            let targetFov = mode.fov + (speedRatio * 14) + (state.isNitroActive ? 7 : 0);
+            if (this.vfx && typeof this.vfx.enhanceCameraFOV === 'function') {
+                targetFov = this.vfx.enhanceCameraFOV(targetFov, state);
+            }
             this.camera.fov += (targetFov - this.camera.fov) * Math.min(1.0, 5.0 * dt);
             this.camera.updateProjectionMatrix();
 
@@ -9980,6 +10110,10 @@
         }
 
         spawnDriftSmoke(dt) {
+            if (this.vfx && typeof this.vfx.spawnDriftSmoke === 'function') {
+                this.vfx.spawnDriftSmoke(dt);
+                return;
+            }
             const THREE = this.THREE;
             if (Math.random() < 0.6 && this.smokeParticles.length < 25) {
                 const geo = this.sharedSmokeGeo || new THREE.SphereGeometry(0.24, 6, 6);
@@ -10016,6 +10150,10 @@
         }
 
         spawnSparks(x, y, z, count = 8) {
+            if (this.vfx && typeof this.vfx.spawnSparks === 'function') {
+                this.vfx.spawnSparks(x, y, z, count);
+                return;
+            }
             const THREE = this.THREE;
             const forwardSpeedMps = (this.state.speed || 0) / 3.6;
             const geo = this.sharedSparkGeo || new THREE.BoxGeometry(0.06, 0.06, 0.06);
@@ -10145,6 +10283,10 @@
             if (this._onResize && typeof window !== 'undefined' && typeof window.removeEventListener === 'function') {
                 window.removeEventListener('resize', this._onResize);
             }
+            if (this.vfx) {
+                try { this.vfx.destroy(); } catch (_) {}
+                this.vfx = null;
+            }
             if (this.sharedSparkGeo) { try { this.sharedSparkGeo.dispose(); } catch (_) {} this.sharedSparkGeo = null; }
             if (this.sharedSparkMat) { try { this.sharedSparkMat.dispose(); } catch (_) {} this.sharedSparkMat = null; }
             if (this.sharedSmokeGeo) { try { this.sharedSmokeGeo.dispose(); } catch (_) {} this.sharedSmokeGeo = null; }
@@ -10179,6 +10321,7 @@
         isWebGLAvailable,
         Car3DShowroom,
         Car3DRacingEngine,
+        RaceEffectsManager: RaceEffectsManagerClass,
         buildDetailedCarModel,
         identifyCarModel,
         STATIC_3D_THUMBNAILS,

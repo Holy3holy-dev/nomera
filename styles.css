@@ -1594,9 +1594,9 @@
         }
         #race-3d-play-container .race-header-hud {
             position: absolute !important;
-            top: 8px !important;
-            left: 12px !important;
-            right: 12px !important;
+            top: max(8px, env(safe-area-inset-top)) !important;
+            left: max(12px, env(safe-area-inset-left)) !important;
+            right: max(12px, env(safe-area-inset-right)) !important;
             z-index: 30 !important;
             max-width: none !important;
             width: auto !important;
@@ -1624,30 +1624,40 @@
             font-size: 11px !important;
             line-height: 1.2 !important;
             white-space: nowrap !important;
-            background: rgba(10, 15, 29, 0.82) !important;
-            backdrop-filter: blur(8px) !important;
-            border: 1px solid rgba(255, 255, 255, 0.18) !important;
-            border-radius: 8px !important;
+            background: rgba(10, 15, 29, 0.68) !important;
+            backdrop-filter: blur(12px) !important;
+            -webkit-backdrop-filter: blur(12px) !important;
+            border: 1px solid rgba(255, 255, 255, 0.16) !important;
+            border-radius: 999px !important;
             color: #fff !important;
             cursor: pointer !important;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35) !important;
-            transition: background 0.15s ease, border-color 0.15s ease !important;
+            transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease !important;
         }
         #race-3d-play-container .race-hud-action-btn:hover {
-            background: rgba(30, 41, 59, 0.95) !important;
+            background: rgba(30, 41, 59, 0.9) !important;
             border-color: rgba(255, 255, 255, 0.35) !important;
+            transform: translateY(-1px);
         }
         #race-3d-play-container .race-hud-close-btn {
             padding: 5px 12px !important;
             font-size: 11.5px !important;
             line-height: 1.2 !important;
             white-space: nowrap !important;
-            border-radius: 8px !important;
-            backdrop-filter: blur(8px) !important;
-            background: rgba(239, 68, 68, 0.28) !important;
-            border: 1px solid rgba(239, 68, 68, 0.6) !important;
+            border-radius: 999px !important;
+            backdrop-filter: blur(12px) !important;
+            -webkit-backdrop-filter: blur(12px) !important;
+            background: rgba(239, 68, 68, 0.24) !important;
+            border: 1px solid rgba(239, 68, 68, 0.55) !important;
             color: #fff !important;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35) !important;
+            cursor: pointer !important;
+            transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease !important;
+        }
+        #race-3d-play-container .race-hud-close-btn:hover {
+            background: rgba(239, 68, 68, 0.38) !important;
+            border-color: rgba(239, 68, 68, 0.8) !important;
+            transform: translateY(-1px);
         }
         .race-badge-shield {
             background: #3b82f6;
@@ -1692,7 +1702,7 @@
             padding-bottom: max(14px, env(safe-area-inset-bottom));
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 8px;
             user-select: none;
             -webkit-user-select: none;
             -webkit-touch-callout: none;
@@ -1702,27 +1712,29 @@
             display: flex;
             justify-content: space-between;
             align-items: stretch;
-            gap: 12px;
+            gap: 10px;
             width: 100%;
         }
         .touch-cluster {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 8px;
+            gap: 6px;
             flex: 1;
         }
         .touch-cluster-steer {
             position: relative;
-            background: rgba(255, 255, 255, 0.05);
+            background: rgba(10, 15, 29, 0.45);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
             border: 1px solid rgba(255, 255, 255, 0.14);
-            border-radius: 16px;
+            border-radius: 18px;
             padding: 4px;
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 4px;
             touch-action: none;
             overflow: hidden;
-            box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.4);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.12);
         }
         .touch-steer-divider {
             position: absolute;
@@ -1735,57 +1747,73 @@
             pointer-events: none;
             z-index: 2;
         }
+        .touch-cluster-pedals {
+            position: relative;
+            background: rgba(10, 15, 29, 0.45);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            border-radius: 18px;
+            padding: 4px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4px;
+            touch-action: none;
+            overflow: hidden;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+        }
         .touch-btn {
             position: relative;
-            background: linear-gradient(145deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.03));
-            border: 1px solid rgba(255, 255, 255, 0.14);
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02));
+            border: 1px solid rgba(255, 255, 255, 0.1);
             color: #fff;
             font-weight: 800;
-            padding: 10px 6px;
-            min-height: 58px;
+            padding: 8px 4px;
+            min-height: 54px;
             border-radius: 14px;
             cursor: pointer;
             user-select: none;
             -webkit-user-select: none;
+            -webkit-touch-callout: none;
             touch-action: none;
-            font-size: 13px;
+            font-size: 12px;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             gap: 2px;
-            transition: transform 0.06s ease, background 0.1s ease, box-shadow 0.1s ease, border-color 0.1s ease;
-            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+            transition: transform 0.08s cubic-bezier(0.2, 0.8, 0.2, 1), background 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.1);
         }
         .touch-btn:active, .touch-btn.pressed {
-            transform: scale(0.95);
+            transform: scale(0.94);
             box-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
         }
         .touch-steer {
-            background: linear-gradient(145deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.02));
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.01));
             border: 1px solid rgba(255, 255, 255, 0.08);
             border-radius: 12px;
-            min-height: 56px;
+            min-height: 54px;
         }
         .touch-steer .touch-arrow {
-            font-size: 20px;
+            font-size: 19px;
             line-height: 1;
         }
         .touch-steer .touch-sublabel {
-            font-size: 9px;
+            font-size: 8.5px;
             letter-spacing: 0.8px;
             color: rgba(255, 255, 255, 0.7);
         }
         .touch-steer:active, .touch-steer.pressed {
-            background: linear-gradient(145deg, rgba(56, 189, 248, 0.4), rgba(14, 165, 233, 0.22));
-            border-color: rgba(56, 189, 248, 0.7);
+            background: linear-gradient(145deg, rgba(56, 189, 248, 0.45), rgba(14, 165, 233, 0.28));
+            border-color: rgba(56, 189, 248, 0.8);
             color: #fff;
-            box-shadow: 0 0 18px rgba(56, 189, 248, 0.6), inset 0 0 10px rgba(56, 189, 248, 0.3);
-            transform: scale(0.96);
+            box-shadow: 0 0 20px rgba(56, 189, 248, 0.65), inset 0 0 10px rgba(56, 189, 248, 0.35);
+            transform: scale(0.94);
         }
         .touch-brake {
-            background: linear-gradient(145deg, rgba(239, 68, 68, 0.35), rgba(185, 28, 28, 0.18));
-            border-color: rgba(239, 68, 68, 0.6);
+            background: linear-gradient(145deg, rgba(239, 68, 68, 0.28), rgba(185, 28, 28, 0.14));
+            border-color: rgba(239, 68, 68, 0.45);
             color: #fca5a5;
         }
         .touch-brake .touch-icon {
@@ -1801,11 +1829,12 @@
             background: linear-gradient(145deg, #ef4444, #b91c1c);
             color: #fff;
             border-color: #f87171;
-            box-shadow: 0 0 20px rgba(239, 68, 68, 0.7);
+            box-shadow: 0 0 22px rgba(239, 68, 68, 0.75), inset 0 0 10px rgba(255, 255, 255, 0.3);
+            transform: scale(0.94);
         }
         .touch-gas {
-            background: linear-gradient(145deg, rgba(16, 185, 129, 0.38), rgba(5, 150, 105, 0.2));
-            border-color: rgba(16, 185, 129, 0.65);
+            background: linear-gradient(145deg, rgba(16, 185, 129, 0.28), rgba(5, 150, 105, 0.14));
+            border-color: rgba(16, 185, 129, 0.5);
             color: #6ee7b7;
         }
         .touch-gas .touch-icon {
@@ -1813,7 +1842,7 @@
             line-height: 1;
         }
         .touch-gas .touch-pedal-label {
-            font-size: 10px;
+            font-size: 9.5px;
             letter-spacing: 0.8px;
             font-weight: 900;
         }
@@ -1821,7 +1850,8 @@
             background: linear-gradient(145deg, #10b981, #047857);
             color: #fff;
             border-color: #34d399;
-            box-shadow: 0 0 22px rgba(16, 185, 129, 0.8);
+            box-shadow: 0 0 24px rgba(16, 185, 129, 0.8), inset 0 0 10px rgba(255, 255, 255, 0.3);
+            transform: scale(0.94);
         }
         .touch-actions-bar {
             display: grid;
@@ -3460,6 +3490,24 @@ body.race-active .main-container {
     height: 100% !important;
 }
 
+/* High-Speed Dynamic Hypersonic Speed Streak & Blur Vignette */
+.race-3d-speed-vignette {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 5;
+    opacity: 0;
+    background: radial-gradient(circle at 50% 55%, transparent 38%, rgba(3, 105, 161, 0.08) 65%, rgba(2, 6, 23, 0.70) 100%);
+    box-shadow: inset 0 0 90px rgba(56, 189, 248, 0.28);
+    mix-blend-mode: screen;
+    transition: opacity 0.1s ease-out;
+}
+
+.race-3d-speed-vignette.hypersonic {
+    background: radial-gradient(circle at 50% 55%, transparent 28%, rgba(14, 165, 233, 0.18) 55%, rgba(8, 14, 30, 0.88) 100%);
+    box-shadow: inset 0 0 160px rgba(56, 189, 248, 0.55);
+}
+
 /* 3D Modern Sci-Fi / Street HUD Overlay */
 .race-3d-hud-overlay {
     position: absolute;
@@ -3472,35 +3520,53 @@ body.race-active .main-container {
     z-index: 10;
 }
 
-/* Top bar: Stats */
+/* Top bar: Stats Floating Micro-Bar in the Sky */
 .race-3d-hud-top {
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
     align-items: center;
-    gap: 8px;
+    gap: 0;
     flex-wrap: nowrap;
+    background: rgba(10, 15, 29, 0.72);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 999px;
+    padding: 3px 8px;
+    width: fit-content;
+    margin: 0 auto;
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
 .race-3d-hud-stat {
-    background: rgba(10, 15, 29, 0.78);
-    backdrop-filter: blur(8px);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: 10px;
-    padding: 6px 10px;
+    background: transparent;
+    border: none;
+    padding: 3px 10px;
     display: flex;
     align-items: center;
-    gap: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    gap: 6px;
+    box-shadow: none;
     min-width: 0;
-    flex: 1 1 0;
+    position: relative;
+}
+
+.race-3d-hud-stat:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 20%;
+    bottom: 20%;
+    width: 1px;
+    background: rgba(255, 255, 255, 0.14);
 }
 
 .race-3d-stat-icon {
-    font-size: 16px;
+    font-size: 14px;
+    line-height: 1;
 }
 
 .race-3d-stat-lbl {
-    font-size: 9px;
+    font-size: 7.5px;
     font-weight: 700;
     color: var(--text-dim, #94a3b8);
     letter-spacing: 0.5px;
@@ -3509,11 +3575,12 @@ body.race-active .main-container {
 }
 
 .race-3d-stat-val {
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 800;
     color: #fff;
     font-variant-numeric: tabular-nums;
-    margin-top: 2px;
+    margin-top: 1px;
+    white-space: nowrap;
 }
 
 /* 🚨 3D Police Pursuit & Wanted Level Box (Top Screen Placement - positioned safely under top stats) */
@@ -3524,13 +3591,14 @@ body.race-active .main-container {
     transform: translateX(-50%);
     margin: 0;
     background: rgba(10, 15, 29, 0.92);
-    backdrop-filter: blur(8px);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
     border: 1.5px solid rgba(239, 68, 68, 0.85);
-    border-radius: 12px;
-    padding: 4px 14px;
+    border-radius: 999px;
+    padding: 3px 14px;
     width: auto;
-    min-width: 170px;
-    max-width: 260px;
+    min-width: 160px;
+    max-width: 250px;
     box-shadow: 0 4px 18px rgba(239, 68, 68, 0.4), 0 0 12px rgba(59, 130, 246, 0.3);
     animation: pursuitPulse 1.2s infinite alternate;
     pointer-events: none;
@@ -3553,18 +3621,18 @@ body.race-active .main-container {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
 }
 
 .race-3d-wanted-stars {
-    font-size: 13px;
-    letter-spacing: 2px;
+    font-size: 11px;
+    letter-spacing: 1.5px;
     text-shadow: 0 0 6px rgba(251, 191, 36, 0.95);
     line-height: 1;
 }
 
 .race-3d-pursuit-status {
-    font-size: 10px;
+    font-size: 9px;
     font-weight: 800;
     color: #ef4444;
     text-transform: uppercase;
@@ -3589,7 +3657,7 @@ body.race-active .main-container {
     box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
 }
 
-/* Bottom bar: Speedometer + Nitro */
+/* Bottom bar: Minimalist Telemetry HUD */
 .race-3d-hud-bottom {
     display: flex;
     justify-content: space-between;
@@ -3597,23 +3665,31 @@ body.race-active .main-container {
     gap: 12px;
 }
 
-/* Digital Speedometer Box */
+/* Digital Speedometer & Telemetry Cluster Box */
 .race-3d-speedo-box {
-    background: rgba(10, 15, 29, 0.85);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    border-radius: 14px;
-    padding: 8px 14px;
+    background: rgba(10, 15, 29, 0.78);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 16px;
+    padding: 8px 12px;
     display: flex;
     flex-direction: column;
     gap: 4px;
-    min-width: 140px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+    min-width: 130px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.12);
 }
 
 .race-3d-speedo-digital {
     display: flex;
     align-items: baseline;
+    justify-content: space-between;
+    gap: 6px;
+}
+
+.race-3d-speed-meta {
+    display: flex;
+    align-items: center;
     gap: 5px;
 }
 
@@ -3623,60 +3699,57 @@ body.race-active .main-container {
     color: #fff;
     font-family: 'Inter', system-ui, sans-serif;
     line-height: 1;
+    letter-spacing: -1px;
     font-variant-numeric: tabular-nums;
-    text-shadow: 0 0 12px rgba(255, 255, 255, 0.4);
+    text-shadow: 0 0 16px rgba(56, 189, 248, 0.45);
 }
 
 .race-3d-speed-unit {
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 800;
     color: #38bdf8;
     letter-spacing: 0.5px;
 }
 
-.race-3d-gear-box {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
 .race-3d-gear-badge {
     background: linear-gradient(135deg, #ef4444, #b91c1c);
     color: #fff;
-    font-size: 11px;
+    font-size: 9.5px;
     font-weight: 900;
-    padding: 2px 7px;
+    padding: 2px 6px;
     border-radius: 5px;
     letter-spacing: 0.5px;
+    box-shadow: 0 0 8px rgba(239, 68, 68, 0.4);
 }
 
 .race-3d-tach-bar-wrap {
-    flex: 1;
-    height: 6px;
-    background: rgba(255, 255, 255, 0.12);
+    width: 100%;
+    height: 5px;
+    background: rgba(255, 255, 255, 0.1);
     border-radius: 999px;
     overflow: hidden;
 }
 
 .race-3d-tach-fill {
     height: 100%;
-    background: linear-gradient(90deg, #10b981, #f59e0b, #ef4444);
+    background: linear-gradient(90deg, #10b981 0%, #06b6d4 40%, #f59e0b 75%, #ef4444 100%);
     border-radius: 999px;
     transition: width 0.08s ease-out;
+    box-shadow: 0 0 6px rgba(16, 185, 129, 0.4);
 }
 
-/* Nitro Box */
+/* Integrated Compact Nitro Gauge */
 .race-3d-nitro-box {
-    background: rgba(10, 15, 29, 0.85);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(0, 240, 255, 0.3);
-    border-radius: 14px;
-    padding: 8px 14px;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    padding: 0;
     display: flex;
     flex-direction: column;
-    gap: 6px;
-    min-width: 140px;
-    box-shadow: 0 8px 24px rgba(0, 240, 255, 0.15);
+    gap: 3px;
+    min-width: 0;
+    box-shadow: none;
+    margin-top: 2px;
 }
 
 .race-3d-nitro-header {
@@ -3685,20 +3758,35 @@ body.race-active .main-container {
     align-items: center;
 }
 
+.race-3d-nitro-title,
+.race-3d-nitro-header span:first-child {
+    font-size: 8.5px;
+    font-weight: 800;
+    color: #00f0ff;
+    letter-spacing: 0.5px;
+}
+
+.race-3d-nitro-pct,
+.race-3d-nitro-header span:last-child {
+    font-size: 9.5px;
+    font-weight: 800;
+    color: #fff;
+    font-variant-numeric: tabular-nums;
+}
+
 .race-3d-nitro-bar-wrap {
     width: 100%;
-    height: 8px;
-    background: rgba(255, 255, 255, 0.12);
+    height: 4px;
+    background: rgba(255, 255, 255, 0.1);
     border-radius: 999px;
     overflow: hidden;
-    padding: 1px;
 }
 
 .race-3d-nitro-fill {
     height: 100%;
     background: linear-gradient(90deg, #00f0ff, #3b82f6);
     border-radius: 999px;
-    box-shadow: 0 0 10px rgba(0, 240, 255, 0.8);
+    box-shadow: 0 0 8px rgba(0, 240, 255, 0.7);
     transition: width 0.08s ease-out;
 }
 
@@ -3831,18 +3919,23 @@ body.race-active .race-3d-viewport-wrapper {
     body.race-active .race-hud-action-btn {
         padding: 5px 8px !important;
         font-size: 11px !important;
-        border-radius: 8px !important;
-        background: rgba(10, 15, 29, 0.85) !important;
-        backdrop-filter: blur(8px) !important;
-        border: 1px solid rgba(255, 255, 255, 0.2) !important;
+        border-radius: 999px !important;
+        background: rgba(10, 15, 29, 0.72) !important;
+        backdrop-filter: blur(10px) !important;
+        -webkit-backdrop-filter: blur(10px) !important;
+        border: 1px solid rgba(255, 255, 255, 0.16) !important;
     }
     body.race-active .race-hud-close-btn {
         padding: 5px 10px !important;
         font-size: 11px !important;
-        border-radius: 8px !important;
-        background: rgba(239, 68, 68, 0.35) !important;
-        backdrop-filter: blur(8px) !important;
+        border-radius: 999px !important;
+        background: rgba(239, 68, 68, 0.28) !important;
+        backdrop-filter: blur(10px) !important;
+        -webkit-backdrop-filter: blur(10px) !important;
         border: 1px solid rgba(239, 68, 68, 0.6) !important;
+    }
+    body.race-active .race-hud-btn-lbl {
+        display: none !important;
     }
     body.race-active .race-3d-hud-overlay {
         position: absolute !important;
@@ -3860,82 +3953,155 @@ body.race-active .race-3d-viewport-wrapper {
         flex-direction: row !important;
         align-items: center !important;
         justify-content: center !important;
-        gap: 6px !important;
+        gap: 0 !important;
         z-index: 28 !important;
         pointer-events: none !important;
         flex-wrap: nowrap !important;
         margin: 0 !important;
-        width: calc(100vw - 20px) !important;
-        max-width: 440px !important;
+        width: auto !important;
+        max-width: calc(100vw - 20px) !important;
+        background: rgba(10, 15, 29, 0.72) !important;
+        backdrop-filter: blur(14px) !important;
+        -webkit-backdrop-filter: blur(14px) !important;
+        border: 1px solid rgba(255, 255, 255, 0.14) !important;
+        border-radius: 999px !important;
+        padding: 3px 6px !important;
+        box-shadow: 0 4px 18px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
     }
     body.race-active .race-3d-hud-stat {
-        flex: 1 1 0 !important;
+        flex: 0 0 auto !important;
         min-width: 0 !important;
-        padding: 3px 6px !important;
-        gap: 4px !important;
-        border-radius: 8px !important;
-        background: rgba(10, 15, 29, 0.85) !important;
-        backdrop-filter: blur(8px) !important;
-        border: 1px solid rgba(255, 255, 255, 0.15) !important;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5) !important;
+        padding: 2px 8px !important;
+        gap: 5px !important;
+        border-radius: 0 !important;
+        background: transparent !important;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+        border: none !important;
+        box-shadow: none !important;
+        position: relative !important;
+        display: flex !important;
+        align-items: center !important;
+    }
+    body.race-active .race-3d-hud-stat:not(:last-child)::after {
+        content: '' !important;
+        position: absolute !important;
+        right: 0 !important;
+        top: 20% !important;
+        bottom: 20% !important;
+        width: 1px !important;
+        background: rgba(255, 255, 255, 0.14) !important;
     }
     body.race-active .race-3d-stat-icon {
         font-size: 12px !important;
     }
     body.race-active .race-3d-stat-lbl {
-        font-size: 7.5px !important;
+        font-size: 7px !important;
         letter-spacing: 0.3px !important;
+        color: rgba(255, 255, 255, 0.5) !important;
+        font-weight: 700 !important;
+        line-height: 1 !important;
     }
     body.race-active .race-3d-stat-val {
-        font-size: 10px !important;
+        font-size: 10.5px !important;
         font-weight: 800 !important;
+        color: #fff !important;
+        margin-top: 1px !important;
+        font-variant-numeric: tabular-nums !important;
+        white-space: nowrap !important;
     }
     body.race-active .race-3d-pursuit-box {
-        top: max(88px, calc(env(safe-area-inset-top) + 80px)) !important;
-        padding: 3px 10px !important;
-        min-width: 150px !important;
-        max-width: 210px !important;
+        top: max(80px, calc(env(safe-area-inset-top) + 74px)) !important;
+        padding: 2px 10px !important;
+        min-width: 140px !important;
+        max-width: 200px !important;
+        border-radius: 999px !important;
         z-index: 35 !important;
     }
     body.race-active .race-3d-hud-bottom {
         position: absolute !important;
-        bottom: max(68px, calc(env(safe-area-inset-bottom) + 64px)) !important;
+        bottom: max(124px, calc(env(safe-area-inset-bottom) + 118px)) !important;
         left: max(10px, env(safe-area-inset-left)) !important;
-        right: max(10px, env(safe-area-inset-right)) !important;
+        right: auto !important;
         display: flex !important;
-        justify-content: space-between !important;
-        align-items: flex-end !important;
+        flex-direction: column !important;
+        align-items: flex-start !important;
         pointer-events: none !important;
         z-index: 22 !important;
         padding: 0 !important;
+        margin: 0 !important;
     }
-    body.race-active .race-3d-speedo-box,
-    body.race-active .race-3d-nitro-box {
-        min-width: 90px !important;
-        max-width: 115px !important;
-        padding: 4px 8px !important;
-        border-radius: 10px !important;
-        background: rgba(10, 15, 29, 0.85) !important;
-        backdrop-filter: blur(8px) !important;
-        border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    body.race-active .race-3d-speedo-box {
+        min-width: 108px !important;
+        max-width: 122px !important;
+        width: 116px !important;
+        padding: 5px 8px !important;
+        border-radius: 14px !important;
+        background: rgba(10, 15, 29, 0.72) !important;
+        backdrop-filter: blur(12px) !important;
+        -webkit-backdrop-filter: blur(12px) !important;
+        border: 1px solid rgba(255, 255, 255, 0.14) !important;
+        box-shadow: 0 4px 18px rgba(0, 0, 0, 0.45) !important;
         gap: 2px !important;
         pointer-events: auto !important;
     }
+    body.race-active .race-3d-speedo-digital {
+        display: flex !important;
+        align-items: baseline !important;
+        justify-content: space-between !important;
+        gap: 4px !important;
+    }
+    body.race-active .race-3d-speed-meta {
+        display: flex !important;
+        align-items: center !important;
+        gap: 4px !important;
+    }
     body.race-active .race-3d-speed-num {
-        font-size: 20px !important;
+        font-size: 24px !important;
+        font-weight: 900 !important;
+        letter-spacing: -0.5px !important;
+        line-height: 1 !important;
     }
     body.race-active .race-3d-gear-badge {
-        font-size: 8px !important;
+        font-size: 7.5px !important;
         padding: 1px 4px !important;
+        border-radius: 4px !important;
     }
     body.race-active .race-3d-speed-unit {
-        font-size: 8px !important;
+        font-size: 7.5px !important;
     }
+    body.race-active .race-3d-tach-bar-wrap {
+        height: 3.5px !important;
+        margin: 1px 0 !important;
+    }
+    body.race-active .race-3d-nitro-box {
+        min-width: 0 !important;
+        max-width: 100% !important;
+        width: 100% !important;
+        padding: 0 !important;
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        gap: 1.5px !important;
+        margin-top: 1px !important;
+    }
+    body.race-active .race-3d-nitro-header {
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+    }
+    body.race-active .race-3d-nitro-title,
     body.race-active .race-3d-nitro-header span:first-child {
-        font-size: 8.5px !important;
+        font-size: 7.5px !important;
+        color: #00f0ff !important;
     }
+    body.race-active .race-3d-nitro-pct,
     body.race-active .race-3d-nitro-header span:last-child {
-        font-size: 9px !important;
+        font-size: 8px !important;
+        color: #fff !important;
+    }
+    body.race-active .race-3d-nitro-bar-wrap {
+        height: 3px !important;
     }
     body.race-active .race-touch-controls {
         position: absolute !important;
@@ -3945,44 +4111,54 @@ body.race-active .race-3d-viewport-wrapper {
         width: 100% !important;
         max-width: 100% !important;
         margin: 0 !important;
-        padding-bottom: max(6px, env(safe-area-inset-bottom)) !important;
+        padding: 0 max(8px, env(safe-area-inset-right)) max(6px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left)) !important;
         pointer-events: none !important;
         z-index: 25 !important;
+        gap: 6px !important;
     }
-    .touch-btn {
-        min-height: 50px;
-        padding: 8px 4px;
-        font-size: 12px;
+    body.race-active .touch-main-gamepad {
+        gap: 8px !important;
+        pointer-events: none !important;
     }
-    .touch-steer {
-        min-height: 50px;
+    body.race-active .touch-cluster-steer,
+    body.race-active .touch-cluster-pedals {
+        pointer-events: auto !important;
     }
-    .touch-steer .touch-arrow {
+    body.race-active .touch-actions-bar {
+        pointer-events: auto !important;
+        gap: 5px !important;
+        margin: 0 !important;
+    }
+    body.race-active .touch-btn {
+        min-height: 48px;
+        padding: 6px 3px;
+        font-size: 11px;
+    }
+    body.race-active .touch-steer {
+        min-height: 48px;
+    }
+    body.race-active .touch-steer .touch-arrow {
         font-size: 18px;
     }
-    .touch-actions-bar {
-        gap: 5px;
-        margin-bottom: max(4px, env(safe-area-inset-bottom));
+    body.race-active .touch-actions-bar .touch-btn {
+        min-height: 40px;
+        padding: 5px 2px;
+        font-size: 9.5px;
     }
-    .touch-actions-bar .touch-btn {
-        min-height: 42px;
-        padding: 6px 2px;
-        font-size: 10px;
+    body.race-active .touch-actions-bar .touch-nitro {
+        padding: 5px 2px;
+        gap: 2px;
     }
-    .touch-actions-bar .touch-nitro {
-        padding: 6px 3px;
-        gap: 3px;
+    body.race-active .touch-actions-bar .touch-nitro .nitro-fire-icon {
+        font-size: 12px;
     }
-    .touch-actions-bar .touch-nitro .nitro-fire-icon {
-        font-size: 13px;
-    }
-    .touch-actions-bar .touch-nitro .touch-action-label {
-        font-size: 10px;
+    body.race-active .touch-actions-bar .touch-nitro .touch-action-label {
+        font-size: 9.5px;
         letter-spacing: 0.2px;
     }
-    .touch-actions-bar .touch-nitro .nitro-badge {
-        font-size: 9px;
-        padding: 1px 4px;
+    body.race-active .touch-actions-bar .touch-nitro .nitro-badge {
+        font-size: 8.5px;
+        padding: 1px 3px;
         margin-left: 2px;
     }
 }
@@ -3990,6 +4166,37 @@ body.race-active .race-3d-viewport-wrapper {
 @media screen and (max-width: 440px) {
     .race-hud-btn-lbl {
         display: none !important;
+    }
+}
+
+@media screen and (max-width: 360px) {
+    body.race-active .race-3d-hud-top {
+        padding: 2px 4px !important;
+    }
+    body.race-active .race-3d-hud-stat {
+        padding: 1px 4px !important;
+        gap: 3px !important;
+    }
+    body.race-active .race-3d-stat-lbl {
+        display: none !important;
+    }
+    body.race-active .race-3d-stat-val {
+        font-size: 9.5px !important;
+    }
+    body.race-active .race-3d-speedo-box {
+        width: 104px !important;
+        min-width: 104px !important;
+    }
+    body.race-active .race-3d-speed-num {
+        font-size: 20px !important;
+    }
+    body.race-active .touch-btn {
+        min-height: 44px !important;
+        padding: 4px 2px !important;
+    }
+    body.race-active .touch-actions-bar .touch-btn {
+        min-height: 36px !important;
+        padding: 3px 2px !important;
     }
 }
 

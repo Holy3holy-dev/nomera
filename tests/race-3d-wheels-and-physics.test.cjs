@@ -731,6 +731,129 @@ test('3D license plate system: formatPlateComponents, createLicensePlate, applyL
     engine.destroy();
 });
 
+test('Vehicle Physics: 1. Weight Transfer & Body Dynamics (Chassis pitch dive/squat and 2nd-order roll spring-damper)', () => {
+    const { THREE, Car3DManager } = setupTestContext();
+    const mockContainer = { clientWidth: 800, clientHeight: 500, style: {}, appendChild: () => {}, removeChild: () => {} };
+    const engine = new Car3DManager.Car3DRacingEngine(mockContainer, {});
+
+    engine.start({
+        carName: 'Ferrari SF90 Stradale',
+        performance: { speed: 380, accel: 80, handling: 6.5 }
+    });
+
+    // 1. Acceleration squat test
+    engine.state.speed = 80;
+    engine.keys.gas = true;
+    for (let i = 0; i < 20; i++) engine.update(0.02);
+
+    assert.ok(engine.state.pitchSquat < -0.02, `Hard acceleration must induce realistic rear squat (pitchSquat < -0.02), got ${engine.state.pitchSquat}`);
+    assert.ok(engine.state.pitchSquat >= -0.065, `Suspension squat must be physically clamped >= -0.065, got ${engine.state.pitchSquat}`);
+
+    // 2. Heavy braking dive test
+    engine.keys.gas = false;
+    engine.keys.brake = true;
+    for (let i = 0; i < 20; i++) engine.update(0.02);
+
+    assert.ok(engine.state.pitchSquat > 0.03, `Heavy braking must induce realistic nose dive (pitchSquat > 0.03), got ${engine.state.pitchSquat}`);
+    assert.ok(engine.state.pitchSquat <= 0.075, `Suspension dive must be physically clamped <= 0.075, got ${engine.state.pitchSquat}`);
+
+    // 3. Dynamic roll 2nd-order spring-damper response
+    engine.keys.brake = false;
+    engine.state.speed = 130;
+    engine.keys.right = true;
+    for (let i = 0; i < 15; i++) engine.update(0.03);
+
+    assert.ok(Math.abs(engine.state.bodyRoll) > 0.02, `Cornering at 130 km/h must lean chassis outward with body roll, got ${engine.state.bodyRoll}`);
+    assert.ok(Math.abs(engine.state.bodyRoll) <= 0.065, `Body roll must be smoothly clamped <= 0.065 rad, got ${engine.state.bodyRoll}`);
+    assert.notEqual(engine.state.rollVelocity, undefined, 'rollVelocity must be tracked in 2nd-order spring-damper');
+
+    // Settle back to straight: roll decays toward 0
+    engine.keys.right = false;
+    for (let i = 0; i < 30; i++) engine.update(0.03);
+    assert.ok(Math.abs(engine.state.bodyRoll) < 0.015, `Body roll must settle level when driving straight, got ${engine.state.bodyRoll}`);
+
+    engine.destroy();
+});
+
+test('Vehicle Physics: 2 & 3. Pacejka Tire Grip, Steering Momentum & High-Speed Downforce', () => {
+    const { THREE, Car3DManager } = setupTestContext();
+    const mockContainer = { clientWidth: 800, clientHeight: 500, style: {}, appendChild: () => {}, removeChild: () => {} };
+    const engine = new Car3DManager.Car3DRacingEngine(mockContainer, {});
+
+    engine.start({
+        carName: 'Porsche 911 GT3 RS',
+        performance: { speed: 320, handling: 6.8 }
+    });
+
+    // 1. Steering momentum & wheel angular velocity vs chassis yaw
+    engine.state.speed = 100;
+    engine.keys.left = true;
+    engine.update(0.016); // 1 frame at 60 FPS (16ms)
+
+    assert.ok(engine.state.steerAngle > 0, `Front wheels must begin progressive steering turn, got ${engine.state.steerAngle}`);
+    assert.ok(engine.state.steerAngle <= 0.32, `Steer angle must be bounded by max rack travel, got ${engine.state.steerAngle}`);
+
+    // Progressive build up over subsequent frames
+    for (let i = 0; i < 10; i++) engine.update(0.02);
+    assert.ok(engine.state.steerAngle > 0.25, `Steer angle should progressively reach full deflection, got ${engine.state.steerAngle}`);
+    assert.ok(engine.state.yawAngle > 0, `Chassis yaw must follow turn direction, got ${engine.state.yawAngle}`);
+
+    // 2. High-speed aerodynamic downforce at > 200 km/h
+    engine.keys.left = false;
+    engine.state.vx = 0;
+    engine.state.speed = 260; // Hypercar speed > 200 km/h
+    engine.update(0.02);
+
+    assert.ok(engine.state.downforceY < -0.01, `Speeds > 200 km/h must produce realistic downforce (downforceY < -0.01), got ${engine.state.downforceY}`);
+
+    // Downforce stabilizes lateral twitchiness when driving straight
+    engine.state.vx = 1.0; // slight disturbance
+    for (let i = 0; i < 15; i++) engine.update(0.02);
+    assert.ok(Math.abs(engine.state.vx) < 0.35, `Rear downforce at 260 km/h must stabilize lateral disturbance, got ${engine.state.vx}`);
+
+    engine.destroy();
+});
+
+test('Vehicle Physics: 5 & 6. Road Rebound Dynamics & Tangential Guardrail Sliding Deflection', () => {
+    const { THREE, Car3DManager } = setupTestContext();
+    let sparksSpawned = 0;
+    let soundEvents = [];
+    const mockContainer = { clientWidth: 800, clientHeight: 500, style: {}, appendChild: () => {}, removeChild: () => {} };
+    const engine = new Car3DManager.Car3DRacingEngine(mockContainer, {
+        onSound: (snd) => soundEvents.push(snd)
+    });
+
+    engine.start({
+        carName: 'BMW M5 F90',
+        performance: { speed: 305, handling: 6.0 }
+    });
+
+    // 1. Suspension vertical dynamics (suspensionY & suspensionVelocityY)
+    engine.state.speed = 120;
+    for (let i = 0; i < 20; i++) engine.update(0.03);
+
+    assert.notEqual(engine.state.suspensionY, undefined, 'Engine must track suspensionY displacement');
+    assert.notEqual(engine.state.suspensionVelocityY, undefined, 'Engine must track suspensionVelocityY');
+    assert.ok(Math.abs(engine.state.suspensionY) <= 0.038, `Suspension travel must be realistically clamped <= 0.038m, got ${engine.state.suspensionY}`);
+
+    // 2. Tangential Guardrail Sliding: no dead-stop, smooth velocity deflection
+    engine.state.x = 8.18;
+    engine.state.vx = 4.0; // Moving into right guardrail
+    engine.state.speed = 180;
+
+    const initialSpeed = engine.state.speed;
+    engine.update(0.03); // Contact guardrail
+
+    assert.equal(engine.state.x, 8.2, 'Car must be bound to guardrail limit');
+    assert.ok(engine.state.vx < 0, `Velocity must deflect softly away from guardrail into road (vx < 0), got ${engine.state.vx}`);
+    // Speed must NOT drop dead by 25% in one frame: tangential sliding preserves forward momentum
+    assert.ok(engine.state.speed > initialSpeed - 5, `Tangential sliding must bleed speed progressively, not dead-stop (speed: ${engine.state.speed})`);
+    assert.ok(engine.state.speed >= 150, `Car must maintain highway momentum while sliding, got ${engine.state.speed}`);
+    assert.ok(soundEvents.includes('scrape'), 'Guardrail contact must trigger scrape sound');
+
+    engine.destroy();
+});
+
 
 
 
