@@ -9458,9 +9458,20 @@
             this._destroyed = false;
             this.engineTremorRoll = 0;
             this.onGameOver = options.onGameOver || null;
+            this.onPopup = options.onPopup || null;
             this.animFrameId = null;
             this.lastTime = 0;
             this._loopBound = this.loop.bind(this);
+            this.lightningTimer = 4.5;
+            this.lightningFlash = 0;
+            this.nearMissCount = 0;
+            this.shashkiCombo = 0;
+            this.shashkiComboTimer = 0;
+            this.earnedCash = 0;
+            this.cameraShake = 0;
+            this.pitchAngle = 0;
+            this.rollAngle = 0;
+            this.weatherGrip = 1.0;
 
             // Camera Modes:
             // 0: Dynamic Chase (default 3rd-person behind & above car)
@@ -9528,21 +9539,29 @@
                 driftDuration: 0,
                 isDrifting: false,
                 isNitroActive: false,
+                isDrafting: false,
+                slipstreamFactor: 0,
                 nitroLevel: 100, // 0 - 100%
                 nitroTimer: 0,
                 overtakesCount: 0,
                 overtakeCombo: 0,
                 overtakeComboTimer: 0,
+                nearMissCount: 0,
+                shashkiCombo: 0,
+                shashkiComboTimer: 0,
                 damageTaken: 0,
                 bodyRoll: 0,
+                rollAngle: 0,
                 rollVelocity: 0,
                 pitchSquat: 0,
+                pitchAngle: 0,
                 pitchVelocity: 0,
                 yawAngle: 0,
                 yawVelocity: 0,
                 steerAngle: 0,
                 suspensionY: 0,
                 suspensionVelocityY: 0,
+                weatherGrip: 1.0,
                 scrapeTimer: 0,
                 sguTimer: 0,
                 sguActive: false,
@@ -9666,6 +9685,7 @@
                     name: 'Ясный день',
                     icon: '☀️',
                     bgColor: 0x38bdf8,
+                    horizonGlowColor: 0xbae6fd,
                     fogDensity: 0.0035,
                     ambientColor: 0xfff7ed,
                     ambientIntensity: 0.85,
@@ -9677,7 +9697,12 @@
                     asphaltMetalness: 0.12,
                     grassColor: 0x15803d,
                     treeColor: 0x064e3b,
+                    curbRedColor: 0xdc2626,
                     lampEmissive: 0.20,
+                    headlightIntensity: 0.25,
+                    headlightDistance: 26,
+                    gripMultiplier: 1.0,
+                    studEmissive: 0.35,
                     hasStars: false,
                     starOpacity: 0.0,
                     hasRain: false,
@@ -9688,6 +9713,7 @@
                     name: 'Золотой закат',
                     icon: '🌅',
                     bgColor: 0x2d0b28,
+                    horizonGlowColor: 0xf97316,
                     fogDensity: 0.0055,
                     ambientColor: 0xfbcfe8,
                     ambientIntensity: 0.60,
@@ -9699,7 +9725,12 @@
                     asphaltMetalness: 0.18,
                     grassColor: 0x3b1d28,
                     treeColor: 0x1c1917,
+                    curbRedColor: 0xdc2626,
                     lampEmissive: 1.6,
+                    headlightIntensity: 1.65,
+                    headlightDistance: 46,
+                    gripMultiplier: 1.0,
+                    studEmissive: 1.15,
                     hasStars: true,
                     starOpacity: 0.45,
                     hasRain: false,
@@ -9710,6 +9741,7 @@
                     name: 'Ночной мегаполис',
                     icon: '🌃',
                     bgColor: 0x030712,
+                    horizonGlowColor: 0x0f172a,
                     fogDensity: 0.0075,
                     ambientColor: 0x1e293b,
                     ambientIntensity: 0.40,
@@ -9721,7 +9753,12 @@
                     asphaltMetalness: 0.15,
                     grassColor: 0x091410,
                     treeColor: 0x064e3b,
+                    curbRedColor: 0xdc2626,
                     lampEmissive: 2.2,
+                    headlightIntensity: 2.35,
+                    headlightDistance: 58,
+                    gripMultiplier: 1.0,
+                    studEmissive: 1.45,
                     hasStars: true,
                     starOpacity: 0.90,
                     hasRain: false,
@@ -9732,6 +9769,7 @@
                     name: 'Грозовой ливень',
                     icon: '🌧️',
                     bgColor: 0x080f19,
+                    horizonGlowColor: 0x1e293b,
                     fogDensity: 0.012,
                     ambientColor: 0x384959,
                     ambientIntensity: 0.40,
@@ -9739,11 +9777,16 @@
                     sunIntensity: 0.35,
                     sunPos: [10, 22, 15],
                     asphaltColor: 0x0c121c,
-                    asphaltRoughness: 0.16, // Mirror wet asphalt
-                    asphaltMetalness: 0.75, // High surface reflection
+                    asphaltRoughness: 0.14, // Mirror wet asphalt sheen
+                    asphaltMetalness: 0.78, // High wet surface reflection
                     grassColor: 0x071e16,
                     treeColor: 0x042f2e,
+                    curbRedColor: 0xb91c1c,
                     lampEmissive: 1.9,
+                    headlightIntensity: 2.60,
+                    headlightDistance: 54,
+                    gripMultiplier: 0.82,
+                    studEmissive: 1.65,
                     hasStars: false,
                     starOpacity: 0.0,
                     hasRain: true,
@@ -9754,6 +9797,7 @@
                     name: 'Густой туман',
                     icon: '🌫️',
                     bgColor: 0x78909c,
+                    horizonGlowColor: 0x94a3b8,
                     fogDensity: 0.022,
                     ambientColor: 0x94a3b8,
                     ambientIntensity: 0.65,
@@ -9765,7 +9809,12 @@
                     asphaltMetalness: 0.25,
                     grassColor: 0x1b382b,
                     treeColor: 0x14342b,
+                    curbRedColor: 0xdc2626,
                     lampEmissive: 2.0,
+                    headlightIntensity: 2.80,
+                    headlightDistance: 40,
+                    gripMultiplier: 0.94,
+                    studEmissive: 1.55,
                     hasStars: false,
                     starOpacity: 0.0,
                     hasRain: false,
@@ -9776,6 +9825,7 @@
                     name: 'Зимняя метель',
                     icon: '❄️',
                     bgColor: 0x334155,
+                    horizonGlowColor: 0xcbd5e1,
                     fogDensity: 0.010,
                     ambientColor: 0x94a3b8,
                     ambientIntensity: 0.60,
@@ -9783,11 +9833,16 @@
                     sunIntensity: 0.65,
                     sunPos: [14, 20, 18],
                     asphaltColor: 0x1e293b,
-                    asphaltRoughness: 0.65,
-                    asphaltMetalness: 0.22,
+                    asphaltRoughness: 0.42, // Icy road surface reflection
+                    asphaltMetalness: 0.38,
                     grassColor: 0xe2e8f0, // Frosted white verge
                     treeColor: 0xcfd8dc, // Frosted pines
+                    curbRedColor: 0xf43f5e, // Snow-dusted curb tint
                     lampEmissive: 1.8,
+                    headlightIntensity: 2.20,
+                    headlightDistance: 48,
+                    gripMultiplier: 0.72,
+                    studEmissive: 1.35,
                     hasStars: false,
                     starOpacity: 0.0,
                     hasRain: false,
@@ -9816,6 +9871,8 @@
             this.currentActiveWeather = activeKey;
             this.weather = activeKey;
             const preset = this.getWeatherPreset(activeKey);
+            this.weatherGrip = preset.gripMultiplier || 1.0;
+            if (this.state) this.state.weatherGrip = this.weatherGrip;
 
             if (!this.scene.background) {
                 this.scene.background = new THREE.Color(preset.bgColor);
@@ -9885,6 +9942,9 @@
 
         applyWeatherMaterials(preset) {
             if (!preset) return;
+            this.weatherGrip = preset.gripMultiplier || 1.0;
+            if (this.state) this.state.weatherGrip = this.weatherGrip;
+
             if (this.asphaltMat) {
                 if (this.asphaltMat.color) this.asphaltMat.color.setHex(preset.asphaltColor);
                 this.asphaltMat.roughness = preset.asphaltRoughness;
@@ -9900,9 +9960,30 @@
                 if (this.treeFoliageMat.color) this.treeFoliageMat.color.setHex(preset.treeColor);
                 this.treeFoliageMat.needsUpdate = true;
             }
+            if (this.curbRedMat && preset.curbRedColor !== undefined) {
+                if (this.curbRedMat.color) this.curbRedMat.color.setHex(preset.curbRedColor);
+                this.curbRedMat.needsUpdate = true;
+            }
             if (this.lampLightMat) {
                 this.lampLightMat.emissiveIntensity = preset.lampEmissive;
                 this.lampLightMat.needsUpdate = true;
+            }
+            if (this.catsEyeWhiteMat) {
+                this.catsEyeWhiteMat.emissiveIntensity = preset.studEmissive !== undefined ? preset.studEmissive : 1.2;
+                this.catsEyeWhiteMat.needsUpdate = true;
+            }
+            if (this.catsEyeAmberMat) {
+                this.catsEyeAmberMat.emissiveIntensity = preset.studEmissive !== undefined ? preset.studEmissive * 1.1 : 1.3;
+                this.catsEyeAmberMat.needsUpdate = true;
+            }
+            // Automatic headlight beam intensity & distance adaptation per weather
+            if (this.playerHeadlights && this.playerHeadlights.length > 0) {
+                const hlInt = preset.headlightIntensity !== undefined ? preset.headlightIntensity : 2.0;
+                const hlDist = preset.headlightDistance !== undefined ? preset.headlightDistance : 52;
+                this.playerHeadlights.forEach(hl => {
+                    hl.intensity = hlInt;
+                    hl.distance = hlDist;
+                });
             }
         }
 
@@ -9918,6 +9999,7 @@
             this.currentActiveWeather = activeKey;
             this.weather = activeKey;
             const preset = this.getWeatherPreset(activeKey);
+            this.lightningFlash = 0;
 
             if (this.scene && this.scene.background) {
                 this.scene.background.setHex(preset.bgColor);
@@ -10022,7 +10104,7 @@
         }
 
         spawnWaterSpray(x, y, z) {
-            if (this.smokeParticles.length >= 20) return;
+            if (this.smokeParticles.length >= 28) return;
             const THREE = this.THREE;
             const geo = this.sharedSprayGeo || new THREE.BoxGeometry(0.18, 0.18, 0.18);
             const mat = this.sharedSprayMat || new THREE.MeshBasicMaterial({
@@ -10034,12 +10116,22 @@
             const mesh = new THREE.Mesh(geo, mat);
             mesh.position.set(x, y, z);
             mesh.userData = {
-                life: 0.25,
-                maxLife: 0.25,
-                vy: 0.4 + Math.random() * 0.8
+                life: 0.28,
+                maxLife: 0.28,
+                vy: 0.45 + Math.random() * 0.85,
+                isWaterSpray: true
             };
             this.scene.add(mesh);
             this.smokeParticles.push(mesh);
+        }
+
+        triggerLightningFlash() {
+            this.lightningFlash = 0.16;
+            this.lightningTimer = 4.2 + Math.random() * 6.5;
+            if (this.ambientLight) this.ambientLight.intensity = 2.1;
+            if (this.sunLight) this.sunLight.intensity = 2.6;
+            if (this.scene && this.scene.background) this.scene.background.setHex(0xdbeafe);
+            if (this.scene && this.scene.fog) this.scene.fog.color.setHex(0xdbeafe);
         }
 
         updateWeatherParticles(dt) {
@@ -10047,7 +10139,7 @@
             if (!state) return;
             const forwardSpeedMps = (state.speed || 0) / 3.6;
 
-            // 1. Rain streaks
+            // 1. Rain streaks & dense dual-wheel water spray
             if (this.rainSystem && this.rainSystem.visible) {
                 const posAttr = this.rainSystem.geometry.attributes.position;
                 const pos = posAttr.array;
@@ -10066,24 +10158,28 @@
                 }
                 posAttr.needsUpdate = true;
 
-                // Wet road spray behind player car
-                if (state.speed > 35 && Math.random() < 0.45) {
-                    this.spawnWaterSpray(state.x + (Math.random() - 0.5) * 1.6, 0.15, state.z - 2.1);
+                // Denser wet road spray behind both rear wheels of player car
+                if (state.speed > 30 && Math.random() < 0.70) {
+                    this.spawnWaterSpray(state.x - 0.75 + (Math.random() - 0.5) * 0.35, 0.16, state.z - 2.1);
+                    this.spawnWaterSpray(state.x + 0.75 + (Math.random() - 0.5) * 0.35, 0.16, state.z - 2.1);
                 }
             }
 
-            // 2. Snow swirling flakes
+            // 2. Snow swirling flakes with crosswind drift
             if (this.snowSystem && this.snowSystem.visible) {
                 const posAttr = this.snowSystem.geometry.attributes.position;
                 const pos = posAttr.array;
                 const speeds = this.snowSystem.userData.speeds;
                 const phases = this.snowSystem.userData.driftPhases;
-                const time = state.time || 0;
+                this.snowWindTime = (this.snowWindTime || 0) + dt;
+                const time = (state.time || 0) + this.snowWindTime;
                 const count = speeds.length;
+                const windDriftX = Math.cos(time * 0.9) * 1.6;
                 for (let i = 0; i < count; i++) {
                     const i3 = i * 3;
                     pos[i3 + 1] -= (speeds[i] + forwardSpeedMps * 0.08) * dt;
-                    pos[i3 + 0] += Math.sin(time * 2.2 + phases[i]) * 3.0 * dt;
+                    pos[i3 + 0] += (Math.sin(time * 2.4 + phases[i]) * 3.6 + windDriftX) * dt;
+                    pos[i3 + 2] += Math.cos(time * 1.8 + phases[i]) * 1.8 * dt;
 
                     if (pos[i3 + 1] <= 0 || pos[i3 + 2] < state.z - 30) {
                         pos[i3 + 0] = state.x + (Math.random() - 0.5) * 55;
@@ -10094,25 +10190,19 @@
                 posAttr.needsUpdate = true;
             }
 
-            // 3. Lightning flash in rain
+            // 3. Thunderstorm lightning flash in rain
             if (this.currentActiveWeather === 'rain') {
                 const preset = this.getWeatherPreset('rain');
-                this.lightningTimer = (this.lightningTimer !== undefined ? this.lightningTimer : 5.0) - dt;
+                this.lightningTimer = (this.lightningTimer !== undefined ? this.lightningTimer : 4.5) - dt;
                 if (this.lightningTimer <= 0) {
-                    this.lightningFlash = 0.14;
-                    this.lightningTimer = 4.5 + Math.random() * 7.0;
-                    if (this.ambientLight) this.ambientLight.intensity = 1.9;
-                    if (this.sunLight) this.sunLight.intensity = 2.4;
-                    if (this.scene.background) this.scene.background.setHex(0xdbeafe);
-                    if (this.scene.fog) this.scene.fog.color.setHex(0xdbeafe);
-                }
-                if (this.lightningFlash > 0) {
-                    this.lightningFlash -= dt;
+                    this.triggerLightningFlash();
+                } else if (this.lightningFlash > 0) {
+                    this.lightningFlash = Math.max(0, this.lightningFlash - dt);
                     if (this.lightningFlash <= 0) {
                         if (this.ambientLight) this.ambientLight.intensity = preset.ambientIntensity;
                         if (this.sunLight) this.sunLight.intensity = preset.sunIntensity;
-                        if (this.scene.background) this.scene.background.setHex(preset.bgColor);
-                        if (this.scene.fog) this.scene.fog.color.setHex(preset.bgColor);
+                        if (this.scene && this.scene.background) this.scene.background.setHex(preset.bgColor);
+                        if (this.scene && this.scene.fog) this.scene.fog.color.setHex(preset.bgColor);
                     }
                 }
             }
@@ -10123,8 +10213,9 @@
                 if (targetWeather !== this.currentActiveWeather) {
                     this.setWeather(targetWeather, false);
                     const p = this.getWeatherPreset(targetWeather);
-                    if (this.options.onPopup && p) {
-                        this.options.onPopup(`🌦️ ПОГОДА: ${p.icon} ${p.name.toUpperCase()}`, '#38bdf8');
+                    const popupFn = this.onPopup || (this.options && this.options.onPopup);
+                    if (popupFn && p) {
+                        popupFn(`🌦️ ПОГОДА: ${p.icon} ${p.name.toUpperCase()}`, '#38bdf8');
                     }
                 }
             }
@@ -10150,6 +10241,9 @@
 
             this.curbBoxGeo = new THREE.BoxGeometry(0.35, 0.04, 1.4);
 
+            // Cat's-eye reflective road studs (botts' dots)
+            this.catsEyeGeo = new THREE.BoxGeometry(0.12, 0.03, 0.12);
+
             this.beamGeo = new THREE.BoxGeometry(0.12, 0.28, L);
             this.lowerBeamGeo = new THREE.BoxGeometry(0.10, 0.20, L);
             this.postGeo = new THREE.BoxGeometry(0.10, 0.65, 0.10);
@@ -10161,6 +10255,14 @@
 
             this.treeTrunkGeo = new THREE.CylinderGeometry(0.18, 0.28, 2.2, 8);
             this.treeConeGeo = new THREE.ConeGeometry(2.0, 1.9, 7);
+
+            // Roadside kilometer / chevron sign & building geometries
+            this.kmSignBoardGeo = new THREE.BoxGeometry(0.55, 0.75, 0.06);
+            this.chevronSignGeo = new THREE.BoxGeometry(0.65, 0.65, 0.05);
+            this.buildingBoxGeo = new THREE.BoxGeometry(6.5, 14.0, 8.5);
+            this.buildingWinGeo = new THREE.BoxGeometry(6.56, 0.35, 7.2);
+            this.archPylonGeo = new THREE.BoxGeometry(0.85, 9.2, 1.1);
+            this.archBeamGeo = new THREE.BoxGeometry(roadW + 5.2, 0.65, 0.95);
 
             // Shared materials for highway assets
             this.asphaltMat = new THREE.MeshStandardMaterial({
@@ -10185,6 +10287,22 @@
             this.curbRedMat = new THREE.MeshBasicMaterial({ color: 0xdc2626 });
             this.curbWhiteMat = new THREE.MeshBasicMaterial({ color: 0xf1f5f9 });
 
+            // Reflective cat's-eye road stud materials (glint in headlights)
+            this.catsEyeWhiteMat = new THREE.MeshStandardMaterial({
+                color: 0xffffff,
+                emissive: 0xbae6fd,
+                emissiveIntensity: 1.35,
+                roughness: 0.12,
+                metalness: 0.88
+            });
+            this.catsEyeAmberMat = new THREE.MeshStandardMaterial({
+                color: 0xfbbf24,
+                emissive: 0xf59e0b,
+                emissiveIntensity: 1.45,
+                roughness: 0.12,
+                metalness: 0.88
+            });
+
             this.guardrailMat = new THREE.MeshStandardMaterial({
                 color: 0x94a3b8,
                 roughness: 0.35,
@@ -10206,6 +10324,39 @@
             this.signGreenMat = new THREE.MeshStandardMaterial({
                 color: 0x065f46,
                 roughness: 0.6
+            });
+
+            this.ledMatrixMat = new THREE.MeshStandardMaterial({
+                color: 0x38bdf8,
+                emissive: 0x0ea5e9,
+                emissiveIntensity: 2.0,
+                roughness: 0.2
+            });
+
+            this.ledAmberMat = new THREE.MeshStandardMaterial({
+                color: 0xfbbf24,
+                emissive: 0xf59e0b,
+                emissiveIntensity: 2.2,
+                roughness: 0.2
+            });
+
+            this.chevronSignMat = new THREE.MeshStandardMaterial({
+                color: 0xfacc15,
+                emissive: 0xca8a04,
+                emissiveIntensity: 0.65,
+                roughness: 0.35
+            });
+
+            this.buildingMat = new THREE.MeshStandardMaterial({
+                color: 0x1e293b,
+                roughness: 0.75,
+                metalness: 0.25
+            });
+
+            this.buildingWindowMat = new THREE.MeshStandardMaterial({
+                color: 0xfef08a,
+                emissive: 0xfde047,
+                emissiveIntensity: 1.4
             });
 
             this.treeTrunkMat = new THREE.MeshStandardMaterial({ color: 0x452311, roughness: 0.9 });
@@ -10232,6 +10383,8 @@
             const THREE = this.THREE;
             const chunk = new THREE.Group();
             chunk.position.z = zPos;
+            chunk.userData.hasGantry = !!hasGantry;
+            chunk.userData.catsEyeStuds = [];
 
             const L = this.chunkLength;
             const roadW = 17.5; // 4 lanes
@@ -10249,7 +10402,7 @@
                 chunk.add(grass);
             });
 
-            // 3. Lane Divider Markings (3 dashed white lines, instanced)
+            // 3. Lane Divider Markings (3 dashed white lines, instanced) + Reflective Cat's-Eye Road Studs (Botts' Dots)
             const laneStep = roadW / 4; // 4.375m per lane
             const dashL = 3.6;
             const gapL = 3.4;
@@ -10257,34 +10410,72 @@
 
             if (typeof THREE.InstancedMesh === 'function') {
                 const dashInst = new THREE.InstancedMesh(this.dashGeo, this.lineMat, totalDashes * 3);
+                const catsEyeLaneInst = new THREE.InstancedMesh(this.catsEyeGeo, this.catsEyeWhiteMat, totalDashes * 3);
+                catsEyeLaneInst.name = 'CatsEyeLaneStuds';
                 let dIdx = 0;
+                let studIdx = 0;
                 [-laneStep * 0.5, 0, laneStep * 0.5].forEach(lineX => {
                     for (let d = 0; d < totalDashes; d++) {
-                        dummy.position.set(lineX, 0.005, -L * 0.5 + d * (dashL + gapL) + dashL * 0.5);
+                        const dashCenterZ = -L * 0.5 + d * (dashL + gapL) + dashL * 0.5;
+                        dummy.position.set(lineX, 0.005, dashCenterZ);
                         dummy.rotation.set(0, 0, 0);
                         dummy.scale.set(1, 1, 1);
                         dummy.updateMatrix();
                         dashInst.setMatrixAt(dIdx++, dummy.matrix);
+
+                        // Cat's-eye road stud centered in the gap between dashes
+                        dummy.position.set(lineX, 0.016, dashCenterZ + (dashL + gapL) * 0.5);
+                        dummy.updateMatrix();
+                        catsEyeLaneInst.setMatrixAt(studIdx++, dummy.matrix);
                     }
                 });
                 dashInst.instanceMatrix.needsUpdate = true;
+                catsEyeLaneInst.instanceMatrix.needsUpdate = true;
                 chunk.add(dashInst);
+                chunk.add(catsEyeLaneInst);
+                chunk.userData.catsEyeStuds.push(catsEyeLaneInst);
             } else {
                 [-laneStep * 0.5, 0, laneStep * 0.5].forEach(lineX => {
                     for (let d = 0; d < totalDashes; d++) {
+                        const dashCenterZ = -L * 0.5 + d * (dashL + gapL) + dashL * 0.5;
                         const dash = new THREE.Mesh(this.dashGeo, this.lineMat);
-                        dash.position.set(lineX, 0.005, -L * 0.5 + d * (dashL + gapL) + dashL * 0.5);
+                        dash.position.set(lineX, 0.005, dashCenterZ);
                         chunk.add(dash);
+
+                        const stud = new THREE.Mesh(this.catsEyeGeo, this.catsEyeWhiteMat);
+                        stud.name = 'CatsEyeLaneStud';
+                        stud.position.set(lineX, 0.016, dashCenterZ + (dashL + gapL) * 0.5);
+                        chunk.add(stud);
+                        chunk.userData.catsEyeStuds.push(stud);
                     }
                 });
             }
 
-            // 4. Solid Outer Edge Lines (White/Yellow)
+            // 4. Solid Outer Edge Lines (White/Yellow) + Shoulder Edge Cat's-Eye Studs
             [-1, 1].forEach(side => {
                 const outerLine = new THREE.Mesh(this.outerGeo, side === -1 ? this.yellowLineMat : this.lineMat);
                 outerLine.position.set(side * (roadW * 0.5 - 0.4), 0.006, 0);
                 chunk.add(outerLine);
             });
+
+            if (typeof THREE.InstancedMesh === 'function') {
+                const shoulderStudInst = new THREE.InstancedMesh(this.catsEyeGeo, this.catsEyeAmberMat, totalDashes * 2);
+                shoulderStudInst.name = 'CatsEyeShoulderStuds';
+                let sIdx = 0;
+                [-1, 1].forEach(side => {
+                    const edgeX = side * (roadW * 0.5 - 0.55);
+                    for (let d = 0; d < totalDashes; d++) {
+                        dummy.position.set(edgeX, 0.016, -L * 0.5 + d * (dashL + gapL) + 1.5);
+                        dummy.rotation.set(0, 0, 0);
+                        dummy.scale.set(1, 1, 1);
+                        dummy.updateMatrix();
+                        shoulderStudInst.setMatrixAt(sIdx++, dummy.matrix);
+                    }
+                });
+                shoulderStudInst.instanceMatrix.needsUpdate = true;
+                chunk.add(shoulderStudInst);
+                chunk.userData.catsEyeStuds.push(shoulderStudInst);
+            }
 
             // 5. Rumble Curb Strips (Alternating Red and White, instanced)
             const curbDashes = Math.floor(L / 1.5);
@@ -10384,6 +10575,33 @@
                 });
             }
 
+            // 6b. Roadside Kilometer Marker & Chevron Warning Signs on Outer Guardrails
+            const signGroup = new THREE.Group();
+            signGroup.name = 'RoadsideSignsGroup';
+            [-1, 1].forEach((side, sIdx) => {
+                const signX = side * (roadW * 0.5 + 0.95);
+                const signZ = (sIdx === 0) ? -L * 0.25 : L * 0.25;
+                const pole = new THREE.Mesh(this.postGeo, this.lampPostMat);
+                pole.position.set(signX, 0.75, signZ);
+                pole.scale.set(0.8, 2.2, 0.8);
+                signGroup.add(pole);
+
+                if (side === 1) {
+                    // Green/white kilometer marker board
+                    const kmBoard = new THREE.Mesh(this.kmSignBoardGeo, this.signGreenMat);
+                    kmBoard.name = 'KilometerSign';
+                    kmBoard.position.set(signX, 1.45, signZ);
+                    signGroup.add(kmBoard);
+                } else {
+                    // Glowing yellow chevron curve sign
+                    const chevBoard = new THREE.Mesh(this.chevronSignGeo, this.chevronSignMat);
+                    chevBoard.name = 'RoadsideChevronSign';
+                    chevBoard.position.set(signX, 1.45, signZ);
+                    signGroup.add(chevBoard);
+                }
+            });
+            chunk.add(signGroup);
+
             // 7. Highway Lampposts (every 40 meters)
             [-1, 1].forEach(side => {
                 const lampX = side * (roadW * 0.5 + 1.6);
@@ -10409,9 +10627,10 @@
                 chunk.add(lampGroup);
             });
 
-            // 8. Overhead Highway Gantry Sign (every 240m on selected chunks)
+            // 8. Overhead Highway Gantry Sign (every 240m on selected chunks) with LED Matrix & Speed Radar
             if (hasGantry) {
                 const gantryGroup = new THREE.Group();
+                gantryGroup.name = 'HighwayGantry';
                 gantryGroup.position.set(0, 0, 0);
 
                 // Dual Support Pillars on shoulders
@@ -10428,8 +10647,8 @@
                 truss.position.set(0, 7.4, 0);
                 gantryGroup.add(truss);
 
-                // Large Green Russian Highway Information Signs
-                [-3.8, 3.8].forEach((signX) => {
+                // Large Green Russian Highway Information Signs + Glowing LED Matrix Display Panels
+                [-3.8, 3.8].forEach((signX, idx) => {
                     const signGeo = new THREE.BoxGeometry(5.2, 1.8, 0.12);
                     const signMesh = new THREE.Mesh(signGeo, this.signGreenMat);
                     signMesh.position.set(signX, 6.8, -0.42);
@@ -10440,21 +10659,35 @@
                     const borderMesh = new THREE.Mesh(borderGeo, this.lineMat);
                     borderMesh.position.set(signX, 6.8, -0.44);
                     gantryGroup.add(borderMesh);
+
+                    // Glowing LED Matrix VMS Board embedded on gantry
+                    const ledPanelGeo = new THREE.BoxGeometry(2.8, 0.52, 0.06);
+                    const ledPanel = new THREE.Mesh(ledPanelGeo, idx === 0 ? this.ledMatrixMat : this.ledAmberMat);
+                    ledPanel.name = 'LEDMatrixDisplay';
+                    ledPanel.position.set(signX, 6.8, -0.50);
+                    gantryGroup.add(ledPanel);
                 });
 
-                // Speed Camera Flash Box (📸) in center
-                const camBoxGeo = new THREE.BoxGeometry(0.8, 0.5, 0.6);
+                // Speed Camera Radar Module (📸 Автоураган / Кордон) in center
+                const camBoxGeo = new THREE.BoxGeometry(0.95, 0.55, 0.65);
                 const camBox = new THREE.Mesh(camBoxGeo, new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.4 }));
+                camBox.name = 'SpeedRadarModule';
                 camBox.position.set(0, 6.7, -0.42);
                 gantryGroup.add(camBox);
 
                 const lensGeo = new THREE.CylinderGeometry(0.12, 0.12, 0.15, 16);
                 lensGeo.rotateX(Math.PI / 2);
                 const lens = new THREE.Mesh(lensGeo, new THREE.MeshBasicMaterial({ color: 0x0284c7 }));
-                lens.position.set(0, 6.7, -0.73);
+                lens.position.set(-0.18, 6.7, -0.76);
                 gantryGroup.add(lens);
 
+                const irStrobe = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.16, 0.06), this.curbRedMat);
+                irStrobe.name = 'RadarIRFlash';
+                irStrobe.position.set(0.20, 6.7, -0.76);
+                gantryGroup.add(irStrobe);
+
                 chunk.add(gantryGroup);
+                chunk.userData.gantryGroup = gantryGroup;
             }
 
             // 9. Roadside Low-Poly Pine and Birch Trees along shoulders (Instanced)
@@ -10508,6 +10741,44 @@
                 }
             }
 
+            // 10. Richer Roadside Scenery Variation: Skyline Buildings & Bridge Arch Pylons
+            const chunkIndex = Math.abs(Math.round(zPos / Math.max(1, L)));
+            const sceneryGroup = new THREE.Group();
+            sceneryGroup.name = 'RoadsideSceneryGroup';
+
+            [-1, 1].forEach((side, sIdx) => {
+                const bldgX = side * (roadW * 0.5 + 16.5 + ((chunkIndex + sIdx) % 3) * 2.8);
+                const bldgZ = (sIdx === 0 ? -12.0 : 14.0);
+                const hScale = 0.8 + ((chunkIndex + sIdx * 2) % 4) * 0.35;
+                const bldg = new THREE.Mesh(this.buildingBoxGeo, this.buildingMat);
+                bldg.name = 'RoadsideBuilding';
+                bldg.scale.set(1.0, hScale, 1.0);
+                bldg.position.set(bldgX, 7.0 * hScale, bldgZ);
+                sceneryGroup.add(bldg);
+
+                // Illuminated window band on building
+                const winStrip = new THREE.Mesh(this.buildingWinGeo, this.buildingWindowMat);
+                winStrip.position.set(bldgX, 9.5 * hScale, bldgZ);
+                sceneryGroup.add(winStrip);
+            });
+
+            if (!hasGantry && chunkIndex % 2 === 1) {
+                const archGroup = new THREE.Group();
+                archGroup.name = 'HighwayBridgeArch';
+                [-1, 1].forEach(side => {
+                    const pylon = new THREE.Mesh(this.archPylonGeo, this.guardrailMat);
+                    pylon.position.set(side * (roadW * 0.5 + 2.1), 4.6, L * 0.3);
+                    archGroup.add(pylon);
+                });
+                const archBeam = new THREE.Mesh(this.archBeamGeo, this.guardrailMat);
+                archBeam.position.set(0, 8.9, L * 0.3);
+                archGroup.add(archBeam);
+                sceneryGroup.add(archGroup);
+            }
+
+            chunk.add(sceneryGroup);
+            chunk.userData.sceneryGroup = sceneryGroup;
+
             return chunk;
         }
 
@@ -10523,12 +10794,23 @@
             }
             this.trafficCars = [];
 
+            const typesPool = ['sedan', 'suv', 'sport', 'police', 'taxi', 'ambulance', 'kamaz', 'truck', 'hatchback', 'police'];
+
             // Spawn pool of traffic cars with authentic lane distribution
             for (let i = 0; i < this.trafficCount; i++) {
-                // Vehicle types: KamAZ freight trucks, modern SUVs, sleek sedans, compact hatchbacks, police sedan
-                const type = (i % 5 === 3) ? 'police' : (i % 4 === 0) ? 'truck' : (i % 4 === 1) ? 'suv' : (i % 4 === 2) ? 'hatchback' : 'sedan';
-                // Trucks in right lane (3), hatchbacks in 2 or 3, SUVs in 1, sedans & police in 0 or 1
-                const laneIdx = (type === 'truck') ? 3 : (type === 'suv') ? 1 : (type === 'police' ? 0 : (type === 'hatchback' ? (Math.random() < 0.5 ? 2 : 3) : (Math.random() < 0.5 ? 0 : 1)));
+                const type = typesPool[i % typesPool.length];
+                let laneIdx;
+                if (type === 'truck' || type === 'kamaz') {
+                    laneIdx = 3;
+                } else if (type === 'sport' || type === 'police') {
+                    laneIdx = 0;
+                } else if (type === 'ambulance' || type === 'suv') {
+                    laneIdx = 1;
+                } else if (type === 'taxi') {
+                    laneIdx = 2;
+                } else {
+                    laneIdx = (i % 2 === 0) ? 1 : 2;
+                }
                 const laneX = this.trafficLanes[laneIdx];
                 const spawnZ = 55 + i * 34 + Math.random() * 12;
 
@@ -10541,6 +10823,11 @@
                     baseSpeed: laneSpeed,
                     speed: laneSpeed,
                     overtaken: false,
+                    nearMissed: false,
+                    changingLane: false,
+                    isBraking: false,
+                    hazardTimer: 0,
+                    evadeBoostTimer: 0,
                     laneChangeTimer: 4 + Math.random() * 8,
                     cruiseTimer: 3 + Math.random() * 4,
                     speedPacingOffset: 0,
@@ -10555,8 +10842,17 @@
         }
 
         getLaneSpeed(laneIdx, type) {
-            if (type === 'truck') {
+            if (type === 'truck' || type === 'kamaz') {
                 return 65 + Math.random() * 12; // 65-77 км/ч (тяжелые длинномеры КАМАЗ)
+            }
+            if (type === 'sport') {
+                return 130 + Math.random() * 20; // 130-150 км/ч (быстрые спорткары)
+            }
+            if (type === 'ambulance') {
+                return 112 + Math.random() * 16; // 112-128 км/ч (скорая помощь)
+            }
+            if (type === 'taxi') {
+                return 92 + Math.random() * 16;  // 92-108 км/ч (городское такси)
             }
             if (laneIdx === 0) {
                 return 122 + Math.random() * 18; // 122-140 км/ч (скоростной левый ряд)
@@ -10575,13 +10871,22 @@
             const group = new THREE.Group();
 
             const colors = ['#1e3a8a', '#374151', '#d97706', '#059669', '#b91c1c', '#f8fafc', '#18181b', '#94a3b8', '#ca8a04', '#475569'];
-            const bodyColor = (type === 'police') ? '#f8fafc' : colors[Math.floor(Math.random() * colors.length)];
+            const sportColors = ['#ef4444', '#0ea5e9', '#facc15', '#10b981', '#a855f7', '#f97316'];
+            const bodyColor = (type === 'police' || type === 'ambulance')
+                ? '#f8fafc'
+                : (type === 'taxi')
+                    ? '#facc15'
+                    : (type === 'sport')
+                        ? sportColors[Math.floor(Math.random() * sportColors.length)]
+                        : colors[Math.floor(Math.random() * colors.length)];
 
             group.userData.type = type;
             group.userData.wheels = [];
+            group.userData.changingLane = false;
+            group.userData.isBraking = false;
 
-            if (type === 'truck') {
-                // High-detail KamAZ Freight Truck with articulated cab and shipping container semi-trailer
+            if (type === 'truck' || type === 'kamaz') {
+                // High-detail KamAZ Freight Truck with articulated cab, sun visor, marker lights, and trailer underrun guards
                 const truckGroup = new THREE.Group();
                 truckGroup.name = 'DetailedTruck';
 
@@ -10596,7 +10901,7 @@
                 const headlightMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
                 const fogLightMat = new THREE.MeshBasicMaterial({ color: 0xfef08a });
                 const taillightMat = new THREE.MeshStandardMaterial({ color: 0xef4444, emissive: 0xdc2626, emissiveIntensity: 1.5 });
-                const amberMat = new THREE.MeshBasicMaterial({ color: 0xf59e0b });
+                const amberMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, emissive: 0xf59e0b, emissiveIntensity: 1.4 });
 
                 // 1. KamAZ Cab-Over-Engine Tractor (Тягач КАМАЗ)
                 const cabW = 2.45, cabH = 2.45, cabL = 2.15;
@@ -10608,6 +10913,25 @@
                 const ws = new THREE.Mesh(new THREE.BoxGeometry(cabW * 0.88, cabH * 0.38, 0.08), glassMat);
                 ws.position.set(0, cabH * 0.68 + 0.44, 2.75 + cabL * 0.5 + 0.02);
                 truckGroup.add(ws);
+
+                // Cab Exterior Sun Visor (Солнцезащитный козырек кабины КАМАЗ)
+                const cabVisor = new THREE.Mesh(new THREE.BoxGeometry(cabW * 0.94, 0.16, 0.28), darkMat);
+                cabVisor.name = 'CabVisor';
+                cabVisor.position.set(0, cabH * 0.90 + 0.44, 2.75 + cabL * 0.5 + 0.10);
+                cabVisor.rotation.x = 0.22;
+                truckGroup.add(cabVisor);
+                group.userData.cabVisor = cabVisor;
+
+                // Rooftop Amber Road-Train Marker Lights (Огни автопоезда на крыше кабины)
+                const markerLightsGroup = new THREE.Group();
+                markerLightsGroup.name = 'CabMarkerLights';
+                [-0.36, -0.18, 0, 0.18, 0.36].forEach(mx => {
+                    const marker = new THREE.Mesh(new THREE.BoxGeometry(0.10, 0.07, 0.08), amberMat);
+                    marker.position.set(mx, cabH + 0.48, 2.75 + cabL * 0.42);
+                    markerLightsGroup.add(marker);
+                });
+                truckGroup.add(markerLightsGroup);
+                group.userData.markerLights = markerLightsGroup;
 
                 // Dual windshield wipers
                 [-0.45, 0.45].forEach(wx => {
@@ -10711,6 +11035,20 @@
                     truckGroup.add(leg);
                 });
 
+                // Side Underrun Protection Guards (Боковая противоподкатная защита полуприцепа)
+                const underrunGroup = new THREE.Group();
+                underrunGroup.name = 'TrailerUnderrunGuards';
+                [-1.16, 1.16].forEach(ux => {
+                    const railUpper = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.10, 2.6), chromeMat);
+                    railUpper.position.set(ux, 0.54, -1.6);
+                    underrunGroup.add(railUpper);
+                    const railLower = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.10, 2.6), chromeMat);
+                    railLower.position.set(ux, 0.36, -1.6);
+                    underrunGroup.add(railLower);
+                });
+                truckGroup.add(underrunGroup);
+                group.userData.underrunGuards = underrunGroup;
+
                 // High-cube corrugated ISO freight container
                 const boxW = 2.55, boxL = 6.6, boxH = 2.85;
                 const freightBox = new THREE.Mesh(new THREE.BoxGeometry(boxW, boxH, boxL), boxMat);
@@ -10741,6 +11079,7 @@
 
                 // Heavy DOT underrun protection bumper and mudflaps
                 const dotBumper = new THREE.Mesh(new THREE.BoxGeometry(boxW * 0.98, 0.18, 0.12), darkMat);
+                dotBumper.name = 'RearUnderrunGuard';
                 dotBumper.position.set(0, 0.44, -2.4 - boxL * 0.502);
                 truckGroup.add(dotBumper);
 
@@ -10812,16 +11151,154 @@
                 truckGroup.add(truckRP);
 
                 group.add(truckGroup);
+                group.userData.isTruck = true;
                 group.userData.halfWidth = 1.35;
                 group.userData.halfLength = 4.8;
+            } else if (type === 'ambulance') {
+                // High-Roof Ambulance Van / Sprinter («Скорая медицинская помощь» 03 / 112)
+                const ambGroup = new THREE.Group();
+                ambGroup.name = 'DetailedAmbulance';
+
+                const whiteMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.28, metalness: 0.25 });
+                const redMat = new THREE.MeshStandardMaterial({ color: 0xdc2626, emissive: 0xb91c1c, emissiveIntensity: 0.45, roughness: 0.35 });
+                const darkMat = new THREE.MeshStandardMaterial({ color: 0x1f2937, roughness: 0.85 });
+                const chromeMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.2, metalness: 0.88 });
+                const glassMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.1, metalness: 0.9, transparent: true, opacity: 0.85 });
+                const hlMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+
+                const vanW = 2.02, vanH = 1.72, vanL = 3.65;
+                // Main high-roof medical box cabin
+                const vanBox = new THREE.Mesh(new THREE.BoxGeometry(vanW, vanH, vanL), whiteMat);
+                vanBox.position.set(0, vanH * 0.5 + 0.38, -0.45);
+                ambGroup.add(vanBox);
+
+                // Front cab nose & sloped hood
+                const hood = new THREE.Mesh(new THREE.BoxGeometry(vanW * 0.96, 0.86, 1.15), whiteMat);
+                hood.position.set(0, 0.82, 1.85);
+                ambGroup.add(hood);
+
+                // Sloped windshield
+                const ws = new THREE.Mesh(new THREE.BoxGeometry(vanW * 0.88, 0.72, 0.08), glassMat);
+                ws.position.set(0, 1.52, 1.48);
+                ws.rotation.x = -0.32;
+                ambGroup.add(ws);
+
+                // Red longitudinal emergency stripes along both sides & hood
+                [-vanW * 0.5 - 0.01, vanW * 0.5 + 0.01].forEach(sx => {
+                    const sideStripe = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.22, vanL * 0.96), redMat);
+                    sideStripe.name = 'AmbulanceStripe';
+                    sideStripe.position.set(sx, 1.05, -0.45);
+                    ambGroup.add(sideStripe);
+
+                    // Iconic Red Cross Emblem on both sides
+                    const crossVert = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.46, 0.14), redMat);
+                    crossVert.name = 'AmbulanceCross';
+                    crossVert.position.set(sx, 1.56, -0.65);
+                    ambGroup.add(crossVert);
+
+                    const crossHoriz = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.14, 0.46), redMat);
+                    crossHoriz.name = 'AmbulanceCross';
+                    crossHoriz.position.set(sx, 1.56, -0.65);
+                    ambGroup.add(crossHoriz);
+                });
+
+                // Hood red stripe & cross
+                const hoodStripe = new THREE.Mesh(new THREE.BoxGeometry(vanW * 0.76, 0.03, 0.28), redMat);
+                hoodStripe.position.set(0, 1.26, 1.92);
+                ambGroup.add(hoodStripe);
+
+                // Front grille, bumper & headlights
+                const bumper = new THREE.Mesh(new THREE.BoxGeometry(vanW * 1.02, 0.30, 0.26), darkMat);
+                bumper.position.set(0, 0.46, 2.38);
+                ambGroup.add(bumper);
+
+                [-0.74, 0.74].forEach(hx => {
+                    const hl = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.18, 0.06), hlMat);
+                    hl.position.set(hx, 0.82, 2.43);
+                    ambGroup.add(hl);
+                });
+
+                // Flashing Blue/Red Emergency Beacons on Roof
+                const barBase = new THREE.Mesh(new THREE.BoxGeometry(vanW * 0.68, 0.07, 0.22), darkMat);
+                barBase.position.set(0, vanH + 0.42, 0.85);
+                ambGroup.add(barBase);
+
+                const ambRed = new THREE.Mesh(
+                    new THREE.BoxGeometry(0.32, 0.12, 0.20),
+                    new THREE.MeshBasicMaterial({ color: 0xef4444 })
+                );
+                ambRed.name = 'AmbulanceBeaconRed';
+                ambRed.position.set(-0.34, vanH + 0.48, 0.85);
+                ambGroup.add(ambRed);
+
+                const ambBlue = new THREE.Mesh(
+                    new THREE.BoxGeometry(0.32, 0.12, 0.20),
+                    new THREE.MeshBasicMaterial({ color: 0x3b82f6 })
+                );
+                ambBlue.name = 'AmbulanceBeaconBlue';
+                ambBlue.position.set(0.34, vanH + 0.48, 0.85);
+                ambGroup.add(ambBlue);
+
+                const ambLight = new THREE.PointLight(0x3b82f6, 1.6, 15, 2.0);
+                ambLight.position.set(0, vanH + 0.65, 0.85);
+                ambGroup.add(ambLight);
+
+                group.userData.ambulanceRed = ambRed;
+                group.userData.ambulanceBlue = ambBlue;
+                group.userData.ambulanceLight = ambLight;
+
+                // 4 Sprinter Wheels
+                [
+                    { x: -0.92, y: 0.38, z: 1.55 },
+                    { x: 0.92, y: 0.38, z: 1.55 },
+                    { x: -0.92, y: 0.38, z: -1.35 },
+                    { x: 0.92, y: 0.38, z: -1.35 }
+                ].forEach(wp => {
+                    const wGroup = new THREE.Group();
+                    wGroup.position.set(wp.x, wp.y, wp.z);
+                    const tire = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.38, 0.24, 16), darkMat);
+                    tire.rotation.z = Math.PI / 2;
+                    wGroup.add(tire);
+                    const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.20, 0.20, 0.25, 12), chromeMat);
+                    hub.rotation.z = Math.PI / 2;
+                    wGroup.add(hub);
+                    wGroup.userData.isWheelSpinner = true;
+                    ambGroup.add(wGroup);
+                    group.userData.wheels.push(wGroup);
+                });
+
+                const ambPlate = 'О 003 МР | 77 RUS';
+                const ambFP = createLicensePlate(THREE, ambPlate, true, 'classic', 'classic');
+                ambFP.name = 'FrontLicensePlate';
+                ambFP.position.set(0, 0.44, 2.52);
+                ambGroup.add(ambFP);
+
+                const ambRP = createLicensePlate(THREE, ambPlate, false, 'classic', 'classic');
+                ambRP.name = 'RearLicensePlate';
+                ambRP.position.set(0, 0.48, -2.30);
+                ambGroup.add(ambRP);
+
+                group.add(ambGroup);
+                group.userData.halfWidth = 1.05;
+                group.userData.halfLength = 2.50;
             } else {
-                // Authentic detailed car models for Sedans, SUVs, Hatchbacks, and Police
+                // Authentic detailed car models for Sedans, Sport Coupes, SUVs, Taxis, Hatchbacks, and Police
                 let modelName;
                 if (type === 'suv') {
                     const suvList = ['Toyota Land Cruiser 300', 'Mercedes-Benz G63 AMG «Гелик»', 'Rolls-Royce Cullinan'];
                     modelName = suvList[Math.floor(Math.random() * suvList.length)];
                     group.userData.halfWidth = 1.05;
                     group.userData.halfLength = 2.45;
+                } else if (type === 'sport') {
+                    const sportList = ['Porsche 911 GT3 RS', 'BMW M5 F90', 'Mercedes-Benz E63 AMG'];
+                    modelName = sportList[Math.floor(Math.random() * sportList.length)];
+                    group.userData.halfWidth = 0.98;
+                    group.userData.halfLength = 2.25;
+                } else if (type === 'taxi') {
+                    const taxiList = ['Toyota Camry 3.5', 'Hyundai Solaris', 'Volkswagen Polo'];
+                    modelName = taxiList[Math.floor(Math.random() * taxiList.length)];
+                    group.userData.halfWidth = 0.95;
+                    group.userData.halfLength = 2.25;
                 } else if (type === 'police') {
                     const policeModels = ['ВАЗ-2107 «Жигули»', 'Toyota Camry 3.5', 'BMW M5 F90', 'Volkswagen Polo'];
                     modelName = policeModels[Math.floor(Math.random() * policeModels.length)];
@@ -10861,12 +11338,15 @@
                 ];
                 const randomTrafficPlate = (type === 'police')
                     ? 'А 001 МР | 97 RUS'
-                    : trafficPlateSamples[Math.floor(Math.random() * trafficPlateSamples.length)];
+                    : (type === 'taxi')
+                        ? 'Е 777 ТХ | 77 RUS'
+                        : trafficPlateSamples[Math.floor(Math.random() * trafficPlateSamples.length)];
 
                 const styling = {
                     color: bodyColor,
                     tint: (type === 'police') ? 'clear' : (Math.random() > 0.4 ? 'medium' : 'stock'),
-                    wheels: (type === 'police') ? 'stamp' : (Math.random() > 0.5 ? 'stock' : 'torus'),
+                    wheels: (type === 'police') ? 'stamp' : (type === 'sport' ? 'sport' : (Math.random() > 0.5 ? 'stock' : 'torus')),
+                    spoiler: (type === 'sport') ? 'high' : 'none',
                     plate: randomTrafficPlate
                 };
 
@@ -10880,6 +11360,109 @@
                             group.userData.wheels.push(c);
                         }
                     });
+
+                    // SUV Expedition Roof Rack & Rear Spare Wheel Cover (G-Class / Land Cruiser silhouette)
+                    if (type === 'suv') {
+                        const rackMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.45, metalness: 0.75 });
+                        const roofRack = new THREE.Group();
+                        roofRack.name = 'SUVRoofRack';
+                        [-0.58, 0.58].forEach(rx => {
+                            const sideRail = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.05, 1.65), rackMat);
+                            sideRail.position.set(rx, 1.56, -0.25);
+                            roofRack.add(sideRail);
+                        });
+                        [-0.95, -0.45, 0.05, 0.45].forEach(rz => {
+                            const crossBar = new THREE.Mesh(new THREE.BoxGeometry(1.18, 0.04, 0.05), rackMat);
+                            crossBar.position.set(0, 1.57, rz);
+                            roofRack.add(crossBar);
+                        });
+                        carModel.add(roofRack);
+                        group.userData.roofRack = roofRack;
+
+                        // Rear Tailgate Spare Wheel Cover
+                        const spareGroup = new THREE.Group();
+                        spareGroup.name = 'SUVSpareWheelCover';
+                        const spareCyl = new THREE.Mesh(
+                            new THREE.CylinderGeometry(0.38, 0.38, 0.22, 18),
+                            new THREE.MeshStandardMaterial({ color: bodyColor, roughness: 0.25, metalness: 0.65 })
+                        );
+                        spareCyl.rotation.x = Math.PI / 2;
+                        spareCyl.position.set(0, 0.88, -2.22);
+                        spareGroup.add(spareCyl);
+                        carModel.add(spareGroup);
+                        group.userData.spareWheelCover = spareGroup;
+                    }
+
+                    // Taxi Livery: Yellow Body, Black-and-White Checkered Side Stripes & Glowing Orange Roof Sign
+                    if (type === 'taxi') {
+                        const W = 1.82, H = 1.38;
+                        const blackCheckerMat = new THREE.MeshBasicMaterial({ color: 0x111827 });
+                        const whiteCheckerMat = new THREE.MeshBasicMaterial({ color: 0xf8fafc });
+                        const checkerGroup = new THREE.Group();
+                        checkerGroup.name = 'TaxiCheckeredStripe';
+
+                        [-W * 0.5 - 0.012, W * 0.5 + 0.012].forEach(sx => {
+                            for (let c = 0; c < 8; c++) {
+                                const cz = -0.70 + c * 0.20;
+                                const sqTop = new THREE.Mesh(
+                                    new THREE.BoxGeometry(0.02, 0.06, 0.18),
+                                    c % 2 === 0 ? blackCheckerMat : whiteCheckerMat
+                                );
+                                sqTop.position.set(sx, 0.72, cz);
+                                checkerGroup.add(sqTop);
+
+                                const sqBot = new THREE.Mesh(
+                                    new THREE.BoxGeometry(0.02, 0.06, 0.18),
+                                    c % 2 === 0 ? whiteCheckerMat : blackCheckerMat
+                                );
+                                sqBot.position.set(sx, 0.65, cz);
+                                checkerGroup.add(sqBot);
+                            }
+                        });
+                        carModel.add(checkerGroup);
+                        group.userData.taxiCheckers = checkerGroup;
+
+                        // Glowing Orange Roof Taxi Sign («Шашечки такси»)
+                        const signBase = new THREE.Mesh(
+                            new THREE.BoxGeometry(0.46, 0.04, 0.20),
+                            blackCheckerMat
+                        );
+                        signBase.position.set(0, H + 0.06, -0.10);
+                        carModel.add(signBase);
+
+                        const taxiLanternMat = new THREE.MeshStandardMaterial({
+                            color: 0xff8800,
+                            emissive: 0xff6600,
+                            emissiveIntensity: 1.9,
+                            roughness: 0.2
+                        });
+                        const taxiSign = new THREE.Mesh(
+                            new THREE.BoxGeometry(0.42, 0.13, 0.16),
+                            taxiLanternMat
+                        );
+                        taxiSign.name = 'TaxiRoofSign';
+                        taxiSign.position.set(0, H + 0.14, -0.10);
+                        carModel.add(taxiSign);
+                        group.userData.taxiSign = taxiSign;
+                    }
+
+                    // Sport Coupe Aerodynamic Carbon GT Wing
+                    if (type === 'sport') {
+                        const carbonMat = new THREE.MeshStandardMaterial({ color: 0x111827, roughness: 0.25, metalness: 0.8 });
+                        const wingGroup = new THREE.Group();
+                        wingGroup.name = 'SportGTWing';
+                        const wingBlade = new THREE.Mesh(new THREE.BoxGeometry(1.68, 0.04, 0.26), carbonMat);
+                        wingBlade.position.set(0, 1.08, -2.02);
+                        wingBlade.rotation.x = 0.12;
+                        wingGroup.add(wingBlade);
+                        [-0.52, 0.52].forEach(wx => {
+                            const strut = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.22, 0.16), carbonMat);
+                            strut.position.set(wx, 0.96, -2.00);
+                            wingGroup.add(strut);
+                        });
+                        carModel.add(wingGroup);
+                        group.userData.sportWing = wingGroup;
+                    }
 
                     // Police livery & dual lightbar
                     if (type === 'police') {
@@ -10953,6 +11536,68 @@
                 }
             }
 
+            // Attach Amber Turn-Signal Blinkers (blinkerL, blinkerR) & Dynamic Rear Brake Lights to all traffic vehicles
+            const halfW = group.userData.halfWidth || 0.95;
+            const halfL = group.userData.halfLength || 2.25;
+            const blinkerGeo = new THREE.BoxGeometry(0.16, 0.09, 0.06);
+
+            const blinkerLMat = new THREE.MeshStandardMaterial({
+                color: 0xf59e0b,
+                emissive: 0xfbbf24,
+                emissiveIntensity: 0.0,
+                transparent: true,
+                opacity: 0.25
+            });
+            const blinkerL = new THREE.Mesh(blinkerGeo, blinkerLMat);
+            blinkerL.name = 'blinkerL';
+            blinkerL.position.set(-halfW * 0.82, 0.62, -halfL - 0.03);
+            blinkerL.visible = false;
+            const blinkerLFront = new THREE.Mesh(blinkerGeo, blinkerLMat);
+            blinkerLFront.position.set(0, -0.04, halfL * 2.0 + 0.06);
+            blinkerL.add(blinkerLFront);
+            group.add(blinkerL);
+
+            const blinkerRMat = new THREE.MeshStandardMaterial({
+                color: 0xf59e0b,
+                emissive: 0xfbbf24,
+                emissiveIntensity: 0.0,
+                transparent: true,
+                opacity: 0.25
+            });
+            const blinkerR = new THREE.Mesh(blinkerGeo, blinkerRMat);
+            blinkerR.name = 'blinkerR';
+            blinkerR.position.set(halfW * 0.82, 0.62, -halfL - 0.03);
+            blinkerR.visible = false;
+            const blinkerRFront = new THREE.Mesh(blinkerGeo, blinkerRMat);
+            blinkerRFront.position.set(0, -0.04, halfL * 2.0 + 0.06);
+            blinkerR.add(blinkerRFront);
+            group.add(blinkerR);
+
+            group.userData.blinkerL = blinkerL;
+            group.userData.blinkerR = blinkerR;
+            group.blinkerL = blinkerL;
+            group.blinkerR = blinkerR;
+
+            const brakeLightMat = new THREE.MeshStandardMaterial({
+                color: 0xef4444,
+                emissive: 0xdc2626,
+                emissiveIntensity: 0.55
+            });
+            const brakeGeo = new THREE.BoxGeometry(0.24, 0.11, 0.05);
+            const brakeL = new THREE.Mesh(brakeGeo, brakeLightMat);
+            brakeL.name = 'TrafficBrakeLightL';
+            brakeL.position.set(-halfW * 0.66, 0.64, -halfL - 0.025);
+            group.add(brakeL);
+
+            const brakeR = new THREE.Mesh(brakeGeo, brakeLightMat);
+            brakeR.name = 'TrafficBrakeLightR';
+            brakeR.position.set(halfW * 0.66, 0.64, -halfL - 0.025);
+            group.add(brakeR);
+
+            group.userData.brakeLights = [brakeL, brakeR];
+            group.userData.brakeLightMat = brakeLightMat;
+            group.userData.brakeLightIntensity = 0.55;
+
             return group;
         }
 
@@ -11002,6 +11647,7 @@
             this.state.distanceKm = 0;
             this.state.peakSpeed = 40;
             this.state.earnedCash = 0;
+            this.earnedCash = 0;
             this.state.driftScore = 0;
             this.state.driftCurrentScore = 0;
             this.state.driftCombo = 1;
@@ -11013,12 +11659,22 @@
             this.state.overtakesCount = 0;
             this.state.overtakeCombo = 0;
             this.state.overtakeComboTimer = 0;
+            this.state.nearMissCount = 0;
+            this.nearMissCount = 0;
+            this.state.shashkiCombo = 0;
+            this.shashkiCombo = 0;
+            this.state.shashkiComboTimer = 0;
+            this.shashkiComboTimer = 0;
             this.state.damageTaken = 0;
             this.state.crashed = false;
             this.state.finished = false;
             this.state.bodyRoll = 0;
+            this.state.rollAngle = 0;
+            this.rollAngle = 0;
             this.state.rollVelocity = 0;
             this.state.pitchSquat = 0;
+            this.state.pitchAngle = 0;
+            this.pitchAngle = 0;
             this.state.pitchVelocity = 0;
             this.state.downforceY = 0;
             this.state.yawAngle = 0;
@@ -11028,6 +11684,12 @@
             this.state.suspensionVelocityY = 0;
             this.state.scrapeTimer = 0;
             this.state.shakeAmount = 0;
+            this.state.cameraShake = 0;
+            this.cameraShake = 0;
+            this.state.isDrafting = false;
+            this.isDrafting = false;
+            this.state.slipstreamFactor = 0;
+            this.slipstreamFactor = 0;
 
             // Police pursuit & wanted state reset
             this.state.wantedStars = 0;
@@ -11272,9 +11934,13 @@
                 this.playerCar.worldToLocal(localHlL);
                 this.playerCar.worldToLocal(localHlR);
 
+                const activeWeatherPreset = this.getWeatherPreset(this.currentActiveWeather || 'night');
+                const hlIntensity = (activeWeatherPreset && typeof activeWeatherPreset.headlightIntensity === 'number') ? activeWeatherPreset.headlightIntensity : 2.0;
+                const hlDistance = (activeWeatherPreset && typeof activeWeatherPreset.headlightDistance === 'number') ? activeWeatherPreset.headlightDistance : 52;
+
                 [-1, 1].forEach(side => {
                     // Subtle, realistic Three.js SpotLight angled forward down the road
-                    const hlSpot = new THREE.SpotLight(0xf8fafc, 2.0, 52, Math.PI / 6.5, 0.55, 1.2);
+                    const hlSpot = new THREE.SpotLight(0xf8fafc, hlIntensity, hlDistance, Math.PI / 6.5, 0.55, 1.2);
                     const localP = side < 0 ? localHlL : localHlR;
                     hlSpot.position.copy(localP);
                     hlSpot.target.position.set(localP.x * 1.05, 0.15, localP.z + 32);
@@ -11621,9 +12287,30 @@
                 }
             }
 
-            // 2. TRANSMISSION, THROTTLE, ACCELERATION & BRAKING
+            // 2. TRANSMISSION, SLIPSTREAM DRAFTING, THROTTLE, ACCELERATION & BRAKING
+            let bestSlipstream = 0;
+            if (state.speed > 100 && this.trafficCars && this.trafficCars.length > 0) {
+                for (let i = 0; i < this.trafficCars.length; i++) {
+                    const tCar = this.trafficCars[i];
+                    if (!tCar || !tCar.position || tCar.position.y < -500) continue;
+                    const tu = tCar.userData || {};
+                    if (tu.isWrecked) continue;
+                    const tDz = tCar.position.z - state.z;
+                    const tDx = Math.abs(state.x - tCar.position.x);
+                    if (tDz > 2.0 && tDz < 28.0 && tDx < 1.85) {
+                        const distFactor = 1.0 - Math.max(0, (tDz - 4.0) / 24.0);
+                        const draftStrength = Math.min(1.0, Math.max(0.18, distFactor));
+                        if (draftStrength > bestSlipstream) bestSlipstream = draftStrength;
+                    }
+                }
+            }
+            state.isDrafting = bestSlipstream > 0;
+            state.slipstreamFactor = bestSlipstream;
+            this.isDrafting = state.isDrafting;
+            this.slipstreamFactor = state.slipstreamFactor;
+
             const nitroMult = state.isNitroActive ? 1.25 : 1.0;
-            const targetMaxSpeed = state.maxSpeed * nitroMult;
+            const targetMaxSpeed = state.maxSpeed * nitroMult * (1.0 + bestSlipstream * 0.06);
 
             // 7-speed automatic gearbox definition
             const gearWindows = [
@@ -11689,9 +12376,10 @@
                 state.gasHoldTime = (state.gasHoldTime || 0) + dt;
                 // High low-gear wheel torque (hypercar launch feeling)
                 const gearTorque = Math.max(0.70, 1.45 - ((state.gear || 1) - 1) * 0.11);
-                // Realistic aerodynamic drag (proportional to v^2)
-                const aeroDrag = Math.pow(state.speed / 100, 2) * 1.85;
-                const rawAccel = state.accel * gearTorque * (state.isNitroActive ? 1.70 : 1.0) * shiftTorque;
+                // Realistic aerodynamic drag (proportional to v^2), reduced by up to 45% when drafting in slipstream
+                const aeroDrag = Math.pow(state.speed / 100, 2) * 1.85 * (1.0 - bestSlipstream * 0.45);
+                const slipstreamBoost = bestSlipstream * 7.5;
+                const rawAccel = state.accel * gearTorque * (state.isNitroActive ? 1.70 : 1.0) * shiftTorque + slipstreamBoost;
                 netAccel = Math.max(3.0, rawAccel - aeroDrag);
                 state.speed = Math.min(targetMaxSpeed, state.speed + netAccel * dt);
             } else if (keys.brake) {
@@ -11709,7 +12397,7 @@
                     state.backfireColor = 'orange';
                     if (this.options.onSound) this.options.onSound('blowOff');
                 }
-                const coastingDrag = 9.0 + Math.pow(state.speed / 100, 2) * 4.2;
+                const coastingDrag = (9.0 + Math.pow(state.speed / 100, 2) * 4.2) * (1.0 - bestSlipstream * 0.35);
                 state.speed = Math.max(0, state.speed - coastingDrag * dt);
             }
             if (!gasActive || isHandbrake) state.gasHoldTime = 0;
@@ -11736,6 +12424,8 @@
             state.pitchVelocity = (state.pitchVelocity || 0) + pitchForce * dt;
             state.pitchSquat = (state.pitchSquat || 0) + state.pitchVelocity * dt;
             state.pitchSquat = Math.max(-0.065, Math.min(0.075, state.pitchSquat));
+            state.pitchAngle = state.pitchSquat;
+            this.pitchAngle = state.pitchSquat;
 
             // Aerodynamic high-speed downforce (chassis lowers to ground and stabilizes rear axle)
             state.downforceY = -Math.min(0.038, Math.pow(state.speed / 380, 2) * 0.038);
@@ -11753,7 +12443,7 @@
             // Dynamic Player Neon Modes (Rainbow / Pulse) during 3D race
             if (this.playerNeonLight && this.styling) {
                 if (this.styling.neonMode === 'rainbow') {
-                    const hue = ((this.lastTime || 0) * 0.0006) % 1.0;
+                    const hue = ((this.lastTime || 0) * 0.00025) % 1.0;
                     const rCol = new this.THREE.Color().setHSL(hue, 1.0, 0.55);
                     this.playerNeonLight.color = rCol;
                     if (this.playerNeonMesh && this.playerNeonMesh.material) {
@@ -11781,6 +12471,7 @@
                 const cashRatePerSec = (state.speed * 4.0) * (state.rewardMult || 1.0);
                 state.earnedCash += cashRatePerSec * dt;
             }
+            this.earnedCash = state.earnedCash;
 
             // Milestone distance bonus for every full 1 km driven
             const currentKm = Math.floor(state.distanceKm);
@@ -11789,6 +12480,7 @@
                 state.lastMilestoneKm = currentKm;
                 const kmBonus = Math.round(10000 * (state.rewardMult || 1.0));
                 state.earnedCash += kmBonus;
+                this.earnedCash = state.earnedCash;
                 if (this.options.onPopup) {
                     this.options.onPopup(`🏁 ДИСТАНЦИЯ ${currentKm} КМ! +${kmBonus.toLocaleString('ru-RU')} ₽`, '#10b981');
                 }
@@ -11804,7 +12496,7 @@
                     consumption: state.fuelConsumption,
                     gas: gasActive,
                     nitro: state.isNitroActive,
-                    drafting: false
+                    drafting: !!state.isDrafting
                 });
                 state.fuelLiters += burned;
                 state.fuelCurrent = Math.max(0, state.fuelCurrent - burned);
@@ -11821,9 +12513,13 @@
                 return;
             }
 
-            // 5. STEERING, HANDBRAKE, TIRE GRIP & DRIFT MECHANICS
+            // 5. STEERING, HANDBRAKE, WEATHER-DEPENDENT TIRE GRIP & DRIFT MECHANICS
             const isDriftMode = (this.mode === 'drift' || (state && state.raceMode === 'drift'));
             const driftMult = state.driftFactor || (isDriftMode ? 1.6 : 1.35);
+            const curWeatherPreset = this.getWeatherPreset(this.currentActiveWeather || 'night');
+            const weatherGrip = (curWeatherPreset && typeof curWeatherPreset.gripMultiplier === 'number') ? curWeatherPreset.gripMultiplier : 1.0;
+            state.weatherGrip = weatherGrip;
+            this.weatherGrip = weatherGrip;
 
             // 4. AERODYNAMICS & TOP SPEED (Downforce stabilizes rear axle at speeds over 200 km/h)
             const speedStability = Math.max(0.68, 1.0 - (state.speed / 380) * 0.32);
@@ -11840,37 +12536,42 @@
             const throttleSteerAuthority = gasActive ? 1.0 : (state.speed > 5 ? Math.min(1.0, 0.40 + (state.speed / 50) * 0.60) : 0);
             const effectiveSteerAuthority = speedSteerAuthority * throttleSteerAuthority;
 
-            // 2. TIRE GRIP & SLIP ANGLE (Pacejka-inspired curve)
+            // 2. TIRE GRIP & SLIP ANGLE (Pacejka-inspired curve scaled by weather grip)
             // Kinematic travel heading vs steering wheel angle
             const travelHeading = Math.atan2(state.vx, Math.max(2.5, forwardSpeedMps));
             const steerAngleRad = steerInput * 0.32;
             const slipAngle = steerAngleRad - travelHeading;
 
             // Pacejka Magic Formula normalized lateral curve: Fy = D * sin(C * atan(B*a - E*(B*a - atan(B*a))))
-            const B_pacejka = 9.5;
+            const B_pacejka = 9.5 * weatherGrip;
             const C_pacejka = 1.35;
-            const D_pacejka = 1.0;
+            const D_pacejka = weatherGrip;
             const E_pacejka = -0.12;
             const Ba = B_pacejka * slipAngle;
             const pacejkaGrip = D_pacejka * Math.sin(C_pacejka * Math.atan(Ba - E_pacejka * (Ba - Math.atan(Ba))));
+            state.pacejkaGrip = pacejkaGrip;
 
             const isSteeringNeutral = (steerInput === 0);
-            const hasLateralSlide = Math.abs(state.vx) > 1.2 && state.speed > 30;
+            const hasLateralSlide = Math.abs(state.vx) > (1.2 * weatherGrip) && state.speed > 30;
             const isCounterSteering = state.vx * steerInput < 0; // steering opposite to slide
-            const isDriftingNow = (isHandbrake && (Math.abs(steerInput) > 0 || hasLateralSlide)) || (state.isDrifting && hasLateralSlide);
+            const isWetSlide = (weatherGrip < 0.88 && Math.abs(steerInput) > 0 && state.speed > 95 && Math.abs(state.vx) > lateralMax * 0.62);
+            const isDriftingNow = (isHandbrake && (Math.abs(steerInput) > 0 || hasLateralSlide)) || (state.isDrifting && hasLateralSlide) || isWetSlide;
+
+            // Cornering stiffness factor scales with weatherGrip (1.0 in dry, lower in rain/snow)
+            const corneringStiffness = (0.55 + 0.45 * weatherGrip);
 
             if (steerInput !== 0 && effectiveSteerAuthority > 0) {
-                state.vx += steerInput * lateralMax * 4.2 * effectiveSteerAuthority * dt;
+                state.vx += steerInput * lateralMax * 4.2 * effectiveSteerAuthority * corneringStiffness * dt;
                 state.vx = Math.max(-lateralMax, Math.min(lateralMax, state.vx));
             } else if (!isDriftingNow && !isHandbrake) {
                 // High-speed straight-line directional stability: damp lateral velocity rapidly and eliminate wandering
-                const straightLineDamping = (effectiveSteerAuthority < 0.05) ? 16.0 : (12.0 + Math.min(10.0, (state.speed / 100) * 5.0));
+                const straightLineDamping = ((effectiveSteerAuthority < 0.05) ? 16.0 : (12.0 + Math.min(10.0, (state.speed / 100) * 5.0))) * weatherGrip;
                 state.vx *= Math.max(0, 1 - straightLineDamping * dt);
                 if (Math.abs(state.vx) < 0.015) {
                     state.vx = 0;
                 }
             } else {
-                const lateralDecay = effectiveSteerAuthority < 0.05 ? 14.0 : 7.5;
+                const lateralDecay = (effectiveSteerAuthority < 0.05 ? 14.0 : 7.5) * weatherGrip;
                 state.vx *= Math.max(0, 1 - lateralDecay * dt);
             }
 
@@ -11929,9 +12630,10 @@
                     state.maxDriftCombo = state.driftCombo;
                 }
 
-                // Realistic slip-angle yaw: smoothly rotate body into drift direction
+                // Realistic slip-angle yaw: smoothly rotate body into drift direction (deeper slip angles in wet/icy weather)
                 const slipRatio = Math.max(-1, Math.min(1, state.vx / (lateralMax || 1)));
-                const baseDriftAngle = slipRatio * 0.52; // car angles into the slide (+X yaw > 0 points to screen left)
+                const weatherSlipMult = 1.0 + (1.0 - weatherGrip) * 0.85;
+                const baseDriftAngle = slipRatio * 0.52 * weatherSlipMult; // car angles into the slide (+X yaw > 0 points to screen left)
                 // Counter-steer adjustment: nose aligns slightly with counter-steer
                 const targetYaw = baseDriftAngle + (isCounterSteering ? steerInput * 0.12 : 0);
                 state.yawAngle += (targetYaw - state.yawAngle) * Math.min(1, 10 * dt);
@@ -11954,17 +12656,19 @@
                 // Return nose forward smoothly when exiting drift or steering normally
                 if (isSteeringNeutral) {
                     // Straight-line heading lock: keep car aligned dead forward along road Z axis
-                    const alignRate = 14.0 + Math.min(8.0, (state.speed / 100) * 4.0);
+                    const alignRate = (14.0 + Math.min(8.0, (state.speed / 100) * 4.0)) * weatherGrip;
                     state.yawAngle += (0 - state.yawAngle) * Math.min(1.0, alignRate * dt);
                     if (Math.abs(state.yawAngle) < 0.0008) state.yawAngle = 0;
                 } else {
-                    const normalTurnYaw = steerInput * Math.min(0.20, (Math.abs(state.vx) / lateralMax) * 0.18);
+                    const weatherSlipMult = 1.0 + (1.0 - weatherGrip) * 0.75;
+                    const normalTurnYaw = steerInput * Math.min(0.24 * weatherSlipMult, (Math.abs(state.vx) / lateralMax) * 0.18 * weatherSlipMult);
                     state.yawAngle += (normalTurnYaw - state.yawAngle) * Math.min(1, 8 * dt);
                 }
                 if (state.driftDuration > 0 || state.driftCurrentScore > 0) {
                     if (state.driftCurrentScore > 30) {
                         const bankedCash = Math.round(state.driftCurrentScore * 4.0 * state.rewardMult);
                         state.earnedCash += bankedCash;
+                        this.earnedCash = state.earnedCash;
                         if (this.options.onPopup) {
                             this.options.onPopup(`🌪️ ЗАНОС: +${Math.round(state.driftCurrentScore)} PTS (+${bankedCash.toLocaleString('ru-RU')} ₽)`, '#fbbf24');
                         }
@@ -12004,6 +12708,8 @@
 
                 // Body roll leans slightly against guardrail
                 state.bodyRoll = wallSide * 0.032;
+                state.rollAngle = state.bodyRoll;
+                this.rollAngle = state.bodyRoll;
 
                 // Suspension shock impulse
                 state.suspensionVelocityY = (state.suspensionVelocityY || 0) + 0.08;
@@ -12011,6 +12717,8 @@
                 // Progressive scrape damage and tactile screen shake
                 state.damageTaken = Math.min(100, (state.damageTaken || 0) + 1.8 * dt * 10);
                 state.shakeAmount = Math.min(0.55, (state.shakeAmount || 0) + 0.12);
+                state.cameraShake = state.shakeAmount;
+                this.cameraShake = state.shakeAmount;
 
                 // Streams of sparks sliding along the contact flank
                 const sparkCount = Math.min(14, Math.max(4, Math.floor(state.speed / 28)));
@@ -12057,6 +12765,8 @@
             state.rollVelocity = (state.rollVelocity || 0) + rollForce * dt;
             state.bodyRoll = (state.bodyRoll || 0) + state.rollVelocity * dt;
             state.bodyRoll = Math.max(-0.065, Math.min(0.065, state.bodyRoll));
+            state.rollAngle = state.bodyRoll;
+            this.rollAngle = state.bodyRoll;
 
             state.time = (state.time || 0) + dt;
 
@@ -12274,7 +12984,9 @@
                     }
                 }
 
-                // 0b. Realistic traffic interaction: vehicles do not pass through each other like ghosts
+                // 0b. Realistic traffic interaction: vehicles do not pass through each other like ghosts,
+                // and brighten rear brake lights when slowing down behind another vehicle
+                let brakingBehindTraffic = false;
                 for (let j = 0; j < this.trafficCars.length; j++) {
                     const otherCar = this.trafficCars[j];
                     if (otherCar === car || otherCar.position.y < -500) continue;
@@ -12285,7 +12997,7 @@
                     const cdz = otherCar.position.z - car.position.z;
 
                     // Traffic car ahead on roughly the same lane
-                    if (cdz > 0.1 && cdz < 16 && cdx < 2.2) {
+                    if (cdz > 0.1 && cdz < 18 && cdx < 2.2) {
                         if (u.type === 'police' && !u.isWrecked) {
                             // Police AI tries to overtake / swerve around civilian car
                             const steerOffset = (car.position.x <= otherCar.position.x) ? -3.8 : 3.8;
@@ -12299,24 +13011,46 @@
                                 this.spawnSparks((car.position.x + otherCar.position.x) * 0.5, 0.6, car.position.z + 1.5, 12);
                                 if (this.options.onSound) this.options.onSound('scrape');
                                 u.speed = Math.max(45, u.speed - 25 * dt);
+                                brakingBehindTraffic = true;
                             }
-                        } else if (u.type !== 'truck') {
-                            // Civilian traffic smooth speed matching and queuing
-                            if (u.speed > ou.speed) {
+                        } else {
+                            // Civilian traffic smooth speed matching, brake light activation, and lane-change queuing
+                            if (u.speed > ou.speed - 4) {
+                                brakingBehindTraffic = true;
                                 u.speed = Math.max(ou.speed * 0.95, u.speed - 26 * dt);
                             }
-                            if ((u.laneChangeTimer || 0) <= 0) {
+                            if (u.type !== 'truck' && u.type !== 'kamaz' && (u.laneChangeTimer || 0) <= 0) {
                                 u.laneChangeTimer = 5 + Math.random() * 6;
                                 const curL = u.laneIndex !== undefined ? u.laneIndex : 1;
                                 const candL = curL === 0 ? 1 : (curL === 3 ? 2 : (Math.random() < 0.5 ? curL - 1 : curL + 1));
+                                u.laneChangeDirection = (this.trafficLanes[candL] > car.position.x) ? 1 : -1;
                                 u.laneIndex = candL;
                                 u.targetX = this.trafficLanes[candL];
+                                u.changingLane = true;
+                                u.plannedLaneIndex = null;
                             }
                         }
                     }
                 }
 
+                // Update rear brake light emissive brightness when slowing down behind traffic
+                u.isBraking = brakingBehindTraffic;
+                if (u.brakeLightMat) {
+                    u.brakeLightMat.emissiveIntensity = brakingBehindTraffic ? 3.2 : 0.65;
+                    if (u.brakeLightMat.color) {
+                        u.brakeLightMat.color.setHex(brakingBehindTraffic ? 0xff2222 : 0xef4444);
+                    }
+                }
+                if (u.brakeLights && u.brakeLights.length > 0) {
+                    u.brakeLights.forEach(bl => {
+                        if (bl && bl.material && bl.material !== u.brakeLightMat) {
+                            bl.material.emissiveIntensity = brakingBehindTraffic ? 3.2 : 0.65;
+                        }
+                    });
+                }
+
                 // 1. Move traffic car forward along Z and apply lateral deflection impulses
+                const prevDz = (typeof u.prevDz === 'number') ? u.prevDz : (car.position.z - state.z);
                 const tSpeedMps = u.speed / 3.6;
                 car.position.z += tSpeedMps * dt;
                 if (Math.abs(u.deflectVx || 0) > 0.05) {
@@ -12349,7 +13083,24 @@
                 // Relative distances to player
                 const dx = Math.abs(state.x - car.position.x);
                 const dz = car.position.z - state.z;
+                u.prevDz = dz;
                 const distToPlayer = Math.hypot(dx, dz);
+
+                // Ambulance emergency beacon strobe animation
+                if (u.type === 'ambulance' && (u.ambulanceRed || u.ambulanceBlue)) {
+                    u.sguStrobeTimer = (u.sguStrobeTimer || 0) + dt * 15;
+                    const isRed = Math.floor(u.sguStrobeTimer) % 2 === 0;
+                    if (u.ambulanceRed && u.ambulanceRed.material) {
+                        u.ambulanceRed.material.color.setHex(isRed ? 0xef4444 : 0x450a0a);
+                    }
+                    if (u.ambulanceBlue && u.ambulanceBlue.material) {
+                        u.ambulanceBlue.material.color.setHex(isRed ? 0x1e3a8a : 0x3b82f6);
+                    }
+                    if (u.ambulanceLight) {
+                        u.ambulanceLight.color.setHex(isRed ? 0xef4444 : 0x3b82f6);
+                        u.ambulanceLight.intensity = 1.6;
+                    }
+                }
 
                 // Police strobe flashing animation & AI
                 if (u.type === 'police' && !u.isWrecked) {
@@ -12401,15 +13152,27 @@
                     }
                 }
 
-                // 2. Periodic lane changing behavior (for civilian cars or calm police)
-                if (state.wantedStars === 0 || u.type !== 'police') {
+                // 2. Periodic lane changing behavior & pre-lane-change turn-signal blinker anticipation
+                if ((state.wantedStars === 0 || u.type !== 'police') && u.type !== 'truck' && u.type !== 'kamaz') {
                     u.laneChangeTimer -= dt;
+                    // Signal intention ~1.6s before executing lane change
+                    if (u.laneChangeTimer <= 1.6 && u.laneChangeTimer > 0 && u.plannedLaneIndex === null) {
+                        const curLane = u.laneIndex !== undefined ? u.laneIndex : 1;
+                        const planned = (curLane === 0) ? 1 : (curLane === 3) ? 2 : (Math.random() < 0.5 ? curLane - 1 : curLane + 1);
+                        u.plannedLaneIndex = planned;
+                        u.laneChangeDirection = (this.trafficLanes[planned] > car.position.x) ? 1 : -1;
+                    }
                     if (u.laneChangeTimer <= 0) {
                         u.laneChangeTimer = 6 + Math.random() * 10;
                         const curLane = u.laneIndex !== undefined ? u.laneIndex : 1;
-                        const newLane = (curLane === 0) ? 1 : (curLane === 3) ? 2 : (Math.random() < 0.5 ? curLane - 1 : curLane + 1);
+                        const newLane = (typeof u.plannedLaneIndex === 'number')
+                            ? u.plannedLaneIndex
+                            : ((curLane === 0) ? 1 : (curLane === 3) ? 2 : (Math.random() < 0.5 ? curLane - 1 : curLane + 1));
+                        u.plannedLaneIndex = null;
+                        u.laneChangeDirection = (this.trafficLanes[newLane] > car.position.x) ? 1 : -1;
                         u.laneIndex = newLane;
                         u.targetX = this.trafficLanes[newLane];
+                        u.changingLane = true;
                     }
                 }
 
@@ -12417,6 +13180,8 @@
                 const steerDist = u.targetX - car.position.x;
                 if (Math.abs(steerDist) > 0.05) {
                     const dir = steerDist > 0 ? 1 : -1;
+                    u.changingLane = true;
+                    u.laneChangeDirection = dir;
                     const steerSpeed = (u.type === 'police' && state.wantedStars > 0) ? 2.8 : 2.2;
                     const step = dir * Math.min(Math.abs(steerDist), steerSpeed * dt);
                     car.position.x += step;
@@ -12426,35 +13191,117 @@
                     car.position.x = u.targetX;
                     car.rotation.y = 0;
                     car.rotation.z = 0;
+                    if (u.plannedLaneIndex === null) {
+                        u.changingLane = false;
+                    }
                 }
 
-                // 3. Near-Miss Overtake Detection
+                // 2b. Amber Turn-Signal Blinkers (blinkerL / blinkerR) & Post-Impact Hazard Flashers
+                const blinkerL = u.blinkerL || car.blinkerL;
+                const blinkerR = u.blinkerR || car.blinkerR;
+                if (blinkerL && blinkerR) {
+                    u.blinkerTimer = (u.blinkerTimer || 0) + dt;
+                    const blinkPulse = (Math.floor(u.blinkerTimer * 7.5) % 2 === 0);
+                    const isPreSignaling = (u.plannedLaneIndex !== null) || (u.laneChangeTimer !== undefined && u.laneChangeTimer < 1.6 && u.laneChangeTimer > 0 && u.type !== 'truck' && u.type !== 'kamaz');
+
+                    if ((u.hazardTimer || 0) > 0) {
+                        u.hazardTimer = Math.max(0, u.hazardTimer - dt);
+                        if (blinkerL.material) {
+                            blinkerL.material.emissiveIntensity = blinkPulse ? 3.2 : 0.05;
+                            blinkerL.material.opacity = blinkPulse ? 1.0 : 0.25;
+                        }
+                        if (blinkerR.material) {
+                            blinkerR.material.emissiveIntensity = blinkPulse ? 3.2 : 0.05;
+                            blinkerR.material.opacity = blinkPulse ? 1.0 : 0.25;
+                        }
+                    } else if (u.changingLane || isPreSignaling) {
+                        const signalDir = u.laneChangeDirection || ((u.targetX >= car.position.x) ? 1 : -1);
+                        const activeBlinker = signalDir > 0 ? blinkerR : blinkerL;
+                        const inactiveBlinker = signalDir > 0 ? blinkerL : blinkerR;
+                        if (activeBlinker && activeBlinker.material) {
+                            activeBlinker.material.emissiveIntensity = blinkPulse ? 3.2 : 0.05;
+                            activeBlinker.material.opacity = blinkPulse ? 1.0 : 0.25;
+                        }
+                        if (inactiveBlinker && inactiveBlinker.material) {
+                            inactiveBlinker.material.emissiveIntensity = 0.0;
+                            inactiveBlinker.material.opacity = 0.25;
+                        }
+                    } else {
+                        if (blinkerL.material) {
+                            blinkerL.material.emissiveIntensity = 0.0;
+                            blinkerL.material.opacity = 0.25;
+                        }
+                        if (blinkerR.material) {
+                            blinkerR.material.emissiveIntensity = 0.0;
+                            blinkerR.material.opacity = 0.25;
+                        }
+                    }
+                }
+
+                // 3. Collision Detection with Player Car, Takedown, and Near-Miss «Шашки впритирку»
                 const speedDiff = state.speed - u.speed;
-                if (!u.overtaken && dz < 0 && dz > -5.0 && dx < 2.3 && speedDiff > 25) {
-                    u.overtaken = true;
-                    state.overtakesCount++;
-                    state.overtakeCombo++;
-                    state.overtakeComboTimer = 3.5;
+                const trafficHalfW = car.userData.halfWidth || 0.95;
+                const trafficHalfL = car.userData.halfLength || 2.2;
+                const lateralClearance = trafficHalfW + 0.55;
+                const longitudinalClearance = trafficHalfL + 1.6;
+                const isColliding = (dx < lateralClearance && Math.abs(dz) < longitudinalClearance);
 
-                    const pts = 250 * Math.min(state.overtakeCombo, 10);
-                    const cash = Math.round(pts * 4.0 * state.rewardMult);
-                    state.earnedCash += cash;
+                // 3a. Near-Miss «Шашки впритирку» & Overtake Detection (when NOT colliding)
+                if (!isColliding) {
+                    const crossedZeroDz = (prevDz >= -0.5 && dz <= 0.35) || (dz <= 0.25 && dz > -5.5);
+                    if (!u.nearMissed && state.speed >= 120 && dx < 2.15 && crossedZeroDz) {
+                        u.nearMissed = true;
+                        u.overtaken = true;
+                        this.nearMissCount = (this.nearMissCount || 0) + 1;
+                        state.nearMissCount = this.nearMissCount;
+                        this.shashkiCombo = (this.shashkiCombo || 0) + 1;
+                        state.shashkiCombo = this.shashkiCombo;
+                        this.shashkiComboTimer = 4.0;
+                        state.shashkiComboTimer = 4.0;
 
-                    if (this.options.onPopup) {
-                        this.options.onPopup(`🔥 ОПАСНЫЙ ОБГОН +${pts} PTS (+${cash.toLocaleString('ru-RU')} ₽) x${state.overtakeCombo}`, '#f59e0b');
-                    }
-                    if (this.options.onSound) {
-                        this.options.onSound('nearMiss');
+                        state.overtakesCount++;
+                        state.overtakeCombo = this.shashkiCombo;
+                        state.overtakeComboTimer = 4.0;
+
+                        const shashkiPts = 300 * Math.min(this.shashkiCombo, 10);
+                        const shashkiCash = Math.round(shashkiPts * 4.0 * (state.rewardMult || 1.0));
+                        state.earnedCash += shashkiCash;
+                        this.earnedCash = state.earnedCash;
+
+                        // Subtle spark / speed-streak burst on tight pass
+                        this.spawnSparks((state.x + car.position.x) * 0.5, 0.45, state.z, 6);
+
+                        const shashkiMsg = '⚡ ШАШКА x' + this.shashkiCombo + '!';
+                        if (typeof this.onPopup === 'function') {
+                            this.onPopup(shashkiMsg, '#38bdf8');
+                        } else if (this.options && typeof this.options.onPopup === 'function') {
+                            this.options.onPopup(shashkiMsg, '#38bdf8');
+                        }
+                        if (this.options && typeof this.options.onSound === 'function') {
+                            this.options.onSound('nearMiss');
+                        }
+                    } else if (!u.overtaken && dz < 0 && dz > -5.0 && dx < 2.3 && speedDiff > 25) {
+                        u.overtaken = true;
+                        state.overtakesCount++;
+                        state.overtakeCombo++;
+                        state.overtakeComboTimer = 3.5;
+
+                        const pts = 250 * Math.min(state.overtakeCombo, 10);
+                        const cash = Math.round(pts * 4.0 * state.rewardMult);
+                        state.earnedCash += cash;
+                        this.earnedCash = state.earnedCash;
+
+                        if (this.options.onPopup) {
+                            this.options.onPopup(`🔥 ОПАСНЫЙ ОБГОН +${pts} PTS (+${cash.toLocaleString('ru-RU')} ₽) x${state.overtakeCombo}`, '#f59e0b');
+                        }
+                        if (this.options.onSound) {
+                            this.options.onSound('nearMiss');
+                        }
                     }
                 }
 
-                // 4. Collision Detection with Player Car & Takedown
-                const trafficHalfW = car.userData.halfWidth || 1.0;
-                const trafficHalfL = car.userData.halfLength || 2.2;
-                const lateralClearance = trafficHalfW + 0.65;
-                const longitudinalClearance = trafficHalfL + 1.6;
-
-                if (dx < lateralClearance && Math.abs(dz) < longitudinalClearance) {
+                // 4. Collision Resolution (Takedown, Rear-End Impact, or Sideswipe)
+                if (isColliding) {
                     // 💥 TAKEDOWN MECHANIC FOR POLICE: Player CAN ram & knock out pursuit cars!
                     if (u.type === 'police' && !u.isWrecked) {
                         const isNitroActive = !!(state.isNitroActive || state.nitroActive || (this.keys && this.keys.nitro));
@@ -12476,11 +13323,14 @@
                             state.speed = Math.max(50, state.speed - 10);
                             state.damageTaken = Math.min(100, (state.damageTaken || 0) + 1.0);
                             state.shakeAmount = 0.65;
+                            state.cameraShake = 0.65;
+                            this.cameraShake = 0.65;
 
                             // Huge sparks and sound
                             this.spawnSparks(car.position.x, 0.7, car.position.z, 45);
                             const takedownBounty = 35000;
                             state.earnedCash += takedownBounty;
+                            this.earnedCash = state.earnedCash;
                             if (this.options.onPopup) {
                                 this.options.onPopup(`💥 ТАРАН! ЭКИПАЖ ДПС СБИТ! +${takedownBounty.toLocaleString('ru-RU')} ₽`, '#22c55e');
                             }
@@ -12506,33 +13356,50 @@
 
                     const playerHalfW = 0.95;
                     const playerHalfL = 2.2;
-                    const isAlongsideSideswipe = dx > (playerHalfW + trafficHalfW) * 0.68 && Math.abs(dz) < (playerHalfL + trafficHalfL) * 0.78;
+                    const isAlongsideSideswipe = dx > (playerHalfW + trafficHalfW) * 0.55 && Math.abs(dz) < (playerHalfL + trafficHalfL) * 0.80;
                     const isRearEndHit = !isAlongsideSideswipe && dz > -1.5;
-                    if (isRearEndHit && speedDiff > 35 && u.type !== 'police') {
-                        // High-speed direct rear-end collision: DAMAGE BUFFER & MOMENTUM EXCHANGE!
+                    if (isRearEndHit && speedDiff > 20 && u.type !== 'police') {
+                        // High-speed direct rear-end / heavy collision: MOMENTUM EXCHANGE, HAZARD LIGHTS & SWERVE!
                         const ramPushDir = (car.position.x >= state.x ? 1 : -1);
 
-                        // 1. Kinetic momentum exchange: push traffic car forward and deflect sideways
-                        const speedTransfer = Math.min(48, speedDiff * 0.42 + 15);
-                        u.speed = Math.min(160, u.speed + speedTransfer);
+                        // 1. Kinetic momentum exchange: push traffic car forward and make it swerve/accelerate away
+                        const speedTransfer = Math.min(48, speedDiff * 0.45 + 16);
+                        u.speed = Math.min(175, u.speed + speedTransfer);
+                        u.baseSpeed = Math.max(u.baseSpeed || 90, u.speed * 0.92);
                         car.position.z += 2.2;
 
-                        // Deflect traffic car sideways into adjacent lane
+                        // Struck traffic car flashes hazard lights and swerves into an adjacent lane
+                        u.hazardTimer = 4.0;
+                        if (u.blinkerL && u.blinkerL.material) {
+                            u.blinkerL.material.emissiveIntensity = 3.2;
+                            u.blinkerL.material.opacity = 1.0;
+                        }
+                        if (u.blinkerR && u.blinkerR.material) {
+                            u.blinkerR.material.emissiveIntensity = 3.2;
+                            u.blinkerR.material.opacity = 1.0;
+                        }
                         const curL = u.laneIndex !== undefined ? u.laneIndex : 1;
                         const deflL = ramPushDir > 0 ? Math.min(3, curL + 1) : Math.max(0, curL - 1);
                         u.laneIndex = deflL;
                         u.targetX = this.trafficLanes[deflL];
+                        u.changingLane = true;
+                        u.laneChangeDirection = ramPushDir;
                         u.deflectVx = ramPushDir * 4.2;
-                        car.rotation.y = ramPushDir * 0.12;
+                        car.rotation.y = ramPushDir * 0.14;
 
                         // 2. Anti-glitch physical separation
                         state.x -= ramPushDir * 0.35;
                         car.position.x += ramPushDir * 0.35;
 
-                        // 3. Player progressive deceleration & damage buffer
-                        const dmg = (u.type === 'truck') ? 32 : 25;
+                        // 3. Player progressive deceleration, pitch jolt & camera shake
+                        const dmg = (u.type === 'truck' || u.type === 'kamaz') ? 32 : 25;
                         state.damageTaken = Math.min(100, (state.damageTaken || 0) + dmg);
                         state.shakeAmount = 1.0;
+                        state.cameraShake = 1.0;
+                        this.cameraShake = 1.0;
+                        state.pitchSquat = 0.055;
+                        state.pitchAngle = 0.055;
+                        this.pitchAngle = 0.055;
                         state.invulnerableTimer = 1.2;
                         state.speed = Math.max(45, state.speed * 0.48);
 
@@ -12561,35 +13428,43 @@
                             return;
                         }
                     } else {
-                        // Glancing sideswipe / side contact: smooth deflection and momentum exchange!
+                        // Glancing sideswipe / side contact: lateral bounce, spark burst, chassis roll jolt & moderate damage
                         const pushDir = (car.position.x >= state.x ? 1 : -1);
 
-                        // 1. Smooth physics deflection: push traffic car sideways into adjacent lane
+                        // 1. Smooth physics deflection: push traffic car sideways into adjacent lane & trigger hazards
                         u.deflectVx = pushDir * 4.5;
+                        u.hazardTimer = 2.5;
                         const curL = u.laneIndex !== undefined ? u.laneIndex : (car.position.x < -4 ? 0 : car.position.x < 0 ? 1 : car.position.x < 4 ? 2 : 3);
                         const deflL = pushDir > 0 ? Math.min(3, curL + 1) : Math.max(0, curL - 1);
                         u.laneIndex = deflL;
                         u.targetX = this.trafficLanes[deflL];
+                        u.changingLane = true;
+                        u.laneChangeDirection = pushDir;
                         car.rotation.z = pushDir * -0.14;
 
-                        // 2. Momentum reaction on player car
-                        state.vx = (state.vx || 0) - pushDir * 3.4;
+                        // 2. Lateral bounce & chassis roll jolt on player car
+                        state.vx = (state.vx || 0) - pushDir * 3.8;
+                        state.bodyRoll = Math.max(-0.065, Math.min(0.065, -pushDir * 0.048));
+                        state.rollAngle = state.bodyRoll;
+                        this.rollAngle = state.bodyRoll;
 
                         // 3. Anti-glitch physical separation: prevent vehicles from sticking or glitching into each other
-                        const minClearanceX = trafficHalfW + 0.65;
+                        const minClearanceX = trafficHalfW + 0.58;
                         if (dx < minClearanceX) {
-                            const overlap = (minClearanceX - dx) * 0.6;
+                            const overlap = (minClearanceX - dx) * 0.65;
                             state.x -= pushDir * overlap;
                             car.position.x += pushDir * overlap;
                         }
 
-                        // 4. Progressive deceleration proportional to angle and speed delta
-                        const speedLoss = Math.min(22, 6 + Math.abs(speedDiff) * 0.12);
+                        // 4. Progressive deceleration & moderate sideswipe damage
+                        const speedLoss = Math.min(20, 5 + Math.abs(speedDiff) * 0.10);
                         state.speed = state.speed > 0 ? Math.max(18, state.speed - speedLoss) : 0;
-                        state.damageTaken = Math.min(100, (state.damageTaken || 0) + 2.5);
+                        state.damageTaken = Math.min(100, (state.damageTaken || 0) + 6.0);
 
                         // 5. Tactical screen shake scaled to impact momentum
                         state.shakeAmount = Math.min(0.75, 0.35 + Math.abs(state.vx || 0) * 0.05);
+                        state.cameraShake = state.shakeAmount;
+                        this.cameraShake = state.shakeAmount;
                         state.invulnerableTimer = 0.35; // grace buffer against multi-frame collision glitching
 
                         // 6. Dynamic sparks along the contact seam
@@ -12626,23 +13501,36 @@
                         u.respawnTimer = 2.0;
                         return;
                     }
-                    const newLane = (u.type === 'truck') ? (Math.random() < 0.8 ? 3 : 2) : Math.floor(Math.random() * 4);
+                    const newLane = (u.type === 'truck' || u.type === 'kamaz') ? (Math.random() < 0.8 ? 3 : 2) : Math.floor(Math.random() * 4);
                     car.position.set(this.trafficLanes[newLane], 0, state.z + 180 + Math.random() * 120);
                     u.laneIndex = newLane;
                     u.targetX = this.trafficLanes[newLane];
                     u.baseSpeed = this.getLaneSpeed(newLane, u.type);
                     u.speed = u.baseSpeed;
                     u.overtaken = false;
+                    u.nearMissed = false;
                     u.isWrecked = false;
                     u.deflectVx = 0;
+                    u.changingLane = false;
+                    u.plannedLaneIndex = null;
+                    u.hazardTimer = 0;
+                    u.prevDz = car.position.z - state.z;
                 }
             });
 
-            // Overtake combo timeout
+            // Overtake & Shashki combo timeouts
             if (state.overtakeComboTimer > 0) {
                 state.overtakeComboTimer -= dt;
                 if (state.overtakeComboTimer <= 0) {
                     state.overtakeCombo = 0;
+                }
+            }
+            if ((this.shashkiComboTimer || 0) > 0) {
+                this.shashkiComboTimer = Math.max(0, this.shashkiComboTimer - dt);
+                state.shashkiComboTimer = this.shashkiComboTimer;
+                if (this.shashkiComboTimer <= 0) {
+                    this.shashkiCombo = 0;
+                    state.shashkiCombo = 0;
                 }
             }
 
@@ -12692,6 +13580,7 @@
                         const starsWon = state.wantedStars;
                         const bounty = Math.round(starsWon * 35000 * (state.rewardMult || 1.0));
                         state.earnedCash += bounty;
+                        this.earnedCash = state.earnedCash;
                         if (this.options.onPopup) {
                             this.options.onPopup(`🎉 УХОД ОТ ПОГОНИ! +${bounty.toLocaleString('ru-RU')} ₽`, '#22c55e');
                         }
@@ -12771,6 +13660,8 @@
             let shakeX = 0, shakeY = 0;
             if (state.shakeAmount > 0) {
                 state.shakeAmount = Math.max(0, state.shakeAmount - 2.5 * dt);
+                state.cameraShake = state.shakeAmount;
+                this.cameraShake = state.shakeAmount;
                 shakeX = (Math.random() - 0.5) * state.shakeAmount * 0.35;
                 shakeY = (Math.random() - 0.5) * state.shakeAmount * 0.35;
             }
@@ -12920,6 +13811,9 @@
                 isDrifting: state.isDrifting,
                 overtakesCount: state.overtakesCount,
                 overtakeCombo: state.overtakeCombo,
+                nearMissCount: this.nearMissCount || 0,
+                shashkiCombo: this.shashkiCombo || 0,
+                isDrafting: !!state.isDrafting,
                 cameraMode: this.cameraMode,
                 weather: this.currentActiveWeather,
                 weatherIcon: curPreset ? curPreset.icon : '🌃',
@@ -13011,6 +13905,20 @@
             if (this.sharedSmokeMat) { try { this.sharedSmokeMat.dispose(); } catch (_) {} this.sharedSmokeMat = null; }
             if (this.sharedSprayGeo) { try { this.sharedSprayGeo.dispose(); } catch (_) {} this.sharedSprayGeo = null; }
             if (this.sharedSprayMat) { try { this.sharedSprayMat.dispose(); } catch (_) {} this.sharedSprayMat = null; }
+            if (this.catsEyeGeo) { try { this.catsEyeGeo.dispose(); } catch (_) {} this.catsEyeGeo = null; }
+            if (this.catsEyeWhiteMat) { try { this.catsEyeWhiteMat.dispose(); } catch (_) {} this.catsEyeWhiteMat = null; }
+            if (this.catsEyeAmberMat) { try { this.catsEyeAmberMat.dispose(); } catch (_) {} this.catsEyeAmberMat = null; }
+            if (this.kmSignBoardGeo) { try { this.kmSignBoardGeo.dispose(); } catch (_) {} this.kmSignBoardGeo = null; }
+            if (this.chevronSignGeo) { try { this.chevronSignGeo.dispose(); } catch (_) {} this.chevronSignGeo = null; }
+            if (this.buildingBoxGeo) { try { this.buildingBoxGeo.dispose(); } catch (_) {} this.buildingBoxGeo = null; }
+            if (this.buildingWinGeo) { try { this.buildingWinGeo.dispose(); } catch (_) {} this.buildingWinGeo = null; }
+            if (this.archPylonGeo) { try { this.archPylonGeo.dispose(); } catch (_) {} this.archPylonGeo = null; }
+            if (this.archBeamGeo) { try { this.archBeamGeo.dispose(); } catch (_) {} this.archBeamGeo = null; }
+            if (this.ledMatrixMat) { try { this.ledMatrixMat.dispose(); } catch (_) {} this.ledMatrixMat = null; }
+            if (this.ledAmberMat) { try { this.ledAmberMat.dispose(); } catch (_) {} this.ledAmberMat = null; }
+            if (this.chevronSignMat) { try { this.chevronSignMat.dispose(); } catch (_) {} this.chevronSignMat = null; }
+            if (this.buildingMat) { try { this.buildingMat.dispose(); } catch (_) {} this.buildingMat = null; }
+            if (this.buildingWindowMat) { try { this.buildingWindowMat.dispose(); } catch (_) {} this.buildingWindowMat = null; }
             if (this.scene) {
                 try { deepDispose(this.scene); } catch (_) {}
                 this.scene = null;

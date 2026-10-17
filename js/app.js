@@ -13674,6 +13674,13 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             overtakesCount: 0,
             combo: 1,
             comboTimer: 0,
+            shashkiCombo: 0,
+            shashkiTimer: 0,
+            maxShashkiCombo: 0,
+            lastShashkaBonus: 0,
+            kissWallCooldown: 0,
+            kissWallCount: 0,
+            tireHeat: 0,
             damageBlink: 0,
             isOnWall: false,
             wantedStars: 0,
@@ -13726,6 +13733,65 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         let raceAutoGasEnabled = false;
         let raceHighwayEvent = null;
         let raceHighwayEventCooldown = 18;
+        let raceSpeedCameras = [];
+        let speedCameraSpawnTimer = 0;
+        let raceCameraShutterFlash = 0;
+        let raceFloatingTexts = [];
+
+        function spawnRaceFloatingText(text, x, y, color = '#fbbf24') {
+            if (!Array.isArray(raceFloatingTexts)) raceFloatingTexts = [];
+            if (raceFloatingTexts.length >= 16) raceFloatingTexts.shift();
+            raceFloatingTexts.push({
+                text: String(text || ''),
+                x: Number.isFinite(x) ? x : (racePlayer ? racePlayer.x : 200),
+                y: Number.isFinite(y) ? y : ((racePlayer ? (racePlayer.y || 470) : 470) - 24),
+                life: 1.0,
+                maxLife: 1.0,
+                color
+            });
+        }
+
+        function hasSpecialPlateImmunity() {
+            if (!racePlayer) return false;
+            if ((racePlayer.sguStrobeTimer || 0) > 0 || racePlayer.sguActive) return true;
+            const carIdx = typeof getSelectedRaceCarIndex === 'function' ? getSelectedRaceCarIndex() : selectedRaceCarIndex;
+            const selectedCar = (carIdx >= 0 && Array.isArray(myCars) && myCars[carIdx])
+                ? myCars[carIdx]
+                : (Array.isArray(myCars) ? myCars.find(c => c && c.name === selectedRaceCarName) : null);
+            const carObj = (selectedCar && selectedCar.plate) ? selectedCar : (activeRaceCar || selectedCar);
+            const rawPlate = racePlayer.plate?.text
+                || (typeof racePlayer.plate === 'string' ? racePlayer.plate : '')
+                || carObj?.plate?.text
+                || (typeof carObj?.plate === 'string' ? carObj.plate : '')
+                || (typeof carObj?.styling?.plate === 'string' && carObj.styling.plate !== 'none' ? carObj.styling.plate : '');
+            if (!rawPlate) return false;
+            const latinToCyr = { A: 'А', B: 'В', E: 'Е', K: 'К', M: 'М', H: 'Н', O: 'О', P: 'Р', C: 'С', T: 'Т', Y: 'У', X: 'Х' };
+            const upper = String(rawPlate).toUpperCase();
+            const norm = upper.replace(/[ABEKMHOPCTYX]/g, ch => latinToCyr[ch] || ch);
+            const mainPart = norm.split('|')[0] || norm;
+            const lettersOnly = mainPart.replace(/[^А-ЯЁ]/g, '');
+            const govSeries = ['АМР', 'ЕКХ', 'ООО', 'СКР', 'ФСО'];
+            for (const s of govSeries) {
+                if (norm.includes(s) || lettersOnly.includes(s)) return true;
+            }
+            const digits = mainPart.match(/\d+/g) || [];
+            const totalDigits = digits.join('');
+            if (totalDigits.length === 1 && (upper.includes('UAE') || upper.includes('DUBAI') || upper.includes('ABU') || /^\s*[A-ZА-ЯЁ]?\s*\d\s*(\||$)/i.test(upper))) {
+                return true;
+            }
+            return false;
+        }
+
+        function spawnSpeedCamera(customY = -90, customLimit = 160) {
+            if (!Array.isArray(raceSpeedCameras)) raceSpeedCameras = [];
+            raceSpeedCameras.push({
+                x: 200,
+                y: customY,
+                limit: customLimit,
+                triggered: false,
+                type: 'autouragan'
+            });
+        }
 
         function toggleRaceAutoGas() {
             raceAutoGasEnabled = !raceAutoGasEnabled;
@@ -15247,6 +15313,13 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 overtakesCount: 0,
                 combo: 1,
                 comboTimer: 0,
+                shashkiCombo: 0,
+                shashkiTimer: 0,
+                maxShashkiCombo: 0,
+                lastShashkaBonus: 0,
+                kissWallCooldown: 0,
+                kissWallCount: 0,
+                tireHeat: 0,
                 damageBlink: 0,
                 isOnWall: false,
                 fuelLiters: 0,
@@ -15301,6 +15374,10 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             clippingSpawnTimer = raceCurrentMode === 'drift' ? 0.75 : 0;
             raceHighwayEvent = null;
             raceHighwayEventCooldown = 18 + Math.random() * 12;
+            raceSpeedCameras = [];
+            speedCameraSpawnTimer = 0;
+            raceCameraShutterFlash = 0;
+            raceFloatingTexts = [];
             raceRoadOffset = 0;
             trafficSpawnTimer = 0;
             collectibleSpawnTimer = 0;
@@ -15390,6 +15467,8 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
         function updateRacePhysics(dt) {
             const stats = racePlayer.tunedStats || carRaceStats[selectedRaceCarName] || carRaceStats["ВАЗ-2107 «Жигули»"];
+            const prevPlayerX = racePlayer.x;
+            const wasDriftingOnEntry = !!racePlayer.isDrifting;
 
             // 1. Динамические повороты трассы
             curveTimer -= dt;
@@ -15640,6 +15719,15 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
             racePlayer.x += racePlayer.vx * dt;
 
+            // В режиме Дрифта при скольжении в зоне «Kiss the Wall» (58..66 или 334..342) без жесткого удара удерживаем от случайного срыва
+            if (isDriftMode && !racePlayer.isOnWall) {
+                if (prevPlayerX > 57 && prevPlayerX <= 66 && racePlayer.x <= 57 && !raceKeys.left && Math.abs(racePlayer.vx) < 55) {
+                    racePlayer.x = 58;
+                } else if (prevPlayerX >= 334 && prevPlayerX < 343 && racePlayer.x >= 343 && !raceKeys.right && Math.abs(racePlayer.vx) < 55) {
+                    racePlayer.x = 342;
+                }
+            }
+
             // ФИЗИКА СТЕНЫ / ОТБОЙНИКА (Устранение бага: нельзя ехать по стене и фармить деньги!)
             const isTouchingLeftWall = racePlayer.x <= 57;
             const isTouchingRightWall = racePlayer.x >= 343;
@@ -15667,6 +15755,8 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     // Резкое падение скорости до 0 от трения борта
                     racePlayer.speed = Math.max(0, racePlayer.speed - 200 * dt);
                     racePlayer.combo = 1;
+                    racePlayer.shashkiCombo = 0;
+                    racePlayer.shashkiTimer = 0;
                     triggerScreenShake();
 
                     // Искры от трения металла о барьер
@@ -15702,6 +15792,8 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     racePlayer.damageTaken += dt * 4.5;
                     racePlayer.speed = Math.max(0, racePlayer.speed - 200 * dt);
                     racePlayer.combo = 1;
+                    racePlayer.shashkiCombo = 0;
+                    racePlayer.shashkiTimer = 0;
                     triggerScreenShake();
 
                     if (racePlayer.speed > 5) {
@@ -15731,17 +15823,43 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             racePlayer.yawAngle = (racePlayer.yawAngle || 0) + (targetYaw - (racePlayer.yawAngle || 0)) * yawRate * dt;
             racePlayer.tilt = racePlayer.yawAngle; // Синхронизируем tilt для обратной совместимости
 
+            if ((racePlayer.kissWallCooldown || 0) > 0) {
+                racePlayer.kissWallCooldown = Math.max(0, racePlayer.kissWallCooldown - dt);
+            }
+
+            const isNearOuterWallEdge = !racePlayer.isOnWall && (
+                (racePlayer.x > 57 && racePlayer.x <= 66)
+                || (racePlayer.x >= 334 && racePlayer.x < 343)
+                || (prevPlayerX > 57 && prevPlayerX <= 66)
+                || (prevPlayerX >= 334 && prevPlayerX < 343)
+            );
+
             // Проверка состояния дрифта
-            const isDriftingNow = (isHandbrake || Math.abs(racePlayer.vx) > (maxLateral * 0.40) || raceCurrentMode === 'drift')
+            const isDriftingNow = (
+                ((isHandbrake || Math.abs(racePlayer.vx) > (maxLateral * 0.40) || raceCurrentMode === 'drift')
                 && Math.abs(racePlayer.vx) > 20
-                && racePlayer.speed > 35
-                && !racePlayer.isOnWall;
+                && racePlayer.speed > 35)
+                || (wasDriftingOnEntry && raceCurrentMode === 'drift' && isNearOuterWallEdge && racePlayer.speed > 30)
+            ) && !racePlayer.isOnWall;
+
+            // Прогрев и остывание шин (Tire Temperature 0..100%)
+            racePlayer.tireHeat = Number.isFinite(racePlayer.tireHeat) ? racePlayer.tireHeat : 0;
+            const isTireHeating = isDriftingNow || (isHandbrake && racePlayer.speed > 15) || (Math.abs(racePlayer.vx) > (maxLateral * 0.55) && racePlayer.speed > 35);
+            if (isTireHeating) {
+                const slipFactor = Math.min(1.6, Math.abs(racePlayer.vx || 0) / Math.max(1, maxLateral * 0.55) + (isHandbrake ? 0.55 : 0.25));
+                const heatGainRate = 24 + slipFactor * 18 + (racePlayer.isNitroActive ? 8 : 0);
+                racePlayer.tireHeat = Math.min(100, racePlayer.tireHeat + heatGainRate * dt);
+            } else {
+                const coolRate = 14 + (racePlayer.speed / 140) * 6;
+                racePlayer.tireHeat = Math.max(0, racePlayer.tireHeat - coolRate * dt);
+            }
 
             if (isDriftingNow) {
                 racePlayer.isDrifting = true;
-                racePlayer.driftDuration += dt;
-                racePlayer.driftComboTimer = 2.0; // 2 секунды на переход между поворотами
-                racePlayer.driftCombo = Math.min(5, 1 + Math.floor(racePlayer.driftDuration / 2.0));
+                racePlayer.driftDuration = (racePlayer.driftDuration || 0) + dt;
+                racePlayer.driftComboTimer = Math.max(racePlayer.driftComboTimer || 0, 2.0); // 2 секунды на переход между поворотами
+                const durationCombo = Math.min(5, 1 + Math.floor(racePlayer.driftDuration / 2.0));
+                racePlayer.driftCombo = Math.max(racePlayer.driftCombo || 1, durationCombo);
                 racePlayer.maxDriftCombo = Math.max(racePlayer.maxDriftCombo || 1, racePlayer.driftCombo);
 
                 // Оценка угла и качества заноса
@@ -15778,8 +15896,38 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
                 // Начисление очков дрифта с учетом комбо, угла и контр-руления
                 const driftRate = Math.round((racePlayer.speed * 0.28) * (Math.abs(racePlayer.vx) / maxLateral) * 18 * driftMult * racePlayer.driftCombo * angleMult * counterMult);
-                racePlayer.driftCurrentScore += driftRate * dt;
-                racePlayer.driftScore += driftRate * dt;
+                racePlayer.driftCurrentScore = (racePlayer.driftCurrentScore || 0) + driftRate * dt;
+                racePlayer.driftScore = (racePlayer.driftScore || 0) + driftRate * dt;
+
+                // «Kiss the Wall» (Впритирку к отбойнику в режиме Дрифта)
+                if (raceCurrentMode === 'drift' && isNearOuterWallEdge && (racePlayer.kissWallCooldown || 0) <= 0) {
+                    const comboNow = racePlayer.driftCombo || 1;
+                    const kissBonus = 600 * comboNow;
+                    racePlayer.driftCurrentScore = (racePlayer.driftCurrentScore || 0) + kissBonus;
+                    racePlayer.driftScore = (racePlayer.driftScore || 0) + kissBonus;
+                    racePlayer.driftCombo = Math.min(10, comboNow + 1);
+                    racePlayer.maxDriftCombo = Math.max(racePlayer.maxDriftCombo || 1, racePlayer.driftCombo);
+                    racePlayer.driftComboTimer = Math.max(racePlayer.driftComboTimer || 0, 2.5);
+                    racePlayer.kissWallCooldown = 1.5;
+                    racePlayer.kissWallCount = (racePlayer.kissWallCount || 0) + 1;
+                    showRacePopup("🧱 KISS THE WALL! +600 PTS", "#38bdf8");
+                    spawnRaceFloatingText(`🧱 KISS THE WALL! +${kissBonus} PTS`, racePlayer.x, (racePlayer.y || 470) - 28, '#38bdf8');
+                    if (typeof playCashSound === 'function') playCashSound();
+                    if (typeof sound?.haptic === 'function') sound.haptic('medium');
+                    const isLeftKiss = racePlayer.x <= 66 || prevPlayerX <= 66;
+                    const sparkOriginX = isLeftKiss ? 56 : 344;
+                    const sparkDirX = isLeftKiss ? 1 : -1;
+                    for (let ks = 0; ks < 14; ks++) {
+                        raceSparks.push({
+                            x: sparkOriginX,
+                            y: (racePlayer.y || 470) + (Math.random() - 0.5) * 24,
+                            vx: sparkDirX * (35 + Math.random() * 65),
+                            vy: -20 - Math.random() * 50,
+                            life: 0.45 + Math.random() * 0.2,
+                            color: ks % 3 === 0 ? '#e2e8f0' : (ks % 2 === 0 ? '#38bdf8' : '#fef08a')
+                        });
+                    }
+                }
 
                 // Звук визга резины и тактильная отдача
                 const nowMs = performance.now();
@@ -15798,8 +15946,11 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 const rrx = racePlayer.x + (9 * cosYaw - 14 * sinYaw);
                 const rry = racePlayer.y + (9 * sinYaw + 14 * cosYaw);
 
-                // Двухпоточный реалистичный дым из-под задних покрышек
-                const smokeWaves = (isHandbrake || racePlayer.isNitroActive || raceKeys.gas) ? 3 : 2;
+                // Двухпоточный реалистичный дым из-под задних покрышек (с эволюцией от прогрева шин tireHeat)
+                const isHotTires = (racePlayer.tireHeat || 0) > 65;
+                const isGoldenSmoke = isHotTires && (racePlayer.driftCombo || 1) >= 4;
+                const smokeSizeMult = isHotTires ? 1.42 : 1.0;
+                const smokeWaves = ((isHandbrake || racePlayer.isNitroActive || raceKeys.gas) ? 3 : 2) + (isHotTires ? 1 : 0);
                 for (let smk = 0; smk < smokeWaves; smk++) {
                     const isLeftWheel = smk % 2 === 0;
                     const wx = isLeftWheel ? rlx : rrx;
@@ -15809,14 +15960,19 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                         y: wy + (Math.random() - 0.5) * 4,
                         vx: (racePlayer.vx * 0.22) + (Math.random() - 0.5) * 18,
                         vy: 20 + Math.random() * 32,
-                        size: 3.8 + Math.random() * 4.2,
-                        life: 0.70
+                        size: (3.8 + Math.random() * 4.2) * smokeSizeMult,
+                        life: isHotTires ? 0.82 : 0.70,
+                        heat: racePlayer.tireHeat || 0,
+                        combo: racePlayer.driftCombo || 1,
+                        isHot: isHotTires,
+                        isGolden: isGoldenSmoke,
+                        color: isGoldenSmoke ? '#fbbf24' : (isHotTires ? '#fde68a' : '#e2e8f0')
                     });
                 }
 
-                // Следы шин от обоих задних колес
-                raceSkidmarks.push({ x: rlx, y: rly, life: 1.0 });
-                raceSkidmarks.push({ x: rrx, y: rry, life: 1.0 });
+                // Следы шин от обоих задних колес (темнеют при прогреве tireHeat > 65%)
+                raceSkidmarks.push({ x: rlx, y: rly, life: isHotTires ? 1.15 : 1.0, heat: racePlayer.tireHeat || 0 });
+                raceSkidmarks.push({ x: rrx, y: rry, life: isHotTires ? 1.15 : 1.0, heat: racePlayer.tireHeat || 0 });
 
                 // Искры от трения шин при глубоком угле заноса
                 if (driftDeg >= 22 && Math.random() < 0.35) {
@@ -15878,9 +16034,10 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 const rly = racePlayer.y + (-9 * sinYaw + 14 * cosYaw);
                 const rrx = racePlayer.x + (9 * cosYaw - 14 * sinYaw);
                 const rry = racePlayer.y + (9 * sinYaw + 14 * cosYaw);
+                const isHot = (racePlayer.tireHeat || 0) > 65;
 
-                raceSkidmarks.push({ x: rlx, y: rly, life: 0.95 });
-                raceSkidmarks.push({ x: rrx, y: rry, life: 0.95 });
+                raceSkidmarks.push({ x: rlx, y: rly, life: isHot ? 1.1 : 0.95, heat: racePlayer.tireHeat || 0 });
+                raceSkidmarks.push({ x: rrx, y: rry, life: isHot ? 1.1 : 0.95, heat: racePlayer.tireHeat || 0 });
 
                 if (isHandbrake && racePlayer.speed > 15) {
                     const nowMs = performance.now();
@@ -15897,8 +16054,12 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                             y: wy + (Math.random() - 0.5) * 4,
                             vx: (racePlayer.vx * 0.22) + (Math.random() - 0.5) * 16,
                             vy: 20 + Math.random() * 30,
-                            size: 3.5 + Math.random() * 4.0,
-                            life: 0.65
+                            size: (3.5 + Math.random() * 4.0) * (isHot ? 1.35 : 1.0),
+                            life: isHot ? 0.78 : 0.65,
+                            heat: racePlayer.tireHeat || 0,
+                            combo: racePlayer.driftCombo || 1,
+                            isHot: isHot,
+                            isGolden: isHot && (racePlayer.driftCombo || 1) >= 4
                         });
                     }
                 }
@@ -15923,6 +16084,18 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 smk.life -= 1.6 * dt;
                 if (smk.life <= 0 || smk.y > 620) {
                     raceDriftSmoke.splice(i, 1);
+                }
+            }
+
+            // Обновление всплывающих текстов на холсте
+            if (Array.isArray(raceFloatingTexts)) {
+                for (let i = raceFloatingTexts.length - 1; i >= 0; i--) {
+                    const ft = raceFloatingTexts[i];
+                    ft.y -= 34 * dt;
+                    ft.life -= dt * 0.95;
+                    if (ft.life <= 0) {
+                        raceFloatingTexts.splice(i, 1);
+                    }
                 }
             }
 
@@ -16048,10 +16221,17 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 }
             }
 
-            // Комбо таймер
+            // Комбо таймер и таймер «Шашек в потоке»
             if (racePlayer.comboTimer > 0) {
                 racePlayer.comboTimer -= dt;
                 if (racePlayer.comboTimer <= 0) racePlayer.combo = 1;
+            }
+            if ((racePlayer.shashkiTimer || 0) > 0) {
+                racePlayer.shashkiTimer -= dt;
+                if (racePlayer.shashkiTimer <= 0) {
+                    racePlayer.shashkiTimer = 0;
+                    racePlayer.shashkiCombo = 0;
+                }
             }
 
             // Движение дороги
@@ -16101,8 +16281,10 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                             racePlayer.driftScore = (racePlayer.driftScore || 0) + pts;
                             racePlayer.driftCurrentScore = (racePlayer.driftCurrentScore || 0) + pts;
                             racePlayer.driftCombo = Math.min(10, (racePlayer.driftCombo || 1) + 1);
+                            racePlayer.maxDriftCombo = Math.max(racePlayer.maxDriftCombo || 1, racePlayer.driftCombo);
                             racePlayer.driftComboTimer = 4.0;
                             showRacePopup(`🎯 АПЕКС ЗАНОСА! +${pts.toLocaleString('ru-RU')} PTS`, '#c084fc');
+                            spawnRaceFloatingText(`🎯 АПЕКС! +${pts} PTS`, cz.x, cz.y, '#c084fc');
                             if (typeof playCashSound === 'function') playCashSound();
                             if (typeof sound?.haptic === 'function') sound.haptic('medium');
                         }
@@ -16112,16 +16294,55 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             }
 
             // ---------------------------------------------------------
-            // РЕЖИМ ШОССЕ: СЛУЧАЙНЫЕ ДОРОЖНЫЕ СОБЫТИЯ
+            // РЕЖИМ ШОССЕ: КАМЕРЫ «АВТОУРАГАН / ПОТОК» И ДОРОЖНЫЕ СОБЫТИЯ
             // ---------------------------------------------------------
+            if (raceCameraShutterFlash > 0) {
+                raceCameraShutterFlash = Math.max(0, raceCameraShutterFlash - dt);
+            }
+
             if (raceCurrentMode === 'highway') {
+                speedCameraSpawnTimer += dt;
+                if (speedCameraSpawnTimer > 10.5 && (!Array.isArray(raceSpeedCameras) || raceSpeedCameras.length === 0) && racePlayer.speed > 60) {
+                    speedCameraSpawnTimer = 0;
+                    spawnSpeedCamera(-90, 160);
+                }
+
+                if (Array.isArray(raceSpeedCameras)) {
+                    for (let i = raceSpeedCameras.length - 1; i >= 0; i--) {
+                        const cam = raceSpeedCameras[i];
+                        const prevCamY = cam.y;
+                        cam.y += (racePlayer.speed * 3.5) * dt;
+                        const pY = racePlayer.y || 470;
+                        if (!cam.triggered && ((prevCamY <= pY && cam.y >= pY - 26) || Math.abs(cam.y - pY) < 26)) {
+                            cam.triggered = true;
+                            const camLimit = cam.limit || 160;
+                            if (racePlayer.speed > camLimit) {
+                                if (hasSpecialPlateImmunity()) {
+                                    racePlayer.earnedCash += 1500;
+                                    showRacePopup("🛡️ ИММУНИТЕТ СПЕЦСЕРИИ! +1 500 ₽", "#38bdf8");
+                                    spawnRaceFloatingText("🛡️ ИММУНИТЕТ СПЕЦСЕРИИ! +1 500 ₽", racePlayer.x, pY - 28, "#38bdf8");
+                                    if (typeof playCashSound === 'function') playCashSound();
+                                } else {
+                                    raceCameraShutterFlash = 0.35;
+                                    addWantedStars(1, '(Камера скорости)');
+                                    spawnRaceFloatingText("📸 КАМЕРА СКОРОСТИ! >160 КМ/Ч", racePlayer.x, pY - 28, "#ef4444");
+                                }
+                            }
+                        }
+                        if (cam.y > 660) {
+                            raceSpeedCameras.splice(i, 1);
+                        }
+                    }
+                }
+
                 raceHighwayEventCooldown -= dt;
                 if (raceHighwayEventCooldown <= 0 && !raceHighwayEvent) {
                     raceHighwayEventCooldown = 22 + Math.random() * 18;
                     const roll = Math.random();
                     if (roll < 0.28) {
-                        raceHighwayEvent = { type: 'speed_trap', timer: 7.0, limit: 140, checked: false };
-                        showRacePopup("🚨 КАМЕРА СКОРОСТИ! СБРОСЬТЕ ДО 140 КМ/Ч ЧЕРЕЗ 5 СЕК!", "#f59e0b");
+                        raceHighwayEvent = { type: 'speed_trap', timer: 7.0, limit: 160, checked: false };
+                        spawnSpeedCamera(-120, 160);
+                        showRacePopup("🚨 КАМЕРА «АВТОУРАГАН» ВПЕРЕДИ! ЛИМИТ 160 КМ/Ч!", "#f59e0b");
                     } else if (roll < 0.52) {
                         raceHighwayEvent = { type: 'road_works', timer: 8.0 };
                         showRacePopup("🚧 ДОРОЖНЫЕ РАБОТЫ! СУЖЕНИЕ В ПРАВЫЙ РЯД ➔➔", "#f97316");
@@ -16134,11 +16355,13 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                                 speed: 0,
                                 targetSpeed: 0,
                                 name: "Дорожный конус",
+                                role: "cone",
                                 isTruck: false,
                                 isPolice: false,
                                 isCone: true,
                                 tilt: 0,
                                 blinker: null,
+                                blinkerDir: 0,
                                 blinkerTimer: 0,
                                 changeLaneCooldown: 999,
                                 overtaken: false
@@ -16156,11 +16379,14 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                             speed: Math.max(140, racePlayer.speed * 0.95),
                             targetSpeed: 210,
                             name: "Скорая помощь (03)",
+                            role: "ambulance",
+                            isAmbulance: true,
                             isTruck: false,
                             isPolice: true,
                             isCone: false,
                             tilt: 0,
                             blinker: 'left',
+                            blinkerDir: -1,
                             blinkerTimer: 0.3,
                             changeLaneCooldown: 999,
                             overtaken: false
@@ -16177,12 +16403,16 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                             speed: Math.max(150, racePlayer.speed * 0.9),
                             targetSpeed: 230,
                             name: rivalCarName,
+                            role: "streetracer",
+                            isStreetRacer: true,
+                            neon: "#a855f7",
                             isTruck: false,
                             isPolice: false,
                             isRival: true,
                             isCone: false,
                             tilt: 0,
                             blinker: null,
+                            blinkerDir: 0,
                             blinkerTimer: 0,
                             changeLaneCooldown: 2.2,
                             overtaken: false
@@ -16194,15 +16424,20 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     raceHighwayEvent.timer -= dt;
                     if (raceHighwayEvent.type === 'speed_trap' && raceHighwayEvent.timer <= 0.1 && !raceHighwayEvent.checked) {
                         raceHighwayEvent.checked = true;
-                        if (racePlayer.speed <= raceHighwayEvent.limit) {
+                        if (racePlayer.speed <= (raceHighwayEvent.limit || 160)) {
                             const trapReward = Math.round(15000 * Math.max(1, (stats.rewardMult || 1) * 0.5));
                             showRacePopup(`✅ КАМЕРА ПРОЙДЕНА ЧИСТО! +${trapReward.toLocaleString('ru-RU')} ₽`, "#10b981");
                             racePlayer.earnedCash += trapReward;
                             if (typeof playCashSound === 'function') playCashSound();
+                        } else if (hasSpecialPlateImmunity()) {
+                            racePlayer.earnedCash += 1500;
+                            showRacePopup("🛡️ ИММУНИТЕТ СПЕЦСЕРИИ! +1 500 ₽", "#38bdf8");
+                            if (typeof playCashSound === 'function') playCashSound();
                         } else {
+                            raceCameraShutterFlash = 0.35;
                             showRacePopup("📸 ШТРАФ ЗА ПРЕВЫШЕНИЕ! −5 000 ₽", "#ef4444");
                             racePlayer.earnedCash = Math.max(0, racePlayer.earnedCash - 5000);
-                            addWantedStars(1, 'РАДАР');
+                            addWantedStars(1, '(Камера скорости)');
                         }
                     }
                     if (raceHighwayEvent.timer <= 0) {
@@ -16211,7 +16446,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 }
             }
 
-            // 10. Физика трафика, динамический ИИ (перестроения, поворотники) и столкновения
+            // 10. Физика трафика, динамический ИИ (перестроения, поворотники, стоп-сигналы) и столкновения
             const lanes = [95, 165, 235, 305];
             for (let i = raceTraffic.length - 1; i >= 0; i--) {
                 const t = raceTraffic[i];
@@ -16231,8 +16466,27 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     continue;
                 }
 
-                // ДИНАМИЧЕСКИЙ ТРАФИК: Машины двигаются между рядами, обгоняют и тормозят
+                // ДИНАМИЧЕСКИЙ ТРАФИК: Машины двигаются между рядами, подают сигнал поворотником и тормозят
                 if (!t.isCone) {
+                    if (t.laneIdx === undefined) {
+                        t.laneIdx = lanes.reduce((best, lx, idx) => Math.abs(lx - t.x) < Math.abs(lanes[best] - t.x) ? idx : best, 0);
+                    }
+                    if (t.targetX === undefined) {
+                        t.targetX = t.x;
+                    }
+                    if (t.blinkerDir === -1 && !t.blinker) t.blinker = 'left';
+                    else if (t.blinkerDir === 1 && !t.blinker) t.blinker = 'right';
+                    else if (t.blinker === 'left' && !t.blinkerDir) t.blinkerDir = -1;
+                    else if (t.blinker === 'right' && !t.blinkerDir) t.blinkerDir = 1;
+
+                    if ((t.blinkerDir === -1 || t.blinkerDir === 1) && Math.abs(t.targetX - t.x) < 1.0) {
+                        const targetLane = Math.max(0, Math.min(3, t.laneIdx + (t.blinkerDir < 0 ? -1 : 1)));
+                        if (targetLane !== t.laneIdx) {
+                            t.laneIdx = targetLane;
+                            t.targetX = lanes[targetLane];
+                        }
+                    }
+
                     // Влияние СГУ («Крякалка»): попутный гражданский трафик впереди в панике уступает дорогу VIP
                     if ((racePlayer.sguStrobeTimer || 0) > 0 && !t.isTruck && !t.isPolice && t.type !== 'heli' && t.type !== 'block' && t.type !== 'spike') {
                         const dy = racePlayer.y - t.y; // положительно, если машина впереди игрока
@@ -16244,6 +16498,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                                 t.laneIdx = newLane;
                                 t.targetX = lanes[newLane];
                                 t.blinker = canGoRight ? 'right' : 'left';
+                                t.blinkerDir = canGoRight ? 1 : -1;
                                 t.blinkerTimer = 0.12; // молниеносная реакция на стробоскопы
                                 t.changeLaneCooldown = 6.0;
                                 t.speed = Math.max(35, t.speed * 0.85);
@@ -16265,12 +16520,13 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
                     t.changeLaneCooldown = (Number.isFinite(t.changeLaneCooldown) ? t.changeLaneCooldown : 3.0) - dt;
 
-                    // Проверка препятствия прямо впереди в своей полосе
+                    // Проверка более медленного автомобиля прямо впереди в своей полосе
                     let obstacleAhead = null;
                     for (let other of raceTraffic) {
                         if (other !== t && Math.abs(other.x - t.x) < 26) {
-                            const dy = other.y - t.y; // положительно, если other впереди нас на экране
-                            if (dy > 15 && dy < 95) {
+                            const gapUp = t.y - other.y;   // other выше по экрану (впереди по ходу движения)
+                            const gapDown = other.y - t.y; // fallback для тестов с обратным порядком Y
+                            if ((gapUp > 14 && gapUp < 115) || (gapDown > 14 && gapDown < 95)) {
                                 obstacleAhead = other;
                                 break;
                             }
@@ -16297,22 +16553,23 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                                 t.laneIdx = yieldLane;
                                 t.targetX = candX;
                                 t.blinker = canGoRight ? 'right' : 'left';
-                                t.blinkerTimer = 0.35; // информирует поворотником перед маневром
+                                t.blinkerDir = canGoRight ? 1 : -1;
+                                t.blinkerTimer = 0.8; // включает поворотник за ~0.8с перед маневром
                                 t.changeLaneCooldown = 5.0;
                             }
                         }
                     }
 
                     if (obstacleAhead) {
-                        // Плавное торможение перед машиной впереди вместо резкого удара по тормозам
-                        if (t.speed > obstacleAhead.speed) {
-                            const gap = obstacleAhead.y - t.y; // дистанция (15..95)
-                            const decel = Math.min(48, Math.max(16, (t.speed - obstacleAhead.speed) * (gap < 35 ? 1.6 : 0.95)));
-                            t.speed = Math.max(obstacleAhead.speed * 0.95, t.speed - decel * dt);
+                        // Замедление и зажигание стоп-сигналов перед медленной машиной впереди
+                        if (t.speed > (obstacleAhead.speed || 0)) {
+                            const gap = Math.abs(obstacleAhead.y - t.y);
+                            const decel = Math.min(52, Math.max(18, (t.speed - (obstacleAhead.speed || 0)) * (gap < 40 ? 1.6 : 0.95)));
+                            t.speed = Math.max((obstacleAhead.speed || 0) * 0.95, t.speed - decel * dt);
                             t.isBraking = true;
                         }
 
-                        // Ищем возможность перестроиться в соседний ряд
+                        // Перестроение с предварительным сигналом поворотника (~0.8с)
                         if (t.changeLaneCooldown <= 0 && !t.isTruck) {
                             const curL = t.laneIdx;
                             const candidates = [];
@@ -16343,23 +16600,31 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                                 t.laneIdx = chosenL;
                                 t.targetX = lanes[chosenL];
                                 t.blinker = (chosenL < curL ? 'left' : 'right');
-                                t.blinkerTimer = 0.45;
+                                t.blinkerDir = (chosenL < curL ? -1 : 1);
+                                t.blinkerTimer = 0.8;
                                 t.changeLaneCooldown = 4.5 + Math.random() * 3.5;
                             }
                         }
                     } else {
                         t.isBraking = false;
-                        if (t.speed < t.targetSpeed) {
+                        if (t.speed < (t.targetSpeed || t.speed)) {
                             t.speed = Math.min(t.targetSpeed, t.speed + 25 * dt);
                         }
 
-                        // Свободное периодическое перестроение (поток живет своей жизнью)
-                        if (t.changeLaneCooldown <= 0 && !t.isTruck && Math.random() < 0.06) {
+                        // Свободное периодическое перестроение с поворотником ~0.8с (стритрейсеры и такси перестраиваются активнее)
+                        const weaveChance = (t.isStreetRacer || t.role === 'streetracer') ? 0.16 : ((t.isTaxi || t.role === 'taxi') ? 0.09 : 0.06);
+                        if (t.changeLaneCooldown <= 0 && !t.isTruck && Math.random() < weaveChance) {
                             const curL = t.laneIdx;
                             let desiredL = curL;
-                            if (t.speed > 115 && curL > 0) desiredL = curL - 1; // быстрые жмутся влево
-                            else if (t.speed < 85 && curL < 3) desiredL = curL + 1; // медленные вправо
-                            else desiredL = curL > 0 ? (Math.random() < 0.5 ? curL - 1 : Math.min(3, curL + 1)) : 1;
+                            if (t.isStreetRacer || t.role === 'streetracer') {
+                                desiredL = curL > 0 && curL < 3 ? (Math.random() < 0.5 ? curL - 1 : curL + 1) : (curL === 0 ? 1 : 2);
+                            } else if (t.speed > 115 && curL > 0) {
+                                desiredL = curL - 1;
+                            } else if (t.speed < 85 && curL < 3) {
+                                desiredL = curL + 1;
+                            } else {
+                                desiredL = curL > 0 ? (Math.random() < 0.5 ? curL - 1 : Math.min(3, curL + 1)) : 1;
+                            }
 
                             if (desiredL !== curL) {
                                 const candX = lanes[desiredL];
@@ -16376,31 +16641,49 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                                     t.laneIdx = desiredL;
                                     t.targetX = candX;
                                     t.blinker = (desiredL < curL ? 'left' : 'right');
-                                    t.blinkerTimer = 0.50; // подаем сигнал заранее перед маневром
-                                    t.changeLaneCooldown = 6.0 + Math.random() * 4.0;
+                                    t.blinkerDir = (desiredL < curL ? -1 : 1);
+                                    t.blinkerTimer = 0.8; // подаем сигнал поворотником за ~0.8с перед маневром
+                                    t.changeLaneCooldown = (t.isStreetRacer || t.role === 'streetracer') ? (2.4 + Math.random() * 2.0) : (6.0 + Math.random() * 4.0);
                                 }
                             }
                         }
                     }
 
-                    // Плавное физическое перестроение к targetX
+                    // Плавное физическое перестроение к targetX после отработки таймера поворотника
                     if (Math.abs(t.x - t.targetX) > 0.5) {
                         if (t.blinkerTimer > 0) {
-                            t.blinkerTimer -= dt;
+                            const remDt = dt - t.blinkerTimer;
+                            t.blinkerTimer = Math.max(0, t.blinkerTimer - dt);
+                            if (remDt > 0) {
+                                const dx = t.targetX - t.x;
+                                const step = Math.sign(dx) * Math.min(Math.abs(dx), (50 + (t.speed || 80) * 0.24) * remDt);
+                                t.x += step;
+                                t.tilt = Math.sign(dx) * 0.08;
+                                if (Math.abs(t.x - t.targetX) <= 1.0) {
+                                    t.x = t.targetX;
+                                    t.tilt = 0;
+                                    t.blinker = null;
+                                    t.blinkerDir = 0;
+                                }
+                            }
                         } else {
                             const dx = t.targetX - t.x;
-                            const step = Math.sign(dx) * Math.min(Math.abs(dx), (48 + t.speed * 0.22) * dt);
+                            const step = Math.sign(dx) * Math.min(Math.abs(dx), (50 + (t.speed || 80) * 0.24) * dt);
                             t.x += step;
                             t.tilt = Math.sign(dx) * 0.08;
                             if (Math.abs(t.x - t.targetX) <= 1.0) {
                                 t.x = t.targetX;
                                 t.tilt = 0;
                                 t.blinker = null;
+                                t.blinkerDir = 0;
                             }
                         }
                     } else {
                         t.tilt = 0;
-                        t.blinker = null;
+                        if ((t.blinkerTimer || 0) <= 0) {
+                            t.blinker = null;
+                            t.blinkerDir = 0;
+                        }
                     }
 
                     // Мигание поворотников
@@ -16442,18 +16725,39 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     }
                 }
 
-                // Проверка опасного обгона (near-miss)
-                if (!t.overtaken && t.y > (racePlayer.y || 470) - 10) {
-                    const dx = Math.abs(t.x - racePlayer.x);
-                    if (dx > 20 && dx < 46) {
+                // Параметры габаритов для проверки столкновения и «Шашек»
+                const dx = Math.abs(t.x - racePlayer.x);
+                const dy = Math.abs(t.y - (racePlayer.y || 470));
+                const hitHeight = t.isTruck ? 54 : (t.isCone ? 18 : 36);
+                const hitWidth = t.isCone ? 16 : 22;
+                const isCollidingWithCar = dx < hitWidth && dy < hitHeight;
+
+                // Проверка опасного обгона (near-miss) и комбо «Шашки в потоке»
+                if (!t.overtaken && !t.isCone && !isCollidingWithCar && t.y >= (racePlayer.y || 470) - 14) {
+                    if (dx < 46) {
                         t.overtaken = true;
                         racePlayer.overtakesCount++;
-                        racePlayer.combo = Math.min(5, racePlayer.combo + 1);
+                        racePlayer.combo = Math.min(5, (racePlayer.combo || 1) + 1);
                         racePlayer.comboTimer = 3.5;
                         if (t.isPolice && !t.wantedTriggered) {
                             t.wantedTriggered = true;
                             addWantedStars(1, 'ОПАСНЫЙ ОБГОН ДПС');
                         }
+
+                        let shashkaTriggered = false;
+                        if (dx < 44 && racePlayer.speed >= 130) {
+                            shashkaTriggered = true;
+                            racePlayer.shashkiCombo = Math.min(10, (racePlayer.shashkiCombo || 0) + 1);
+                            racePlayer.maxShashkiCombo = Math.max(racePlayer.maxShashkiCombo || 0, racePlayer.shashkiCombo);
+                            racePlayer.shashkiTimer = 4.0;
+                            const shashkaCash = Math.round(250 * racePlayer.shashkiCombo * (stats.rewardMult || 1));
+                            racePlayer.lastShashkaBonus = shashkaCash;
+                            racePlayer.earnedCash += shashkaCash;
+                            spawnRaceFloatingText(`⚡ ШАШКА! x${racePlayer.shashkiCombo} (+${shashkaCash} ₽)`, racePlayer.x, (racePlayer.y || 470) - 26, '#38bdf8');
+                            showRacePopup(`⚡ ШАШКА! x${racePlayer.shashkiCombo} (+${shashkaCash.toLocaleString('ru-RU')} ₽)`, '#38bdf8');
+                            if (typeof sound?.nearMiss === 'function') sound.nearMiss();
+                        }
+
                         if (t.isRival) {
                             const rivalBonus = Math.round(25000 * stats.rewardMult);
                             racePlayer.earnedCash += rivalBonus;
@@ -16462,19 +16766,16 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                         } else {
                             const bonus = Math.round(1500 * stats.rewardMult * racePlayer.combo);
                             racePlayer.earnedCash += bonus;
-                            showRacePopup(`🔥 ОБГОН! +${bonus.toLocaleString('ru-RU')} ₽ (x${racePlayer.combo})`, '#fbbf24');
+                            if (!shashkaTriggered) {
+                                showRacePopup(`🔥 ОБГОН! +${bonus.toLocaleString('ru-RU')} ₽ (x${racePlayer.combo})`, '#fbbf24');
+                            }
                             playCashSound();
                         }
                     }
                 }
 
                 // Проверка столкновения
-                const dx = Math.abs(t.x - racePlayer.x);
-                const dy = Math.abs(t.y - (racePlayer.y || 470));
-                const hitHeight = t.isTruck ? 54 : (t.isCone ? 18 : 36);
-                const hitWidth = t.isCone ? 16 : 22;
-
-                if (dx < hitWidth && dy < hitHeight) {
+                if (isCollidingWithCar) {
                     if (racePlayer.invulnerableTimer > 0) {
                         // Неуязвим после бокового удара
                     } else if (t.isCone) {
@@ -16482,6 +16783,8 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                         t.y = 800;
                         racePlayer.speed = Math.max(45, racePlayer.speed - 18);
                         racePlayer.combo = 1;
+                        racePlayer.shashkiCombo = 0;
+                        racePlayer.shashkiTimer = 0;
                         racePlayer.damageTaken += 0.8;
                         addWantedStars(1, 'СБИТ КОНУС');
                         showRacePopup("🚧 СБИТ КОНУС! -18 км/ч", "#f97316");
@@ -16533,7 +16836,6 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                         }
                     } else if (dx >= 10 && !t.isTruck) {
                         // БОКОВОЙ КОНТАКТ (SIDE SCRAPE) с легковым авто!
-                        // Отскок в сторону, расталкивание трафика в соседний ряд, искры от трения металла, умеренное замедление вместо смерти
                         const pushDir = racePlayer.x < t.x ? -1 : 1;
                         racePlayer.x += pushDir * 14;
                         racePlayer.vx = pushDir * -110;
@@ -16542,14 +16844,15 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                         t.tilt = (pushDir > 0 ? 1 : -1) * -0.12;
 
                         racePlayer.speed = Math.max(50, racePlayer.speed - 16);
-                        racePlayer.invulnerableTimer = 0.6; // 0.6 сек неуязвимости
+                        racePlayer.invulnerableTimer = 0.6;
                         racePlayer.combo = 1;
+                        racePlayer.shashkiCombo = 0;
+                        racePlayer.shashkiTimer = 0;
                         racePlayer.damageTaken = (racePlayer.damageTaken || 0) + 2.5;
                         triggerScreenShake();
                         playTick();
                         showRacePopup("⚡ БОКОВОЙ ТАРАН! -16 км/ч", "#f59e0b");
 
-                        // Поток искр
                         for (let s = 0; s < 18; s++) {
                             raceSparks.push({
                                 x: (racePlayer.x + t.x) / 2,
@@ -16561,11 +16864,13 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                             });
                         }
                     } else if ((racePlayer.damageTaken || 0) < 70) {
-                        // ТЯЖЕЛЫЙ УДАР С ПОВРЕЖДЕНИЕМ КАРКАСА (включая фуры и лобовые тычки с защитным буфером)
+                        // ТЯЖЕЛЫЙ УДАР С ПОВРЕЖДЕНИЕМ КАРКАСА
                         const dmg = t.isTruck ? 38 : 25;
                         racePlayer.damageTaken = (racePlayer.damageTaken || 0) + dmg;
                         racePlayer.speed = Math.max(40, racePlayer.speed * 0.48);
                         racePlayer.invulnerableTimer = 1.0;
+                        racePlayer.shashkiCombo = 0;
+                        racePlayer.shashkiTimer = 0;
                         t.y -= (t.isTruck ? 30 : 60);
                         t.speed = Math.min(140, t.speed + 20);
                         triggerScreenShake();
@@ -16586,7 +16891,6 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                             return;
                         }
                     } else {
-                        // ЛОБОВОЙ ТАРАН ИЛИ ТОТАЛЬНЫЙ КРАШ ПРИ ПРЕВЫШЕНИИ ЗАПАСА ПРОЧНОСТИ
                         triggerRaceCrash();
                         return;
                     }
@@ -16735,15 +17039,19 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                         speed: 65,
                         targetSpeed: 75,
                         name: "ДПС / Полиция",
+                        role: 'police',
                         isTruck: false,
                         isPolice: true,
                         isCone: false,
                         spottedSpeeding: true,
                         tilt: 0,
                         blinker: null,
+                        blinkerDir: 0,
                         blinkerTimer: 0,
+                        isBraking: false,
                         changeLaneCooldown: 999,
-                        overtaken: false
+                        overtaken: false,
+                        shashkaAwarded: false
                     });
                 });
                 return;
@@ -16768,14 +17076,18 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     speed: truckSpeed,
                     targetSpeed: truckSpeed + 6,
                     name: isVan ? "Газель / Фургон" : "КАМАЗ / Фура",
+                    role: 'truck',
                     isTruck: true,
                     isPolice: false,
                     isCone: false,
                     tilt: 0,
                     blinker: null,
+                    blinkerDir: 0,
                     blinkerTimer: 0,
+                    isBraking: false,
                     changeLaneCooldown: 999,
-                    overtaken: false
+                    overtaken: false,
+                    shashkaAwarded: false
                 });
             } else if (roll < (0.23 + policeBonus)) {
                 // Патруль ДПС с мигалками (при активном розыске ускоряется на перехват с учетом звезд)
@@ -16792,17 +17104,21 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     speed: spd,
                     targetSpeed: tgtSpd,
                     name: "ДПС / Полиция",
+                    role: 'police',
                     isTruck: false,
                     isPolice: true,
                     isCone: false,
                     spottedSpeeding: isPursuit,
                     tilt: 0,
                     blinker: null,
+                    blinkerDir: 0,
                     blinkerTimer: 0,
+                    isBraking: false,
                     changeLaneCooldown: 2.2 + Math.random() * 2.5,
-                    overtaken: false
+                    overtaken: false,
+                    shashkaAwarded: false
                 });
-            } else if (roll < (0.28 + policeBonus * 0.5)) {
+            } else if (roll < (0.27 + policeBonus * 0.5)) {
                 // Дорожные работы (конус)
                 raceTraffic.push({
                     x: laneX,
@@ -16812,21 +17128,101 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     speed: 0,
                     targetSpeed: 0,
                     name: "Дорожный конус",
+                    role: 'cone',
                     isTruck: false,
                     isPolice: false,
                     isCone: true,
                     tilt: 0,
                     blinker: null,
+                    blinkerDir: 0,
                     blinkerTimer: 0,
+                    isBraking: false,
                     changeLaneCooldown: 999,
-                    overtaken: false
+                    overtaken: false,
+                    shashkaAwarded: false
+                });
+            } else if (roll < 0.37) {
+                // Яндекс-Такси: желтый седан с шашечками, активно перестраивается между полосами
+                const taxiSpeed = 88 + Math.random() * 22;
+                raceTraffic.push({
+                    x: laneX,
+                    y: spawnY,
+                    laneIdx: laneIdx,
+                    targetX: laneX,
+                    speed: taxiSpeed,
+                    targetSpeed: taxiSpeed + 8,
+                    name: Math.random() < 0.5 ? "Hyundai Solaris" : "Volkswagen Polo",
+                    role: 'taxi',
+                    isTaxi: true,
+                    color: '#fbbf24',
+                    isTruck: false,
+                    isPolice: false,
+                    isCone: false,
+                    tilt: 0,
+                    blinker: null,
+                    blinkerDir: 0,
+                    blinkerTimer: 0,
+                    isBraking: false,
+                    changeLaneCooldown: 1.4 + Math.random() * 2.0,
+                    overtaken: false,
+                    shashkaAwarded: false
+                });
+            } else if (roll < 0.43) {
+                // Скорая помощь / Спецтранспорт с проблесковым маячком
+                const ambSpeed = 104 + Math.random() * 18;
+                raceTraffic.push({
+                    x: laneX,
+                    y: spawnY,
+                    laneIdx: laneIdx,
+                    targetX: laneX,
+                    speed: ambSpeed,
+                    targetSpeed: ambSpeed + 6,
+                    name: "Toyota Land Cruiser 300",
+                    role: 'ambulance',
+                    isAmbulance: true,
+                    color: '#f8fafc',
+                    isTruck: false,
+                    isPolice: false,
+                    isCone: false,
+                    tilt: 0,
+                    blinker: null,
+                    blinkerDir: 0,
+                    blinkerTimer: 0,
+                    isBraking: false,
+                    changeLaneCooldown: 2.0 + Math.random() * 2.5,
+                    overtaken: false,
+                    shashkaAwarded: false
+                });
+            } else if (roll < 0.51 && laneIdx <= 1) {
+                // Стритрейсер с неоновой подсветкой в левых рядах
+                const srSpeed = 128 + Math.random() * 22;
+                const srPool = ['BMW M5 F90', 'Mercedes-Benz E63 AMG', 'Porsche 911 GT3 RS', 'Audi RS6 Avant'];
+                const srNeonPool = ['#ec4899', '#38bdf8', '#10b981', '#a855f7'];
+                raceTraffic.push({
+                    x: laneX,
+                    y: spawnY,
+                    laneIdx: laneIdx,
+                    targetX: laneX,
+                    speed: srSpeed,
+                    targetSpeed: srSpeed + 10,
+                    name: srPool[Math.floor(Math.random() * srPool.length)],
+                    role: 'streetracer',
+                    isStreetRacer: true,
+                    neon: srNeonPool[Math.floor(Math.random() * srNeonPool.length)],
+                    isTruck: false,
+                    isPolice: false,
+                    isCone: false,
+                    tilt: 0,
+                    blinker: null,
+                    blinkerDir: 0,
+                    blinkerTimer: 0,
+                    isBraking: false,
+                    changeLaneCooldown: 1.6 + Math.random() * 2.2,
+                    overtaken: false,
+                    shashkaAwarded: false
                 });
             } else {
                 // РЕАЛИСТИЧНАЯ ИЕРАРХИЯ СКОРОСТЕЙ ПО ПОЛОСАМ:
-                // Левый ряд (lane 0): 120-140 км/ч (быстрые седаны и спорткары)
-                // Средне-левый (lane 1): 95-115 км/ч (крейсерский поток)
-                // Средне-правый (lane 2): 85-100 км/ч (умеренный поток)
-                // Правый (lane 3): 60-80 км/ч (медленные авто и коммерческий транспорт)
                 let baseSpeed;
                 if (laneIdx === 0) {
                     baseSpeed = 120 + Math.random() * 20; // 120-140 км/ч
@@ -16865,14 +17261,18 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     speed: baseSpeed,
                     targetSpeed: baseSpeed,
                     name: randCar,
+                    role: 'sedan',
                     isTruck: false,
                     isPolice: false,
                     isCone: false,
                     tilt: 0,
                     blinker: null,
+                    blinkerDir: 0,
                     blinkerTimer: 0,
+                    isBraking: false,
                     changeLaneCooldown: 2.5 + Math.random() * 4.0,
-                    overtaken: false
+                    overtaken: false,
+                    shashkaAwarded: false
                 });
             }
         }
@@ -17052,9 +17452,11 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         function getSunGrad(ctx) {
             if (!cachedSunGrad) {
                 cachedSunGrad = ctx.createRadialGradient(200, 24, 2, 200, 24, 22);
-                cachedSunGrad.addColorStop(0, '#fef08a');
-                cachedSunGrad.addColorStop(0.6, '#fde047');
-                cachedSunGrad.addColorStop(1, 'rgba(253, 224, 71, 0)');
+                if (cachedSunGrad && typeof cachedSunGrad.addColorStop === 'function') {
+                    cachedSunGrad.addColorStop(0, '#fef08a');
+                    cachedSunGrad.addColorStop(0.6, '#fde047');
+                    cachedSunGrad.addColorStop(1, 'rgba(253, 224, 71, 0)');
+                }
             }
             return cachedSunGrad;
         }
@@ -17062,9 +17464,11 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         function getSunsetSun(ctx) {
             if (!cachedSunsetSun) {
                 cachedSunsetSun = ctx.createRadialGradient(200, 48, 4, 200, 48, 38);
-                cachedSunsetSun.addColorStop(0, '#fbbf24');
-                cachedSunsetSun.addColorStop(0.5, '#f97316');
-                cachedSunsetSun.addColorStop(1, 'rgba(249, 115, 22, 0)');
+                if (cachedSunsetSun && typeof cachedSunsetSun.addColorStop === 'function') {
+                    cachedSunsetSun.addColorStop(0, '#fbbf24');
+                    cachedSunsetSun.addColorStop(0.5, '#f97316');
+                    cachedSunsetSun.addColorStop(1, 'rgba(249, 115, 22, 0)');
+                }
             }
             return cachedSunsetSun;
         }
@@ -17081,8 +17485,10 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         function getNormRefGrad(ctx) {
             if (!cachedNormRefGrad) {
                 cachedNormRefGrad = ctx.createLinearGradient(0, 0, 0, 1);
-                cachedNormRefGrad.addColorStop(0, "rgba(148, 163, 184, 0.28)");
-                cachedNormRefGrad.addColorStop(1, "rgba(0, 0, 0, 0)");
+                if (cachedNormRefGrad && typeof cachedNormRefGrad.addColorStop === 'function') {
+                    cachedNormRefGrad.addColorStop(0, "rgba(148, 163, 184, 0.28)");
+                    cachedNormRefGrad.addColorStop(1, "rgba(0, 0, 0, 0)");
+                }
             }
             return cachedNormRefGrad;
         }
@@ -17091,15 +17497,19 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             if (isBraking) {
                 if (!cachedNormTailBrake) {
                     cachedNormTailBrake = ctx.createLinearGradient(0, 0, 0, 1);
-                    cachedNormTailBrake.addColorStop(0, "rgba(239, 68, 68, 0.65)");
-                    cachedNormTailBrake.addColorStop(1, "rgba(239, 68, 68, 0)");
+                    if (cachedNormTailBrake && typeof cachedNormTailBrake.addColorStop === 'function') {
+                        cachedNormTailBrake.addColorStop(0, "rgba(239, 68, 68, 0.65)");
+                        cachedNormTailBrake.addColorStop(1, "rgba(239, 68, 68, 0)");
+                    }
                 }
                 return cachedNormTailBrake;
             }
             if (!cachedNormTailNormal) {
                 cachedNormTailNormal = ctx.createLinearGradient(0, 0, 0, 1);
-                cachedNormTailNormal.addColorStop(0, "rgba(239, 68, 68, 0.35)");
-                cachedNormTailNormal.addColorStop(1, "rgba(239, 68, 68, 0)");
+                if (cachedNormTailNormal && typeof cachedNormTailNormal.addColorStop === 'function') {
+                    cachedNormTailNormal.addColorStop(0, "rgba(239, 68, 68, 0.35)");
+                    cachedNormTailNormal.addColorStop(1, "rgba(239, 68, 68, 0)");
+                }
             }
             return cachedNormTailNormal;
         }
@@ -17108,8 +17518,10 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             if (cachedPlayerGradColor !== color || !cachedPlayerGrad) {
                 cachedPlayerGradColor = color;
                 cachedPlayerGrad = ctx.createLinearGradient(0, 0, 0, 1);
-                cachedPlayerGrad.addColorStop(0, color);
-                cachedPlayerGrad.addColorStop(1, "rgba(0, 0, 0, 0)");
+                if (cachedPlayerGrad && typeof cachedPlayerGrad.addColorStop === 'function') {
+                    cachedPlayerGrad.addColorStop(0, color);
+                    cachedPlayerGrad.addColorStop(1, "rgba(0, 0, 0, 0)");
+                }
             }
             return cachedPlayerGrad;
         }
@@ -17118,13 +17530,15 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             if (cachedPlayerNeonColor !== neon || !cachedPlayerNeonGrad) {
                 cachedPlayerNeonColor = neon;
                 cachedPlayerNeonGrad = ctx.createLinearGradient(0, 0, 0, 1);
-                cachedPlayerNeonGrad.addColorStop(0, neon);
-                cachedPlayerNeonGrad.addColorStop(1, "rgba(0, 0, 0, 0)");
+                if (cachedPlayerNeonGrad && typeof cachedPlayerNeonGrad.addColorStop === 'function') {
+                    cachedPlayerNeonGrad.addColorStop(0, neon);
+                    cachedPlayerNeonGrad.addColorStop(1, "rgba(0, 0, 0, 0)");
+                }
             }
             return cachedPlayerNeonGrad;
         }
 
-        // Отрисовка кадра гонки (4 биома, изгибы трассы, визуальные эффекты)
+        // Отрисовка кадра гонки (биомы, изгибы трассы, камеры скорости, Touge-серпантин и визуальные эффекты)
         function renderRaceFrame() {
             const canvas = document.getElementById('race-canvas');
             if (!canvas) return;
@@ -17221,6 +17635,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
             // 3. Дорожное полотно с изгибом (построчная отрисовка ломтиками по 6px)
             const sliceH = 6;
+            const isTougeDrift = (raceCurrentMode === 'drift');
             for (let y = 0; y < H; y += sliceH) {
                 const curX = getCurveX(y);
                 const lEdge = 50 + curX;
@@ -17261,14 +17676,20 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 ctx.fillStyle = biome.asphalt;
                 ctx.fillRect(lEdge, y, rEdge - lEdge, sliceH);
 
-                // Отбойники с отражателями
+                // Отбойники и поребрики (в режиме Дрифта — широкие Touge-поребрики красно-белые / жёлто-чёрные на виражах)
                 const isCurb1 = ((y + raceRoadOffset) % 32) < 16;
-                ctx.fillStyle = isCurb1 ? biome.curb1 : biome.curb2;
-                ctx.fillRect(lEdge - 4, y, 4, sliceH);
-                ctx.fillRect(rEdge, y, 4, sliceH);
+                if (isTougeDrift && Math.abs(roadCurve) > 18) {
+                    ctx.fillStyle = isCurb1 ? '#ef4444' : '#f8fafc';
+                    ctx.fillRect(lEdge - 6, y, 6, sliceH);
+                    ctx.fillRect(rEdge, y, 6, sliceH);
+                } else {
+                    ctx.fillStyle = isCurb1 ? biome.curb1 : biome.curb2;
+                    ctx.fillRect(lEdge - 4, y, 4, sliceH);
+                    ctx.fillRect(rEdge, y, 4, sliceH);
+                }
 
-                // Сплошные белые краевые линии
-                ctx.fillStyle = "#f1f5f9";
+                // Сплошные краевые линии (в режиме Touge — двойные жёлтые направляющие линии каньона)
+                ctx.fillStyle = isTougeDrift ? "#fbbf24" : "#f1f5f9";
                 ctx.fillRect(lEdge + 2, y, 2.5, sliceH);
                 ctx.fillRect(rEdge - 4.5, y, 2.5, sliceH);
 
@@ -17279,6 +17700,30 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     ctx.fillRect(lEdge + 75, y, 2.5, sliceH);
                     ctx.fillRect(lEdge + 150, y, 2.5, sliceH);
                     ctx.fillRect(lEdge + 225, y, 2.5, sliceH);
+                }
+            }
+
+            // 3.2. Знаки крутого поворота (Touge Chevron Signs >>> / <<<) и километровые столбики в режиме Дрифта
+            if (isTougeDrift && Math.abs(roadCurve) > 22) {
+                const signStep = 95;
+                const startSignY = (raceRoadOffset * 1.2) % signStep;
+                const isTurnLeft = roadCurve > 0; // Положительный roadCurve смещает дорогу влево
+                for (let sy = startSignY; sy < H; sy += signStep) {
+                    const scurX = getCurveX(sy);
+                    const signX = isTurnLeft ? (350 + scurX + 16) : (50 + scurX - 16);
+                    ctx.save();
+                    ctx.translate(signX, sy);
+                    ctx.fillStyle = "#ef4444";
+                    ctx.fillRect(-10, -8, 20, 16);
+                    ctx.strokeStyle = "#ffffff";
+                    ctx.lineWidth = 1.5;
+                    ctx.strokeRect(-10, -8, 20, 16);
+                    ctx.fillStyle = "#ffffff";
+                    ctx.font = "900 10px sans-serif";
+                    ctx.textAlign = "center";
+                    ctx.textBaseline = "middle";
+                    ctx.fillText(isTurnLeft ? "<<" : ">>", 0, 0);
+                    ctx.restore();
                 }
             }
 
@@ -17366,12 +17811,52 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 }
             }
 
-            // 5. Следы шин (Skidmarks)
+            // 4.5. Камеры контроля скорости «Автоураган» (Лазерный створ и ферма над трассой)
+            if (raceSpeedCameras && raceSpeedCameras.length > 0) {
+                for (let cam of raceSpeedCameras) {
+                    const camCurX = getCurveX(cam.y);
+                    const clEdge = 50 + camCurX;
+                    const crEdge = 350 + camCurX;
+                    ctx.save();
+                    // Зона лазерного сканирования на асфальте
+                    ctx.fillStyle = cam.triggered ? "rgba(16, 185, 129, 0.14)" : "rgba(239, 68, 68, 0.16)";
+                    ctx.fillRect(clEdge + 4, cam.y - 18, (crEdge - clEdge) - 8, 36);
+                    ctx.strokeStyle = cam.triggered ? "rgba(52, 211, 153, 0.7)" : "rgba(248, 113, 113, 0.85)";
+                    ctx.lineWidth = 1.5;
+                    ctx.setLineDash([6, 4]);
+                    ctx.beginPath();
+                    ctx.moveTo(clEdge + 4, cam.y);
+                    ctx.lineTo(crEdge - 4, cam.y);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+
+                    // Металлическая П-образная ферма камеры над дорогой
+                    ctx.fillStyle = "#334155";
+                    ctx.fillRect(clEdge - 6, cam.y - 26, (crEdge - clEdge) + 12, 6);
+                    ctx.fillStyle = "#0f172a";
+                    ctx.fillRect(clEdge + 110, cam.y - 30, 80, 14);
+                    ctx.strokeStyle = cam.triggered ? "#10b981" : "#ef4444";
+                    ctx.lineWidth = 1.2;
+                    ctx.strokeRect(clEdge + 110, cam.y - 30, 80, 14);
+
+                    ctx.fillStyle = "#f8fafc";
+                    ctx.font = "bold 8px sans-serif";
+                    ctx.textAlign = "center";
+                    ctx.fillText(`📷 РАДАР ${cam.speedLimit || 160}`, clEdge + 150, cam.y - 20);
+                    ctx.restore();
+                }
+            }
+
+            // 5. Следы шин (Skidmarks — темнее и шире при прогретой резине tireHeat > 65)
             for (let sm of raceSkidmarks) {
                 const sx = sm.x + getCurveX(sm.y);
-                ctx.fillStyle = `rgba(10, 15, 26, ${sm.life * 0.55})`;
-                ctx.fillRect(sx - 8, sm.y, 4, 8);
-                ctx.fillRect(sx + 5, sm.y, 4, 8);
+                const isHotTrack = (sm.heat || 0) > 65;
+                ctx.fillStyle = isHotTrack
+                    ? `rgba(5, 8, 16, ${Math.min(0.85, sm.life * 0.78)})`
+                    : `rgba(10, 15, 26, ${sm.life * 0.55})`;
+                const trackW = isHotTrack ? 5 : 4;
+                ctx.fillRect(sx - 8, sm.y, trackW, 8);
+                ctx.fillRect(sx + 5, sm.y, trackW, 8);
             }
 
             // 6. Бонусы на трассе
@@ -17469,10 +17954,12 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 }
             }
 
-            // 7. Трафик (другие пиксельные авто, фуры, полиция, конусы)
+            // 7. Трафик (другие пиксельные авто, такси, скорая, стритрейсеры, фуры, полиция, конусы)
             const isTrafficLit = biome.isNight || biome.isRain;
             for (let t of raceTraffic) {
                 const tx = t.x + getCurveX(t.y);
+                const blinkLeft = (t.blinker === 'left' || t.blinkerDir === -1) && t.blinkerFlash;
+                const blinkRight = (t.blinker === 'right' || t.blinkerDir === 1) && t.blinkerFlash;
                 if (t.isCone) {
                     drawPixelCar(ctx, tx, t.y, "Дорожный конус", 1.2);
                 } else if (t.isTruck) {
@@ -17480,25 +17967,72 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                         lightsOn: isTrafficLit,
                         tilt: t.tilt || 0,
                         braking: t.isBraking || false,
-                        blinkerLeft: t.blinker === 'left' && t.blinkerFlash,
-                        blinkerRight: t.blinker === 'right' && t.blinkerFlash
+                        blinkerLeft: blinkLeft,
+                        blinkerRight: blinkRight
                     });
                 } else if (t.isPolice) {
                     drawPixelCar(ctx, tx, t.y, "ДПС / Полиция", 1.0, {
                         lightsOn: isTrafficLit,
                         tilt: t.tilt || 0,
                         braking: t.isBraking || false,
-                        blinkerLeft: t.blinker === 'left' && t.blinkerFlash,
-                        blinkerRight: t.blinker === 'right' && t.blinkerFlash
+                        blinkerLeft: blinkLeft,
+                        blinkerRight: blinkRight
                     });
                 } else {
                     drawPixelCar(ctx, tx, t.y, t.name, 1.0, {
                         lightsOn: isTrafficLit,
                         tilt: t.tilt || 0,
+                        color: t.color,
+                        neon: t.neon,
                         braking: t.isBraking || false,
-                        blinkerLeft: t.blinker === 'left' && t.blinkerFlash,
-                        blinkerRight: t.blinker === 'right' && t.blinkerFlash
+                        blinkerLeft: blinkLeft,
+                        blinkerRight: blinkRight
                     });
+                }
+
+                // Дополнительные визуальные маркеры ролей трафика, стоп-сигналов и поворотников
+                if (!t.isCone) {
+                    ctx.save();
+                    ctx.translate(tx, t.y);
+                    if (t.tilt) ctx.rotate(t.tilt);
+                    // Шашечки Яндекс-Такси на крыше
+                    if (t.isTaxi || t.role === 'taxi') {
+                        ctx.fillStyle = "#f59e0b";
+                        ctx.fillRect(-5, -4, 10, 4);
+                        ctx.fillStyle = "#0f172a";
+                        ctx.fillRect(-4, -3, 2, 2);
+                        ctx.fillRect(0, -3, 2, 2);
+                        ctx.fillRect(2, -1, 2, 1);
+                    }
+                    // Проблесковый маячок и красный крест Скорой помощи
+                    if (t.isAmbulance || t.role === 'ambulance') {
+                        ctx.fillStyle = "#ef4444";
+                        ctx.fillRect(-1.5, -6, 3, 8);
+                        ctx.fillRect(-4, -3.5, 8, 3);
+                        const ambFlash = Math.floor(Date.now() / 140) % 2 === 0;
+                        ctx.fillStyle = ambFlash ? "#ef4444" : "#38bdf8";
+                        ctx.beginPath();
+                        ctx.arc(0, -11, 3.2, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                    // Яркие стоп-сигналы при торможении перед медленной помехой
+                    if (t.isBraking) {
+                        ctx.fillStyle = "rgba(239, 68, 68, 0.9)";
+                        ctx.fillRect(-9, 17, 4, 3);
+                        ctx.fillRect(5, 17, 4, 3);
+                    }
+                    // Яркие оранжевые поворотники за ~0.8с до перестроения
+                    if (blinkLeft) {
+                        ctx.fillStyle = "#fbbf24";
+                        ctx.fillRect(-12, -16, 3.5, 4);
+                        ctx.fillRect(-12, 14, 3.5, 4);
+                    }
+                    if (blinkRight) {
+                        ctx.fillStyle = "#fbbf24";
+                        ctx.fillRect(8.5, -16, 3.5, 4);
+                        ctx.fillRect(8.5, 14, 3.5, 4);
+                    }
+                    ctx.restore();
                 }
             }
 
@@ -17556,6 +18090,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                         else if (t.isPolice) tag = '🚨 ДПС';
                         else if (t.isCone) tag = '🚧 КОНУС';
                         else if (t.isRival) tag = '🏎️ СОПЕРНИК';
+                        else if (t.isTaxi) tag = '🚕 ТАКСИ';
+                        else if (t.isAmbulance) tag = '🚑 СКОРАЯ';
+                        else if (t.isStreetRacer) tag = '🏎️ СТРИТ';
                         ctx.fillText(`▼ ${tag} ${meters}м`, markerX, 44);
                     }
                 }
@@ -17664,6 +18201,12 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 ctx.fillRect(0, 0, W, H);
             }
 
+            // Фотовспышка камеры контроля скорости при штрафе
+            if (raceCameraShutterFlash > 0) {
+                ctx.fillStyle = `rgba(255, 255, 255, ${Math.min(0.65, raceCameraShutterFlash * 1.8)})`;
+                ctx.fillRect(0, 0, W, H);
+            }
+
             // 10.5. Скоростные линии (Speed Lines) и визуальный форсаж нитро
             if (racePlayer.speed > 160 || racePlayer.isNitroActive) {
                 const intensity = Math.min(1.0, (racePlayer.speed - 160) / 100 + (racePlayer.isNitroActive ? 0.6 : 0));
@@ -17684,15 +18227,38 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 ctx.restore();
             }
 
-            // Дым из-под шин при заносе
+            // Дым из-под шин при заносе (с учетом прогрева резины tireHeat и золотого дыма при высоком комбо)
             for (let smk of raceDriftSmoke) {
                 const sx = smk.x + getCurveX(smk.y);
                 ctx.save();
-                ctx.fillStyle = `rgba(226, 232, 240, ${Math.max(0, smk.life * 0.55)})`;
+                if (smk.isGolden) {
+                    ctx.fillStyle = `rgba(251, 191, 36, ${Math.max(0, smk.life * 0.65)})`;
+                } else if (smk.isHot) {
+                    ctx.fillStyle = `rgba(241, 245, 249, ${Math.max(0, smk.life * 0.68)})`;
+                } else {
+                    ctx.fillStyle = `rgba(226, 232, 240, ${Math.max(0, smk.life * 0.55)})`;
+                }
                 ctx.beginPath();
                 ctx.arc(sx, smk.y, smk.size, 0, Math.PI * 2);
                 ctx.fill();
                 ctx.restore();
+            }
+
+            // Всплывающие надписи на трассе (Шашки, Kiss the Wall, Иммунитет спецсерии)
+            if (raceFloatingTexts && raceFloatingTexts.length > 0) {
+                for (let ft of raceFloatingTexts) {
+                    const fx = ft.x + getCurveX(ft.y);
+                    ctx.save();
+                    ctx.globalAlpha = Math.max(0, Math.min(1, ft.life / Math.max(0.2, (ft.maxLife || 1.1) * 0.45)));
+                    ctx.font = "900 11px sans-serif";
+                    ctx.textAlign = "center";
+                    ctx.strokeStyle = "rgba(10, 15, 29, 0.9)";
+                    ctx.lineWidth = 3;
+                    ctx.strokeText(ft.text, fx, ft.y);
+                    ctx.fillStyle = ft.color || "#fbbf24";
+                    ctx.fillText(ft.text, fx, ft.y);
+                    ctx.restore();
+                }
             }
 
             // Обновление индикатора нитро на мобильной панели (кэшировано без лишних DOM мутаций)
@@ -17795,10 +18361,11 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             ctx.fillText(`${biome.icon} ${biome.name}`, W / 2, topCenterOffset + 16);
 
             // Оверлей активного дрифта прямо под биомом
+            let nextCenterHudY = topCenterOffset + 28;
             if (racePlayer.isDrifting || racePlayer.driftCurrentScore > 0) {
                 const bw = 186;
                 const bh = 28;
-                const driftY = topCenterOffset + 28;
+                const driftY = nextCenterHudY;
                 ctx.fillStyle = "rgba(15, 23, 42, 0.92)";
                 ctx.beginPath();
                 ctx.roundRect(W / 2 - bw / 2, driftY, bw, bh, 6);
@@ -17828,12 +18395,38 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     ctx.fillStyle = racePlayer.isCounterSteering ? "#38bdf8" : "rgba(245, 158, 11, 0.9)";
                     ctx.fillRect(W / 2 - (bw - 16) / 2, driftY + bh - 2.5, (bw - 16) * timerPct, 2);
                 }
+                nextCenterHudY += 32;
+            }
+
+            // Оверлей комбо «Шашки в потоке» (Highway Near-Miss Combo)
+            if (racePlayer.shashkiCombo > 0 && racePlayer.shashkiTimer > 0) {
+                const sbw = 172;
+                const sbh = 22;
+                const shY = nextCenterHudY;
+                ctx.fillStyle = "rgba(15, 23, 42, 0.92)";
+                ctx.beginPath();
+                ctx.roundRect(W / 2 - sbw / 2, shY, sbw, sbh, 6);
+                ctx.fill();
+                ctx.strokeStyle = "#f59e0b";
+                ctx.lineWidth = 1.4;
+                ctx.stroke();
+
+                ctx.fillStyle = "#fde047";
+                ctx.font = "900 10px sans-serif";
+                ctx.textAlign = "center";
+                ctx.fillText(`⚡ ШАШКИ x${racePlayer.shashkiCombo} (+${(racePlayer.lastShashkaBonus || 250).toLocaleString('ru-RU')} ₽)`, W / 2, shY + 14);
+
+                const shPct = Math.min(1, Math.max(0, racePlayer.shashkiTimer / 4.0));
+                ctx.fillStyle = "#f59e0b";
+                ctx.fillRect(W / 2 - (sbw - 14) / 2, shY + sbh - 2.5, (sbw - 14) * shPct, 2);
+                nextCenterHudY += 26;
             }
 
             // Спидометр и датчики (Улучшенная контрастность и читабельность)
+            const hudBoxH = isTougeDrift ? 90 : 76;
             ctx.fillStyle = "rgba(10, 15, 29, 0.85)";
             ctx.beginPath();
-            ctx.roundRect(10, 10, 134, 76, 8);
+            ctx.roundRect(10, 10, 134, hudBoxH, 8);
             ctx.fill();
             ctx.strokeStyle = "rgba(255, 255, 255, 0.15)";
             ctx.lineWidth = 1;
@@ -17876,6 +18469,20 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             ctx.font = "600 8px sans-serif";
             ctx.textAlign = "right";
             ctx.fillText(`−${Math.round((racePlayer.fuelLiters || 0) * NomeraRaceEconomy.FUEL_PRICE)} ₽`, 132, 76);
+
+            // Индикатор прогрева шин (tireHeat) в режиме Дрифта
+            if (isTougeDrift) {
+                const heatPct = Math.round(Math.max(0, Math.min(100, racePlayer.tireHeat || 0)));
+                const heatCol = heatPct > 65 ? "#f59e0b" : (heatPct > 30 ? "#22c55e" : "#38bdf8");
+                ctx.textAlign = "left";
+                ctx.fillStyle = heatCol;
+                ctx.font = "700 8px sans-serif";
+                ctx.fillText(`🌡️ ШИНЫ: ${heatPct}%`, 16, 90);
+                ctx.fillStyle = "rgba(255, 255, 255, 0.15)";
+                ctx.fillRect(82, 84, 50, 5);
+                ctx.fillStyle = heatCol;
+                ctx.fillRect(82, 84, Math.round(50 * (heatPct / 100)), 5);
+            }
 
             // Заработок за заезд (верхний правый угол)
             ctx.fillStyle = "rgba(10, 15, 29, 0.85)";
