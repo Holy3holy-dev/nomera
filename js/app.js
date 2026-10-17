@@ -650,9 +650,16 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         };
 
         // --- ЖИВОЙ АУДИТ ДЕЙСТВИЙ («КТО ЧТО КРУТИТ») ---
-        function updatePlayerPresence(actionName, details) {
+        let lastPresenceSync = 0;
+        let presenceDisconnectRegistered = false;
+
+        function updatePlayerPresence(actionName, details, force = false) {
             if (actionName) currentActionName = String(actionName).slice(0, 60);
             if (details !== undefined) currentActionDetails = String(details).slice(0, 120);
+            const now = Date.now();
+            if (!force && now - lastPresenceSync < 15000) return;
+            lastPresenceSync = now;
+
             const rtdb = (typeof firebase !== 'undefined' && typeof firebase.database === 'function') ? firebase.database() : db;
             if (!rtdb || typeof rtdb.ref !== 'function') return;
             try {
@@ -664,7 +671,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     nickname: curNick,
                     avatarData: avatarData || '',
                     loginTime: sessionStartTime,
-                    lastActive: Date.now(),
+                    lastActive: now,
                     action: currentActionName,
                     details: currentActionDetails,
                     balance: Number(balance) || 0,
@@ -676,7 +683,10 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 };
                 const presenceRef = rtdb.ref('presence/' + pKey);
                 presenceRef.set(payload).catch?.(() => {});
-                if (presenceRef.onDisconnect) presenceRef.onDisconnect().remove();
+                if (!presenceDisconnectRegistered && presenceRef.onDisconnect) {
+                    presenceRef.onDisconnect().remove();
+                    presenceDisconnectRegistered = true;
+                }
             } catch (_) {}
         }
 
@@ -701,7 +711,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             }
         }
 
-        function saveProgress() {
+        function saveProgress(syncCloud = true) {
             progressRevision++;
             const data = {
                 balance,
@@ -731,8 +741,10 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             }
             updateBadge();
             updateProfileUI();
-            if (typeof syncCloudGarage === 'function') syncCloudGarage();
-            if (onlineProfile && typeof syncMyLeaderboardEntry === 'function') syncMyLeaderboardEntry();
+            if (syncCloud) {
+                if (typeof syncCloudGarage === 'function') syncCloudGarage();
+                if (onlineProfile && typeof syncMyLeaderboardEntry === 'function') syncMyLeaderboardEntry();
+            }
         }
 
         function loadProgress() {
@@ -887,11 +899,11 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                         notifyUser(`💰 Начислено ${diff.toLocaleString('ru-RU')} ₽!`, 'success');
                         playCashSound();
                         if (typeof sound?.haptic === 'function') sound.haptic('win');
-                        saveProgress();
-                    } else {
+                        saveProgress(false);
+                    } else if (newBal !== balance) {
                         balance = newBal;
                         updateBalance();
-                        saveProgress();
+                        saveProgress(false);
                     }
                 };
                 myAccountRef.on('value', myAccountRefListener);
@@ -955,7 +967,10 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     });
                     db.ref('leaderboard').limitToLast(100).on('value', snap => {
                         cloudLeaderboardList = Object.values(snap.val() || {});
-                        renderLeaderboard();
+                        const lbTab = document.getElementById('leaderboard');
+                        if (lbTab && !lbTab.classList.contains('hidden')) {
+                            renderLeaderboard();
+                        }
                     });
                 } catch (_) {}
             }
@@ -3506,7 +3521,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
         function setCellChar(cellId, char) {
             const span = getCellSpan(cellId);
-            if (span) {
+            if (span && span.textContent !== char) {
                 span.textContent = char;
                 span.innerText = char;
             }
@@ -6468,8 +6483,12 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             renderLeaderboard();
         }
 
-        function syncMyLeaderboardEntry() {
+        let lastLeaderboardSync = 0;
+        function syncMyLeaderboardEntry(force = false) {
             if (!db || typeof db.ref !== 'function') return;
+            const now = Date.now();
+            if (!force && now - lastLeaderboardSync < 15000) return;
+            lastLeaderboardSync = now;
             try {
                 const userKey = sanitizeKey(nickname);
                 if (!userKey) return;

@@ -5575,11 +5575,15 @@
     }
 
     // Automotive Studio HDRI Environment Generator
+    let cachedStudioEnvTexture = null;
     function createStudioEnvironment(THREE, renderer) {
         if (!THREE.PMREMGenerator || !renderer) return null;
+        if (cachedStudioEnvTexture) return cachedStudioEnvTexture;
         try {
             const pmrem = new THREE.PMREMGenerator(renderer);
-            pmrem.compileEquirectangularShader();
+            if (pmrem.compileEquirectangularShader) {
+                pmrem.compileEquirectangularShader();
+            }
 
             const envScene = new THREE.Scene();
             envScene.background = new THREE.Color(0x0e1117);
@@ -5613,8 +5617,9 @@
             });
 
             const rt = pmrem.fromScene(envScene);
+            cachedStudioEnvTexture = rt ? rt.texture : null;
             pmrem.dispose();
-            return rt.texture;
+            return cachedStudioEnvTexture;
         } catch (err) {
             console.warn('Could not generate studio environment:', err);
             return null;
@@ -5858,6 +5863,9 @@
 
             if (this.renderer.shadowMap) {
                 this.renderer.shadowMap.enabled = false;
+            }
+            if (this.renderer.debug) {
+                this.renderer.debug.checkShaderErrors = false;
             }
 
             this.container.innerHTML = '';
@@ -6975,6 +6983,9 @@
         if (offscreenRenderer.shadowMap) {
             offscreenRenderer.shadowMap.enabled = false;
         }
+        if (offscreenRenderer.debug) {
+            offscreenRenderer.debug.checkShaderErrors = false;
+        }
         offscreenRenderer.toneMapping = THREE.ACESFilmicToneMapping;
         offscreenRenderer.toneMappingExposure = 1.20;
         if (typeof offscreenRenderer.setClearColor === 'function') {
@@ -7283,6 +7294,9 @@
                 });
             }
             this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.25));
+            if (this.renderer.debug) {
+                this.renderer.debug.checkShaderErrors = false;
+            }
             this.renderer.setSize(this.width, this.height);
             if (THREE.sRGBEncoding) {
                 this.renderer.outputEncoding = THREE.sRGBEncoding;

@@ -30,6 +30,13 @@
                         if (typeof reg.update === 'function') reg.update();
                     }).catch(error => console.warn('Service Worker registration failed:', error));
                 });
+                document.addEventListener('visibilitychange', () => {
+                    if (!document.hidden && navigator.serviceWorker.controller) {
+                        navigator.serviceWorker.getRegistration().then(reg => {
+                            if (reg && typeof reg.update === 'function') reg.update();
+                        }).catch(() => {});
+                    }
+                });
             }
         }
     </script>
@@ -1606,7 +1613,7 @@
             document.write('<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"><\/script>');
         }
     </script>
-    <script src="./js/car-3d.js?v=af0511b87113"></script>
-    <script src="./js/app.js?v=da36ac8f286a"></script>
+    <script src="./js/car-3d.js?v=bf0d7a718dcc"></script>
+    <script src="./js/app.js?v=437ce1737944"></script>
 </body>
 </html>
