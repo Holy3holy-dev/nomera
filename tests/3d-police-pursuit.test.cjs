@@ -105,7 +105,10 @@ test('3D Police Pursuit: AI speeds up and chases player during hot pursuit', () 
         engine.addWantedStars(2, 'Тестовый розыск');
         assert.strictEqual(engine.state.wantedStars, 2);
 
-        // Position police car behind moving player
+        // Position police car behind moving player and clear civilian traffic from the test lane
+        engine.trafficCars.forEach(c => {
+            if (c !== policeCar) c.position.set(-6, 0, -500);
+        });
         engine.state.x = 2.5;
         engine.state.z = 100;
         engine.state.speed = 180;

@@ -966,6 +966,40 @@
         return group;
     }
 
+    function getCarProfile(carId) {
+        const cid = String(carId || '').toLowerCase();
+        const isSuv = cid === 'g63' || cid === 'lc300' || cid === 'cullinan';
+        const isButterfly = cid === 'huracan' || cid === 'sf90' || cid === 'chiron' || cid === 'jesko' || cid === 'm8';
+        const isSupercar = isButterfly || cid === 'porsche911' || cid === 'gtr';
+        const isHatch = cid === 'vaz2109' || cid === 'polo' || cid === 'rs6';
+        const isClassic = cid === 'vaz2107' || cid === 'vaz2109' || cid === 'gaz24';
+        const isMidEngine = cid === 'huracan' || cid === 'sf90' || cid === 'chiron' || cid === 'jesko' || cid === 'porsche911';
+        return {
+            carId: cid,
+            isSuv,
+            isSupercar,
+            isButterfly,
+            isHatch,
+            isClassic,
+            isMidEngine
+        };
+    }
+
+    function isIgnoredAccessoryOrRigNode(node, rootNode) {
+        let p = node;
+        while (p && p !== rootNode) {
+            if (p.userData && (p.userData.isInteractiveRigNode || p.userData.isLicensePlate)) {
+                return true;
+            }
+            const nm = String(p.name || '');
+            if (/^(?:GLB_InteractiveRig|Door_FL_Pivot|Door_FR_Pivot|Door_CavityGroup|Hood_Pivot|EngineBayGroup|Trunk_Pivot|SubwooferGroup|GLB_SpoilerGroup|GLB_Spoiler|SpoilerGroup|SGUGroup|GLB_NeonTubes|NeonGroup|LicensePlatesGroup|GLB_FrontLicensePlate|GLB_RearLicensePlate|FrontLicensePlate|RearLicensePlate|ChassisUndertray|GLB_Undertray|ShowroomHeadlightCones|ShowroomHeadlightFlares|ShowroomTaillightFlares|HeadlightsGroup)$/i.test(nm)) {
+                return true;
+            }
+            p = p.parent;
+        }
+        return false;
+    }
+
     // Automatic 3D Light Coordinates Detector for GLTF and procedural models
     function detectVehicleLightPositions(model, carId, THREE) {
         const fallback = {
@@ -978,7 +1012,16 @@
 
         try {
             model.updateMatrixWorld(true);
-            const box = new THREE.Box3().setFromObject(model);
+            const box = new THREE.Box3();
+            model.traverse(c => {
+                if (c.isMesh && c.geometry && !isIgnoredAccessoryOrRigNode(c, model)) {
+                    const cb = new THREE.Box3().setFromObject(c);
+                    if (!cb.isEmpty() && (cb.max.y - cb.min.y) > 0.05) {
+                        box.union(cb);
+                    }
+                }
+            });
+            if (box.isEmpty()) box.setFromObject(model);
             if (box.isEmpty()) return fallback;
 
             const size = box.getSize(new THREE.Vector3());
@@ -996,6 +1039,7 @@
             const badWords = /interior|seat|dash|mirror|wheel|tire|plate|bottom|chassis|under|roof|cabin|radiator|grille|intake|diffuser|disc|caliper|pad|rotor|exhaust|hood|bonnet|scoop|vent|toit|glass_toit|wiper|spoiler|wing/i;
 
             model.traverse(c => {
+                if (isIgnoredAccessoryOrRigNode(c, model)) return;
                 if (!c.name && (!c.material || !c.material.name)) return;
                 const mn = String((c.material && c.material.name) || '').toLowerCase();
                 const nn = String(c.name || '').toLowerCase();
@@ -1089,15 +1133,25 @@
             const tlResult = extractLeftRight(tlCandidates);
 
             const cid = carId || (model.userData && model.userData.carId) || '';
-            const isSUV = (cid === 'g63' || cid === 'lc300' || cid === 'cullinan') || size.y > 1.7;
-            const isSuper = (cid === 'sf90' || cid === 'huracan' || cid === 'jesko' || cid === 'porsche911') || size.y < 1.25;
+            const profile = getCarProfile(cid);
+            const isSUV = profile.isSuv || size.y > 1.7;
+            const isSuper = profile.isSupercar || size.y < 1.25;
+
+            const minFrontY = box.min.y + carH * 0.38;
+            const maxFrontY = box.min.y + carH * 0.62;
+            const minRearY = box.min.y + carH * 0.38;
+            const maxRearY = box.min.y + carH * (isSuper ? 0.68 : 0.62);
+            const minSpanX = halfW * 0.50;
+            const maxSpanX = halfW * 0.85;
 
             let hlL, hlR, tlL, tlR;
 
             if (hlResult.leftPos && hlResult.rightPos) {
-                const avgY = (hlResult.leftPos.y + hlResult.rightPos.y) * 0.5;
+                const rawY = (hlResult.leftPos.y + hlResult.rightPos.y) * 0.5;
+                const avgY = Math.max(minFrontY, Math.min(maxFrontY, rawY));
                 const avgZ = (hlResult.leftPos.z + hlResult.rightPos.z) * 0.5;
-                const halfDistX = (Math.abs(hlResult.leftPos.x - center.x) + Math.abs(hlResult.rightPos.x - center.x)) * 0.5;
+                const rawDistX = (Math.abs(hlResult.leftPos.x - center.x) + Math.abs(hlResult.rightPos.x - center.x)) * 0.5;
+                const halfDistX = Math.max(minSpanX, Math.min(maxSpanX, rawDistX));
                 hlL = new THREE.Vector3(center.x - halfDistX, avgY, avgZ);
                 hlR = new THREE.Vector3(center.x + halfDistX, avgY, avgZ);
             } else {
@@ -1109,9 +1163,11 @@
             }
 
             if (tlResult.leftPos && tlResult.rightPos) {
-                const avgY = (tlResult.leftPos.y + tlResult.rightPos.y) * 0.5;
+                const rawY = (tlResult.leftPos.y + tlResult.rightPos.y) * 0.5;
+                const avgY = Math.max(minRearY, Math.min(maxRearY, rawY));
                 const avgZ = (tlResult.leftPos.z + tlResult.rightPos.z) * 0.5;
-                const halfDistX = (Math.abs(tlResult.leftPos.x - center.x) + Math.abs(tlResult.rightPos.x - center.x)) * 0.5;
+                const rawDistX = (Math.abs(tlResult.leftPos.x - center.x) + Math.abs(tlResult.rightPos.x - center.x)) * 0.5;
+                const halfDistX = Math.max(minSpanX, Math.min(maxSpanX, rawDistX));
                 tlL = new THREE.Vector3(center.x - halfDistX, avgY, avgZ);
                 tlR = new THREE.Vector3(center.x + halfDistX, avgY, avgZ);
             } else {
@@ -1160,13 +1216,14 @@
             return;
         }
 
-        // Compute model dimensions & bounds
+        // Compute model dimensions & bounds ignoring interactive rig and accessories
         modelRoot.updateMatrixWorld(true);
         const box = new THREE.Box3();
         modelRoot.traverse(child => {
             if (child.isMesh && child.visible && child.geometry) {
+                if (isIgnoredAccessoryOrRigNode(child, modelRoot)) return;
                 const n = String(child.name || '').toLowerCase();
-                if (!n.includes('licenseplate') && !n.includes('spoiler') && !n.includes('neon')) {
+                if (!n.includes('licenseplate') && !n.includes('spoiler') && !n.includes('neon') && !n.includes('sgu')) {
                     const mb = new THREE.Box3().setFromObject(child);
                     if (mb.max.y - mb.min.y > 0.05) {
                         box.union(mb);
@@ -1183,7 +1240,7 @@
         // Check if model contains built-in plate nodes (e.g. vaz2107, bmw_m4, etc.)
         let existingFP = null, existingRP = null;
         modelRoot.traverse(child => {
-            if (!child.name) return;
+            if (!child.name || isIgnoredAccessoryOrRigNode(child, modelRoot)) return;
             const n = child.name.toLowerCase();
             if ((n.includes('plate_01') || n.includes('reg plate (front)') || n.includes('plate_f') || n.includes('licenseplate_front')) && !existingFP) {
                 existingFP = child;
@@ -1214,8 +1271,9 @@
             const minZThresh = box.min.z + size.z * 0.65;
             modelRoot.traverse(c => {
                 if (!c.isMesh || !c.geometry) return;
+                if (isIgnoredAccessoryOrRigNode(c, modelRoot)) return;
                 const n = String(c.name || '').toLowerCase();
-                if (n.includes('wheel') || n.includes('tire') || n.includes('plate') || n.includes('spoiler') || n.includes('neon')) return;
+                if (n.includes('wheel') || n.includes('tire') || n.includes('plate') || n.includes('spoiler') || n.includes('neon') || n.includes('sgu')) return;
                 const attr = c.geometry.attributes.position;
                 if (!attr) return;
                 const mw = c.matrixWorld;
@@ -1246,8 +1304,9 @@
             const maxZThresh = box.min.z + size.z * 0.35;
             modelRoot.traverse(c => {
                 if (!c.isMesh || !c.geometry) return;
+                if (isIgnoredAccessoryOrRigNode(c, modelRoot)) return;
                 const n = String(c.name || '').toLowerCase();
-                if (n.includes('wheel') || n.includes('tire') || n.includes('plate') || n.includes('spoiler') || n.includes('neon')) return;
+                if (n.includes('wheel') || n.includes('tire') || n.includes('plate') || n.includes('spoiler') || n.includes('neon') || n.includes('sgu')) return;
                 const attr = c.geometry.attributes.position;
                 if (!attr) return;
                 const mw = c.matrixWorld;
@@ -4427,11 +4486,24 @@
         const doorLength = spec.bodyLength * 0.24;
         const doorHeight = 0.50;
         const doorThick = 0.04;
+        const isButterfly = (carId === 'huracan' || carId === 'sf90' || carId === 'chiron' || carId === 'jesko' || carId === 'm8');
+
+        const doorCavityGroup = new THREE.Group();
+        doorCavityGroup.name = 'Door_CavityGroup';
+        doorCavityGroup.visible = false;
+        [-1, 1].forEach(side => {
+            const cav = new THREE.Mesh(new THREE.BoxGeometry(0.08, doorHeight * 0.94, doorLength * 0.94), mats.darkPlastic || mats.trim);
+            cav.position.set(side * (spec.bodyWidth * 0.46), 0.58, spec.wheelBase * 0.42 - doorLength * 0.5);
+            doorCavityGroup.add(cav);
+        });
+        chassisGroup.add(doorCavityGroup);
 
         // Front Left Door (Driver) with Hinge Pivot
         const doorFLPivot = new THREE.Group();
         doorFLPivot.name = 'Door_FL_Pivot';
         doorFLPivot.position.set(-spec.bodyWidth * 0.49, 0.58, spec.wheelBase * 0.42);
+        doorFLPivot.userData.isButterflyDoor = isButterfly;
+        doorFLPivot.visible = false;
 
         const doorFLMesh = new THREE.Mesh(new THREE.BoxGeometry(doorThick, doorHeight, doorLength), mats.paint);
         doorFLMesh.position.set(0, 0, -doorLength * 0.5);
@@ -4455,6 +4527,8 @@
         const doorFRPivot = new THREE.Group();
         doorFRPivot.name = 'Door_FR_Pivot';
         doorFRPivot.position.set(spec.bodyWidth * 0.49, 0.58, spec.wheelBase * 0.42);
+        doorFRPivot.userData.isButterflyDoor = isButterfly;
+        doorFRPivot.visible = false;
 
         const doorFRMesh = new THREE.Mesh(new THREE.BoxGeometry(doorThick, doorHeight, doorLength), mats.paint);
         doorFRMesh.position.set(0, 0, -doorLength * 0.5);
@@ -4480,6 +4554,7 @@
         const hoodPivot = new THREE.Group();
         hoodPivot.name = 'Hood_Pivot';
         hoodPivot.position.set(0, 0.78, spec.wheelBase * 0.44);
+        hoodPivot.visible = false;
 
         const hoodMesh = new THREE.Mesh(new THREE.BoxGeometry(hoodWidth, 0.025, hoodLength), mats.paint);
         hoodMesh.position.set(0, 0, hoodLength * 0.5);
@@ -4490,6 +4565,7 @@
         const engineBayGroup = new THREE.Group();
         engineBayGroup.name = 'EngineBayGroup';
         engineBayGroup.position.set(0, 0.55, spec.wheelBase * 0.58);
+        engineBayGroup.visible = false;
 
         const engBlock = new THREE.Mesh(new THREE.BoxGeometry(spec.bodyWidth * 0.40, 0.26, 0.40), mats.trim);
         engBlock.name = 'Engine_Block';
@@ -4525,6 +4601,7 @@
         const trunkPivot = new THREE.Group();
         trunkPivot.name = 'Trunk_Pivot';
         trunkPivot.position.set(0, 0.77, -spec.wheelBase * 0.36);
+        trunkPivot.visible = false;
 
         const trunkMesh = new THREE.Mesh(new THREE.BoxGeometry(trunkWidth, 0.025, trunkLength), mats.paint);
         trunkMesh.position.set(0, 0, -trunkLength * 0.5);
@@ -4535,6 +4612,7 @@
         const subwooferGroup = new THREE.Group();
         subwooferGroup.name = 'SubwooferGroup';
         subwooferGroup.position.set(0, 0.52, -spec.wheelBase * 0.50);
+        subwooferGroup.visible = false;
 
         const subBox = new THREE.Mesh(new THREE.BoxGeometry(spec.bodyWidth * 0.62, 0.24, 0.32), mats.darkPlastic || mats.trim);
         subBox.name = 'Subwoofer_Box';
@@ -4552,6 +4630,7 @@
                 emissive: 0x0284c7,
                 emissiveIntensity: 1.2
             }));
+            subRing.userData.isInteractiveNeon = true;
             subRing.position.set(sx * (spec.bodyWidth * 0.44), 0.03, 0.17);
             subwooferGroup.add(subRing);
         });
@@ -4827,6 +4906,7 @@
 
         const wheelCandidates = [];
         modelRoot.traverse(node => {
+            if (isIgnoredAccessoryOrRigNode(node, modelRoot)) return;
             const nm = String(node.name || '').toLowerCase();
             if (/(?:wheel|koles|tyre|tire|rim)[_\-\s]*(?:fl|fr|rl|rr|f_l|f_r|r_l|r_r|front_l|front_r|rear_l|rear_r|l|r|01|02|03|04|\d)?/i.test(nm)) {
                 if (!nm.includes('steer') && !nm.includes('interior') && !nm.includes('cabin')) {
@@ -4861,6 +4941,418 @@
             wNode.userData.camber = camberDeg;
             wNode.userData.wheelOffset = spacerOffset;
         });
+    }
+
+    // =========================================================================
+    // 🚪 INTERACTIVE RIG GENERATOR FOR ALL 25 GLB CAR MODELS
+    // Builds precision Door_FL_Pivot, Door_FR_Pivot, Hood_Pivot, EngineBayGroup,
+    // Trunk_Pivot, and SubwooferGroup directly calibrated to any GLB vehicle's
+    // real bounding box, with dark interior cavities and zero Z-fighting when closed.
+    // =========================================================================
+    function ensureGLBInteractiveRig(THREE, modelRoot, styling, carId, mats, styledPaint) {
+        if (!THREE || !modelRoot) return null;
+
+        let rig = modelRoot.getObjectByName('GLB_InteractiveRig');
+        if (rig) {
+            // Update paint & glass materials on existing interactive panels
+            rig.traverse(child => {
+                if (!child.isMesh) return;
+                if (child.userData.isInteractiveBody) {
+                    child.material = styledPaint;
+                } else if (child.userData.isInteractiveGlass) {
+                    child.material = mats.glass;
+                } else if (child.userData.isInteractiveNeon && styling && styling.neon && styling.neon !== 'none') {
+                    const nCol = parseColor(styling.neon, 0x38bdf8);
+                    if (child.material && child.material.color) {
+                        child.material.color.setHex(nCol);
+                        if (child.material.emissive) child.material.emissive.setHex(nCol);
+                    }
+                }
+            });
+            return rig;
+        }
+
+        // Compute clean bounding box of the base GLB vehicle (before adding interactive rig)
+        modelRoot.updateMatrixWorld(true);
+        const box = new THREE.Box3();
+        let hasMesh = false;
+        modelRoot.traverse(c => {
+            if (!c.isMesh || !c.geometry) return;
+            if (isIgnoredAccessoryOrRigNode(c, modelRoot)) return;
+            if (!c.geometry.boundingBox) c.geometry.computeBoundingBox();
+            if (c.geometry.boundingBox && !c.geometry.boundingBox.isEmpty()) {
+                const wb = c.geometry.boundingBox.clone().applyMatrix4(c.matrixWorld);
+                wb.min.sub(modelRoot.position);
+                wb.max.sub(modelRoot.position);
+                box.union(wb);
+                hasMesh = true;
+            }
+        });
+        if (!hasMesh || box.isEmpty()) {
+            if (modelRoot.userData && modelRoot.userData.baseBoundingBox && !modelRoot.userData.baseBoundingBox.isEmpty()) {
+                box.copy(modelRoot.userData.baseBoundingBox);
+            } else {
+                box.set(new THREE.Vector3(-0.90, 0, -2.20), new THREE.Vector3(0.90, 1.40, 2.20));
+            }
+        }
+
+        const size = box.getSize(new THREE.Vector3());
+        const center = box.getCenter(new THREE.Vector3());
+        const W = Math.max(1.5, Math.min(2.3, size.x || 1.85));
+        const H = Math.max(1.05, Math.min(2.1, size.y || 1.40));
+        const L = Math.max(3.6, Math.min(5.5, size.z || 4.45));
+        const profile = getCarProfile(carId);
+        const isSUV = profile === 'suv';
+        const isSupercar = profile === 'supercar';
+        const isHatch = profile === 'hatch';
+
+        rig = new THREE.Group();
+        rig.name = 'GLB_InteractiveRig';
+
+        const cavityMat = new THREE.MeshStandardMaterial({
+            color: 0x050507,
+            roughness: 0.96,
+            metalness: 0.05,
+            name: 'InteractiveCavityBlack'
+        });
+        const doorCardMat = new THREE.MeshStandardMaterial({
+            color: 0x16181d,
+            roughness: 0.80,
+            metalness: 0.10,
+            name: 'InteractiveDoorCard'
+        });
+        const engineMetalMat = new THREE.MeshStandardMaterial({
+            color: 0x272a30,
+            roughness: 0.45,
+            metalness: 0.75,
+            name: 'InteractiveEngineMetal'
+        });
+        const valveCoverColor = (carId === 'gtr' || carId === 'sf90' || carId === 'subaru' || carId === 'vesta' || carId === 'm5f90')
+            ? 0xdc2626
+            : (carId === 'huracan' || carId === 'jesko' ? 0xd97706 : 0x3b82f6);
+        const valveMat = new THREE.MeshStandardMaterial({
+            color: valveCoverColor,
+            roughness: 0.30,
+            metalness: 0.60,
+            name: 'InteractiveValveCover'
+        });
+        const subCarpetMat = new THREE.MeshStandardMaterial({
+            color: 0x111216,
+            roughness: 0.92,
+            metalness: 0.05,
+            name: 'InteractiveSubCarpet'
+        });
+        const neonRingCol = parseColor(styling && styling.neon && styling.neon !== 'none' ? styling.neon : '#38bdf8', 0x38bdf8);
+        const neonRingMat = new THREE.MeshStandardMaterial({
+            color: neonRingCol,
+            emissive: neonRingCol,
+            emissiveIntensity: 1.5,
+            roughness: 0.2,
+            name: 'InteractiveSubNeon'
+        });
+
+        // ---------------------------------------------------------------------
+        // 1. DOORS (Left & Right Front Doors + Dark Interior Sill Cavities)
+        // ---------------------------------------------------------------------
+        const doorLen = L * (isSupercar ? 0.28 : 0.25);
+        const doorH = H * (isSUV ? 0.38 : 0.36);
+        const doorThick = 0.038;
+        const doorHingeZ = center.z + L * 0.14;
+        const doorCenterY = box.min.y + H * 0.42;
+
+        const doorCavityGroup = new THREE.Group();
+        doorCavityGroup.name = 'Door_CavityGroup';
+        doorCavityGroup.visible = false;
+        [-1, 1].forEach(side => {
+            // Deep black door opening mask that hides the static closed GLB door when opened
+            const cavGeo = new THREE.BoxGeometry(0.08, doorH * 0.94, doorLen * 0.94);
+            const cav = new THREE.Mesh(cavGeo, cavityMat);
+            cav.position.set(side * (W * 0.465), doorCenterY, doorHingeZ - doorLen * 0.5);
+            doorCavityGroup.add(cav);
+
+            // Interior sport bucket seat & B-pillar silhouette visible inside cabin
+            const seatGeo = new THREE.BoxGeometry(W * 0.24, doorH * 0.85, 0.14);
+            const seat = new THREE.Mesh(seatGeo, doorCardMat);
+            seat.position.set(side * (W * 0.24), doorCenterY + 0.04, doorHingeZ - doorLen * 0.65);
+            doorCavityGroup.add(seat);
+
+            // Chrome door sill scuff plate
+            const sillGeo = new THREE.BoxGeometry(0.07, 0.02, doorLen * 0.88);
+            const sill = new THREE.Mesh(sillGeo, mats.chrome);
+            sill.position.set(side * (W * 0.46), doorCenterY - doorH * 0.46, doorHingeZ - doorLen * 0.5);
+            doorCavityGroup.add(sill);
+        });
+        rig.add(doorCavityGroup);
+
+        [-1, 1].forEach(side => {
+            const pivot = new THREE.Group();
+            pivot.name = side < 0 ? 'Door_FL_Pivot' : 'Door_FR_Pivot';
+            pivot.position.set(side * (W * 0.492), doorCenterY, doorHingeZ);
+            pivot.userData.isButterflyDoor = (carId === 'huracan' || carId === 'sf90' || carId === 'chiron' || carId === 'jesko' || carId === 'm8');
+            pivot.visible = false; // Hidden when closed (angle = 0) to eliminate Z-fighting with native GLB doors
+
+            // Outer painted door skin
+            const doorSkin = new THREE.Mesh(new THREE.BoxGeometry(doorThick, doorH, doorLen), styledPaint);
+            doorSkin.userData.isInteractiveBody = true;
+            doorSkin.position.set(0, 0, -doorLen * 0.5);
+            pivot.add(doorSkin);
+
+            // Inner upholstered door card
+            const doorCard = new THREE.Mesh(new THREE.BoxGeometry(0.02, doorH * 0.90, doorLen * 0.92), doorCardMat);
+            doorCard.position.set(-side * 0.022, 0, -doorLen * 0.5);
+            pivot.add(doorCard);
+
+            // Door speaker grille
+            const spkGeo = new THREE.CylinderGeometry(0.065, 0.065, 0.015, 16);
+            spkGeo.rotateZ(Math.PI / 2);
+            const speaker = new THREE.Mesh(spkGeo, mats.grilleMesh || mats.trim);
+            speaker.position.set(-side * 0.032, -doorH * 0.22, -doorLen * 0.28);
+            pivot.add(speaker);
+
+            // Framed side window glass
+            const winH = H * (isSUV ? 0.25 : 0.22);
+            const winGlass = new THREE.Mesh(new THREE.BoxGeometry(doorThick * 0.5, winH, doorLen * 0.86), mats.glass);
+            winGlass.userData.isInteractiveGlass = true;
+            winGlass.position.set(-side * 0.03, doorH * 0.5 + winH * 0.44, -doorLen * 0.52);
+            pivot.add(winGlass);
+
+            // Window B-pillar vertical frame
+            const bPillar = new THREE.Mesh(new THREE.BoxGeometry(0.025, winH * 0.96, 0.04), mats.trim);
+            bPillar.position.set(-side * 0.025, doorH * 0.5 + winH * 0.44, -doorLen * 0.94);
+            pivot.add(bPillar);
+
+            // Exterior door handle
+            const handle = new THREE.Mesh(new THREE.BoxGeometry(0.022, 0.028, 0.11), mats.chrome);
+            handle.position.set(side * (doorThick * 0.55), doorH * 0.14, -doorLen * 0.78);
+            pivot.add(handle);
+
+            // Side view mirror assembly
+            const mirror = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.075, 0.13), styledPaint);
+            mirror.userData.isInteractiveBody = true;
+            mirror.position.set(side * 0.065, doorH * 0.46, -doorLen * 0.12);
+            pivot.add(mirror);
+
+            rig.add(pivot);
+        });
+
+        // ---------------------------------------------------------------------
+        // 2. HOOD & DETAILED 3D ENGINE BAY
+        // ---------------------------------------------------------------------
+        const hoodW = W * (isSupercar ? 0.78 : 0.82);
+        const hoodL = L * (isSupercar ? 0.22 : 0.26);
+        const hoodHingeZ = center.z + L * 0.17;
+        const hoodY = box.min.y + H * (isSUV ? 0.64 : isSupercar ? 0.56 : 0.60);
+
+        const engineBayGroup = new THREE.Group();
+        engineBayGroup.name = 'EngineBayGroup';
+        engineBayGroup.position.set(0, hoodY - 0.12, hoodHingeZ + hoodL * 0.48);
+        engineBayGroup.visible = false;
+
+        // Recessed dark engine bay well that sits flush over the closed hood surface
+        const hoodCavity = new THREE.Mesh(new THREE.BoxGeometry(hoodW * 0.96, 0.16, hoodL * 0.92), cavityMat);
+        hoodCavity.name = 'Hood_Cavity';
+        hoodCavity.position.set(0, 0.02, 0);
+        engineBayGroup.add(hoodCavity);
+
+        // Engine Block
+        const engBlock = new THREE.Mesh(new THREE.BoxGeometry(hoodW * 0.44, 0.18, hoodL * 0.52), engineMetalMat);
+        engBlock.name = 'Engine_Block';
+        engBlock.position.set(0, 0.09, -0.02);
+        engineBayGroup.add(engBlock);
+
+        // Performance Powder-Coated Valve Cover
+        const valveCover = new THREE.Mesh(new THREE.BoxGeometry(hoodW * 0.36, 0.06, hoodL * 0.46), valveMat);
+        valveCover.name = 'Engine_ValveCover';
+        valveCover.position.set(0, 0.19, -0.02);
+        engineBayGroup.add(valveCover);
+
+        // Chrome Twin-Scroll Intake Manifold / Piping
+        const intakeManifold = new THREE.Mesh(new THREE.CylinderGeometry(0.032, 0.032, hoodW * 0.42, 12), mats.chrome);
+        intakeManifold.name = 'Engine_IntakePipe';
+        intakeManifold.rotation.z = Math.PI / 2;
+        intakeManifold.position.set(-hoodW * 0.12, 0.21, 0.12);
+        engineBayGroup.add(intakeManifold);
+
+        // Conical Cold-Air Filter
+        const airFilter = new THREE.Mesh(new THREE.ConeGeometry(0.065, 0.15, 14), valveMat);
+        airFilter.name = 'Engine_AirFilter';
+        airFilter.rotation.z = Math.PI / 2;
+        airFilter.position.set(-hoodW * 0.34, 0.19, 0.16);
+        engineBayGroup.add(airFilter);
+
+        // Front Strut Tower Brace Bar
+        const strutBrace = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, hoodW * 0.84, 10), mats.chrome);
+        strutBrace.name = 'Engine_StrutBar';
+        strutBrace.rotation.z = Math.PI / 2;
+        strutBrace.position.set(0, 0.24, -0.08);
+        engineBayGroup.add(strutBrace);
+
+        // Battery & Coolant Reservoir Accents
+        const battery = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.12, 0.22), doorCardMat);
+        battery.position.set(hoodW * 0.34, 0.14, -0.12);
+        engineBayGroup.add(battery);
+
+        const coolant = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.055, 0.11, 12), new THREE.MeshStandardMaterial({ color: 0x38bdf8, roughness: 0.3 }));
+        coolant.position.set(hoodW * 0.32, 0.15, 0.16);
+        engineBayGroup.add(coolant);
+
+        rig.add(engineBayGroup);
+
+        const hoodPivot = new THREE.Group();
+        hoodPivot.name = 'Hood_Pivot';
+        hoodPivot.position.set(0, hoodY + 0.015, hoodHingeZ);
+        hoodPivot.visible = false;
+
+        const hoodOuterGeo = new THREE.BoxGeometry(hoodW, 0.026, hoodL);
+        const hoodOuter = new THREE.Mesh(hoodOuterGeo, styledPaint);
+        hoodOuter.userData.isInteractiveBody = true;
+        hoodOuter.position.set(0, 0, hoodL * 0.5);
+        hoodOuter.rotation.x = -Math.PI / 32; // Subtle forward rake matching hood contour
+        hoodPivot.add(hoodOuter);
+
+        const hoodLiner = new THREE.Mesh(new THREE.BoxGeometry(hoodW * 0.92, 0.014, hoodL * 0.90), cavityMat);
+        hoodLiner.position.set(0, -0.016, hoodL * 0.5);
+        hoodLiner.rotation.x = -Math.PI / 32;
+        hoodPivot.add(hoodLiner);
+
+        rig.add(hoodPivot);
+
+        // ---------------------------------------------------------------------
+        // 3. TRUNK & CUSTOM SUBWOOFER AUDIO SYSTEM
+        // ---------------------------------------------------------------------
+        const trunkW = W * 0.80;
+        const trunkL = L * (isHatch || isSUV ? 0.16 : 0.20);
+        const trunkHingeZ = center.z - L * (isHatch || isSUV ? 0.30 : 0.27);
+        const trunkY = box.min.y + H * (isHatch || isSUV ? 0.68 : 0.62);
+
+        const subwooferGroup = new THREE.Group();
+        subwooferGroup.name = 'SubwooferGroup';
+        subwooferGroup.position.set(0, trunkY - 0.14, trunkHingeZ - trunkL * 0.46);
+        subwooferGroup.visible = false;
+
+        // Trunk recessed cavity floor
+        const trunkCavity = new THREE.Mesh(new THREE.BoxGeometry(trunkW * 0.96, 0.16, trunkL * 0.92), cavityMat);
+        trunkCavity.name = 'Trunk_Cavity';
+        trunkCavity.position.set(0, 0.02, 0);
+        subwooferGroup.add(trunkCavity);
+
+        // Dual 12" Custom Carpeted Subwoofer Enclosure
+        const subBox = new THREE.Mesh(new THREE.BoxGeometry(trunkW * 0.76, 0.18, trunkL * 0.56), subCarpetMat);
+        subBox.name = 'Subwoofer_Box';
+        subBox.position.set(0, 0.11, 0.04);
+        subwooferGroup.add(subBox);
+
+        [-1, 1].forEach((side, idx) => {
+            const subX = side * (trunkW * 0.21);
+            const cone = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.035, 0.06, 20), doorCardMat);
+            cone.name = idx === 0 ? 'Subwoofer_Cone_L' : 'Subwoofer_Cone_R';
+            cone.rotation.x = Math.PI / 5;
+            cone.position.set(subX, 0.19, 0.03);
+            subwooferGroup.add(cone);
+
+            // Center dust cap
+            const dustCap = new THREE.Mesh(new THREE.SphereGeometry(0.042, 12, 12), mats.chrome);
+            dustCap.position.set(subX, 0.20, 0.02);
+            subwooferGroup.add(dustCap);
+
+            // Illuminated LED Neon Ring around each subwoofer
+            const subRing = new THREE.Mesh(new THREE.TorusGeometry(0.115, 0.012, 10, 24), neonRingMat);
+            subRing.userData.isInteractiveNeon = true;
+            subRing.rotation.x = -Math.PI / 2 + Math.PI / 5;
+            subRing.position.set(subX, 0.21, 0.02);
+            subwooferGroup.add(subRing);
+        });
+
+        // Chrome Monoblock Amplifier Rack
+        const ampRack = new THREE.Mesh(new THREE.BoxGeometry(trunkW * 0.42, 0.035, trunkL * 0.26), mats.chrome);
+        ampRack.position.set(0, 0.11, -trunkL * 0.28);
+        subwooferGroup.add(ampRack);
+
+        rig.add(subwooferGroup);
+
+        const trunkPivot = new THREE.Group();
+        trunkPivot.name = 'Trunk_Pivot';
+        trunkPivot.position.set(0, trunkY + 0.015, trunkHingeZ);
+        trunkPivot.visible = false;
+
+        const trunkOuter = new THREE.Mesh(new THREE.BoxGeometry(trunkW, 0.026, trunkL), styledPaint);
+        trunkOuter.userData.isInteractiveBody = true;
+        trunkOuter.position.set(0, 0, -trunkL * 0.5);
+        trunkPivot.add(trunkOuter);
+
+        const trunkLiner = new THREE.Mesh(new THREE.BoxGeometry(trunkW * 0.92, 0.014, trunkL * 0.90), cavityMat);
+        trunkLiner.position.set(0, -0.016, -trunkL * 0.5);
+        trunkPivot.add(trunkLiner);
+
+        rig.add(trunkPivot);
+
+        modelRoot.add(rig);
+        return rig;
+    }
+
+    function applyInteractiveAnglesToModel(model, doorAngle, hoodAngle, trunkAngle) {
+        if (!model) return;
+        const dOpen = doorAngle > 0.005;
+        const hOpen = hoodAngle > 0.005;
+        const tOpen = trunkAngle > 0.005;
+
+        const pFL = model.getObjectByName('Door_FL_Pivot');
+        const pFR = model.getObjectByName('Door_FR_Pivot');
+        const dCav = model.getObjectByName('Door_CavityGroup');
+        const pHood = model.getObjectByName('Hood_Pivot');
+        const engBay = model.getObjectByName('EngineBayGroup');
+        const pTrunk = model.getObjectByName('Trunk_Pivot');
+        const subGroup = model.getObjectByName('SubwooferGroup');
+
+        if (dCav) dCav.visible = dOpen;
+        if (pFL) {
+            pFL.visible = dOpen;
+            if (pFL.userData && pFL.userData.isButterflyDoor) {
+                pFL.rotation.y = doorAngle * 0.72;
+                pFL.rotation.z = -doorAngle * 0.55;
+            } else {
+                pFL.rotation.y = doorAngle;
+                pFL.rotation.z = 0;
+            }
+        }
+        if (pFR) {
+            pFR.visible = dOpen;
+            if (pFR.userData && pFR.userData.isButterflyDoor) {
+                pFR.rotation.y = -doorAngle * 0.72;
+                pFR.rotation.z = doorAngle * 0.55;
+            } else {
+                pFR.rotation.y = -doorAngle;
+                pFR.rotation.z = 0;
+            }
+        }
+
+        if (engBay) engBay.visible = hOpen;
+        if (pHood) {
+            pHood.visible = hOpen;
+            pHood.rotation.x = -hoodAngle;
+        }
+
+        if (subGroup) subGroup.visible = tOpen;
+        if (pTrunk) {
+            pTrunk.visible = tOpen;
+            pTrunk.rotation.x = trunkAngle;
+        }
+
+        // If car has a trunk-mounted spoiler, rotate it smoothly with the trunk lid
+        const spoiler = model.getObjectByName('GLB_SpoilerGroup') || model.getObjectByName('SpoilerGroup');
+        if (spoiler && pTrunk) {
+            if (!spoiler.userData._basePos) {
+                spoiler.userData._basePos = spoiler.position.clone();
+            }
+            if (tOpen) {
+                spoiler.rotation.x = trunkAngle * 0.85;
+                spoiler.position.y = spoiler.userData._basePos.y + Math.sin(trunkAngle) * 0.22;
+                spoiler.position.z = spoiler.userData._basePos.z + (1 - Math.cos(trunkAngle)) * 0.14;
+            } else {
+                spoiler.rotation.x = 0;
+                spoiler.position.copy(spoiler.userData._basePos);
+            }
+        }
     }
 
     function applyStylingToGLTF(THREE, modelRoot, styling = {}, carId = '') {
@@ -5288,6 +5780,7 @@
         styledPaint.needsUpdate = true;
 
         modelRoot.traverse(child => {
+            if (isIgnoredAccessoryOrRigNode(child, modelRoot)) return;
             const mName = String(child.name || '').toLowerCase();
             // Automatically hide any stray manufacturer badge/logo planes on base models
             if (mName.includes('logo_plane') || mName.includes('emblem') || mName.includes('badge') || mName.includes('bmw_logo') || mName.includes('hyundai_logo') || mName.includes('logo') || mName.includes('license_plate') || mName.includes('illinois') || mName.includes('symbol') || mName.includes('reg plate') || mName.includes('2025_103') || mName.includes('object_174')) {
@@ -5483,9 +5976,21 @@
             modelRoot.remove(oldUndertray);
         }
 
-        // Compute world bounding box for accessories placement
+        // Compute world bounding box for accessories placement (excluding interactive rig & accessories)
         modelRoot.updateMatrixWorld(true);
-        const box = new THREE.Box3().setFromObject(modelRoot);
+        const box = new THREE.Box3();
+        modelRoot.traverse(c => {
+            if (!c.isMesh || !c.geometry) return;
+            if (isIgnoredAccessoryOrRigNode(c, modelRoot)) return;
+            if (!c.geometry.boundingBox) c.geometry.computeBoundingBox();
+            if (c.geometry.boundingBox && !c.geometry.boundingBox.isEmpty()) {
+                const wb = c.geometry.boundingBox.clone().applyMatrix4(c.matrixWorld);
+                box.union(wb);
+            }
+        });
+        if (box.isEmpty()) {
+            box.setFromObject(modelRoot);
+        }
         const size = box.getSize(new THREE.Vector3());
         const center = box.getCenter(new THREE.Vector3());
 
@@ -5573,6 +6078,9 @@
             });
             modelRoot.add(neonGroup);
         }
+
+        // Interactive Doors, Hood, Engine Bay, Trunk, and Subwoofer Rig for all GLB Models
+        ensureGLBInteractiveRig(THREE, modelRoot, styling, carId, mats, styledPaint);
 
         // Russian License Plates
         const plateVal = (styling && styling.plate !== undefined) ? styling.plate : 'А 777 АА | 77 RUS';
@@ -5718,6 +6226,8 @@
                 clonedScene.position.y = -scaledBox.min.y;
 
                 modelGroup.add(clonedScene);
+                modelGroup.updateMatrixWorld(true);
+                modelGroup.userData.baseBoundingBox = new THREE.Box3().setFromObject(clonedScene);
                 applyStylingToGLTF(THREE, modelGroup, styling, carId);
 
                 return modelGroup;
@@ -6289,8 +6799,11 @@
             if (hasGlb && loader && this.glbCar && this.glbCar.userData && this.glbCar.userData.carId === carId) {
                 this.setLoading(false);
                 applyStylingToGLTF(THREE, this.glbCar, this.currentStyling, carId);
+                applyInteractiveAnglesToModel(this.glbCar, this.doorAngle, this.hoodAngle, this.trunkAngle);
                 this.updateActiveCarVisibility();
                 this.updateNeonLight();
+                this.updateCapabilities();
+                this.updateLightsRigPositions();
                 this.updateHeadlightsState();
                 return;
             }
@@ -6304,6 +6817,7 @@
                     try {
                         this.proceduralCar = buildDetailedCarModel(THREE, this.currentCarName, this.currentStyling);
                         if (this.proceduralCar) {
+                            applyInteractiveAnglesToModel(this.proceduralCar, this.doorAngle, this.hoodAngle, this.trunkAngle);
                             this.scene.add(this.proceduralCar);
                             this.carGroup = this.proceduralCar;
                             this.updateActiveCarVisibility();
@@ -6343,6 +6857,7 @@
                                 c.rotation.y = c.userData.baseRotY || 0;
                             }
                         });
+                        applyInteractiveAnglesToModel(loadedModel, this.doorAngle, this.hoodAngle, this.trunkAngle);
                         this.glbCar = loadedModel;
                         this.carGroup = loadedModel;
                         this.scene.add(loadedModel);
@@ -6390,6 +6905,7 @@
                         if (this.currentStyling && this.currentStyling.plate !== undefined) {
                             applyLicensePlateToModel(THREE, this.proceduralCar, this.currentStyling.plate);
                         }
+                        applyInteractiveAnglesToModel(this.proceduralCar, this.doorAngle, this.hoodAngle, this.trunkAngle);
                         this.scene.add(this.proceduralCar);
                         this.carGroup = this.proceduralCar;
                     }
@@ -6439,6 +6955,7 @@
             const carId = identifyCarModel(this.currentCarName);
             if (this.glbCar && GLB_MODEL_MAP[carId]) {
                 applyStylingToGLTF(this.THREE, this.glbCar, this.currentStyling, carId);
+                applyInteractiveAnglesToModel(this.glbCar, this.doorAngle, this.hoodAngle, this.trunkAngle);
                 this.updateNeonLight();
                 this.updateCapabilities();
                 this.updateLightsRigPositions();
@@ -6512,6 +7029,12 @@
             return this.capabilities[feature] !== false;
         }
 
+        syncInteractiveModels() {
+            if (this.glbCar) applyInteractiveAnglesToModel(this.glbCar, this.doorAngle, this.hoodAngle, this.trunkAngle);
+            if (this.proceduralCar && this.proceduralCar !== this.glbCar) applyInteractiveAnglesToModel(this.proceduralCar, this.doorAngle, this.hoodAngle, this.trunkAngle);
+            if (this.carGroup && this.carGroup !== this.proceduralCar && this.carGroup !== this.glbCar) applyInteractiveAnglesToModel(this.carGroup, this.doorAngle, this.hoodAngle, this.trunkAngle);
+        }
+
         toggleDoors() {
             if (!this.hasCapability('doors')) {
                 this.doorsOpen = false;
@@ -6520,6 +7043,12 @@
             }
             this.doorsOpen = !this.doorsOpen;
             this.targetDoorAngle = this.doorsOpen ? 1.05 : 0;
+            if (this.doorsOpen && this.doorAngle <= 0.005) {
+                this.doorAngle = 0.01;
+            } else if (!this.doorsOpen && this.doorAngle <= 0.02) {
+                this.doorAngle = 0;
+            }
+            this.syncInteractiveModels();
             this.updateActiveCarVisibility();
             this.needsRender = true;
             return this.doorsOpen;
@@ -6533,6 +7062,12 @@
             }
             this.hoodOpen = !this.hoodOpen;
             this.targetHoodAngle = this.hoodOpen ? 0.85 : 0;
+            if (this.hoodOpen && this.hoodAngle <= 0.005) {
+                this.hoodAngle = 0.01;
+            } else if (!this.hoodOpen && this.hoodAngle <= 0.02) {
+                this.hoodAngle = 0;
+            }
+            this.syncInteractiveModels();
             this.updateActiveCarVisibility();
             this.needsRender = true;
             return this.hoodOpen;
@@ -6546,6 +7081,12 @@
             }
             this.trunkOpen = !this.trunkOpen;
             this.targetTrunkAngle = this.trunkOpen ? 0.90 : 0;
+            if (this.trunkOpen && this.trunkAngle <= 0.005) {
+                this.trunkAngle = 0.01;
+            } else if (!this.trunkOpen && this.trunkAngle <= 0.02) {
+                this.trunkAngle = 0;
+            }
+            this.syncInteractiveModels();
             this.updateActiveCarVisibility();
             this.needsRender = true;
             return this.trunkOpen;
@@ -6779,6 +7320,7 @@
                 }
                 const badWords = /interior|seat|dash|mirror|cabin|roof|wheel|tire|caliper|disc|brake_disc|bumper|grille|radiator/i;
                 model.traverse(obj => {
+                    if (isIgnoredAccessoryOrRigNode(obj, model)) return;
                     if (obj.isMesh && obj.material) {
                         const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
                         mats.forEach(mat => {
@@ -7124,26 +7666,11 @@
                 const bodyMoving = Math.abs(diffDoor) > 0.001 || Math.abs(diffHood) > 0.001 || Math.abs(diffTrunk) > 0.001;
 
                 if (bodyMoving) {
-                    this.doorAngle += diffDoor * 0.14;
-                    this.hoodAngle += diffHood * 0.14;
-                    this.trunkAngle += diffTrunk * 0.14;
+                    this.doorAngle = Math.abs(diffDoor) <= 0.005 ? this.targetDoorAngle : this.doorAngle + diffDoor * 0.14;
+                    this.hoodAngle = Math.abs(diffHood) <= 0.005 ? this.targetHoodAngle : this.hoodAngle + diffHood * 0.14;
+                    this.trunkAngle = Math.abs(diffTrunk) <= 0.005 ? this.targetTrunkAngle : this.trunkAngle + diffTrunk * 0.14;
 
-                    const animateModel = (model) => {
-                        if (!model) return;
-                        const pFL = model.getObjectByName('Door_FL_Pivot');
-                        const pFR = model.getObjectByName('Door_FR_Pivot');
-                        const pHood = model.getObjectByName('Hood_Pivot');
-                        const pTrunk = model.getObjectByName('Trunk_Pivot');
-
-                        if (pFL) pFL.rotation.y = this.doorAngle;
-                        if (pFR) pFR.rotation.y = -this.doorAngle;
-                        if (pHood) pHood.rotation.x = -this.hoodAngle;
-                        if (pTrunk) pTrunk.rotation.x = this.trunkAngle;
-                    };
-
-                    if (this.glbCar) animateModel(this.glbCar);
-                    if (this.proceduralCar && this.proceduralCar !== this.glbCar) animateModel(this.proceduralCar);
-                    if (this.carGroup && this.carGroup !== this.proceduralCar && this.carGroup !== this.glbCar) animateModel(this.carGroup);
+                    this.syncInteractiveModels();
                     this.needsRender = true;
                 }
 
@@ -7165,6 +7692,15 @@
                         if (nGroup) {
                             nGroup.traverse(m => {
                                 if (m.material) {
+                                    m.material.color = rCol;
+                                    if (m.material.emissive) m.material.emissive = rCol;
+                                }
+                            });
+                        }
+                        const subGroup = this.carGroup.getObjectByName('SubwooferGroup');
+                        if (subGroup && subGroup.visible) {
+                            subGroup.traverse(m => {
+                                if (m.userData && m.userData.isInteractiveNeon && m.material) {
                                     m.material.color = rCol;
                                     if (m.material.emissive) m.material.emissive = rCol;
                                 }
@@ -9245,8 +9781,26 @@
                     });
                 }
 
-                // Compute bounds of player model
-                const box = new THREE.Box3().setFromObject(this.playerCar);
+                // Compute bounds of player model (excluding accessories/interactive rig)
+                const box = new THREE.Box3();
+                if (this.playerCar.userData && this.playerCar.userData.baseBoundingBox && !this.playerCar.userData.baseBoundingBox.isEmpty()) {
+                    box.copy(this.playerCar.userData.baseBoundingBox);
+                } else {
+                    this.playerCar.traverse(c => {
+                        if (!c.isMesh || !c.geometry) return;
+                        if (isIgnoredAccessoryOrRigNode(c, this.playerCar)) return;
+                        if (!c.geometry.boundingBox) c.geometry.computeBoundingBox();
+                        if (c.geometry.boundingBox && !c.geometry.boundingBox.isEmpty()) {
+                            const wb = c.geometry.boundingBox.clone().applyMatrix4(c.matrixWorld);
+                            wb.min.sub(this.playerCar.position);
+                            wb.max.sub(this.playerCar.position);
+                            box.union(wb);
+                        }
+                    });
+                    if (box.isEmpty()) {
+                        box.setFromObject(this.playerCar);
+                    }
+                }
                 const size = box.getSize(new THREE.Vector3());
                 const halfL = (size.z || 4.4) * 0.5;
                 const halfW = (size.x || 1.9) * 0.5;
@@ -9274,6 +9828,7 @@
                 // 2. Taillight Braking Emissive Glow & Dynamic Brake Point Light
                 this.playerTaillights = [];
                 this.playerCar.traverse(child => {
+                    if (isIgnoredAccessoryOrRigNode(child, this.playerCar)) return;
                     if (child.isMesh && child.material) {
                         const mats = Array.isArray(child.material) ? child.material : [child.material];
                         mats.forEach(m => {
@@ -9300,8 +9855,9 @@
 
                 // 3. Streamlined Subtle Nitro Exhaust Flame Meshes & Dynamic Road Light
                 this.playerNitroFlames = [];
-                const exhaustY = Math.max(0.18, Math.min(0.28, box.min.y + size.y * 0.16));
+                const exhaustY = Math.max(0.18, Math.min(0.28, (size.y || 1.4) * 0.16));
                 const exhaustSpanX = (carId === 'vaz2107' || carId === 'vaz2109') ? halfW * 0.34 : halfW * 0.40;
+                const exhaustZ = -halfL - 0.04;
 
                 [-1, 1].forEach(side => {
                     // Outer streamlined electric cyan-blue nitro flame jet
@@ -9315,7 +9871,7 @@
                         depthWrite: false
                     });
                     const flame = new THREE.Mesh(flameGeo, flameMat);
-                    flame.position.set(side * exhaustSpanX, exhaustY, -halfL - 0.20);
+                    flame.position.set(side * exhaustSpanX, exhaustY, exhaustZ - 0.14);
                     flame.visible = false;
                     this.playerCar.add(flame);
                     this.playerNitroFlames.push(flame);
@@ -9331,14 +9887,14 @@
                         depthWrite: false
                     });
                     const core = new THREE.Mesh(coreGeo, coreMat);
-                    core.position.set(side * exhaustSpanX, exhaustY, -halfL - 0.12);
+                    core.position.set(side * exhaustSpanX, exhaustY, exhaustZ - 0.08);
                     core.visible = false;
                     this.playerCar.add(core);
                     this.playerNitroFlames.push(core);
                 });
 
                 this.playerNitroLight = new THREE.PointLight(0x00d4ff, 0, 5.0, 2.0);
-                this.playerNitroLight.position.set(0, exhaustY + 0.08, -halfL - 0.25);
+                this.playerNitroLight.position.set(0, exhaustY + 0.08, exhaustZ - 0.20);
                 this.playerCar.add(this.playerNitroLight);
 
                 // 4. Compact Exhaust Backfire Flame Pops & Road Flash Light
@@ -9354,14 +9910,14 @@
                         depthWrite: false
                     });
                     const bf = new THREE.Mesh(bfGeo, bfMat);
-                    bf.position.set(side * exhaustSpanX, exhaustY, -halfL - 0.16);
+                    bf.position.set(side * exhaustSpanX, exhaustY, exhaustZ - 0.10);
                     bf.visible = false;
                     this.playerCar.add(bf);
                     this.playerBackfireFlames.push(bf);
                 });
 
                 this.playerBackfireLight = new THREE.PointLight(0xff7700, 0, 4.5, 2.0);
-                this.playerBackfireLight.position.set(0, exhaustY + 0.08, -halfL - 0.20);
+                this.playerBackfireLight.position.set(0, exhaustY + 0.08, exhaustZ - 0.16);
                 this.playerCar.add(this.playerBackfireLight);
 
                 // 5. Glowing Brake Discs Collection
@@ -11001,6 +11557,8 @@
         loadCarModel,
         preloadCarModel,
         applyStylingToGLTF,
+        ensureGLBInteractiveRig,
+        applyInteractiveAnglesToModel,
         createCarMaterials,
         createStudioEnvironment,
         applyLicensePlateToModel,

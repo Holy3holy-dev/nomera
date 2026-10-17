@@ -245,4 +245,54 @@ test('Frontend selectPlateCountry switches country, spin costs, regions, and blo
   assert.equal(app.run('inventory.length'), invLenBefore);
 });
 
+test('Frontend cases adapt prices and plate pools by country and support dedicated international boxes', () => {
+  const { createApp } = require('./helpers/create-app.cjs');
+  const app = createApp();
+
+  // Base RUS prices
+  assert.equal(app.run("getCaseEffectivePrice('normal', 'RUS')"), 5000);
+  assert.equal(app.run("getCaseEffectivePrice('super', 'RUS')"), 50000);
+  assert.equal(app.run("getCaseEffectivePrice('mega', 'RUS')"), 200000);
+
+  // KZ (x1.8) prices
+  assert.equal(app.run("getCaseEffectivePrice('normal', 'KZ')"), 9000);
+  assert.equal(app.run("getCaseEffectivePrice('super', 'KZ')"), 90000);
+  assert.equal(app.run("getCaseEffectivePrice('mega', 'KZ')"), 360000);
+
+  // USA (x3.5) prices
+  assert.equal(app.run("getCaseEffectivePrice('normal', 'USA')"), 17500);
+  assert.equal(app.run("getCaseEffectivePrice('super', 'USA')"), 175000);
+  assert.equal(app.run("getCaseEffectivePrice('mega', 'USA')"), 700000);
+
+  // UAE (x8.0) prices
+  assert.equal(app.run("getCaseEffectivePrice('normal', 'UAE')"), 40000);
+  assert.equal(app.run("getCaseEffectivePrice('super', 'UAE')"), 400000);
+  assert.equal(app.run("getCaseEffectivePrice('mega', 'UAE')"), 1600000);
+
+  // Dedicated international VIP boxes have fixed prices and fixed countries
+  assert.equal(app.run("getCaseEffectivePrice('kz_box', 'RUS')"), 45000);
+  assert.equal(app.run("getCaseEffectivePrice('usa_box', 'RUS')"), 110000);
+  assert.equal(app.run("getCaseEffectivePrice('uae_box', 'RUS')"), 320000);
+
+  // Switching case country updates DOM price labels and generates country-specific plates
+  app.run("selectCaseCountry('UAE')");
+  assert.equal(app.run('currentCaseCountry'), 'UAE');
+  assert.match(app.run("document.getElementById('case-price-normal').innerText"), /40\s*000\s*₽/);
+  assert.match(app.run("document.getElementById('case-price-super').innerText"), /400\s*000\s*₽/);
+  assert.match(app.run("document.getElementById('case-price-mega').innerText"), /1\s*600\s*000\s*₽/);
+
+  const uaePlate = app.run("forcePlate('Легендарный', 'UAE')");
+  assert.equal(uaePlate.country, 'UAE');
+  assert.match(uaePlate.text, /^[A-Z]{3} \d{3} \| [A-Z]{3} UAE$/);
+  assert.ok(uaePlate.price > 500000);
+
+  const kzPlate = app.run("forcePlate('Эпический', 'KZ')");
+  assert.equal(kzPlate.country, 'KZ');
+  assert.match(kzPlate.text, /^\d{3} [A-Z]{3} \| \d{2} KZ$/);
+
+  const usaPlate = app.run("forcePlate('Мифический', 'USA')");
+  assert.equal(usaPlate.country, 'USA');
+  assert.match(usaPlate.text, /^[A-Z]{3} \d{3} \| [A-Z]{2} USA$/);
+});
+
 

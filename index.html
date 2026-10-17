@@ -60,7 +60,7 @@
     <!-- Подключение Firebase SDK для базы данных, аккаунтов и мультиплеера -->
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
-    <link rel="stylesheet" href="./styles.css?v=892b22b8f191">
+    <link rel="stylesheet" href="./styles.css?v=c4f13783ee66">
 </head>
 <body>
     <svg class="icon-sprite" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><defs><symbol id="icon-plate" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M7 10h5m-5 4h5m4-4v4"/></symbol><symbol id="icon-collection" viewBox="0 0 24 24"><rect x="4" y="7" width="16" height="13" rx="2"/><path d="M8 7V4h8v3m-8 5h8m-8 4h5"/></symbol><symbol id="icon-garage" viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v10H3zM7 21V12h10v9m-10-5h10"/></symbol><symbol id="icon-race" viewBox="0 0 24 24"><path d="M5 21V3m0 1h6l2 2h7v10h-7l-2-2H5m6-10v10m2-8v10"/></symbol><symbol id="icon-case" viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="14" rx="2"/><path d="M12 7v14M3 12h18m-9-5C4 7 5 1 8 3l4 4m0 0c8 0 7-6 4-4z"/></symbol><symbol id="icon-rating" viewBox="0 0 24 24"><path d="M7 3h10v5a5 5 0 01-10 0zm10 2h4v3a4 4 0 01-4 4M7 5H3v3a4 4 0 004 4m5 1v5m-4 3h8m-6-3h4"/></symbol><symbol id="icon-online" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><ellipse cx="12" cy="12" rx="4" ry="9"/><path d="M3 12h18"/></symbol><symbol id="icon-profile" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M5 21v-2a7 7 0 0114 0v2"/></symbol><symbol id="icon-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3M5 5l2 2m10 10l2 2M5 19l2-2M17 7l2-2"/></symbol></defs></svg>
@@ -394,12 +394,13 @@
                             <div class="showroom-loading-text" id="garage-3d-loader-text">⏳ Загрузка 3D модели...</div>
                         </div>
 
-                        <!-- Интерактивный тулбар 3D осмотра в гараже (Двери, Капот, Багажник, Фары) -->
+                        <!-- Интерактивный тулбар 3D осмотра в гараже (Двери, Капот, Багажник, Фары, Сигнал) -->
                         <div class="showroom-interact-toolbar" id="garage-showroom-toolbar" style="display: flex;">
                             <button type="button" class="showroom-interact-btn" id="btn-gshow-doors" onclick="toggleGarageDoors()" title="Распахнуть двери">🚪 Двери</button>
                             <button type="button" class="showroom-interact-btn" id="btn-gshow-hood" onclick="toggleGarageHood()" title="Открыть капот (двигатель)">⚙️ Капот</button>
                             <button type="button" class="showroom-interact-btn" id="btn-gshow-trunk" onclick="toggleGarageTrunk()" title="Открыть багажник">🔊 Багажник</button>
                             <button type="button" class="showroom-interact-btn" id="btn-gshow-lights" onclick="toggleGarageHeadlights()" title="Включить фары">💡 Фары</button>
+                            <button type="button" class="showroom-interact-btn" id="btn-gshow-horn" onclick="triggerGarageHorn()" title="Подать звуковой сигнал / СГУ">📢 Сигнал</button>
                         </div>
 
                         <div id="garage-3d-hint" class="garage-3d-hint">
@@ -880,40 +881,90 @@
                 <div class="section-header">
                     <div class="section-title">🎁 Кейсы с номерами и авто</div>
                 </div>
+                <div class="case-country-bar" id="case-country-bar" role="group" aria-label="Страна номеров в кейсах">
+                    <button type="button" class="case-country-btn active" id="btn-case-country-RUS" data-country="RUS" onclick="selectCaseCountry('RUS')">
+                        <span class="country-flag-badge">🇷🇺</span>
+                        <span>РФ</span>
+                        <small>x1</small>
+                    </button>
+                    <button type="button" class="case-country-btn" id="btn-case-country-KZ" data-country="KZ" onclick="selectCaseCountry('KZ')">
+                        <span class="country-flag-badge">🇰🇿</span>
+                        <span>Казахстан</span>
+                        <small>x1.8</small>
+                    </button>
+                    <button type="button" class="case-country-btn" id="btn-case-country-USA" data-country="USA" onclick="selectCaseCountry('USA')">
+                        <span class="country-flag-badge">🇺🇸</span>
+                        <span>США</span>
+                        <small>x3.5</small>
+                    </button>
+                    <button type="button" class="case-country-btn" id="btn-case-country-UAE" data-country="UAE" onclick="selectCaseCountry('UAE')">
+                        <span class="country-flag-badge">🇦🇪</span>
+                        <span>Дубай</span>
+                        <small>x8.0</small>
+                    </button>
+                </div>
+                <div id="case-country-subtitle" class="case-country-subtitle">Выбрана база номеров: 🇷🇺 Россия (ГОСТ) — стандартная стоимость кейсов</div>
                 <div class="cases-grid">
                     <div class="case-card case-normal" onclick="openCasePreview('normal')">
                         <div class="case-icon-box">📦</div>
                         <div class="case-card-title">Обычный Box</div>
-                        <div class="case-card-price">5 000 ₽</div>
+                        <div class="case-card-sub">Базовые и редкие госномера</div>
+                        <div class="case-card-price" id="case-price-normal">5 000 ₽</div>
                     </div>
 
                     <div class="case-card case-super" onclick="openCasePreview('super')">
                         <div class="case-icon-box">🎁</div>
                         <div class="case-card-title" style="color: #c084fc;">Супер Box</div>
-                        <div class="case-card-price">50 000 ₽</div>
+                        <div class="case-card-sub">Редкие и эпические серии</div>
+                        <div class="case-card-price" id="case-price-super">50 000 ₽</div>
                     </div>
 
                     <div class="case-card case-mega" onclick="openCasePreview('mega')">
                         <div class="case-icon-box">💎</div>
                         <div class="case-card-title" style="color: #fbbf24;">Mega Box</div>
-                        <div class="case-card-price">200 000 ₽</div>
+                        <div class="case-card-sub">Блатные и легендарные номера</div>
+                        <div class="case-card-price" id="case-price-mega">200 000 ₽</div>
+                    </div>
+
+                    <div class="case-card case-super" style="border-top-color: #00afca;" onclick="openCasePreview('kz_box')">
+                        <div class="case-icon-box">🇰🇿</div>
+                        <div class="case-card-title" style="color: #38bdf8;">Казахстан VIP Box</div>
+                        <div class="case-card-sub">Номера 01/02 KZ · VIP серии</div>
+                        <div class="case-card-price" id="case-price-kz">45 000 ₽</div>
+                    </div>
+
+                    <div class="case-card case-super" style="border-top-color: #3b82f6;" onclick="openCasePreview('usa_box')">
+                        <div class="case-icon-box">🇺🇸</div>
+                        <div class="case-card-title" style="color: #60a5fa;">Америка State Box</div>
+                        <div class="case-card-sub">Штаты CA, NY, FL, TX, NV</div>
+                        <div class="case-card-price" id="case-price-usa">110 000 ₽</div>
+                    </div>
+
+                    <div class="case-card case-mega" style="border-top-color: #d97706;" onclick="openCasePreview('uae_box')">
+                        <div class="case-icon-box">🇦🇪</div>
+                        <div class="case-card-title" style="color: #fbbf24;">Дубай Sheikh Box</div>
+                        <div class="case-card-sub">Элитные номера DXB & AUH</div>
+                        <div class="case-card-price" id="case-price-uae">320 000 ₽</div>
                     </div>
 
                     <div class="case-card case-normal" style="border-top-color: #10b981;" onclick="openCasePreview('car_standard')">
                         <div class="case-icon-box">🏎️</div>
                         <div class="case-card-title" style="color: #34d399;">Авто-Кейс</div>
+                        <div class="case-card-sub">Седаны, стрит и JDM авто</div>
                         <div class="case-card-price">650 000 ₽</div>
                     </div>
 
                     <div class="case-card case-mega" style="border-top-color: #f59e0b;" onclick="openCasePreview('car_luxury')">
                         <div class="case-icon-box">👑</div>
                         <div class="case-card-title" style="color: #fbbf24;">Элит Авто Box</div>
+                        <div class="case-card-sub">Премиум, спорткары и Гелик</div>
                         <div class="case-card-price">7 500 000 ₽</div>
                     </div>
 
                     <div class="case-card case-mega" style="border-top-color: #ef4444;" onclick="openCasePreview('car_hyper')">
                         <div class="case-icon-box">🔥</div>
                         <div class="case-card-title" style="color: #f87171;">Гиперкар Box</div>
+                        <div class="case-card-sub">Гиперкары Bugatti, Jesko, SF90</div>
                         <div class="case-card-price">45 000 000 ₽</div>
                     </div>
                 </div>
@@ -1410,12 +1461,13 @@
                             <div class="showroom-loading-text" id="styling-3d-loader-text">⏳ Загрузка 3D модели...</div>
                         </div>
                         
-                        <!-- 🚪 Интерактивный тулбар 3D осмотра (Двери, Капот, Багажник, Фары) -->
+                        <!-- 🚪 Интерактивный тулбар 3D осмотра (Двери, Капот, Багажник, Фары, Сигнал) -->
                         <div class="showroom-interact-toolbar" id="showroom-toolbar" style="display: none;">
                             <button type="button" class="showroom-interact-btn" id="btn-show-doors" onclick="toggleShowroomDoors()" title="Распахнуть двери">🚪 Двери</button>
                             <button type="button" class="showroom-interact-btn" id="btn-show-hood" onclick="toggleShowroomHood()" title="Открыть капот (двигатель)">⚙️ Капот</button>
                             <button type="button" class="showroom-interact-btn" id="btn-show-trunk" onclick="toggleShowroomTrunk()" title="Открыть багажник (музыка)">🔊 Багажник</button>
                             <button type="button" class="showroom-interact-btn" id="btn-show-lights" onclick="toggleShowroomHeadlights()" title="Включить фары">💡 Фары</button>
+                            <button type="button" class="showroom-interact-btn" id="btn-show-horn" onclick="triggerShowroomHorn()" title="Проверить сигнал / СГУ">📢 Сигнал</button>
                         </div>
 
                         <div id="styling-3d-hint" style="display: none; position: absolute; bottom: 8px; left: 0; right: 0; font-size: 10px; color: #94a3b8; pointer-events: none; text-shadow: 0 1px 3px rgba(0,0,0,0.8);">
@@ -1641,7 +1693,7 @@
     <script src="./js/storage.js?v=327dc7592b84"></script>
     <script src="./js/race-records.js?v=eaeaf8e59fc2"></script>
     <script src="./js/race-economy.js?v=3be50de54c84"></script>
-    <script src="./js/audio.js?v=82a54bea01a6"></script>
+    <script src="./js/audio.js?v=4d35353de234"></script>
     <script src="./js/vendor/three.min.js"></script>
     <script>
         if (typeof THREE === 'undefined') {
@@ -1656,8 +1708,8 @@
             document.write('<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"><\/script>');
         }
     </script>
-    <script src="./js/race-effects.js?v=b4648e8a43b0"></script>
-    <script src="./js/car-3d.js?v=626ce23afdc1"></script>
-    <script src="./js/app.js?v=f6a823b89104"></script>
+    <script src="./js/race-effects.js?v=6883d3af7d80"></script>
+    <script src="./js/car-3d.js?v=7bd42f2219e2"></script>
+    <script src="./js/app.js?v=46a1d1602371"></script>
 </body>
 </html>

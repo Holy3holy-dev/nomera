@@ -1325,14 +1325,20 @@
             text-overflow: ellipsis;
         }
 
-        .mini-plate.country-kz {
+        .mini-plate.country-kz,
+        .mini-plate.plate-country-kz,
+        .r-plate.country-kz,
+        .r-plate.plate-country-kz {
             background: linear-gradient(180deg, #ffffff 0%, #f1f5f9 100%);
             border-color: #0f172a;
             color: #0f172a;
             gap: 5px;
             box-shadow: inset 0 1px 1px #fff, 0 2px 8px rgba(14, 165, 233, 0.25);
         }
-        .mini-plate.country-kz::before {
+        .mini-plate.country-kz::before,
+        .mini-plate.plate-country-kz::before,
+        .r-plate.country-kz::before,
+        .r-plate.plate-country-kz::before {
             content: "KZ";
             display: inline-flex;
             align-items: center;
@@ -1348,7 +1354,10 @@
             flex-shrink: 0;
         }
 
-        .mini-plate.country-usa {
+        .mini-plate.country-usa,
+        .mini-plate.plate-country-usa,
+        .r-plate.country-usa,
+        .r-plate.plate-country-usa {
             background: linear-gradient(180deg, #ffffff 0%, #f8fafc 70%, #e2e8f0 100%);
             border: 2px solid #1e293b;
             border-top: 3.5px solid #b91c1c;
@@ -1356,7 +1365,10 @@
             gap: 5px;
             box-shadow: inset 0 1px 1px #fff, 0 2px 8px rgba(30, 58, 138, 0.3);
         }
-        .mini-plate.country-usa::before {
+        .mini-plate.country-usa::before,
+        .mini-plate.plate-country-usa::before,
+        .r-plate.country-usa::before,
+        .r-plate.plate-country-usa::before {
             content: "USA";
             display: inline-flex;
             align-items: center;
@@ -1372,14 +1384,20 @@
             flex-shrink: 0;
         }
 
-        .mini-plate.country-uae {
+        .mini-plate.country-uae,
+        .mini-plate.plate-country-uae,
+        .r-plate.country-uae,
+        .r-plate.plate-country-uae {
             background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
             border: 2px solid #0f172a;
             color: #0f172a;
             gap: 5px;
             box-shadow: inset 0 1px 1px #fff, 0 2px 10px rgba(15, 23, 42, 0.35);
         }
-        .mini-plate.country-uae::before {
+        .mini-plate.country-uae::before,
+        .mini-plate.plate-country-uae::before,
+        .r-plate.country-uae::before,
+        .r-plate.plate-country-uae::before {
             content: "DUBAI";
             display: inline-flex;
             align-items: center;
@@ -1528,6 +1546,80 @@
         }
 
         /* КЕЙСЫ (LOOTBOX CRATES) */
+        .case-country-bar {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .case-country-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 9px 10px;
+            background: rgba(15, 23, 42, 0.72);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: var(--radius-md);
+            color: var(--text-muted);
+            font-size: 12px;
+            font-weight: 800;
+            cursor: pointer;
+            transition: all 0.18s ease;
+            min-width: 0;
+        }
+
+        .case-country-btn:hover {
+            background: rgba(30, 41, 59, 0.9);
+            border-color: rgba(255, 255, 255, 0.28);
+            color: #fff;
+            transform: translateY(-1px);
+        }
+
+        .case-country-btn.active {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.22) 0%, rgba(37, 99, 235, 0.26) 100%);
+            border-color: rgba(52, 211, 153, 0.8);
+            color: #fff;
+            box-shadow: 0 0 16px rgba(16, 185, 129, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+        }
+
+        .case-country-btn .country-flag-badge {
+            font-size: 16px;
+            line-height: 1;
+            flex-shrink: 0;
+        }
+
+        .case-country-btn small {
+            font-size: 10px;
+            font-weight: 800;
+            color: #fbbf24;
+            background: rgba(245, 158, 11, 0.15);
+            border: 1px solid rgba(245, 158, 11, 0.35);
+            padding: 1px 5px;
+            border-radius: var(--radius-full);
+            line-height: 1.2;
+            flex-shrink: 0;
+        }
+
+        .case-country-subtitle {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-sm);
+            padding: 8px 12px;
+            margin-bottom: 14px;
+            text-align: center;
+        }
+
+        @media (max-width: 520px) {
+            .case-country-bar {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
         .cases-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -1580,7 +1672,15 @@
         .case-card-title {
             font-size: 16px;
             font-weight: 800;
-            margin-bottom: 6px;
+            margin-bottom: 4px;
+        }
+
+        .case-card-sub {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-dim);
+            margin-bottom: 10px;
+            line-height: 1.3;
         }
 
         .case-card-price {
@@ -1660,6 +1760,7 @@
             width: 140px;
             height: 100px;
             margin: 0 4px;
+            padding: 4px 6px;
             background: #181e28;
             border-radius: var(--radius-sm);
             display: flex;
@@ -1669,26 +1770,59 @@
             box-sizing: border-box;
             border-bottom: 4px solid #555;
             flex-shrink: 0;
+            overflow: hidden;
             box-shadow: 0 4px 10px rgba(0,0,0,0.6);
             transition: transform 0.25s, box-shadow 0.25s;
         }
 
-        .roulette-card .r-plate {
+        .roulette-card .r-rarity {
+            font-size: 10px;
+            font-weight: 700;
+            color: #cbd5e1;
+            margin-bottom: 4px;
+            max-width: 128px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .roulette-card .r-plate,
+        .roulette-card .r-plate.mini-plate {
             background: white;
             color: black;
-            font-size: 13px;
+            font-size: 11.5px;
             font-weight: 900;
-            padding: 4px 6px;
-            border-radius: 3px;
+            padding: 3px 6px;
+            border-radius: 4px;
             border: 2px solid black;
             font-family: var(--font-plate);
             margin-bottom: 4px;
+            max-width: 128px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            box-sizing: border-box;
+        }
+
+        .roulette-card .r-plate.country-kz::before,
+        .roulette-card .r-plate.plate-country-kz::before,
+        .roulette-card .r-plate.country-usa::before,
+        .roulette-card .r-plate.plate-country-usa::before,
+        .roulette-card .r-plate.country-uae::before,
+        .roulette-card .r-plate.plate-country-uae::before {
+            font-size: 7px;
+            padding: 1px 3px;
         }
 
         .roulette-card .r-price {
             font-size: 11px;
             color: #aaa;
             font-weight: 700;
+            white-space: nowrap;
         }
 
         .roulette-card img {
@@ -5203,7 +5337,7 @@ body.race-active .race-3d-viewport-wrapper {
 }
 
 /* =========================================================================
-   3D Showroom Interactive Toolbar (Doors, Hood, Trunk, Headlights)
+   3D Showroom Interactive Toolbar (Doors, Hood, Trunk, Headlights, Horn)
    ========================================================================= */
 .showroom-interact-toolbar {
     position: absolute;
@@ -5211,6 +5345,7 @@ body.race-active .race-3d-viewport-wrapper {
     left: 8px;
     right: 8px;
     display: flex;
+    flex-wrap: wrap;
     justify-content: center;
     gap: 6px;
     z-index: 10;

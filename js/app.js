@@ -259,7 +259,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         // Система Опыта
         let playerLevel = 1;
         let playerExp = 0;
-        const expRewards = { "Обычный": 1, "Необычный": 3, "Редкий": 7, "Супер редкий": 10, "Эпический": 13, "Легендарный": 20, "Крутой": 30, "БЛАТНОЙ": 100, "МИФИЧЕСКИЙ": 150 };
+        const expRewards = { "Обычный": 1, "Необычный": 3, "Редкий": 7, "Супер редкий": 10, "Эпический": 13, "Легендарный": 20, "Крутой": 30, "БЛАТНОЙ": 100, "МИФИЧЕСКИЙ": 150, "Мифический": 150 };
 
         // Генератор
         let isSpinning = false;
@@ -364,8 +364,13 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 eliteLetters: ['DXB', 'UAE', 'SHK', 'VIP', 'AAA', 'ZZZ', 'FFF', 'GGG', 'RRR', 'SSS', 'XXX', 'CEO', 'OIL', 'GLD']
             }
         };
-        if (typeof window !== 'undefined') window.PLATE_COUNTRIES = PLATE_COUNTRIES;
+        const COUNTRY_CONFIGS = PLATE_COUNTRIES;
+        if (typeof window !== 'undefined') {
+            window.PLATE_COUNTRIES = PLATE_COUNTRIES;
+            window.COUNTRY_CONFIGS = COUNTRY_CONFIGS;
+        }
         let currentCountry = 'RUS';
+        let currentCaseCountry = 'RUS';
         let currentL1 = '-', currentL2 = '-', currentL3 = '-';
         let currentNum = '---';
         let currentReg = '777';
@@ -3991,6 +3996,18 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             return getCalculatedPrice(currentL1, currentL2, currentL3, currentNum, currentReg, currentCountry);
         }
 
+        function calculatePlatePriceForCountry(countryCode, l1, l2, l3, num, reg) {
+            const code = String(countryCode || currentCaseCountry || currentCountry || 'RUS').toUpperCase();
+            const c = COUNTRY_CONFIGS[code] ? code : 'RUS';
+            const r = (reg !== undefined && reg !== null && String(reg).trim() !== '')
+                ? String(reg).trim()
+                : (COUNTRY_CONFIGS[c].defaultReg || '777');
+            return getCalculatedPrice(l1, l2, l3, String(num || '001'), r, c);
+        }
+        if (typeof window !== 'undefined') {
+            window.calculatePlatePriceForCountry = calculatePlatePriceForCountry;
+        }
+
         function getRarity(price) {
             if (price >= 10000000) return { text: "БЛАТНОЙ", color: "white", bg: "linear-gradient(45deg, #e0115f, #ffd700)", border: "1px solid #ffd700", glow: "blatnoy" };
             if (price >= 3000000) return { text: "Крутой", color: "white", bg: "linear-gradient(45deg, #ff1493, #8a2be2)", border: "1px solid #ff1493", glow: "blatnoy" };
@@ -4104,6 +4121,10 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     onlineProfile.draft.country = currentCountry;
                 }
                 onlineRequest('setRegion', { region: currentReg, country: currentCountry }).catch(() => {});
+            }
+
+            if (typeof selectCaseCountry === 'function') {
+                selectCaseCountry(code, true);
             }
 
             checkCanSaveButton();
@@ -4910,70 +4931,180 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         }
 
         // --- КЕЙСЫ (CS:GO HORIZONTAL ROULETTE) ---
-        function forcePlate(targetRarity, country = currentCountry) {
-            const cfg = PLATE_COUNTRIES[country] || PLATE_COUNTRIES.RUS;
+        function getRarityObjForTier(targetRarity, fallbackPrice = 0) {
+            if (targetRarity === 'Мифический' || targetRarity === 'МИФИЧЕСКИЙ') {
+                return { text: "Мифический", color: "white", bg: "linear-gradient(45deg, #e0115f, #ffd700)", border: "1px solid #ffd700", glow: "blatnoy" };
+            }
+            if (targetRarity === 'БЛАТНОЙ') {
+                return { text: "БЛАТНОЙ", color: "white", bg: "linear-gradient(45deg, #e0115f, #ffd700)", border: "1px solid #ffd700", glow: "blatnoy" };
+            }
+            if (targetRarity === 'Крутой') {
+                return { text: "Крутой", color: "white", bg: "linear-gradient(45deg, #ff1493, #8a2be2)", border: "1px solid #ff1493", glow: "blatnoy" };
+            }
+            if (targetRarity === 'Легендарный') {
+                return { text: "Легендарный", color: "black", bg: "#f59e0b", border: "1px solid black", glow: "legendary" };
+            }
+            if (targetRarity === 'Эпический') {
+                return { text: "Эпический", color: "white", bg: "#8b5cf6", border: "1px solid black", glow: "epic" };
+            }
+            if (targetRarity === 'Супер редкий') {
+                return { text: "Супер редкий", color: "white", bg: "#ef4444", border: "1px solid black", glow: "super" };
+            }
+            if (targetRarity === 'Редкий') {
+                return { text: "Редкий", color: "white", bg: "#10b981", border: "1px solid black", glow: "rare" };
+            }
+            if (targetRarity === 'Необычный') {
+                return { text: "Необычный", color: "white", bg: "#3b82f6", border: "1px solid black", glow: "uncommon" };
+            }
+            if (targetRarity === 'Обычный') {
+                return { text: "Обычный", color: "white", bg: "transparent", border: "none", glow: "none" };
+            }
+            return getRarity(fallbackPrice);
+        }
+
+        function forcePlate(targetRarity, countryOverride) {
+            const rawOverride = countryOverride ? String(countryOverride).toUpperCase() : '';
+            const cCode = (rawOverride && COUNTRY_CONFIGS[rawOverride])
+                ? rawOverride
+                : (currentCaseCountry || currentCountry || 'RUS');
+            const cfg = COUNTRY_CONFIGS[cCode] || COUNTRY_CONFIGS.RUS;
             const pool = cfg.letters || lettersArr;
             const elites = cfg.eliteLetters || eliteLetters;
-            let l1, l2, l3, num, reg = (country === currentCountry && currentReg) ? currentReg : (cfg.defaultReg || currentReg), price, actualRarity;
-            for (let i = 0; i < 100; i++) {
-                l1 = randomItem(pool); l2 = randomItem(pool); l3 = randomItem(pool);
-                num = Math.floor(Math.random() * 899 + 100).toString();
 
-                if (targetRarity === 'Редкий') {
-                    while (l1 === l2 && l2 === l3) l3 = randomItem(pool);
-                    while (elites.includes(l1 + l2 + l3)) l2 = randomItem(pool);
-                    num = randomItem(['100', '200', '300', '400', '500', '123', '234', '345', '456', '002', '003', '005']);
-                } else if (targetRarity === 'Супер редкий') {
-                    while (l1 === l2 && l2 === l3) l3 = randomItem(pool);
-                    while (elites.includes(l1 + l2 + l3)) l2 = randomItem(pool);
-                    num = '007';
-                } else if (targetRarity === 'Эпический') {
-                    while (l1 === l2 && l2 === l3) l3 = randomItem(pool);
-                    while (elites.includes(l1 + l2 + l3)) l2 = randomItem(pool);
-                    num = randomItem(['111', '222', '333', '444', '555', '888', '999', '001']);
-                } else if (targetRarity === 'Легендарный') {
-                    const elite = randomItem(country === 'RUS' ? ['ВОР', 'ЕКХ', 'АМР', 'ААА'] : elites);
-                    l1 = elite[0]; l2 = elite[1]; l3 = elite[2];
-                    num = randomItem(['123', '234', '345', '100', '200', '500']);
-                } else if (targetRarity === 'Крутой') {
-                    const elite = randomItem(country === 'RUS' ? ['ВОР', 'ЕКХ', 'АМР', 'ААА'] : elites);
-                    l1 = elite[0]; l2 = elite[1]; l3 = elite[2];
-                    num = randomItem(['777', '888']);
-                } else if (targetRarity === 'БЛАТНОЙ') {
-                    if (country === 'UAE') { l1 = 'S'; l2 = 'H'; l3 = 'K'; num = '001'; }
-                    else if (country === 'USA') { l1 = 'V'; l2 = 'I'; l3 = 'P'; num = '001'; }
-                    else if (country === 'KZ') { l1 = 'V'; l2 = 'I'; l3 = 'P'; num = '777'; }
-                    else { l1 = 'Е'; l2 = 'К'; l3 = 'Х'; num = '011'; }
-                } else if (targetRarity === 'Необычный') {
-                    while (l1 === l2 || l2 === l3 || l1 === l3) {
-                        l1 = randomItem(pool); l2 = randomItem(pool); l3 = randomItem(pool);
-                    }
-                    num = randomItem(['010', '020', '030', '040', '050']);
-                } else if (targetRarity === 'Обычный') {
-                    while (l1 === l2 || l2 === l3 || l1 === l3 || elites.includes(l1 + l2 + l3)) {
-                        l1 = randomItem(pool); l2 = randomItem(pool); l3 = randomItem(pool);
-                    }
-                    num = randomItem(['142', '258', '369', '417', '582', '638']);
+            const ordinaryRegionsMap = {
+                RUS: ['50', '23', '16', '78', '777', '77', '99'],
+                KZ: ['05', '07', '09', '13', '01', '02'],
+                USA: ['TX', 'IL', 'WA', 'GA', 'CA', 'NY', 'FL'],
+                UAE: ['SHJ', 'AJM', 'RAK', 'DXB', 'AUH']
+            };
+            const capitalRegionsMap = {
+                RUS: ['77', '777', '97'],
+                KZ: ['01', '02'],
+                USA: ['CA', 'NY', 'FL'],
+                UAE: ['DXB', 'AUH']
+            };
+            const legendarySeriesMap = {
+                RUS: ['ААА', 'МММ', 'ООО', 'ХХХ', 'АМР', 'ЕКХ', 'ВОР'],
+                KZ: ['VIP', 'AAA', 'MMM', 'ZZZ', 'XXX'],
+                USA: ['VIP', 'AAA', 'NYC', 'USA', 'LAX'],
+                UAE: ['SHK', 'DXB', 'VIP', 'AAA', 'UAE']
+            };
+            const mythicTemplatesMap = {
+                RUS: [
+                    { l: 'ААА', num: '777', reg: '777' },
+                    { l: 'ЕКХ', num: '777', reg: '77' },
+                    { l: 'АМР', num: '001', reg: '97' },
+                    { l: 'ВОР', num: '777', reg: '777' }
+                ],
+                KZ: [
+                    { l: 'ZZZ', num: '777', reg: '01' },
+                    { l: 'VIP', num: '001', reg: '01' },
+                    { l: 'AAA', num: '777', reg: '02' }
+                ],
+                USA: [
+                    { l: 'VIP', num: '777', reg: 'CA' },
+                    { l: 'USA', num: '001', reg: 'NY' },
+                    { l: 'MIA', num: '777', reg: 'FL' }
+                ],
+                UAE: [
+                    { l: 'SHK', num: '001', reg: 'DXB' },
+                    { l: 'DXB', num: '777', reg: 'DXB' },
+                    { l: 'VIP', num: '001', reg: 'AUH' }
+                ]
+            };
+
+            const pickOrdinaryLetters = () => {
+                let a = randomItem(pool), b = randomItem(pool), c = randomItem(pool);
+                let guard = 0;
+                while ((a === b || b === c || a === c || elites.includes(a + b + c)) && guard < 40) {
+                    a = randomItem(pool); b = randomItem(pool); c = randomItem(pool);
+                    guard++;
                 }
+                return [a, b, c];
+            };
 
-                price = getCalculatedPrice(l1, l2, l3, num, reg.toString(), country);
-                actualRarity = getRarity(price).text;
-                if (actualRarity === targetRarity) break;
+            let l1 = pool[0], l2 = pool[1] || pool[0], l3 = pool[2] || pool[0];
+            let num = '142';
+            let reg = (cCode === currentCountry && currentReg) ? currentReg : (cfg.defaultReg || '777');
+            let price = 0;
+            let matched = false;
+
+            const applyDeterministicPattern = (tier) => {
+                if (tier === 'Мифический' || tier === 'МИФИЧЕСКИЙ' || tier === 'БЛАТНОЙ') {
+                    const tpl = randomItem(mythicTemplatesMap[cCode] || mythicTemplatesMap.RUS);
+                    l1 = tpl.l[0]; l2 = tpl.l[1]; l3 = tpl.l[2];
+                    num = (tier === 'БЛАТНОЙ' && cCode === 'RUS' && tpl.l === 'ЕКХ') ? '011' : tpl.num;
+                    reg = tpl.reg;
+                } else if (tier === 'Крутой' || tier === 'Легендарный') {
+                    const series = randomItem(legendarySeriesMap[cCode] || legendarySeriesMap.RUS);
+                    l1 = series[0]; l2 = series[1]; l3 = series[2];
+                    num = randomItem(['777', '001', '888', '999']);
+                    reg = randomItem(capitalRegionsMap[cCode] || capitalRegionsMap.RUS);
+                } else if (tier === 'Эпический') {
+                    [l1, l2, l3] = pickOrdinaryLetters();
+                    num = randomItem(['001', '777', '666', '111', '222', '333', '444', '555', '888', '999']);
+                    reg = randomItem(capitalRegionsMap[cCode] || capitalRegionsMap.RUS);
+                } else if (tier === 'Супер редкий') {
+                    [l1, l2, l3] = pickOrdinaryLetters();
+                    num = randomItem(['007', '111', '222', '333', '444', '555', '888', '999', '002', '003', '005', '008', '009']);
+                    reg = randomItem(ordinaryRegionsMap[cCode] || ordinaryRegionsMap.RUS);
+                } else if (tier === 'Редкий') {
+                    if (Math.random() < 0.25) {
+                        const triplePool = cCode === 'RUS' ? ['В', 'К', 'М', 'Н', 'Р', 'Т'] : ['B', 'K', 'M', 'N', 'R', 'T'];
+                        const ch = randomItem(triplePool);
+                        l1 = ch; l2 = ch; l3 = ch;
+                        num = randomItem(['142', '385', '619']);
+                    } else {
+                        [l1, l2, l3] = pickOrdinaryLetters();
+                        num = randomItem(['100', '200', '300', '500', '700', '900', '123', '234', '345', '456']);
+                    }
+                    reg = randomItem(ordinaryRegionsMap[cCode] || ordinaryRegionsMap.RUS);
+                } else if (tier === 'Необычный') {
+                    [l1, l2, l3] = pickOrdinaryLetters();
+                    num = randomItem(['101', '252', '707', '818', '909', '010', '020', '030', '040', '050', '070', '090']);
+                    reg = randomItem(ordinaryRegionsMap[cCode] || ordinaryRegionsMap.RUS);
+                } else {
+                    [l1, l2, l3] = pickOrdinaryLetters();
+                    num = randomItem(['142', '385', '619', '258', '369', '417', '582', '638']);
+                    reg = randomItem(ordinaryRegionsMap[cCode] || ordinaryRegionsMap.RUS);
+                }
+            };
+
+            for (let i = 0; i < 60; i++) {
+                applyDeterministicPattern(targetRarity);
+                price = calculatePlatePriceForCountry(cCode, l1, l2, l3, num, reg);
+                const baseEquivalentPrice = Math.round(price / (cfg.priceMult || 1));
+                const r = getRarity(baseEquivalentPrice);
+                const bonusMult = cCode === 'UAE' ? 2.2 : (cCode === 'USA' ? 1.6 : (cCode === 'KZ' ? 1.3 : 1));
+                const bonusEquivalentPrice = cCode === 'RUS'
+                    ? price
+                    : Math.max(450, Math.round((price - (cfg.basePrice || 450)) / bonusMult + 450));
+                const rBonus = getRarity(bonusEquivalentPrice);
+
+                if (
+                    r.text === targetRarity ||
+                    rBonus.text === targetRarity ||
+                    ((targetRarity === 'Мифический' || targetRarity === 'МИФИЧЕСКИЙ') && price >= 5000000)
+                ) {
+                    matched = true;
+                    break;
+                }
             }
-            if (actualRarity !== targetRarity) {
-                const defLetters = country === 'RUS' ? ['А', 'В', 'Е'] : ['A', 'B', 'E'];
-                const eliteTop = country === 'UAE' ? ['S', 'H', 'K'] : (country === 'RUS' ? ['Е', 'К', 'Х'] : ['V', 'I', 'P']);
-                if (targetRarity === 'БЛАТНОЙ') { [l1, l2, l3] = eliteTop; num = country === 'KZ' ? '777' : (country === 'RUS' ? '011' : '001'); }
-                else if (targetRarity === 'Крутой') { [l1, l2, l3] = eliteTop; num = '777'; }
-                else if (targetRarity === 'Легендарный') { [l1, l2, l3] = eliteTop; num = '123'; }
-                else if (targetRarity === 'Эпический') { [l1, l2, l3] = defLetters; num = '111'; }
-                else if (targetRarity === 'Супер редкий') { [l1, l2, l3] = defLetters; num = '007'; }
-                else if (targetRarity === 'Редкий') { [l1, l2, l3] = defLetters; num = '100'; }
-                else if (targetRarity === 'Необычный') { [l1, l2, l3] = defLetters; num = '010'; }
-                else { [l1, l2, l3] = defLetters; num = '142'; }
-                price = getCalculatedPrice(l1, l2, l3, num, reg.toString(), country);
+
+            if (!matched) {
+                applyDeterministicPattern(targetRarity);
+                price = calculatePlatePriceForCountry(cCode, l1, l2, l3, num, reg);
             }
-            return { text: formatPlateText(l1, l2, l3, num, reg, country), price: price, rarity: getRarity(price), country };
+
+            return {
+                text: formatPlateText(l1, l2, l3, num, reg, cCode),
+                price: price,
+                rarity: getRarityObjForTier(targetRarity, price),
+                country: cCode
+            };
+        }
+        if (typeof window !== 'undefined') {
+            window.forcePlate = forcePlate;
         }
 
         function getCarRarity(price) {
@@ -4986,9 +5117,127 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         }
 
         const caseConfigs = {
-            'normal': { title: "📦 Обычный Box", name: "Обычный Box", price: 5000, contents: [ {r:'Обычный', count:10}, {r:'Редкий', count:5}, {r:'Супер редкий', count:6} ], probs: [{r:'Обычный', p:0.80}, {r:'Редкий', p:0.17}, {r:'Супер редкий', p:0.03}] },
-            'super': { title: "🎁 Супер Box", name: "Супер Box", price: 50000, contents: [ {r:'Редкий', count:15}, {r:'Супер редкий', count:5}, {r:'Эпический', count:6} ], probs: [{r:'Редкий', p:0.80}, {r:'Супер редкий', p:0.17}, {r:'Эпический', p:0.03}] },
-            'mega': { title: "💎 Mega Box", name: "Mega Box", price: 200000, contents: [ {r:'Супер редкий', count:15}, {r:'Эпический', count:4}, {r:'Легендарный', count:5} ], probs: [{r:'Супер редкий', p:0.85}, {r:'Эпический', p:0.12}, {r:'Легендарный', p:0.03}] },
+            'normal': {
+                title: "📦 Обычный Box",
+                name: "Обычный Box",
+                price: 5000,
+                icon: "📦",
+                type: "plate",
+                contents: [
+                    { r: 'Обычный', count: 10, weight: 80 },
+                    { r: 'Редкий', count: 5, weight: 17 },
+                    { r: 'Супер редкий', count: 6, weight: 3 }
+                ],
+                probs: [
+                    { r: 'Обычный', p: 0.80 },
+                    { r: 'Редкий', p: 0.17 },
+                    { r: 'Супер редкий', p: 0.03 }
+                ]
+            },
+            'super': {
+                title: "🎁 Супер Box",
+                name: "Супер Box",
+                price: 50000,
+                icon: "🎁",
+                type: "plate",
+                contents: [
+                    { r: 'Редкий', count: 15, weight: 80 },
+                    { r: 'Супер редкий', count: 5, weight: 17 },
+                    { r: 'Эпический', count: 6, weight: 3 }
+                ],
+                probs: [
+                    { r: 'Редкий', p: 0.80 },
+                    { r: 'Супер редкий', p: 0.17 },
+                    { r: 'Эпический', p: 0.03 }
+                ]
+            },
+            'mega': {
+                title: "💎 Mega Box",
+                name: "Mega Box",
+                price: 200000,
+                icon: "💎",
+                type: "plate",
+                contents: [
+                    { r: 'Супер редкий', count: 15, weight: 85 },
+                    { r: 'Эпический', count: 4, weight: 12 },
+                    { r: 'Легендарный', count: 5, weight: 3 }
+                ],
+                probs: [
+                    { r: 'Супер редкий', p: 0.85 },
+                    { r: 'Эпический', p: 0.12 },
+                    { r: 'Легендарный', p: 0.03 }
+                ]
+            },
+            'kz_box': {
+                title: "🇰🇿 Казахстан VIP Box",
+                name: "Казахстан VIP Box",
+                price: 45000,
+                icon: "🇰🇿",
+                type: "plate",
+                fixedCountry: "KZ",
+                contents: [
+                    { r: 'Необычный', weight: 35, count: 6 },
+                    { r: 'Редкий', weight: 30, count: 6 },
+                    { r: 'Супер редкий', weight: 20, count: 5 },
+                    { r: 'Эпический', weight: 10, count: 4 },
+                    { r: 'Легендарный', weight: 4, count: 3 },
+                    { r: 'Мифический', weight: 1, count: 2 }
+                ],
+                probs: [
+                    { r: 'Необычный', p: 0.35 },
+                    { r: 'Редкий', p: 0.30 },
+                    { r: 'Супер редкий', p: 0.20 },
+                    { r: 'Эпический', p: 0.10 },
+                    { r: 'Легендарный', p: 0.04 },
+                    { r: 'Мифический', p: 0.01 }
+                ]
+            },
+            'usa_box': {
+                title: "🇺🇸 Америка State Box",
+                name: "Америка State Box",
+                price: 110000,
+                icon: "🇺🇸",
+                type: "plate",
+                fixedCountry: "USA",
+                contents: [
+                    { r: 'Необычный', weight: 30, count: 6 },
+                    { r: 'Редкий', weight: 32, count: 6 },
+                    { r: 'Супер редкий', weight: 20, count: 5 },
+                    { r: 'Эпический', weight: 12, count: 4 },
+                    { r: 'Легендарный', weight: 5, count: 3 },
+                    { r: 'Мифический', weight: 1, count: 2 }
+                ],
+                probs: [
+                    { r: 'Необычный', p: 0.30 },
+                    { r: 'Редкий', p: 0.32 },
+                    { r: 'Супер редкий', p: 0.20 },
+                    { r: 'Эпический', p: 0.12 },
+                    { r: 'Легендарный', p: 0.05 },
+                    { r: 'Мифический', p: 0.01 }
+                ]
+            },
+            'uae_box': {
+                title: "🇦🇪 Дубай Sheikh Box",
+                name: "Дубай Sheikh Box",
+                price: 320000,
+                icon: "🇦🇪",
+                type: "plate",
+                fixedCountry: "UAE",
+                contents: [
+                    { r: 'Редкий', weight: 35, count: 7 },
+                    { r: 'Супер редкий', weight: 30, count: 6 },
+                    { r: 'Эпический', weight: 20, count: 5 },
+                    { r: 'Легендарный', weight: 11, count: 4 },
+                    { r: 'Мифический', weight: 4, count: 2 }
+                ],
+                probs: [
+                    { r: 'Редкий', p: 0.35 },
+                    { r: 'Супер редкий', p: 0.30 },
+                    { r: 'Эпический', p: 0.20 },
+                    { r: 'Легендарный', p: 0.11 },
+                    { r: 'Мифический', p: 0.04 }
+                ]
+            },
             'car_standard': {
                 title: "🏎️ Авто-Кейс",
                 name: "Авто-Кейс",
@@ -5045,18 +5294,147 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 ]
             }
         };
+        if (typeof window !== 'undefined') {
+            window.caseConfigs = caseConfigs;
+        }
 
-        const SUPER_PRIZE = { text: "А 011 ЕО | 12 RUS", price: 10000000, rarity: getRarity(10000000) };
+        function getCaseEffectivePrice(type, countryCode = currentCaseCountry) {
+            const cfg = caseConfigs[type];
+            if (!cfg) return 0;
+            if (cfg.isCar || cfg.fixedCountry) {
+                return cfg.price;
+            }
+            const code = String(countryCode || currentCaseCountry || currentCountry || 'RUS').toUpperCase();
+            const countryCfg = COUNTRY_CONFIGS[code] || COUNTRY_CONFIGS.RUS;
+            const mult = Number(countryCfg.priceMult) || 1;
+            if (type === 'normal' || type === 'super' || type === 'mega') {
+                return Math.round((cfg.price * mult) / 500) * 500;
+            }
+            return cfg.price;
+        }
+        if (typeof window !== 'undefined') {
+            window.getCaseEffectivePrice = getCaseEffectivePrice;
+        }
+
+        function getCaseEffectiveConfig(type, countryCode = currentCaseCountry) {
+            const cfg = caseConfigs[type];
+            if (!cfg) return null;
+            const caseCountry = cfg.fixedCountry || (COUNTRY_CONFIGS[String(countryCode || '').toUpperCase()] ? String(countryCode).toUpperCase() : (currentCaseCountry || currentCountry || 'RUS'));
+            const countryMeta = COUNTRY_CONFIGS[caseCountry] || COUNTRY_CONFIGS.RUS;
+            const effectivePrice = getCaseEffectivePrice(type, caseCountry);
+            const countryShortLabel = caseCountry === 'UAE' ? 'ОАЭ' : countryMeta.name;
+            const displayTitle = cfg.isCar
+                ? cfg.title
+                : (cfg.fixedCountry ? cfg.title : `${cfg.title} · ${countryMeta.flagEmoji} ${countryShortLabel}`);
+            return {
+                ...cfg,
+                country: caseCountry,
+                effectivePrice,
+                displayTitle
+            };
+        }
+        if (typeof window !== 'undefined') {
+            window.getCaseEffectiveConfig = getCaseEffectiveConfig;
+        }
+
+        function selectCaseCountry(countryCode, silent = false) {
+            const code = String(countryCode || 'RUS').toUpperCase();
+            const cfg = COUNTRY_CONFIGS[code];
+            if (!cfg) return;
+            currentCaseCountry = code;
+
+            ['RUS', 'KZ', 'USA', 'UAE'].forEach(c => {
+                const btn = document.getElementById(`btn-case-country-${c}`);
+                if (btn && btn.classList) {
+                    btn.classList.toggle('active', c === code);
+                }
+            });
+
+            if (typeof document !== 'undefined' && typeof document.querySelectorAll === 'function') {
+                const btns = document.querySelectorAll('.case-country-btn');
+                if (btns && typeof btns.forEach === 'function') {
+                    btns.forEach(btn => {
+                        const btnCountry = btn.getAttribute ? btn.getAttribute('data-country') : (btn.dataset ? btn.dataset.country : '');
+                        if (btnCountry && btn.classList) {
+                            btn.classList.toggle('active', String(btnCountry).toUpperCase() === code);
+                        }
+                    });
+                }
+            }
+
+            ['normal', 'super', 'mega'].forEach(type => {
+                const priceVal = getCaseEffectivePrice(type, code);
+                const priceText = `${priceVal.toLocaleString('ru-RU')} ₽`;
+                const priceEl = document.getElementById(`case-price-${type}`);
+                if (priceEl) priceEl.innerText = priceText;
+                const badgeEl = document.getElementById(`case-badge-${type}`);
+                if (badgeEl) badgeEl.innerText = `${cfg.flagEmoji} ${cfg.code}`;
+            });
+
+            const subtitleEl = document.getElementById('case-country-subtitle');
+            if (subtitleEl) {
+                const shortName = code === 'UAE' ? 'ОАЭ (Дубай)' : cfg.name;
+                subtitleEl.innerText = `${cfg.flagEmoji} Стандарт номеров: ${shortName} (${cfg.code}) · Коэффициент стоимости и наград x${cfg.priceMult}`;
+            }
+
+            if (!silent) {
+                playTick();
+            }
+        }
+        if (typeof window !== 'undefined') {
+            window.selectCaseCountry = selectCaseCountry;
+        }
+
+        const SUPER_PRIZE = { text: "А 011 ЕО | 12 RUS", price: 10000000, rarity: getRarity(10000000), country: "RUS" };
+
+        function pickCaseRarity(config) {
+            if (Array.isArray(config.contents) && config.contents.some(ct => Number.isFinite(ct.weight))) {
+                const totalWeight = config.contents.reduce((sum, ct) => sum + (Number(ct.weight) || 0), 0);
+                if (totalWeight > 0) {
+                    let rand = Math.random() * totalWeight;
+                    let cumulative = 0;
+                    for (const ct of config.contents) {
+                        cumulative += (Number(ct.weight) || 0);
+                        if (rand <= cumulative) return ct.r;
+                    }
+                }
+            }
+            if (Array.isArray(config.probs) && config.probs.length > 0) {
+                const rand = Math.random();
+                let cumulative = 0;
+                for (const pb of config.probs) {
+                    cumulative += pb.p;
+                    if (rand <= cumulative) return pb.r;
+                }
+                return config.probs[0].r;
+            }
+            return (config.contents && config.contents[0] && config.contents[0].r) || 'Обычный';
+        }
 
         function openCasePreview(type) {
             if (isSpinning) return;
             activeCaseType = type;
-            let config = caseConfigs[type];
+            const config = caseConfigs[type];
             if (!config) return;
-            let list = document.getElementById('case-preview-list');
-            list.innerHTML = '';
 
-            document.getElementById('case-preview-title').innerText = config.title ? `Содержимое: ${config.title}` : "Содержимое кейса";
+            const caseCountry = config.fixedCountry || currentCaseCountry || currentCountry || 'RUS';
+            const countryMeta = COUNTRY_CONFIGS[caseCountry] || COUNTRY_CONFIGS.RUS;
+            const effectivePrice = getCaseEffectivePrice(type, caseCountry);
+            const countryShortLabel = caseCountry === 'UAE' ? 'ОАЭ' : countryMeta.name;
+
+            const list = document.getElementById('case-preview-list') || document.getElementById('preview-grid');
+            if (list) list.innerHTML = '';
+
+            const titleEl = document.getElementById('case-preview-title');
+            if (titleEl) {
+                if (config.isCar) {
+                    titleEl.innerText = config.title ? `Содержимое: ${config.title}` : "Содержимое кейса";
+                } else if (config.fixedCountry) {
+                    titleEl.innerText = `Содержимое: ${config.title}`;
+                } else {
+                    titleEl.innerText = `Содержимое: ${config.title || config.name} · ${countryMeta.flagEmoji} ${countryShortLabel}`;
+                }
+            }
 
             if (config.isCar) {
                 currentCaseCars = [];
@@ -5074,46 +5452,59 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
                 currentCaseCars.sort((a, b) => b.price - a.price);
 
-                currentCaseCars.forEach(car => {
-                    let r = car.rarity;
-                    let rColor = r.bg.startsWith('linear') ? '#ef4444' : r.bg;
-                    list.innerHTML += `
-                        <div style="background: rgba(255,255,255,0.04); border: 1px solid var(--border-subtle); padding: 8px 12px; border-radius: var(--radius-sm); display: flex; justify-content: space-between; align-items: center; gap: 10px;">
-                            <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
-                                <img src="${getCarSpriteDataUrl(car.name)}" class="car-sprite-img" onerror="this.onerror=null; this.src='./icons/car-placeholder.svg';" style="width: 58px; height: 38px; object-fit: contain; border-radius: 4px; flex-shrink: 0; border: 1px solid rgba(255,255,255,0.1);">
-                                <div style="min-width: 0;">
-                                    <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
-                                        <span style="font-size: 10px; padding: 2px 6px; border-radius: 4px; background:${r.bg}; color:${r.color}; font-weight:700;">${escapeHtml(r.text)}</span>
-                                        <b style="color: white; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(car.name)}</b>
+                if (list) {
+                    currentCaseCars.forEach(car => {
+                        let r = car.rarity;
+                        list.innerHTML += `
+                            <div style="background: rgba(255,255,255,0.04); border: 1px solid var(--border-subtle); padding: 8px 12px; border-radius: var(--radius-sm); display: flex; justify-content: space-between; align-items: center; gap: 10px;">
+                                <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
+                                    <img src="${getCarSpriteDataUrl(car.name)}" class="car-sprite-img" onerror="this.onerror=null; this.src='./icons/car-placeholder.svg';" style="width: 58px; height: 38px; object-fit: contain; border-radius: 4px; flex-shrink: 0; border: 1px solid rgba(255,255,255,0.1);">
+                                    <div style="min-width: 0;">
+                                        <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                                            <span style="font-size: 10px; padding: 2px 6px; border-radius: 4px; background:${r.bg}; color:${r.color}; font-weight:700;">${escapeHtml(r.text)}</span>
+                                            <b style="color: white; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(car.name)}</b>
+                                        </div>
+                                        <small style="color: var(--text-dim); font-size: 11px;">Шанс: <b style="color: #fbbf24;">${car.weight}%</b></small>
                                     </div>
-                                    <small style="color: var(--text-dim); font-size: 11px;">Шанс: <b style="color: #fbbf24;">${car.weight}%</b></small>
                                 </div>
-                            </div>
-                            <small style="color: var(--accent-green); font-weight:700; white-space: nowrap;">${car.price.toLocaleString('ru-RU')} ₽</small>
-                        </div>`;
-                });
+                                <small style="color: var(--accent-green); font-weight:700; white-space: nowrap;">${car.price.toLocaleString('ru-RU')} ₽</small>
+                            </div>`;
+                    });
+                }
             } else {
                 currentCaseData = [];
                 config.contents.forEach(ct => {
-                    for(let i=0; i<ct.count; i++) {
-                        currentCaseData.push(forcePlate(ct.r));
+                    const count = ct.count || Math.max(2, Math.round((ct.weight || 10) / 5));
+                    for (let i = 0; i < count; i++) {
+                        currentCaseData.push(forcePlate(ct.r, caseCountry));
                     }
                 });
 
                 currentCaseData.sort((a, b) => b.price - a.price);
 
-                currentCaseData.forEach(item => {
-                    let rHtml = item.rarity.text !== "Обычный" ? `<span style="font-size: 10px; padding: 2px 6px; border-radius:4px; background:${item.rarity.bg}; color:${item.rarity.color}; margin-right: 6px; font-weight:700;">${item.rarity.text}</span>` : '';
-                    list.innerHTML += `
-                        <div style="background: rgba(255,255,255,0.04); border: 1px solid var(--border-subtle); padding: 10px 14px; border-radius: var(--radius-sm); display: flex; justify-content: space-between; align-items: center;">
-                            <div>${rHtml}<b style="color: white; font-size:13px;">${escapeHtml(item.text)}</b></div>
-                            <small style="color: var(--accent-green); font-weight:700;">${Number(item.price || 0).toLocaleString('ru-RU')} ₽</small>
-                        </div>`;
-                });
+                if (list) {
+                    currentCaseData.forEach(item => {
+                        let rHtml = item.rarity.text !== "Обычный" ? `<span style="font-size: 10px; padding: 2px 6px; border-radius:4px; background:${item.rarity.bg}; color:${item.rarity.color}; margin-right: 6px; font-weight:700;">${escapeHtml(item.rarity.text)}</span>` : '';
+                        const plateClass = getMiniPlateCountryClass(item.text);
+                        list.innerHTML += `
+                            <div style="background: rgba(255,255,255,0.04); border: 1px solid var(--border-subtle); padding: 10px 14px; border-radius: var(--radius-sm); display: flex; justify-content: space-between; align-items: center; gap: 8px;">
+                                <div style="display:flex; align-items:center; flex-wrap:wrap; gap:6px;">
+                                    ${rHtml}
+                                    <span class="mini-plate ${plateClass}" style="font-size:12px; padding:2px 8px;">${escapeHtml(item.text)}</span>
+                                </div>
+                                <small style="color: var(--accent-green); font-weight:700; white-space:nowrap;">${Number(item.price || 0).toLocaleString('ru-RU')} ₽</small>
+                            </div>`;
+                    });
+                }
             }
 
-            document.getElementById('btn-buy-case').innerText = `Открыть за ${config.price.toLocaleString('ru-RU')} ₽`;
-            document.getElementById('case-preview-modal').classList.add('show');
+            const buyText = `Открыть за ${effectivePrice.toLocaleString('ru-RU')} ₽`;
+            const btnBuy = document.getElementById('btn-buy-case');
+            if (btnBuy) btnBuy.innerText = buyText;
+            const previewBuyBtn = document.getElementById('preview-buy-btn');
+            if (previewBuyBtn) previewBuyBtn.innerText = buyText;
+
+            document.getElementById('case-preview-modal')?.classList.add('show');
         }
 
         function closeCasePreview() {
@@ -5122,18 +5513,26 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
         let caseRouletteTimeout = null;
 
-        function buyCase() {
+        function buyCase(type = activeCaseType) {
             if (isSpinning) return;
-            let config = caseConfigs[activeCaseType];
+            if (type && caseConfigs[type]) {
+                activeCaseType = type;
+            }
+            const config = caseConfigs[activeCaseType];
             if (!config) return;
+
+            const caseCountry = config.fixedCountry || currentCaseCountry || currentCountry || 'RUS';
+            const effectivePrice = getCaseEffectivePrice(activeCaseType, caseCountry);
+
             const curBal = (onlineProfile && Number.isFinite(Number(onlineProfile.balance))) ? Math.max(balance, Number(onlineProfile.balance)) : balance;
-            if (curBal < config.price) return notifyUser("Недостаточно средств!");
+            if (curBal < effectivePrice) return notifyUser("Недостаточно средств!");
 
             isSpinning = true;
-            deductPlayerBalance(config.price, `Открытие кейса «${config.name}»`);
+            const caseLabel = config.name || config.title || activeCaseType;
+            deductPlayerBalance(effectivePrice, `Открытие кейса «${caseLabel}»`);
             achievements.casesOpened = (achievements.casesOpened || 0) + 1;
             checkAchievements();
-            logPlayerActivity('Открыл кейс', `Открыл кейс «${config.name}» за ${config.price.toLocaleString('ru-RU')} ₽`);
+            logPlayerActivity('Открыл кейс', `Открыл кейс «${caseLabel}» за ${effectivePrice.toLocaleString('ru-RU')} ₽`);
             saveProgress();
             closeCasePreview();
 
@@ -5142,6 +5541,16 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             wonPlateObj = null;
 
             if (isCar) {
+                if (!Array.isArray(currentCaseCars) || currentCaseCars.length === 0) {
+                    currentCaseCars = config.cars.map(item => {
+                        const carTemplate = carsData.find(c => c.name === item.name) || carsData[0];
+                        return {
+                            ...carTemplate,
+                            weight: item.weight,
+                            rarity: getCarRarity(carTemplate.price)
+                        };
+                    });
+                }
                 let totalWeight = config.cars.reduce((sum, item) => sum + item.weight, 0);
                 let rand = Math.random() * totalWeight;
                 let cumulative = 0;
@@ -5162,58 +5571,63 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     rarity: getCarRarity(template.price)
                 };
             } else {
-                if (activeCaseType === 'mega' && Math.random() < 0.00001) {
+                if (activeCaseType === 'mega' && caseCountry === 'RUS' && Math.random() < 0.00001) {
                     wonPlateObj = SUPER_PRIZE;
                 } else {
-                    let rand = Math.random();
-                    let cumulative = 0;
-                    let wonRarity = config.probs[0].r;
-                    for (let pb of config.probs) {
-                        cumulative += pb.p;
-                        if (rand <= cumulative) { wonRarity = pb.r; break; }
-                    }
-                    wonPlateObj = forcePlate(wonRarity);
+                    const wonRarity = pickCaseRarity(config);
+                    wonPlateObj = forcePlate(wonRarity, caseCountry);
                 }
             }
 
-            const track = document.getElementById('case-roulette-track');
-            track.innerHTML = '';
-            track.style.transition = 'none';
-            track.style.transform = 'translateX(0px)';
+            const track = document.getElementById('case-roulette-track') || document.getElementById('roulette-track');
+            if (track) {
+                track.innerHTML = '';
+                track.style.transition = 'none';
+                track.style.transform = 'translateX(0px)';
+            }
 
             const modalTitle = document.getElementById('roulette-modal-title');
-            modalTitle.innerText = "🎲 Крутим рулетку...";
-            modalTitle.style.color = "#fff";
+            if (modalTitle) {
+                modalTitle.innerText = "🎲 Крутим рулетку...";
+                modalTitle.style.color = "#fff";
+            }
 
             const winningIndex = 26;
+            const totalRouletteItems = 40;
             const cardWidth = 148;
 
-            for (let i = 0; i < 35; i++) {
+            for (let i = 0; i < totalRouletteItems; i++) {
                 if (isCar) {
                     let item = (i === winningIndex) ? wonCarObj : randomItem(currentCaseCars);
                     let rColor = item.rarity ? (item.rarity.bg.startsWith('linear') ? '#ef4444' : item.rarity.bg) : "#555";
-                    track.innerHTML += `
-                        <div class="roulette-card" id="rcard-${i}" style="border-bottom-color: ${rColor}; padding: 6px; text-align: center;">
-                            <img src="${getCarSpriteDataUrl(item.name)}" class="car-sprite-img" onerror="this.onerror=null; this.src='./icons/car-placeholder.svg';" style="width: 124px; height: 50px; object-fit: contain; border-radius: 4px; display: block; margin: 0 auto 5px auto; border: 1px solid rgba(255,255,255,0.1);">
-                            <div style="font-size: 11px; font-weight: 800; color: #fff; max-width: 125px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(item.name)}</div>
-                            <div class="r-price" style="color: ${rColor}; margin-top: 2px;">${Number(item.price || 0).toLocaleString('ru-RU')} ₽</div>
-                        </div>
-                    `;
+                    if (track) {
+                        track.innerHTML += `
+                            <div class="roulette-card" id="rcard-${i}" style="border-bottom-color: ${rColor}; padding: 6px; text-align: center;">
+                                <img src="${getCarSpriteDataUrl(item.name)}" class="car-sprite-img" onerror="this.onerror=null; this.src='./icons/car-placeholder.svg';" style="width: 124px; height: 50px; object-fit: contain; border-radius: 4px; display: block; margin: 0 auto 5px auto; border: 1px solid rgba(255,255,255,0.1);">
+                                <div style="font-size: 11px; font-weight: 800; color: #fff; max-width: 125px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(item.name)}</div>
+                                <div class="r-price" style="color: ${rColor}; margin-top: 2px;">${Number(item.price || 0).toLocaleString('ru-RU')} ₽</div>
+                            </div>
+                        `;
+                    }
                 } else {
-                    let item = (i === winningIndex) ? wonPlateObj : randomItem(currentCaseData);
-                    let rColor = item.rarity.bg !== "transparent" ? item.rarity.bg : "#555";
-                    track.innerHTML += `
-                        <div class="roulette-card" id="rcard-${i}" style="border-bottom-color: ${rColor};">
-                            <div class="r-rarity">${escapeHtml(item.rarity.text)}</div>
-                            <div class="r-plate">${escapeHtml(item.text.split('|')[0])}</div>
-                            <div class="r-price" style="color: ${rColor};">${Number(item.price || 0).toLocaleString('ru-RU')} ₽</div>
-                        </div>
-                    `;
+                    const chosenRarity = pickCaseRarity(config);
+                    let item = (i === winningIndex) ? wonPlateObj : forcePlate(chosenRarity, caseCountry);
+                    let rColor = item.rarity.bg !== "transparent" ? (item.rarity.bg.startsWith('linear') ? '#f59e0b' : item.rarity.bg) : "#555";
+                    const plateClass = getMiniPlateCountryClass(item.text);
+                    if (track) {
+                        track.innerHTML += `
+                            <div class="roulette-card" id="rcard-${i}" style="border-bottom-color: ${rColor};">
+                                <div class="r-rarity">${escapeHtml(item.rarity.text)}</div>
+                                <div class="r-plate ${plateClass}">${escapeHtml(item.text.split('|')[0].trim())}</div>
+                                <div class="r-price" style="color: ${rColor};">${Number(item.price || 0).toLocaleString('ru-RU')} ₽</div>
+                            </div>
+                        `;
+                    }
                 }
             }
 
-            document.getElementById('roulette-result').classList.add('hidden');
-            document.getElementById('roulette-modal').classList.add('show');
+            document.getElementById('roulette-result')?.classList.add('hidden');
+            document.getElementById('roulette-modal')?.classList.add('show');
             initAudio();
 
             const containerWidth = document.querySelector?.('.case-roulette-container')?.offsetWidth || 400;
@@ -5230,8 +5644,10 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             playCaseReelTicks();
 
             setTimeout(() => {
-                track.style.transition = 'transform 4.0s cubic-bezier(0.12, 0.8, 0.22, 1)';
-                track.style.transform = `translateX(${targetX}px)`;
+                if (track) {
+                    track.style.transition = 'transform 4.0s cubic-bezier(0.12, 0.8, 0.22, 1)';
+                    track.style.transform = `translateX(${targetX}px)`;
+                }
             }, 60);
 
             setTimeout(() => {
@@ -5248,18 +5664,22 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                         winningCard.style.boxShadow = `0 0 24px ${winColor}`;
                     }
 
-                    modalTitle.innerText = "🎉 Вы выиграли автомобиль!";
-                    modalTitle.style.color = winColor;
+                    if (modalTitle) {
+                        modalTitle.innerText = "🎉 Вы выиграли автомобиль!";
+                        modalTitle.style.color = winColor;
+                    }
 
                     let rLabel = document.getElementById('roulette-rarity');
-                    rLabel.innerText = wonCarObj.rarity.text;
-                    rLabel.style.background = wonCarObj.rarity.bg;
-                    rLabel.style.color = wonCarObj.rarity.color;
+                    if (rLabel) {
+                        rLabel.innerText = wonCarObj.rarity.text;
+                        rLabel.style.background = wonCarObj.rarity.bg;
+                        rLabel.style.color = wonCarObj.rarity.color;
+                    }
 
-                    document.getElementById('roulette-plate-prize-box').classList.add('hidden');
-                    document.getElementById('roulette-car-prize-box').classList.remove('hidden');
-                    document.getElementById('roulette-actions-plate').classList.add('hidden');
-                    document.getElementById('roulette-actions-car').classList.remove('hidden');
+                    document.getElementById('roulette-plate-prize-box')?.classList.add('hidden');
+                    document.getElementById('roulette-car-prize-box')?.classList.remove('hidden');
+                    document.getElementById('roulette-actions-plate')?.classList.add('hidden');
+                    document.getElementById('roulette-actions-car')?.classList.remove('hidden');
 
                     const rCarImg = document.getElementById('roulette-car-img');
                     if (rCarImg) {
@@ -5283,7 +5703,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
                     let sellPrice = Math.floor(wonCarObj.price * 0.9);
                     document.getElementById('btn-roulette-sell-car').innerText = `💰 Продать за 90% (${sellPrice.toLocaleString('ru-RU')} ₽)`;
-                    document.getElementById('roulette-result').classList.remove('hidden');
+                    document.getElementById('roulette-result')?.classList.remove('hidden');
 
                     if (wonCarObj.rarity.text === "МИФИЧЕСКИЙ" || wonCarObj.rarity.text === "Легендарный") {
                         triggerConfetti();
@@ -5293,33 +5713,47 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                         playWinJingle(wonCarObj.rarity.text);
                     }
                 } else {
-                    let winColor = wonPlateObj.rarity.bg !== "transparent" ? wonPlateObj.rarity.bg : "#10b981";
+                    let winColor = wonPlateObj.rarity.bg !== "transparent" ? (wonPlateObj.rarity.bg.startsWith('linear') ? '#f59e0b' : wonPlateObj.rarity.bg) : "#10b981";
                     if (winningCard) {
                         winningCard.style.transform = 'scale(1.08)';
-                        winningCard.style.boxShadow = `0 0 20px ${wonPlateObj.rarity.bg !== "transparent" ? wonPlateObj.rarity.bg : "#fff"}`;
+                        winningCard.style.boxShadow = `0 0 20px ${winColor}`;
                     }
 
-                    modalTitle.innerText = "🎉 Вы выиграли госномер!";
-                    modalTitle.style.color = winColor;
+                    if (modalTitle) {
+                        modalTitle.innerText = "🎉 Вы выиграли госномер!";
+                        modalTitle.style.color = winColor;
+                    }
 
                     let rLabel = document.getElementById('roulette-rarity');
-                    rLabel.innerText = wonPlateObj.rarity.text;
-                    rLabel.style.background = wonPlateObj.rarity.bg;
-                    rLabel.style.color = wonPlateObj.rarity.color;
+                    if (rLabel) {
+                        rLabel.innerText = wonPlateObj.rarity.text;
+                        rLabel.style.background = wonPlateObj.rarity.bg;
+                        rLabel.style.color = wonPlateObj.rarity.color;
+                    }
 
-                    document.getElementById('roulette-plate-prize-box').classList.remove('hidden');
-                    document.getElementById('roulette-car-prize-box').classList.add('hidden');
-                    document.getElementById('roulette-actions-plate').classList.remove('hidden');
-                    document.getElementById('roulette-actions-car').classList.add('hidden');
+                    document.getElementById('roulette-plate-prize-box')?.classList.remove('hidden');
+                    document.getElementById('roulette-car-prize-box')?.classList.add('hidden');
+                    document.getElementById('roulette-actions-plate')?.classList.remove('hidden');
+                    document.getElementById('roulette-actions-car')?.classList.add('hidden');
 
-                    document.getElementById('roulette-plate-card').innerText = wonPlateObj.text;
+                    const rPlateCard = document.getElementById('roulette-plate-card');
+                    if (rPlateCard) {
+                        rPlateCard.className = `mini-plate ${getMiniPlateCountryClass(wonPlateObj.text)}`;
+                        rPlateCard.innerText = wonPlateObj.text;
+                    }
                     document.getElementById('roulette-price').innerText = `+${wonPlateObj.price.toLocaleString('ru-RU')} ₽`;
-                    document.getElementById('roulette-result').classList.remove('hidden');
+                    document.getElementById('roulette-result')?.classList.remove('hidden');
 
-                    if (wonPlateObj.rarity.text === "БЛАТНОЙ" || wonPlateObj.rarity.text === "Легендарный") {
+                    if (
+                        wonPlateObj.rarity.text === "БЛАТНОЙ" ||
+                        wonPlateObj.rarity.text === "Мифический" ||
+                        wonPlateObj.rarity.text === "МИФИЧЕСКИЙ" ||
+                        wonPlateObj.rarity.text === "Легендарный" ||
+                        wonPlateObj.rarity.text === "Крутой"
+                    ) {
                         triggerConfetti();
                         triggerScreenShake();
-                        playWinJingle(wonPlateObj.rarity.text);
+                        playWinJingle("Легендарный");
                     } else if (wonPlateObj.rarity.text === "Эпический" || wonPlateObj.rarity.text === "Супер редкий") {
                         playWinJingle(wonPlateObj.rarity.text);
                     }
@@ -6350,25 +6784,22 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             const btnLights = document.getElementById('btn-show-lights');
 
             if (btnDoors) {
-                const canDoors = car3DShowroom.hasCapability('doors');
-                btnDoors.classList.toggle('disabled', !canDoors);
-                btnDoors.title = canDoors ? 'Распахнуть двери' : 'Кузов монолит (двери зафиксированы)';
-                if (!canDoors) btnDoors.classList.remove('active');
-                else btnDoors.classList.toggle('active', !!car3DShowroom.doorsOpen);
+                btnDoors.classList.remove('disabled');
+                btnDoors.style.opacity = '1';
+                btnDoors.title = 'Распахнуть двери';
+                btnDoors.classList.toggle('active', !!car3DShowroom.doorsOpen);
             }
             if (btnHood) {
-                const canHood = car3DShowroom.hasCapability('hood');
-                btnHood.classList.toggle('disabled', !canHood);
-                btnHood.title = canHood ? 'Открыть капот' : 'Монокок (капот зафиксирован)';
-                if (!canHood) btnHood.classList.remove('active');
-                else btnHood.classList.toggle('active', !!car3DShowroom.hoodOpen);
+                btnHood.classList.remove('disabled');
+                btnHood.style.opacity = '1';
+                btnHood.title = 'Открыть капот';
+                btnHood.classList.toggle('active', !!car3DShowroom.hoodOpen);
             }
             if (btnTrunk) {
-                const canTrunk = car3DShowroom.hasCapability('trunk');
-                btnTrunk.classList.toggle('disabled', !canTrunk);
-                btnTrunk.title = canTrunk ? 'Открыть багажник' : 'Без отдельного багажника';
-                if (!canTrunk) btnTrunk.classList.remove('active');
-                else btnTrunk.classList.toggle('active', !!car3DShowroom.trunkOpen);
+                btnTrunk.classList.remove('disabled');
+                btnTrunk.style.opacity = '1';
+                btnTrunk.title = 'Открыть багажник';
+                btnTrunk.classList.toggle('active', !!car3DShowroom.trunkOpen);
             }
             if (btnLights) {
                 btnLights.classList.toggle('active', !!car3DShowroom.headlightsOn);
@@ -6496,6 +6927,36 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         }
         window.toggleShowroomHeadlights = toggleShowroomHeadlights;
 
+        function triggerShowroomHorn() {
+            const car = myCars[currentStylingCarIndex];
+            const hasSgu = !!(car && car.styling && car.styling.sgu && car.styling.sgu !== 'none');
+            if (sound) {
+                if (hasSgu && typeof sound.sgu === 'function') {
+                    sound.sgu();
+                } else if (typeof sound.horn === 'function') {
+                    sound.horn({ sgu: hasSgu, truck: false });
+                }
+            }
+            if (car3DShowroom && typeof car3DShowroom.flashHorn === 'function') {
+                car3DShowroom.flashHorn();
+            } else if (car3DShowroom) {
+                const wasOn = !!car3DShowroom.headlightsOn;
+                car3DShowroom.toggleHeadlights();
+                setTimeout(() => {
+                    if (car3DShowroom && !!car3DShowroom.headlightsOn !== wasOn) {
+                        car3DShowroom.toggleHeadlights();
+                        updateShowroomButtonsState();
+                    }
+                }, 260);
+            }
+            const btn = document.getElementById('btn-show-horn');
+            if (btn) {
+                btn.classList.add('active');
+                setTimeout(() => btn.classList.remove('active'), 320);
+            }
+        }
+        window.triggerShowroomHorn = triggerShowroomHorn;
+
         // =====================================================================
         // 🏎️ GARAGE 3D SHOWROOM (Интерактивный 3D-подиум прямо в Гараже)
         // =====================================================================
@@ -6511,18 +6972,18 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             const btnLights = document.getElementById('btn-gshow-lights');
 
             if (btnDoors) {
-                const has = garage3DShowroom.hasCapability('doors');
-                btnDoors.style.opacity = has ? '1' : '0.4';
+                btnDoors.style.opacity = '1';
+                btnDoors.classList.remove('disabled');
                 btnDoors.classList.toggle('active', !!garage3DShowroom.doorsOpen);
             }
             if (btnHood) {
-                const has = garage3DShowroom.hasCapability('hood');
-                btnHood.style.opacity = has ? '1' : '0.4';
+                btnHood.style.opacity = '1';
+                btnHood.classList.remove('disabled');
                 btnHood.classList.toggle('active', !!garage3DShowroom.hoodOpen);
             }
             if (btnTrunk) {
-                const has = garage3DShowroom.hasCapability('trunk');
-                btnTrunk.style.opacity = has ? '1' : '0.4';
+                btnTrunk.style.opacity = '1';
+                btnTrunk.classList.remove('disabled');
                 btnTrunk.classList.toggle('active', !!garage3DShowroom.trunkOpen);
             }
             if (btnLights) {
@@ -6729,6 +7190,37 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             playTick();
         }
         window.toggleGarageHeadlights = toggleGarageHeadlights;
+
+        function triggerGarageHorn() {
+            if (!garage3DShowroom) return;
+            const car = myCars[activeGarageCarIndex];
+            const hasSgu = !!(car && car.styling && car.styling.sgu && car.styling.sgu !== 'none');
+            if (sound) {
+                if (hasSgu && typeof sound.sgu === 'function') {
+                    sound.sgu();
+                } else if (typeof sound.horn === 'function') {
+                    sound.horn({ sgu: hasSgu, truck: false });
+                }
+            }
+            if (typeof garage3DShowroom.flashHorn === 'function') {
+                garage3DShowroom.flashHorn();
+            } else {
+                const wasOn = !!garage3DShowroom.headlightsOn;
+                garage3DShowroom.toggleHeadlights();
+                setTimeout(() => {
+                    if (garage3DShowroom && !!garage3DShowroom.headlightsOn !== wasOn) {
+                        garage3DShowroom.toggleHeadlights();
+                        updateGarageButtonsState();
+                    }
+                }, 260);
+            }
+            const btn = document.getElementById('btn-gshow-horn');
+            if (btn) {
+                btn.classList.add('active');
+                setTimeout(() => btn.classList.remove('active'), 320);
+            }
+        }
+        window.triggerGarageHorn = triggerGarageHorn;
 
         function openStylingForActiveGarageCar() {
             openStylingModal(activeGarageCarIndex, '3d');
@@ -15157,6 +15649,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             const target = document.getElementById(tabId);
             if (target) target.classList.remove('hidden');
             if (element) { element.classList.add('active'); element.setAttribute('aria-selected', 'true'); }
+            if (tabId === 'cases' && typeof selectCaseCountry === 'function') {
+                selectCaseCountry(currentCaseCountry || currentCountry || 'RUS', true);
+            }
             if (tabId === 'leaderboard') renderLeaderboard();
             if (tabId === 'multiplayer') {
                 if (activeMultiSubTab === 'market') renderMarketListings();

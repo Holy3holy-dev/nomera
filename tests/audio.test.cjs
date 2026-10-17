@@ -250,4 +250,83 @@ test('rich authentic automotive dual-tone horn synthesizes Hella-style frequenci
     assert.equal(ctx3.created.length, 3, 'horn with truck flag delegates to airBrake');
 });
 
+test('nitro, stopNitro, handbrake, horn, and sgu synthesize and play realistic non-silent PCM AudioBuffers when supported', () => {
+    const context = fakeContext();
+    context.sampleRate = 44100;
+    context.buffers = [];
+    context.bufferSources = [];
+    context.createBuffer = (channels, length, sampleRate) => {
+        const data = new Float32Array(length);
+        const buf = {
+            numberOfChannels: channels,
+            length,
+            sampleRate,
+            duration: length / sampleRate,
+            getChannelData: () => data
+        };
+        context.buffers.push(buf);
+        return buf;
+    };
+    context.createBufferSource = () => {
+        const src = {
+            buffer: null,
+            loop: false,
+            started: false,
+            stopped: false,
+            connect() {},
+            disconnect() {},
+            start() { this.started = true; },
+            stop() { this.stopped = true; }
+        };
+        context.bufferSources.push(src);
+        return src;
+    };
+
+    const sound = createAudio({ contextFactory: () => context });
+    sound.unlock();
+
+    const checkPcmSource = (src, label) => {
+        assert.ok(src && src.started, `${label} should start a PCM AudioBufferSourceNode`);
+        assert.ok(src.buffer, `${label} source should have an AudioBuffer assigned`);
+        const samples = src.buffer.getChannelData(0);
+        assert.ok(samples.length > 4000, `${label} buffer should have high-resolution sample length`);
+        let energy = 0;
+        let peak = 0;
+        for (let i = 0; i < samples.length; i++) {
+            const v = samples[i];
+            assert.ok(Number.isFinite(v), `${label} sample at ${i} must be finite`);
+            energy += v * v;
+            const abs = Math.abs(v);
+            if (abs > peak) peak = abs;
+        }
+        const rms = Math.sqrt(energy / samples.length);
+        assert.ok(rms > 0.02 && peak > 0.15 && peak <= 1.0, `${label} PCM waveform must have realistic acoustic RMS (${rms.toFixed(4)}) and peak (${peak.toFixed(4)})`);
+    };
+
+    sound.nitro();
+    const nitroSampleSrc = context.bufferSources.find(s => !s.loop);
+    checkPcmSource(nitroSampleSrc, 'nitro');
+
+    const beforeStopSources = context.bufferSources.length;
+    sound.stopNitro();
+    const bovSampleSrc = context.bufferSources.slice(beforeStopSources).find(s => !s.loop);
+    checkPcmSource(bovSampleSrc, 'stopNitro blow-off flutter');
+
+    const beforeHbSources = context.bufferSources.length;
+    sound.handbrake();
+    const hbSampleSrc = context.bufferSources.slice(beforeHbSources).find(s => !s.loop);
+    checkPcmSource(hbSampleSrc, 'handbrake');
+
+    const beforeHornSources = context.bufferSources.length;
+    sound.horn();
+    const hornSampleSrc = context.bufferSources.slice(beforeHornSources).find(s => !s.loop);
+    checkPcmSource(hornSampleSrc, 'horn');
+
+    const beforeSguSources = context.bufferSources.length;
+    sound.sgu();
+    const sguSampleSrc = context.bufferSources.slice(beforeSguSources).find(s => !s.loop);
+    checkPcmSource(sguSampleSrc, 'sgu');
+});
+
+
 

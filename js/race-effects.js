@@ -545,9 +545,11 @@
             if (!playerCar) return;
 
             try {
-                // Compute model dimensions
+                // Compute model dimensions (using clean base bounding box if available)
                 playerCar.updateMatrixWorld(true);
-                const box = new THREE.Box3().setFromObject(playerCar);
+                const box = (playerCar.userData && playerCar.userData.baseBoundingBox && !playerCar.userData.baseBoundingBox.isEmpty())
+                    ? playerCar.userData.baseBoundingBox.clone()
+                    : new THREE.Box3().setFromObject(playerCar);
                 const size = box.getSize(new THREE.Vector3());
                 const halfL = (size.z || 4.4) * 0.5;
                 const halfW = (size.x || 1.9) * 0.5;
@@ -558,7 +560,9 @@
                     : '';
                 const detectFunc = (typeof Car3DManager !== 'undefined' && Car3DManager.detectVehicleLightPositions)
                     ? Car3DManager.detectVehicleLightPositions
-                    : null;
+                    : ((typeof window !== 'undefined' && window.Car3D && window.Car3D.detectVehicleLightPositions)
+                        ? window.Car3D.detectVehicleLightPositions
+                        : null);
                 const detected = (detectFunc)
                     ? detectFunc(playerCar, carId, THREE)
                     : {
@@ -772,17 +776,24 @@
             // Ensures the smooth light patch always hugs the asphalt surface at y = 0.012 without clipping
             const playerCar = (this.engine && this.engine.playerCar) ? this.engine.playerCar : null;
             const state = (this.engine && this.engine.state) ? this.engine.state : null;
-            if (playerCar && state && this.headlightGroundPatches && this.headlightGroundPatches.length > 0) {
+            if (playerCar && state) {
                 const pitch = state.pitchSquat || 0;
                 const roll = (state.bodyRoll || 0) + ((this.engine && this.engine.engineTremorRoll) || 0);
                 const carY = playerCar.position.y || 0;
-                for (let i = 0; i < this.headlightGroundPatches.length; i++) {
-                    const p = this.headlightGroundPatches[i];
-                    if (p) {
-                        p.rotation.x = -pitch;
-                        p.rotation.z = -roll;
-                        p.position.y = 0.012 - carY;
+                if (this.headlightGroundPatches && this.headlightGroundPatches.length > 0) {
+                    for (let i = 0; i < this.headlightGroundPatches.length; i++) {
+                        const p = this.headlightGroundPatches[i];
+                        if (p) {
+                            p.rotation.x = -pitch;
+                            p.rotation.z = -roll;
+                            p.position.y = 0.012 - carY;
+                        }
                     }
+                }
+                if (this.brakeGroundDecal) {
+                    this.brakeGroundDecal.rotation.x = -pitch;
+                    this.brakeGroundDecal.rotation.z = -roll;
+                    this.brakeGroundDecal.position.y = 0.010 - carY;
                 }
             }
 
@@ -838,12 +849,15 @@
             const localFR = new THREE.Vector3(halfW * 0.82, 0.012, halfL * 0.60);
 
             playerCar.updateMatrixWorld(true);
-            return {
-                rl: localRL.applyMatrix4(playerCar.matrixWorld),
-                rr: localRR.applyMatrix4(playerCar.matrixWorld),
-                fl: localFL.applyMatrix4(playerCar.matrixWorld),
-                fr: localFR.applyMatrix4(playerCar.matrixWorld)
-            };
+            const rl = localRL.applyMatrix4(playerCar.matrixWorld);
+            const rr = localRR.applyMatrix4(playerCar.matrixWorld);
+            const fl = localFL.applyMatrix4(playerCar.matrixWorld);
+            const fr = localFR.applyMatrix4(playerCar.matrixWorld);
+            rl.y = 0.012;
+            rr.y = 0.012;
+            fl.y = 0.012;
+            fr.y = 0.012;
+            return { rl, rr, fl, fr };
         }
 
         spawnSmokePuff(pos, options = {}) {
@@ -1329,6 +1343,10 @@
             this.speedStreaksData = [];
         }
     }
+
+    RaceEffectsManager.createRaceEffects = function(engine) {
+        return new RaceEffectsManager(engine);
+    };
 
     return RaceEffectsManager;
 }));

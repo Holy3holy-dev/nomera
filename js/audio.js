@@ -8,11 +8,474 @@
         let unlocked = false, unavailable = false, lastTick = -Infinity;
         let prefs = {volume: 0.45, muted: false, engine: true};
         let cachedNoiseBuffer = null;
+        const cachedSamples = {};
         const voices = new Set();
         let activeNitroVoices = [];
         let lastNitroTime = -Infinity;
         let lastHandbrakeTime = -Infinity;
         let lastEngineNitroState = false;
+
+        function hasSampleSupport() {
+            return Boolean(context && typeof context.createBuffer === 'function' && typeof context.createBufferSource === 'function');
+        }
+
+        function playSampleBuffer(buffer, { gain = 0.45, delay = 0, registerNitro = false } = {}) {
+            if (!unlocked || !context || context.state === 'suspended' || level() <= 0 || !buffer || !hasSampleSupport() || voices.size >= 64) return null;
+            try {
+                const source = context.createBufferSource();
+                source.buffer = buffer;
+                const envelope = context.createGain ? context.createGain() : null;
+                if (!envelope) return null;
+
+                const start = context.currentTime + Math.max(0, Number.isFinite(delay) ? delay : 0);
+                const duration = buffer.duration || (buffer.length / (buffer.sampleRate || 44100)) || 0.4;
+                const targetGain = Number.isFinite(gain) ? Math.max(0.0001, gain) : 0.45;
+
+                envelope.gain.setValueAtTime(targetGain, start);
+                if (envelope.gain.setValueAtTime && duration > 0.04) {
+                    envelope.gain.setValueAtTime(targetGain, start + Math.max(0.01, duration - 0.025));
+                }
+                if (envelope.gain.exponentialRampToValueAtTime) {
+                    envelope.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+                } else if (envelope.gain.setValueAtTime) {
+                    envelope.gain.setValueAtTime(0.0001, start + duration);
+                }
+
+                source.connect(envelope);
+                envelope.connect(master);
+                voices.add(source);
+                source.onended = () => {
+                    voices.delete(source);
+                    try { source.disconnect(); envelope.disconnect(); } catch (_) {}
+                };
+                source.start(start);
+                if (typeof source.stop === 'function') {
+                    source.stop(start + duration + 0.02);
+                }
+                const voice = { source, envelope };
+                if (registerNitro) registerNitroVoice(voice);
+                return voice;
+            } catch (_) {
+                return null;
+            }
+        }
+
+        // 1. Realistic N2O Solenoid Purge + 11-Blade Twin-Scroll Turbo Spool + Jet Combustion Roar (0.85s PCM)
+        function getNitroRealisticBuffer() {
+            if (!hasSampleSupport()) return null;
+            const sr = context.sampleRate || 44100;
+            const key = 'nitro_' + sr;
+            if (cachedSamples[key]) return cachedSamples[key];
+            try {
+                const duration = 0.85;
+                const len = Math.floor(sr * duration);
+                const buffer = context.createBuffer(1, len, sr);
+                const data = buffer.getChannelData(0);
+
+                let seed = 0x6D2B79F5;
+                const rand = () => {
+                    seed ^= seed << 13;
+                    seed ^= seed >>> 17;
+                    seed ^= seed << 5;
+                    return ((seed >>> 0) / 4294967296) * 2 - 1;
+                };
+
+                // Resonator filter states for cryogenic N2O purge spray & intake rush
+                let bp1Low = 0, bp1Band = 0;
+                let bp2Low = 0, bp2Band = 0;
+                let pink0 = 0, pink1 = 0, pink2 = 0;
+                let turboPhase = 0, combPhase = 0, subPhase = 0;
+
+                for (let i = 0; i < len; i++) {
+                    const t = i / sr;
+                    const white = rand();
+                    pink0 = 0.99886 * pink0 + white * 0.0555179;
+                    pink1 = 0.99332 * pink1 + white * 0.0750759;
+                    pink2 = 0.96900 * pink2 + white * 0.1538520;
+                    const pink = (pink0 + pink1 + pink2 + white * 0.5362) * 0.25;
+
+                    // A. 0.00s - 0.16s: N2O Solenoid Valve Crack + Cryogenic Gas Expansion Hiss ("TSSSHHH-CHHH!")
+                    let solenoidClick = 0;
+                    if (t < 0.012) {
+                        const clickEnv = Math.exp(-t * 420);
+                        solenoidClick = (
+                            Math.sin(2 * Math.PI * 2450 * t) * 0.55 +
+                            Math.sin(2 * Math.PI * 5100 * t) * 0.35 +
+                            white * 0.45
+                        ) * clickEnv;
+                    }
+
+                    // Dual formant band-pass filters sweeping 4200Hz -> 1400Hz for pressurized liquid N2O purge
+                    const purgeCut1 = 1400 + 2800 * Math.exp(-t * 9.5);
+                    const purgeCut2 = 2200 + 2400 * Math.exp(-t * 7.2);
+                    const f1 = Math.min(0.75, 2 * Math.sin(Math.PI * Math.min(sr * 0.42, purgeCut1) / sr));
+                    const f2 = Math.min(0.75, 2 * Math.sin(Math.PI * Math.min(sr * 0.42, purgeCut2) / sr));
+                    bp1Low += f1 * bp1Band;
+                    const hp1 = white - bp1Low - 0.22 * bp1Band;
+                    bp1Band += f1 * hp1;
+
+                    bp2Low += f2 * bp2Band;
+                    const hp2 = pink - bp2Low - 0.28 * bp2Band;
+                    bp2Band += f2 * hp2;
+
+                    const purgeEnv = t < 0.003
+                        ? (t / 0.003)
+                        : (t < 0.18 ? Math.exp(-(t - 0.003) * 14.5) : Math.exp(-(t - 0.003) * 18.0));
+                    const purgeFlutter = 0.78 + 0.22 * Math.sin(2 * Math.PI * 44 * t) * Math.cos(2 * Math.PI * 112 * t);
+                    const purgeSample = (bp1Band * 0.55 + bp2Band * 0.45) * purgeEnv * purgeFlutter * 0.85;
+
+                    // B. 0.05s - 0.85s: 11-Blade Garrett/BorgWarner Turbocharger Impeller Whistle
+                    const boostProgress = 1 - Math.exp(-Math.max(0, t - 0.03) * 4.8);
+                    const turboFreq = 720 + 2630 * boostProgress;
+                    turboPhase += (2 * Math.PI * turboFreq) / sr;
+                    const turboEnv = t < 0.03
+                        ? (t / 0.03) * 0.3
+                        : Math.min(1, (t - 0.02) / 0.09) * (t > 0.72 ? Math.max(0, (duration - t) / 0.13) : 1);
+                    const turbineWhistle = (
+                        Math.sin(turboPhase) * 0.62 +
+                        Math.sin(turboPhase * 2 + 0.3) * 0.26 +
+                        Math.sin(turboPhase * 3 + 0.7) * 0.12
+                    ) * (1 + 0.14 * pink) * turboEnv * 0.24;
+
+                    // C. 0.04s - 0.85s: Rich-Fuel N2O Cylinder Detonation & Jet Exhaust Roar
+                    const combFreq = 52 + 93 * boostProgress;
+                    combPhase += (2 * Math.PI * combFreq) / sr;
+                    subPhase += (2 * Math.PI * (combFreq * 0.5)) / sr;
+                    const detonationPunch = t < 0.14
+                        ? Math.sin(2 * Math.PI * (112 - 64 * (t / 0.14)) * t) * Math.exp(-t * 19) * 0.55
+                        : 0;
+                    const rawExhaust =
+                        Math.sin(combPhase) * 0.65 +
+                        Math.sin(subPhase) * 0.48 +
+                        Math.sin(combPhase * 1.5 + 0.4) * 0.34 +
+                        Math.sin(combPhase * 2.0 + 1.1) * 0.25 +
+                        pink * 0.95;
+                    const roastEnv = Math.min(1, t / 0.025) * (t > 0.73 ? Math.max(0, (duration - t) / 0.12) : 1);
+                    const jetRoar = Math.tanh(2.4 * rawExhaust) * roastEnv * 0.42;
+
+                    const sample = solenoidClick + purgeSample + turbineWhistle + detonationPunch + jetRoar;
+                    data[i] = Math.max(-0.96, Math.min(0.96, sample));
+                }
+
+                cachedSamples[key] = buffer;
+                return buffer;
+            } catch (_) {
+                return null;
+            }
+        }
+
+        // 1b. Realistic JDM HKS/Greddy Compressor Surge Blow-Off Flutter ("PSSSHHH-tu-tu-tu-tu!", 0.42s PCM)
+        function getBlowOffFlutterBuffer() {
+            if (!hasSampleSupport()) return null;
+            const sr = context.sampleRate || 44100;
+            const key = 'bov_' + sr;
+            if (cachedSamples[key]) return cachedSamples[key];
+            try {
+                const duration = 0.42;
+                const len = Math.floor(sr * duration);
+                const buffer = context.createBuffer(1, len, sr);
+                const data = buffer.getChannelData(0);
+
+                let seed = 0x9E3779B9;
+                const rand = () => {
+                    seed ^= seed << 13;
+                    seed ^= seed >>> 17;
+                    seed ^= seed << 5;
+                    return ((seed >>> 0) / 4294967296) * 2 - 1;
+                };
+
+                let bpLow = 0, bpBand = 0;
+                let whistlePhase = 0;
+
+                for (let i = 0; i < len; i++) {
+                    const t = i / sr;
+                    const white = rand();
+
+                    // 14Hz -> 18Hz compressor surge flutter envelope ("PSSSHHH-tu-tu-tu-tu!")
+                    const flutterFreq = 13.5 + 5.5 * (t / duration);
+                    const flutterWave = 0.55 + 0.45 * Math.sin(2 * Math.PI * flutterFreq * t + 0.8);
+                    const decay = Math.exp(-t * 6.8) * (t < 0.004 ? t / 0.004 : 1) * (t > 0.36 ? (duration - t) / 0.06 : 1);
+
+                    // Sweeping resonant blow-off air vent
+                    const cutoff = (1150 + 2500 * Math.exp(-t * 8.5)) * (0.82 + 0.18 * flutterWave);
+                    const f = Math.min(0.75, 2 * Math.sin(Math.PI * Math.min(sr * 0.42, cutoff) / sr));
+                    bpLow += f * bpBand;
+                    const hp = white - bpLow - 0.18 * bpBand;
+                    bpBand += f * hp;
+
+                    // Metallic SSQV fin whistle stalling with flutter
+                    const whistleFreq = (680 + 1850 * Math.exp(-t * 7.2)) * (0.9 + 0.12 * flutterWave);
+                    whistlePhase += (2 * Math.PI * whistleFreq) / sr;
+                    const whistle = (Math.sin(whistlePhase) * 0.65 + Math.sin(whistlePhase * 1.62) * 0.35) * 0.28;
+
+                    const sample = (bpBand * 0.72 + whistle) * flutterWave * decay;
+                    data[i] = Math.max(-0.95, Math.min(0.95, sample));
+                }
+
+                cachedSamples[key] = buffer;
+                return buffer;
+            } catch (_) {
+                return null;
+            }
+        }
+
+        // 2. Realistic Mechanical Ratchet Lever Pull + Stick-Slip Rubber-on-Asphalt Tire Skid (0.58s PCM)
+        function getHandbrakeRealisticBuffer() {
+            if (!hasSampleSupport()) return null;
+            const sr = context.sampleRate || 44100;
+            const key = 'handbrake_' + sr;
+            if (cachedSamples[key]) return cachedSamples[key];
+            try {
+                const duration = 0.58;
+                const len = Math.floor(sr * duration);
+                const buffer = context.createBuffer(1, len, sr);
+                const data = buffer.getChannelData(0);
+
+                let seed = 0x243F6A88;
+                const rand = () => {
+                    seed ^= seed << 13;
+                    seed ^= seed >>> 17;
+                    seed ^= seed << 5;
+                    return ((seed >>> 0) / 4294967296) * 2 - 1;
+                };
+
+                // 4 steel pawl teeth clicks along the ratchet quadrant
+                const clickTimes = [0.002, 0.022, 0.046, 0.074];
+                const clickPitches = [1.0, 1.08, 1.17, 1.28];
+
+                // 4 formant band-pass filters for tire tread block stick-slip resonances on asphalt
+                let f1Low = 0, f1Band = 0;
+                let f2Low = 0, f2Band = 0;
+                let f3Low = 0, f3Band = 0;
+                let f4Low = 0, f4Band = 0;
+                let slipPhase = 0, jitterPhase1 = 0, jitterPhase2 = 0;
+
+                for (let i = 0; i < len; i++) {
+                    const t = i / sr;
+                    const white = rand();
+
+                    // A. 0.00s - 0.095s: Crisp Steel Ratchet Pawl Teeth Clicks & Lever Lock Thud
+                    let ratchet = 0;
+                    for (let c = 0; c < clickTimes.length; c++) {
+                        const dt = t - clickTimes[c];
+                        if (dt >= 0 && dt < 0.022) {
+                            const p = clickPitches[c];
+                            const env = Math.exp(-dt * 280);
+                            const metalRing =
+                                Math.sin(2 * Math.PI * 1850 * p * dt) * 0.46 +
+                                Math.sin(2 * Math.PI * 2420 * p * dt) * 0.34 +
+                                Math.sin(2 * Math.PI * 3100 * p * dt) * 0.25 +
+                                white * Math.exp(-dt * 520) * 0.5;
+                            ratchet += metalRing * env * (c === 3 ? 0.65 : 0.48);
+                        }
+                    }
+                    // Final lever latch lock thud at t = 0.074s
+                    if (t >= 0.072 && t < 0.14) {
+                        const dt = t - 0.072;
+                        ratchet += Math.sin(2 * Math.PI * (190 - 75 * (dt / 0.068)) * dt) * Math.exp(-dt * 55) * 0.38;
+                    }
+
+                    // B. 0.065s - 0.58s: Locked Rear Tires Skidding & Biting Asphalt (Stick-Slip Friction)
+                    let skidSample = 0;
+                    if (t >= 0.062) {
+                        const st = t - 0.062;
+                        const skidDur = duration - 0.062;
+                        const decelDrop = 1 - 0.14 * (st / skidDur);
+
+                        // Micro-slip chaotic relaxation oscillation (rubber tread blocks snapping on macadam)
+                        jitterPhase1 += (2 * Math.PI * 45) / sr;
+                        jitterPhase2 += (2 * Math.PI * 112) / sr;
+                        const microJitter = 1 + 0.055 * Math.sin(jitterPhase1) + 0.035 * Math.cos(jitterPhase2) + 0.04 * white;
+                        const stickSlipFundamental = (760 * decelDrop) * microJitter;
+                        slipPhase = (slipPhase + stickSlipFundamental / sr) % 1;
+
+                        // Asymmetric stick-slip sawtooth-pulse exciter + road-grit scrubbing noise
+                        const stickExciter = (2 * slipPhase - 1) * 0.68 + Math.sin(2 * Math.PI * slipPhase) * 0.35 + white * 0.52;
+
+                        // Vocal-like rubber formant resonators: 740Hz, 1180Hz, 1760Hz, 2520Hz
+                        const cf1 = 740 * decelDrop;
+                        const cf2 = 1180 * decelDrop;
+                        const cf3 = 1760 * decelDrop;
+                        const cf4 = 2520 * decelDrop;
+
+                        const k1 = Math.min(0.72, 2 * Math.sin(Math.PI * cf1 / sr));
+                        const k2 = Math.min(0.72, 2 * Math.sin(Math.PI * cf2 / sr));
+                        const k3 = Math.min(0.72, 2 * Math.sin(Math.PI * cf3 / sr));
+                        const k4 = Math.min(0.72, 2 * Math.sin(Math.PI * cf4 / sr));
+
+                        f1Low += k1 * f1Band;
+                        f1Band += k1 * (stickExciter - f1Low - 0.11 * f1Band);
+
+                        f2Low += k2 * f2Band;
+                        f2Band += k2 * (stickExciter - f2Low - 0.10 * f2Band);
+
+                        f3Low += k3 * f3Band;
+                        f3Band += k3 * (stickExciter - f3Low - 0.13 * f3Band);
+
+                        f4Low += k4 * f4Band;
+                        f4Band += k4 * (white - f4Low - 0.22 * f4Band);
+
+                        const rawSkid = f1Band * 0.44 + f2Band * 0.38 + f3Band * 0.26 + f4Band * 0.22;
+                        const amScrub = 0.84 + 0.16 * Math.sin(jitterPhase1 * 1.3);
+                        const skidEnv = Math.min(1, st / 0.018) * (st > skidDur - 0.09 ? Math.max(0, (skidDur - st) / 0.09) : 1);
+                        skidSample = Math.tanh(1.95 * rawSkid) * amScrub * skidEnv * 0.56;
+                    }
+
+                    data[i] = Math.max(-0.96, Math.min(0.96, ratchet + skidSample));
+                }
+
+                cachedSamples[key] = buffer;
+                return buffer;
+            } catch (_) {
+                return null;
+            }
+        }
+
+        // 3a. Realistic Bosch / Hella Supertone Dual-Diaphragm Brass Trumpet Horn (410 Hz + 495 Hz, 0.48s PCM)
+        function getHornRealisticBuffer() {
+            if (!hasSampleSupport()) return null;
+            const sr = context.sampleRate || 44100;
+            const key = 'horn_' + sr;
+            if (cachedSamples[key]) return cachedSamples[key];
+            try {
+                const duration = 0.48;
+                const len = Math.floor(sr * duration);
+                const buffer = context.createBuffer(1, len, sr);
+                const data = buffer.getChannelData(0);
+
+                let seed = 0x13198A2E;
+                const rand = () => {
+                    seed ^= seed << 13;
+                    seed ^= seed >>> 17;
+                    seed ^= seed << 5;
+                    return ((seed >>> 0) / 4294967296) * 2 - 1;
+                };
+
+                // 2.1ms early road/grille reflection delay line for real outdoor acoustic projection
+                const combDelay = Math.max(1, Math.floor(sr * 0.0021));
+                const combBuf = new Float32Array(combDelay);
+                let combIdx = 0;
+
+                let pLow = 0, pHigh = 0, pSub = 0;
+
+                for (let i = 0; i < len; i++) {
+                    const t = i / sr;
+                    const white = rand();
+
+                    // Initial 6ms electromagnetic relay & steel diaphragm strike transient
+                    const relayStrike = t < 0.006
+                        ? (Math.sin(2 * Math.PI * 1680 * t) * 0.5 + white * 0.5) * Math.exp(-t * 480) * 0.42
+                        : 0;
+
+                    // Natural electromagnetic pressure pitch warm-up over first 12ms
+                    const pitchWarmup = 1 - 0.028 * Math.exp(-t * 210);
+                    const fLow = 410 * pitchWarmup;
+                    const fHigh = 495 * pitchWarmup;
+
+                    pLow += (2 * Math.PI * fLow) / sr;
+                    pHigh += (2 * Math.PI * fHigh) / sr;
+                    pSub += (2 * Math.PI * (fLow * 0.5)) / sr;
+
+                    // Dual steel diaphragms with rich odd & even harmonic overtones before trumpet flare
+                    const diaphragmLow =
+                        Math.sin(pLow) * 0.55 +
+                        Math.sin(pLow * 2 + 0.2) * 0.28 +
+                        Math.sin(pLow * 3 + 0.5) * 0.18 +
+                        Math.sin(pLow * 4 + 0.9) * 0.09;
+                    const diaphragmHigh =
+                        Math.sin(pHigh) * 0.52 +
+                        Math.sin(pHigh * 2 + 0.3) * 0.30 +
+                        Math.sin(pHigh * 3 + 0.7) * 0.20 +
+                        Math.sin(pHigh * 5 + 1.1) * 0.08;
+                    const chassisSub = Math.sin(pSub) * 0.22;
+
+                    // Non-linear brass horn flare saturation (generates up to 10th harmonic brass edge)
+                    const rawMix = diaphragmLow * 0.56 + diaphragmHigh * 0.54 + chassisSub;
+                    const flared = Math.tanh(2.8 * rawMix + 0.22 * rawMix * rawMix);
+
+                    // Short 2.1ms comb reflection off front bumper / asphalt
+                    const delayed = combBuf[combIdx];
+                    combBuf[combIdx] = flared;
+                    combIdx = (combIdx + 1) % combDelay;
+
+                    const env = Math.min(1, t / 0.008) * (t > duration - 0.055 ? Math.max(0, (duration - t) / 0.055) : 1);
+                    const sample = relayStrike + (flared * 0.82 + delayed * 0.18) * env * 0.58;
+                    data[i] = Math.max(-0.96, Math.min(0.96, sample));
+                }
+
+                cachedSamples[key] = buffer;
+                return buffer;
+            } catch (_) {
+                return null;
+            }
+        }
+
+        // 3b. Authentic Russian ФСО / ДПС VIP SGU «Элина / СГУ-200П Крякалка» Air-Horn & Yelp Tail (0.36s PCM)
+        function getSguRealisticBuffer() {
+            if (!hasSampleSupport()) return null;
+            const sr = context.sampleRate || 44100;
+            const key = 'sgu_' + sr;
+            if (cachedSamples[key]) return cachedSamples[key];
+            try {
+                const duration = 0.36;
+                const len = Math.floor(sr * duration);
+                const buffer = context.createBuffer(1, len, sr);
+                const data = buffer.getChannelData(0);
+
+                let carrierPhase = 0;
+                let reedPhase = 0;
+                let yelpPhase = 0;
+                let hornBpLow = 0, hornBpBand = 0;
+
+                for (let i = 0; i < len; i++) {
+                    const t = i / sr;
+                    let raw = 0;
+
+                    if (t < 0.24) {
+                        // Phase 1 (0.00s - 0.24s): Authentic 200W VIP Air-Horn "КРЯ-Я-К!"
+                        // 34 Hz hard-clipped reed/pulse train modulating a sweeping 215Hz -> 142Hz -> 188Hz horn fundamental
+                        const sweep = t < 0.13
+                            ? 215 - (215 - 142) * (t / 0.13)
+                            : 142 + (188 - 142) * ((t - 0.13) / 0.11);
+                        carrierPhase += (2 * Math.PI * sweep) / sr;
+                        reedPhase += (2 * Math.PI * 34) / sr;
+
+                        const reedPulse = Math.tanh(4.2 * Math.sin(reedPhase));
+                        const brassHarmonics =
+                            Math.sin(carrierPhase) * 0.52 +
+                            Math.sin(carrierPhase * 2) * 0.38 +
+                            Math.sin(carrierPhase * 3 + 0.25) * 0.30 +
+                            Math.sin(carrierPhase * 4 + 0.5) * 0.22 +
+                            Math.sin(carrierPhase * 6 + 0.8) * 0.14;
+
+                        // Hard compression-driver diaphragm clipping ("КРЯК")
+                        const quackEnv = Math.min(1, t / 0.004) * (t > 0.215 ? (0.24 - t) / 0.025 : 1);
+                        raw = Math.tanh(3.5 * brassHarmonics * (0.68 + 0.32 * reedPulse)) * quackEnv;
+                    } else {
+                        // Phase 2 (0.24s - 0.36s): High-voltage electronic PA yelp chirp tail (1650 Hz -> 880 Hz)
+                        const yt = (t - 0.24) / 0.12;
+                        const yelpFreq = 1650 * Math.pow(880 / 1650, yt);
+                        yelpPhase += (2 * Math.PI * yelpFreq) / sr;
+                        const chirpEnv = Math.min(1, (t - 0.24) / 0.006) * Math.max(0, 1 - yt);
+                        raw = Math.tanh(2.6 * (Math.sin(yelpPhase) * 0.7 + Math.sin(yelpPhase * 2) * 0.3)) * chirpEnv * 0.78;
+                    }
+
+                    // Compression horn speaker throat resonance (~1150 Hz)
+                    const f = Math.min(0.75, 2 * Math.sin(Math.PI * 1150 / sr));
+                    hornBpLow += f * hornBpBand;
+                    const hp = raw - hornBpLow - 0.35 * hornBpBand;
+                    hornBpBand += f * hp;
+
+                    const sample = (raw * 0.65 + hornBpBand * 0.45) * 0.62;
+                    data[i] = Math.max(-0.96, Math.min(0.96, sample));
+                }
+
+                cachedSamples[key] = buffer;
+                return buffer;
+            } catch (_) {
+                return null;
+            }
+        }
 
         function stopNitro(smooth = 0.06, playBlowOff = true) {
             if (!context) return;
@@ -49,17 +512,22 @@
                 lastNitroTime = -Infinity;
 
                 if (playBlowOff && unlocked && context.state !== 'suspended' && level() > 0) {
+                    const useSample = hasSampleSupport();
+                    if (useSample) {
+                        playSampleBuffer(getBlowOffFlutterBuffer(), { gain: 0.42 });
+                    }
+                    const oscScale = useSample ? 0.35 : 1.0;
                     // Clean, crisp blow-off gas release upon key release without any pops or clicks
                     noiseBurst({
                         duration: 0.22,
-                        gain: 0.12,
+                        gain: 0.12 * oscScale,
                         filterType: 'bandpass',
                         filterFreq: 3200,
                         filterEndFreq: 1400,
                         filterQ: 2.2
                     });
-                    tone(2100, 0.11, 0.08, 0, 'triangle', 720);
-                    tone(1420, 0.07, 0.05, 0.02, 'sine', 480);
+                    tone(2100, 0.11, 0.08 * oscScale, 0, 'triangle', 720);
+                    tone(1420, 0.07, 0.05 * oscScale, 0.02, 'sine', 480);
                 }
             }
         }
@@ -165,7 +633,7 @@
         }
 
         function tone(freq, duration, gain = 0.12, delay = 0, type = 'sine', endFreq = freq) {
-            if (!unlocked || !context || context.state === 'suspended' || level() <= 0 || voices.size >= 24) return null;
+            if (!unlocked || !context || context.state === 'suspended' || level() <= 0 || voices.size >= 64) return null;
             duration = Math.max(0.01, Number.isFinite(duration) ? duration : 0.1);
             freq = Math.max(20, Number.isFinite(freq) ? freq : 440);
             endFreq = Math.max(1, Number.isFinite(endFreq) ? endFreq : freq);
@@ -207,7 +675,7 @@
 
         // Procedural noise layer for authentic friction, aerodynamic rushing, and pressure bursts
         function noiseBurst({ duration = 0.25, gain = 0.08, delay = 0, filterType = 'bandpass', filterFreq = 1200, filterEndFreq = null, filterQ = 1.5 } = {}) {
-            if (!unlocked || !context || context.state === 'suspended' || level() <= 0 || voices.size >= 24) return null;
+            if (!unlocked || !context || context.state === 'suspended' || level() <= 0 || voices.size >= 64) return null;
             duration = Math.max(0.01, Number.isFinite(duration) ? duration : 0.1);
             filterFreq = Math.max(20, Number.isFinite(filterFreq) ? filterFreq : 1000);
             delay = Math.max(0, Number.isFinite(delay) ? delay : 0);
@@ -291,6 +759,9 @@
                         try { node.disconnect(); } catch (_) {}
                     }
                 });
+                if (typeof siren.shaper?.disconnect === 'function') {
+                    try { siren.shaper.disconnect(); } catch (_) {}
+                }
                 if (typeof siren.gain?.disconnect === 'function') {
                     try { siren.gain.disconnect(); } catch (_) {}
                 }
@@ -310,8 +781,8 @@
             try {
                 const gain = context.createGain(), filter = context.createBiquadFilter();
                 filter.type = 'bandpass';
-                filter.frequency.setValueAtTime(780, context.currentTime);
-                if (filter.Q) filter.Q.setValueAtTime(1.2, context.currentTime);
+                filter.frequency.setValueAtTime(1020, context.currentTime);
+                if (filter.Q) filter.Q.setValueAtTime(1.45, context.currentTime);
                 gain.gain.setValueAtTime(0.011, context.currentTime);
                 filter.connect(gain);
                 gain.connect(master);
@@ -320,18 +791,38 @@
                 const lfo = context.createOscillator();
                 const lfoGain = context.createGain();
 
+                // Authentic Federal Signal PA300 / Premier Hazard pursuit wail-yelp loudspeaker profile
                 osc.type = 'triangle';
-                osc.frequency.setValueAtTime(720, context.currentTime);
+                osc.frequency.setValueAtTime(840, context.currentTime);
 
                 lfo.type = 'triangle';
-                lfo.frequency.setValueAtTime(1.5, context.currentTime);
-                lfoGain.gain.setValueAtTime(220, context.currentTime);
+                lfo.frequency.setValueAtTime(1.65, context.currentTime);
+                lfoGain.gain.setValueAtTime(320, context.currentTime);
+
+                let shaper = null;
+                if (typeof context.createWaveShaper === 'function') {
+                    try {
+                        shaper = context.createWaveShaper();
+                        const curve = new Float32Array(256);
+                        for (let i = 0; i < 256; i++) {
+                            const x = (i * 2) / 256 - 1;
+                            curve[i] = Math.tanh(2.4 * x + 0.15 * x * x);
+                        }
+                        shaper.curve = curve;
+                        shaper.oversample = '2x';
+                    } catch (_) { shaper = null; }
+                }
 
                 try { lfo.connect(lfoGain); lfoGain.connect(osc.frequency); } catch (_) {}
-                osc.connect(filter);
+                if (shaper) {
+                    osc.connect(shaper);
+                    shaper.connect(filter);
+                } else {
+                    osc.connect(filter);
+                }
                 osc.start();
                 lfo.start();
-                siren = { gain, filter, nodes: [osc, lfo, lfoGain] };
+                siren = { gain, filter, shaper, nodes: [osc, lfo, lfoGain] };
             } catch (_) { stopSiren(); }
         }
 
@@ -545,11 +1036,18 @@
                 if (now - lastNitroTime < 0.22) return;
                 lastNitroTime = now;
 
+                // Play high-resolution PCM sample buffer of real N2O solenoid purge + 11-blade turbo spool + jet roar
+                const useSample = hasSampleSupport();
+                if (useSample) {
+                    playSampleBuffer(getNitroRealisticBuffer(), { gain: 0.52, registerNitro: true });
+                }
+                const oscScale = useSample ? 0.28 : 1.0;
+
                 // 1. INSTANT HIGH-PRESSURE PNEUMATIC PURGE BURST ("TSSSHHH-POW!") ON TRIGGER
                 // High-pressure cryogenic solenoid release spray (sharp decompression hiss)
                 const purgeSpray = noiseBurst({
                     duration: 0.42,
-                    gain: 0.22,
+                    gain: 0.22 * oscScale,
                     filterType: 'bandpass',
                     filterFreq: 3800,
                     filterEndFreq: 1900,
@@ -558,30 +1056,30 @@
                 registerNitroVoice(purgeSpray);
 
                 // Solenoid valve snap transient (metallic click)
-                const purgeSnap = tone(2400, 0.045, 0.12, 0, 'triangle', 820);
+                const purgeSnap = tone(2400, 0.045, 0.12 * oscScale, 0, 'triangle', 820);
                 registerNitroVoice(purgeSnap);
 
                 // Visceral kinetic detonation punch ("-POW!"): sub-bass cylinder pressure punch
-                const subPunch = tone(108, 0.32, 0.32, 0, 'triangle', 44);
+                const subPunch = tone(108, 0.32, 0.32 * oscScale, 0, 'triangle', 44);
                 registerNitroVoice(subPunch);
 
                 // Mid-frequency cylinder combustion slam
-                const midPunch = tone(220, 0.16, 0.22, 0, 'sawtooth', 68);
+                const midPunch = tone(220, 0.16, 0.22 * oscScale, 0, 'sawtooth', 68);
                 registerNitroVoice(midPunch);
 
                 // 2. TWIN-TURBO COMPRESSOR SPOOL/WHINE THAT RISES RAPIDLY IN PITCH
                 // Primary compressor impeller spool (screaming turbine whine)
-                const turboSpool1 = tone(680, 0.62, 0.10, 0.015, 'sine', 2100);
+                const turboSpool1 = tone(680, 0.62, 0.10 * oscScale, 0.015, 'sine', 2100);
                 registerNitroVoice(turboSpool1);
 
                 // Secondary twin-turbo harmonic overtone whine
-                const turboSpool2 = tone(1020, 0.58, 0.07, 0.025, 'triangle', 2850);
+                const turboSpool2 = tone(1020, 0.58, 0.07 * oscScale, 0.025, 'triangle', 2850);
                 registerNitroVoice(turboSpool2);
 
                 // Aerodynamic compressor intake rush
                 const intakeRush = noiseBurst({
                     duration: 0.55,
-                    gain: 0.14,
+                    gain: 0.14 * oscScale,
                     delay: 0.02,
                     filterType: 'bandpass',
                     filterFreq: 1050,
@@ -592,15 +1090,15 @@
 
                 // 3. DEEP RESONANT COMBUSTION AFTERBURNER ROAR WITH RICH BASS HARMONIC SATURATION WHILE HELD
                 // Sub-bass afterburner combustion fundamental
-                const afterburner = tone(54, 0.72, 0.26, 0.01, 'triangle', 72);
+                const afterburner = tone(54, 0.72, 0.26 * oscScale, 0.01, 'triangle', 72);
                 registerNitroVoice(afterburner);
 
                 // Saturated exhaust manifold growl
-                const exhaustGrowl = tone(118, 0.68, 0.20, 0.015, 'sawtooth', 156);
+                const exhaustGrowl = tone(118, 0.68, 0.20 * oscScale, 0.015, 'sawtooth', 156);
                 registerNitroVoice(exhaustGrowl);
 
                 // Throaty air expansion roar
-                const airExpansion = tone(168, 0.64, 0.15, 0.02, 'triangle', 224);
+                const airExpansion = tone(168, 0.64, 0.15 * oscScale, 0.02, 'triangle', 224);
                 registerNitroVoice(airExpansion);
             },
             stopNitro(smooth = 0.06) { stopNitro(smooth, true); },
@@ -618,21 +1116,28 @@
                 if (now - lastHandbrakeTime < 0.25) return;
                 lastHandbrakeTime = now;
 
+                // Play high-resolution PCM sample of steel ratchet pawl clicks + stick-slip rubber tire skid on asphalt
+                const useSample = hasSampleSupport();
+                if (useSample) {
+                    playSampleBuffer(getHandbrakeRealisticBuffer(), { gain: 0.50 });
+                }
+                const oscScale = useSample ? 0.26 : 1.0;
+
                 // 1. AUDIBLE MECHANICAL CABLE RATCHET ENGAGEMENT CLICK-CLACK ("krr-chk!")
                 // Tooth 1 click (initial pull tension)
-                tone(1350, 0.022, 0.11, 0, 'triangle', 920);
+                tone(1350, 0.022, 0.11 * oscScale, 0, 'triangle', 920);
                 // Tooth 2 click (cable ratchet slide)
-                tone(1620, 0.024, 0.13, 0.024, 'triangle', 1100);
+                tone(1620, 0.024, 0.13 * oscScale, 0.024, 'triangle', 1100);
                 // Pawl solid mechanical lock latch ("-chk!")
-                tone(2150, 0.038, 0.15, 0.052, 'triangle', 780);
-                tone(420, 0.048, 0.14, 0.054, 'sawtooth', 160); // metallic chassis latch thud
+                tone(2150, 0.038, 0.15 * oscScale, 0.052, 'triangle', 780);
+                tone(420, 0.048, 0.14 * oscScale, 0.054, 'sawtooth', 160); // metallic chassis latch thud
                 // Metallic cable tension ping
-                tone(860, 0.065, 0.09, 0.058, 'sine', 380);
+                tone(860, 0.065, 0.09 * oscScale, 0.058, 'sine', 380);
 
                 // Mechanical ratchet friction noise
                 noiseBurst({
                     duration: 0.065,
-                    gain: 0.09,
+                    gain: 0.09 * oscScale,
                     filterType: 'bandpass',
                     filterFreq: 2600,
                     filterEndFreq: 1400,
@@ -646,7 +1151,7 @@
                 // Deep asphalt rubber friction grain
                 noiseBurst({
                     duration: 0.34,
-                    gain: 0.13,
+                    gain: 0.13 * oscScale,
                     delay,
                     filterType: 'bandpass',
                     filterFreq: 1100,
@@ -657,7 +1162,7 @@
                 // High friction asphalt bite screech
                 noiseBurst({
                     duration: 0.28,
-                    gain: 0.10,
+                    gain: 0.10 * oscScale,
                     delay: delay + 0.015,
                     filterType: 'bandpass',
                     filterFreq: 2100,
@@ -666,9 +1171,9 @@
                 });
 
                 // Tonal rubber shear resonance (violent asphalt friction slide)
-                tone(820, 0.28, 0.11, delay, 'sawtooth', 660);
-                tone(1380, 0.22, 0.07, delay + 0.012, 'triangle', 1120);
-                tone(460, 0.30, 0.10, delay, 'triangle', 280);
+                tone(820, 0.28, 0.11 * oscScale, delay, 'sawtooth', 660);
+                tone(1380, 0.22, 0.07 * oscScale, delay + 0.012, 'triangle', 1120);
+                tone(460, 0.30, 0.10 * oscScale, delay, 'triangle', 280);
             },
             scrape() {
                 // Textured guardrail / asphalt scrape (satisfies >= 2 created nodes in tests)
@@ -700,11 +1205,18 @@
                 }
                 if (!unlocked || !context || context.state === 'suspended' || level() <= 0) return;
 
+                // Play high-resolution PCM sample of Bosch / Hella Supertone dual-diaphragm trumpet horn
+                const useSample = hasSampleSupport();
+                if (useSample) {
+                    playSampleBuffer(getHornRealisticBuffer(), { gain: 0.48 });
+                }
+                const oscScale = useSample ? 0.28 : 1.0;
+
                 // Rich, authentic automotive dual-tone horn (Hella-style dual tone ~410 Hz & 495 Hz with warm chassis body resonance)
                 // 1. Diaphragm electrical contact bite transient
                 noiseBurst({
                     duration: 0.05,
-                    gain: 0.07,
+                    gain: 0.07 * oscScale,
                     filterType: 'bandpass',
                     filterFreq: 1450,
                     filterEndFreq: 950,
@@ -712,26 +1224,34 @@
                 });
 
                 // 2. Warm chassis body sub-resonance (~205 Hz, octave sub-harmonic)
-                tone(205, 0.28, 0.10, 0, 'triangle', 202);
+                tone(205, 0.28, 0.10 * oscScale, 0, 'triangle', 202);
 
                 // 3. Low tone fundamental (~410 Hz) - rich body
-                tone(410, 0.28, 0.18, 0, 'triangle', 407);
+                tone(410, 0.28, 0.18 * oscScale, 0, 'triangle', 407);
 
                 // 4. High tone fundamental (~495 Hz) - brass horn trumpet bite
-                tone(495, 0.28, 0.16, 0, 'sawtooth', 491);
+                tone(495, 0.28, 0.16 * oscScale, 0, 'sawtooth', 491);
 
                 // 5. 2nd harmonics for brass acoustic richness
-                tone(820, 0.24, 0.07, 0.005, 'triangle', 814);
-                tone(990, 0.24, 0.06, 0.005, 'sine', 982);
+                tone(820, 0.24, 0.07 * oscScale, 0.005, 'triangle', 814);
+                tone(990, 0.24, 0.06 * oscScale, 0.005, 'sine', 982);
             },
             sgu() {
+                if (!unlocked || !context || context.state === 'suspended' || level() <= 0) return;
+                // Play high-resolution PCM sample of Russian ФСО / ДПС VIP «Элина / СГУ-200П Крякалка»
+                const useSample = hasSampleSupport();
+                if (useSample) {
+                    playSampleBuffer(getSguRealisticBuffer(), { gain: 0.52 });
+                }
+                const oscScale = useSample ? 0.28 : 1.0;
+
                 // VIP / Police SGU strobe electronic spec-wail / airhorn chirp
-                tone(175, 0.22, 0.26, 0, 'sawtooth', 170);
-                tone(350, 0.22, 0.18, 0, 'triangle', 340);
-                tone(525, 0.20, 0.12, 0, 'sawtooth', 510);
-                tone(700, 0.18, 0.08, 0.01, 'triangle', 680);
-                tone(88, 0.24, 0.18, 0, 'triangle', 82);
-                noiseBurst({ duration: 0.18, gain: 0.10, filterType: 'bandpass', filterFreq: 1850, filterEndFreq: 920, filterQ: 1.8 });
+                tone(175, 0.22, 0.26 * oscScale, 0, 'sawtooth', 170);
+                tone(350, 0.22, 0.18 * oscScale, 0, 'triangle', 340);
+                tone(525, 0.20, 0.12 * oscScale, 0, 'sawtooth', 510);
+                tone(700, 0.18, 0.08 * oscScale, 0.01, 'triangle', 680);
+                tone(88, 0.24, 0.18 * oscScale, 0, 'triangle', 82);
+                noiseBurst({ duration: 0.18, gain: 0.10 * oscScale, filterType: 'bandpass', filterFreq: 1850, filterEndFreq: 920, filterQ: 1.8 });
             },
             airBrake() {
                 // Pneumatic truck brake air dump
@@ -742,13 +1262,18 @@
             },
             blowOff() {
                 // Turbo blow-off valve flutter (pssshh-tsu-tsu-tsu)
-                noiseBurst({ duration: 0.22, gain: 0.11, filterType: 'bandpass', filterFreq: 2600, filterEndFreq: 1100, filterQ: 2.0 });
-                tone(2400, 0.22, 0.10, 0, 'triangle', 750);
-                tone(3200, 0.16, 0.06, 0.005, 'sine', 1100);
-                tone(1450, 0.075, 0.08, 0.045, 'sawtooth', 460);
-                tone(1250, 0.065, 0.06, 0.095, 'triangle', 400);
-                tone(1080, 0.055, 0.045, 0.145, 'triangle', 350);
-                tone(920, 0.045, 0.03, 0.195, 'triangle', 300);
+                const useSample = hasSampleSupport();
+                if (useSample) {
+                    playSampleBuffer(getBlowOffFlutterBuffer(), { gain: 0.44 });
+                }
+                const oscScale = useSample ? 0.32 : 1.0;
+                noiseBurst({ duration: 0.22, gain: 0.11 * oscScale, filterType: 'bandpass', filterFreq: 2600, filterEndFreq: 1100, filterQ: 2.0 });
+                tone(2400, 0.22, 0.10 * oscScale, 0, 'triangle', 750);
+                tone(3200, 0.16, 0.06 * oscScale, 0.005, 'sine', 1100);
+                tone(1450, 0.075, 0.08 * oscScale, 0.045, 'sawtooth', 460);
+                tone(1250, 0.065, 0.06 * oscScale, 0.095, 'triangle', 400);
+                tone(1080, 0.055, 0.045 * oscScale, 0.145, 'triangle', 350);
+                tone(920, 0.045, 0.03 * oscScale, 0.195, 'triangle', 300);
             },
             backfire() {
                 // Explosive unburnt fuel detonation in exhaust manifold ("popcorn" crackle)
