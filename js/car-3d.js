@@ -9514,7 +9514,7 @@
                 { name: 'chase_close', offset: new this.THREE.Vector3(0, 1.55, -4.4), lookOffset: new this.THREE.Vector3(0, 0.85, 13.0), fov: 62 },
                 { name: 'hood', offset: new this.THREE.Vector3(0, 1.15, 0.6), lookOffset: new this.THREE.Vector3(0, 1.00, 25.0), fov: 68 },
                 { name: 'top', offset: new this.THREE.Vector3(0, 30.0, -5.5), lookOffset: new this.THREE.Vector3(0, 0.0, 18.0), fov: 68 }, // zoomed out from 11.5m so full car + traffic are visible
-                { name: 'cockpit', offset: new this.THREE.Vector3(-0.36, 1.26, 0.24), lookOffset: new this.THREE.Vector3(-0.36, 1.12, 32.0), fov: 72 }
+                { name: 'cockpit', offset: new this.THREE.Vector3(0.32, 1.22, -0.24), lookOffset: new this.THREE.Vector3(0.32, 1.12, 32.0), fov: 68 }
             ];
             this.camPos = new this.THREE.Vector3(0, 2.05, -5.8);
             this.camLook = new this.THREE.Vector3(0, 1.05, 14.0);
@@ -12601,131 +12601,256 @@
                 this.cockpitGroup.parent.remove(this.cockpitGroup);
             }
 
+            // Note: In Three.js looking forward along +Z, +X is SCREEN LEFT (driver side) and -X is SCREEN RIGHT (passenger side)
+            const driverX = 0.32;
             const cockpit = new THREE.Group();
             cockpit.name = 'CockpitInteriorRig';
 
-            const alcantaraMat = new THREE.MeshStandardMaterial({ color: 0x111827, roughness: 0.85, metalness: 0.1 });
-            const carbonMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.35, metalness: 0.65 });
-            const dashGlowMat = new THREE.MeshStandardMaterial({
-                color: 0x0f172a,
-                emissive: new THREE.Color(0x38bdf8),
-                emissiveIntensity: 1.4
-            });
+            const alcantaraMat = new THREE.MeshStandardMaterial({ color: 0x111827, roughness: 0.78, metalness: 0.15 });
+            const leatherMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.55, metalness: 0.25 });
+            const carbonMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.30, metalness: 0.75 });
+            const chromeMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.18, metalness: 0.92 });
+            const bodyHex = parseColor((this.styling && this.styling.color) || '#2563eb', 0x2563eb);
+            const hoodPaintMat = new THREE.MeshStandardMaterial({ color: bodyHex, roughness: 0.22, metalness: 0.72 });
 
-            // 1. Low-Profile Dashboard Cowl & Instrument Binnacle (positioned in bottom frame so road is 100% clear)
-            const dashCowl = new THREE.Mesh(new THREE.BoxGeometry(1.64, 0.14, 0.48), alcantaraMat);
+            // 0. Interior Cabin Illumination (so steering wheel, spokes, and dashboard are clearly lit at night/tunnels)
+            if (THREE.PointLight) {
+                const cabinLight = new THREE.PointLight(0xe2e8f0, 0.95, 2.5);
+                cabinLight.name = 'CockpitCabinLight';
+                cabinLight.position.set(driverX, 1.16, 0.12);
+                cockpit.add(cabinLight);
+            }
+
+            // 1. Sculpted Exterior Front Hood & Fender Ridges (visible beyond the windshield)
+            const hoodMesh = new THREE.Mesh(new THREE.BoxGeometry(1.56, 0.06, 1.15), hoodPaintMat);
+            hoodMesh.name = 'CockpitHood';
+            hoodMesh.position.set(0, 0.78, 1.46);
+            hoodMesh.rotation.x = 0.08;
+            cockpit.add(hoodMesh);
+
+            const fenderGeo = new THREE.BoxGeometry(0.16, 0.075, 1.10);
+            const fenderL = new THREE.Mesh(fenderGeo, hoodPaintMat);
+            fenderL.name = 'CockpitFenderL';
+            fenderL.position.set(0.72, 0.80, 1.44);
+            fenderL.rotation.x = 0.07;
+            cockpit.add(fenderL);
+
+            const fenderR = new THREE.Mesh(fenderGeo, hoodPaintMat);
+            fenderR.name = 'CockpitFenderR';
+            fenderR.position.set(-0.72, 0.80, 1.44);
+            fenderR.rotation.x = 0.07;
+            cockpit.add(fenderR);
+
+            // 2. Sculpted Dashboard Cowl, Ambient LED Trim & Driver Instrument Binnacle
+            const dashCowl = new THREE.Mesh(new THREE.BoxGeometry(1.72, 0.22, 0.52), alcantaraMat);
             dashCowl.name = 'CockpitDashCowl';
-            dashCowl.position.set(0, 0.68, 0.88);
+            dashCowl.position.set(0, 0.75, 0.82);
             cockpit.add(dashCowl);
 
-            const binnacle = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.11, 0.24), carbonMat);
-            binnacle.position.set(-0.36, 0.78, 0.78);
+            const ambientMat = new THREE.MeshStandardMaterial({
+                color: 0x38bdf8,
+                emissive: new THREE.Color(0x38bdf8),
+                emissiveIntensity: 1.6
+            });
+            const ambientStrip = new THREE.Mesh(new THREE.BoxGeometry(1.62, 0.008, 0.015), ambientMat);
+            ambientStrip.name = 'CockpitAmbientStrip';
+            ambientStrip.position.set(0, 0.855, 0.56);
+            cockpit.add(ambientStrip);
+
+            const binnacle = new THREE.Mesh(new THREE.BoxGeometry(0.40, 0.14, 0.24), carbonMat);
+            binnacle.name = 'CockpitBinnacle';
+            binnacle.position.set(driverX, 0.87, 0.72);
             cockpit.add(binnacle);
 
-            const digitalDash = new THREE.Mesh(new THREE.PlaneGeometry(0.30, 0.085), dashGlowMat);
+            // Live Canvas Digital Instrument Cluster (Speed, Gear, RPM bar)
+            let dashTex = null;
+            this._cockpitDashCanvas = null;
+            this._cockpitDashCtx = null;
+            this._lastCockpitDashSpeed = -1;
+            this._lastCockpitDashGear = -1;
+            try {
+                if (typeof document !== 'undefined') {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = 256;
+                    canvas.height = 128;
+                    const ctx = canvas.getContext('2d');
+                    if (ctx && THREE.CanvasTexture) {
+                        this._cockpitDashCanvas = canvas;
+                        this._cockpitDashCtx = ctx;
+                        dashTex = new THREE.CanvasTexture(canvas);
+                        this._cockpitDashTexture = dashTex;
+                    }
+                }
+            } catch (_) {}
+
+            const dashGlowMat = new THREE.MeshStandardMaterial({
+                color: 0x0f172a,
+                map: dashTex || null,
+                emissive: new THREE.Color(dashTex ? 0xffffff : 0x38bdf8),
+                emissiveMap: dashTex || null,
+                emissiveIntensity: dashTex ? 0.95 : 1.4
+            });
+
+            const digitalDash = new THREE.Mesh(new THREE.PlaneGeometry(0.34, 0.125), dashGlowMat);
             digitalDash.name = 'CockpitDigitalDash';
-            digitalDash.position.set(-0.36, 0.78, 0.655);
+            digitalDash.position.set(driverX, 0.87, 0.595);
             digitalDash.rotation.y = Math.PI;
             cockpit.add(digitalDash);
             this.cockpitDigitalDash = digitalDash;
+            this.updateCockpitDashTexture(this.state || { speed: 0, rpm: 1000, maxRpm: 8000, gear: 1 });
 
-            // 2. RPM Shift Light Strip (6 LEDs on top of instrument binnacle, well below horizon line)
+            // Center Console Multimedia Display
+            const centerScreenMat = new THREE.MeshStandardMaterial({
+                color: 0x0f172a,
+                emissive: new THREE.Color(0x1e40af),
+                emissiveIntensity: 0.9
+            });
+            const centerScreen = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.12, 0.025), centerScreenMat);
+            centerScreen.name = 'CockpitCenterScreen';
+            centerScreen.position.set(-0.06, 0.88, 0.64);
+            centerScreen.rotation.y = -0.18;
+            cockpit.add(centerScreen);
+
+            // 3. RPM Shift Light Strip (6 LEDs on top of instrument binnacle, left-to-right from +X to -X)
             this.cockpitShiftLights = [];
-            const ledGeo = new THREE.BoxGeometry(0.032, 0.014, 0.018);
+            const ledGeo = new THREE.BoxGeometry(0.032, 0.015, 0.018);
             for (let i = 0; i < 6; i++) {
                 const baseCol = i < 2 ? 0x22c55e : (i < 4 ? 0xf59e0b : 0xef4444);
                 const ledMat = new THREE.MeshStandardMaterial({
                     color: 0x1e293b,
                     emissive: new THREE.Color(baseCol),
-                    emissiveIntensity: 0.15
+                    emissiveIntensity: 0.18
                 });
                 const led = new THREE.Mesh(ledGeo, ledMat);
                 led.name = 'CockpitShiftLight_' + i;
-                led.position.set(-0.46 + i * 0.04, 0.845, 0.665);
+                led.position.set((driverX + 0.115) - i * 0.046, 0.948, 0.605);
                 led.userData = { baseColor: baseCol, index: i };
                 cockpit.add(led);
                 this.cockpitShiftLights.push(led);
             }
 
-            // 3. Wide-Set Left & Right A-Pillars + Top Rearview Mirror (wide panoramic windshield opening)
-            const pillarGeo = new THREE.BoxGeometry(0.055, 0.68, 0.075);
+            // 4. Connected Windshield Frame: Left/Right A-Pillars + Top Roof Header + Rearview Mirror on Stalk
+            const pillarGeo = new THREE.BoxGeometry(0.065, 0.78, 0.085);
             const pillarL = new THREE.Mesh(pillarGeo, alcantaraMat);
             pillarL.name = 'CockpitAPillarL';
-            pillarL.position.set(-0.92, 1.22, 0.78);
-            pillarL.rotation.x = -0.52;
-            pillarL.rotation.z = -0.14;
+            pillarL.position.set(0.96, 1.20, 0.62);
+            pillarL.rotation.x = -0.46;
+            pillarL.rotation.z = 0.16;
             cockpit.add(pillarL);
 
             const pillarR = new THREE.Mesh(pillarGeo, alcantaraMat);
             pillarR.name = 'CockpitAPillarR';
-            pillarR.position.set(0.92, 1.22, 0.78);
-            pillarR.rotation.x = -0.52;
-            pillarR.rotation.z = 0.14;
+            pillarR.position.set(-0.68, 1.20, 0.62);
+            pillarR.rotation.x = -0.46;
+            pillarR.rotation.z = -0.16;
             cockpit.add(pillarR);
 
-            const mirrorFrame = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.055, 0.035), carbonMat);
+            const roofHeader = new THREE.Mesh(new THREE.BoxGeometry(1.78, 0.065, 0.22), alcantaraMat);
+            roofHeader.name = 'CockpitRoofHeader';
+            roofHeader.position.set(0.14, 1.60, 0.44);
+            cockpit.add(roofHeader);
+
+            const mirrorStalk = new THREE.Mesh(new THREE.BoxGeometry(0.022, 0.10, 0.022), carbonMat);
+            mirrorStalk.position.set(-0.02, 1.53, 0.50);
+            cockpit.add(mirrorStalk);
+
+            const mirrorFrame = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.058, 0.030), carbonMat);
             mirrorFrame.name = 'CockpitRearMirror';
-            mirrorFrame.position.set(0.0, 1.50, 0.68);
+            mirrorFrame.position.set(-0.02, 1.47, 0.51);
+            mirrorFrame.rotation.y = -0.12;
+            const mirrorGlass = new THREE.Mesh(new THREE.PlaneGeometry(0.22, 0.046), chromeMat);
+            mirrorGlass.position.set(0, 0, -0.016);
+            mirrorGlass.rotation.y = Math.PI;
+            mirrorFrame.add(mirrorGlass);
             cockpit.add(mirrorFrame);
 
-            // 4. Ergonomic Sport Steering Wheel (tilted & lowered so top rim sits below road horizon)
+            // 5. Detailed 3-Spoke Sport Steering Wheel with Paddle Shifters & 12-o'clock Red Stripe
             const wheelGroup = new THREE.Group();
             wheelGroup.name = 'CockpitSteeringWheel';
-            wheelGroup.position.set(-0.36, 0.76, 0.54);
-            wheelGroup.rotation.x = 0.22;
+            wheelGroup.position.set(driverX, 0.82, 0.54);
+            wheelGroup.rotation.x = 0.18;
 
-            const rimGeo = new THREE.TorusGeometry ? new THREE.TorusGeometry(0.142, 0.016, 12, 28) : new THREE.CylinderGeometry(0.142, 0.142, 0.024, 18);
-            const rimMesh = new THREE.Mesh(rimGeo, alcantaraMat);
+            const rimGeo = new THREE.TorusGeometry ? new THREE.TorusGeometry(0.155, 0.021, 14, 32) : new THREE.CylinderGeometry(0.155, 0.155, 0.028, 20);
+            const rimMesh = new THREE.Mesh(rimGeo, leatherMat);
             wheelGroup.add(rimMesh);
 
-            const hubMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.032, 12), carbonMat);
+            // Steering column shaft connecting wheel to dashboard
+            const columnMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.036, 0.042, 0.18, 12), alcantaraMat);
+            columnMesh.rotation.x = Math.PI / 2;
+            columnMesh.position.set(0, -0.01, 0.09);
+            wheelGroup.add(columnMesh);
+
+            // Center Airbag Hub & Chrome Emblem Ring
+            const hubMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.052, 0.052, 0.036, 16), leatherMat);
             hubMesh.rotation.x = Math.PI / 2;
             wheelGroup.add(hubMesh);
 
-            const spokeGeo = new THREE.BoxGeometry(0.26, 0.022, 0.018);
-            const spokeH = new THREE.Mesh(spokeGeo, carbonMat);
-            spokeH.position.set(0, -0.015, 0);
+            if (THREE.TorusGeometry) {
+                const badgeRing = new THREE.Mesh(new THREE.TorusGeometry(0.026, 0.0035, 8, 20), chromeMat);
+                badgeRing.position.set(0, 0, -0.019);
+                wheelGroup.add(badgeRing);
+            }
+
+            // 3 Sculpted Carbon/Metallic Spokes (Left, Right, Bottom)
+            const spokeH = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.026, 0.020), carbonMat);
+            spokeH.position.set(0, -0.012, 0);
             wheelGroup.add(spokeH);
 
-            const spokeVGeo = new THREE.BoxGeometry(0.024, 0.12, 0.018);
-            const spokeV = new THREE.Mesh(spokeVGeo, carbonMat);
-            spokeV.position.set(0, -0.075, 0);
+            const spokeTrim = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.008, 0.022), chromeMat);
+            spokeTrim.position.set(0, -0.012, -0.002);
+            wheelGroup.add(spokeTrim);
+
+            const spokeV = new THREE.Mesh(new THREE.BoxGeometry(0.030, 0.135, 0.020), carbonMat);
+            spokeV.position.set(0, -0.082, 0);
             wheelGroup.add(spokeV);
 
+            // Aluminum Shift Paddles (- Left / + Right)
+            const paddleGeo = new THREE.BoxGeometry(0.026, 0.075, 0.008);
+            const paddleL = new THREE.Mesh(paddleGeo, chromeMat);
+            paddleL.name = 'PaddleShifterL';
+            paddleL.position.set(0.11, 0.02, 0.022);
+            wheelGroup.add(paddleL);
+
+            const paddleR = new THREE.Mesh(paddleGeo, chromeMat);
+            paddleR.name = 'PaddleShifterR';
+            paddleR.position.set(-0.11, 0.02, 0.022);
+            wheelGroup.add(paddleR);
+
+            // 12-o'clock Glowing Red Racing Stripe
             const stripeMat = new THREE.MeshStandardMaterial({
                 color: 0xef4444,
                 emissive: new THREE.Color(0xef4444),
-                emissiveIntensity: 0.85
+                emissiveIntensity: 0.95
             });
-            const centerStripe = new THREE.Mesh(new THREE.BoxGeometry(0.022, 0.034, 0.036), stripeMat);
+            const centerStripe = new THREE.Mesh(new THREE.BoxGeometry(0.024, 0.044, 0.046), stripeMat);
             centerStripe.name = 'SteeringCenterStripe';
-            centerStripe.position.set(0, 0.142, 0);
+            centerStripe.position.set(0, 0.155, 0);
             wheelGroup.add(centerStripe);
 
             cockpit.add(wheelGroup);
             this.cockpitSteeringWheel = wheelGroup;
 
-            // 5. Low-Profile Windshield Wipers (tucked along bottom cowl when dry, sweeping in rain/snow)
+            // 6. Low-Profile Windshield Wipers (tucked flat to the right along cowl when dry, sweeping in rain/snow)
             const wiperMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.4, metalness: 0.8 });
-            const wiperBladeGeo = new THREE.BoxGeometry(0.010, 0.34, 0.010);
+            const wiperBladeGeo = new THREE.BoxGeometry(0.010, 0.36, 0.010);
 
             const wiperPivotL = new THREE.Group();
             wiperPivotL.name = 'CockpitWiperL';
-            wiperPivotL.position.set(-0.48, 0.75, 0.96);
+            wiperPivotL.position.set(0.44, 0.85, 0.88);
             const bladeL = new THREE.Mesh(wiperBladeGeo, wiperMat);
-            bladeL.position.set(0, 0.17, 0);
+            bladeL.position.set(0, 0.18, 0);
             wiperPivotL.add(bladeL);
-            wiperPivotL.rotation.z = -1.42;
+            wiperPivotL.rotation.z = 1.48;
             cockpit.add(wiperPivotL);
             this.cockpitWiperL = wiperPivotL;
 
             const wiperPivotR = new THREE.Group();
             wiperPivotR.name = 'CockpitWiperR';
-            wiperPivotR.position.set(0.06, 0.75, 0.96);
+            wiperPivotR.position.set(-0.04, 0.85, 0.88);
             const bladeR = new THREE.Mesh(wiperBladeGeo, wiperMat);
-            bladeR.position.set(0, 0.17, 0);
+            bladeR.position.set(0, 0.18, 0);
             wiperPivotR.add(bladeR);
-            wiperPivotR.rotation.z = -1.42;
+            wiperPivotR.rotation.z = 1.48;
             cockpit.add(wiperPivotR);
             this.cockpitWiperR = wiperPivotR;
 
@@ -12735,6 +12860,46 @@
             this.cockpitGroup = cockpit;
             this.syncCockpitCarVisibility(isCockpitNow);
             return cockpit;
+        }
+
+        updateCockpitDashTexture(state) {
+            const ctx = this._cockpitDashCtx;
+            const tex = this._cockpitDashTexture;
+            if (!ctx || !tex || !state) return;
+            const spd = Math.round(state.speed || 0);
+            const rpmFrac = Math.max(0, Math.min(1, ((state.rpm || 1000) - (state.idleRpm || 1000)) / Math.max(1, (state.maxRpm || 8500) - (state.idleRpm || 1000))));
+            const gear = state.gear || (spd < 45 ? 1 : spd < 90 ? 2 : spd < 140 ? 3 : spd < 195 ? 4 : spd < 255 ? 5 : 6);
+            if (spd === this._lastCockpitDashSpeed && gear === this._lastCockpitDashGear && Math.abs(rpmFrac - (this._lastCockpitDashRpm || 0)) < 0.04) {
+                return;
+            }
+            this._lastCockpitDashSpeed = spd;
+            this._lastCockpitDashGear = gear;
+            this._lastCockpitDashRpm = rpmFrac;
+            try {
+                ctx.fillStyle = '#070b14';
+                ctx.fillRect(0, 0, 256, 128);
+                // Top RPM bar background
+                ctx.fillStyle = '#1e293b';
+                ctx.fillRect(16, 12, 224, 14);
+                // Active RPM bar
+                ctx.fillStyle = rpmFrac > 0.85 ? '#ef4444' : (rpmFrac > 0.65 ? '#f59e0b' : '#38bdf8');
+                ctx.fillRect(16, 12, Math.round(224 * rpmFrac), 14);
+                // Digital Speed readout
+                ctx.fillStyle = '#f8fafc';
+                ctx.font = 'bold 54px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText(String(spd), 112, 84);
+                ctx.fillStyle = '#38bdf8';
+                ctx.font = 'bold 14px sans-serif';
+                ctx.fillText('KM/H', 112, 108);
+                // Gear badge
+                ctx.fillStyle = '#ef4444';
+                ctx.fillRect(188, 44, 48, 52);
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 28px sans-serif';
+                ctx.fillText('D' + gear, 212, 80);
+                tex.needsUpdate = true;
+            } catch (_) {}
         }
 
         syncCockpitCarVisibility(isCockpit) {
@@ -13614,7 +13779,10 @@
                     });
                 }
 
-                // 4. 1st-Person Cockpit Interior Rig Animations (Steering wheel, RPM Shift Lights, Wipers)
+                // 4. 1st-Person Cockpit Interior Rig Animations (Steering wheel, Digital Dash, RPM Shift Lights, Wipers)
+                if (this.cockpitGroup && this.cockpitGroup.visible) {
+                    this.updateCockpitDashTexture(state);
+                }
                 if (this.cockpitSteeringWheel) {
                     this.cockpitSteeringWheel.rotation.z = -(state.steerAngle || 0) * 2.35;
                 }
@@ -13643,12 +13811,12 @@
                         const wiperSpeed = this.currentActiveWeather === 'rain' ? 6.5 : 4.2;
                         this.wiperPhase = (this.wiperPhase || 0) + dt * wiperSpeed;
                         const sweep = (Math.sin(this.wiperPhase) + 1) * 0.5; // 0..1
-                        const wiperAngle = -1.42 + sweep * 1.15;
+                        const wiperAngle = 1.48 - sweep * 1.15;
                         this.cockpitWiperL.rotation.z = wiperAngle;
                         this.cockpitWiperR.rotation.z = wiperAngle;
                     } else {
-                        this.cockpitWiperL.rotation.z += (-1.42 - this.cockpitWiperL.rotation.z) * Math.min(1.0, 8.0 * dt);
-                        this.cockpitWiperR.rotation.z += (-1.42 - this.cockpitWiperR.rotation.z) * Math.min(1.0, 8.0 * dt);
+                        this.cockpitWiperL.rotation.z += (1.48 - this.cockpitWiperL.rotation.z) * Math.min(1.0, 8.0 * dt);
+                        this.cockpitWiperR.rotation.z += (1.48 - this.cockpitWiperR.rotation.z) * Math.min(1.0, 8.0 * dt);
                     }
                 }
 
@@ -14453,13 +14621,18 @@
             // In portrait aspect, elevate camera slightly so the vehicle sits higher in frame,
             // preventing lower HUD gauges (speedometer & nitro) from covering the bumper and plate.
             const accelLag = (!isHood && !isTopDown && !isCockpit) ? ((this.keys && this.keys.gas) ? 0.30 : ((this.keys && this.keys.brake) ? -0.25 : 0)) : 0;
+            const yaw = state.yawAngle || 0;
+            const cosYaw = Math.cos(yaw);
+            const sinYaw = Math.sin(yaw);
             const targetCamX = isCockpit
-                ? (state.x + mode.offset.x)
+                ? (state.x + mode.offset.x * cosYaw + mode.offset.z * sinYaw)
                 : (isTopDown ? (state.x * 0.65) : (isHood ? state.x : state.x * 0.75));
             const targetCamY = isCockpit
                 ? (mode.offset.y + (state.downforceY || 0) + (state.suspensionY || 0))
                 : (mode.offset.y + (isPortrait && !isHood && !isTopDown ? 0.85 : 0));
-            const targetCamZ = state.z + mode.offset.z - (isPortrait && !isHood && !isTopDown && !isCockpit ? 1.05 : 0) - accelLag * Math.min(1.0, state.speed / 100);
+            const targetCamZ = isCockpit
+                ? (state.z - mode.offset.x * sinYaw + mode.offset.z * cosYaw)
+                : (state.z + mode.offset.z - (isPortrait && !isHood && !isTopDown && !isCockpit ? 1.05 : 0) - accelLag * Math.min(1.0, state.speed / 100));
 
             // 2. Smooth spring follow for camera position (glides smoothly across lanes without snapping)
             const posLerp = isCockpit ? 28.0 : (isHood ? 16.0 : (isTopDown ? 12.0 : 6.0));
@@ -14497,15 +14670,21 @@
             // diagonally across the screen when steering. In drift, adds gentle slide anticipation.
             const driftLookBias = (state.isDrifting && !isHood && !isTopDown && !isCockpit) ? state.yawAngle * 0.16 : 0;
             const targetLookX = isCockpit
-                ? (state.x + mode.lookOffset.x + Math.sin(state.yawAngle || 0) * 6.0)
+                ? (state.x + mode.lookOffset.x * cosYaw + mode.lookOffset.z * sinYaw)
                 : (isTopDown ? (state.x * 0.65) : (isHood ? state.x : (this.camPos.x * 0.82 + state.x * 0.18 + driftLookBias)));
             const targetLookY = isCockpit
-                ? (mode.lookOffset.y - (state.pitchSquat || 0) * 4.5)
+                ? (mode.lookOffset.y - (state.pitchSquat || 0) * mode.lookOffset.z)
                 : (mode.lookOffset.y - (isPortrait && !isHood && !isTopDown ? 0.45 : 0));
-            const targetLookZ = state.z + mode.lookOffset.z;
+            const targetLookZ = isCockpit
+                ? (state.z - mode.lookOffset.x * sinYaw + mode.lookOffset.z * cosYaw)
+                : (state.z + mode.lookOffset.z);
 
             const lookLerp = isCockpit ? 24.0 : ((isHood || isTopDown) ? 16.0 : 6.5);
-            this.camLook.x += (targetLookX - this.camLook.x) * Math.min(1.0, lookLerp * dt);
+            if (isCockpit) {
+                this.camLook.x = targetLookX;
+            } else {
+                this.camLook.x += (targetLookX - this.camLook.x) * Math.min(1.0, lookLerp * dt);
+            }
             this.camLook.y = targetLookY;
             this.camLook.z = targetLookZ;
 

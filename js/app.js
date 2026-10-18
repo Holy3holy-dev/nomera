@@ -16041,6 +16041,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         let raceRadioTimerId = null;
         let raceRadioStep = 0;
         let raceRadioAudioCtx = null;
+        let raceRadioNoiseBuffer = null;
+        let raceRadioMasterBus = null;
+        let raceRadioDelayBus = null;
 
         function ensureRaceRadioAudioContext() {
             try {
@@ -16054,6 +16057,50 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 }
                 if (raceRadioAudioCtx && raceRadioAudioCtx.state === 'suspended' && typeof raceRadioAudioCtx.resume === 'function') {
                     raceRadioAudioCtx.resume().catch(() => {});
+                }
+                if (raceRadioAudioCtx && !raceRadioNoiseBuffer && typeof raceRadioAudioCtx.createBuffer === 'function') {
+                    const sr = raceRadioAudioCtx.sampleRate || 44100;
+                    const len = Math.floor(sr * 0.35);
+                    const buf = raceRadioAudioCtx.createBuffer(1, len, sr);
+                    const data = buf.getChannelData ? buf.getChannelData(0) : null;
+                    if (data) {
+                        for (let i = 0; i < len; i++) {
+                            data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (sr * 0.12));
+                        }
+                    }
+                    raceRadioNoiseBuffer = buf;
+                }
+                if (raceRadioAudioCtx && !raceRadioMasterBus) {
+                    const masterGain = raceRadioAudioCtx.createGain();
+                    masterGain.gain.setValueAtTime(0.9, raceRadioAudioCtx.currentTime || 0);
+                    if (typeof raceRadioAudioCtx.createDynamicsCompressor === 'function') {
+                        const comp = raceRadioAudioCtx.createDynamicsCompressor();
+                        if (comp.threshold) comp.threshold.setValueAtTime(-16, raceRadioAudioCtx.currentTime || 0);
+                        if (comp.ratio) comp.ratio.setValueAtTime(4, raceRadioAudioCtx.currentTime || 0);
+                        masterGain.connect(comp);
+                        comp.connect(raceRadioAudioCtx.destination);
+                    } else {
+                        masterGain.connect(raceRadioAudioCtx.destination);
+                    }
+                    raceRadioMasterBus = masterGain;
+
+                    if (typeof raceRadioAudioCtx.createDelay === 'function') {
+                        const delay = raceRadioAudioCtx.createDelay(1.0);
+                        const fb = raceRadioAudioCtx.createGain();
+                        const dFilter = raceRadioAudioCtx.createBiquadFilter();
+                        const wet = raceRadioAudioCtx.createGain();
+                        delay.delayTime.setValueAtTime(0.22, raceRadioAudioCtx.currentTime || 0);
+                        fb.gain.setValueAtTime(0.28, raceRadioAudioCtx.currentTime || 0);
+                        dFilter.type = 'lowpass';
+                        dFilter.frequency.setValueAtTime(2200, raceRadioAudioCtx.currentTime || 0);
+                        wet.gain.setValueAtTime(0.26, raceRadioAudioCtx.currentTime || 0);
+                        delay.connect(dFilter);
+                        dFilter.connect(fb);
+                        fb.connect(delay);
+                        dFilter.connect(wet);
+                        wet.connect(raceRadioMasterBus);
+                        raceRadioDelayBus = delay;
+                    }
                 }
             } catch (_) {}
             return raceRadioAudioCtx;
@@ -16085,6 +16132,92 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         }
         window.stopRaceRadioAudio = stopRaceRadioAudio;
 
+        function triggerRadioDrum(ctx, dest, now, type, volScale) {
+            try {
+                if (type === 'kick' || type === '808') {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = type === '808' ? 'triangle' : 'sine';
+                    osc.frequency.setValueAtTime(type === '808' ? 155 : 140, now);
+                    osc.frequency.exponentialRampToValueAtTime(type === '808' ? 38.9 : 46.0, now + 0.065);
+                    const dur = type === '808' ? 0.24 : 0.16;
+                    gain.gain.setValueAtTime((type === '808' ? 0.28 : 0.24) * volScale, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + dur);
+                    osc.connect(gain);
+                    gain.connect(dest);
+                    osc.start(now);
+                    osc.stop(now + dur + 0.01);
+                } else if (type === 'snare' || type === 'hat' || type === 'openhat' || type === 'squelch') {
+                    if (type === 'snare') {
+                        const body = ctx.createOscillator();
+                        const bGain = ctx.createGain();
+                        body.type = 'triangle';
+                        body.frequency.setValueAtTime(195, now);
+                        body.frequency.exponentialRampToValueAtTime(105, now + 0.07);
+                        bGain.gain.setValueAtTime(0.14 * volScale, now);
+                        bGain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+                        body.connect(bGain);
+                        bGain.connect(dest);
+                        body.start(now);
+                        body.stop(now + 0.10);
+                    }
+                    if (raceRadioNoiseBuffer && typeof ctx.createBufferSource === 'function') {
+                        const src = ctx.createBufferSource();
+                        src.buffer = raceRadioNoiseBuffer;
+                        const flt = ctx.createBiquadFilter();
+                        const nGain = ctx.createGain();
+                        flt.type = type === 'squelch' ? 'bandpass' : 'highpass';
+                        flt.frequency.setValueAtTime(type === 'snare' ? 1100 : (type === 'squelch' ? 1650 : 6800), now);
+                        const dur = type === 'snare' ? 0.15 : (type === 'openhat' ? 0.14 : (type === 'squelch' ? 0.08 : 0.04));
+                        const amp = type === 'snare' ? 0.15 : (type === 'openhat' ? 0.065 : (type === 'squelch' ? 0.08 : 0.045));
+                        nGain.gain.setValueAtTime(amp * volScale, now);
+                        nGain.gain.exponentialRampToValueAtTime(0.001, now + dur);
+                        src.connect(flt);
+                        flt.connect(nGain);
+                        nGain.connect(dest);
+                        src.start(now);
+                        src.stop(now + dur + 0.01);
+                    } else {
+                        const fallbackOsc = ctx.createOscillator();
+                        const fGain = ctx.createGain();
+                        fallbackOsc.type = 'square';
+                        fallbackOsc.frequency.setValueAtTime(type === 'snare' ? 220 : 5200, now);
+                        fGain.gain.setValueAtTime(0.04 * volScale, now);
+                        fGain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
+                        fallbackOsc.connect(fGain);
+                        fGain.connect(dest);
+                        fallbackOsc.start(now);
+                        fallbackOsc.stop(now + 0.05);
+                    }
+                }
+            } catch (_) {}
+        }
+
+        function triggerRadioChordPad(ctx, dest, now, freqs, duration, volScale, cutoff = 950) {
+            try {
+                const filter = ctx.createBiquadFilter();
+                const gain = ctx.createGain();
+                filter.type = 'lowpass';
+                filter.frequency.setValueAtTime(cutoff * 0.65, now);
+                filter.frequency.exponentialRampToValueAtTime(cutoff * 1.35, now + duration * 0.5);
+                gain.gain.setValueAtTime(0.002, now);
+                gain.gain.linearRampToValueAtTime
+                    ? gain.gain.linearRampToValueAtTime(0.055 * volScale, now + 0.06)
+                    : gain.gain.setValueAtTime(0.055 * volScale, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+                filter.connect(gain);
+                gain.connect(dest);
+                freqs.forEach((f, idx) => {
+                    const osc = ctx.createOscillator();
+                    osc.type = idx % 2 === 0 ? 'sawtooth' : 'triangle';
+                    osc.frequency.setValueAtTime(f * (1 + (idx - 1) * 0.003), now);
+                    osc.connect(filter);
+                    osc.start(now);
+                    osc.stop(now + duration + 0.02);
+                });
+            } catch (_) {}
+        }
+
         function playRaceRadioStepSound() {
             if (typeof isMuted !== 'undefined' && isMuted) return;
             if (typeof sound !== 'undefined' && sound && typeof sound.preferences === 'function') {
@@ -16099,15 +16232,34 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 ? (sound.preferences().volume ?? 0.55)
                 : 0.55;
             const volScale = Math.max(0.25, Math.min(1.6, prefsVol * 1.45));
+            const dest = raceRadioMasterBus || ctx.destination;
 
             const now = ctx.currentTime;
-            const step = raceRadioStep++ % 16;
+            const step64 = raceRadioStep++ % 64;
+            const bar = Math.floor(step64 / 16); // 0..3
+            const step = step64 % 16;           // 0..15
 
             try {
                 if (raceRadioStation === 'phonk') {
-                    // 1. Cowbell-мелодия (Memphis Drift Phonk)
-                    const cowbellNotes = [587.33, 0, 587.33, 698.46, 783.99, 0, 698.46, 587.33, 523.25, 0, 587.33, 698.46, 880.0, 783.99, 698.46, 587.33];
-                    const noteFreq = cowbellNotes[step];
+                    // 1. Dark Atmospheric Phonk Pad on bar downbeats (Dm -> Dm/F -> Gm -> A7)
+                    if (step === 0) {
+                        const phonkChords = [
+                            [146.83, 174.61, 220.0],
+                            [174.61, 220.0, 261.63],
+                            [196.0, 233.08, 293.66],
+                            [138.59, 164.81, 220.0]
+                        ];
+                        triggerRadioChordPad(ctx, dest, now, phonkChords[bar], 1.65, volScale * 0.85, 780);
+                    }
+
+                    // 2. 4-Bar Memphis Drift Phonk Cowbell Lead (Kordhell / DVRST style)
+                    const cowbellBars = [
+                        [587.33, 0, 587.33, 698.46, 783.99, 0, 880.0, 783.99, 698.46, 0, 587.33, 698.46, 783.99, 698.46, 587.33, 523.25],
+                        [587.33, 0, 587.33, 698.46, 932.33, 0, 880.0, 783.99, 698.46, 783.99, 698.46, 587.33, 659.25, 0, 523.25, 587.33],
+                        [698.46, 0, 698.46, 783.99, 880.0, 0, 932.33, 880.0, 783.99, 0, 698.46, 783.99, 880.0, 783.99, 698.46, 587.33],
+                        [880.0, 0, 783.99, 698.46, 659.25, 0, 698.46, 659.25, 587.33, 523.25, 587.33, 698.46, 587.33, 0, 440.0, 523.25]
+                    ];
+                    const noteFreq = cowbellBars[bar][step];
                     if (noteFreq > 0) {
                         const osc1 = ctx.createOscillator();
                         const osc2 = ctx.createOscillator();
@@ -16116,101 +16268,144 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                         osc1.type = 'square';
                         osc2.type = 'sawtooth';
                         osc1.frequency.setValueAtTime(noteFreq, now);
-                        osc2.frequency.setValueAtTime(noteFreq * 1.48, now);
+                        osc2.frequency.setValueAtTime(noteFreq * 1.481, now); // Authentic TR-808 cowbell ratio
                         filter.type = 'bandpass';
-                        filter.frequency.setValueAtTime(1050, now);
-                        filter.Q.setValueAtTime(2.6, now);
-                        gain.gain.setValueAtTime(0.13 * volScale, now);
-                        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.13);
+                        filter.frequency.setValueAtTime(1120, now);
+                        filter.Q.setValueAtTime(3.1, now);
+                        gain.gain.setValueAtTime(0.115 * volScale, now);
+                        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.135);
                         osc1.connect(filter);
                         osc2.connect(filter);
                         filter.connect(gain);
-                        gain.connect(ctx.destination);
+                        gain.connect(dest);
+                        if (raceRadioDelayBus) gain.connect(raceRadioDelayBus);
                         osc1.start(now);
                         osc2.start(now);
-                        osc1.stop(now + 0.14);
-                        osc2.stop(now + 0.14);
+                        osc1.stop(now + 0.145);
+                        osc2.stop(now + 0.145);
                     }
-                    // 2. 808 Sub-Bass Kick на долях 0, 3, 6, 8, 11, 14
-                    if (step === 0 || step === 3 || step === 6 || step === 8 || step === 11 || step === 14) {
+
+                    // 3. 808 Sub-Bass & Punchy Kick on syncopated Phonk pattern
+                    const bassRoots = [73.42, 87.31, 98.0, 65.41]; // D2, F2, G2, C2
+                    if (step === 0 || step === 3 || step === 6 || step === 8 || step === 10 || step === 14) {
+                        triggerRadioDrum(ctx, dest, now, '808', volScale);
                         const sub = ctx.createOscillator();
+                        const subFlt = ctx.createBiquadFilter();
                         const subGain = ctx.createGain();
-                        sub.type = 'triangle';
-                        sub.frequency.setValueAtTime(135, now);
-                        sub.frequency.exponentialRampToValueAtTime(48, now + 0.16);
-                        subGain.gain.setValueAtTime(0.22 * volScale, now);
-                        subGain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
-                        sub.connect(subGain);
-                        subGain.connect(ctx.destination);
+                        sub.type = 'sawtooth';
+                        sub.frequency.setValueAtTime(bassRoots[bar], now);
+                        subFlt.type = 'lowpass';
+                        subFlt.frequency.setValueAtTime(210, now);
+                        subGain.gain.setValueAtTime(0.16 * volScale, now);
+                        subGain.gain.exponentialRampToValueAtTime(0.001, now + 0.21);
+                        sub.connect(subFlt);
+                        subFlt.connect(subGain);
+                        subGain.connect(dest);
                         sub.start(now);
-                        sub.stop(now + 0.19);
+                        sub.stop(now + 0.22);
                     }
-                    // 3. Чёткий хай-хэт / снейр-импульс
-                    if (step === 4 || step === 12 || step % 2 === 1) {
-                        const hatOsc = ctx.createOscillator();
-                        const hatFilter = ctx.createBiquadFilter();
-                        const hatGain = ctx.createGain();
-                        hatOsc.type = 'square';
-                        hatOsc.frequency.setValueAtTime((step === 4 || step === 12) ? 240 : 4200, now);
-                        hatFilter.type = 'highpass';
-                        hatFilter.frequency.setValueAtTime((step === 4 || step === 12) ? 180 : 2800, now);
-                        hatGain.gain.setValueAtTime(((step === 4 || step === 12) ? 0.09 : 0.035) * volScale, now);
-                        hatGain.gain.exponentialRampToValueAtTime(0.001, now + ((step === 4 || step === 12) ? 0.09 : 0.035));
-                        hatOsc.connect(hatFilter);
-                        hatFilter.connect(hatGain);
-                        hatGain.connect(ctx.destination);
-                        hatOsc.start(now);
-                        hatOsc.stop(now + 0.095);
+
+                    // 4. Snare on beats 2 & 4 + crisp trap hi-hats
+                    if (step === 4 || step === 12) {
+                        triggerRadioDrum(ctx, dest, now, 'snare', volScale);
+                    }
+                    if (step % 2 === 1 || (bar % 2 === 1 && step >= 13)) {
+                        triggerRadioDrum(ctx, dest, now, step === 7 || step === 15 ? 'openhat' : 'hat', volScale);
                     }
                 } else if (raceRadioStation === 'synthwave') {
-                    // 1. Retrowave Arpeggio (A-minor -> F -> C -> G)
-                    const arpNotes = [220, 261.63, 329.63, 440, 174.61, 220, 261.63, 349.23, 196.0, 246.94, 293.66, 392.0, 164.81, 196.0, 246.94, 329.63];
-                    const freq = arpNotes[step];
+                    // 1. Lush Juno-106 Stereo Poly-Synth Chords (Am7 -> Fmaj7 -> Cmaj7 -> G6)
+                    const synthChords = [
+                        [220.0, 261.63, 329.63, 392.0],
+                        [174.61, 220.0, 261.63, 329.63],
+                        [261.63, 329.63, 392.0, 493.88],
+                        [196.0, 246.94, 293.66, 329.63]
+                    ];
+                    if (step === 0) {
+                        triggerRadioChordPad(ctx, dest, now, synthChords[bar], 1.85, volScale, 1350);
+                    }
+
+                    // 2. Soaring Outrun Arpeggio & Lead Melody
+                    const chord = synthChords[bar];
+                    const arpPattern = [0, 1, 2, 3, 2, 1, 0, 2, 1, 2, 3, 2, 3, 1, 2, 0];
+                    const freq = chord[arpPattern[step]] * (step % 4 === 0 ? 2.0 : 1.0);
                     const osc = ctx.createOscillator();
                     const filter = ctx.createBiquadFilter();
                     const gain = ctx.createGain();
                     osc.type = 'sawtooth';
                     osc.frequency.setValueAtTime(freq, now);
                     filter.type = 'lowpass';
-                    filter.frequency.setValueAtTime(1850, now);
-                    filter.frequency.exponentialRampToValueAtTime(480, now + 0.15);
-                    gain.gain.setValueAtTime(0.125 * volScale, now);
-                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.16);
+                    filter.frequency.setValueAtTime(2200, now);
+                    filter.frequency.exponentialRampToValueAtTime(520, now + 0.14);
+                    gain.gain.setValueAtTime(0.095 * volScale, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
                     osc.connect(filter);
                     filter.connect(gain);
-                    gain.connect(ctx.destination);
+                    gain.connect(dest);
+                    if (raceRadioDelayBus && step % 2 === 0) gain.connect(raceRadioDelayBus);
                     osc.start(now);
-                    osc.stop(now + 0.17);
+                    osc.stop(now + 0.16);
 
-                    // 2. Пульсирующий аналоговый бас (Sub-Octave)
-                    const bassNotes = [110, 110, 110, 110, 87.31, 87.31, 87.31, 87.31, 98.0, 98.0, 98.0, 98.0, 82.41, 82.41, 82.41, 82.41];
+                    // 3. Driving 16th-Note Rolling Analog Bassline
+                    const bassRoots = [110.0, 87.31, 130.81, 98.0];
+                    const bassFreq = bassRoots[bar] * (step % 2 === 1 ? 2.0 : 1.0);
                     const bassOsc = ctx.createOscillator();
+                    const bassFlt = ctx.createBiquadFilter();
                     const bassGain = ctx.createGain();
-                    bassOsc.type = 'triangle';
-                    bassOsc.frequency.setValueAtTime(bassNotes[step], now);
-                    bassGain.gain.setValueAtTime((step % 2 === 0 ? 0.16 : 0.11) * volScale, now);
-                    bassGain.gain.exponentialRampToValueAtTime(0.001, now + 0.14);
-                    bassOsc.connect(bassGain);
-                    bassGain.connect(ctx.destination);
+                    bassOsc.type = 'sawtooth';
+                    bassOsc.frequency.setValueAtTime(bassFreq, now);
+                    bassFlt.type = 'lowpass';
+                    bassFlt.frequency.setValueAtTime(780, now);
+                    bassFlt.frequency.exponentialRampToValueAtTime(190, now + 0.11);
+                    bassGain.gain.setValueAtTime((step % 4 === 0 ? 0.15 : 0.10) * volScale, now);
+                    bassGain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+                    bassOsc.connect(bassFlt);
+                    bassFlt.connect(bassGain);
+                    bassGain.connect(dest);
                     bassOsc.start(now);
-                    bassOsc.stop(now + 0.15);
+                    bassOsc.stop(now + 0.13);
+
+                    // 4. 80s Four-on-the-Floor Drum Beat
+                    if (step % 4 === 0) triggerRadioDrum(ctx, dest, now, 'kick', volScale);
+                    if (step === 4 || step === 12) triggerRadioDrum(ctx, dest, now, 'snare', volScale);
+                    if (step % 2 === 1) triggerRadioDrum(ctx, dest, now, 'hat', volScale);
                 } else if (raceRadioStation === 'dps') {
-                    // Рация ДПС: характерные бипы эфира, радарный импульс и диспетчерский сигнал
-                    if (step === 0 || step === 4 || step === 8 || step === 11 || step === 14) {
+                    // Волна ДПС: Darksynth Pursuit Beat + Полицейский радиоэфир и радар
+                    const darkBassRoots = [82.41, 82.41, 98.0, 110.0]; // E2, E2, G2, A2
+                    const bassOsc = ctx.createOscillator();
+                    const bassFlt = ctx.createBiquadFilter();
+                    const bassGain = ctx.createGain();
+                    bassOsc.type = 'sawtooth';
+                    bassOsc.frequency.setValueAtTime(darkBassRoots[bar] * (step % 4 === 2 ? 1.5 : 1.0), now);
+                    bassFlt.type = 'lowpass';
+                    bassFlt.frequency.setValueAtTime(640, now);
+                    bassFlt.frequency.exponentialRampToValueAtTime(160, now + 0.10);
+                    bassGain.gain.setValueAtTime((step % 4 === 0 ? 0.14 : 0.085) * volScale, now);
+                    bassGain.gain.exponentialRampToValueAtTime(0.001, now + 0.11);
+                    bassOsc.connect(bassFlt);
+                    bassFlt.connect(bassGain);
+                    bassGain.connect(dest);
+                    bassOsc.start(now);
+                    bassOsc.stop(now + 0.12);
+
+                    if (step % 4 === 0) triggerRadioDrum(ctx, dest, now, 'kick', volScale * 0.9);
+                    if (step === 4 || step === 12) triggerRadioDrum(ctx, dest, now, 'snare', volScale * 0.85);
+                    if (step % 2 === 1) triggerRadioDrum(ctx, dest, now, 'hat', volScale * 0.8);
+
+                    // Tactical Police Radio PTT Chirp & Squelch on bar transitions
+                    if ((bar % 2 === 0 && step === 0) || (bar % 2 === 1 && step === 10)) {
+                        triggerRadioDrum(ctx, dest, now, 'squelch', volScale);
                         const beep = ctx.createOscillator();
                         const bGain = ctx.createGain();
-                        beep.type = (step === 4 || step === 14) ? 'triangle' : 'sine';
-                        const tone = step === 0 ? 1320 : (step === 8 ? 980 : (step === 11 ? 1480 : 760));
-                        beep.frequency.setValueAtTime(tone, now);
-                        if (step === 4 || step === 14) {
-                            beep.frequency.exponentialRampToValueAtTime(1180, now + 0.08);
-                        }
-                        bGain.gain.setValueAtTime(0.11 * volScale, now);
-                        bGain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+                        beep.type = 'sine';
+                        beep.frequency.setValueAtTime(step === 0 ? 1280 : 1560, now);
+                        beep.frequency.setValueAtTime(step === 0 ? 1760 : 1040, now + 0.045);
+                        bGain.gain.setValueAtTime(0.075 * volScale, now);
+                        bGain.gain.exponentialRampToValueAtTime(0.001, now + 0.095);
                         beep.connect(bGain);
-                        bGain.connect(ctx.destination);
+                        bGain.connect(dest);
+                        if (raceRadioDelayBus) bGain.connect(raceRadioDelayBus);
                         beep.start(now);
-                        beep.stop(now + 0.10);
+                        beep.stop(now + 0.105);
                     }
                 }
             } catch (_) {}
@@ -16222,7 +16417,8 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             ensureRaceRadioAudioContext();
             const meta = getRaceRadioStationMeta(raceRadioStation);
             const bpm = meta.bpm || 128;
-            const stepMs = Math.max(95, Math.round((60000 / bpm) / 2));
+            // 16th-note step resolution (~110..128ms) for smooth studio-grade drum & synth sequencing
+            const stepMs = Math.max(95, Math.round((60000 / bpm) / 4));
             raceRadioStep = 0;
             playRaceRadioStepSound();
             if (typeof setInterval === 'function') {
