@@ -1829,6 +1829,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             const garageStat = document.getElementById('garage-stat');
             if (collectionStat) collectionStat.textContent = inventory.length;
             if (garageStat) garageStat.textContent = myCars.length;
+            if (typeof updateBulkSellButtons === 'function') updateBulkSellButtons();
         }
 
         // --- ОНЛАЙН ПРИСУТСТВИЕ И СЧЕТЧИК ---
@@ -6694,8 +6695,76 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         }
 
         // --- ИНВЕНТАРЬ ---
+        function isCommonInventoryPlate(item) {
+            const price = Number(item && item.price) || 0;
+            const r = (item && item.rarity && item.rarity.text) ? item.rarity : getRarity(price);
+            return (!r || r.text === 'Обычный' || r.text === 'Базовый' || price <= 2500);
+        }
+
+        function updateBulkSellButtons() {
+            if (typeof document === 'undefined') return;
+            const invArr = Array.isArray(inventory) ? inventory : [];
+            let totalAll = 0;
+            let commonCount = 0;
+            let totalCommon = 0;
+            for (const item of invArr) {
+                const p = Math.max(0, Number(item && item.price) || 0);
+                totalAll += p;
+                if (isCommonInventoryPlate(item)) {
+                    commonCount++;
+                    totalCommon += p;
+                }
+            }
+
+            const summaryEl = document.getElementById('col-plates-summary');
+            if (summaryEl) {
+                summaryEl.textContent = `Всего в коллекции: ${invArr.length} шт. • На сумму: ${totalAll.toLocaleString('ru-RU')} ₽`;
+            }
+
+            const btnAll = document.getElementById('btn-sell-all-plates');
+            if (btnAll) {
+                btnAll.textContent = invArr.length > 0
+                    ? `💸 Продать все номера (${invArr.length} шт. • +${totalAll.toLocaleString('ru-RU')} ₽)`
+                    : '💸 Продать все номера';
+                btnAll.disabled = invArr.length === 0;
+                btnAll.style.opacity = invArr.length === 0 ? '0.5' : '1';
+            }
+
+            const btnHeaderAll = document.getElementById('btn-header-sell-all-plates');
+            if (btnHeaderAll) {
+                btnHeaderAll.textContent = invArr.length > 0
+                    ? `💸 Продать все номера (${invArr.length} шт. • +${totalAll.toLocaleString('ru-RU')} ₽)`
+                    : '💸 Продать все номера';
+                btnHeaderAll.disabled = invArr.length === 0;
+                btnHeaderAll.style.opacity = invArr.length === 0 ? '0.5' : '1';
+            }
+
+            const btnAsideAll = document.getElementById('btn-aside-sell-all-plates');
+            if (btnAsideAll) {
+                btnAsideAll.textContent = invArr.length > 0
+                    ? `💸 Продать все номера (${invArr.length} шт.)`
+                    : '💸 Продать все номера';
+                btnAsideAll.disabled = invArr.length === 0;
+                btnAsideAll.style.opacity = invArr.length === 0 ? '0.5' : '1';
+            }
+
+            const btnCommon = document.getElementById('btn-sell-all-common');
+            if (btnCommon) {
+                btnCommon.textContent = commonCount > 0
+                    ? `💰 Продать обычные (${commonCount} шт. • +${totalCommon.toLocaleString('ru-RU')} ₽)`
+                    : '💰 Продать обычные';
+                btnCommon.disabled = commonCount === 0;
+                btnCommon.style.opacity = commonCount === 0 ? '0.5' : '1';
+            }
+        }
+
         function renderInventory() {
             let list = document.getElementById('inventory-list');
+            updateBulkSellButtons();
+            if (!list) {
+                updateBadge();
+                return;
+            }
             if (inventory.length === 0) {
                 list.innerHTML = `
                     <div class="empty-state" style="grid-column: 1 / -1;">
@@ -6751,6 +6820,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     }).catch(() => {});
                 }
             }
+            saveProgress();
             playCashSound();
             renderInventory();
             if (!silent) {
@@ -6758,28 +6828,45 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             }
         }
 
-        function sellAllPlates(filter = 'common') {
+        async function sellAllPlates(filter = 'all') {
             if (!Array.isArray(inventory) || inventory.length === 0) {
                 notifyUser('Инвентарь пуст!', 'info');
-                return;
+                return false;
             }
+            const mode = (filter === 'common') ? 'common' : 'all';
+            const previewToSell = [];
+            let previewTotalCash = 0;
+            for (const item of inventory) {
+                if (mode === 'all' || isCommonInventoryPlate(item)) {
+                    previewToSell.push(item);
+                    previewTotalCash += Math.max(0, Number(item && item.price) || 0);
+                }
+            }
+            if (previewToSell.length === 0) {
+                notifyUser(mode === 'common' ? 'Нет обычных номеров для продажи' : 'Нет номеров для продажи', 'info');
+                return false;
+            }
+
+            const confirmMsg = mode === 'all'
+                ? `Вы уверены, что хотите продать ВСЕ номера из коллекции (${previewToSell.length} шт.) на сумму +${previewTotalCash.toLocaleString('ru-RU')} ₽? Это действие нельзя отменить.`
+                : `Продать все обычные номера (${previewToSell.length} шт.) на сумму +${previewTotalCash.toLocaleString('ru-RU')} ₽? Редкие и блатные номера останутся в коллекции.`;
+
+            const confirmed = await confirmAction(confirmMsg);
+            if (!confirmed) return false;
+
             const toSell = [];
             const toKeep = [];
             let totalCash = 0;
             for (const item of inventory) {
-                const r = getRarity(Number(item.price) || 0);
-                const isCommon = (!r || r.text === 'Обычный' || r.text === 'Базовый' || (Number(item.price) || 0) <= 2500);
-                if (filter === 'all' || isCommon) {
+                if (mode === 'all' || isCommonInventoryPlate(item)) {
                     toSell.push(item);
-                    totalCash += (Number(item.price) || 0);
+                    totalCash += Math.max(0, Number(item && item.price) || 0);
                 } else {
                     toKeep.push(item);
                 }
             }
-            if (toSell.length === 0) {
-                notifyUser(filter === 'common' ? 'Нет обычных номеров для продажи' : 'Нет номеров для продажи', 'info');
-                return;
-            }
+            if (toSell.length === 0) return false;
+
             inventory = toKeep;
             creditPlayerBalance(totalCash, `Массовая продажа номеров (${toSell.length} шт.)`);
             if (onlineProfile) {
@@ -6796,9 +6883,12 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     }).catch(() => {});
                 }
             }
+            logPlayerActivity('Массовая продажа', `Продал номеров: ${toSell.length} шт. на сумму +${totalCash.toLocaleString('ru-RU')} ₽`);
+            saveProgress();
             playCashSound();
             renderInventory();
             notifyUser(`Продано номеров: ${toSell.length} шт. на сумму +${totalCash.toLocaleString('ru-RU')} ₽!`, 'success');
+            return true;
         }
         window.sellAllPlates = sellAllPlates;
 

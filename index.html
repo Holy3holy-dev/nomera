@@ -448,6 +448,7 @@
                 <div class="collection-summary"><span class="eyebrow">КОЛЛЕКЦИЯ</span>
                     <div class="summary-stat"><strong id="collection-stat">0</strong><span>номеров</span></div>
                     <div class="summary-stat"><strong id="garage-stat">1</strong><span>в гараже</span></div>
+                    <button type="button" class="btn btn-close" id="btn-aside-sell-all-plates" onclick="sellAllPlates('all')" style="margin-top:6px; margin-bottom:4px; padding:7px 10px; font-size:11.5px; font-weight:800; width:100%; background:linear-gradient(135deg,#dc2626,#991b1b); color:#fff; border:1px solid rgba(252,165,165,0.4);">💸 Продать все номера</button>
                     <button class="text-action" onclick="navigateToTab('garage')">В гараж ↗</button>
                     <button class="text-action" onclick="openCollectorBook()" style="margin-top:4px;">📘 Книга коллекционера ↗</button>
                     <button class="text-action" onclick="openVipOrders()" style="margin-top:4px;">📋 Спецзаказы VIP ↗</button>
@@ -465,9 +466,12 @@
         <!-- 2. ВКЛАДКА: ИНВЕНТАРЬ И ДОСТИЖЕНИЯ -->
         <div id="inventory" class="tab-content hidden">
             <div class="section-box">
-                <div class="section-header">
+                <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
                     <div class="section-title">
                         <span>🎒</span> Моя коллекция
+                    </div>
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                        <button type="button" class="btn btn-close" id="btn-header-sell-all-plates" style="font-size: 12px; padding: 8px 14px; width: auto; margin: 0; font-weight: 800; background: linear-gradient(135deg, #dc2626, #991b1b); border: 1px solid rgba(251, 191, 36, 0.45); color: #fff;" onclick="sellAllPlates('all')">💸 Продать все номера</button>
                     </div>
                 </div>
 
@@ -480,9 +484,12 @@
                 </div>
 
                 <div id="col-subtab-plates">
-                    <div style="display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap;" id="col-actions-bar">
-                        <button class="btn btn-dark" style="font-size: 11px; padding: 6px 12px; width: auto;" onclick="sellAllPlates('common')">💰 Продать обычные</button>
-                        <button class="btn btn-close" style="font-size: 11px; padding: 6px 12px; width: auto; margin: 0;" onclick="sellAllPlates('all')">💸 Продать ВСЕ номера</button>
+                    <div style="display: flex; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; align-items: center; justify-content: space-between; background: rgba(15, 23, 42, 0.65); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 10px 12px;" id="col-actions-bar">
+                        <div style="font-size: 12px; color: var(--text-muted); font-weight: 700;" id="col-plates-summary">Всего в коллекции: 0 шт. • На сумму: 0 ₽</div>
+                        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                            <button type="button" class="btn btn-dark" id="btn-sell-all-common" style="font-size: 12px; padding: 8px 14px; width: auto; font-weight: 700;" onclick="sellAllPlates('common')">💰 Продать обычные</button>
+                            <button type="button" class="btn btn-close" id="btn-sell-all-plates" style="font-size: 12px; padding: 8px 14px; width: auto; margin: 0; font-weight: 800; background: linear-gradient(135deg, #ef4444, #b91c1c); color: #fff; border: 1px solid rgba(252, 165, 165, 0.4);" onclick="sellAllPlates('all')">💸 Продать все номера</button>
+                        </div>
                     </div>
                     <div class="inventory-grid" id="inventory-list"></div>
                 </div>
@@ -2008,6 +2015,6 @@
     </script>
     <script src="./js/race-effects.js?v=6883d3af7d80"></script>
     <script src="./js/car-3d.js?v=5185799fb037"></script>
-    <script src="./js/app.js?v=80b68465b51f"></script>
+    <script src="./js/app.js?v=681b8e19b54e"></script>
 </body>
 </html>

@@ -1179,7 +1179,7 @@ describe('Collector Book & Car-Plate Synergy (RUS / KZ / USA / UAE)', () => {
     assert.ok(uaeUncommon.price < 18000, `Expected UAE Необычный forced plate < 18000 ₽, got ${uaeUncommon.price}`);
   });
 
-  test('Japan (JPN) plates and Ultra-Rare Special plates (USSR, Diplomatic CD, MVD, Military, Federal, JDM Glow) work across server, 2D UI, and 3D bumpers with ultra-low drop chance', () => {
+  test('Japan (JPN) plates and Ultra-Rare Special plates (USSR, Diplomatic CD, MVD, Military, Federal, JDM Glow) work across server, 2D UI, and 3D bumpers with ultra-low drop chance', async () => {
     const { Car3DManager, drawnTexts } = setup3DPlateTestEnv();
     const { createApp } = require('./helpers/create-app.cjs');
     const app = createApp();
@@ -1292,6 +1292,40 @@ describe('Collector Book & Car-Plate Synergy (RUS / KZ / USA / UAE)', () => {
       if (c.ULTRA_SPECIAL_RUS_SERIES.includes(series)) specialCountIn500++;
     }
     assert.ok(specialCountIn500 <= 5, `Ultra-special series must have a super low drop rate (~0.2%), got ${specialCountIn500}/500`);
+
+    // 6. Bulk Sell All Plates ('Продать все номера') requires confirmation and updates live button counters
+    app.run(`
+      balance = 10000;
+      inventory = [
+        { text: 'А 124 ВС | 77 RUS', price: 1500, rarity: { text: 'Обычный' }, country: 'RUS' },
+        { text: 'А 777 МР | 77 RUS', price: 5000000, rarity: { text: 'БЛАТНОЙ' }, country: 'RUS' }
+      ];
+      renderInventory();
+    `);
+    assert.match(app.run("document.getElementById('btn-sell-all-plates').textContent"), /2 шт\./);
+    assert.match(app.run("document.getElementById('btn-sell-all-common').textContent"), /1 шт\./);
+
+    // Cancel confirmation -> nothing sold
+    app.run("window._testConfirmResult = false; confirmAction = (msg) => { window._lastConfirmMsg = msg; return Promise.resolve(window._testConfirmResult); };");
+    const cancelledRes = await app.run("sellAllPlates('all')");
+    assert.equal(cancelledRes, false);
+    assert.equal(app.run("inventory.length"), 2);
+    assert.equal(app.run("balance"), 10000);
+    assert.match(app.run("window._lastConfirmMsg"), /ВСЕ номера из коллекции \(2 шт\.\)/);
+
+    // Confirm sellAllPlates('common') -> only common plate sold
+    app.run("window._testConfirmResult = true;");
+    const commonSoldRes = await app.run("sellAllPlates('common')");
+    assert.equal(commonSoldRes, true);
+    assert.equal(app.run("inventory.length"), 1);
+    assert.equal(app.run("balance"), 11500);
+
+    // Confirm sellAllPlates('all') -> remaining rare plate sold
+    const allSoldRes = await app.run("sellAllPlates('all')");
+    assert.equal(allSoldRes, true);
+    assert.equal(app.run("inventory.length"), 0);
+    assert.equal(app.run("balance"), 5011500);
+    assert.equal(app.run("document.getElementById('btn-sell-all-plates').disabled"), true);
   });
 });
 
