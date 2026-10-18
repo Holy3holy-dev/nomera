@@ -330,10 +330,193 @@
             inductionType: 'turbo', inductionBoost: 0.55, spoolRpmRatio: 0.30, dragCoeff: 0.21, downforceCoeff: 0.78,
             gearRatios: [-3.20, 0, 3.70, 2.32, 1.68, 1.28, 1.00, 0.80, 0.64], finalDrive: 3.12, wheelRadius: 0.35,
             springStiffness: 96000, dampingRate: 11000, rollBalance: 0.46, yawSpeedMult: 1.42
+        },
+        // =========================================================================
+        // NFS MOST WANTED BLACKLIST #15-#1 & BONUS 3D MODELS
+        // =========================================================================
+        "BMW M3 E46 GTR (NFS Most Wanted)": {
+            id: 'm3gtr', category: 'nfsmw', drivetrain: 'RWD', torqueSplit: 0.0,
+            massKg: 1120, wheelbase: 2.73, trackWidth: 1.64, cgHeight: 0.37, frontWeightBias: 0.50,
+            idleRpm: 1150, peakTorqueRpm: 7200, redlineRpm: 8800, maxRpm: 9200,
+            baseTorqueNm: 540, topSpeedKmh: 388, accelRating: 7.4, handlingRating: 9.8, driftFactor: 1.52,
+            inductionType: 'na', inductionBoost: 0.28, dragCoeff: 0.24, downforceCoeff: 0.76,
+            gearRatios: [-3.15, 0, 3.68, 2.38, 1.72, 1.32, 1.04, 0.84], finalDrive: 3.42, wheelRadius: 0.33,
+            springStiffness: 94000, dampingRate: 10800, rollBalance: 0.49, yawSpeedMult: 1.46,
+            engineSoundClass: 'm3gtr'
+        },
+        "Chevrolet Corvette C6.R (Cross NFS MW)": {
+            id: 'corvette_cross', category: 'nfsmw', drivetrain: 'RWD', torqueSplit: 0.0,
+            massKg: 1290, wheelbase: 2.69, trackWidth: 1.66, cgHeight: 0.39, frontWeightBias: 0.51,
+            idleRpm: 950, peakTorqueRpm: 5400, redlineRpm: 7400, maxRpm: 7700,
+            baseTorqueNm: 780, topSpeedKmh: 382, accelRating: 7.1, handlingRating: 9.3, driftFactor: 1.64,
+            inductionType: 'supercharger', inductionBoost: 0.38, spoolRpmRatio: 0.18, dragCoeff: 0.25, downforceCoeff: 0.68,
+            gearRatios: [-3.20, 0, 3.55, 2.28, 1.64, 1.24, 0.98, 0.78], finalDrive: 3.42, wheelRadius: 0.34,
+            springStiffness: 88000, dampingRate: 10000, rollBalance: 0.48, yawSpeedMult: 1.38,
+            engineSoundClass: 'v8'
+        },
+        "Ford Mustang GT (Razor NFS MW)": {
+            id: 'mustang_razor', category: 'nfsmw', drivetrain: 'RWD', torqueSplit: 0.0,
+            massKg: 1540, wheelbase: 2.72, trackWidth: 1.59, cgHeight: 0.45, frontWeightBias: 0.54,
+            idleRpm: 880, peakTorqueRpm: 4600, redlineRpm: 6800, maxRpm: 7100,
+            baseTorqueNm: 690, topSpeedKmh: 342, accelRating: 6.2, handlingRating: 8.4, driftFactor: 1.82,
+            inductionType: 'supercharger', inductionBoost: 0.36, spoolRpmRatio: 0.16, dragCoeff: 0.30, downforceCoeff: 0.44,
+            gearRatios: [-3.30, 0, 3.65, 2.32, 1.65, 1.26, 1.00, 0.79], finalDrive: 3.55, wheelRadius: 0.34,
+            springStiffness: 72000, dampingRate: 8400, rollBalance: 0.46, yawSpeedMult: 1.36,
+            engineSoundClass: 'v8'
+        },
+        "Mercedes-Benz SLR McLaren (Bull #2 MW)": {
+            id: 'mclaren', category: 'nfsmw', drivetrain: 'RWD', torqueSplit: 0.0,
+            massKg: 1690, wheelbase: 2.70, trackWidth: 1.64, cgHeight: 0.41, frontWeightBias: 0.49,
+            idleRpm: 900, peakTorqueRpm: 4000, redlineRpm: 7000, maxRpm: 7300,
+            baseTorqueNm: 820, topSpeedKmh: 378, accelRating: 6.9, handlingRating: 9.0, driftFactor: 1.50,
+            inductionType: 'supercharger', inductionBoost: 0.42, spoolRpmRatio: 0.15, dragCoeff: 0.25, downforceCoeff: 0.58,
+            gearRatios: [-3.20, 0, 3.60, 2.30, 1.65, 1.25, 1.00, 0.80], finalDrive: 3.30, wheelRadius: 0.35,
+            springStiffness: 84000, dampingRate: 9600, rollBalance: 0.48, yawSpeedMult: 1.34,
+            engineSoundClass: 'v8'
+        },
+        "Aston Martin DB9 (Ronnie #3 MW)": {
+            id: 'db9', category: 'nfsmw', drivetrain: 'RWD', torqueSplit: 0.0,
+            massKg: 1710, wheelbase: 2.74, trackWidth: 1.57, cgHeight: 0.43, frontWeightBias: 0.50,
+            idleRpm: 950, peakTorqueRpm: 5000, redlineRpm: 7300, maxRpm: 7600,
+            baseTorqueNm: 660, topSpeedKmh: 356, accelRating: 6.3, handlingRating: 8.9, driftFactor: 1.48,
+            inductionType: 'na', inductionBoost: 0.22, dragCoeff: 0.27, downforceCoeff: 0.48,
+            gearRatios: [-3.25, 0, 3.70, 2.35, 1.68, 1.28, 1.02, 0.82], finalDrive: 3.45, wheelRadius: 0.34,
+            springStiffness: 78000, dampingRate: 9000, rollBalance: 0.49, yawSpeedMult: 1.32,
+            engineSoundClass: 'supercar'
+        },
+        "Dodge Viper SRT10 (JV #4 MW)": {
+            id: 'viper_jv', category: 'nfsmw', drivetrain: 'RWD', torqueSplit: 0.0,
+            massKg: 1530, wheelbase: 2.51, trackWidth: 1.65, cgHeight: 0.40, frontWeightBias: 0.49,
+            idleRpm: 850, peakTorqueRpm: 4200, redlineRpm: 6400, maxRpm: 6700,
+            baseTorqueNm: 790, topSpeedKmh: 365, accelRating: 6.7, handlingRating: 8.7, driftFactor: 1.76,
+            inductionType: 'supercharger', inductionBoost: 0.35, spoolRpmRatio: 0.18, dragCoeff: 0.27, downforceCoeff: 0.54,
+            gearRatios: [-3.20, 0, 3.50, 2.24, 1.60, 1.22, 0.96, 0.76], finalDrive: 3.35, wheelRadius: 0.35,
+            springStiffness: 82000, dampingRate: 9400, rollBalance: 0.46, yawSpeedMult: 1.40,
+            engineSoundClass: 'v8'
+        },
+        "Chevrolet Corvette C6 (Webster #5 MW)": {
+            id: 'corvette_webster', category: 'nfsmw', drivetrain: 'RWD', torqueSplit: 0.0,
+            massKg: 1460, wheelbase: 2.68, trackWidth: 1.62, cgHeight: 0.41, frontWeightBias: 0.51,
+            idleRpm: 900, peakTorqueRpm: 4800, redlineRpm: 7000, maxRpm: 7300,
+            baseTorqueNm: 710, topSpeedKmh: 360, accelRating: 6.5, handlingRating: 8.9, driftFactor: 1.60,
+            inductionType: 'supercharger', inductionBoost: 0.34, spoolRpmRatio: 0.20, dragCoeff: 0.26, downforceCoeff: 0.52,
+            gearRatios: [-3.20, 0, 3.58, 2.30, 1.65, 1.25, 0.99, 0.79], finalDrive: 3.42, wheelRadius: 0.34,
+            springStiffness: 80000, dampingRate: 9200, rollBalance: 0.48, yawSpeedMult: 1.35,
+            engineSoundClass: 'v8'
+        },
+        "Lamborghini Gallardo (Ming #6 MW)": {
+            id: 'gallardo_ming', category: 'nfsmw', drivetrain: 'AWD', torqueSplit: 0.30,
+            massKg: 1430, wheelbase: 2.56, trackWidth: 1.64, cgHeight: 0.40, frontWeightBias: 0.42,
+            idleRpm: 1050, peakTorqueRpm: 6200, redlineRpm: 8200, maxRpm: 8500,
+            baseTorqueNm: 630, topSpeedKmh: 362, accelRating: 6.6, handlingRating: 9.2, driftFactor: 1.44,
+            inductionType: 'na', inductionBoost: 0.20, dragCoeff: 0.26, downforceCoeff: 0.54,
+            gearRatios: [-3.30, 0, 3.88, 2.42, 1.79, 1.38, 1.10, 0.89], finalDrive: 3.60, wheelRadius: 0.34,
+            springStiffness: 84000, dampingRate: 9600, rollBalance: 0.48, yawSpeedMult: 1.36,
+            engineSoundClass: 'supercar'
+        },
+        "Mercedes-Benz CLK 500 (Kaze #7 MW)": {
+            id: 'clk_kaze', category: 'nfsmw', drivetrain: 'RWD', torqueSplit: 0.0,
+            massKg: 1580, wheelbase: 2.71, trackWidth: 1.56, cgHeight: 0.45, frontWeightBias: 0.53,
+            idleRpm: 850, peakTorqueRpm: 4200, redlineRpm: 6800, maxRpm: 7100,
+            baseTorqueNm: 610, topSpeedKmh: 332, accelRating: 5.7, handlingRating: 8.3, driftFactor: 1.58,
+            inductionType: 'supercharger', inductionBoost: 0.32, spoolRpmRatio: 0.20, dragCoeff: 0.28, downforceCoeff: 0.38,
+            gearRatios: [-3.30, 0, 3.75, 2.38, 1.70, 1.30, 1.02, 0.82], finalDrive: 3.50, wheelRadius: 0.34,
+            springStiffness: 72000, dampingRate: 8300, rollBalance: 0.48, yawSpeedMult: 1.28,
+            engineSoundClass: 'v8'
+        },
+        "Ford Mustang GT (Jewels #8 MW)": {
+            id: 'mustang_jewels', category: 'nfsmw', drivetrain: 'RWD', torqueSplit: 0.0,
+            massKg: 1550, wheelbase: 2.72, trackWidth: 1.58, cgHeight: 0.45, frontWeightBias: 0.54,
+            idleRpm: 860, peakTorqueRpm: 4500, redlineRpm: 6700, maxRpm: 7000,
+            baseTorqueNm: 640, topSpeedKmh: 328, accelRating: 5.8, handlingRating: 8.1, driftFactor: 1.75,
+            inductionType: 'supercharger', inductionBoost: 0.32, spoolRpmRatio: 0.18, dragCoeff: 0.31, downforceCoeff: 0.40,
+            gearRatios: [-3.30, 0, 3.65, 2.32, 1.65, 1.26, 1.00, 0.79], finalDrive: 3.55, wheelRadius: 0.34,
+            springStiffness: 70000, dampingRate: 8100, rollBalance: 0.46, yawSpeedMult: 1.32,
+            engineSoundClass: 'v8'
+        },
+        "Mitsubishi Lancer Evo VIII (Earl #9 MW)": {
+            id: 'evo8_earl', category: 'nfsmw', drivetrain: 'AWD', torqueSplit: 0.42,
+            massKg: 1410, wheelbase: 2.62, trackWidth: 1.52, cgHeight: 0.46, frontWeightBias: 0.56,
+            idleRpm: 950, peakTorqueRpm: 4500, redlineRpm: 7600, maxRpm: 7900,
+            baseTorqueNm: 540, topSpeedKmh: 325, accelRating: 6.1, handlingRating: 9.0, driftFactor: 1.48,
+            inductionType: 'turbo', inductionBoost: 0.42, spoolRpmRatio: 0.34, dragCoeff: 0.31, downforceCoeff: 0.46,
+            gearRatios: [-3.40, 0, 3.72, 2.32, 1.62, 1.22, 0.96, 0.78], finalDrive: 3.85, wheelRadius: 0.33,
+            springStiffness: 74000, dampingRate: 8600, rollBalance: 0.50, yawSpeedMult: 1.35,
+            engineSoundClass: 'sport'
+        },
+        "Porsche Cayman S (Baron #10 MW)": {
+            id: 'cayman_baron', category: 'nfsmw', drivetrain: 'RWD', torqueSplit: 0.0,
+            massKg: 1340, wheelbase: 2.41, trackWidth: 1.54, cgHeight: 0.41, frontWeightBias: 0.44,
+            idleRpm: 950, peakTorqueRpm: 4800, redlineRpm: 7500, maxRpm: 7800,
+            baseTorqueNm: 510, topSpeedKmh: 330, accelRating: 5.9, handlingRating: 9.1, driftFactor: 1.46,
+            inductionType: 'turbo', inductionBoost: 0.34, spoolRpmRatio: 0.30, dragCoeff: 0.27, downforceCoeff: 0.48,
+            gearRatios: [-3.30, 0, 3.82, 2.36, 1.66, 1.26, 1.00, 0.81], finalDrive: 3.55, wheelRadius: 0.33,
+            springStiffness: 78000, dampingRate: 9000, rollBalance: 0.48, yawSpeedMult: 1.36,
+            engineSoundClass: 'sport'
+        },
+        "Mitsubishi Eclipse GT (Big Lou #11 MW)": {
+            id: 'eclipse_lou', category: 'nfsmw', drivetrain: 'FWD', torqueSplit: 1.0,
+            massKg: 1480, wheelbase: 2.57, trackWidth: 1.55, cgHeight: 0.46, frontWeightBias: 0.59,
+            idleRpm: 880, peakTorqueRpm: 4400, redlineRpm: 7000, maxRpm: 7300,
+            baseTorqueNm: 470, topSpeedKmh: 305, accelRating: 5.2, handlingRating: 8.0, driftFactor: 1.32,
+            inductionType: 'turbo', inductionBoost: 0.34, spoolRpmRatio: 0.33, dragCoeff: 0.30, downforceCoeff: 0.36,
+            gearRatios: [-3.30, 0, 3.68, 2.28, 1.60, 1.21, 0.96, 0.78], finalDrive: 3.70, wheelRadius: 0.33,
+            springStiffness: 66000, dampingRate: 7700, rollBalance: 0.54, yawSpeedMult: 1.24,
+            engineSoundClass: 'sport'
+        },
+        "Mazda RX-8 (Izzy #12 MW)": {
+            id: 'rx7', category: 'nfsmw', drivetrain: 'RWD', torqueSplit: 0.0,
+            massKg: 1310, wheelbase: 2.70, trackWidth: 1.52, cgHeight: 0.43, frontWeightBias: 0.50,
+            idleRpm: 1100, peakTorqueRpm: 5800, redlineRpm: 9000, maxRpm: 9400,
+            baseTorqueNm: 460, topSpeedKmh: 318, accelRating: 5.6, handlingRating: 8.9, driftFactor: 1.92,
+            inductionType: 'turbo', inductionBoost: 0.38, spoolRpmRatio: 0.36, dragCoeff: 0.29, downforceCoeff: 0.40,
+            gearRatios: [-3.35, 0, 3.76, 2.27, 1.65, 1.25, 1.00, 0.81], finalDrive: 3.90, wheelRadius: 0.32,
+            springStiffness: 70000, dampingRate: 8200, rollBalance: 0.46, yawSpeedMult: 1.42,
+            engineSoundClass: 'sport'
+        },
+        "Toyota Supra MK4 (Vic #13 MW)": {
+            id: 'supra', category: 'nfsmw', drivetrain: 'RWD', torqueSplit: 0.0,
+            massKg: 1490, wheelbase: 2.55, trackWidth: 1.54, cgHeight: 0.44, frontWeightBias: 0.53,
+            idleRpm: 950, peakTorqueRpm: 4800, redlineRpm: 7600, maxRpm: 8000,
+            baseTorqueNm: 620, topSpeedKmh: 345, accelRating: 6.2, handlingRating: 8.6, driftFactor: 1.88,
+            inductionType: 'turbo', inductionBoost: 0.44, spoolRpmRatio: 0.36, dragCoeff: 0.29, downforceCoeff: 0.44,
+            gearRatios: [-3.30, 0, 3.65, 2.26, 1.58, 1.20, 0.96, 0.77], finalDrive: 3.62, wheelRadius: 0.33,
+            springStiffness: 72000, dampingRate: 8400, rollBalance: 0.46, yawSpeedMult: 1.38,
+            engineSoundClass: 'sport'
+        },
+        "Lexus IS300 (Taz #14 MW)": {
+            id: 'is300_taz', category: 'nfsmw', drivetrain: 'RWD', torqueSplit: 0.0,
+            massKg: 1470, wheelbase: 2.67, trackWidth: 1.51, cgHeight: 0.46, frontWeightBias: 0.53,
+            idleRpm: 880, peakTorqueRpm: 4500, redlineRpm: 7200, maxRpm: 7500,
+            baseTorqueNm: 480, topSpeedKmh: 295, accelRating: 5.0, handlingRating: 8.1, driftFactor: 1.80,
+            inductionType: 'turbo', inductionBoost: 0.34, spoolRpmRatio: 0.35, dragCoeff: 0.30, downforceCoeff: 0.32,
+            gearRatios: [-3.30, 0, 3.62, 2.22, 1.55, 1.18, 0.95, 0.78], finalDrive: 3.72, wheelRadius: 0.33,
+            springStiffness: 64000, dampingRate: 7500, rollBalance: 0.47, yawSpeedMult: 1.32,
+            engineSoundClass: 'sport'
+        },
+        "Volkswagen Golf GTI (Sonny #15 MW)": {
+            id: 'golf_sonny', category: 'nfsmw', drivetrain: 'FWD', torqueSplit: 1.0,
+            massKg: 1330, wheelbase: 2.58, trackWidth: 1.53, cgHeight: 0.47, frontWeightBias: 0.60,
+            idleRpm: 850, peakTorqueRpm: 4200, redlineRpm: 6900, maxRpm: 7200,
+            baseTorqueNm: 430, topSpeedKmh: 288, accelRating: 4.8, handlingRating: 8.2, driftFactor: 1.28,
+            inductionType: 'turbo', inductionBoost: 0.34, spoolRpmRatio: 0.31, dragCoeff: 0.31, downforceCoeff: 0.32,
+            gearRatios: [-3.30, 0, 3.65, 2.24, 1.56, 1.18, 0.94, 0.76], finalDrive: 3.75, wheelRadius: 0.32,
+            springStiffness: 62000, dampingRate: 7300, rollBalance: 0.56, yawSpeedMult: 1.24,
+            engineSoundClass: 'sport'
+        },
+        "Audi Le Mans Quattro R8 (Darius MW)": {
+            id: 'audir8', category: 'nfsmw', drivetrain: 'AWD', torqueSplit: 0.30,
+            massKg: 1530, wheelbase: 2.65, trackWidth: 1.66, cgHeight: 0.40, frontWeightBias: 0.43,
+            idleRpm: 1050, peakTorqueRpm: 6400, redlineRpm: 8500, maxRpm: 8800,
+            baseTorqueNm: 680, topSpeedKmh: 376, accelRating: 6.9, handlingRating: 9.4, driftFactor: 1.48,
+            inductionType: 'turbo', inductionBoost: 0.38, spoolRpmRatio: 0.28, dragCoeff: 0.25, downforceCoeff: 0.58,
+            gearRatios: [-3.30, 0, 3.88, 2.40, 1.76, 1.35, 1.08, 0.87], finalDrive: 3.55, wheelRadius: 0.34,
+            springStiffness: 86000, dampingRate: 9800, rollBalance: 0.48, yawSpeedMult: 1.38,
+            engineSoundClass: 'supercar'
         }
     });
 
-    function resolveVehicleProfile(carOrName, customOverrides = {}) {
+    function resolveVehicleProfile(carOrName, customOverrides = {}, extraStyling = {}) {
         const carObj = (carOrName && typeof carOrName === 'object') ? carOrName : null;
         const mergedOverrides = Object.assign(
             {},
@@ -350,28 +533,48 @@
         let base = VEHICLE_PROFILES[name];
         if (!base) {
             const lower = name.toLowerCase();
-            for (const [k, prof] of Object.entries(VEHICLE_PROFILES)) {
-                if (k.toLowerCase().includes(lower) || lower.includes(prof.id) || lower.includes(k.toLowerCase())) {
-                    base = prof;
-                    break;
+            if (lower.includes('m3 e46') || lower.includes('m3 gtr') || lower.includes('m3gtr')) base = VEHICLE_PROFILES["BMW M3 E46 GTR (NFS Most Wanted)"];
+            else if (lower.includes('corvette c6.r') || lower.includes('cross')) base = VEHICLE_PROFILES["Chevrolet Corvette C6.R (Cross NFS MW)"];
+            else if (lower.includes('webster') || lower.includes('corvette')) base = VEHICLE_PROFILES["Chevrolet Corvette C6 (Webster #5 MW)"];
+            else if (lower.includes('razor') || (lower.includes('mustang') && lower.includes('razor'))) base = VEHICLE_PROFILES["Ford Mustang GT (Razor NFS MW)"];
+            else if (lower.includes('mustang') || lower.includes('jewels')) base = VEHICLE_PROFILES["Ford Mustang GT (Jewels #8 MW)"];
+            else if (lower.includes('slr') || lower.includes('mclaren') || lower.includes('bull')) base = VEHICLE_PROFILES["Mercedes-Benz SLR McLaren (Bull #2 MW)"];
+            else if (lower.includes('db9') || lower.includes('aston') || lower.includes('ronnie')) base = VEHICLE_PROFILES["Aston Martin DB9 (Ronnie #3 MW)"];
+            else if (lower.includes('viper') || lower.includes('jv')) base = VEHICLE_PROFILES["Dodge Viper SRT10 (JV #4 MW)"];
+            else if (lower.includes('gallardo') || lower.includes('ming')) base = VEHICLE_PROFILES["Lamborghini Gallardo (Ming #6 MW)"];
+            else if (lower.includes('clk') || lower.includes('kaze')) base = VEHICLE_PROFILES["Mercedes-Benz CLK 500 (Kaze #7 MW)"];
+            else if (lower.includes('evo') || lower.includes('lancer') || lower.includes('earl')) base = VEHICLE_PROFILES["Mitsubishi Lancer Evo VIII (Earl #9 MW)"];
+            else if (lower.includes('cayman') || lower.includes('baron')) base = VEHICLE_PROFILES["Porsche Cayman S (Baron #10 MW)"];
+            else if (lower.includes('eclipse') || lower.includes('big lou') || lower.includes('veloster')) base = VEHICLE_PROFILES["Mitsubishi Eclipse GT (Big Lou #11 MW)"];
+            else if (lower.includes('rx-8') || lower.includes('rx-7') || lower.includes('rx7') || lower.includes('rx8') || lower.includes('izzy')) base = VEHICLE_PROFILES["Mazda RX-8 (Izzy #12 MW)"];
+            else if (lower.includes('supra') || lower.includes('vic')) base = VEHICLE_PROFILES["Toyota Supra MK4 (Vic #13 MW)"];
+            else if (lower.includes('is300') || lower.includes('lexus') || lower.includes('taz')) base = VEHICLE_PROFILES["Lexus IS300 (Taz #14 MW)"];
+            else if (lower.includes('golf') || lower.includes('sonny')) base = VEHICLE_PROFILES["Volkswagen Golf GTI (Sonny #15 MW)"];
+            else if (lower.includes('le mans') || lower.includes('r8') || lower.includes('darius')) base = VEHICLE_PROFILES["Audi Le Mans Quattro R8 (Darius MW)"];
+            if (!base) {
+                for (const [k, prof] of Object.entries(VEHICLE_PROFILES)) {
+                    if (k.toLowerCase().includes(lower) || lower.includes(prof.id) || lower.includes(k.toLowerCase())) {
+                        base = prof;
+                        break;
+                    }
                 }
             }
             if (!base) {
-                if (lower.includes('m5 f90') || lower.includes('m5')) base = VEHICLE_PROFILES["BMW M5 F90 Competition"];
-                else if (lower.includes('m8')) base = VEHICLE_PROFILES["BMW M8 Gran Coupe"];
-                else if (lower.includes('911') || lower.includes('porsche')) base = VEHICLE_PROFILES["Porsche 911 Turbo S"];
+                if (lower.includes('m5 f90') || lower.includes('m5') || lower.includes('m3')) base = VEHICLE_PROFILES["BMW M5 F90 Competition"];
+                else if (lower.includes('m8') || lower.includes('maserati')) base = VEHICLE_PROFILES["BMW M8 Gran Coupe"];
+                else if (lower.includes('911') || lower.includes('porsche') || lower.includes('panamera')) base = VEHICLE_PROFILES["Porsche 911 Turbo S"];
                 else if (lower.includes('skyline') || lower.includes('gt-r') || lower.includes('gtr')) base = VEHICLE_PROFILES["Nissan GT-R R35 Nismo"];
                 else if (lower.includes('silvia') || lower.includes('s15')) base = VEHICLE_PROFILES["Nissan Silvia S15 Spec-R"];
                 else if (lower.includes('mark')) base = VEHICLE_PROFILES["Toyota Mark II Tourer V"];
                 else if (lower.includes('camry') || lower.includes('камри')) base = VEHICLE_PROFILES["Toyota Camry 3.5"];
                 else if (lower.includes('priora') || lower.includes('приора')) base = VEHICLE_PROFILES["Lada Priora БПАН"];
-                else if (lower.includes('vesta') || lower.includes('веста')) base = VEHICLE_PROFILES["Lada Vesta Sport"];
+                else if (lower.includes('vesta') || lower.includes('веста') || lower.includes('elantra')) base = VEHICLE_PROFILES["Lada Vesta Sport"];
                 else if (lower.includes('solaris') || lower.includes('солярис')) base = VEHICLE_PROFILES["Hyundai Solaris"];
                 else if (lower.includes('polo') || lower.includes('поло')) base = VEHICLE_PROFILES["Volkswagen Polo"];
                 else if (lower.includes('impreza') || lower.includes('subaru') || lower.includes('wrx')) base = VEHICLE_PROFILES["Subaru Impreza WRX STI"];
-                else if (lower.includes('rs6') || lower.includes('audi')) base = VEHICLE_PROFILES["Audi RS6 Avant"];
+                else if (lower.includes('rs6') || lower.includes('rs7') || lower.includes('audi')) base = VEHICLE_PROFILES["Audi RS6 Avant"];
                 else if (lower.includes('e63')) base = VEHICLE_PROFILES["Mercedes-Benz E63s AMG"];
-                else if (lower.includes('g63') || lower.includes('гелик')) base = VEHICLE_PROFILES["Mercedes-Benz G63 AMG «Гелик»"];
+                else if (lower.includes('g63') || lower.includes('гелик') || lower.includes('x5')) base = VEHICLE_PROFILES["Mercedes-Benz G63 AMG «Гелик»"];
                 else if (lower.includes('huracan') || lower.includes('lamborghini')) base = VEHICLE_PROFILES["Lamborghini Huracan Performante"];
                 else if (lower.includes('sf90') || lower.includes('ferrari')) base = VEHICLE_PROFILES["Ferrari SF90 Stradale"];
                 else if (lower.includes('chiron') || lower.includes('bugatti')) base = VEHICLE_PROFILES["Bugatti Chiron Super Sport"];
@@ -406,18 +609,41 @@
             tunedStats = ecoApi.performance(baseStatsForEco, carObj);
         }
 
-        const effectiveTopSpeedKmh = tunedStats
+        // Styling, NFS MW BodyShop aero, Junkman Parts & Pro Tuning sliders
+        const styling = Object.assign({}, carObj?.styling || {}, mergedOverrides.styling || {}, extraStyling || {});
+        const junkmanEngine = !!(styling.junkmanEngine || mergedOverrides.junkmanEngine || upgrades.junkmanEngine);
+        const junkmanTurbo = !!(styling.junkmanTurbo || mergedOverrides.junkmanTurbo || upgrades.junkmanTurbo);
+        const junkmanTires = !!(styling.junkmanTires || mergedOverrides.junkmanTires || upgrades.junkmanTires);
+        const junkmanNitro = !!(styling.junkmanNitro || mergedOverrides.junkmanNitro || upgrades.junkmanNitro);
+
+        // Pro Tuning biases in [-1..+1]
+        // gearRatioBias: -1 = short gears (acceleration), +1 = tall gears (top speed)
+        const gearRatioBias = clamp(Number(styling.gearRatioBias ?? mergedOverrides.gearRatioBias ?? upgrades.gearRatioBias ?? 0) || 0, -1, 1);
+        // aeroDownforce: -1 = low drag, +1 = max cornering downforce
+        const aeroDownforceBias = clamp(Number(styling.aeroDownforce ?? mergedOverrides.aeroDownforce ?? upgrades.aeroDownforce ?? 0) || 0, -1, 1);
+        // gripDriftBias: +1 = grip setup, -1 = drift angle setup
+        const gripDriftBias = clamp(Number(styling.gripDriftBias ?? mergedOverrides.gripDriftBias ?? upgrades.gripDriftBias ?? 0) || 0, -1, 1);
+
+        const junkmanSpeedMult = (junkmanEngine ? 1.045 : 1.0) * (junkmanTurbo ? 1.04 : 1.0);
+        const junkmanAccelMult = (junkmanEngine ? 1.08 : 1.0) * (junkmanTurbo ? 1.07 : 1.0);
+        const proGearSpeedMult = 1 + gearRatioBias * 0.055 - Math.max(0, aeroDownforceBias) * 0.02;
+        const proGearAccelMult = 1 - gearRatioBias * 0.065;
+
+        const rawTopSpeed = tunedStats
             ? tunedStats.speed
             : Math.round((mergedOverrides.speed || base.topSpeedKmh) * (1 + engineLvl * 0.055) * health);
-        const effectiveAccelRating = tunedStats
+        const effectiveTopSpeedKmh = Math.round(rawTopSpeed * junkmanSpeedMult * proGearSpeedMult);
+
+        const rawAccel = tunedStats
             ? tunedStats.accel
             : Number(((mergedOverrides.accel || base.accelRating) * (1 + engineLvl * 0.07) * health).toFixed(2));
-        const effectiveHandlingRating = tunedStats
+        const effectiveAccelRating = Number((rawAccel * junkmanAccelMult * proGearAccelMult).toFixed(2));
+
+        const rawHandling = tunedStats
             ? tunedStats.handling
             : Number(clamp((mergedOverrides.handling || base.handlingRating) + handlingLvl * 0.65 - (1 - health) * 3, 2, 10).toFixed(2));
+        const effectiveHandlingRating = Number(clamp(rawHandling + (junkmanTires ? 0.55 : 0) + aeroDownforceBias * 0.35, 2, 10).toFixed(2));
 
-        // Styling bonuses (suspension & wheels from garage)
-        const styling = carObj?.styling || mergedOverrides.styling || {};
         let cgDrop = 0;
         let gripBonus = 0;
         if (styling.suspension === 'bpan') {
@@ -427,18 +653,37 @@
             cgDrop = 0.025;
             gripBonus += 0.03;
         }
-        if (styling.wheels === 'forged') {
-            gripBonus += 0.03;
+        if (styling.wheels === 'forged' || styling.wheels === 'bbs_gtr' || styling.wheels === 'oz_racing') {
+            gripBonus += 0.035;
         }
+        if (styling.bodykit === 'widebody' || styling.bodykit === 'nfsmw_gtr') {
+            gripBonus += 0.045;
+            cgDrop += 0.015;
+        } else if (styling.bodykit === 'street') {
+            gripBonus += 0.02;
+        }
+        if (junkmanTires) {
+            gripBonus += 0.065;
+        }
+        gripBonus += Math.max(-0.04, gripDriftBias * 0.045);
 
-        const engineTorqueScale = (1 + engineLvl * 0.085) * health * (effectiveAccelRating / Math.max(1, base.accelRating));
+        let aeroBonus = Math.max(0, aeroDownforceBias * 0.18);
+        if (styling.spoiler === 'gtr') aeroBonus += 0.14;
+        else if (styling.spoiler === 'gt') aeroBonus += 0.09;
+        else if (styling.spoiler === 'ducktail') aeroBonus += 0.04;
+        if (styling.bodykit === 'nfsmw_gtr' || styling.bodykit === 'widebody') aeroBonus += 0.08;
+
+        const engineTorqueScale = (1 + engineLvl * 0.085) * health * junkmanAccelMult * ((mergedOverrides.accel || base.accelRating) / Math.max(1, base.accelRating));
         const handlingGripScale = (0.85 + (effectiveHandlingRating / 10) * 0.55) + gripBonus;
         const resolvedDrivetrain = mergedOverrides.drivetrain || base.drivetrain;
         const resolvedTorqueSplit = mergedOverrides.torqueSplit !== undefined
             ? clamp(mergedOverrides.torqueSplit, 0, 1)
             : ((resolvedDrivetrain === 'FWD') ? 1.0 : (resolvedDrivetrain === 'RWD' ? 0.0 : base.torqueSplit));
         const effectiveBaseTorqueNm = base.baseTorqueNm * engineTorqueScale;
+        const effectiveFinalDrive = Number((base.finalDrive * (1 - gearRatioBias * 0.045)).toFixed(3));
         const firstGearRatio = Math.abs(base.gearRatios[2] || 3.4);
+        const effectiveDriftFactor = Number(clamp(base.driftFactor * (1 - gripDriftBias * 0.25), 0.85, 2.45).toFixed(3));
+        const nitroMult = Number((1.48 + nitroLvl * 0.06 + (junkmanNitro ? 0.14 : 0)).toFixed(3));
 
         return {
             ...base,
@@ -450,18 +695,25 @@
             accelRating: effectiveAccelRating,
             handlingRating: effectiveHandlingRating,
             baseTorqueNm: effectiveBaseTorqueNm,
-            peakEngineForce: (effectiveBaseTorqueNm * firstGearRatio * base.finalDrive) / base.wheelRadius,
+            finalDrive: effectiveFinalDrive,
+            driftFactor: effectiveDriftFactor,
+            downforceCoeff: Number(clamp(base.downforceCoeff + aeroBonus, 0.02, 1.15).toFixed(3)),
+            inductionBoost: Number((base.inductionBoost + (junkmanTurbo ? 0.12 : 0)).toFixed(3)),
+            peakEngineForce: (effectiveBaseTorqueNm * firstGearRatio * effectiveFinalDrive) / base.wheelRadius,
             cgHeight: Math.max(0.32, base.cgHeight - cgDrop),
             tireGripScale: handlingGripScale,
             frontCorneringStiffness: Number((9.2 * handlingGripScale * 1.05).toFixed(3)),
-            rearCorneringStiffness: Number((9.2 * handlingGripScale).toFixed(3)),
-            nitroDrainRate: tunedStats ? tunedStats.nitroDrain : (28 * (1 - nitroLvl * 0.1)),
-            nitroRechargeRate: tunedStats ? tunedStats.nitroRecharge : (4 + nitroLvl * 0.8),
-            nitroTorqueMult: 1.48 + nitroLvl * 0.06,
-            nitroTopSpeedMult: tunedStats ? Math.min(1.26, tunedStats.nitroSpeedBonus - 0.12) : (1.18 + nitroLvl * 0.015),
+            rearCorneringStiffness: Number((9.2 * handlingGripScale * (1 - Math.max(0, -gripDriftBias) * 0.08)).toFixed(3)),
+            nitroDrainRate: (tunedStats ? tunedStats.nitroDrain : (28 * (1 - nitroLvl * 0.1))) * (junkmanNitro ? 0.82 : 1.0),
+            nitroRechargeRate: (tunedStats ? tunedStats.nitroRecharge : (4 + nitroLvl * 0.8)) * (junkmanNitro ? 1.25 : 1.0),
+            nitroTorqueMult: nitroMult,
+            nitroForceMultiplier: nitroMult,
+            nitroTopSpeedMult: (tunedStats ? Math.min(1.26, tunedStats.nitroSpeedBonus - 0.12) : (1.18 + nitroLvl * 0.015)) + (junkmanNitro ? 0.035 : 0),
             fuelConsumption: tunedStats ? tunedStats.consumption : Number(((8 + base.topSpeedKmh / 29) * (1 - economyLvl * 0.085)).toFixed(2)),
             rewardMult: tunedStats ? tunedStats.rewardMult : (mergedOverrides.rewardMult || 1.0),
             upgrades: { engine: engineLvl, handling: handlingLvl, economy: economyLvl, nitro: nitroLvl },
+            junkman: { engine: junkmanEngine, turbo: junkmanTurbo, tires: junkmanTires, nitro: junkmanNitro },
+            proTuning: { gearRatioBias, aeroDownforce: aeroDownforceBias, gripDriftBias },
             condition
         };
     }

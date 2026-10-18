@@ -935,8 +935,15 @@
                 }
 
                 const velocity = Number.isFinite(speed) ? Math.max(0, Math.min(650, speed)) : 0;
+                const isM3Gtr = carClass === 'm3gtr' || carClass === 'nfs_gtr';
+                const isSupercharger = carClass === 'supercharger';
                 let minRPM = 28, maxRPM = 84, mult2 = 2.01, filterBase = 460;
-                if (carClass === 'v8') {
+                if (isM3Gtr) {
+                    // Iconic BMW M3 E46 GTR P60B40 V8 + straight-cut spur-gear transmission whine harmonic
+                    minRPM = 58; maxRPM = 320; mult2 = 3.85; filterBase = 1150;
+                } else if (isSupercharger) {
+                    minRPM = 30; maxRPM = 115; mult2 = 2.95; filterBase = 740;
+                } else if (carClass === 'v8') {
                     minRPM = 22; maxRPM = 68; mult2 = 1.5; filterBase = 520;
                 } else if (carClass === 'sport' || carClass === 'supercar') {
                     minRPM = 52; maxRPM = 280; mult2 = 2.0; filterBase = 800;
@@ -974,29 +981,36 @@
                 }
 
                 param(engine.nodes[0].frequency, revs, context.currentTime);
-                param(engine.nodes[1].frequency, revs * mult2, context.currentTime);
+                // For M3 GTR, 2nd oscillator tracks the speed-dependent straight-cut gearbox whine!
+                const secondFreq = isM3Gtr
+                    ? (revs * mult2 + velocity * 2.8)
+                    : (revs * mult2);
+                param(engine.nodes[1].frequency, secondFreq, context.currentTime);
 
                 // Dynamic tone filter (avoids harsh high-frequency buzzing while keeping authentic warm body)
+                const maxFilterCap = isM3Gtr ? 2600 : 1450;
                 const filterFreq = nitro
-                    ? Math.min(1150, filterBase + velocity * 1.4 + 140)
-                    : (gas ? Math.min(1450, filterBase + velocity * 1.6 + 180) : Math.min(880, filterBase + velocity * 0.8));
+                    ? Math.min(maxFilterCap, filterBase + velocity * (isM3Gtr ? 3.2 : 1.4) + 140)
+                    : (gas ? Math.min(maxFilterCap, filterBase + velocity * (isM3Gtr ? 3.5 : 1.6) + 180) : Math.min(isM3Gtr ? 1400 : 880, filterBase + velocity * 0.8));
                 param(engine.filter.frequency, filterFreq, context.currentTime);
                 if (engine.filter.Q) {
-                    param(engine.filter.Q, carClass === 'supercar' || carClass === 'sport' ? 1.4 : 0.85, context.currentTime);
+                    param(engine.filter.Q, isM3Gtr ? 2.6 : (carClass === 'supercar' || carClass === 'sport' ? 1.4 : 0.85), context.currentTime);
                 }
 
-                // Throaty intake roar: peaking resonance opens with throttle
+                // Throaty intake roar / straight-cut gear resonance: peaking resonance opens with throttle
                 if (engine.intakeFilter) {
-                    const intakeCenter = carClass === 'v8' ? 220 : (carClass === 'sport' ? 360 : 280);
+                    const intakeCenter = isM3Gtr
+                        ? (780 + velocity * 3.1)
+                        : (carClass === 'v8' ? 220 : (carClass === 'sport' ? 360 : 280));
                     param(engine.intakeFilter.frequency, intakeCenter + (gas ? 25 : 0), context.currentTime);
                     if (engine.intakeFilter.gain) {
-                        param(engine.intakeFilter.gain, gas ? (nitro ? 3.2 : 3.5) : 0, context.currentTime);
+                        param(engine.intakeFilter.gain, gas ? (isM3Gtr ? 6.5 : (nitro ? 3.2 : 3.5)) : (isM3Gtr && velocity > 20 ? 3.0 : 0), context.currentTime);
                     }
                 }
 
                 // Sub-bass body rumble (deepens warmly during nitro)
                 if (engine.rumbleFilter && engine.rumbleFilter.gain) {
-                    param(engine.rumbleFilter.gain, nitro ? 6.0 : (gas ? (carClass === 'v8' ? 5.0 : 3.5) : 1.8), context.currentTime);
+                    param(engine.rumbleFilter.gain, nitro ? 6.0 : (gas ? (carClass === 'v8' || isM3Gtr ? 5.0 : 3.5) : 1.8), context.currentTime);
                 }
 
                 // Master engine gain with smooth volume scaling
@@ -1320,6 +1334,43 @@
                 noiseBurst({ duration: 0.35, gain: 0.09, filterType: 'bandpass', filterFreq: 1600, filterEndFreq: 380, filterQ: 1.5 });
                 tone(540, 0.24, 0.08, 0, 'sine', 190);
                 tone(260, 0.28, 0.09, 0.02, 'triangle', 95);
+            },
+            speedbreakerOn() {
+                // NFS Most Wanted Speedbreaker time-dilation activation: deep sub-bass drop + metallic time-warp
+                noiseBurst({ duration: 0.42, gain: 0.11, filterType: 'lowpass', filterFreq: 1400, filterEndFreq: 120, filterQ: 2.2 });
+                tone(260, 0.45, 0.22, 0, 'sawtooth', 42);
+                tone(130, 0.50, 0.26, 0.02, 'triangle', 28);
+                tone(520, 0.30, 0.09, 0, 'sine', 95);
+            },
+            speedbreakerOff() {
+                // NFS Most Wanted Speedbreaker deactivation: upward pitch time-snap recovery
+                noiseBurst({ duration: 0.26, gain: 0.08, filterType: 'bandpass', filterFreq: 220, filterEndFreq: 1800, filterQ: 1.8 });
+                tone(55, 0.28, 0.18, 0, 'triangle', 280);
+                tone(110, 0.25, 0.12, 0.02, 'sawtooth', 560);
+            },
+            countdownBeep(stage = 1) {
+                // Authentic NFS MW 3-2-1-GO race start synth beep
+                if (stage === 'go' || stage === 0) {
+                    tone(880, 0.36, 0.18, 0, 'sawtooth', 880);
+                    tone(1318.5, 0.38, 0.14, 0.01, 'triangle', 1318.5);
+                    tone(440, 0.34, 0.14, 0, 'triangle', 440);
+                } else {
+                    tone(440, 0.18, 0.15, 0, 'sawtooth', 435);
+                    tone(880, 0.14, 0.08, 0, 'triangle', 870);
+                }
+            },
+            m3GtrWhine(speed = 180) {
+                // Iconic BMW M3 E46 GTR straight-cut spur-gear transmission whine burst
+                const v = Math.max(40, Math.min(400, Number(speed) || 180));
+                const baseWhine = 680 + v * 3.4;
+                tone(baseWhine, 0.24, 0.075, 0, 'sawtooth', baseWhine * 1.12);
+                tone(baseWhine * 1.5, 0.20, 0.045, 0.01, 'triangle', baseWhine * 1.65);
+            },
+            superchargerWhine(speed = 160) {
+                // Roots/Twin-screw V8 supercharger whine (Mustang Razor / Corvette C6.R / SLR McLaren)
+                const v = Math.max(40, Math.min(400, Number(speed) || 160));
+                const f = 520 + v * 2.6;
+                tone(f, 0.22, 0.065, 0, 'triangle', f * 1.15);
             },
             error() {
                 tone(220, 0.12, 0.12, 0, 'triangle', 160);

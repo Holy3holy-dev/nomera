@@ -55,15 +55,33 @@
     function identifyCarModel(name) {
         const n = String(name || '').toLowerCase();
 
-        // 0. NFS Most Wanted (2005) Iconic Hero & Blacklist Rips (before generic 'gtr' or 'bmw')
+        // 0. NFS Most Wanted (2005) Iconic Hero & Full Blacklist #15-#1 Rips (before generic 'gtr' or 'bmw')
         if (n.includes('m3 gtr') || n.includes('m3 e46') || n.includes('e46 gtr') || n.includes('most wanted')) return 'm3gtr';
+        if (n.includes('webster') || n.includes('вебстер')) return 'corvette_webster';
         if (n.includes('corvette') || n.includes('корвет') || n.includes('c6.r') || n.includes('c6r') || n.includes('кросс')) return 'corvette_cross';
+        if (n.includes('jewels') || n.includes('джуэлс')) return 'mustang_jewels';
         if (n.includes('mustang') || n.includes('мустанг') || n.includes('рейзор')) return 'mustang_razor';
-        if (n.includes('supra') || n.includes('супра')) return 'supra';
-        if (n.includes('rx-7') || n.includes('rx7') || n.includes('mazda') || n.includes('мазда')) return 'rx7';
-        if (n.includes('aston') || n.includes('db9') || n.includes('астон')) return 'db9';
-        if (n.includes('mclaren') || n.includes('макларен') || n.includes('slr')) return 'mclaren';
-        if (n.includes('r8') || n.includes('le mans')) return 'audir8';
+        if (n.includes('supra') || n.includes('супра') || n.includes('вик') || n.includes('vic #13')) return 'supra';
+        if (n.includes('rx-8') || n.includes('rx8') || n.includes('rx-7') || n.includes('rx7') || n.includes('mazda') || n.includes('мазда') || n.includes('иззи') || n.includes('izzy')) return 'rx7';
+        if (n.includes('aston') || n.includes('db9') || n.includes('астон') || n.includes('ронни') || n.includes('ronnie')) return 'db9';
+        if (n.includes('mclaren') || n.includes('макларен') || n.includes('slr') || n.includes('булл') || n.includes('bull #2')) return 'mclaren';
+        if (n.includes('r8') || n.includes('le mans') || n.includes('дариус') || n.includes('darius')) return 'audir8';
+        if (n.includes('viper') || n.includes('вайпер') || n.includes('jv #4') || n.includes('джей ви')) return 'viper_jv';
+        if (n.includes('gallardo') || n.includes('гальярдо') || n.includes('минг') || n.includes('ming #6')) return 'gallardo_ming';
+        if (n.includes('clk') || n.includes('камикадзе') || n.includes('kaze #7')) return 'clk_kaze';
+        if (n.includes('evo') || n.includes('lancer') || n.includes('лансер') || n.includes('эрл') || n.includes('earl #9')) return 'evo8_earl';
+        if (n.includes('cayman') || n.includes('кайман') || n.includes('барон') || n.includes('baron #10')) return 'cayman_baron';
+        if (n.includes('eclipse') || n.includes('эклипс') || n.includes('биг лу') || n.includes('big lou') || n.includes('veloster')) return 'eclipse_lou';
+        if (n.includes('is300') || n.includes('lexus') || n.includes('лексус') || n.includes('таз #14') || n.includes('taz #14')) return 'is300_taz';
+        if (n.includes('golf gti') || n.includes('сонни') || n.includes('sonny #15')) return 'golf_sonny';
+
+        // 0b. Bonus GLB models in assets/models/
+        if (n.includes('m3 g80') || n.includes('m3 sedan')) return 'm3_g80';
+        if (n.includes('x5m') || n.includes('x5 m')) return 'x5m';
+        if (n.includes('rs7')) return 'rs7';
+        if (n.includes('maserati') || n.includes('мазерати')) return 'maserati';
+        if (n.includes('panamera') || n.includes('панамера')) return 'panamera';
+        if (n.includes('elantra') || n.includes('элантра')) return 'elantra_n';
 
         // 1. Specific supercars & hypercars first to avoid substring collisions (e.g. sf90 vs f90)
         if (n.includes('sf90') || n.includes('ferrari') || n.includes('феррари')) return 'sf90';
@@ -107,14 +125,30 @@
     function getDefaultCarColor(name = '', id = '') {
         const carId = id || identifyCarModel(name);
         const map = {
-            m3gtr: 0xcbd5e1,          // NFS Most Wanted Silver & Blue M3 GTR
-            corvette_cross: 0x1e293b, // Sergeant Cross Federal Interceptor
-            mustang_razor: 0x0f172a,  // Razor Blacklist #15 Mustang GT
-            supra: 0xf97316,          // Vic #13 Supra
-            rx7: 0xef4444,            // Mia / Izzy RX-7
-            db9: 0x0284c7,            // Ronnie #3 Aston Martin DB9
-            mclaren: 0x18181b,        // Bull #2 SLR McLaren
-            audir8: 0xdc2626,         // Darius Le Mans Quattro R8
+            m3gtr: 0xcbd5e1,            // #1 Razor — NFS Most Wanted Silver & Blue M3 GTR
+            corvette_cross: 0x1e293b,   // Sergeant Cross Federal Interceptor
+            mustang_razor: 0x0f172a,    // Razor Prologue Mustang GT
+            mclaren: 0x18181b,          // #2 Bull — SLR McLaren Obsidian Black
+            db9: 0x0284c7,              // #3 Ronnie — Aston Martin DB9
+            viper_jv: 0x16a34a,         // #4 JV — Dodge Viper SRT10 Venom Green
+            corvette_webster: 0xb45309, // #5 Webster — Corvette C6 Copper/Gold
+            gallardo_ming: 0x334155,    // #6 Ming — Lamborghini Gallardo Gunmetal
+            clk_kaze: 0x0d9488,         // #7 Kaze — Mercedes CLK 500 Jade/Teal
+            mustang_jewels: 0xdbeafe,   // #8 Jewels — Ford Mustang GT Pearl
+            evo8_earl: 0xe2e8f0,        // #9 Earl — Mitsubishi Lancer Evo VIII White/Red
+            cayman_baron: 0xf8fafc,     // #10 Baron — Porsche Cayman S Flame White
+            eclipse_lou: 0x9333ea,      // #11 Big Lou — Mitsubishi Eclipse GT Tiger Purple
+            rx7: 0xef4444,              // #12 Izzy / Mia — Mazda RX-8 / RX-7 Crimson
+            supra: 0xf97316,            // #13 Vic — Toyota Supra MK4 Orange/Red
+            is300_taz: 0xca8a04,        // #14 Taz — Lexus IS300 Gold/Bronze
+            golf_sonny: 0x1d4ed8,       // #15 Sonny — VW Golf GTI White/Blue Kanji
+            audir8: 0xdc2626,           // Darius — Audi Le Mans Quattro R8 Canyon Red
+            m3_g80: 0x16a34a,           // BMW M3 G80 Isle of Man Green
+            x5m: 0x1e3a8a,              // BMW X5 M Marina Bay Blue
+            rs7: 0x334155,              // Audi RS7 Daytona Grey
+            maserati: 0x1e1b4b,         // Maserati Blu Infinito
+            panamera: 0x475569,         // Porsche Panamera Volcano Grey
+            elantra_n: 0x38bdf8,        // Hyundai Elantra N Performance Blue
             vaz2107: 0x991b1b,    // Ruby cherry red (iconic Zhiguli)
             vaz2109: 0x475569,    // Wet asphalt metallic
             gaz24: 0x0f172a,      // Deep black KGB Volga
@@ -1565,7 +1599,7 @@
                 return true;
             }
             const nm = String(p.name || '');
-            if (/^(?:GLB_InteractiveRig|Door_FL_Pivot|Door_FR_Pivot|Door_CavityGroup|Hood_Pivot|EngineBayGroup|Trunk_Pivot|SubwooferGroup|GLB_SpoilerGroup|GLB_Spoiler|SpoilerGroup|SGUGroup|GLB_NeonTubes|NeonGroup|LicensePlatesGroup|GLB_FrontLicensePlate|GLB_RearLicensePlate|FrontLicensePlate|RearLicensePlate|ChassisUndertray|GLB_Undertray|ShowroomHeadlightCones|ShowroomHeadlightFlares|ShowroomTaillightFlares|HeadlightsGroup)$/i.test(nm)) {
+            if (/^(?:GLB_InteractiveRig|Door_FL_Pivot|Door_FR_Pivot|Door_CavityGroup|Hood_Pivot|EngineBayGroup|Trunk_Pivot|SubwooferGroup|GLB_SpoilerGroup|GLB_Spoiler|SpoilerGroup|GLB_BodykitGroup|GLB_RoofScoopGroup|GLB_HoodGroup|SGUGroup|GLB_NeonTubes|NeonGroup|LicensePlatesGroup|GLB_FrontLicensePlate|GLB_RearLicensePlate|FrontLicensePlate|RearLicensePlate|ChassisUndertray|GLB_Undertray|ShowroomHeadlightCones|ShowroomHeadlightFlares|ShowroomTaillightFlares|HeadlightsGroup)$/i.test(nm)) {
                 return true;
             }
             p = p.parent;
@@ -5434,15 +5468,33 @@
     // 🚘 GLB / GLTF REAL 3D MODEL LOADER & STYLING ENGINE
     // =========================================================================
     const GLB_MODEL_MAP = {
-        // NFS Most Wanted (2005) Authentic 3D Rips & Blacklist Icons
-        m3gtr: './assets/models/bmw_m3_gtr.glb',             // 2005 BMW M3 E46 GTR — NFS Most Wanted Hero Livery (5.9 MB)
-        corvette_cross: './assets/models/corvette_cross.glb', // Sergeant Cross Chevrolet Corvette C6.R Interceptor (9.0 MB)
-        mustang_razor: './assets/models/mustang_razor.glb',   // Razor (#15 Blacklist) 2005 Ford Mustang GT Widebody (1.76 MB)
-        supra: './assets/models/toyota_supra.glb',            // Vic (#13 Blacklist) Toyota Supra
-        rx7: './assets/models/mazda_rx7.glb',                 // Mia / Izzy (#12 Blacklist) Mazda RX-7
-        db9: './assets/models/aston_martin.glb',              // Ronnie (#3 Blacklist) Aston Martin DB9
-        mclaren: './assets/models/mclaren.glb',               // Bull (#2 Blacklist) McLaren
-        audir8: './assets/models/audi_r8.glb',                // Darius Audi Le Mans Quattro / R8
+        // NFS Most Wanted (2005) Authentic 3D Rips & Full Blacklist #15-#1 Icons
+        m3gtr: './assets/models/bmw_m3_gtr.glb',             // #1 Razor — 2005 BMW M3 E46 GTR Hero Livery (5.9 MB)
+        corvette_cross: './assets/models/corvette_cross.glb', // Sergeant Cross — Chevrolet Corvette C6.R Interceptor (9.0 MB)
+        mustang_razor: './assets/models/mustang_razor.glb',   // Razor Prologue — 2005 Ford Mustang GT Widebody (1.76 MB)
+        mclaren: './assets/models/mclaren.glb',               // #2 Bull — Mercedes-Benz SLR McLaren / McLaren
+        db9: './assets/models/aston_martin.glb',              // #3 Ronnie — Aston Martin DB9
+        viper_jv: './assets/models/sport_car.glb',            // #4 JV — Dodge Viper SRT10 / Supercar
+        corvette_webster: './assets/models/corvette_cross.glb', // #5 Webster — Chevrolet Corvette C6
+        gallardo_ming: './assets/models/lamborghini.glb',     // #6 Ming — Lamborghini Gallardo
+        clk_kaze: './assets/models/mercedes_v8.glb',          // #7 Kaze — Mercedes-Benz CLK 500
+        mustang_jewels: './assets/models/mustang_razor.glb',  // #8 Jewels — Ford Mustang GT
+        evo8_earl: './assets/models/rally.glb',               // #9 Earl — Mitsubishi Lancer Evolution VIII Rally
+        cayman_baron: './assets/models/porsche.glb',          // #10 Baron — Porsche Cayman S / 911
+        eclipse_lou: './assets/models/veloster_n.glb',        // #11 Big Lou — Mitsubishi Eclipse GT / Sport Hatch
+        rx7: './assets/models/mazda_rx7.glb',                 // #12 Izzy / Mia — Mazda RX-8 / RX-7
+        supra: './assets/models/toyota_supra.glb',            // #13 Vic — Toyota Supra MK4
+        is300_taz: './assets/models/mark2.glb',               // #14 Taz — Lexus IS300 / JDM Tourer
+        golf_sonny: './assets/models/golf2.glb',              // #15 Sonny — Volkswagen Golf GTI
+        audir8: './assets/models/audi_r8.glb',                // Darius — Audi Le Mans Quattro / R8
+
+        // Bonus Exclusive 3D Models from assets/models/
+        m3_g80: './assets/models/bmw_m3_sedan.glb',           // BMW M3 G80 Competition Sedan
+        x5m: './assets/models/x5m.glb',                       // BMW X5 M Competition
+        rs7: './assets/models/audi_rs7.glb',                  // Audi RS7 Sportback Performance
+        maserati: './assets/models/maserati.glb',             // Maserati GranTurismo Trofeo
+        panamera: './assets/models/panamera_wagon.glb',       // Porsche Panamera Turbo S Sport Turismo
+        elantra_n: './assets/models/elantra_n.glb',           // Hyundai Elantra N TCR
 
         // Budget & Classic Russian
         vaz2107: './assets/models/vaz2107.glb',       // Real VAZ-2107 «Жигули» (57.45 MB, 724 meshes)
@@ -5608,6 +5660,69 @@
                     ctx.fill();
                 }
                 ctx.restore();
+            } else if (vinylType === 'mw_m3gtr') {
+                // Iconic NFS Most Wanted BMW M3 GTR Silver & Deep Cobalt Blue Livery
+                ctx.fillStyle = '#cbd5e1';
+                ctx.fillRect(0, 0, 512, 512);
+                ctx.fillStyle = '#1d4ed8';
+                ctx.fillRect(64, 0, 74, 512);
+                ctx.fillRect(374, 0, 74, 512);
+                ctx.beginPath();
+                ctx.moveTo(0, 120);
+                ctx.lineTo(512, 220);
+                ctx.lineTo(512, 290);
+                ctx.lineTo(0, 190);
+                ctx.closePath();
+                ctx.fill();
+                ctx.fillStyle = '#0f172a';
+                ctx.fillRect(60, 0, 4, 512);
+                ctx.fillRect(138, 0, 4, 512);
+                ctx.fillRect(370, 0, 4, 512);
+                ctx.fillRect(448, 0, 4, 512);
+            } else if (vinylType === 'mw_razor') {
+                // Razor #15 / #1 Blacklist Flame Tribal Livery
+                ctx.fillStyle = '#09090b';
+                ctx.fillRect(0, 0, 512, 512);
+                ctx.fillStyle = '#f97316';
+                for (let i = 0; i < 5; i++) {
+                    const y = 50 + i * 95;
+                    ctx.beginPath();
+                    ctx.moveTo(0, y);
+                    ctx.lineTo(390 - i * 25, y + 25);
+                    ctx.lineTo(220, y + 60);
+                    ctx.closePath();
+                    ctx.fill();
+                }
+                ctx.fillStyle = '#facc15';
+                ctx.fillRect(228, 0, 22, 512);
+                ctx.fillRect(262, 0, 22, 512);
+            } else if (vinylType === 'mw_cross') {
+                // Sergeant Cross Rockport PD Federal Interceptor Livery
+                ctx.fillStyle = '#0f172a';
+                ctx.fillRect(0, 0, 512, 512);
+                ctx.fillStyle = '#f8fafc';
+                ctx.fillRect(0, 165, 512, 180);
+                ctx.fillStyle = '#38bdf8';
+                ctx.fillRect(0, 155, 512, 10);
+                ctx.fillRect(0, 345, 512, 10);
+                ctx.fillStyle = '#ef4444';
+                ctx.fillRect(236, 0, 40, 512);
+            } else if (vinylType === 'mw_blacklist') {
+                // Blacklist Boss Crimson & Carbon Tribal Livery
+                ctx.fillStyle = '#dc2626';
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.lineTo(320, 160);
+                ctx.lineTo(140, 260);
+                ctx.lineTo(490, 420);
+                ctx.lineTo(0, 512);
+                ctx.closePath();
+                ctx.fill();
+                ctx.fillStyle = '#18181b';
+                ctx.fillRect(205, 0, 102, 512);
+                ctx.fillStyle = '#fbbf24';
+                ctx.fillRect(200, 0, 5, 512);
+                ctx.fillRect(307, 0, 5, 512);
             }
 
             const texture = new THREE.CanvasTexture(canvas);
@@ -5750,7 +5865,7 @@
                     const updated = matList.map((m, idx) => {
                         const role = child.userData._stylingRoles[idx];
                         if (role === 'body') {
-                            if (m && m.userData && m.userData.preserveLiveryMap && !styling.customPaintOverride) return m;
+                            if (m && m.userData && m.userData.preserveLiveryMap && !styling.customPaintOverride && (!styling.vinyl || styling.vinyl === 'none')) return m;
                             return styledPaint;
                         }
                         if (role === 'glass') return mats.glass;
@@ -5762,7 +5877,7 @@
                     });
                     child.material = isMulti ? updated : updated[0];
                 } else if (child.userData.isInteractiveBody) {
-                    if (!(child.material && child.material.userData && child.material.userData.preserveLiveryMap && !styling.customPaintOverride)) {
+                    if (!(child.material && child.material.userData && child.material.userData.preserveLiveryMap && !styling.customPaintOverride && (!styling.vinyl || styling.vinyl === 'none'))) {
                         child.material = styledPaint;
                     }
                 } else if (child.userData.isInteractiveGlass) {
@@ -5838,7 +5953,7 @@
                     return true;
                 }
                 const nm = String(p.name || '');
-                if (/^(?:Wheel_|WheelsRig|GLB_InteractiveRig|GLB_NeonTubes|NeonGroup|GLB_SpoilerGroup|SpoilerGroup|LicensePlatesGroup|FrontLicensePlate|RearLicensePlate|GLB_FrontLicensePlate|GLB_RearLicensePlate|Plate_01|Plate_02)/i.test(nm)) {
+                if (/^(?:Wheel_|WheelsRig|GLB_InteractiveRig|GLB_NeonTubes|NeonGroup|GLB_SpoilerGroup|SpoilerGroup|GLB_BodykitGroup|GLB_RoofScoopGroup|GLB_HoodGroup|LicensePlatesGroup|FrontLicensePlate|RearLicensePlate|GLB_FrontLicensePlate|GLB_RearLicensePlate|Plate_01|Plate_02)/i.test(nm)) {
                     return true;
                 }
                 p = p.parent;
@@ -7048,6 +7163,10 @@
                             return mats.chrome;
                         } else if (styling.wheels === 'forged') {
                             return new THREE.MeshStandardMaterial({ color: 0xc89d4c, roughness: 0.25, metalness: 0.88, name: 'Rim_Forged' });
+                        } else if (styling.wheels === 'bbs_gtr') {
+                            return new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.16, metalness: 0.94, name: 'Rim_BBS_GTR' });
+                        } else if (styling.wheels === 'oz_racing') {
+                            return new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.22, metalness: 0.90, name: 'Rim_OZ_Racing' });
                         }
                         // If model has baked wheel texture (e.g. Golf, RS3, i8, M3 GTR BBS) and stock wheels, enhance PBR with sheen
                         if (mat.map && (!styling.wheels || styling.wheels === 'stock')) {
@@ -7132,7 +7251,7 @@
                     // 9. Car Body Paint (Preserve authentic NFS Most Wanted livery textures unless custom vinyl/paint override is active)
                     if (role === 'body') {
                         const origBodyMat = child.userData._origBodyMats && child.userData._origBodyMats[idx];
-                        if ((carId === 'm3gtr' || carId === 'corvette_cross' || carId === 'mustang_razor') && origBodyMat && origBodyMat.map && !styling.customPaintOverride) {
+                        if ((carId === 'm3gtr' || carId === 'corvette_cross' || carId === 'mustang_razor' || carId === 'corvette_webster' || carId === 'mustang_jewels') && origBodyMat && origBodyMat.map && !styling.customPaintOverride && (!styling.vinyl || styling.vinyl === 'none')) {
                             const liveryMat = origBodyMat.clone();
                             liveryMat.roughness = 0.15;
                             liveryMat.metalness = 0.52;
@@ -7174,26 +7293,13 @@
         });
 
         // Clean up previous accessories before attaching new ones
-        const oldSpoiler = modelRoot.getObjectByName('GLB_SpoilerGroup') || modelRoot.getObjectByName('GLB_Spoiler');
-        if (oldSpoiler) {
-            disposeObject3D(oldSpoiler);
-            modelRoot.remove(oldSpoiler);
-        }
-        const oldSgu = modelRoot.getObjectByName('SGUGroup');
-        if (oldSgu) {
-            disposeObject3D(oldSgu);
-            modelRoot.remove(oldSgu);
-        }
-        const oldNeon = modelRoot.getObjectByName('GLB_NeonTubes');
-        if (oldNeon) {
-            disposeObject3D(oldNeon);
-            modelRoot.remove(oldNeon);
-        }
-        const oldUndertray = modelRoot.getObjectByName('ChassisUndertray') || modelRoot.getObjectByName('GLB_Undertray');
-        if (oldUndertray) {
-            disposeObject3D(oldUndertray);
-            modelRoot.remove(oldUndertray);
-        }
+        ['GLB_SpoilerGroup', 'GLB_Spoiler', 'GLB_BodykitGroup', 'GLB_RoofScoopGroup', 'GLB_HoodGroup', 'SGUGroup', 'GLB_NeonTubes', 'ChassisUndertray', 'GLB_Undertray'].forEach(accName => {
+            const oldAcc = modelRoot.getObjectByName(accName);
+            if (oldAcc) {
+                disposeObject3D(oldAcc);
+                modelRoot.remove(oldAcc);
+            }
+        });
 
         // Compute local bounding box for accessories placement (excluding interactive rig & accessories)
         modelRoot.updateMatrixWorld(true);
@@ -7224,14 +7330,14 @@
         const size = box.getSize(new THREE.Vector3());
         const center = box.getCenter(new THREE.Vector3());
 
-        // 3D Spoilers on GLB models (skip duplicate procedural wing on BMW M3 GTR which has its built-in 3D GTR wing)
-        if (styling.spoiler && styling.spoiler !== 'none' && carId !== 'm3gtr') {
+        // 3D Spoilers on GLB models (skip duplicate procedural wing on BMW M3 GTR unless user selects a different custom spoiler)
+        if (styling.spoiler && styling.spoiler !== 'none' && !(carId === 'm3gtr' && styling.spoiler === 'gtr')) {
             const spoilerGroup = new THREE.Group();
             spoilerGroup.name = 'GLB_SpoilerGroup';
 
-            const spanW = (carId === 'vaz2109' || carId === 'polo') ? Math.min(size.x * 0.72, 1.32) : Math.min(size.x * 0.76, 1.45);
+            const spanW = (carId === 'vaz2109' || carId === 'polo' || carId === 'golf_sonny') ? Math.min(size.x * 0.72, 1.32) : Math.min(size.x * 0.76, 1.45);
             let deckY, deckZ;
-            if (carId === 'vaz2109' || carId === 'polo') {
+            if (carId === 'vaz2109' || carId === 'polo' || carId === 'golf_sonny') {
                 // Hatchback: mount roof spoiler / visor flush at the top rear edge of the tailgate
                 deckY = box.max.y - 0.02;
                 deckZ = box.min.z + size.z * 0.16;
@@ -7267,28 +7373,164 @@
                     ep.position.set(side * (spanW * 0.54), deckY + 0.30, deckZ - 0.02);
                     spoilerGroup.add(ep);
                 });
-            } else if (styling.spoiler === 'gt') {
+            } else if (styling.spoiler === 'gt' || styling.spoiler === 'gtr') {
+                const isGtrWing = styling.spoiler === 'gtr';
                 [-1, 1].forEach(side => {
-                    const stanchGeo = new THREE.BoxGeometry(0.035, 0.38, 0.08);
+                    const stanchGeo = new THREE.BoxGeometry(0.035, isGtrWing ? 0.42 : 0.38, 0.09);
                     stanchGeo.rotateX(-Math.PI / 14);
                     const stanch = new THREE.Mesh(stanchGeo, mats.trim);
-                    stanch.position.set(side * (spanW * 0.32), deckY + 0.19, deckZ);
+                    stanch.position.set(side * (spanW * 0.30), deckY + (isGtrWing ? 0.21 : 0.19), deckZ);
                     spoilerGroup.add(stanch);
                 });
-                const mainBladeGeo = new THREE.BoxGeometry(spanW * 1.15, 0.035, 0.30);
+                const mainBladeGeo = new THREE.BoxGeometry(spanW * (isGtrWing ? 1.22 : 1.15), 0.035, 0.30);
                 mainBladeGeo.rotateX(Math.PI / 14);
                 const mainBlade = new THREE.Mesh(mainBladeGeo, mats.carbon);
-                mainBlade.position.set(0, deckY + 0.40, deckZ - 0.04);
+                mainBlade.position.set(0, deckY + (isGtrWing ? 0.43 : 0.40), deckZ - 0.04);
                 spoilerGroup.add(mainBlade);
 
+                if (isGtrWing) {
+                    const lowerDeckGeo = new THREE.BoxGeometry(spanW * 1.14, 0.028, 0.22);
+                    lowerDeckGeo.rotateX(Math.PI / 18);
+                    const lowerDeck = new THREE.Mesh(lowerDeckGeo, mats.carbon);
+                    lowerDeck.position.set(0, deckY + 0.31, deckZ - 0.02);
+                    spoilerGroup.add(lowerDeck);
+                }
+
                 [-1, 1].forEach(side => {
-                    const epGeo = new THREE.BoxGeometry(0.02, 0.24, 0.36);
+                    const epGeo = new THREE.BoxGeometry(0.022, isGtrWing ? 0.28 : 0.24, 0.38);
                     const ep = new THREE.Mesh(epGeo, mats.carbon);
-                    ep.position.set(side * (spanW * 0.58), deckY + 0.40, deckZ - 0.04);
+                    ep.position.set(side * (spanW * (isGtrWing ? 0.61 : 0.58)), deckY + (isGtrWing ? 0.41 : 0.40), deckZ - 0.04);
                     spoilerGroup.add(ep);
                 });
             }
             modelRoot.add(spoilerGroup);
+        }
+
+        // 3D NFS Most Wanted Bodykits (Street Aero, Widebody, ALMS M3 GTR Kit)
+        if (styling.bodykit && styling.bodykit !== 'stock' && styling.bodykit !== 'none') {
+            const bkGroup = new THREE.Group();
+            bkGroup.name = 'GLB_BodykitGroup';
+            const bkType = styling.bodykit;
+            const halfW = size.x * 0.5;
+            const halfL = size.z * 0.5;
+            const groundY = Math.max(0.08, box.min.y + 0.10);
+
+            // 1. Front Carbon Lip Splitter
+            const lipW = size.x * (bkType === 'nfsmw_gtr' ? 1.06 : (bkType === 'widebody' ? 1.04 : 0.98));
+            const lipGeo = new THREE.BoxGeometry(lipW, 0.045, 0.22);
+            const frontLip = new THREE.Mesh(lipGeo, mats.carbon);
+            frontLip.name = 'Bodykit_FrontSplitter';
+            frontLip.position.set(0, groundY, box.max.z - 0.06);
+            bkGroup.add(frontLip);
+
+            // 2. Side Skirts (Left & Right)
+            [-1, 1].forEach(side => {
+                const skirtGeo = new THREE.BoxGeometry(bkType === 'street' ? 0.06 : 0.11, 0.075, size.z * 0.56);
+                const skirt = new THREE.Mesh(skirtGeo, bkType === 'street' ? mats.trim : mats.carbon);
+                skirt.name = side < 0 ? 'Bodykit_Skirt_L' : 'Bodykit_Skirt_R';
+                skirt.position.set(side * (halfW + (bkType === 'street' ? 0.01 : 0.035)), groundY + 0.02, center.z);
+                bkGroup.add(skirt);
+            });
+
+            // 3. Widebody Overfenders & Rear Diffuser (Widebody & NFS MW GTR)
+            if (bkType === 'widebody' || bkType === 'nfsmw_gtr') {
+                const archZPositions = [center.z + halfL * 0.58, center.z - halfL * 0.58];
+                [-1, 1].forEach(side => {
+                    archZPositions.forEach((az, aIdx) => {
+                        const flareGeo = new THREE.BoxGeometry(0.095, size.y * 0.26, size.z * 0.19);
+                        const flare = new THREE.Mesh(flareGeo, styledPaint);
+                        flare.name = `Bodykit_FenderFlare_${side < 0 ? 'L' : 'R'}_${aIdx}`;
+                        flare.position.set(side * (halfW + 0.032), box.min.y + size.y * 0.34, az);
+                        bkGroup.add(flare);
+                    });
+                });
+
+                // Rear Multi-Fin Carbon Diffuser
+                const diffGeo = new THREE.BoxGeometry(size.x * 0.82, 0.09, 0.20);
+                const diffuser = new THREE.Mesh(diffGeo, mats.carbon);
+                diffuser.name = 'Bodykit_RearDiffuser';
+                diffuser.position.set(0, groundY + 0.03, box.min.z + 0.08);
+                bkGroup.add(diffuser);
+            }
+
+            // 4. ALMS M3 GTR Canards & Side Exhaust Tips
+            if (bkType === 'nfsmw_gtr') {
+                [-1, 1].forEach(side => {
+                    const canardGeo = new THREE.BoxGeometry(0.14, 0.022, 0.24);
+                    canardGeo.rotateZ(side * -0.25);
+                    const canard = new THREE.Mesh(canardGeo, mats.carbon);
+                    canard.name = side < 0 ? 'Bodykit_Canard_L' : 'Bodykit_Canard_R';
+                    canard.position.set(side * (halfW + 0.02), groundY + 0.16, box.max.z - 0.22);
+                    bkGroup.add(canard);
+                });
+            }
+
+            modelRoot.add(bkGroup);
+        }
+
+        // 3D NFS Most Wanted Roof Scoops (Single, Dual, Vortex Generators)
+        if (styling.roofScoop && styling.roofScoop !== 'none') {
+            const rsGroup = new THREE.Group();
+            rsGroup.name = 'GLB_RoofScoopGroup';
+            const roofY = box.max.y - 0.015;
+            const roofZ = center.z + size.z * 0.04;
+
+            if (styling.roofScoop === 'single') {
+                const scoopGeo = new THREE.BoxGeometry(0.34, 0.085, 0.52);
+                const scoop = new THREE.Mesh(scoopGeo, mats.carbon);
+                scoop.position.set(0, roofY + 0.03, roofZ);
+                rsGroup.add(scoop);
+            } else if (styling.roofScoop === 'dual') {
+                [-1, 1].forEach(side => {
+                    const scoopGeo = new THREE.BoxGeometry(0.24, 0.08, 0.48);
+                    const scoop = new THREE.Mesh(scoopGeo, mats.carbon);
+                    scoop.position.set(side * 0.22, roofY + 0.03, roofZ);
+                    rsGroup.add(scoop);
+                });
+            } else if (styling.roofScoop === 'vortex') {
+                for (let i = -3; i <= 3; i++) {
+                    const finGeo = new THREE.BoxGeometry(0.022, 0.065, 0.14);
+                    const fin = new THREE.Mesh(finGeo, mats.carbon);
+                    fin.position.set(i * 0.13, roofY + 0.025, center.z - size.z * 0.14);
+                    rsGroup.add(fin);
+                }
+            }
+            modelRoot.add(rsGroup);
+        }
+
+        // 3D NFS Most Wanted Custom Hoods (Carbon Hood, GTR Louver Vents, Muscle Supercharger Blower)
+        if (styling.hood && styling.hood !== 'stock' && styling.hood !== 'none') {
+            const hoodGroup = new THREE.Group();
+            hoodGroup.name = 'GLB_HoodGroup';
+            const hoodY = box.min.y + size.y * 0.67;
+            const hoodZ = center.z + size.z * 0.28;
+
+            if (styling.hood === 'carbon') {
+                const panelGeo = new THREE.BoxGeometry(size.x * 0.68, 0.022, size.z * 0.26);
+                const panel = new THREE.Mesh(panelGeo, mats.carbon);
+                panel.position.set(0, hoodY, hoodZ);
+                hoodGroup.add(panel);
+            } else if (styling.hood === 'gtr_vents') {
+                [-1, 1].forEach(side => {
+                    for (let v = 0; v < 3; v++) {
+                        const louverGeo = new THREE.BoxGeometry(0.22, 0.028, 0.08);
+                        louverGeo.rotateX(-0.22);
+                        const louver = new THREE.Mesh(louverGeo, mats.carbon);
+                        louver.position.set(side * 0.26, hoodY + 0.01, hoodZ - 0.12 + v * 0.12);
+                        hoodGroup.add(louver);
+                    }
+                });
+            } else if (styling.hood === 'blower') {
+                const baseGeo = new THREE.BoxGeometry(0.38, 0.14, 0.46);
+                const blowerBase = new THREE.Mesh(baseGeo, mats.chrome);
+                blowerBase.position.set(0, hoodY + 0.07, hoodZ);
+                hoodGroup.add(blowerBase);
+                const intakeGeo = new THREE.BoxGeometry(0.42, 0.09, 0.32);
+                const blowerIntake = new THREE.Mesh(intakeGeo, mats.carbon);
+                blowerIntake.position.set(0, hoodY + 0.16, hoodZ + 0.04);
+                hoodGroup.add(blowerIntake);
+            }
+            modelRoot.add(hoodGroup);
         }
 
         // Roof-Mounted Police/Government SGU Flasher Bar removed per user request: "убери все мигалки которые можно ставить на машину, они только мешают"
@@ -12301,18 +12543,38 @@
             this.state.targetCurvature = this.targetCurvature;
             this.state.curveTimer = this.curveTimer;
 
-            // Initialize player physics parameters
+            // Initialize player physics parameters (including NFS MW Junkman & Pro Tuning modifiers)
+            const stTuning = this.styling || {};
+            const jmEngine = !!stTuning.junkmanEngine;
+            const jmTurbo = !!stTuning.junkmanTurbo;
+            const jmTires = !!stTuning.junkmanTires;
+            const jmNitro = !!stTuning.junkmanNitro;
+            const gearBias = Math.max(-1, Math.min(1, Number(stTuning.gearRatioBias) || 0));
+            const aeroBias = Math.max(-1, Math.min(1, Number(stTuning.aeroDownforce) || 0));
+            const driftBias = Math.max(-1, Math.min(1, Number(stTuning.gripDriftBias) || 0));
+
+            const jmSpeedMult = (jmEngine ? 1.045 : 1.0) * (jmTurbo ? 1.04 : 1.0) * (1 + gearBias * 0.055 - Math.max(0, aeroBias) * 0.02);
+            const jmAccelMult = (jmEngine ? 1.08 : 1.0) * (jmTurbo ? 1.07 : 1.0) * (1 - gearBias * 0.065);
+            const basePerfSpeed = this.performance.speed || 190;
+            const tunedMaxSpeed = Math.round(basePerfSpeed * jmSpeedMult);
+            const baseAccelVal = 24 + ((this.performance.accel || 3.0) < 2.5 ? 12 : 6);
+            const tunedAccelVal = Number((baseAccelVal * jmAccelMult).toFixed(2));
+            const tunedHandlingVal = Number(Math.max(2, Math.min(10, (this.performance.handling || 5.5) + (jmTires ? 0.55 : 0) + aeroBias * 0.35 - driftBias * 0.25)).toFixed(2));
+            const tunedDriftFactor = Number(Math.max(0.85, Math.min(2.45, (this.performance.driftFactor || 1.35) * (1 + driftBias * 0.25))).toFixed(2));
+
             this.state.x = 2.125; // start in lane 2
             this.state.z = 0;
             this.state.vx = 0;
             this.state.bodyRoll = 0;
             this.camRoll = 0;
             this.state.speed = this.isNfsCircuit ? 0 : 40; // standing grid start in NFS circuit, rolling start in highway
-            this.state.targetSpeed = (this.performance.speed || 180) * 0.75;
-            this.state.accel = 24 + ((this.performance.accel || 3.0) < 2.5 ? 12 : 6);
-            this.state.maxSpeed = this.performance.speed || 190;
-            this.state.handling = this.performance.handling || 5.5;
-            this.state.driftFactor = this.performance.driftFactor || 1.35;
+            this.state.targetSpeed = tunedMaxSpeed * 0.75;
+            this.state.accel = tunedAccelVal;
+            this.state.maxSpeed = tunedMaxSpeed;
+            this.state.handling = tunedHandlingVal;
+            this.state.driftFactor = tunedDriftFactor;
+            this.state.junkmanNitro = jmNitro;
+            this.state.proAeroDownforce = aeroBias;
             this.state.rewardMult = this.performance.rewardMult || 1.0;
             this.state.fuelCurrent = this.performance.tankCapacity || 45;
             this.state.fuelConsumption = this.performance.consumption || 9.0;
@@ -12403,8 +12665,8 @@
             this.state.prevGear = 1;
             this.state.rpm = 1200;
             const carId = identifyCarModel(this.carName);
-            const isSupercar = ['sf90', 'huracan', 'porsche911', 'chiron', 'jesko', 'gtr'].includes(carId);
-            this.state.maxRpm = isSupercar ? 8800 : (['m5e60', 'm5f90', 'm8', 'e63', 'rs6', 'g63'].includes(carId) ? 7500 : 6500);
+            const isSupercar = ['sf90', 'huracan', 'porsche911', 'chiron', 'jesko', 'gtr', 'm3gtr', 'corvette_cross', 'mclaren', 'db9', 'viper_jv', 'gallardo_ming', 'audir8', 'rx7'].includes(carId);
+            this.state.maxRpm = carId === 'm3gtr' ? 9000 : (carId === 'rx7' ? 9200 : (isSupercar ? 8800 : (['m5e60', 'm5f90', 'm8', 'e63', 'rs6', 'g63', 'supra', 'evo8_earl'].includes(carId) ? 7500 : 6500)));
             this.state.idleRpm = isSupercar ? 1100 : 900;
             this.state.shiftShock = 0;
             this.state.gasHoldTime = 0;
@@ -12507,14 +12769,12 @@
             const diffScale = difficulty === 'hard' ? 1.04 : (difficulty === 'easy' ? 0.88 : 0.96);
             const playerBaseMax = this.state.maxSpeed || 200;
 
-            const roster = [
+            const blacklistPool = [
                 {
                     id: 'razor',
                     driverName: 'Рейзор (#1 Blacklist)',
                     shortTag: '#1 РЕЙЗОР',
                     carName: 'BMW M3 E46 GTR (NFS Most Wanted)',
-                    laneIndex: 1,
-                    startZ: 14,
                     skill: 1.02 * diffScale,
                     styling: { color: '#cbd5e1', vinyl: 'none', spoiler: 'gtr', neon: '#38bdf8', plate: 'M 001 MW | 777 RUS' }
                 },
@@ -12523,21 +12783,83 @@
                     driverName: 'Сержант Кросс (C6.R)',
                     shortTag: '🚓 КРОСС',
                     carName: 'Chevrolet Corvette C6.R (Cross NFS MW)',
-                    laneIndex: 2,
-                    startZ: 9.5,
-                    skill: 0.98 * diffScale,
+                    skill: 0.99 * diffScale,
                     styling: { color: '#1e293b', vinyl: 'none', spoiler: 'none', neon: '#ef4444', sgu: true, plate: 'К 001 РО | 77 RUS' }
+                },
+                {
+                    id: 'bull',
+                    driverName: 'Булл (#2 Blacklist)',
+                    shortTag: '#2 БУЛЛ',
+                    carName: 'Mercedes-Benz SLR McLaren (Bull #2 MW)',
+                    skill: 0.98 * diffScale,
+                    styling: { color: '#18181b', vinyl: 'mw_blacklist', spoiler: 'gt', neon: '#ef4444', plate: 'В 002 УЛ | 777 RUS' }
+                },
+                {
+                    id: 'ronnie',
+                    driverName: 'Ронни (#3 Blacklist)',
+                    shortTag: '#3 РОННИ',
+                    carName: 'Aston Martin DB9 (Ronnie #3 MW)',
+                    skill: 0.96 * diffScale,
+                    styling: { color: '#eab308', vinyl: 'stripes', spoiler: 'gt', neon: '#fbbf24', plate: 'Р 003 ОН | 777 RUS' }
+                },
+                {
+                    id: 'jv',
+                    driverName: 'Джей Ви (#4 Blacklist)',
+                    shortTag: '#4 ДЖЕЙ ВИ',
+                    carName: 'Dodge Viper SRT10 (JV #4 MW)',
+                    skill: 0.95 * diffScale,
+                    styling: { color: '#16a34a', vinyl: 'mw_blacklist', spoiler: 'gtr', neon: '#22c55e', plate: 'В 004 АЙ | 777 RUS' }
+                },
+                {
+                    id: 'ming',
+                    driverName: 'Минг (#6 Blacklist)',
+                    shortTag: '#6 МИНГ',
+                    carName: 'Lamborghini Gallardo (Ming #6 MW)',
+                    skill: 0.95 * diffScale,
+                    styling: { color: '#334155', vinyl: 'stripes', spoiler: 'none', neon: '#f59e0b', plate: 'М 006 ИН | 777 RUS' }
+                },
+                {
+                    id: 'earl',
+                    driverName: 'Эрл (#9 Blacklist)',
+                    shortTag: '#9 ЭРЛ',
+                    carName: 'Mitsubishi Lancer Evo VIII (Earl #9 MW)',
+                    skill: 0.94 * diffScale,
+                    styling: { color: '#f8fafc', vinyl: 'drift', spoiler: 'gt', roofScoop: 'vortex', neon: '#ef4444', plate: 'Э 009 РЛ | 777 RUS' }
+                },
+                {
+                    id: 'izzy',
+                    driverName: 'Иззи (#12 Blacklist)',
+                    shortTag: '#12 ИЗЗИ',
+                    carName: 'Mazda RX-8 (Izzy #12 MW)',
+                    skill: 0.93 * diffScale,
+                    styling: { color: '#ef4444', vinyl: 'drift', spoiler: 'gt', neon: '#38bdf8', plate: 'И 012 ЗИ | 777 RUS' }
+                },
+                {
+                    id: 'vic',
+                    driverName: 'Вик (#13 Blacklist)',
+                    shortTag: '#13 ВИК',
+                    carName: 'Toyota Supra MK4 (Vic #13 MW)',
+                    skill: 0.93 * diffScale,
+                    styling: { color: '#f97316', vinyl: 'mw_blacklist', spoiler: 'gtr', bodykit: 'widebody', neon: '#f97316', plate: 'В 013 ИК | 777 RUS' }
                 },
                 {
                     id: 'razor_mustang',
                     driverName: 'Рейзор (#15 Mustang GT)',
                     shortTag: '#15 МУСТАНГ',
                     carName: 'Ford Mustang GT (Razor NFS MW)',
-                    laneIndex: 0,
-                    startZ: 5.0,
                     skill: 0.94 * diffScale,
                     styling: { color: '#0f172a', vinyl: 'none', spoiler: 'none', neon: '#f59e0b', plate: 'Р 015 МВ | 77 RUS' }
                 }
+            ];
+
+            // Always feature #1 Razor M3 GTR & Cross C6.R, plus a 3rd Blacklist boss (Mustang GT or rotating boss by track)
+            const thirdBossIdx = (this.nfsTrackMeta && this.nfsTrackMeta.id === 'canyon_pass')
+                ? 2
+                : ((this.nfsTrackMeta && this.nfsTrackMeta.id === 'bayview_sprint') ? 8 : 9);
+            const roster = [
+                Object.assign({}, blacklistPool[0], { laneIndex: 1, startZ: 14, name: blacklistPool[0].driverName }),
+                Object.assign({}, blacklistPool[1], { laneIndex: 2, startZ: 9.5, name: blacklistPool[1].driverName }),
+                Object.assign({}, blacklistPool[thirdBossIdx] || blacklistPool[9], { laneIndex: 0, startZ: 5.0, name: (blacklistPool[thirdBossIdx] || blacklistPool[9]).driverName })
             ];
 
             for (let i = 0; i < roster.length; i++) {
@@ -12992,18 +13314,27 @@
                 this.playerBrakeLight.position.set(0, localTlMid.y, localTlMid.z - 0.04);
                 this.playerCar.add(this.playerBrakeLight);
 
-                // 3. Streamlined Subtle Nitro Exhaust Flame Meshes & Dynamic Road Light
+                // 3. Streamlined Subtle Nitro Exhaust Flame Meshes & Dynamic Road Light (with custom N2O color)
                 this.playerNitroFlames = [];
                 const exhaustY = Math.max(0.18, Math.min(0.28, (size.y || 1.4) * 0.16));
                 const exhaustSpanX = (carId === 'vaz2107' || carId === 'vaz2109') ? halfW * 0.34 : halfW * 0.40;
                 const exhaustZ = -halfL - 0.04;
+                const nitroColorMap = {
+                    blue: 0x00d4ff,
+                    purple: 0xa855f7,
+                    emerald: 0x10b981,
+                    crimson: 0xef4444,
+                    gold: 0xf59e0b
+                };
+                const rawNitroCol = this.styling && this.styling.nitroColor;
+                const nitroFlameHex = nitroColorMap[rawNitroCol] || parseColor(rawNitroCol, 0x00d4ff);
 
                 [-1, 1].forEach(side => {
-                    // Outer streamlined electric cyan-blue nitro flame jet
+                    // Outer streamlined nitro flame jet
                     const flameGeo = new THREE.ConeGeometry(0.042, 0.38, 16);
                     flameGeo.rotateX(-Math.PI / 2);
                     const flameMat = new THREE.MeshBasicMaterial({
-                        color: 0x00d4ff,
+                        color: nitroFlameHex,
                         transparent: true,
                         opacity: 0.70,
                         blending: THREE.AdditiveBlending,
@@ -13032,7 +13363,7 @@
                     this.playerNitroFlames.push(core);
                 });
 
-                this.playerNitroLight = new THREE.PointLight(0x00d4ff, 0, 5.0, 2.0);
+                this.playerNitroLight = new THREE.PointLight(nitroFlameHex, 0, 5.0, 2.0);
                 this.playerNitroLight.position.set(0, exhaustY + 0.08, exhaustZ - 0.20);
                 this.playerCar.add(this.playerNitroLight);
 
@@ -13742,10 +14073,19 @@
             const keys = this.keys;
 
             // NFS Most Wanted Speedbreaker charge & time-dilation handling
+            if (state.isSpeedbreakerActive && !this._wasSpeedbreakerActive) {
+                if (this.options && this.options.onSound) this.options.onSound('speedbreakerOn');
+            } else if (!state.isSpeedbreakerActive && this._wasSpeedbreakerActive) {
+                if (this.options && this.options.onSound) this.options.onSound('speedbreakerOff');
+            }
+            this._wasSpeedbreakerActive = !!state.isSpeedbreakerActive;
+
             if (state.isSpeedbreakerActive) {
                 state.speedbreakerCharge = Math.max(0, (state.speedbreakerCharge || 0) - 28 * rawDt);
                 if (state.speedbreakerCharge <= 0) {
                     state.isSpeedbreakerActive = false;
+                    this._wasSpeedbreakerActive = false;
+                    if (this.options && this.options.onSound) this.options.onSound('speedbreakerOff');
                 }
             } else {
                 const sbRecharge = (4.2 + (state.speed || 0) / 42 + (state.isDrifting ? 6.5 : 0)) * rawDt;
@@ -13763,6 +14103,7 @@
                 else {
                     state.countdownText = '🟢 СТАРТ!';
                     state.racePhase = 'racing';
+                    if (this.options && this.options.onSound) this.options.onSound('countdown_go');
                     const isPerfectLaunch = state.rpm >= (state.maxRpm || 7500) * 0.62 && state.rpm <= (state.maxRpm || 7500) * 0.92;
                     if (isPerfectLaunch) {
                         state.speed = 46;
@@ -13780,8 +14121,13 @@
                         }
                     }
                 }
-                if (state.countdownText !== prevCd && state.racePhase === 'countdown' && this.options && this.options.onPopup) {
-                    this.options.onPopup(`🚦 ${state.countdownText}...`, '#fbbf24');
+                if (state.countdownText !== prevCd && state.racePhase === 'countdown') {
+                    if (this.options && this.options.onPopup) {
+                        this.options.onPopup(`🚦 ${state.countdownText}...`, '#fbbf24');
+                    }
+                    if (this.options && this.options.onSound) {
+                        this.options.onSound('countdown_beep');
+                    }
                 }
                 if (keys.gas) {
                     state.rpm = Math.min((state.maxRpm || 7500) * 0.90, (state.rpm || 1100) + 5200 * rawDt);
@@ -15738,12 +16084,25 @@
             }
             const THREE = this.THREE;
             if (Math.random() < 0.6 && this.smokeParticles.length < 25) {
+                const smokeColorMap = {
+                    white: 0xd1d5db,
+                    blue: 0x38bdf8,
+                    red: 0xef4444,
+                    purple: 0xc084fc,
+                    gold: 0xfbbf24,
+                    green: 0x22c55e
+                };
+                const rawSmokeCol = this.styling && this.styling.smokeColor;
+                const smokeHex = smokeColorMap[rawSmokeCol] || parseColor(rawSmokeCol, 0xd1d5db);
                 const geo = this.sharedSmokeGeo || new THREE.SphereGeometry(0.24, 6, 6);
                 const mat = this.sharedSmokeMat ? this.sharedSmokeMat.clone() : new THREE.MeshBasicMaterial({
-                    color: 0xd1d5db,
+                    color: smokeHex,
                     transparent: true,
-                    opacity: 0.45
+                    opacity: 0.48
                 });
+                if (mat.color && typeof mat.color.setHex === 'function') {
+                    mat.color.setHex(smokeHex);
+                }
                 const smoke = new THREE.Mesh(geo, mat);
                 smoke.position.set(this.state.x + (Math.random() - 0.5) * 1.4, 0.2, this.state.z - 1.8);
                 smoke.userData = { life: 0.55, maxLife: 0.55 };

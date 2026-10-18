@@ -580,12 +580,12 @@
                         </div>
                     </div>
 
-                    <!-- 3D Легенды NFS Most Wanted (2005): быстрый выбор и выдача на подиум -->
+                    <!-- 3D Легенды NFS Most Wanted (2005): быстрый выбор и выдача на подиум (Все 15 Боссов Чёрного Списка) -->
                     <div id="garage-nfsmw-legends-bar" style="margin-top: 10px; padding: 10px 12px; background: linear-gradient(135deg, rgba(2, 132, 199, 0.16), rgba(15, 23, 42, 0.88)); border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 12px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
                         <div style="font-size: 11.5px; font-weight: 800; color: #bae6fd;">
-                            🏆 3D-рипы из NFS Most Wanted (2005) — выставить на подиум и забрать в гараж:
+                            🏆 Все 3D-машины Blacklist #15–#1 из NFS Most Wanted (2005):
                         </div>
-                        <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                        <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center;">
                             <button type="button" class="styling-chip" style="background: rgba(2, 132, 199, 0.25); border-color: rgba(56, 189, 248, 0.6); color: #fff; font-weight: 800;" onclick="claimAndSelectNfsMwCar('m3gtr', 'garage')">
                                 🏎️ BMW M3 E46 GTR (#1 MW)
                             </button>
@@ -595,6 +595,27 @@
                             <button type="button" class="styling-chip" style="background: rgba(245, 158, 11, 0.22); border-color: rgba(251, 191, 36, 0.55); color: #fff; font-weight: 800;" onclick="claimAndSelectNfsMwCar('mustang_razor', 'garage')">
                                 🔥 Mustang GT (Рейзор #15)
                             </button>
+                            <select id="garage-nfsmw-blacklist-select" onchange="if(this.value) claimAndSelectNfsMwCar(this.value, 'garage')" style="background: rgba(15, 23, 42, 0.92); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.55); border-radius: 8px; padding: 5px 8px; font-size: 11px; font-weight: 800; cursor: pointer;">
+                                <option value="">📋 Выбрать любого Босса Blacklist #15–#1...</option>
+                                <option value="m3gtr">#1 Игрок — BMW M3 E46 GTR</option>
+                                <option value="mustang_razor">#1 Рейзор — Ford Mustang GT</option>
+                                <option value="mclaren">#2 Булл — Mercedes-Benz SLR McLaren</option>
+                                <option value="db9">#3 Ронни — Aston Martin DB9</option>
+                                <option value="viper_jv">#4 Джей-Ви — Dodge Viper SRT10</option>
+                                <option value="corvette_webster">#5 Вебстер — Chevrolet Corvette C6</option>
+                                <option value="gallardo_ming">#6 Минг — Lamborghini Gallardo</option>
+                                <option value="clk_kaze">#7 Камикадзе — Mercedes-Benz CLK 500</option>
+                                <option value="mustang_jewels">#8 Джуэлс — Ford Mustang GT</option>
+                                <option value="evo8_earl">#9 Эрл — Mitsubishi Lancer Evo VIII</option>
+                                <option value="cayman_baron">#10 Барон — Porsche Cayman S</option>
+                                <option value="eclipse_lou">#11 Биг Лу — Mitsubishi Eclipse GT</option>
+                                <option value="rx8_izzy">#12 Иззи — Mazda RX-8</option>
+                                <option value="supra_vic">#13 Вик — Toyota Supra MK4</option>
+                                <option value="is300_taz">#14 Таз — Lexus IS300</option>
+                                <option value="golf_sonny">#15 Сонни — Volkswagen Golf GTI</option>
+                                <option value="corvette_cross">🚓 Сержант Кросс — Corvette C6.R</option>
+                                <option value="audir8_darius">👑 Дариус — Audi Le Mans Quattro R8</option>
+                            </select>
                         </div>
                     </div>
                 </div>
@@ -805,8 +826,8 @@
                             </button>
                         </div>
                         <div style="padding-top: 8px; border-top: 1px solid rgba(125, 211, 252, 0.2); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
-                            <span style="font-size: 11px; font-weight: 800; color: #e0f2fe;">🔥 Сесть за руль оригинальной 3D-легенды NFS MW:</span>
-                            <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                            <span style="font-size: 11px; font-weight: 800; color: #e0f2fe;">🔥 Сесть за руль любого Босса Blacklist #15–#1:</span>
+                            <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center;">
                                 <button type="button" class="styling-chip" style="background: rgba(2, 132, 199, 0.3); border-color: rgba(56, 189, 248, 0.65); color: #fff; font-weight: 800;" onclick="claimAndSelectNfsMwCar('m3gtr', 'race')">
                                     🏎️ BMW M3 E46 GTR (#1 MW)
                                 </button>
@@ -816,6 +837,27 @@
                                 <button type="button" class="styling-chip" style="background: rgba(245, 158, 11, 0.25); border-color: rgba(251, 191, 36, 0.6); color: #fff; font-weight: 800;" onclick="claimAndSelectNfsMwCar('mustang_razor', 'race')">
                                     🔥 Mustang GT (Рейзор #15)
                                 </button>
+                                <select id="race-nfsmw-blacklist-select" onchange="if(this.value) claimAndSelectNfsMwCar(this.value, 'race')" style="background: rgba(15, 23, 42, 0.92); color: #fde047; border: 1px solid rgba(250, 204, 21, 0.6); border-radius: 8px; padding: 5px 8px; font-size: 11px; font-weight: 800; cursor: pointer;">
+                                    <option value="">🏁 Все 18 болидов NFS MW (#15–#1)...</option>
+                                    <option value="m3gtr">#1 Игрок — BMW M3 E46 GTR</option>
+                                    <option value="mustang_razor">#1 Рейзор — Ford Mustang GT</option>
+                                    <option value="mclaren">#2 Булл — Mercedes-Benz SLR McLaren</option>
+                                    <option value="db9">#3 Ронни — Aston Martin DB9</option>
+                                    <option value="viper_jv">#4 Джей-Ви — Dodge Viper SRT10</option>
+                                    <option value="corvette_webster">#5 Вебстер — Chevrolet Corvette C6</option>
+                                    <option value="gallardo_ming">#6 Минг — Lamborghini Gallardo</option>
+                                    <option value="clk_kaze">#7 Камикадзе — Mercedes-Benz CLK 500</option>
+                                    <option value="mustang_jewels">#8 Джуэлс — Ford Mustang GT</option>
+                                    <option value="evo8_earl">#9 Эрл — Mitsubishi Lancer Evo VIII</option>
+                                    <option value="cayman_baron">#10 Барон — Porsche Cayman S</option>
+                                    <option value="eclipse_lou">#11 Биг Лу — Mitsubishi Eclipse GT</option>
+                                    <option value="rx8_izzy">#12 Иззи — Mazda RX-8</option>
+                                    <option value="supra_vic">#13 Вик — Toyota Supra MK4</option>
+                                    <option value="is300_taz">#14 Таз — Lexus IS300</option>
+                                    <option value="golf_sonny">#15 Сонни — Volkswagen Golf GTI</option>
+                                    <option value="corvette_cross">🚓 Сержант Кросс — Corvette C6.R</option>
+                                    <option value="audir8_darius">👑 Дариус — Audi Le Mans Quattro R8</option>
+                                </select>
                             </div>
                         </div>
                     </div>
@@ -1891,6 +1933,8 @@
                             <button type="button" class="styling-chip" data-wheels="stamps" onclick="selectStylingWheels('stamps')">Штампы (15 000 ₽)</button>
                             <button type="button" class="styling-chip" data-wheels="deepdish" onclick="selectStylingWheels('deepdish')">Полки / Разварки (45 000 ₽)</button>
                             <button type="button" class="styling-chip" data-wheels="forged" onclick="selectStylingWheels('forged')">Кованые спорт (75 000 ₽)</button>
+                            <button type="button" class="styling-chip" data-wheels="bbs_gtr" onclick="selectStylingWheels('bbs_gtr')">🏆 BBS RE M3 GTR (110 000 ₽)</button>
+                            <button type="button" class="styling-chip" data-wheels="oz_racing" onclick="selectStylingWheels('oz_racing')">⚡ OZ Racing MW (95 000 ₽)</button>
                         </div>
                     </div>
 
@@ -1955,15 +1999,113 @@
                             <button type="button" class="styling-chip" data-spoiler="none" onclick="selectStylingSpoiler('none')">Без спойлера (0 ₽)</button>
                             <button type="button" class="styling-chip" data-spoiler="ducktail" onclick="selectStylingSpoiler('ducktail')">Дактейл (20 000 ₽)</button>
                             <button type="button" class="styling-chip" data-spoiler="gt" onclick="selectStylingSpoiler('gt')">GT-крыло (50 000 ₽)</button>
+                            <button type="button" class="styling-chip" data-spoiler="gtr" onclick="selectStylingSpoiler('gtr')">🏆 Карбон GTR MW (85 000 ₽)</button>
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom:14px;">
+                        <div style="font-size:12px; color:#fff; font-weight:800; margin-bottom:6px;">🛡️ Кузовной обвес (Bodykit NFS MW):</div>
+                        <div class="styling-options-row" id="styling-bodykit-chips">
+                            <button type="button" class="styling-chip" data-bodykit="stock" onclick="selectStylingBodykit('stock')">Сток кузов (0 ₽)</button>
+                            <button type="button" class="styling-chip" data-bodykit="street" onclick="selectStylingBodykit('street')">Стрит-сплиттер + Пороги (45 000 ₽)</button>
+                            <button type="button" class="styling-chip" data-bodykit="widebody" onclick="selectStylingBodykit('widebody')">Widebody Арки + Канарды (90 000 ₽)</button>
+                            <button type="button" class="styling-chip" data-bodykit="nfsmw_gtr" onclick="selectStylingBodykit('nfsmw_gtr')">🏆 Обвес M3 GTR ALMS (140 000 ₽)</button>
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom:14px;">
+                        <div style="font-size:12px; color:#fff; font-weight:800; margin-bottom:6px;">🌪️ Воздухозаборник на крышу (Roof Scoop NFS MW):</div>
+                        <div class="styling-options-row" id="styling-roofscoop-chips">
+                            <button type="button" class="styling-chip" data-roofscoop="none" onclick="selectStylingRoofScoop('none')">Без ковша (0 ₽)</button>
+                            <button type="button" class="styling-chip" data-roofscoop="single" onclick="selectStylingRoofScoop('single')">Одинарный JDM (25 000 ₽)</button>
+                            <button type="button" class="styling-chip" data-roofscoop="dual" onclick="selectStylingRoofScoop('dual')">Двойной Twin-Scoop (40 000 ₽)</button>
+                            <button type="button" class="styling-chip" data-roofscoop="vortex" onclick="selectStylingRoofScoop('vortex')">Карбон + Vortex-плавники (65 000 ₽)</button>
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom:14px;">
+                        <div style="font-size:12px; color:#fff; font-weight:800; margin-bottom:6px;">🔥 Капот (Custom Hood NFS MW):</div>
+                        <div class="styling-options-row" id="styling-hood-chips">
+                            <button type="button" class="styling-chip" data-hood="stock" onclick="selectStylingHood('stock')">Заводской (0 ₽)</button>
+                            <button type="button" class="styling-chip" data-hood="carbon" onclick="selectStylingHood('carbon')">Чистый Карбон (35 000 ₽)</button>
+                            <button type="button" class="styling-chip" data-hood="gtr_vents" onclick="selectStylingHood('gtr_vents')">Жабры GTR Vents (55 000 ₽)</button>
+                            <button type="button" class="styling-chip" data-hood="blower" onclick="selectStylingHood('blower')">Компрессор V8 Blower (95 000 ₽)</button>
                         </div>
                     </div>
 
                     <div style="margin-bottom:18px;">
-                        <div style="font-size:12px; color:#fff; font-weight:800; margin-bottom:6px;">Винилография / Ливрея:</div>
+                        <div style="font-size:12px; color:#fff; font-weight:800; margin-bottom:6px;">Винилография / Ливрея (включая NFS Most Wanted):</div>
                         <div class="styling-options-row" id="styling-vinyl-chips">
                             <button type="button" class="styling-chip" data-vinyl="none" onclick="selectStylingVinyl('none')">Без винила (0 ₽)</button>
                             <button type="button" class="styling-chip" data-vinyl="stripes" onclick="selectStylingVinyl('stripes')">Две полосы (30 000 ₽)</button>
                             <button type="button" class="styling-chip" data-vinyl="drift" onclick="selectStylingVinyl('drift')">Дрифт-арт (60 000 ₽)</button>
+                            <button type="button" class="styling-chip" data-vinyl="mw_m3gtr" onclick="selectStylingVinyl('mw_m3gtr')">🏆 Ливрея M3 GTR #1 (120 000 ₽)</button>
+                            <button type="button" class="styling-chip" data-vinyl="mw_razor" onclick="selectStylingVinyl('mw_razor')">🔥 Пламя Рейзора (95 000 ₽)</button>
+                            <button type="button" class="styling-chip" data-vinyl="mw_cross" onclick="selectStylingVinyl('mw_cross')">🚓 Перехватчик Кросса (95 000 ₽)</button>
+                            <button type="button" class="styling-chip" data-vinyl="mw_blacklist" onclick="selectStylingVinyl('mw_blacklist')">☠️ Чёрный Список (85 000 ₽)</button>
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom:16px; display:grid; grid-template-columns:repeat(auto-fit, minmax(210px, 1fr)); gap:10px;">
+                        <div>
+                            <div style="font-size:12px; color:#fff; font-weight:800; margin-bottom:6px;">🚀 Цвет пламени N2O (30 000 ₽):</div>
+                            <div class="styling-options-row" id="styling-nitrocolor-chips">
+                                <button type="button" class="styling-chip" data-nitrocolor="blue" onclick="selectStylingNitroColor('blue')">💙 Синий N2O</button>
+                                <button type="button" class="styling-chip" data-nitrocolor="orange" onclick="selectStylingNitroColor('orange')">🧡 Огонь MW</button>
+                                <button type="button" class="styling-chip" data-nitrocolor="purple" onclick="selectStylingNitroColor('purple')">💜 Ультрафиолет</button>
+                                <button type="button" class="styling-chip" data-nitrocolor="green" onclick="selectStylingNitroColor('green')">💚 Токсик</button>
+                            </div>
+                        </div>
+                        <div>
+                            <div style="font-size:12px; color:#fff; font-weight:800; margin-bottom:6px;">💨 Цвет дыма шин (25 000 ₽):</div>
+                            <div class="styling-options-row" id="styling-smokecolor-chips">
+                                <button type="button" class="styling-chip" data-smokecolor="white" onclick="selectStylingSmokeColor('white')">⚪ Белый</button>
+                                <button type="button" class="styling-chip" data-smokecolor="blue" onclick="selectStylingSmokeColor('blue')">🔵 Синий</button>
+                                <button type="button" class="styling-chip" data-smokecolor="red" onclick="selectStylingSmokeColor('red')">🔴 Красный</button>
+                                <button type="button" class="styling-chip" data-smokecolor="yellow" onclick="selectStylingSmokeColor('yellow')">🟡 Золотой</button>
+                                <button type="button" class="styling-chip" data-smokecolor="purple" onclick="selectStylingSmokeColor('purple')">🟣 Неон</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom:16px; padding:12px; border-radius:12px; background:linear-gradient(135deg, rgba(245, 158, 11, 0.14), rgba(15, 23, 42, 0.9)); border:1px solid rgba(251, 191, 36, 0.4);">
+                        <div style="font-size:12px; color:#fde047; font-weight:900; margin-bottom:6px;">⚙️ Детали Старьёвщика (Junkman Parts — Уникальный тюнинг Боссов NFS MW):</div>
+                        <div style="font-size:11px; color:#cbd5e1; margin-bottom:8px;">Увеличивают максимальную скорость, крутящий момент, зацеп сликов и мощность N2O сверх лимита 5/5!</div>
+                        <div class="styling-options-row" id="styling-junkman-chips">
+                            <button type="button" class="styling-chip" data-junkman="junkmanEngine" onclick="toggleStylingJunkman('junkmanEngine')">🔥 Двигатель Junkman (+18 км/ч · 150 000 ₽)</button>
+                            <button type="button" class="styling-chip" data-junkman="junkmanTurbo" onclick="toggleStylingJunkman('junkmanTurbo')">🐌 Турбо/Компрессор Junkman (+12% тяги · 140 000 ₽)</button>
+                            <button type="button" class="styling-chip" data-junkman="junkmanTires" onclick="toggleStylingJunkman('junkmanTires')">🛞 Гоночные слики Junkman (+10% держака · 125 000 ₽)</button>
+                            <button type="button" class="styling-chip" data-junkman="junkmanNitro" onclick="toggleStylingJunkman('junkmanNitro')">🚀 Закись N2O Junkman (+30% буста · 130 000 ₽)</button>
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom:16px; padding:12px; border-radius:12px; background:rgba(2, 132, 199, 0.12); border:1px solid rgba(56, 189, 248, 0.35);">
+                        <div style="font-size:12px; color:#38bdf8; font-weight:900; margin-bottom:8px;">🎛️ Тонкая Pro-Настройка Ходовой (NFS MW Pro Tuning — Бесплатно):</div>
+                        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:8px;">
+                            <div>
+                                <div style="font-size:11px; color:#e2e8f0; font-weight:700; margin-bottom:4px;">КПП (Разгон ⇄ Максималка):</div>
+                                <div class="styling-options-row" id="styling-pro-gear-chips">
+                                    <button type="button" class="styling-chip" data-pro-gear="-1" onclick="selectStylingProTuning('gearRatioBias', -1)">Короткая (Разгон)</button>
+                                    <button type="button" class="styling-chip" data-pro-gear="0" onclick="selectStylingProTuning('gearRatioBias', 0)">Баланс</button>
+                                    <button type="button" class="styling-chip" data-pro-gear="1" onclick="selectStylingProTuning('gearRatioBias', 1)">Длинная (+Скорость)</button>
+                                </div>
+                            </div>
+                            <div>
+                                <div style="font-size:11px; color:#e2e8f0; font-weight:700; margin-bottom:4px;">Аэродинамика (Прижим):</div>
+                                <div class="styling-options-row" id="styling-pro-aero-chips">
+                                    <button type="button" class="styling-chip" data-pro-aero="-1" onclick="selectStylingProTuning('aeroDownforce', -1)">Мин. драг</button>
+                                    <button type="button" class="styling-chip" data-pro-aero="0" onclick="selectStylingProTuning('aeroDownforce', 0)">Сток</button>
+                                    <button type="button" class="styling-chip" data-pro-aero="1" onclick="selectStylingProTuning('aeroDownforce', 1)">Макс. прижим</button>
+                                </div>
+                            </div>
+                            <div>
+                                <div style="font-size:11px; color:#e2e8f0; font-weight:700; margin-bottom:4px;">Баланс шин (Грип ⇄ Дрифт):</div>
+                                <div class="styling-options-row" id="styling-pro-grip-chips">
+                                    <button type="button" class="styling-chip" data-pro-grip="-1" onclick="selectStylingProTuning('gripDriftBias', -1)">Дрифт (Занос)</button>
+                                    <button type="button" class="styling-chip" data-pro-grip="0" onclick="selectStylingProTuning('gripDriftBias', 0)">Универсал</button>
+                                    <button type="button" class="styling-chip" data-pro-grip="1" onclick="selectStylingProTuning('gripDriftBias', 1)">Кольцевой Грип</button>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -2083,7 +2225,7 @@
     <script src="./js/storage.js?v=327dc7592b84"></script>
     <script src="./js/race-records.js?v=eaeaf8e59fc2"></script>
     <script src="./js/race-economy.js?v=2802923358a3"></script>
-    <script src="./js/audio.js?v=bca765d74412"></script>
+    <script src="./js/audio.js?v=816cc43763e2"></script>
     <script src="./js/vendor/three.min.js"></script>
     <script>
         if (typeof THREE === 'undefined') {
@@ -2099,9 +2241,9 @@
         }
     </script>
     <script src="./js/race-effects.js?v=6883d3af7d80"></script>
-    <script src="./js/nfs-physics.js?v=ff50e03112fb"></script>
-    <script src="./js/nfs-circuit-race.js?v=c4d499efbc0c"></script>
-    <script src="./js/car-3d.js?v=ae207407a181"></script>
-    <script src="./js/app.js?v=5faac24f9dbc"></script>
+    <script src="./js/nfs-physics.js?v=f4af89e86f17"></script>
+    <script src="./js/nfs-circuit-race.js?v=a495d845d3b5"></script>
+    <script src="./js/car-3d.js?v=634b8c8076c7"></script>
+    <script src="./js/app.js?v=6c29997fe7a8"></script>
 </body>
 </html>

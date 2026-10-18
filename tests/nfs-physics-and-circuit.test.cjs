@@ -439,3 +439,77 @@ test('16. Оригинальные 3D GLB-рипы из NFS Most Wanted 2005 (BM
     assert.ok(appJs.includes('"Ford Mustang GT (Razor NFS MW)"'), 'В carRaceStats должен быть Ford Mustang GT (Razor NFS MW)');
 });
 
+test('17. Полный перенос NFS Most Wanted: все 18 профилей Чёрного списка #15–#1, 3D-бодикиты/воздухозаборники/капоты, пакеты Junkman + Pro-тюнинг и звук прямозубой КПП M3 GTR + Speedbreaker', () => {
+    const blacklistCars = [
+        'BMW M3 E46 GTR (NFS Most Wanted)',
+        'Chevrolet Corvette C6.R (Cross NFS MW)',
+        'Ford Mustang GT (Razor NFS MW)',
+        'Mercedes-Benz SLR McLaren (Bull #2 MW)',
+        'Aston Martin DB9 (Ronnie #3 MW)',
+        'Dodge Viper SRT10 (JV #4 MW)',
+        'Chevrolet Corvette C6 (Webster #5 MW)',
+        'Lamborghini Gallardo (Ming #6 MW)',
+        'Mercedes-Benz CLK 500 (Kaze #7 MW)',
+        'Ford Mustang GT (Jewels #8 MW)',
+        'Mitsubishi Lancer Evo VIII (Earl #9 MW)',
+        'Porsche Cayman S (Baron #10 MW)',
+        'Mitsubishi Eclipse GT (Big Lou #11 MW)',
+        'Mazda RX-8 (Izzy #12 MW)',
+        'Toyota Supra MK4 (Vic #13 MW)',
+        'Lexus IS300 (Taz #14 MW)',
+        'Volkswagen Golf GTI (Sonny #15 MW)',
+        'Audi Le Mans Quattro R8 (Darius MW)'
+    ];
+
+    for (const carName of blacklistCars) {
+        assert.ok(NfsPhysics.VEHICLE_PROFILES[carName], `В VEHICLE_PROFILES должен быть профиль ${carName}`);
+        const prof = NfsPhysics.resolveVehicleProfile(carName);
+        assert.ok(prof.maxSpeedKmh >= 285, `Профиль ${carName} должен иметь валидную максимальную скорость`);
+    }
+
+    // Проверяем влияние деталей старьёвщика (Junkman) и Pro-настроек КПП/Аэро/Зацепа
+    const baseM3 = NfsPhysics.resolveVehicleProfile('BMW M3 E46 GTR (NFS Most Wanted)', {}, {});
+    const junkmanM3 = NfsPhysics.resolveVehicleProfile(
+        'BMW M3 E46 GTR (NFS Most Wanted)',
+        {
+            junkmanEngine: true,
+            junkmanTurbo: true,
+            junkmanTires: true,
+            junkmanNitro: true,
+            gearRatioBias: 1,
+            aeroDownforce: 1,
+            gripDriftBias: 1
+        },
+        { bodykit: 'nfsmw_gtr', spoiler: 'gtr' }
+    );
+    assert.ok(junkmanM3.peakEngineForce > baseM3.peakEngineForce, 'Junkman Engine + Turbo должны повышать пиковую тягу двигателя');
+    assert.ok(junkmanM3.maxSpeedKmh > baseM3.maxSpeedKmh, 'Junkman + длинная КПП должны повышать максимальную скорость');
+    assert.ok(junkmanM3.frontCorneringStiffness > baseM3.frontCorneringStiffness, 'Junkman Tires + Grip Bias + обвес GTR должны усиливать боковой зацеп шин');
+    assert.ok(junkmanM3.nitroForceMultiplier > baseM3.nitroForceMultiplier, 'Junkman N2O должен усиливать тягу закиси азота');
+
+    // Проверяем наличие 3D-тюнинга BodyShop и звуков в исходниках
+    const car3dJs = fs.readFileSync(path.join(__dirname, '..', 'js', 'car-3d.js'), 'utf8');
+    const audioJs = fs.readFileSync(path.join(__dirname, '..', 'js', 'audio.js'), 'utf8');
+    const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
+
+    assert.ok(car3dJs.includes('GLB_BodykitGroup'), 'В js/car-3d.js должна поддерживаться 3D-группа обвесов GLB_BodykitGroup');
+    assert.ok(car3dJs.includes('GLB_RoofScoopGroup'), 'В js/car-3d.js должна поддерживаться 3D-группа воздухозаборников GLB_RoofScoopGroup');
+    assert.ok(car3dJs.includes('GLB_HoodGroup'), 'В js/car-3d.js должна поддерживаться 3D-группа капотов GLB_HoodGroup');
+    assert.ok(car3dJs.includes('bbs_gtr'), 'В js/car-3d.js должны поддерживаться диски BBS Motorsport GTR');
+    assert.ok(car3dJs.includes('oz_racing'), 'В js/car-3d.js должны поддерживаться диски OZ Superleggera');
+    assert.ok(car3dJs.includes('mw_m3gtr'), 'В js/car-3d.js должен поддерживаться винил M3 GTR Hero');
+    assert.ok(car3dJs.includes('mw_razor'), 'В js/car-3d.js должен поддерживаться винил Razor Flame');
+
+    assert.ok(audioJs.includes("carClass === 'm3gtr'"), 'В js/audio.js должен быть профиль прямозубой КПП M3 GTR');
+    assert.ok(audioJs.includes('speedbreakerOn('), 'В js/audio.js должен быть звук активации Speedbreaker');
+    assert.ok(audioJs.includes('speedbreakerOff('), 'В js/audio.js должен быть звук выхода из Speedbreaker');
+    assert.ok(audioJs.includes('countdownBeep('), 'В js/audio.js должен быть звук стартового отсчёта NFS MW');
+    assert.ok(audioJs.includes('m3GtrWhine('), 'В js/audio.js должен быть метод m3GtrWhine');
+
+    assert.ok(html.includes('id="styling-bodykit-chips"'), 'В index.html должны быть чипы выбора боди-китов NFS MW');
+    assert.ok(html.includes('id="styling-roofscoop-chips"'), 'В index.html должны быть чипы выбора воздухозаборников на крышу');
+    assert.ok(html.includes('id="styling-hood-chips"'), 'В index.html должны быть чипы выбора капота');
+    assert.ok(html.includes('id="styling-junkman-chips"'), 'В index.html должны быть чипы выбора деталей Junkman');
+});
+
+

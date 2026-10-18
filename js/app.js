@@ -1176,6 +1176,13 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         let stylingTempCamber = 0;
         let stylingTempOffset = 0;
         let stylingTempNeonMode = 'solid';
+        let stylingTempBodykit = 'stock';
+        let stylingTempRoofScoop = 'none';
+        let stylingTempHood = 'stock';
+        let stylingTempNitroColor = 'blue';
+        let stylingTempSmokeColor = 'white';
+        let stylingTempJunkman = { junkmanEngine: false, junkmanTurbo: false, junkmanTires: false, junkmanNitro: false };
+        let stylingTempProTuning = { gearRatioBias: 0, aeroDownforce: 0, gripDriftBias: 0 };
         let stylingViewMode = 'side';
 
         const TITLES_CATALOG = {
@@ -7701,7 +7708,12 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                         plate: stylingTempPlate,
                         camber: stylingTempCamber,
                         wheelOffset: stylingTempOffset,
-                        neonMode: stylingTempNeonMode
+                        neonMode: stylingTempNeonMode,
+                        bodykit: stylingTempBodykit,
+                        roofScoop: stylingTempRoofScoop,
+                        hood: stylingTempHood,
+                        nitroColor: stylingTempNitroColor,
+                        smokeColor: stylingTempSmokeColor
                     });
                     updateShowroomButtonsState();
                 }
@@ -7748,7 +7760,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             openStylingModal(carIndex, '3d');
         }
 
-        // --- 2. СТАЙЛИНГ АВТОМОБИЛЕЙ (ПОКРАСКА, ТОНИРОВКА, ДИСКИ, КЛИРЕНС, СГУ, НЕОН) ---
+        // --- 2. СТАЙЛИНГ АВТОМОБИЛЕЙ (ПОКРАСКА, ТОНИРОВКА, ДИСКИ, КЛИРЕНС, СГУ, НЕОН, NFS MW БОДИ-КИТЫ И JUNKMAN) ---
         function openStylingModal(carIndex, initialMode) {
             if (garage3DShowroom) {
                 try { garage3DShowroom.stop(); } catch (_) {}
@@ -7775,7 +7787,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             if (btn3D) btn3D.classList.toggle('active', is3D);
             const car = myCars[carIndex];
             if (!car) return;
-            car.styling = car.styling || { color: '#ffffff', tint: 0, neon: 'none', spoiler: 'none', vinyl: 'none', wheels: 'stock', suspension: 'stock', sgu: 'none', camber: 0, wheelOffset: 0, neonMode: 'solid' };
+            car.styling = car.styling || { color: '#ffffff', tint: 0, neon: 'none', spoiler: 'none', vinyl: 'none', wheels: 'stock', suspension: 'stock', sgu: 'none', camber: 0, wheelOffset: 0, neonMode: 'solid', bodykit: 'stock', roofScoop: 'none', hood: 'stock', nitroColor: 'blue', smokeColor: 'white' };
             stylingTempColor = car.styling.color || '#ffffff';
             stylingTempTint = car.styling.tint ?? 0;
             stylingTempNeon = car.styling.neon || 'none';
@@ -7788,6 +7800,22 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             stylingTempCamber = car.styling.camber ?? 0;
             stylingTempOffset = car.styling.wheelOffset ?? 0;
             stylingTempNeonMode = car.styling.neonMode || 'solid';
+            stylingTempBodykit = car.styling.bodykit || 'stock';
+            stylingTempRoofScoop = car.styling.roofScoop || 'none';
+            stylingTempHood = car.styling.hood || 'stock';
+            stylingTempNitroColor = car.styling.nitroColor || 'blue';
+            stylingTempSmokeColor = car.styling.smokeColor || 'white';
+            stylingTempJunkman = {
+                engine: Boolean(car.styling.junkmanEngine || (car.upgrades && car.upgrades.junkmanEngine)),
+                turbo: Boolean(car.styling.junkmanTurbo || (car.upgrades && car.upgrades.junkmanTurbo)),
+                tires: Boolean(car.styling.junkmanTires || (car.upgrades && car.upgrades.junkmanTires)),
+                nitro: Boolean(car.styling.junkmanNitro || (car.upgrades && car.upgrades.junkmanNitro))
+            };
+            stylingTempProTuning = {
+                gearRatioBias: Number(car.styling.gearRatioBias ?? (car.upgrades && car.upgrades.gearRatioBias) ?? 0),
+                aeroDownforce: Number(car.styling.aeroDownforce ?? (car.upgrades && car.upgrades.aeroDownforce) ?? 0),
+                gripDriftBias: Number(car.styling.gripDriftBias ?? (car.upgrades && car.upgrades.gripDriftBias) ?? 0)
+            };
 
             const titleEl = document.getElementById('styling-car-title');
             if (titleEl) titleEl.innerText = `Настройка для: ${car.name}`;
@@ -7830,6 +7858,34 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             });
             document.querySelectorAll('#styling-neon-mode-chips .styling-chip').forEach(btn => {
                 btn.classList.toggle('active', btn.dataset.neonmode === stylingTempNeonMode);
+            });
+            document.querySelectorAll('#styling-bodykit-chips .styling-chip').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.bodykit === stylingTempBodykit);
+            });
+            document.querySelectorAll('#styling-roofscoop-chips .styling-chip').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.roofscoop === stylingTempRoofScoop);
+            });
+            document.querySelectorAll('#styling-hood-chips .styling-chip').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.hood === stylingTempHood);
+            });
+            document.querySelectorAll('#styling-nitrocolor-chips .styling-chip').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.nitrocolor === stylingTempNitroColor);
+            });
+            document.querySelectorAll('#styling-smokecolor-chips .styling-chip').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.smokecolor === stylingTempSmokeColor);
+            });
+            document.querySelectorAll('#styling-junkman-chips .styling-chip').forEach(btn => {
+                const part = btn.dataset.junkman;
+                btn.classList.toggle('active', Boolean(part && stylingTempJunkman[part]));
+            });
+            document.querySelectorAll('#styling-pro-gear-chips .styling-chip').forEach(btn => {
+                btn.classList.toggle('active', Number(btn.dataset.progear) === Number(stylingTempProTuning.gearRatioBias));
+            });
+            document.querySelectorAll('#styling-pro-aero-chips .styling-chip').forEach(btn => {
+                btn.classList.toggle('active', Number(btn.dataset.proaero) === Number(stylingTempProTuning.aeroDownforce));
+            });
+            document.querySelectorAll('#styling-pro-grip-chips .styling-chip').forEach(btn => {
+                btn.classList.toggle('active', Number(btn.dataset.progrip) === Number(stylingTempProTuning.gripDriftBias));
             });
 
             document.getElementById('btn-show-doors')?.classList.remove('active');
@@ -7954,6 +8010,91 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             playTick();
             updateStylingModalPreview();
         }
+
+        function selectStylingBodykit(bodykit) {
+            stylingTempBodykit = bodykit || 'stock';
+            document.querySelectorAll('#styling-bodykit-chips .styling-chip').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.bodykit === stylingTempBodykit);
+            });
+            playTick();
+            updateStylingModalPreview();
+        }
+        window.selectStylingBodykit = selectStylingBodykit;
+
+        function selectStylingRoofScoop(scoop) {
+            stylingTempRoofScoop = scoop || 'none';
+            document.querySelectorAll('#styling-roofscoop-chips .styling-chip').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.roofscoop === stylingTempRoofScoop);
+            });
+            playTick();
+            updateStylingModalPreview();
+        }
+        window.selectStylingRoofScoop = selectStylingRoofScoop;
+
+        function selectStylingHood(hood) {
+            stylingTempHood = hood || 'stock';
+            document.querySelectorAll('#styling-hood-chips .styling-chip').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.hood === stylingTempHood);
+            });
+            playTick();
+            updateStylingModalPreview();
+        }
+        window.selectStylingHood = selectStylingHood;
+
+        function selectStylingNitroColor(nitroColor) {
+            stylingTempNitroColor = nitroColor || 'blue';
+            document.querySelectorAll('#styling-nitrocolor-chips .styling-chip').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.nitrocolor === stylingTempNitroColor);
+            });
+            playTick();
+            updateStylingModalPreview();
+        }
+        window.selectStylingNitroColor = selectStylingNitroColor;
+
+        function selectStylingSmokeColor(smokeColor) {
+            stylingTempSmokeColor = smokeColor || 'white';
+            document.querySelectorAll('#styling-smokecolor-chips .styling-chip').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.smokecolor === stylingTempSmokeColor);
+            });
+            playTick();
+            updateStylingModalPreview();
+        }
+        window.selectStylingSmokeColor = selectStylingSmokeColor;
+
+        function toggleStylingJunkman(part) {
+            if (!part || !stylingTempJunkman) return;
+            stylingTempJunkman[part] = !stylingTempJunkman[part];
+            document.querySelectorAll('#styling-junkman-chips .styling-chip').forEach(btn => {
+                const p = btn.dataset.junkman;
+                btn.classList.toggle('active', Boolean(p && stylingTempJunkman[p]));
+            });
+            playTick();
+            updateStylingModalPreview();
+        }
+        window.toggleStylingJunkman = toggleStylingJunkman;
+
+        function selectStylingProTuning(axis, val) {
+            const numVal = Number(val) || 0;
+            if (axis === 'gear') {
+                stylingTempProTuning.gearRatioBias = numVal;
+                document.querySelectorAll('#styling-pro-gear-chips .styling-chip').forEach(btn => {
+                    btn.classList.toggle('active', Number(btn.dataset.progear) === numVal);
+                });
+            } else if (axis === 'aero') {
+                stylingTempProTuning.aeroDownforce = numVal;
+                document.querySelectorAll('#styling-pro-aero-chips .styling-chip').forEach(btn => {
+                    btn.classList.toggle('active', Number(btn.dataset.proaero) === numVal);
+                });
+            } else if (axis === 'grip') {
+                stylingTempProTuning.gripDriftBias = numVal;
+                document.querySelectorAll('#styling-pro-grip-chips .styling-chip').forEach(btn => {
+                    btn.classList.toggle('active', Number(btn.dataset.progrip) === numVal);
+                });
+            }
+            playTick();
+            updateStylingModalPreview();
+        }
+        window.selectStylingProTuning = selectStylingProTuning;
 
         function updateShowroomButtonsState() {
             if (!car3DShowroom) return;
@@ -8708,7 +8849,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         async function confirmApplyStyling() {
             const car = myCars[stylingActiveCarIndex];
             if (!car) return;
-            car.styling = car.styling || { color: '#ffffff', tint: 0, neon: 'none', spoiler: 'none', vinyl: 'none', wheels: 'stock', suspension: 'stock', sgu: 'none', camber: 0, wheelOffset: 0, neonMode: 'solid' };
+            car.styling = car.styling || { color: '#ffffff', tint: 0, neon: 'none', spoiler: 'none', vinyl: 'none', wheels: 'stock', suspension: 'stock', sgu: 'none', camber: 0, wheelOffset: 0, neonMode: 'solid', bodykit: 'stock', roofScoop: 'none', hood: 'stock', nitroColor: 'blue', smokeColor: 'white' };
 
             let cost = 0;
             if (stylingTempColor !== car.styling.color) cost += 15000;
@@ -8722,15 +8863,18 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             if (stylingTempSpoiler !== (car.styling.spoiler || 'none')) {
                 if (stylingTempSpoiler === 'ducktail') cost += 20000;
                 else if (stylingTempSpoiler === 'gt') cost += 50000;
+                else if (stylingTempSpoiler === 'gtr') cost += 85000;
             }
             if (stylingTempVinyl !== (car.styling.vinyl || 'none')) {
                 if (stylingTempVinyl === 'stripes') cost += 30000;
                 else if (stylingTempVinyl === 'drift') cost += 60000;
+                else if (stylingTempVinyl === 'mw_m3gtr' || stylingTempVinyl === 'mw_razor' || stylingTempVinyl === 'mw_cross' || stylingTempVinyl === 'mw_blacklist') cost += 95000;
             }
             if (stylingTempWheels !== (car.styling.wheels || 'stock')) {
                 if (stylingTempWheels === 'stamps') cost += 15000;
                 else if (stylingTempWheels === 'deepdish') cost += 45000;
                 else if (stylingTempWheels === 'forged') cost += 75000;
+                else if (stylingTempWheels === 'bbs_gtr' || stylingTempWheels === 'oz_racing') cost += 90000;
             }
             if (stylingTempSuspension !== (car.styling.suspension || 'stock')) {
                 if (stylingTempSuspension === 'lowered') cost += 25000;
@@ -8751,6 +8895,21 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             }
             if (stylingTempSgu !== (car.styling.sgu || 'none')) {
                 if (stylingTempSgu === 'installed') cost += 80000;
+            }
+            if (stylingTempBodykit !== (car.styling.bodykit || 'stock')) {
+                if (stylingTempBodykit === 'street') cost += 45000;
+                else if (stylingTempBodykit === 'widebody') cost += 90000;
+                else if (stylingTempBodykit === 'nfsmw_gtr') cost += 130000;
+            }
+            if (stylingTempRoofScoop !== (car.styling.roofScoop || 'none')) {
+                if (stylingTempRoofScoop === 'single') cost += 20000;
+                else if (stylingTempRoofScoop === 'dual') cost += 35000;
+                else if (stylingTempRoofScoop === 'vortex') cost += 45000;
+            }
+            if (stylingTempHood !== (car.styling.hood || 'stock')) {
+                if (stylingTempHood === 'carbon') cost += 30000;
+                else if (stylingTempHood === 'gtr_vents') cost += 55000;
+                else if (stylingTempHood === 'blower') cost += 85000;
             }
 
             if (cost > 0) {
@@ -8808,8 +8967,29 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 plate: finalPlateStr,
                 camber: stylingTempCamber,
                 wheelOffset: stylingTempOffset,
-                neonMode: stylingTempNeonMode
+                neonMode: stylingTempNeonMode,
+                bodykit: stylingTempBodykit,
+                roofScoop: stylingTempRoofScoop,
+                hood: stylingTempHood,
+                nitroColor: stylingTempNitroColor,
+                smokeColor: stylingTempSmokeColor,
+                junkmanEngine: Boolean(stylingTempJunkman?.engine),
+                junkmanTurbo: Boolean(stylingTempJunkman?.turbo),
+                junkmanTires: Boolean(stylingTempJunkman?.tires),
+                junkmanNitro: Boolean(stylingTempJunkman?.nitro),
+                gearRatioBias: Number(stylingTempProTuning?.gearRatioBias || 0),
+                aeroDownforce: Number(stylingTempProTuning?.aeroDownforce || 0),
+                gripDriftBias: Number(stylingTempProTuning?.gripDriftBias || 0)
             };
+            car.upgrades = Object.assign({}, car.upgrades || {}, {
+                junkmanEngine: Boolean(stylingTempJunkman?.engine),
+                junkmanTurbo: Boolean(stylingTempJunkman?.turbo),
+                junkmanTires: Boolean(stylingTempJunkman?.tires),
+                junkmanNitro: Boolean(stylingTempJunkman?.nitro),
+                gearRatioBias: Number(stylingTempProTuning?.gearRatioBias || 0),
+                aeroDownforce: Number(stylingTempProTuning?.aeroDownforce || 0),
+                gripDriftBias: Number(stylingTempProTuning?.gripDriftBias || 0)
+            });
             if (onlineProfile) {
                 onlineProfile.inventory = [...inventory];
                 onlineProfile.myCars = JSON.parse(JSON.stringify(myCars));
@@ -12242,10 +12422,10 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 desc: "Шведский монстр на биотопливе E85 с коробкой LST. Король скорости за гранью возможного!"
             },
 
-            // 6. Эксклюзивные 3D-легенды NFS Most Wanted (2005)
+            // 6. Эксклюзивные 3D-легенды NFS Most Wanted (2005) — Полный Чёрный Список (Blacklist #15–#1) + Бонусные авто
             "BMW M3 E46 GTR (NFS Most Wanted)": {
                 speed: 395, accel: 7.4, handling: 9.8, boost: 4.5, rewardMult: 28.0, driftFactor: 1.5,
-                desc: "Легенда Рокпорта #1 Blacklist (NFS Most Wanted 2005): атмосферный 4.0L V8 P60B40, оригинальная бело-синяя ливрея, расширение кузова и карбоновое антикрыло GTR!"
+                desc: "Легенда Рокпорта #1 Blacklist (NFS Most Wanted 2005): атмосферный 4.0L V8 P60B40, прямозубая КПП с фирменным свистом, расширение кузова и карбоновое антикрыло GTR!"
             },
             "Chevrolet Corvette C6.R (Cross NFS MW)": {
                 speed: 405, accel: 7.5, handling: 9.5, boost: 4.6, rewardMult: 26.0, driftFactor: 1.4,
@@ -12254,6 +12434,90 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             "Ford Mustang GT (Razor NFS MW)": {
                 speed: 345, accel: 6.2, handling: 8.6, boost: 3.9, rewardMult: 18.0, driftFactor: 1.65,
                 desc: "Мустанг Кларенса «Рейзора» Каллахана (#15 Blacklist NFS Most Wanted): компрессорный 4.6L V8, огненный винил и агрессивный боди-кит!"
+            },
+            "Mercedes-Benz SLR McLaren (Bull #2 MW)": {
+                speed: 392, accel: 7.3, handling: 9.2, boost: 4.4, rewardMult: 25.0, driftFactor: 1.4,
+                desc: "Болид Тору «Булла» Сато (#2 Blacklist NFS Most Wanted): компрессорный 5.4L V8 AMG, активный аэротормоз и чудовищная тяга!"
+            },
+            "Aston Martin DB9 (Ronnie #3 MW)": {
+                speed: 375, accel: 6.8, handling: 9.0, boost: 4.1, rewardMult: 23.0, driftFactor: 1.42,
+                desc: "Аристократичный гран-туризмо Ронни Макреа (#3 Blacklist NFS Most Wanted): атмосферный 6.0L V12 и британский гоночный обвес!"
+            },
+            "Dodge Viper SRT10 (JV #4 MW)": {
+                speed: 385, accel: 7.2, handling: 8.9, boost: 4.3, rewardMult: 22.0, driftFactor: 1.68,
+                desc: "Ядовитая гадюка Джо «JV» Веги (#4 Blacklist NFS Most Wanted): 8.3-литровый V10, бешеный крутящий момент и зелёно-чёрная ливрея!"
+            },
+            "Chevrolet Corvette C6 (Webster #5 MW)": {
+                speed: 380, accel: 7.0, handling: 9.1, boost: 4.2, rewardMult: 21.0, driftFactor: 1.5,
+                desc: "Корвет Уэса «Вебстера» Аллена (#5 Blacklist NFS Most Wanted): форсированный LS2 V8 с пакетом Junkman!"
+            },
+            "Lamborghini Gallardo (Ming #6 MW)": {
+                speed: 378, accel: 7.1, handling: 9.4, boost: 4.2, rewardMult: 20.5, driftFactor: 1.35,
+                desc: "Полноприводный суперкар Гектора «Минга» Доминго (#6 Blacklist NFS Most Wanted): 5.0L V10 и идеальный зацеп на любой трассе!"
+            },
+            "Mercedes-Benz CLK 500 (Kaze #7 MW)": {
+                speed: 350, accel: 6.3, handling: 8.7, boost: 3.8, rewardMult: 18.5, driftFactor: 1.48,
+                desc: "Безумное купе Киры «Казе» Накадзато (#7 Blacklist NFS Most Wanted): V8 M113 и агрессивный таранный характер!"
+            },
+            "Ford Mustang GT (Jewels #8 MW)": {
+                speed: 342, accel: 6.1, handling: 8.5, boost: 3.8, rewardMult: 17.5, driftFactor: 1.6,
+                desc: "Дрэг-мустанг Джейд «Джуэлс» Барретт (#8 Blacklist NFS Most Wanted): взрывной старт и классическая мощь V8!"
+            },
+            "Mitsubishi Lancer Evo VIII (Earl #9 MW)": {
+                speed: 338, accel: 6.5, handling: 9.3, boost: 3.9, rewardMult: 16.5, driftFactor: 1.4,
+                desc: "Раллийная ракета Пьера «Эрла» Дюпона (#9 Blacklist NFS Most Wanted): турбо 4G63T и молниеносный выход из шпилек!"
+            },
+            "Porsche Cayman S (Baron #10 MW)": {
+                speed: 348, accel: 6.4, handling: 9.2, boost: 3.8, rewardMult: 16.0, driftFactor: 1.42,
+                desc: "Среднемоторный Porsche Карла «Барона» Смита (#10 Blacklist NFS Most Wanted): эталонная рулёжка в каньонах Рокпорта!"
+            },
+            "Mitsubishi Eclipse GT (Big Lou #11 MW)": {
+                speed: 325, accel: 5.8, handling: 8.4, boost: 3.6, rewardMult: 14.5, driftFactor: 1.3,
+                desc: "Тюнингованный Eclipse Лу «Биг Лу» Парка (#11 Blacklist NFS Most Wanted): широкие арки, неон и закись азота!"
+            },
+            "Mazda RX-8 (Izzy #12 MW)": {
+                speed: 332, accel: 6.0, handling: 9.1, boost: 3.7, rewardMult: 14.0, driftFactor: 1.55,
+                desc: "Роторная фурия Изабель «Иззи» Диас (#12 Blacklist NFS Most Wanted): крутится до 9000 об/мин и проходит виражи как по рельсам!"
+            },
+            "Toyota Supra MK4 (Vic #13 MW)": {
+                speed: 345, accel: 6.3, handling: 8.7, boost: 4.0, rewardMult: 15.0, driftFactor: 1.6,
+                desc: "Легендарная 2JZ-GTE Супра Виктора «Вика» Васкеса (#13 Blacklist NFS Most Wanted): гигантская турбина и свист блоу-оффа!"
+            },
+            "Lexus IS300 (Taz #14 MW)": {
+                speed: 320, accel: 5.6, handling: 8.5, boost: 3.5, rewardMult: 13.0, driftFactor: 1.58,
+                desc: "Стрит-седан Винса «Таза» Килича (#14 Blacklist NFS Most Wanted): рядная шестёрка 2JZ и дерзкий дрифт-настрой!"
+            },
+            "Volkswagen Golf GTI (Sonny #15 MW)": {
+                speed: 315, accel: 5.7, handling: 8.8, boost: 3.5, rewardMult: 12.5, driftFactor: 1.25,
+                desc: "Хот-хэтч Хо «Сонни» Сёна (#15 Blacklist NFS Most Wanted): турбо 2.0 TFSI, лёгкий кузов и острая управляемость!"
+            },
+            "Audi Le Mans Quattro R8 (Darius MW)": {
+                speed: 398, accel: 7.5, handling: 9.6, boost: 4.5, rewardMult: 27.0, driftFactor: 1.38,
+                desc: "Концепт-кар босса Дариуса (NFS Carbon / Most Wanted Collector's): 5.2L V10 Twin-Turbo и полный привод Quattro!"
+            },
+            "BMW M3 G80 Competition": {
+                speed: 350, accel: 6.1, handling: 9.0, boost: 3.6, rewardMult: 12.0, driftFactor: 1.55,
+                desc: "Современный баварский хищник с рядной битурбо шестёркой S58 и системой M xDrive!"
+            },
+            "BMW X5M Competition": {
+                speed: 315, accel: 5.6, handling: 7.9, boost: 3.2, rewardMult: 11.0, driftFactor: 1.25,
+                desc: "Сверхмощный баварский кроссовер 4.4L V8 TwinPower Turbo — король скоростного потока!"
+            },
+            "Audi RS7 Sportback": {
+                speed: 345, accel: 5.9, handling: 8.6, boost: 3.5, rewardMult: 11.5, driftFactor: 1.35,
+                desc: "Широкофюзеляжный лифтбек с 4.0L TFSI V8 битурбо и фирменным приводом Quattro!"
+            },
+            "Maserati GranTurismo": {
+                speed: 335, accel: 5.7, handling: 8.5, boost: 3.4, rewardMult: 11.0, driftFactor: 1.45,
+                desc: "Итальянский гран-туризмо с атмосферным V8 Ferrari и оперным звуком выхлопа!"
+            },
+            "Porsche Panamera Turbo": {
+                speed: 340, accel: 5.8, handling: 8.7, boost: 3.5, rewardMult: 11.5, driftFactor: 1.35,
+                desc: "Четырёхдверный суперкар из Штутгарта с активным антикрылом и полным приводом!"
+            },
+            "Hyundai Elantra N": {
+                speed: 295, accel: 5.0, handling: 8.4, boost: 3.1, rewardMult: 7.5, driftFactor: 1.3,
+                desc: "Заряженный спорт-седан подразделения N с отстрелами выхлопа и электронной блокировкой e-LSD!"
             }
         };
 
@@ -15224,7 +15488,12 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     plate: stylingTempPlate,
                     camber: stylingTempCamber,
                     wheelOffset: stylingTempOffset,
-                    neonMode: stylingTempNeonMode
+                    neonMode: stylingTempNeonMode,
+                    bodykit: stylingTempBodykit,
+                    roofScoop: stylingTempRoofScoop,
+                    hood: stylingTempHood,
+                    nitroColor: stylingTempNitroColor,
+                    smokeColor: stylingTempSmokeColor
                 });
             }
 
@@ -15298,10 +15567,12 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             if (!car) return 'standard';
             const name = String(car.name || '').toLowerCase();
             const cat = String(car.category || '').toLowerCase();
+            if (name.includes('m3 e46 gtr') || name.includes('m3 gtr') || name.includes('nfs most wanted')) return 'm3gtr';
+            if (name.includes('slr mclaren') || name.includes('mustang gt (razor') || name.includes('corvette c6.r')) return 'supercharger';
             if (name.includes('камаз') || name.includes('фура')) return 'kamaz';
             if (cat.includes('классик') || cat.includes('ретро') || name.includes('ваз') || name.includes('газ')) return 'classic';
-            if (cat.includes('гиперкар') || cat.includes('суперкар') || name.includes('911') || name.includes('huracan') || name.includes('gt-r') || name.includes('ferrari') || name.includes('bugatti') || name.includes('jesko') || name.includes('silvia') || name.includes('wrx')) return 'sport';
-            if (cat.includes('внедорожник') || cat.includes('люкс') || cat.includes('спорт') || name.includes('m5') || name.includes('m8') || name.includes('amg') || name.includes('rs6') || name.includes('v8') || name.includes('v10') || name.includes('cullinan') || name.includes('гелик') || name.includes('land cruiser')) return 'v8';
+            if (cat.includes('гиперкар') || cat.includes('суперкар') || name.includes('911') || name.includes('huracan') || name.includes('gallardo') || name.includes('db9') || name.includes('viper') || name.includes('le mans quattro') || name.includes('gt-r') || name.includes('ferrari') || name.includes('bugatti') || name.includes('jesko') || name.includes('silvia') || name.includes('wrx') || name.includes('rx-8') || name.includes('supra')) return 'sport';
+            if (cat.includes('внедорожник') || cat.includes('люкс') || cat.includes('спорт') || name.includes('m5') || name.includes('m8') || name.includes('amg') || name.includes('clk 500') || name.includes('corvette') || name.includes('mustang') || name.includes('rs6') || name.includes('rs7') || name.includes('v8') || name.includes('v10') || name.includes('cullinan') || name.includes('гелик') || name.includes('land cruiser')) return 'v8';
             return 'standard';
         }
 
@@ -15515,23 +15786,170 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             m3gtr: {
                 key: 'm3gtr',
                 name: 'BMW M3 E46 GTR (NFS Most Wanted)',
-                category: 'Легенда NFS MW',
+                category: 'Blacklist #1 (Hero)',
                 basePrice: 38000000,
-                styling: { color: '#cbd5e1', vinyl: 'none', spoiler: 'gtr', neon: '#38bdf8' }
+                styling: { color: '#cbd5e1', vinyl: 'none', spoiler: 'gtr', neon: '#38bdf8', bodykit: 'nfsmw_gtr', wheels: 'bbs_gtr', hood: 'gtr_vents' }
             },
             corvette_cross: {
                 key: 'corvette_cross',
                 name: 'Chevrolet Corvette C6.R (Cross NFS MW)',
-                category: 'Перехватчик NFS MW',
+                category: 'Перехватчик Сержанта Кросса',
                 basePrice: 34000000,
-                styling: { color: '#1e293b', vinyl: 'none', spoiler: 'none', neon: '#ef4444', sgu: 'installed' }
+                styling: { color: '#1e293b', vinyl: 'none', spoiler: 'none', neon: '#ef4444', sgu: 'installed', bodykit: 'widebody' }
             },
             mustang_razor: {
                 key: 'mustang_razor',
                 name: 'Ford Mustang GT (Razor NFS MW)',
-                category: 'Босс #15 NFS MW',
+                category: 'Blacklist #1 (Razor)',
                 basePrice: 19500000,
-                styling: { color: '#0f172a', vinyl: 'none', spoiler: 'none', neon: '#f59e0b' }
+                styling: { color: '#0f172a', vinyl: 'none', spoiler: 'gt', neon: '#f59e0b', bodykit: 'widebody', hood: 'blower' }
+            },
+            mclaren: {
+                key: 'mclaren',
+                name: 'Mercedes-Benz SLR McLaren (Bull #2 MW)',
+                category: 'Blacklist #2 (Bull)',
+                basePrice: 32000000,
+                styling: { color: '#0a0a0f', vinyl: 'none', spoiler: 'none', neon: '#ef4444' }
+            },
+            db9: {
+                key: 'db9',
+                name: 'Aston Martin DB9 (Ronnie #3 MW)',
+                category: 'Blacklist #3 (Ronnie)',
+                basePrice: 26500000,
+                styling: { color: '#eab308', vinyl: 'mw_blacklist', spoiler: 'gt', neon: '#f59e0b', bodykit: 'street' }
+            },
+            viper_jv: {
+                key: 'viper_jv',
+                name: 'Dodge Viper SRT10 (JV #4 MW)',
+                category: 'Blacklist #4 (JV)',
+                basePrice: 25000000,
+                styling: { color: '#16a34a', vinyl: 'mw_blacklist', spoiler: 'gt', neon: '#22c55e', bodykit: 'widebody' }
+            },
+            corvette_webster: {
+                key: 'corvette_webster',
+                name: 'Chevrolet Corvette C6 (Webster #5 MW)',
+                category: 'Blacklist #5 (Webster)',
+                basePrice: 23500000,
+                styling: { color: '#7c2d12', vinyl: 'mw_razor', spoiler: 'gt', neon: '#f97316', bodykit: 'widebody' }
+            },
+            gallardo_ming: {
+                key: 'gallardo_ming',
+                name: 'Lamborghini Gallardo (Ming #6 MW)',
+                category: 'Blacklist #6 (Ming)',
+                basePrice: 24000000,
+                styling: { color: '#334155', vinyl: 'stripes', spoiler: 'none', neon: '#38bdf8' }
+            },
+            clk_kaze: {
+                key: 'clk_kaze',
+                name: 'Mercedes-Benz CLK 500 (Kaze #7 MW)',
+                category: 'Blacklist #7 (Kaze)',
+                basePrice: 18500000,
+                styling: { color: '#0d9488', vinyl: 'mw_blacklist', spoiler: 'ducktail', neon: '#2dd4bf', bodykit: 'street' }
+            },
+            mustang_jewels: {
+                key: 'mustang_jewels',
+                name: 'Ford Mustang GT (Jewels #8 MW)',
+                category: 'Blacklist #8 (Jewels)',
+                basePrice: 17500000,
+                styling: { color: '#f8fafc', vinyl: 'stripes', spoiler: 'ducktail', neon: '#ec4899', hood: 'blower' }
+            },
+            evo8_earl: {
+                key: 'evo8_earl',
+                name: 'Mitsubishi Lancer Evo VIII (Earl #9 MW)',
+                category: 'Blacklist #9 (Earl)',
+                basePrice: 16500000,
+                styling: { color: '#e2e8f0', vinyl: 'mw_blacklist', spoiler: 'gt', neon: '#ef4444', roofScoop: 'vortex', wheels: 'oz_racing' }
+            },
+            cayman_baron: {
+                key: 'cayman_baron',
+                name: 'Porsche Cayman S (Baron #10 MW)',
+                category: 'Blacklist #10 (Baron)',
+                basePrice: 16000000,
+                styling: { color: '#0f172a', vinyl: 'mw_razor', spoiler: 'gt', neon: '#f59e0b', bodykit: 'widebody' }
+            },
+            eclipse_lou: {
+                key: 'eclipse_lou',
+                name: 'Mitsubishi Eclipse GT (Big Lou #11 MW)',
+                category: 'Blacklist #11 (Big Lou)',
+                basePrice: 14000000,
+                styling: { color: '#111827', vinyl: 'mw_blacklist', spoiler: 'gt', neon: '#eab308', bodykit: 'street', roofScoop: 'dual' }
+            },
+            rx8_izzy: {
+                key: 'rx8_izzy',
+                name: 'Mazda RX-8 (Izzy #12 MW)',
+                category: 'Blacklist #12 (Izzy)',
+                basePrice: 13500000,
+                styling: { color: '#94a3b8', vinyl: 'mw_m3gtr', spoiler: 'gt', neon: '#38bdf8', bodykit: 'street' }
+            },
+            supra_vic: {
+                key: 'supra_vic',
+                name: 'Toyota Supra MK4 (Vic #13 MW)',
+                category: 'Blacklist #13 (Vic)',
+                basePrice: 15000000,
+                styling: { color: '#dc2626', vinyl: 'mw_blacklist', spoiler: 'gt', neon: '#ef4444', bodykit: 'widebody', hood: 'carbon' }
+            },
+            is300_taz: {
+                key: 'is300_taz',
+                name: 'Lexus IS300 (Taz #14 MW)',
+                category: 'Blacklist #14 (Taz)',
+                basePrice: 12000000,
+                styling: { color: '#a16207', vinyl: 'mw_blacklist', spoiler: 'ducktail', neon: '#eab308', bodykit: 'street' }
+            },
+            golf_sonny: {
+                key: 'golf_sonny',
+                name: 'Volkswagen Golf GTI (Sonny #15 MW)',
+                category: 'Blacklist #15 (Sonny)',
+                basePrice: 11000000,
+                styling: { color: '#f8fafc', vinyl: 'mw_m3gtr', spoiler: 'ducktail', neon: '#3b82f6', bodykit: 'street', wheels: 'oz_racing' }
+            },
+            audir8_darius: {
+                key: 'audir8_darius',
+                name: 'Audi Le Mans Quattro R8 (Darius MW)',
+                category: 'Босс Дариус (Le Mans Quattro)',
+                basePrice: 36000000,
+                styling: { color: '#dc2626', vinyl: 'mw_blacklist', spoiler: 'gtr', neon: '#ef4444' }
+            },
+            m3_g80: {
+                key: 'm3_g80',
+                name: 'BMW M3 G80 Competition',
+                category: 'Эксклюзив 3D',
+                basePrice: 16800000,
+                styling: { color: '#10b981', vinyl: 'none', spoiler: 'ducktail', neon: '#10b981' }
+            },
+            x5m: {
+                key: 'x5m',
+                name: 'BMW X5M Competition',
+                category: 'Эксклюзив 3D',
+                basePrice: 17500000,
+                styling: { color: '#1e3a8a', vinyl: 'none', spoiler: 'none', neon: '#3b82f6' }
+            },
+            rs7: {
+                key: 'rs7',
+                name: 'Audi RS7 Sportback',
+                category: 'Эксклюзив 3D',
+                basePrice: 18200000,
+                styling: { color: '#1f2937', vinyl: 'none', spoiler: 'ducktail', neon: '#ef4444' }
+            },
+            maserati: {
+                key: 'maserati',
+                name: 'Maserati GranTurismo',
+                category: 'Эксклюзив 3D',
+                basePrice: 19000000,
+                styling: { color: '#1e3a8a', vinyl: 'none', spoiler: 'none', neon: '#38bdf8' }
+            },
+            panamera: {
+                key: 'panamera',
+                name: 'Porsche Panamera Turbo',
+                category: 'Эксклюзив 3D',
+                basePrice: 18800000,
+                styling: { color: '#334155', vinyl: 'none', spoiler: 'ducktail', neon: '#f59e0b' }
+            },
+            elantra_n: {
+                key: 'elantra_n',
+                name: 'Hyundai Elantra N',
+                category: 'Эксклюзив 3D',
+                basePrice: 7500000,
+                styling: { color: '#38bdf8', vinyl: 'none', spoiler: 'gt', neon: '#ef4444' }
             }
         };
 
@@ -16833,6 +17251,10 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                         if (name === 'brake' && typeof sound?.brake === 'function') sound.brake();
                         if (name === 'scrape' && typeof sound?.scrape === 'function') sound.scrape();
                         if (name === 'horn' && typeof sound?.horn === 'function') sound.horn();
+                        if (name === 'speedbreakerOn' && typeof sound?.speedbreakerOn === 'function') sound.speedbreakerOn();
+                        if (name === 'speedbreakerOff' && typeof sound?.speedbreakerOff === 'function') sound.speedbreakerOff();
+                        if (name === 'countdown_beep' && typeof sound?.countdownBeep === 'function') sound.countdownBeep(1);
+                        if (name === 'countdown_go' && typeof sound?.countdownBeep === 'function') sound.countdownBeep('go');
                         if (name === 'siren_start') {
                             // Siren sound disabled per user request
                         }
@@ -16854,9 +17276,11 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 const raceStyling = Object.assign({}, activeRaceCar.styling || {}, {
                     plate: activeRaceCar.plate ? (activeRaceCar.plate.text || activeRaceCar.plate) : 'none'
                 });
+                const raceUpgrades = Object.assign({}, activeRaceCar.upgrades || {}, activeRaceCar.styling || {});
                 car3DRacingEngine.start({
                     carName: selectedRaceCarName,
                     styling: raceStyling,
+                    upgrades: raceUpgrades,
                     performance: stats,
                     mode: isNfsCircuit ? 'nfs_circuit' : raceCurrentMode,
                     trackId: nfsSelectedTrack,

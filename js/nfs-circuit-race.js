@@ -440,24 +440,94 @@
             preferredLineOffset: -2.4
         },
         {
+            id: 'bull_slr',
+            driverName: 'Булл (#2 SLR McLaren)',
+            carName: 'Mercedes-Benz SLR McLaren (Bull #2 MW)',
+            plate: 'B 002 MW | 777 RUS',
+            color: '#18181b',
+            vinyl: 'mw_blacklist',
+            spoiler: 'gt',
+            preferredLineOffset: 2.0
+        },
+        {
+            id: 'ronnie_db9',
+            driverName: 'Ронни (#3 Aston Martin DB9)',
+            carName: 'Aston Martin DB9 (Ronnie #3 MW)',
+            plate: 'R 003 MW | 777 RUS',
+            color: '#eab308',
+            vinyl: 'stripes',
+            spoiler: 'gt',
+            preferredLineOffset: -1.8
+        },
+        {
+            id: 'jv_viper',
+            driverName: 'Джей Ви (#4 Dodge Viper)',
+            carName: 'Dodge Viper SRT10 (JV #4 MW)',
+            plate: 'J 004 MW | 777 RUS',
+            color: '#16a34a',
+            vinyl: 'mw_blacklist',
+            spoiler: 'gtr',
+            preferredLineOffset: 1.8
+        },
+        {
+            id: 'ming_gallardo',
+            driverName: 'Минг (#6 Gallardo)',
+            carName: 'Lamborghini Gallardo (Ming #6 MW)',
+            plate: 'M 006 MW | 777 RUS',
+            color: '#334155',
+            vinyl: 'stripes',
+            spoiler: 'none',
+            preferredLineOffset: -2.0
+        },
+        {
             id: 'earl_evo',
-            driverName: 'Ирл «Спидтрип» (#9)',
-            carName: 'Subaru Impreza WRX STI',
-            plate: 'E 555 RL | 78 RUS',
-            color: '#2563eb',
+            driverName: 'Эрл (#9 Lancer Evo VIII)',
+            carName: 'Mitsubishi Lancer Evo VIII (Earl #9 MW)',
+            plate: 'E 009 MW | 78 RUS',
+            color: '#f8fafc',
             vinyl: 'drift',
             spoiler: 'gt',
             preferredLineOffset: 2.4
         },
         {
-            id: 'taz_mark2',
-            driverName: 'Винс «Таз» Киллич (#14)',
-            carName: 'Toyota Mark II Tourer V',
-            plate: 'T 888 AZ | 125 RUS',
-            color: '#dc2626',
+            id: 'izzy_rx8',
+            driverName: 'Иззи (#12 Mazda RX-8)',
+            carName: 'Mazda RX-8 (Izzy #12 MW)',
+            plate: 'X 012 MW | 777 RUS',
+            color: '#ef4444',
+            vinyl: 'drift',
+            spoiler: 'gt',
+            preferredLineOffset: -1.6
+        },
+        {
+            id: 'vic_supra',
+            driverName: 'Вик (#13 Toyota Supra)',
+            carName: 'Toyota Supra MK4 (Vic #13 MW)',
+            plate: 'V 013 MW | 777 RUS',
+            color: '#f97316',
+            vinyl: 'mw_blacklist',
+            spoiler: 'gtr',
+            preferredLineOffset: 1.6
+        },
+        {
+            id: 'taz_is300',
+            driverName: 'Винс «Таз» (#14 Lexus IS300)',
+            carName: 'Lexus IS300 (Taz #14 MW)',
+            plate: 'T 014 MW | 125 RUS',
+            color: '#ca8a04',
             vinyl: 'drift',
             spoiler: 'ducktail',
             preferredLineOffset: 0.0
+        },
+        {
+            id: 'sonny_golf',
+            driverName: 'Сонни (#15 VW Golf GTI)',
+            carName: 'Volkswagen Golf GTI (Sonny #15 MW)',
+            plate: 'S 015 MW | 777 RUS',
+            color: '#1d4ed8',
+            vinyl: 'drift',
+            spoiler: 'ducktail',
+            preferredLineOffset: -1.2
         }
     ];
 
@@ -666,6 +736,7 @@
             this.playerPhysics = new NomeraNfsPhysics.NfsVehiclePhysics({
                 carName: this.carConfig.carName,
                 performance: perf,
+                upgrades: Object.assign({}, this.carConfig.upgrades || {}, this.carConfig.styling || {}),
                 styling: this.carConfig.styling || {},
                 weather: config.weather === 'auto' ? 'night' : (config.weather || 'night'),
                 transmissionMode: config.transmissionMode || 'auto',
@@ -966,9 +1037,11 @@
                     this.state.countdownText = '🟢 СТАРТ!';
                     this.state.racePhase = 'racing';
                     if (this.options.onPopup) this.options.onPopup('🟢 СТАРТ ГОНКИ!', '#10b981');
+                    if (this.options.onSound) this.options.onSound('countdown_go');
                 }
-                if (this.state.countdownText !== prevText && this.state.racePhase === 'countdown' && this.options.onPopup) {
-                    this.options.onPopup(`🚦 ${this.state.countdownText}...`, '#fbbf24');
+                if (this.state.countdownText !== prevText && this.state.racePhase === 'countdown') {
+                    if (this.options.onPopup) this.options.onPopup(`🚦 ${this.state.countdownText}...`, '#fbbf24');
+                    if (this.options.onSound) this.options.onSound('countdown_beep');
                 }
                 // Allow engine revving on the grid without moving
                 if (this.keys.gas) {
@@ -1105,8 +1178,14 @@
             this.state.driftScore = pState.driftScore;
             this.state.driftCurrentScore = pState.driftCurrentScore;
             this.state.driftCombo = pState.driftCombo;
+            const wasSb = this.state.isSpeedbreakerActive;
             this.state.speedbreakerCharge = pState.speedbreakerCharge;
             this.state.isSpeedbreakerActive = pState.isSpeedbreakerActive;
+            if (!wasSb && pState.isSpeedbreakerActive && this.options.onSound) {
+                this.options.onSound('speedbreakerOn');
+            } else if (wasSb && !pState.isSpeedbreakerActive && this.options.onSound) {
+                this.options.onSound('speedbreakerOff');
+            }
 
             // Spawn tire smoke when drifting
             if (pState.isDrifting && pState.speedKmh > 35) {
