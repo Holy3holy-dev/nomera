@@ -9267,3 +9267,967 @@ body {
     }
 }
 
+/* ==========================================================================
+   ЭТАП 2 РЕДИЗАЙНА: AUTOMOTIVE GARAGE LUXURY SHOWROOM & WIDESCREEN (1580px)
+   ========================================================================== */
+
+/* 1. Расширенный адаптивный контейнер (1500–1600 px) */
+.main-container {
+    max-width: 1580px !important;
+    width: min(1580px, 97vw) !important;
+    margin: 0 auto !important;
+    padding: 14px 20px 56px 20px !important;
+    box-sizing: border-box !important;
+}
+
+/* 2. Улучшенная шапка (крупный бренд, открытая навигация, выразительный баланс и уровень) */
+.top-game-header {
+    padding: 12px 24px !important;
+    min-height: 70px;
+    border-radius: 18px !important;
+    background: linear-gradient(180deg, rgba(22, 29, 41, 0.96) 0%, rgba(12, 17, 25, 0.96) 100%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.09) !important;
+    border-bottom: 1px solid rgba(231, 36, 62, 0.38) !important;
+    box-shadow: 0 18px 44px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.07) !important;
+    margin-bottom: 18px !important;
+    gap: 18px !important;
+}
+
+.top-game-header .brand-lockup {
+    gap: 10px !important;
+}
+
+.top-game-header .brand-mark {
+    font-size: 16px !important;
+    font-weight: 900 !important;
+    padding: 7px 12px !important;
+    border-radius: 10px !important;
+    background: linear-gradient(135deg, #ff2e4c 0%, #b81229 100%) !important;
+    box-shadow: 0 6px 18px rgba(231, 36, 62, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
+}
+
+.top-game-header .brand-word {
+    font-size: 21px !important;
+    font-weight: 900 !important;
+    letter-spacing: 1.5px !important;
+    color: #F5F6F8 !important;
+    text-shadow: 0 2px 12px rgba(0, 0, 0, 0.6);
+}
+
+.top-game-header .nav-tabs {
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+    gap: 6px !important;
+    max-width: none !important;
+    justify-content: center;
+}
+
+.top-game-header .nav-tab {
+    font-size: 14.5px !important;
+    font-weight: 800 !important;
+    padding: 10px 16px !important;
+    border-radius: 12px !important;
+    color: #b0bac9 !important;
+    letter-spacing: 0.2px;
+}
+
+.top-game-header .nav-tab:hover {
+    color: #ffffff !important;
+    background: rgba(255, 255, 255, 0.06) !important;
+}
+
+.top-game-header .nav-tab.active {
+    background: linear-gradient(180deg, rgba(231, 36, 62, 0.34) 0%, rgba(185, 20, 43, 0.16) 100%) !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(231, 36, 62, 0.72) !important;
+    box-shadow: 0 6px 20px rgba(231, 36, 62, 0.32), inset 0 -2px 0 #ff3b56 !important;
+}
+
+.top-game-header .nav-tab .badge-count {
+    font-size: 11.5px !important;
+    padding: 2px 7px !important;
+    border-radius: 999px !important;
+}
+
+.top-game-header .header-hud {
+    gap: 12px !important;
+}
+
+.hud-balance-pill {
+    padding: 7px 16px !important;
+    border-radius: 13px !important;
+    background: linear-gradient(180deg, rgba(24, 20, 14, 0.92) 0%, rgba(11, 14, 20, 0.96) 100%) !important;
+    border: 1px solid rgba(251, 191, 36, 0.42) !important;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(251, 191, 36, 0.15) !important;
+    gap: 10px !important;
+}
+
+.hud-coin-icon {
+    width: 30px !important;
+    height: 30px !important;
+    font-size: 15px !important;
+    box-shadow: 0 0 14px rgba(245, 158, 11, 0.55) !important;
+}
+
+.hud-balance-pill .wallet-label {
+    font-size: 10px !important;
+    color: #cbd5e1 !important;
+    letter-spacing: 0.8px !important;
+}
+
+.hud-balance-pill .hud-balance-val {
+    font-size: 17.5px !important;
+    font-weight: 900 !important;
+    color: #fef08a !important;
+    text-shadow: 0 2px 10px rgba(245, 158, 11, 0.35);
+}
+
+.top-game-header .hud-level-box {
+    min-width: 148px !important;
+    padding: 7px 14px !important;
+    border-radius: 13px !important;
+    background: rgba(10, 14, 21, 0.92) !important;
+    border: 1px solid rgba(255, 255, 255, 0.09) !important;
+}
+
+.top-game-header .hud-level-badge {
+    font-size: 13px !important;
+    font-weight: 900 !important;
+    color: #F5F6F8 !important;
+}
+
+.top-game-header .hud-xp-text {
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    color: #939BA9 !important;
+}
+
+.top-game-header .hud-exp-track {
+    height: 6px !important;
+    border-radius: 999px !important;
+    margin-top: 4px !important;
+    background: rgba(255, 255, 255, 0.08) !important;
+}
+
+.top-game-header .hud-player {
+    padding: 6px 14px 6px 8px !important;
+    border-radius: 13px !important;
+    gap: 10px !important;
+    background: rgba(10, 14, 21, 0.92) !important;
+    border: 1px solid rgba(255, 255, 255, 0.09) !important;
+}
+
+.top-game-header .hud-player .avatar {
+    width: 36px !important;
+    height: 36px !important;
+}
+
+.top-game-header .hud-player-name {
+    font-size: 14px !important;
+    font-weight: 800 !important;
+    max-width: 140px !important;
+}
+
+.hud-icon-btn {
+    width: 42px !important;
+    height: 42px !important;
+    border-radius: 12px !important;
+    font-size: 17px !important;
+}
+
+/* 3. Автомобильная гаражная сцена генератора (.gen-garage-arena) */
+.gen-garage-arena {
+    position: relative;
+    border-radius: 24px;
+    overflow: hidden;
+    background:
+        radial-gradient(ellipse 75% 58% at 50% 38%, rgba(30, 42, 62, 0.72) 0%, rgba(14, 20, 30, 0.92) 55%, #070a10 100%);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    box-shadow: 0 28px 72px rgba(0, 0, 0, 0.78), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    padding: 26px 26px 0 26px;
+}
+
+.garage-arena-backdrop {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    overflow: hidden;
+}
+
+.garage-scene-svg {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0.95;
+    display: block;
+}
+
+.garage-ceiling-spotlight {
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(ellipse 52% 44% at 50% 6%, rgba(255, 236, 190, 0.14) 0%, rgba(231, 36, 62, 0.06) 45%, transparent 75%);
+    pointer-events: none;
+}
+
+.garage-floor-reflection {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 44%;
+    background:
+        radial-gradient(ellipse 58% 45% at 50% 25%, rgba(245, 158, 11, 0.09) 0%, transparent 70%),
+        linear-gradient(180deg, transparent 0%, rgba(9, 13, 19, 0.55) 48%, rgba(6, 9, 14, 0.94) 100%);
+    pointer-events: none;
+}
+
+/* 3-колоночная сетка внутри гаражной арены */
+.gen-garage-arena .gen-luxury-grid {
+    position: relative;
+    z-index: 2;
+    display: grid;
+    grid-template-columns: 320px minmax(0, 1fr) 330px !important;
+    gap: 28px !important;
+    align-items: start;
+}
+
+/* Левый заголовок «Генератор номеров» */
+.gen-left-hero-heading {
+    margin-bottom: 14px;
+    padding: 2px 4px;
+}
+
+.gen-hero-title {
+    font-size: 28px;
+    font-weight: 900;
+    letter-spacing: -0.4px;
+    color: #F5F6F8;
+    margin: 0 0 4px 0;
+    line-height: 1.12;
+    text-shadow: 0 4px 18px rgba(0, 0, 0, 0.65);
+}
+
+.gen-hero-subtitle {
+    font-size: 13.5px;
+    font-weight: 600;
+    color: #939BA9;
+    margin: 0;
+    line-height: 1.35;
+}
+
+/* Единые стеклянные боковые панели без вложенных рамок (.gen-glass-sidebar) */
+.gen-glass-sidebar {
+    background: linear-gradient(180deg, rgba(20, 27, 38, 0.80) 0%, rgba(12, 17, 25, 0.88) 100%) !important;
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: 18px !important;
+    padding: 18px !important;
+    box-shadow: 0 18px 42px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+}
+
+.gen-sidebar-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.gen-sidebar-divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.1) 50%, transparent 100%);
+    margin: 16px 0;
+}
+
+.luxury-panel-title {
+    font-size: 16px !important;
+    font-weight: 800 !important;
+    color: #F5F6F8 !important;
+    letter-spacing: 0.2px !important;
+    text-transform: none !important;
+}
+
+/* Улучшенная левая колонка: крупные кнопки выбора страны */
+.plate-country-selector {
+    gap: 8px !important;
+}
+
+.country-select-btn {
+    padding: 11px 14px !important;
+    border-radius: 13px !important;
+    background: rgba(9, 13, 19, 0.65) !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+    min-height: 54px;
+}
+
+.country-select-btn:hover {
+    background: rgba(27, 34, 45, 0.88) !important;
+    border-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+.country-select-btn.active {
+    background: linear-gradient(135deg, rgba(231, 36, 62, 0.26) 0%, rgba(20, 27, 38, 0.95) 100%) !important;
+    border-color: rgba(231, 36, 62, 0.78) !important;
+    box-shadow: 0 8px 22px rgba(231, 36, 62, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.12) !important;
+}
+
+.country-flag-icon {
+    font-size: 24px !important;
+    width: 30px !important;
+}
+
+.country-select-info b {
+    font-size: 15px !important;
+    font-weight: 800 !important;
+    color: #F5F6F8 !important;
+}
+
+.country-select-info small {
+    font-size: 12px !important;
+    color: #939BA9 !important;
+}
+
+.country-select-cost {
+    font-size: 13px !important;
+    font-weight: 800 !important;
+    padding: 5px 10px !important;
+    border-radius: 9px !important;
+}
+
+.region-current-pill {
+    padding: 11px 14px !important;
+    border-radius: 12px !important;
+    background: rgba(9, 13, 19, 0.68) !important;
+    border: 1px solid rgba(255, 255, 255, 0.07) !important;
+    font-size: 13.5px !important;
+}
+
+.region-current-pill b {
+    font-size: 17px !important;
+}
+
+.region-quick-chips .region-chip {
+    font-size: 12.5px !important;
+    padding: 6px 11px !important;
+    border-radius: 8px !important;
+}
+
+/* 4. Центральный подиум и увеличенный главный номер (#gen-plate-stage, #plate-box) */
+.gen-center-stage {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 6px 0 0 0 !important;
+    gap: 12px !important;
+}
+
+.gen-center-stage::before {
+    display: none !important;
+}
+
+.gen-plate-podium,
+#gen-plate-stage {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    min-height: 310px !important;
+    padding: 16px 12px 6px 12px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    position: relative !important;
+    overflow: visible !important;
+}
+
+.gen-plate-podium::after {
+    display: none !important;
+}
+
+/* Лучи подсветки редкости за номером */
+.podium-rarity-rays {
+    position: absolute;
+    width: 540px;
+    height: 280px;
+    top: 18px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: radial-gradient(ellipse 65% 55% at 50% 52%, rgba(245, 158, 11, 0.14) 0%, rgba(231, 36, 62, 0.06) 45%, transparent 72%);
+    pointer-events: none;
+    z-index: 1;
+    transition: background 0.35s ease, transform 0.35s ease;
+}
+
+#gen-plate-stage[data-rarity-tier="rare"] .podium-rarity-rays {
+    background: radial-gradient(ellipse 68% 58% at 50% 52%, rgba(16, 185, 129, 0.26) 0%, transparent 72%);
+}
+
+#gen-plate-stage[data-rarity-tier="super"] .podium-rarity-rays {
+    background: radial-gradient(ellipse 70% 60% at 50% 52%, rgba(239, 68, 68, 0.30) 0%, transparent 74%);
+}
+
+#gen-plate-stage[data-rarity-tier="epic"] .podium-rarity-rays {
+    background: radial-gradient(ellipse 72% 62% at 50% 52%, rgba(168, 85, 247, 0.34) 0%, rgba(59, 130, 246, 0.12) 48%, transparent 75%);
+}
+
+#gen-plate-stage[data-rarity-tier="legendary"] .podium-rarity-rays,
+#gen-plate-stage[data-rarity-tier="blatnoy"] .podium-rarity-rays {
+    background:
+        radial-gradient(ellipse 78% 66% at 50% 50%, rgba(251, 191, 36, 0.42) 0%, rgba(231, 36, 62, 0.22) 45%, transparent 76%);
+    transform: translateX(-50%) scale(1.06);
+}
+
+/* Плашка редкости над номером */
+.gen-rarity-crown-wrap {
+    position: relative;
+    z-index: 5;
+    min-height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 8px;
+}
+
+.gen-rarity-crown-badge,
+#gen-rarity {
+    font-size: 14px !important;
+    font-weight: 900 !important;
+    letter-spacing: 1.4px !important;
+    text-transform: uppercase;
+    padding: 7px 22px !important;
+    border-radius: 999px !important;
+    border: 1px solid rgba(255, 255, 255, 0.24) !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.65), 0 0 20px rgba(245, 158, 11, 0.28) !important;
+}
+
+/* Масштабирование главного госномера (#plate-box) — главный объект экрана */
+.plate-hero-scale-wrap {
+    position: relative;
+    z-index: 4;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px 0 24px 0;
+}
+
+@media (min-width: 1240px) {
+    .plate-hero-scale-wrap #plate-box {
+        transform: scale(1.36);
+        transform-origin: center center;
+    }
+}
+
+@media (min-width: 960px) and (max-width: 1239px) {
+    .plate-hero-scale-wrap #plate-box {
+        transform: scale(1.20);
+        transform-origin: center center;
+    }
+}
+
+@media (min-width: 600px) and (max-width: 959px) {
+    .plate-hero-scale-wrap #plate-box {
+        transform: scale(1.12);
+        transform-origin: center center;
+    }
+}
+
+/* 3D Подиум под номером с оценочной стоимостью */
+.podium-pedestal-3d {
+    position: relative;
+    z-index: 3;
+    width: min(620px, 96%);
+    margin-top: 2px;
+    padding: 20px 24px 16px 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.podium-base-ring {
+    position: absolute;
+    inset: 0;
+    border-radius: 50% / 34%;
+    background:
+        radial-gradient(ellipse 68% 55% at 50% 25%, rgba(251, 191, 36, 0.16) 0%, rgba(18, 25, 36, 0.92) 56%, rgba(8, 12, 18, 0.98) 100%);
+    border-top: 2px solid rgba(251, 191, 36, 0.55);
+    border-bottom: 3px solid rgba(231, 36, 62, 0.45);
+    box-shadow:
+        0 20px 46px rgba(0, 0, 0, 0.85),
+        0 -4px 26px rgba(245, 158, 11, 0.2),
+        inset 0 2px 14px rgba(255, 255, 255, 0.08);
+    pointer-events: none;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.podium-pedestal-3d[data-rarity-tier="rare"] .podium-base-ring {
+    border-top-color: rgba(16, 185, 129, 0.7);
+    box-shadow: 0 20px 46px rgba(0, 0, 0, 0.85), 0 -4px 28px rgba(16, 185, 129, 0.28);
+}
+
+.podium-pedestal-3d[data-rarity-tier="super"] .podium-base-ring {
+    border-top-color: rgba(239, 68, 68, 0.78);
+    box-shadow: 0 20px 46px rgba(0, 0, 0, 0.85), 0 -4px 30px rgba(239, 68, 68, 0.32);
+}
+
+.podium-pedestal-3d[data-rarity-tier="epic"] .podium-base-ring {
+    border-top-color: rgba(168, 85, 247, 0.82);
+    box-shadow: 0 20px 46px rgba(0, 0, 0, 0.85), 0 -4px 32px rgba(168, 85, 247, 0.36);
+}
+
+.podium-pedestal-3d[data-rarity-tier="legendary"] .podium-base-ring,
+.podium-pedestal-3d[data-rarity-tier="blatnoy"] .podium-base-ring {
+    border-top-color: #fde047;
+    border-bottom-color: #f59e0b;
+    box-shadow: 0 22px 52px rgba(0, 0, 0, 0.9), 0 -6px 38px rgba(251, 191, 36, 0.48), inset 0 2px 18px rgba(251, 191, 36, 0.22);
+}
+
+.podium-price-readout {
+    position: relative;
+    z-index: 2;
+    text-align: center;
+}
+
+.podium-price-caption {
+    font-size: 13px;
+    font-weight: 700;
+    color: #cbd5e1;
+    letter-spacing: 0.5px;
+    margin-bottom: 2px;
+}
+
+.podium-price-value,
+#current-price-display {
+    font-size: 15px;
+    color: #F5F6F8;
+}
+
+#current-price-display .price-hero-value {
+    font-size: 36px;
+    font-weight: 900;
+    line-height: 1.12;
+    letter-spacing: 0.5px;
+    background: linear-gradient(180deg, #fffbeb 0%, #fde047 48%, #f59e0b 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 4px 16px rgba(245, 158, 11, 0.4));
+    display: inline-block;
+}
+
+#current-price-display .price-hero-value.price-placeholder {
+    font-size: 28px;
+    opacity: 0.65;
+}
+
+#current-price-display .price-sub-aed {
+    display: inline-block;
+    font-size: 13px;
+    font-weight: 800;
+    color: #fbbf24;
+    margin-left: 8px;
+}
+
+#current-price-display .price-uae-passport {
+    font-size: 12px;
+    color: #cbd5e1;
+    margin-top: 4px;
+    line-height: 1.35;
+}
+
+/* 5. Панель управления генератором (.gen-controls-dock) */
+.gen-controls-dock {
+    background: linear-gradient(180deg, rgba(16, 22, 32, 0.78) 0%, rgba(10, 14, 21, 0.88) 100%) !important;
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: 20px !important;
+    padding: 16px 20px !important;
+    width: 100%;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.gen-quick-toggles {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.gen-toggle-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(9, 13, 19, 0.78);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 11px;
+    padding: 6px 12px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #cbd5e1;
+}
+
+.gen-inline-select {
+    background: transparent;
+    color: #F5F6F8;
+    border: none;
+    font-size: 13px;
+    font-weight: 800;
+    cursor: pointer;
+    outline: none;
+}
+
+.gen-inline-select option {
+    background: #121821;
+    color: #F5F6F8;
+}
+
+.turbo-pill-label {
+    cursor: pointer;
+    user-select: none;
+}
+
+.turbo-pill-label input[type="checkbox"] {
+    accent-color: #f59e0b;
+    width: 15px;
+    height: 15px;
+}
+
+.btn-auto-pill {
+    background: rgba(9, 13, 19, 0.78) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    color: #F5F6F8 !important;
+    font-size: 13px !important;
+    font-weight: 800 !important;
+    padding: 7px 14px !important;
+    border-radius: 11px !important;
+}
+
+.btn-auto-pill.active {
+    background: rgba(231, 36, 62, 0.24) !important;
+    border-color: #E7243E !important;
+    color: #fff !important;
+}
+
+/* Главная кнопка «СГЕНЕРИРОВАТЬ НОМЕР» */
+.gen-main-cta-wrap {
+    width: 100%;
+    max-width: 520px;
+    margin: 0 auto;
+}
+
+#btn-spin-both.btn-spin-hero {
+    width: 100%;
+    min-height: 64px !important;
+    padding: 12px 28px !important;
+    border-radius: 16px !important;
+    background: linear-gradient(180deg, #ff2e4c 0%, #d41430 55%, #9e0b20 100%) !important;
+    border: 1px solid rgba(255, 150, 165, 0.55) !important;
+    box-shadow:
+        0 14px 36px rgba(231, 36, 62, 0.48),
+        0 0 24px rgba(231, 36, 62, 0.25),
+        inset 0 1px 0 rgba(255, 255, 255, 0.38) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 3px !important;
+    cursor: pointer;
+    transition: transform 0.16s ease, box-shadow 0.16s ease, filter 0.16s ease;
+}
+
+#btn-spin-both.btn-spin-hero:hover {
+    transform: translateY(-2px);
+    filter: brightness(1.07);
+    box-shadow:
+        0 18px 42px rgba(231, 36, 62, 0.6),
+        0 0 30px rgba(231, 36, 62, 0.35),
+        inset 0 1px 0 rgba(255, 255, 255, 0.45) !important;
+}
+
+.spin-hero-title {
+    font-size: 19px;
+    font-weight: 900;
+    letter-spacing: 0.7px;
+    text-transform: uppercase;
+    color: #ffffff;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+}
+
+.spin-hero-cost {
+    font-size: 14px;
+    font-weight: 800;
+    color: #fde047;
+}
+
+/* Вторичные кнопки: Цифры, Буквы, В коллекцию, Продать */
+.gen-secondary-actions-grid {
+    display: grid !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+}
+
+.btn-spin-sub,
+.gen-secondary-actions-grid .btn-save-plate,
+.gen-secondary-actions-grid .btn-sell-plate {
+    min-height: 50px !important;
+    padding: 8px 12px !important;
+    border-radius: 13px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 2px !important;
+    font-size: 13.5px !important;
+    font-weight: 800 !important;
+    background: rgba(20, 27, 38, 0.9) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    color: #F5F6F8 !important;
+}
+
+.btn-spin-sub small,
+.gen-secondary-actions-grid .btn-sell-plate small {
+    font-size: 12px !important;
+    font-weight: 800 !important;
+    color: #fde047 !important;
+}
+
+.gen-secondary-actions-grid .btn-save-plate.can-save {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.28), rgba(5, 150, 105, 0.16)) !important;
+    border-color: rgba(16, 185, 129, 0.65) !important;
+    color: #ecfdf5 !important;
+}
+
+.gen-secondary-actions-grid .btn-sell-plate.can-sell {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.25), rgba(180, 83, 9, 0.14)) !important;
+    border-color: rgba(245, 158, 11, 0.6) !important;
+    color: #fef3c7 !important;
+}
+
+/* Шкала удачи (Pity) */
+.gen-controls-dock .pity-status-bar {
+    padding: 10px 14px !important;
+    border-radius: 12px !important;
+    background: rgba(9, 13, 19, 0.65) !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+
+.gen-controls-dock .pity-status-top {
+    font-size: 12.5px !important;
+}
+
+/* 6. Правая колонка: Статистика игрока с иконками и последние находки */
+.gen-right-panel .summary-stats-grid {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+}
+
+.gen-right-panel .summary-stat {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 12px !important;
+    padding: 10px 14px !important;
+    border-radius: 13px !important;
+    background: rgba(9, 13, 19, 0.62) !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+
+.gen-right-panel .stat-icon-box {
+    width: 40px;
+    height: 40px;
+    border-radius: 11px;
+    background: linear-gradient(135deg, rgba(231, 36, 62, 0.2), rgba(245, 158, 11, 0.1));
+    border: 1px solid rgba(231, 36, 62, 0.32);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 19px;
+    flex-shrink: 0;
+}
+
+.gen-right-panel .stat-text-col {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.gen-right-panel .stat-text-col span {
+    font-size: 12.5px !important;
+    font-weight: 700 !important;
+    color: #939BA9 !important;
+}
+
+.gen-right-panel .stat-text-col b {
+    font-size: 16px !important;
+    font-weight: 900 !important;
+    color: #F5F6F8 !important;
+}
+
+/* Нижняя полоса шансов редкости (.gen-rarity-odds-strip) */
+.gen-rarity-odds-strip {
+    position: relative;
+    z-index: 2;
+    margin: 22px -26px 0 -26px;
+    padding: 12px 24px;
+    background: rgba(7, 10, 15, 0.86);
+    border-top: 1px solid rgba(255, 255, 255, 0.07);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    font-size: 13px;
+    font-weight: 700;
+    color: #cbd5e1;
+}
+
+.odds-strip-title {
+    color: #939BA9;
+    font-weight: 800;
+}
+
+.odds-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.odds-pill i {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.odds-common i { background: #94a3b8; }
+.odds-rare i { background: #3b82f6; box-shadow: 0 0 8px #3b82f6; }
+.odds-epic i { background: #a855f7; box-shadow: 0 0 8px #a855f7; }
+.odds-legendary i { background: #f59e0b; box-shadow: 0 0 8px #f59e0b; }
+.odds-unique i { background: #ef4444; box-shadow: 0 0 8px #ef4444; }
+
+.odds-sep {
+    opacity: 0.35;
+}
+
+/* 7. Повышение читаемости в остальных разделах (Коллекция, Гараж, Рынок, Кейсы) */
+.section-title {
+    font-size: 24px !important;
+    font-weight: 900 !important;
+}
+
+.collection-luxury-layout {
+    grid-template-columns: 280px minmax(0, 1fr) !important;
+    gap: 20px !important;
+}
+
+.col-quick-tab {
+    font-size: 13.5px !important;
+    padding: 10px 12px !important;
+}
+
+.garage-luxury-layout {
+    grid-template-columns: 300px minmax(0, 1fr) 330px !important;
+    gap: 20px !important;
+}
+
+/* 8. Адаптивность Этапа 2 для ноутбуков, планшетов и смартфонов */
+@media (max-width: 1220px) {
+    .gen-garage-arena .gen-luxury-grid {
+        grid-template-columns: 270px minmax(0, 1fr) 280px !important;
+        gap: 18px !important;
+    }
+}
+
+@media (max-width: 1040px) {
+    .gen-garage-arena .gen-luxury-grid {
+        grid-template-columns: 1fr 1fr !important;
+    }
+
+    .gen-center-stage {
+        grid-column: 1 / -1 !important;
+        order: -1 !important;
+    }
+}
+
+@media (max-width: 860px) {
+    .main-container {
+        width: 100% !important;
+        padding: 10px 10px 88px 10px !important;
+    }
+
+    .gen-garage-arena {
+        padding: 14px 12px 0 12px !important;
+        border-radius: 18px !important;
+    }
+
+    .gen-left-hero-heading {
+        display: none;
+    }
+
+    .gen-garage-arena .gen-luxury-grid {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 14px !important;
+    }
+
+    .gen-center-stage {
+        order: 1 !important;
+        width: 100% !important;
+    }
+
+    .gen-left-panel {
+        order: 2 !important;
+        width: 100% !important;
+    }
+
+    .gen-right-panel {
+        order: 3 !important;
+        width: 100% !important;
+    }
+
+    .gen-secondary-actions-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    }
+
+    .gen-rarity-odds-strip {
+        margin: 14px -12px 0 -12px !important;
+        padding: 10px 12px !important;
+        font-size: 11.5px !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .plate-hero-scale-wrap {
+        padding: 8px 0 12px 0 !important;
+    }
+
+    .plate-hero-scale-wrap #plate-box {
+        transform: scale(0.96);
+    }
+
+    .podium-pedestal-3d {
+        padding: 14px 12px 12px 12px !important;
+    }
+
+    #current-price-display .price-hero-value {
+        font-size: 26px !important;
+    }
+
+    #btn-spin-both.btn-spin-hero {
+        min-height: 56px !important;
+    }
+
+    .spin-hero-title {
+        font-size: 16px !important;
+    }
+}
+
+

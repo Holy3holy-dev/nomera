@@ -199,3 +199,31 @@ test('Case Animation Modes (standard, fast, instant), skipCaseAnimation(), batch
   assert.equal(app.run(`document.getElementById('col-filter-sidebar').classList.contains('mobile-collapsed')`), false);
 });
 
+test('Stage 2 Redesign: 1580px widescreen layout, automotive garage arena, hero plate podium, and dynamic rarity lighting', () => {
+  const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
+  const css = fs.readFileSync(path.join(__dirname, '..', 'styles.css'), 'utf8');
+  const app = createApp();
+
+  // Widescreen 1580px container & Garage Arena classes
+  assert.ok(css.includes('1580px'), 'CSS must define 1580px widescreen container max-width');
+  assert.ok(html.includes('gen-garage-arena'), 'HTML must include .gen-garage-arena wrapper');
+  assert.ok(html.includes('garage-arena-backdrop'), 'HTML must include .garage-arena-backdrop');
+  assert.ok(html.includes('plate-hero-scale-wrap'), 'HTML must include .plate-hero-scale-wrap for enlarged license plate');
+  assert.ok(html.includes('id="gen-podium-pedestal"'), 'HTML must include #gen-podium-pedestal');
+  assert.ok(html.includes('gen-glass-sidebar'), 'HTML must include unified .gen-glass-sidebar panels');
+  assert.ok(html.includes('gen-rarity-odds-strip'), 'HTML must include .gen-rarity-odds-strip footer');
+
+  // Dynamic podium & stage rarity lighting + hero gold price readout
+  app.run(`
+    selectPlateCountry('RUS');
+    currentL1 = 'А'; currentL2 = 'М'; currentL3 = 'Р'; currentNum = '777'; currentReg = '97';
+    boardHasLetters = true; boardHasNumbers = true;
+    checkCanSaveButton();
+  `);
+  assert.equal(app.run(`document.getElementById('gen-plate-stage').dataset.rarityTier`), 'blatnoy');
+  assert.equal(app.run(`document.getElementById('gen-podium-pedestal').dataset.rarityTier`), 'blatnoy');
+  assert.ok(app.run(`document.getElementById('current-price-display').innerHTML`).includes('price-hero-value'));
+  assert.ok(app.run(`document.getElementById('gen-rarity').innerText`).includes('👑'));
+});
+
+

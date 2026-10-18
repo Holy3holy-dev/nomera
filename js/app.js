@@ -1469,17 +1469,31 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             const plateBox = document.getElementById('plate-box');
             if (!plateBox) return;
             const cCode = String(currentCountry || 'RUS').toLowerCase();
-            plateBox.className = 'plate-container country-' + cCode;
+            let glowTier = 'none';
+            if (rarityText === "Необычный") glowTier = 'uncommon';
+            else if (rarityText === "Редкий") glowTier = 'rare';
+            else if (rarityText === "Супер редкий") glowTier = 'super';
+            else if (rarityText === "Эпический") glowTier = 'epic';
+            else if (rarityText === "Легендарный") glowTier = 'legendary';
+            else if (rarityText === "Крутой" || rarityText === "БЛАТНОЙ" || rarityText === "Мифический" || rarityText === "МИФИЧЕСКИЙ") glowTier = 'blatnoy';
+
+            plateBox.className = 'plate-container country-' + cCode + ' glow-' + glowTier;
             if (plateBox.classList && typeof plateBox.classList.add === 'function') {
-                plateBox.classList.add('country-' + cCode);
+                plateBox.classList.add('country-' + cCode, 'glow-' + glowTier);
             }
-            if (rarityText === "Необычный") plateBox.classList.add('glow-uncommon');
-            else if (rarityText === "Редкий") plateBox.classList.add('glow-rare');
-            else if (rarityText === "Супер редкий") plateBox.classList.add('glow-super');
-            else if (rarityText === "Эпический") plateBox.classList.add('glow-epic');
-            else if (rarityText === "Легендарный") plateBox.classList.add('glow-legendary');
-            else if (rarityText === "Крутой" || rarityText === "БЛАТНОЙ") plateBox.classList.add('glow-blatnoy');
-            else plateBox.classList.add('glow-none');
+            const stageEl = document.getElementById('gen-plate-stage');
+            if (stageEl) {
+                if (typeof stageEl.setAttribute === 'function') stageEl.setAttribute('data-rarity-tier', glowTier);
+                if (stageEl.dataset) stageEl.dataset.rarityTier = glowTier;
+            }
+            const pedestalEl = document.getElementById('gen-podium-pedestal');
+            if (pedestalEl) {
+                if (typeof pedestalEl.setAttribute === 'function') pedestalEl.setAttribute('data-rarity-tier', glowTier);
+                if (pedestalEl.dataset) pedestalEl.dataset.rarityTier = glowTier;
+            }
+            if (typeof updatePlateBoxMeta === 'function') {
+                updatePlateBoxMeta(currentCountry, currentReg);
+            }
         }
 
         function isTouchOrMobileDevice() {
@@ -5547,26 +5561,36 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 let rarity = getRarity(price);
                 const specialMeta = getUltraSpecialPlateMeta(currentL1, currentL2, currentL3, currentNum, currentReg, currentCountry);
                 const cCode = String(currentCountry || 'RUS').toUpperCase();
+                const isRoyalRarity = ['БЛАТНОЙ', 'Легендарный', 'Крутой', 'Мифический', 'МИФИЧЕСКИЙ'].includes(rarity.text);
+                const isEpicRarity = ['Эпический', 'Супер редкий'].includes(rarity.text);
                 if (cCode === 'UAE') {
                     const uaeInfo = evaluateUaePlateDetails(currentL1, currentL2, currentL3, currentNum, currentReg);
-                    document.getElementById('current-price-display').innerHTML = `Оценка RTA: <b style="color:var(--accent-green); margin-left:4px;">${price.toLocaleString('ru-RU')} ₽</b> <span style="font-size:11px; color:#fbbf24; font-weight:700; margin-left:6px;">≈ ${uaeInfo.estimatedAed.toLocaleString('ru-RU')} AED ($${uaeInfo.estimatedUsd.toLocaleString('ru-RU')})</span><div style="font-size:11px; color:#94a3b8; margin-top:4px; line-height:1.35;"><b style="color:#e2e8f0;">${escapeHtml(uaeInfo.tierTitle)}</b> · ${escapeHtml(uaeInfo.codePrestige)}<br><span style="opacity:0.85;">${escapeHtml(uaeInfo.realWorldNote)}</span></div>`;
+                    document.getElementById('current-price-display').innerHTML = `<span class="price-hero-value">${price.toLocaleString('ru-RU')} ₽</span> <span class="price-sub-aed">≈ ${uaeInfo.estimatedAed.toLocaleString('ru-RU')} AED ($${uaeInfo.estimatedUsd.toLocaleString('ru-RU')})</span><div class="price-uae-passport"><b>${escapeHtml(uaeInfo.tierTitle)}</b> · ${escapeHtml(uaeInfo.codePrestige)}<br><span>${escapeHtml(uaeInfo.realWorldNote)}</span></div>`;
                     let rLabel = document.getElementById('gen-rarity');
                     rLabel.innerText = `${uaeInfo.tierBadge} • ${rarity.text}`;
                     rLabel.style.background = rarity.bg;
                     rLabel.style.color = rarity.color;
+                    rLabel.setAttribute('data-rarity-glow', rarity.glow || 'none');
                     rLabel.classList.remove('hidden');
                 } else {
-                    document.getElementById('current-price-display').innerHTML = `Оценка номера: <b style="color:var(--accent-green); margin-left:4px;">${price.toLocaleString('ru-RU')} ₽</b> <span style="font-size:11px; opacity:0.75; font-weight:600; margin-left:4px;">(для инвентаря)</span>`;
+                    document.getElementById('current-price-display').innerHTML = `<span class="price-hero-value">${price.toLocaleString('ru-RU')} ₽</span>`;
                     let rLabel = document.getElementById('gen-rarity');
-                    rLabel.innerText = specialMeta ? `${specialMeta.title} • ${rarity.text}` : rarity.text;
+                    const baseBadgeText = specialMeta ? `${specialMeta.title} • ${rarity.text}` : rarity.text;
+                    rLabel.innerText = isRoyalRarity
+                        ? `👑 ${baseBadgeText} 👑`
+                        : (isEpicRarity ? `✨ ${baseBadgeText} ✨` : baseBadgeText);
                     rLabel.style.background = rarity.bg;
                     rLabel.style.color = rarity.color;
+                    rLabel.setAttribute('data-rarity-glow', rarity.glow || 'none');
                     rLabel.classList.remove('hidden');
                 }
                 updatePlateGlow(rarity.text);
             } else {
-                document.getElementById('current-price-display').innerText = `Оценка номера: --- ₽`;
-                document.getElementById('gen-rarity').classList.add('hidden');
+                const priceEl = document.getElementById('current-price-display');
+                if (priceEl) {
+                    priceEl.innerHTML = `<span class="price-hero-value price-placeholder">— ₽</span>`;
+                }
+                document.getElementById('gen-rarity')?.classList.add('hidden');
                 updatePlateGlow('none');
             }
         }

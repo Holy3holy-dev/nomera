@@ -60,7 +60,7 @@
     <!-- Подключение Firebase SDK для базы данных, аккаунтов и мультиплеера -->
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
-    <link rel="stylesheet" href="./styles.css?v=843b145eb0dd">
+    <link rel="stylesheet" href="./styles.css?v=6542629f4cd6">
     <style>
         /* Collector's Book («Книга коллекционера») & Car-Plate Synergy UI */
         .collector-book-summary {
@@ -299,7 +299,7 @@
             <!-- ВЕРХНИЙ HUD: БАЛАНС, УРОВЕНЬ/XP, ПРОФИЛЬ, УВЕДОМЛЕНИЯ, НАСТРОЙКИ -->
             <div class="header-hud">
                 <div class="hud-balance-pill" onclick="openProfileModal()" title="Текущий игровой баланс">
-                    <span class="hud-coin-icon">₽</span>
+                    <span class="hud-coin-icon" aria-hidden="true">₽</span>
                     <div class="hud-balance">
                         <span class="wallet-label">БАЛАНС</span>
                         <span class="hud-balance-val"><span id="balance">50 000</span> ₽</span>
@@ -308,7 +308,7 @@
 
                 <div class="hud-level-box" title="Уровень и прогресс опыта">
                     <div class="hud-level-header">
-                        <span class="hud-lvl-pill">УР. <span id="player-level">1</span></span>
+                        <span class="hud-lvl-pill">LVL <span id="player-level">1</span></span>
                         <span class="hud-xp-text"><span id="current-exp">0</span> / <span id="needed-exp">10</span> XP</span>
                     </div>
                     <div class="hud-progress-bg">
@@ -324,7 +324,7 @@
                     <div class="hud-player-info">
                         <div class="hud-player-name">
                             <span id="player-name">Игрок</span>
-                            <span class="cloud-badge online" id="cloud-status-badge">🟢 Облако</span>
+                            <span class="cloud-badge online" id="cloud-status-badge">🟢</span>
                         </div>
                     </div>
                 </div>
@@ -332,9 +332,8 @@
                 <div class="hud-actions brand-right">
                     <button class="hud-icon-btn admin-glow-btn hidden" id="hud-admin-btn" onclick="openAdminModal()" title="Админ-Панель">👑 АДМИН</button>
                     <button class="hud-icon-btn" id="hud-daily-btn" onclick="openDailyModal()" title="Ежедневные бонусы и уведомления" aria-label="Бонусы и уведомления" style="position: relative;">
-                        🔔<span id="daily-badge-dot" style="display:none;position:absolute;top:4px;right:4px;width:8px;height:8px;background:#E7243E;border-radius:50%;box-shadow:0 0 8px #E7243E;"></span>
+                        🔔<span id="daily-badge-dot" style="display:none;position:absolute;top:5px;right:5px;width:9px;height:9px;background:#E7243E;border-radius:50%;box-shadow:0 0 8px #E7243E;"></span>
                     </button>
-                    <button class="hud-icon-btn" onclick="openProfileModal()" title="Профиль и Аккаунт" aria-label="Профиль"><svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24"><use href="#icon-profile"/></svg></button>
                     <button id="sound-toggle" class="hud-icon-btn sound-toggle" onclick="toggleSoundMute()" aria-label="Отключить звук" aria-pressed="false" title="Звуковые эффекты">🔊</button>
                     <button class="hud-icon-btn" onclick="openSettings()" title="Настройки" aria-label="Настройки"><svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24"><use href="#icon-settings"/></svg></button>
                 </div>
@@ -343,81 +342,116 @@
 
         <div id="save-status" class="save-status" role="status" aria-live="polite">Локальное сохранение</div>
 
-        <!-- 1. ВКЛАДКА: ГЕНЕРАТОР НОМЕРОВ (PREMIUM COLLECTOR PODIUM) -->
+        <!-- 1. ВКЛАДКА: ГЕНЕРАТОР НОМЕРОВ (PREMIUM COLLECTOR GARAGE ARENA) -->
         <div id="generator" class="tab-content">
-            <div class="generator-layout gen-luxury-grid">
-                <!-- ЛЕВАЯ ПАНЕЛЬ: СТРАНА, СЕРИЯ/РЕГИОН, АНИМАЦИЯ -->
+            <div class="generator-layout gen-luxury-grid gen-garage-arena">
+                <!-- Атмосферный фон автомобильного гаража (лёгкий SVG + CSS-свет без нагрузки на GPU) -->
+                <div class="garage-arena-backdrop" aria-hidden="true">
+                    <div class="garage-ceiling-lights"></div>
+                    <svg class="garage-bg-cars-svg" viewBox="0 0 1600 720" preserveAspectRatio="xMidYMid slice">
+                        <defs>
+                            <radialGradient id="garageFloorGlow" cx="50%" cy="68%" r="48%">
+                                <stop offset="0%" stop-color="#E7243E" stop-opacity="0.22"/>
+                                <stop offset="45%" stop-color="#F59E0B" stop-opacity="0.08"/>
+                                <stop offset="100%" stop-color="#090D13" stop-opacity="0"/>
+                            </radialGradient>
+                            <linearGradient id="taillightLeft" x1="0" y1="0" x2="1" y2="0">
+                                <stop offset="0%" stop-color="#ff1e42" stop-opacity="0.9"/>
+                                <stop offset="100%" stop-color="#E7243E" stop-opacity="0.2"/>
+                            </linearGradient>
+                            <linearGradient id="taillightRight" x1="1" y1="0" x2="0" y2="0">
+                                <stop offset="0%" stop-color="#ff1e42" stop-opacity="0.9"/>
+                                <stop offset="100%" stop-color="#E7243E" stop-opacity="0.2"/>
+                            </linearGradient>
+                        </defs>
+                        <!-- Перспектива колонн и потолочных балок гаража -->
+                        <path d="M0,90 L420,180 L1180,180 L1600,90" stroke="rgba(255,255,255,0.04)" stroke-width="2" fill="none"/>
+                        <path d="M260,0 L350,480 M1340,0 L1250,480" stroke="rgba(255,255,255,0.035)" stroke-width="18" fill="none"/>
+                        <!-- Силуэт спорткара слева в глубине гаража -->
+                        <g opacity="0.42" transform="translate(170, 255)">
+                            <path d="M25,115 Q55,52 145,48 L245,48 Q305,55 335,105 L350,155 L10,155 Z" fill="#0b1018" stroke="rgba(255,255,255,0.08)" stroke-width="1.5"/>
+                            <rect x="34" y="106" width="84" height="7" rx="3.5" fill="url(#taillightLeft)"/>
+                            <rect x="235" y="106" width="76" height="7" rx="3.5" fill="url(#taillightLeft)"/>
+                            <ellipse cx="75" cy="110" rx="52" ry="14" fill="#E7243E" opacity="0.25"/>
+                            <ellipse cx="272" cy="110" rx="48" ry="14" fill="#E7243E" opacity="0.22"/>
+                        </g>
+                        <!-- Силуэт спорткара справа в глубине гаража -->
+                        <g opacity="0.42" transform="translate(1080, 255)">
+                            <path d="M25,105 Q55,55 115,48 L215,48 Q305,52 335,115 L350,155 L10,155 Z" fill="#0b1018" stroke="rgba(255,255,255,0.08)" stroke-width="1.5"/>
+                            <rect x="48" y="106" width="76" height="7" rx="3.5" fill="url(#taillightRight)"/>
+                            <rect x="242" y="106" width="84" height="7" rx="3.5" fill="url(#taillightRight)"/>
+                            <ellipse cx="86" cy="110" rx="48" ry="14" fill="#E7243E" opacity="0.22"/>
+                            <ellipse cx="284" cy="110" rx="52" ry="14" fill="#E7243E" opacity="0.25"/>
+                        </g>
+                        <!-- Отражение света на полированном полу гаража -->
+                        <ellipse cx="800" cy="520" rx="580" ry="140" fill="url(#garageFloorGlow)"/>
+                    </svg>
+                </div>
+
+                <!-- ЛЕВАЯ КОЛОНКА: ЗАГОЛОВОК, КРУПНЫЙ ВЫБОР СТРАНЫ И СЕРИЯ/РЕГИОН (БЕЗ ЛИШНИХ ВЛОЖЕННЫХ РАМОК) -->
                 <aside class="gen-left-panel" aria-label="Параметры генерации">
-                    <div class="luxury-panel-card">
-                        <div class="luxury-panel-header">
-                            <span class="luxury-panel-eyebrow">СТРАНА ГОСНОМЕРА</span>
-                        </div>
-                        <div class="plate-country-selector" id="plate-country-selector" role="group" aria-label="Страна госномера">
-                            <button type="button" class="country-select-btn active" id="btn-country-RUS" data-country="RUS" onclick="selectPlateCountry('RUS')">
-                                <span class="country-btn-flag">🇷🇺</span>
-                                <span class="country-btn-info"><strong>Россия</strong><small>ГОСТ • спин 900 ₽</small></span>
-                                <span class="country-mult-pill">x1.0</span>
-                            </button>
-                            <button type="button" class="country-select-btn" id="btn-country-KZ" data-country="KZ" onclick="selectPlateCountry('KZ')">
-                                <span class="country-btn-flag">🇰🇿</span>
-                                <span class="country-btn-info"><strong>Казахстан</strong><small>VIP • спин 1 800 ₽</small></span>
-                                <span class="country-mult-pill">x1.8</span>
-                            </button>
-                            <button type="button" class="country-select-btn" id="btn-country-USA" data-country="USA" onclick="selectPlateCountry('USA')">
-                                <span class="country-btn-flag">🇺🇸</span>
-                                <span class="country-btn-info"><strong>США</strong><small>State • спин 3 500 ₽</small></span>
-                                <span class="country-mult-pill">x3.5</span>
-                            </button>
-                            <button type="button" class="country-select-btn" id="btn-country-UAE" data-country="UAE" onclick="selectPlateCountry('UAE')">
-                                <span class="country-btn-flag">🇦🇪</span>
-                                <span class="country-btn-info"><strong>Дубай (ОАЭ)</strong><small>RTA • спин 9 000 ₽</small></span>
-                                <span class="country-mult-pill">x8.0</span>
-                            </button>
-                            <button type="button" class="country-select-btn" id="btn-country-JPN" data-country="JPN" onclick="selectPlateCountry('JPN')">
-                                <span class="country-btn-flag">🇯🇵</span>
-                                <span class="country-btn-info"><strong>Япония</strong><small>JDM • спин 5 000 ₽</small></span>
-                                <span class="country-mult-pill">x5.0</span>
-                            </button>
-                        </div>
+                    <div class="gen-left-hero-heading">
+                        <h1>Генератор номеров</h1>
+                        <p>Создавай уникальные номера, испытывай удачу и пополняй свою коллекцию.</p>
                     </div>
 
-                    <div class="luxury-panel-card">
-                        <div class="luxury-panel-header">
-                            <span class="luxury-panel-eyebrow">РЕГИОН И АНИМАЦИЯ</span>
+                    <div class="gen-glass-sidebar">
+                        <div class="gen-sidebar-section">
+                            <div class="gen-sidebar-label">Выбор страны</div>
+                            <div class="plate-country-selector" id="plate-country-selector" role="group" aria-label="Страна госномера">
+                                <button type="button" class="country-select-btn active" id="btn-country-RUS" data-country="RUS" onclick="selectPlateCountry('RUS')">
+                                    <span class="country-btn-flag">🇷🇺</span>
+                                    <span class="country-btn-info"><strong>Россия</strong><small>ГОСТ • 900 ₽</small></span>
+                                    <span class="country-mult-pill">x1.0</span>
+                                </button>
+                                <button type="button" class="country-select-btn" id="btn-country-KZ" data-country="KZ" onclick="selectPlateCountry('KZ')">
+                                    <span class="country-btn-flag">🇰🇿</span>
+                                    <span class="country-btn-info"><strong>Казахстан</strong><small>VIP • 1 800 ₽</small></span>
+                                    <span class="country-mult-pill">x1.8</span>
+                                </button>
+                                <button type="button" class="country-select-btn" id="btn-country-USA" data-country="USA" onclick="selectPlateCountry('USA')">
+                                    <span class="country-btn-flag">🇺🇸</span>
+                                    <span class="country-btn-info"><strong>США</strong><small>State • 3 500 ₽</small></span>
+                                    <span class="country-mult-pill">x3.5</span>
+                                </button>
+                                <button type="button" class="country-select-btn" id="btn-country-UAE" data-country="UAE" onclick="selectPlateCountry('UAE')">
+                                    <span class="country-btn-flag">🇦🇪</span>
+                                    <span class="country-btn-info"><strong>ОАЭ (Дубай)</strong><small>RTA • 9 000 ₽</small></span>
+                                    <span class="country-mult-pill">x8.0</span>
+                                </button>
+                                <button type="button" class="country-select-btn" id="btn-country-JPN" data-country="JPN" onclick="selectPlateCountry('JPN')">
+                                    <span class="country-btn-flag">🇯🇵</span>
+                                    <span class="country-btn-info"><strong>Япония</strong><small>JDM • 5 000 ₽</small></span>
+                                    <span class="country-mult-pill">x5.0</span>
+                                </button>
+                            </div>
                         </div>
-                        <div class="gen-side-control-row">
-                            <span class="gen-side-label">Код региона / штата</span>
+
+                        <div class="gen-sidebar-divider"></div>
+
+                        <div class="gen-sidebar-section">
+                            <div class="gen-sidebar-label">Серия и регион</div>
                             <button type="button" class="btn-region-trigger" onclick="changeRegion()">
-                                <span>Сменить регион</span> <span>✎</span>
+                                <span class="region-trigger-left">🌍 Код региона / штата</span>
+                                <span class="region-trigger-action">Сменить ✎</span>
                             </button>
-                        </div>
-                        <div class="control-group gen-anim-control">
-                            <label for="anim-style-select" class="gen-side-label">Режим анимации</label>
-                            <select class="control-select" id="anim-style-select">
-                                <option value="cascade">🌊 Каскад (Слоты)</option>
-                                <option value="suspense">🎯 Интрига (Саспенс)</option>
-                                <option value="converge">🔀 От краёв к центру</option>
-                                <option value="chaos">🎲 Хаос (Случайно)</option>
-                                <option value="wave">💫 Эхо-Волна</option>
-                                <option value="sync">⚡ Синхрон</option>
-                            </select>
+                            <p id="generator-online-wallet" class="generator-footnote" aria-live="polite">Загружаем онлайн-кошелёк…</p>
                         </div>
                     </div>
                 </aside>
 
-                <!-- ЦЕНТРАЛЬНАЯ ОБЛАСТЬ: ПОДИУМ ГОСНОМЕРА И ГЛАВНЫЕ ДЕЙСТВИЯ -->
+                <!-- ЦЕНТРАЛЬНАЯ СЦЕНА: КРУПНЫЙ НОМЕР НА ПОДИУМЕ, ОЦЕНКА И ГЛАВНАЯ КНОПКА СПИНА -->
                 <section class="generator-workbench gen-center-stage" aria-label="Генератор номеров">
-                    <div class="gen-stage-header">
-                        <div class="gen-stage-title-wrap">
-                            <h1>ГЕНЕРАТОР НОМЕРОВ</h1>
-                            <p id="generator-online-wallet" class="generator-footnote" aria-live="polite">Загружаем онлайн-кошелёк…</p>
-                        </div>
-                        <div id="gen-rarity" class="rarity-label hidden">Обычный</div>
-                    </div>
-
-                    <!-- Подиум с госномером и подсветкой редкости -->
+                    <!-- Подиум с крупным госномером и презентацией редкости -->
                     <div class="plate-stage" id="gen-plate-stage">
                         <div class="podium-spotlight" aria-hidden="true"></div>
+                        <div class="podium-rarity-rays" id="gen-podium-rays" aria-hidden="true"></div>
+
+                        <!-- Корона / бейдж категории редкости прямо над номером -->
+                        <div class="gen-rarity-crown-wrap">
+                            <div id="gen-rarity" class="rarity-label gen-rarity-hero-badge hidden">Обычный</div>
+                        </div>
+
                         <div id="region-editor" class="region-editor hidden" role="dialog" aria-modal="true" aria-label="Смена региона госномера">
                             <div class="region-editor-header">
                                 <label for="region-edit-input" id="region-editor-label">Код региона РФ (2–3 цифры)</label>
@@ -442,41 +476,107 @@
                             </div>
                         </div>
 
-                        <div class="plate-container glow-none" id="plate-box" data-country="RUS" data-reg="777" data-state-title="California" data-state-slogan="dmv.ca.gov" data-emirate-en="DUBAI" data-emirate-ar="دبي">
-                            <div class="plate-bolt bolt-left"></div>
-                            <div class="plate-bolt bolt-right"></div>
+                        <!-- ГЛАВНЫЙ ИГРОВОЙ ОБЪЕКТ: ГОСУДАРСТВЕННЫЙ НОМЕР -->
+                        <div class="plate-hero-scale-wrap">
+                            <div class="plate-container glow-none" id="plate-box" data-country="RUS" data-reg="777" data-state-title="California" data-state-slogan="dmv.ca.gov" data-emirate-en="DUBAI" data-emirate-ar="دبي">
+                                <div class="plate-bolt bolt-left"></div>
+                                <div class="plate-bolt bolt-right"></div>
 
-                            <div class="plate-kz-strip" aria-hidden="true">
-                                <div class="flag flag-kz"></div>
-                                <span>KZ</span>
-                            </div>
+                                <div class="plate-kz-strip" aria-hidden="true">
+                                    <div class="flag flag-kz"></div>
+                                    <span>KZ</span>
+                                </div>
 
-                            <div class="plate-cells-main" id="plate-cells-box">
-                                <div class="plate-cell letter-cell" id="cell-l1"><span class="char-span">-</span></div>
-                                <div class="plate-cell num-cell" id="cell-n1"><span class="char-span">-</span></div>
-                                <div class="plate-cell num-cell" id="cell-n2"><span class="char-span">-</span></div>
-                                <div class="plate-cell num-cell" id="cell-n3"><span class="char-span">-</span></div>
-                                <div class="plate-cell num-cell uae-extra-digit uae-cell-hidden" id="cell-n4"><span class="char-span">-</span></div>
-                                <div class="plate-cell num-cell uae-extra-digit uae-cell-hidden" id="cell-n5"><span class="char-span">-</span></div>
-                                <div class="plate-cell letter-cell" id="cell-l2"><span class="char-span">-</span></div>
-                                <div class="plate-cell letter-cell" id="cell-l3"><span class="char-span">-</span></div>
-                            </div>
+                                <div class="plate-cells-main" id="plate-cells-box">
+                                    <div class="plate-cell letter-cell" id="cell-l1"><span class="char-span">-</span></div>
+                                    <div class="plate-cell num-cell" id="cell-n1"><span class="char-span">-</span></div>
+                                    <div class="plate-cell num-cell" id="cell-n2"><span class="char-span">-</span></div>
+                                    <div class="plate-cell num-cell" id="cell-n3"><span class="char-span">-</span></div>
+                                    <div class="plate-cell num-cell uae-extra-digit uae-cell-hidden" id="cell-n4"><span class="char-span">-</span></div>
+                                    <div class="plate-cell num-cell uae-extra-digit uae-cell-hidden" id="cell-n5"><span class="char-span">-</span></div>
+                                    <div class="plate-cell letter-cell" id="cell-l2"><span class="char-span">-</span></div>
+                                    <div class="plate-cell letter-cell" id="cell-l3"><span class="char-span">-</span></div>
+                                </div>
 
-                            <div class="plate-region" role="button" tabindex="0" aria-label="Сменить регион номера" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();changeRegion();}" onclick="changeRegion()" title="Нажмите, чтобы сменить регион">
-                                <span id="region">777</span>
-                                <div class="plate-region-text"><span id="plate-country-code">RUS</span> <div class="flag flag-rus" id="plate-country-flag"></div></div>
-                                <span class="region-edit-hint" aria-hidden="true" title="Сменить регион">✎</span>
+                                <div class="plate-region" role="button" tabindex="0" aria-label="Сменить регион номера" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();changeRegion();}" onclick="changeRegion()" title="Нажмите, чтобы сменить регион">
+                                    <span id="region">777</span>
+                                    <div class="plate-region-text"><span id="plate-country-code">RUS</span> <div class="flag flag-rus" id="plate-country-flag"></div></div>
+                                    <span class="region-edit-hint" aria-hidden="true" title="Сменить регион">✎</span>
+                                </div>
                             </div>
                         </div>
 
-                        <div class="podium-base-ring" id="gen-podium-base" aria-hidden="true"></div>
+                        <!-- Многоуровневый автомобильный подиум с подсветкой и оценочной стоимостью -->
+                        <div class="podium-pedestal-3d" id="gen-podium-pedestal">
+                            <div class="podium-base-ring" id="gen-podium-base" aria-hidden="true"></div>
+                            <div class="podium-price-readout">
+                                <span class="podium-price-caption">Оценочная стоимость</span>
+                                <div class="current-price-badge" id="current-price-display">
+                                    Сделай первый спин — узнай стоимость
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
-                    <!-- Оценочная стоимость и индикатор удачи -->
-                    <div class="gen-price-and-pity-row">
-                        <div class="current-price-badge" id="current-price-display">
-                            Сделай первый спин — узнай стоимость
+                    <!-- Панель управления генерацией (в стиле первого референса) -->
+                    <div class="gen-controls-dock">
+                        <!-- Компактная строка режимов: Анимация • Турбо • Автогенерация -->
+                        <div class="spin-control-bar gen-quick-toggles">
+                            <div class="gen-mode-pill-wrap">
+                                <select class="control-select" id="anim-style-select" aria-label="Режим анимации">
+                                    <option value="cascade">🌊 Каскад (Слоты)</option>
+                                    <option value="suspense">🎯 Интрига (Саспенс)</option>
+                                    <option value="converge">🔀 К центру</option>
+                                    <option value="chaos">🎲 Хаос</option>
+                                    <option value="wave">💫 Эхо-Волна</option>
+                                    <option value="sync">⚡ Синхрон</option>
+                                </select>
+                            </div>
+
+                            <label class="toggle-pill" title="Мгновенный темп прокрутки">
+                                <input type="checkbox" id="turbo-toggle">
+                                <span>⚡ Турбо</span>
+                            </label>
+
+                            <div class="gen-auto-group">
+                                <button type="button" class="btn-auto-toggle" id="btn-auto-spin" onclick="toggleAutoSpin()">🔄 Авто: ВЫКЛ</button>
+                                <select class="control-select" id="auto-spin-count" title="Количество авто-спинов" aria-label="Количество авто-спинов">
+                                    <option value="10">10 спинов</option>
+                                    <option value="25">25 спинов</option>
+                                    <option value="50">50 спинов</option>
+                                    <option value="100">100 спинов</option>
+                                    <option value="Infinity" selected>∞ До редкого</option>
+                                </select>
+                            </div>
                         </div>
+
+                        <!-- ГЛАВНАЯ КНОПКА «СГЕНЕРИРОВАТЬ НОМЕР» -->
+                        <div class="gen-main-cta-wrap">
+                            <button type="button" class="btn btn-spin-full" id="btn-spin-both" onclick="spinBoth()">
+                                <span class="spin-cta-main">🎲 Сгенерировать номер</span>
+                                <small id="spin-cost-both">900 ₽</small>
+                            </button>
+                        </div>
+
+                        <!-- Вспомогательные действия: Цифры / Буквы / В коллекцию / Продать -->
+                        <div class="gen-secondary-actions-grid">
+                            <button type="button" class="btn btn-numbers" id="btn-spin-num" onclick="spinNumbers()">
+                                <span>Только цифры</span>
+                                <small id="spin-cost-num">500 ₽</small>
+                            </button>
+                            <button type="button" class="btn btn-letters" id="btn-spin-let" onclick="spinLetters()">
+                                <span>Только буквы</span>
+                                <small id="spin-cost-let">500 ₽</small>
+                            </button>
+                            <button type="button" class="btn btn-save" id="btn-save" onclick="savePlate()" disabled>
+                                ＋ В коллекцию
+                            </button>
+                            <button type="button" class="btn btn-sell-direct" id="btn-sell-direct" onclick="sellCurrentPlate()" disabled>
+                                <span>💰 Продать</span>
+                            </button>
+                        </div>
+
+                        <!-- Индикатор гаранта удачи -->
                         <div class="pity-status-bar" id="pity-status-bar" aria-live="polite">
                             <div class="pity-header">
                                 <span class="pity-title">🍀 Гарант удачи: <strong id="pity-count">0</strong> <span id="pity-boost-badge" class="pity-boost">+0%</span></span>
@@ -487,105 +587,67 @@
                             </div>
                         </div>
                     </div>
-
-                    <!-- Панель главной кнопки генерации, частичных спинов и турбо/авто -->
-                    <div class="gen-controls-dock">
-                        <div class="btn-grid-spins">
-                            <button class="btn btn-spin-full" id="btn-spin-both" onclick="spinBoth()">
-                                <span class="spin-cta-main">🎲 СГЕНЕРИРОВАТЬ НОМЕР</span>
-                                <small id="spin-cost-both">900 ₽</small>
-                            </button>
-                            <button class="btn btn-numbers" id="btn-spin-num" onclick="spinNumbers()">
-                                <span>Только цифры</span>
-                                <small id="spin-cost-num">500 ₽</small>
-                            </button>
-                            <button class="btn btn-letters" id="btn-spin-let" onclick="spinLetters()">
-                                <span>Только буквы</span>
-                                <small id="spin-cost-let">500 ₽</small>
-                            </button>
-                        </div>
-
-                        <div class="spin-control-bar gen-quick-toggles">
-                            <label class="toggle-pill" title="Мгновенный темп прокрутки">
-                                <input type="checkbox" id="turbo-toggle"> ⚡ Турбо-режим
-                            </label>
-                            <div class="control-group" style="display: inline-flex; align-items: center; gap: 6px;">
-                                <button class="btn-auto-toggle" id="btn-auto-spin" onclick="toggleAutoSpin()">🔄 Автогенерация: ВЫКЛ</button>
-                                <select class="control-select" id="auto-spin-count" style="padding: 4px 8px; font-size: 11px; height: 32px; width: auto;" title="Количество авто-спинов">
-                                    <option value="10">10 спинов</option>
-                                    <option value="25">25 спинов</option>
-                                    <option value="50">50 спинов</option>
-                                    <option value="100">100 спинов</option>
-                                    <option value="Infinity" selected>∞ До редкого</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div class="generator-action-row">
-                            <button class="btn btn-save" id="btn-save" onclick="savePlate()" disabled>
-                                ＋ Сохранить в коллекцию
-                            </button>
-                            <button class="btn btn-sell-direct" id="btn-sell-direct" onclick="sellCurrentPlate()" disabled>
-                                <span>💰 Продать сразу</span>
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Шкала категорий редкости и вероятностей -->
-                    <div class="gen-rarity-odds-strip" aria-label="Категории редкости">
-                        <div class="odds-chip odds-common"><span class="odds-dot"></span>Обычный <b>70%</b></div>
-                        <div class="odds-chip odds-rare"><span class="odds-dot"></span>Редкий <b>20%</b></div>
-                        <div class="odds-chip odds-epic"><span class="odds-dot"></span>Эпический <b>7.5%</b></div>
-                        <div class="odds-chip odds-legend"><span class="odds-dot"></span>Легендарный <b>2%</b></div>
-                        <div class="odds-chip odds-mythic"><span class="odds-dot"></span>Блатной / Уникальный <b>0.5%</b></div>
-                    </div>
                 </section>
 
-                <!-- ПРАВАЯ ПАНЕЛЬ: СТАТИСТИКА И ПОСЛЕДНИЕ РЕДКИЕ ВЫПАДЕНИЯ -->
+                <!-- ПРАВАЯ КОЛОНКА: ЧИСТАЯ СТАТИСТИКА ИГРОКА И ПОСЛЕДНИЕ РЕДКИЕ ВЫПАДЕНИЯ -->
                 <aside class="generator-aside gen-right-panel" aria-label="Игровая статистика">
-                    <div class="luxury-panel-card collection-summary">
-                        <div class="luxury-panel-header">
-                            <span class="luxury-panel-eyebrow">СТАТИСТИКА ИГРОКА</span>
-                        </div>
+                    <div class="gen-glass-sidebar collection-summary">
+                        <div class="gen-sidebar-title">Статистика</div>
                         <div class="gen-stats-list">
-                            <div class="summary-stat" onclick="navigateToTab('inventory')" style="cursor:pointer;">
-                                <span class="stat-label">📋 В коллекции</span>
-                                <div class="stat-val-wrap"><strong id="collection-stat">0</strong><span>номеров</span></div>
+                            <div class="summary-stat" onclick="navigateToTab('inventory')" role="button" tabindex="0">
+                                <span class="stat-icon-box">📋</span>
+                                <div class="stat-content">
+                                    <span class="stat-label">Коллекция</span>
+                                    <div class="stat-val-wrap"><strong id="collection-stat">0</strong><span>номеров</span></div>
+                                </div>
                             </div>
-                            <div class="summary-stat" onclick="navigateToTab('garage')" style="cursor:pointer;">
-                                <span class="stat-label">🏎️ В гараже</span>
-                                <div class="stat-val-wrap"><strong id="garage-stat">1</strong><span>машин</span></div>
+                            <div class="summary-stat" onclick="navigateToTab('garage')" role="button" tabindex="0">
+                                <span class="stat-icon-box">🏎️</span>
+                                <div class="stat-content">
+                                    <span class="stat-label">В гараже</span>
+                                    <div class="stat-val-wrap"><strong id="garage-stat">1</strong><span>машин</span></div>
+                                </div>
                             </div>
-                            <div class="summary-stat" onclick="openMarketSection()" style="cursor:pointer;">
-                                <span class="stat-label">🏪 Активные лоты</span>
-                                <div class="stat-val-wrap"><strong id="market-active-stat">0</strong><span>на рынке</span></div>
+                            <div class="summary-stat" onclick="openMarketSection()" role="button" tabindex="0">
+                                <span class="stat-icon-box">🏪</span>
+                                <div class="stat-content">
+                                    <span class="stat-label">На рынке</span>
+                                    <div class="stat-val-wrap"><strong id="market-active-stat">0</strong><span>лотов</span></div>
+                                </div>
+                            </div>
+                            <div class="summary-stat stat-daily-row" onclick="openDailyModal()" role="button" tabindex="0">
+                                <span class="stat-icon-box stat-icon-gold">🎁</span>
+                                <div class="stat-content">
+                                    <span class="stat-label">Ежедневные задания</span>
+                                    <div class="stat-val-wrap"><strong style="font-size:14px; color:#fbbf24;">Награды и бонусы ↗</strong></div>
+                                </div>
                             </div>
                         </div>
 
-                        <div class="gen-quick-links">
-                            <button class="text-action" onclick="openCollectorBook()">📘 Книга коллекционера ↗</button>
-                            <button class="text-action" onclick="openVipOrders()">📋 Спецзаказы VIP ↗</button>
-                            <button class="text-action" onclick="openVipAuction()">🔨 VIP-Аукцион ↗</button>
-                            <button type="button" class="btn btn-close" id="btn-aside-sell-all-plates" onclick="sellAllPlates('all')" style="margin-top:6px; padding:7px 10px; font-size:11px; font-weight:700; width:100%;">💸 Продать все свободные</button>
-                        </div>
-                    </div>
+                        <div class="gen-sidebar-divider"></div>
 
-                    <div class="luxury-panel-card gen-recent-drops-card">
-                        <div class="luxury-panel-header">
-                            <span class="luxury-panel-eyebrow">ПОСЛЕДНИЕ РЕДКИЕ ВЫПАДЕНИЯ</span>
+                        <div class="gen-recent-drops-section">
+                            <div class="gen-sidebar-label">Последние редкие находки</div>
+                            <div class="gen-recent-drops-list" id="generator-recent-drops">
+                                <div class="recent-drop-empty">Крутите генератор или открывайте кейсы — редкие номера появятся здесь.</div>
+                            </div>
                         </div>
-                        <div class="gen-recent-drops-list" id="generator-recent-drops">
-                            <div class="recent-drop-empty">Крутите генератор или открывайте кейсы — редкие находки появятся здесь.</div>
-                        </div>
-                    </div>
 
-                    <div class="luxury-panel-card race-invite">
-                        <span class="eyebrow">ГОНОЧНЫЙ КЛУБ</span>
-                        <h2>Трасса М-11 и 3D-Кольцо</h2>
-                        <p>Испытайте автопарк и бонусы блатных серий на скорости.</p>
-                        <button class="btn btn-green" onclick="navigateToTab('racegame')">🏁 В гонки ↗</button>
+                        <button type="button" class="btn btn-close gen-sell-free-btn" id="btn-aside-sell-all-plates" onclick="sellAllPlates('all')">
+                            💸 Продать все свободные
+                        </button>
                     </div>
                 </aside>
+
+                <!-- Нижняя полоса шансов редкости на всю ширину арены генератора -->
+                <footer class="gen-rarity-odds-strip" aria-label="Категории редкости и шансы">
+                    <span class="odds-strip-title">Шанс редкости:</span>
+                    <div class="odds-chip odds-common"><span class="odds-dot"></span>Обычный <b>70%</b></div>
+                    <div class="odds-chip odds-rare"><span class="odds-dot"></span>Редкий <b>20%</b></div>
+                    <div class="odds-chip odds-epic"><span class="odds-dot"></span>Эпический <b>7.5%</b></div>
+                    <div class="odds-chip odds-legend"><span class="odds-dot"></span>Легендарный <b>2%</b></div>
+                    <div class="odds-chip odds-mythic"><span class="odds-dot"></span>Уникальный <b>0.5%</b></div>
+                </footer>
             </div>
         </div>
 
@@ -2751,6 +2813,6 @@
     <script src="./js/nfs-physics.js?v=8345fce74626"></script>
     <script src="./js/nfs-circuit-race.js?v=05bfeab9b9a0"></script>
     <script src="./js/car-3d.js?v=f4537ffff2a5"></script>
-    <script src="./js/app.js?v=2da96b06b4df"></script>
+    <script src="./js/app.js?v=b46e2c8ec28b"></script>
 </body>
 </html>
