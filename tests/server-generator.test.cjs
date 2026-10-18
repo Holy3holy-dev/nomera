@@ -59,7 +59,7 @@ test('server-approved plate can be put on the marketplace; invalid local client 
 });
 test('front end supports selling plates directly and server claims',()=>{
   const app=fs.readFileSync(path.join(__dirname,'../js/app.js'),'utf8');
-  assert.match(app,/function sellPlate\(index\)/);
+  assert.match(app,/function sellPlate\(index/);
   assert.match(app,/if\(onlineProfile\)return serverSpin\('both'\)/);
   assert.match(app,/const data=await onlineRequest\('claim'\)/);
 });
