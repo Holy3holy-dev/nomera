@@ -7749,9 +7749,17 @@
         }
 
         updateCameraPosition() {
-            const cx = Math.sin(this.cameraAngleY) * Math.cos(this.cameraAngleX) * this.cameraDistance;
-            const cy = Math.sin(this.cameraAngleX) * this.cameraDistance + this.targetY;
-            const cz = Math.cos(this.cameraAngleY) * Math.cos(this.cameraAngleX) * this.cameraDistance;
+            const aspect = (this.camera && Number.isFinite(this.camera.aspect) && this.camera.aspect > 0)
+                ? this.camera.aspect
+                : 1.5;
+            const isCloseUpPlate = this.currentPreset === 'plate_front' || this.currentPreset === 'plate_rear';
+            const aspectScale = isCloseUpPlate
+                ? (aspect < 1.15 ? Math.min(1.32, 1.12 / Math.max(0.65, aspect)) : 1.0)
+                : (aspect < 1.35 ? Math.min(1.42, 1.32 / Math.max(0.68, aspect)) : 1.0);
+            const effDist = this.cameraDistance * aspectScale;
+            const cx = Math.sin(this.cameraAngleY) * Math.cos(this.cameraAngleX) * effDist;
+            const cy = Math.sin(this.cameraAngleX) * effDist + this.targetY;
+            const cz = Math.cos(this.cameraAngleY) * Math.cos(this.cameraAngleX) * effDist;
             this.camera.position.set(cx, cy, cz);
             this.camera.lookAt(0, this.targetY, 0);
         }

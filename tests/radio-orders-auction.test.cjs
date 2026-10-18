@@ -114,6 +114,29 @@ test('Item 5: VIP Special Orders match plates from inventory, pay x2.6-x3.5 mult
     assert.equal(deliveryResult.invLenAfter, 2, 'Delivered plate should be removed from inventory');
     assert.equal(deliveryResult.completedAfter, 1, 'achievements.vipOrdersCompleted should increment');
     assert.notEqual(deliveryResult.newSlotId, 'test_slot_mirror', 'Completed order slot should rotate to a fresh contract');
+
+    // Verify payout cap on ultra-expensive plates and 3-deal quota limit per cycle
+    const quotaAndCapCheck = app.run(`
+        const mirrorTpl2 = VIP_ORDER_TEMPLATES.find(t => t.id === 'order_mirror');
+        const cappedPayout = calculateVipOrderPayout(mirrorTpl2, { text: 'А 707 АА | 77', price: 15000000 });
+        inventory.push(
+            { text: 'А 101 ВС | 77', price: 20000 },
+            { text: 'А 202 ВС | 77', price: 20000 },
+            { text: 'А 303 ВС | 77', price: 20000 }
+        );
+        vipActiveOrders[0] = Object.assign({}, mirrorTpl2, { slotId: 'slot_q2', templateId: 'order_mirror' });
+        const d2 = deliverVipOrder('slot_q2', inventory.findIndex(p => p.text === 'А 101 ВС | 77'));
+        vipActiveOrders[0] = Object.assign({}, mirrorTpl2, { slotId: 'slot_q3', templateId: 'order_mirror' });
+        const d3 = deliverVipOrder('slot_q3', inventory.findIndex(p => p.text === 'А 202 ВС | 77'));
+        vipActiveOrders[0] = Object.assign({}, mirrorTpl2, { slotId: 'slot_q4', templateId: 'order_mirror' });
+        const d4Blocked = deliverVipOrder('slot_q4', inventory.findIndex(p => p.text === 'А 303 ВС | 77'));
+        ({ cappedPayout, d2Ok: !!d2, d3Ok: !!d3, d4Blocked, quota: getVipOrdersQuotaState() });
+    `);
+    assert.ok(quotaAndCapCheck.cappedPayout <= 165000, 'VIP order payout must be capped by contract maxPayout');
+    assert.equal(quotaAndCapCheck.d2Ok, true, '2nd deal in cycle should succeed');
+    assert.equal(quotaAndCapCheck.d3Ok, true, '3rd deal in cycle should succeed');
+    assert.equal(quotaAndCapCheck.d4Blocked, false, '4th deal in cycle should be blocked by 3-deal quota limit');
+    assert.equal(quotaAndCapCheck.quota.remaining, 0, 'Remaining quota should be 0 after 3 deliveries');
 });
 
 test('Item 6: Live VIP Plate Auction allows bidding against AI tycoons, winning lots below market value, and instant buyout', () => {

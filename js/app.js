@@ -6504,6 +6504,10 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         }
         window.getCarSynergyHint = getCarSynergyHint;
 
+        const FLEET_MAX_PER_MIN = 75000;
+        let fleetPassiveTimerId = null;
+        let fleetPassiveSaveTicks = 0;
+
         function calculateFleetStats(overrideCars, overrideMode) {
             const cars = Array.isArray(overrideCars) ? overrideCars : (Array.isArray(myCars) ? myCars : []);
             const mode = String(overrideMode || (achievements && achievements.fleetMode) || 'cortezh');
@@ -6511,16 +6515,17 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             let synergyCarsCount = 0;
             let totalSynergyPct = 0;
 
-            cars.forEach(car => {
+            cars.forEach((car, idx) => {
                 if (!car) return;
                 const template = carsData.find(c => c.name === car.name) || {};
                 const baseVal = Math.max(150000, Number(car.basePrice || car.price || template.price || 500000));
-                const baseCarPerMin = Math.max(2500, Math.round(baseVal * 0.004));
+                // Сбалансированная кривая базового дохода (от 350 до 9 500 ₽/мин с одного авто)
+                const baseCarPerMin = Math.min(9500, Math.max(350, Math.round(Math.pow(baseVal / 10000, 0.56) * 28)));
 
                 let mult = 1.0;
                 const platePrice = Number(car.plate && car.plate.price) || 0;
                 if (platePrice > 0) {
-                    mult += Math.min(1.2, Math.max(0.12, platePrice / 1200000));
+                    mult += Math.min(0.55, Math.max(0.08, platePrice / 3500000));
                 }
 
                 const syn = getCarPlateSynergy(car.name, car.plate);
@@ -6528,7 +6533,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     synergyCarsCount++;
                     const synPct = Math.round(Number(syn.bonusMultiplier) * 100);
                     totalSynergyPct += synPct;
-                    mult += Number(syn.bonusMultiplier) * 1.5;
+                    mult += Number(syn.bonusMultiplier) * 0.75;
                 }
 
                 const plateRaw = String(car.plate?.text || car.plate || '').toUpperCase();
@@ -6542,8 +6547,13 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     mult *= 1.10;
                 }
 
-                totalPerMin += Math.round(baseCarPerMin * mult);
+                // Убывающая отдача при большом автопарке (свыше 4 и 8 машин)
+                const fleetScale = idx < 4 ? 1.0 : (idx < 8 ? 0.65 : 0.35);
+                totalPerMin += Math.round(baseCarPerMin * mult * fleetScale);
             });
+
+            totalPerMin = Math.min(FLEET_MAX_PER_MIN, totalPerMin);
+            const maxVaultCap = Math.min(300000, Math.max(50000, totalPerMin * 15));
 
             return {
                 mode,
@@ -6551,22 +6561,46 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 synergyCarsCount,
                 totalSynergyPct,
                 totalPerMin,
-                totalPerHour: totalPerMin * 60
+                totalPerHour: totalPerMin * 60,
+                maxVaultCap
             };
         }
         window.calculateFleetStats = calculateFleetStats;
+
+        function ensureFleetPassiveTimer() {
+            if (fleetPassiveTimerId !== null || typeof setInterval !== 'function') return;
+            fleetPassiveTimerId = setInterval(() => {
+                if (typeof document !== 'undefined' && document.hidden) return;
+                if (!Array.isArray(myCars) || myCars.length === 0) return;
+                tickFleetIncome(1);
+                fleetPassiveSaveTicks++;
+                if (fleetPassiveSaveTicks >= 20) {
+                    fleetPassiveSaveTicks = 0;
+                    if (typeof saveProgress === 'function') saveProgress();
+                }
+            }, 1000);
+        }
+        window.ensureFleetPassiveTimer = ensureFleetPassiveTimer;
 
         function renderFleetBusiness() {
             if (!achievements || typeof achievements !== 'object') return;
             if (!Number.isFinite(Number(achievements.fleetVault))) achievements.fleetVault = 0;
             if (!achievements.fleetMode) achievements.fleetMode = 'cortezh';
+            ensureFleetPassiveTimer();
 
             const stats = calculateFleetStats();
+            if (achievements.fleetVault > stats.maxVaultCap) {
+                achievements.fleetVault = stats.maxVaultCap;
+            }
             const rateEl = document.getElementById('fleet-income-rate');
             if (rateEl) rateEl.textContent = `+${stats.totalPerMin.toLocaleString('ru-RU')} ₽ / мин`;
 
             const vaultEl = document.getElementById('fleet-vault-amount');
-            if (vaultEl) vaultEl.textContent = `${Math.floor(Number(achievements.fleetVault || 0)).toLocaleString('ru-RU')} ₽`;
+            if (vaultEl) {
+                const curVault = Math.floor(Number(achievements.fleetVault || 0));
+                vaultEl.textContent = `${curVault.toLocaleString('ru-RU')} ₽`;
+                vaultEl.title = `Лимит кассы: ${stats.maxVaultCap.toLocaleString('ru-RU')} ₽`;
+            }
 
             const countEl = document.getElementById('fleet-active-cars-count');
             if (countEl) countEl.textContent = String(stats.activeCarsCount);
@@ -6597,8 +6631,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             if (!Number.isFinite(Number(achievements.fleetVault))) achievements.fleetVault = 0;
             const stats = calculateFleetStats();
             if (stats.totalPerMin <= 0) return Number(achievements.fleetVault);
-            const delta = Math.max(1, Math.round((stats.totalPerMin / 60) * Math.max(0.1, Number(secondsElapsed) || 1)));
-            const maxCap = Math.max(500000, stats.totalPerMin * 240);
+            const secs = Math.max(0.1, Number(secondsElapsed) || 1);
+            const delta = Math.max(1, Math.round((stats.totalPerMin / 60) * secs));
+            const maxCap = stats.maxVaultCap || Math.min(300000, Math.max(50000, stats.totalPerMin * 15));
             achievements.fleetVault = Math.min(maxCap, Math.floor(Number(achievements.fleetVault || 0)) + delta);
             const vaultEl = document.getElementById('fleet-vault-amount');
             if (vaultEl) vaultEl.textContent = `${achievements.fleetVault.toLocaleString('ru-RU')} ₽`;
@@ -8916,6 +8951,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             };
         }
 
+        const VIP_ORDERS_MAX_SALES = 3;
+        const VIP_ORDERS_COOLDOWN_MS = 15 * 60 * 1000;
+
         const VIP_ORDER_TEMPLATES = [
             {
                 id: 'order_mirror',
@@ -8927,6 +8965,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 badge: 'Зеркальные цифры',
                 multiplier: 3.4,
                 minPayout: 48000,
+                maxPayout: 165000,
                 xpReward: 70,
                 matchesPlate: (plate) => {
                     const info = extractPlateInspection(plate);
@@ -8942,7 +8981,8 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 desc: 'Нужен строгий номер с ровной сотней (100, 200, 300, 500, 700, 900) любой страны.',
                 badge: 'Ровная сотня (-00)',
                 multiplier: 3.2,
-                minPayout: 68000,
+                minPayout: 55000,
+                maxPayout: 190000,
                 xpReward: 85,
                 matchesPlate: (plate) => {
                     const info = extractPlateInspection(plate);
@@ -8955,10 +8995,11 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 role: 'Башня Федерация',
                 avatar: '💎',
                 title: 'Три одинаковые цифры (Триплет)',
-                desc: 'Куплю номер с тремя одинаковыми цифрами (111–999) на суперкар. Плачу тройной прайс!',
+                desc: 'Куплю номер с тремя одинаковыми цифрами (111–999) на суперкар.',
                 badge: 'Триплет (111–999)',
                 multiplier: 2.8,
-                minPayout: 145000,
+                minPayout: 95000,
+                maxPayout: 320000,
                 xpReward: 120,
                 matchesPlate: (plate) => {
                     const info = extractPlateInspection(plate);
@@ -8974,7 +9015,8 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 desc: 'Требуется статусный номер из первой десятки (001–009 или однозначный ОАЭ 1–9).',
                 badge: 'Первая десятка (001–009)',
                 multiplier: 2.9,
-                minPayout: 185000,
+                minPayout: 110000,
+                maxPayout: 350000,
                 xpReward: 140,
                 matchesPlate: (plate) => {
                     const info = extractPlateInspection(plate);
@@ -8990,7 +9032,8 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 desc: 'Ищу номер с одинаковыми буквами (ААА, ВВВ, ХХХ, ООО, МММ, ZZZ) или спецсерией (АМР, ЕКХ, VIP).',
                 badge: 'Одинаковые буквы / Спецсерия',
                 multiplier: 2.85,
-                minPayout: 155000,
+                minPayout: 95000,
+                maxPayout: 280000,
                 xpReward: 130,
                 matchesPlate: (plate) => {
                     const info = extractPlateInspection(plate);
@@ -9003,14 +9046,15 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 role: 'Dubai Royal Club',
                 avatar: '🐪',
                 title: 'Эксклюзив Эмиратов (UAE)',
-                desc: 'Выкуплю престижный номер ОАЭ (1–2 цифры или ценный номер Дубая/Абу-Даби от 18 000 ₽).',
+                desc: 'Выкуплю престижный номер ОАЭ (1–2 цифры, триплет, зеркалка или ровная сотня Дубая/Абу-Даби).',
                 badge: 'ОАЭ (UAE) · Престиж',
                 multiplier: 3.0,
-                minPayout: 110000,
+                minPayout: 90000,
+                maxPayout: 340000,
                 xpReward: 115,
                 matchesPlate: (plate) => {
                     const info = extractPlateInspection(plate);
-                    return info.country === 'UAE' && (info.digitsRaw.length <= 2 || info.isTriple || info.isMirror || info.isRoundHundred || info.price >= 18000);
+                    return info.country === 'UAE' && (info.digitsRaw.length <= 2 || info.isTriple || info.isMirror || info.isRoundHundred || info.isFirstTen || info.isLadder);
                 }
             },
             {
@@ -9019,14 +9063,15 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 role: 'Ocean Drive Motors',
                 avatar: '🌴',
                 title: 'Американский Стиль (USA)',
-                desc: 'Приобрету интересный номер США (зеркальный, ровный, триплет, лесенка или от 15 000 ₽).',
+                desc: 'Приобрету особенный номер США (зеркальный, ровная сотня, триплет, первая десятка или лесенка).',
                 badge: 'США (USA) · Кастом',
                 multiplier: 3.1,
-                minPayout: 85000,
+                minPayout: 70000,
+                maxPayout: 250000,
                 xpReward: 100,
                 matchesPlate: (plate) => {
                     const info = extractPlateInspection(plate);
-                    return info.country === 'USA' && (info.isMirror || info.isTriple || info.isRoundHundred || info.isFirstTen || info.isLadder || info.isSameLetters || info.price >= 15000);
+                    return info.country === 'USA' && (info.isMirror || info.isTriple || info.isRoundHundred || info.isFirstTen || info.isLadder || (info.isSameLetters && /^(VIP|USA|AAA|XXX|NYC|MIA|LAX)$/.test(info.lettersOnly)));
                 }
             },
             {
@@ -9035,14 +9080,15 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 role: 'Astana Motors VIP',
                 avatar: '🦅',
                 title: 'Золотой резерв Казахстана (KZ)',
-                desc: 'Нужен статусный номер Казахстана (KZ) с красивыми цифрами или редкой серией.',
+                desc: 'Нужен статусный номер Казахстана (KZ) с красивыми цифрами (зеркалка, сотня, триплет, лесенка) или спецсерией.',
                 badge: 'Казахстан (KZ) · Элита',
                 multiplier: 3.15,
-                minPayout: 65000,
+                minPayout: 60000,
+                maxPayout: 220000,
                 xpReward: 95,
                 matchesPlate: (plate) => {
                     const info = extractPlateInspection(plate);
-                    return info.country === 'KZ' && (info.isMirror || info.isTriple || info.isRoundHundred || info.isFirstTen || info.isLadder || info.isSameLetters || info.price >= 9000);
+                    return info.country === 'KZ' && (info.isMirror || info.isTriple || info.isRoundHundred || info.isFirstTen || info.isLadder || info.isSameLetters);
                 }
             },
             {
@@ -9054,7 +9100,8 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 desc: 'Срочно ищу номер с цифрами по порядку (123, 234, 345, 456, 567, 678, 789, 987, 321).',
                 badge: 'Лесенка (123 / 789)',
                 multiplier: 3.5,
-                minPayout: 58000,
+                minPayout: 52000,
+                maxPayout: 175000,
                 xpReward: 80,
                 matchesPlate: (plate) => {
                     const info = extractPlateInspection(plate);
@@ -9067,20 +9114,41 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 role: 'Частный дилер',
                 avatar: '🎩',
                 title: 'Ценитель редких комбинаций',
-                desc: 'Выкупаем любой номер с оценкой от 6 000 ₽ или с любой особенностью (зеркалка, ровный, лесенка).',
-                badge: 'Любой ценный номер',
+                desc: 'Выкупаем любой номер с особенной комбинацией цифр (зеркалка, ровная сотня, триплет, лесенка, первая десятка).',
+                badge: 'Любая редкая комбинация',
                 multiplier: 2.6,
-                minPayout: 36000,
+                minPayout: 32000,
+                maxPayout: 140000,
                 xpReward: 60,
                 matchesPlate: (plate) => {
                     const info = extractPlateInspection(plate);
-                    return info.price >= 6000 || info.isMirror || info.isRoundHundred || info.isTriple || info.isFirstTen || info.isLadder || info.isSameLetters;
+                    return info.isMirror || info.isRoundHundred || info.isTriple || info.isFirstTen || info.isLadder || info.digitsRaw.length <= 2 || (info.country === 'RUS' && info.price >= 15000);
                 }
             }
         ];
 
         let vipActiveOrders = [];
         let vipOrdersRefreshCount = 0;
+
+        function getVipOrdersQuotaState(now = Date.now()) {
+            if (!achievements || typeof achievements !== 'object') {
+                return { used: 0, remaining: VIP_ORDERS_MAX_SALES, max: VIP_ORDERS_MAX_SALES, cooldownUntil: 0, cooldownLeftSec: 0 };
+            }
+            let used = Math.max(0, Math.floor(Number(achievements.vipOrdersQuotaUsed) || 0));
+            let cooldownUntil = Math.max(0, Math.floor(Number(achievements.vipOrdersCooldownUntil) || 0));
+            if (cooldownUntil > 0 && now >= cooldownUntil) {
+                used = 0;
+                cooldownUntil = 0;
+                achievements.vipOrdersQuotaUsed = 0;
+                achievements.vipOrdersCooldownUntil = 0;
+            }
+            const remaining = Math.max(0, VIP_ORDERS_MAX_SALES - used);
+            const cooldownLeftSec = remaining === 0 && cooldownUntil > now
+                ? Math.max(1, Math.ceil((cooldownUntil - now) / 1000))
+                : 0;
+            return { used, remaining, max: VIP_ORDERS_MAX_SALES, cooldownUntil, cooldownLeftSec };
+        }
+        window.getVipOrdersQuotaState = getVipOrdersQuotaState;
 
         function initVipOrders(forceNew = false) {
             if (!forceNew && Array.isArray(vipActiveOrders) && vipActiveOrders.length === 4) {
@@ -9110,6 +9178,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 badge: tpl.badge,
                 multiplier: tpl.multiplier,
                 minPayout: tpl.minPayout,
+                maxPayout: tpl.maxPayout || 280000,
                 xpReward: tpl.xpReward
             }));
             updateVipOrdersBadge();
@@ -9126,8 +9195,14 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             const tpl = getVipOrderTemplate(order) || order;
             const mult = Number(tpl?.multiplier || order?.multiplier || 2.8);
             const minPayout = Number(tpl?.minPayout || order?.minPayout || 40000);
+            const maxPayout = Number(tpl?.maxPayout || order?.maxPayout || 280000);
             const basePrice = Math.max(2000, Number(plate?.price) || 0);
-            return Math.max(minPayout, Math.round(basePrice * mult));
+            // Для дорогих номеров свыше 50 000 ₽ применяется мягкое демпфирование + жесткий потолок контракта
+            const effectiveBase = basePrice <= 50000
+                ? basePrice
+                : Math.round(50000 + Math.pow(basePrice - 50000, 0.68) * 14);
+            const rawPayout = Math.max(minPayout, Math.round(effectiveBase * mult));
+            return Math.min(maxPayout, rawPayout);
         }
         window.calculateVipOrderPayout = calculateVipOrderPayout;
 
@@ -9154,6 +9229,11 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             }
             const badge = document.getElementById('vip-orders-badge');
             if (!badge) return;
+            const quota = getVipOrdersQuotaState();
+            if (quota.remaining <= 0) {
+                badge.style.display = 'none';
+                return;
+            }
             let readyCount = 0;
             for (const ord of vipActiveOrders) {
                 if (getMatchingInventoryForVipOrder(ord).length > 0) {
@@ -9161,7 +9241,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 }
             }
             if (readyCount > 0) {
-                badge.textContent = String(readyCount);
+                badge.textContent = String(Math.min(readyCount, quota.remaining));
                 badge.style.display = 'inline-block';
             } else {
                 badge.style.display = 'none';
@@ -9171,6 +9251,14 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
         function deliverVipOrder(templateOrSlotId, invIndex) {
             initVipOrders(false);
+            const quota = getVipOrdersQuotaState();
+            if (quota.remaining <= 0) {
+                const minsLeft = Math.max(1, Math.ceil(quota.cooldownLeftSec / 60));
+                notifyUser(`⏳ Лимит сделок VIP исчерпан (${quota.max}/${quota.max})! Новая квота контрактов откроется через ${minsLeft} мин.`, 'info');
+                renderVipOrders();
+                return false;
+            }
+
             const ordIdx = vipActiveOrders.findIndex(o => o.slotId === templateOrSlotId || o.templateId === templateOrSlotId);
             if (ordIdx === -1) return false;
             const order = vipActiveOrders[ordIdx];
@@ -9196,6 +9284,10 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             if (typeof addExp === 'function') addExp(xp);
             achievements.vipOrdersCompleted = (Number(achievements.vipOrdersCompleted) || 0) + 1;
             achievements.vipOrdersEarned = (Number(achievements.vipOrdersEarned) || 0) + payout;
+            achievements.vipOrdersQuotaUsed = (Number(achievements.vipOrdersQuotaUsed) || 0) + 1;
+            if (achievements.vipOrdersQuotaUsed >= VIP_ORDERS_MAX_SALES) {
+                achievements.vipOrdersCooldownUntil = Date.now() + VIP_ORDERS_COOLDOWN_MS;
+            }
 
             // Заменяем выполненный заказ новым из пула
             const activeIds = new Set(vipActiveOrders.map(o => o.templateId));
@@ -9215,6 +9307,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 badge: nextTpl.badge,
                 multiplier: nextTpl.multiplier,
                 minPayout: nextTpl.minPayout,
+                maxPayout: nextTpl.maxPayout || 280000,
                 xpReward: nextTpl.xpReward
             };
 
@@ -9223,13 +9316,14 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             if (typeof logPlayerActivity === 'function') {
                 logPlayerActivity('Спецзаказ VIP', `Сдал номер «${plate.text}» клиенту «${order.client}» за ${payout.toLocaleString('ru-RU')} ₽ (x${order.multiplier})`);
             }
-            notifyUser(`🤝 Контракт выполнен! «${order.client}» заплатил +${payout.toLocaleString('ru-RU')} ₽ (+${xp} XP) за номер «${plate.text}»!`, 'success');
+            const nextQuota = getVipOrdersQuotaState();
+            notifyUser(`🤝 Контракт выполнен! «${order.client}» заплатил +${payout.toLocaleString('ru-RU')} ₽ (+${xp} XP) за номер «${plate.text}»! Осталось сделок: ${nextQuota.remaining}/${nextQuota.max}`, 'success');
 
             if (typeof checkAchievements === 'function') checkAchievements();
             if (typeof saveProgress === 'function') saveProgress();
             renderInventory();
             renderVipOrders();
-            return { payout, xp, plateText: plate.text, client: order.client };
+            return { payout, xp, plateText: plate.text, client: order.client, quotaRemaining: nextQuota.remaining };
         }
         window.deliverVipOrder = deliverVipOrder;
 
@@ -9260,19 +9354,31 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             const completedCount = Number(achievements.vipOrdersCompleted || 0);
             const totalEarned = Number(achievements.vipOrdersEarned || 0);
             const nextRefreshCost = vipOrdersRefreshCount === 0 ? 'Бесплатно (1-й раз)' : '15 000 ₽';
+            const quota = getVipOrdersQuotaState();
+            const quotaText = quota.remaining > 0
+                ? `Доступно сделок: <b>${quota.remaining} / ${quota.max}</b>`
+                : `⏳ Лимит сделок (0 / ${quota.max}) · Обновление через <b>${Math.max(1, Math.ceil(quota.cooldownLeftSec / 60))} мин.</b>`;
 
             const cardsHtml = vipActiveOrders.map((ord) => {
+                const tpl = getVipOrderTemplate(ord) || ord;
+                const maxCap = Number(ord.maxPayout || tpl.maxPayout || 280000);
                 const matches = getMatchingInventoryForVipOrder(ord);
                 const hasMatch = matches.length > 0;
                 const bestMatch = hasMatch ? matches.reduce((a, b) => (b.payout > a.payout ? b : a), matches[0]) : null;
 
                 const matchingButtonsHtml = hasMatch
-                    ? matches.slice(0, 3).map(m => `
-                        <button type="button" class="btn btn-green" style="padding: 8px 12px; font-size: 12px; width: 100%; margin-top: 6px; display: flex; justify-content: space-between; align-items: center; gap: 8px;" onclick="deliverVipOrder('${ord.slotId}', ${m.index})">
-                            <span>🤝 Сдать <b>${escapeHtml(m.plate.text)}</b></span>
-                            <span style="background: rgba(0,0,0,0.25); padding: 2px 8px; border-radius: 999px; font-weight: 900;">+${m.payout.toLocaleString('ru-RU')} ₽</span>
-                        </button>
-                    `).join('')
+                    ? (quota.remaining > 0
+                        ? matches.slice(0, 3).map(m => `
+                            <button type="button" class="btn btn-green" style="padding: 8px 12px; font-size: 12px; width: 100%; margin-top: 6px; display: flex; justify-content: space-between; align-items: center; gap: 8px;" onclick="deliverVipOrder('${ord.slotId}', ${m.index})">
+                                <span>🤝 Сдать <b>${escapeHtml(m.plate.text)}</b></span>
+                                <span style="background: rgba(0,0,0,0.25); padding: 2px 8px; border-radius: 999px; font-weight: 900;">+${m.payout.toLocaleString('ru-RU')} ₽</span>
+                            </button>
+                        `).join('')
+                        : `
+                            <div style="margin-top: 8px; padding: 8px 10px; border-radius: 8px; background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.35); font-size: 11px; color: #fbbf24; text-align: center; font-weight: 700;">
+                                ⏳ Лимит сделок исчерпан (${quota.max}/${quota.max}). Подождите ${Math.max(1, Math.ceil(quota.cooldownLeftSec / 60))} мин.
+                            </div>
+                        `)
                     : `
                         <div style="margin-top: 8px; padding: 8px 10px; border-radius: 8px; background: rgba(255,255,255,0.03); border: 1px dashed rgba(255,255,255,0.12); font-size: 11px; color: var(--text-dim); display: flex; justify-content: space-between; align-items: center; gap: 8px;">
                             <span>В коллекции пока нет подходящего номера</span>
@@ -9291,7 +9397,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                                         <div style="font-size: 10px; color: var(--text-dim);">${escapeHtml(ord.role)}</div>
                                     </div>
                                 </div>
-                                <span style="font-size: 11px; font-weight: 900; padding: 3px 8px; border-radius: 999px; background: rgba(245, 158, 11, 0.18); border: 1px solid rgba(245, 158, 11, 0.45); color: #fbbf24; white-space: nowrap;">🔥 x${ord.multiplier} (от ${ord.minPayout.toLocaleString('ru-RU')} ₽)</span>
+                                <span style="font-size: 11px; font-weight: 900; padding: 3px 8px; border-radius: 999px; background: rgba(245, 158, 11, 0.18); border: 1px solid rgba(245, 158, 11, 0.45); color: #fbbf24; white-space: nowrap;">🔥 x${ord.multiplier} (до ${maxCap.toLocaleString('ru-RU')} ₽)</span>
                             </div>
                             <div style="margin-top: 10px; font-size: 14px; font-weight: 800; color: #f8fafc;">${escapeHtml(ord.title)}</div>
                             <div style="margin-top: 4px; font-size: 12px; color: var(--text-muted); line-height: 1.4;">${escapeHtml(ord.desc)}</div>
@@ -9312,8 +9418,8 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 <div style="background: linear-gradient(135deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.95)); border: 1px solid rgba(251, 191, 36, 0.3); border-radius: 14px; padding: 14px 16px; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
                     <div>
                         <div style="font-size: 15px; font-weight: 900; color: #fff;">📋 Доска VIP-Спецзаказов (Контракты Элиты)</div>
-                        <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">Шейхи, чиновники и блогеры платят <b>x2.6–x3.5</b> рыночной цены за нужные им комбинации!</div>
-                        <div style="font-size: 11px; color: #fbbf24; margin-top: 4px; font-weight: 700;">Выполнено контрактов: <b>${completedCount}</b> · Заработано на спецзаказах: <b>${totalEarned.toLocaleString('ru-RU')} ₽</b></div>
+                        <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">Шейхи, чиновники и блогеры платят <b>x2.6–x3.5</b> (потолок <b>до 350 000 ₽</b> за номер). Лимит: <b>3 сделки</b> за цикл.</div>
+                        <div style="font-size: 11px; color: #fbbf24; margin-top: 4px; font-weight: 700;">${quotaText} · Выполнено: <b>${completedCount}</b> · Заработано: <b>${totalEarned.toLocaleString('ru-RU')} ₽</b></div>
                     </div>
                     <button type="button" class="btn btn-dark" style="padding: 8px 14px; font-size: 12px; width: auto; margin: 0;" onclick="refreshVipOrders()">🔄 Сменить заказы (${nextRefreshCost})</button>
                 </div>

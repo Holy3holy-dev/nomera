@@ -971,7 +971,7 @@ describe('Collector Book & Car-Plate Synergy (RUS / KZ / USA / UAE)', () => {
     const statsCortezh = app.run("calculateFleetStats()");
     assert.equal(statsCortezh.activeCarsCount, 2);
     assert.equal(statsCortezh.synergyCarsCount, 2);
-    assert.ok(statsCortezh.totalPerMin > 100000, 'High-value synergy fleet must generate substantial passive income per min');
+    assert.ok(statsCortezh.totalPerMin > 3000 && statsCortezh.totalPerMin <= 75000, 'Balanced synergy fleet must generate realistic passive income per min without hyper-inflation');
 
     app.run("setFleetOperationMode('dubai_vip')");
     const statsDubai = app.run("calculateFleetStats()");
