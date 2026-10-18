@@ -367,3 +367,30 @@ test('13. Интеграция режима 3D Круг (NFS MW) во все т�
     assert.ok(appJs.includes('function startNfsRaceWithActiveGarageCar('), 'В js/app.js должна быть функция запуска NFS гонки с 3D-подиума гаража');
     assert.ok(appJs.includes('function toggle3DSpeedbreaker('), 'В js/app.js должна быть функция активации Speedbreaker');
 });
+
+test('14. Изоляция миникарты (.nfs-minimap-canvas) от растягивания на весь экран и подключение 3D GLB моделей + студийного освещения', () => {
+    const css = fs.readFileSync(path.join(__dirname, '..', 'styles.css'), 'utf8');
+    const circuitJs = fs.readFileSync(path.join(__dirname, '..', 'js', 'nfs-circuit-race.js'), 'utf8');
+
+    assert.ok(
+        css.includes('.race-3d-canvas-container > canvas:not(.nfs-minimap-canvas)'),
+        'Правило 100% размера canvas в styles.css не должно растягивать .nfs-minimap-canvas на весь экран'
+    );
+    assert.ok(
+        css.includes('.nfs-minimap-canvas'),
+        'В styles.css должны быть заданы явные размеры .nfs-minimap-canvas'
+    );
+    assert.ok(
+        circuitJs.includes("mapCanvas.className = 'nfs-minimap-canvas'"),
+        'Миникарта в nfs-circuit-race.js должна иметь класс nfs-minimap-canvas'
+    );
+    assert.ok(
+        circuitJs.includes('c3d.loadCarModel(THREE, carName, styling'),
+        'NomeraCircuitRaceEngine должен подгружать детализированные 3D GLB-модели машин через Car3DManager.loadCarModel'
+    );
+    assert.ok(
+        circuitJs.includes('c3d.createStudioEnvironment(THREE)'),
+        'NomeraCircuitRaceEngine должен устанавливать scene.environment через createStudioEnvironment для корректного отражения краски кузова'
+    );
+});
+

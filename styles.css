@@ -4887,10 +4887,21 @@ body.race-active .main-container {
     touch-action: none;
 }
 
-.race-3d-canvas-container canvas {
+.race-3d-canvas-container > canvas:not(.nfs-minimap-canvas) {
     display: block;
     width: 100% !important;
     height: 100% !important;
+}
+
+.nfs-minimap-canvas {
+    position: absolute !important;
+    top: 68px !important;
+    right: 16px !important;
+    width: 132px !important;
+    height: 132px !important;
+    display: block !important;
+    border-radius: 12px !important;
+    pointer-events: none !important;
 }
 
 /* High-Speed Dynamic Hypersonic Speed Streak & Blur Vignette */

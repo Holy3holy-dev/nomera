@@ -912,12 +912,12 @@
 
         getWeatherPreset(w) {
             const presets = {
-                day: { id: 'day', name: 'Солнечный день', icon: '☀️', sky: 0x38bdf8, fog: 0x7dd3fc, ambient: 1.05, sun: 1.35 },
-                sunset: { id: 'sunset', name: 'Золотой закат', icon: '🌅', sky: 0x4c1d95, fog: 0x7c2d12, ambient: 0.85, sun: 1.15 },
-                night: { id: 'night', name: 'Ночной Рокпорт', icon: '🌃', sky: 0x060b16, fog: 0x091020, ambient: 0.65, sun: 0.75 },
-                rain: { id: 'rain', name: 'Грозовой ливень', icon: '🌧️', sky: 0x08141e, fog: 0x0f1f2e, ambient: 0.60, sun: 0.65 },
-                fog: { id: 'fog', name: 'Густой туман', icon: '🌫️', sky: 0x64748b, fog: 0x64748b, ambient: 0.75, sun: 0.55 },
-                snow: { id: 'snow', name: 'Зимний гололёд', icon: '❄️', sky: 0x334155, fog: 0x475569, ambient: 0.90, sun: 0.95 }
+                day: { id: 'day', name: 'Солнечный день', icon: '☀️', sky: 0x38bdf8, fog: 0x7dd3fc, ambient: 1.25, sun: 1.55 },
+                sunset: { id: 'sunset', name: 'Золотой закат', icon: '🌅', sky: 0x5b21b6, fog: 0x9a3412, ambient: 1.10, sun: 1.40 },
+                night: { id: 'night', name: 'Ночной Рокпорт', icon: '🌃', sky: 0x0c192c, fog: 0x11223b, ambient: 0.98, sun: 1.18 },
+                rain: { id: 'rain', name: 'Грозовой ливень', icon: '🌧️', sky: 0x0f2032, fog: 0x162b40, ambient: 0.92, sun: 1.05 },
+                fog: { id: 'fog', name: 'Густой туман', icon: '🌫️', sky: 0x64748b, fog: 0x64748b, ambient: 1.00, sun: 0.85 },
+                snow: { id: 'snow', name: 'Зимний гололёд', icon: '❄️', sky: 0x3b4d63, fog: 0x475569, ambient: 1.15, sun: 1.20 }
             };
             return presets[w] || presets.night;
         }
@@ -1424,18 +1424,36 @@
             this.scene = new THREE.Scene();
             this.camera = new THREE.PerspectiveCamera(60, this.width / this.height, 0.3, 650);
 
+            const c3d = (typeof root !== 'undefined' && root.Car3DManager) ? root.Car3DManager : null;
+            if (c3d && typeof c3d.createStudioEnvironment === 'function') {
+                try {
+                    const envTex = c3d.createStudioEnvironment(THREE);
+                    if (envTex) {
+                        this.scene.environment = envTex;
+                        this._trackDisposables(null, null, envTex);
+                    }
+                } catch (_) {}
+            }
+
             try {
                 this.renderer = new THREE.WebGLRenderer({
-                    antialias: false,
+                    antialias: true,
                     alpha: false,
                     powerPreference: 'high-performance'
                 });
+                if (THREE.sRGBEncoding !== undefined && 'outputEncoding' in this.renderer) {
+                    this.renderer.outputEncoding = THREE.sRGBEncoding;
+                }
+                if (THREE.ACESFilmicToneMapping !== undefined && 'toneMapping' in this.renderer) {
+                    this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+                    this.renderer.toneMappingExposure = 1.28;
+                }
                 if (typeof this.renderer.setSize === 'function') {
                     this.renderer.setSize(this.width, this.height, false);
                 }
                 if (typeof this.renderer.setPixelRatio === 'function') {
                     const dpr = (typeof root !== 'undefined' && root.devicePixelRatio) ? root.devicePixelRatio : 1;
-                    this.renderer.setPixelRatio(Math.min(dpr, 1.5));
+                    this.renderer.setPixelRatio(Math.min(dpr, 1.75));
                 }
                 if (this.renderer.domElement && typeof this.container.appendChild === 'function') {
                     this.renderer.domElement.style.width = '100%';
@@ -1447,13 +1465,23 @@
                 this.renderer = null;
             }
 
-            // Lighting
-            this.ambientLight = new THREE.AmbientLight(0xffffff, 0.75);
+            // Lighting (Ambient + Hemisphere + Sun + Fill Directional)
+            this.ambientLight = new THREE.AmbientLight(0xffffff, 1.05);
             this.scene.add(this.ambientLight);
 
-            this.sunLight = new THREE.DirectionalLight(0xfffbeb, 1.15);
+            if (THREE.HemisphereLight) {
+                this.hemiLight = new THREE.HemisphereLight(0xdbeafe, 0x1e293b, 0.95);
+                this.hemiLight.position.set(0, 80, 0);
+                this.scene.add(this.hemiLight);
+            }
+
+            this.sunLight = new THREE.DirectionalLight(0xfffbeb, 1.35);
             this.sunLight.position.set(60, 120, 80);
             this.scene.add(this.sunLight);
+
+            this.fillLight = new THREE.DirectionalLight(0x93c5fd, 0.65);
+            this.fillLight.position.set(-70, 85, -60);
+            this.scene.add(this.fillLight);
 
             this._applyWeatherToScene();
             this._buildTrack3DMesh();
@@ -1471,7 +1499,7 @@
                 this.scene.background = new THREE.Color(preset.sky);
             }
             if (THREE.FogExp2) {
-                this.scene.fog = new THREE.FogExp2(preset.fog, this.currentActiveWeather === 'fog' ? 0.0085 : 0.0022);
+                this.scene.fog = new THREE.FogExp2(preset.fog, this.currentActiveWeather === 'fog' ? 0.0065 : 0.0016);
             }
             if (this.ambientLight) this.ambientLight.intensity = preset.ambient;
             if (this.sunLight) this.sunLight.intensity = preset.sun;
@@ -1489,7 +1517,7 @@
 
             // Ground terrain plane
             const groundGeo = new THREE.PlaneGeometry(1600, 1600);
-            const groundMat = new THREE.MeshLambertMaterial({ color: 0x0b1320 });
+            const groundMat = new THREE.MeshLambertMaterial({ color: 0x0f1a2c });
             this._trackDisposables(groundGeo, groundMat);
             const ground = new THREE.Mesh(groundGeo, groundMat);
             ground.rotation.x = -Math.PI / 2;
@@ -1499,15 +1527,19 @@
             const segs = this.track.segments;
             const n = segs.length;
 
-            // Build merged closed-loop ribbon for asphalt road
+            // Build merged closed-loop ribbon for asphalt road + lane markings
             const roadPositions = [];
             const roadIndices = [];
+            const linePositions = [];
+            const lineColors = [];
+            const lineIndices = [];
             const curbPositions = [];
             const curbColors = [];
             const curbIndices = [];
             const wallPositions = [];
             const wallIndices = [];
 
+            let lineVertCount = 0;
             let curbVertCount = 0;
             let wallVertCount = 0;
 
@@ -1526,13 +1558,37 @@
                     roadIndices.push(base, base + 1, base + 2, base + 1, base + 3, base + 2);
                 }
 
-                // Red/White Apex Curbs & Concrete Guardrail Walls per segment
+                // Red/White Apex Curbs, Lane Markings & Concrete Guardrail Walls per segment
                 if (i < n) {
                     const nextSeg = segs[(i + 1) % n];
                     const isRed = (i % 2 === 0);
-                    const cr = isRed ? 0.90 : 0.96;
-                    const cg = isRed ? 0.18 : 0.96;
-                    const cb = isRed ? 0.18 : 0.98;
+                    const cr = isRed ? 0.92 : 0.97;
+                    const cg = isRed ? 0.20 : 0.97;
+                    const cb = isRed ? 0.20 : 0.99;
+
+                    // Dashed center amber/white line + continuous inner edge lines
+                    const addLaneStripe = (offsetLat, halfStripeW, rCol, gCol, bCol) => {
+                        const x0 = this.toThreeX(seg.x + seg.nx * (offsetLat - halfStripeW));
+                        const z0 = this.toThreeZ(seg.z + seg.nz * (offsetLat - halfStripeW));
+                        const x1 = this.toThreeX(seg.x + seg.nx * (offsetLat + halfStripeW));
+                        const z1 = this.toThreeZ(seg.z + seg.nz * (offsetLat + halfStripeW));
+                        const x2 = this.toThreeX(nextSeg.x + nextSeg.nx * (offsetLat - halfStripeW));
+                        const z2 = this.toThreeZ(nextSeg.z + nextSeg.nz * (offsetLat - halfStripeW));
+                        const x3 = this.toThreeX(nextSeg.x + nextSeg.nx * (offsetLat + halfStripeW));
+                        const z3 = this.toThreeZ(nextSeg.z + nextSeg.nz * (offsetLat + halfStripeW));
+                        linePositions.push(x0, 0.045, z0, x1, 0.045, z1, x2, 0.045, z2, x3, 0.045, z3);
+                        for (let k = 0; k < 4; k++) lineColors.push(rCol, gCol, bCol);
+                        lineIndices.push(
+                            lineVertCount, lineVertCount + 1, lineVertCount + 2,
+                            lineVertCount + 1, lineVertCount + 3, lineVertCount + 2
+                        );
+                        lineVertCount += 4;
+                    };
+                    if (i % 2 === 0) {
+                        addLaneStripe(0, 0.16, 0.98, 0.78, 0.18);
+                    }
+                    addLaneStripe(-(hw - 1.35), 0.11, 0.90, 0.94, 0.98);
+                    addLaneStripe(hw - 1.35, 0.11, 0.90, 0.94, 0.98);
 
                     const addCurbStrip = (sideSign) => {
                         const innerOff = (hw - 1.15) * sideSign;
@@ -1582,10 +1638,22 @@
             roadGeo.setIndex(roadIndices);
             if (typeof roadGeo.computeVertexNormals === 'function') roadGeo.computeVertexNormals();
             const roadMat = new THREE.MeshStandardMaterial
-                ? new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.65, metalness: 0.15, side: THREE.DoubleSide })
-                : new THREE.MeshLambertMaterial({ color: 0x1e293b });
+                ? new THREE.MeshStandardMaterial({ color: 0x263449, roughness: 0.55, metalness: 0.14, side: THREE.DoubleSide })
+                : new THREE.MeshLambertMaterial({ color: 0x263449 });
             this._trackDisposables(roadGeo, roadMat);
             this.scene.add(new THREE.Mesh(roadGeo, roadMat));
+
+            if (linePositions.length > 0) {
+                const lineGeo = new THREE.BufferGeometry();
+                lineGeo.setAttribute('position', new THREE.Float32BufferAttribute(linePositions, 3));
+                lineGeo.setAttribute('color', new THREE.Float32BufferAttribute(lineColors, 3));
+                lineGeo.setIndex(lineIndices);
+                const lineMat = new THREE.MeshBasicMaterial
+                    ? new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.DoubleSide })
+                    : new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide });
+                this._trackDisposables(lineGeo, lineMat);
+                this.scene.add(new THREE.Mesh(lineGeo, lineMat));
+            }
 
             const curbGeo = new THREE.BufferGeometry();
             curbGeo.setAttribute('position', new THREE.Float32BufferAttribute(curbPositions, 3));
@@ -1599,20 +1667,30 @@
             wallGeo.setAttribute('position', new THREE.Float32BufferAttribute(wallPositions, 3));
             wallGeo.setIndex(wallIndices);
             if (typeof wallGeo.computeVertexNormals === 'function') wallGeo.computeVertexNormals();
-            const wallMat = new THREE.MeshLambertMaterial({ color: 0x475569, side: THREE.DoubleSide });
+            const wallMat = new THREE.MeshLambertMaterial({ color: 0x64748b, side: THREE.DoubleSide });
             this._trackDisposables(wallGeo, wallMat);
             this.scene.add(new THREE.Mesh(wallGeo, wallMat));
 
-            // Start / Finish Gantry Arch + Checkpoint Pillars + Chevron Turn Signs
+            // Start / Finish Gantry Arch + Checkpoint Pillars + Chevron Turn Signs + Streetlamps
             const pillarGeo = new THREE.BoxGeometry(1.2, 6.5, 1.2);
             const beamGeo = new THREE.BoxGeometry(this.track.halfWidth * 2.2, 1.4, 1.4);
             const startMat = new THREE.MeshLambertMaterial({ color: 0xfbbf24 });
             const cpMat = new THREE.MeshLambertMaterial({ color: 0x38bdf8 });
             const chevGeo = new THREE.BoxGeometry(0.4, 1.4, 2.2);
-            const chevMat = new THREE.MeshLambertMaterial({ color: 0xf97316 });
+            const chevMat = new THREE.MeshBasicMaterial
+                ? new THREE.MeshBasicMaterial({ color: 0xf97316 })
+                : new THREE.MeshLambertMaterial({ color: 0xf97316 });
+            const poleGeo = new THREE.BoxGeometry(0.22, 6.2, 0.22);
+            const poleMat = new THREE.MeshLambertMaterial({ color: 0x94a3b8 });
+            const bulbGeo = new THREE.BoxGeometry(1.1, 0.25, 0.55);
+            const bulbMat = new THREE.MeshBasicMaterial
+                ? new THREE.MeshBasicMaterial({ color: 0xfef08a })
+                : new THREE.MeshLambertMaterial({ color: 0xfef08a });
             this._trackDisposables(pillarGeo, startMat);
             this._trackDisposables(beamGeo, cpMat);
             this._trackDisposables(chevGeo, chevMat);
+            this._trackDisposables(poleGeo, poleMat);
+            this._trackDisposables(bulbGeo, bulbMat);
 
             for (const cp of this.track.checkpoints) {
                 const isStart = cp.index === 0;
@@ -1634,9 +1712,9 @@
                 this.scene.add(gateGroup);
             }
 
-            // Place NFS orange chevron signs on sharp turns & industrial buildings along track
+            // Place NFS orange chevron signs on sharp turns, streetlamps & buildings along track
             const bldgGeo = new THREE.BoxGeometry(14, 26, 14);
-            const bldgMat = new THREE.MeshLambertMaterial({ color: 0x0f172a });
+            const bldgMat = new THREE.MeshLambertMaterial({ color: 0x1e293b });
             this._trackDisposables(bldgGeo, bldgMat);
 
             for (let i = 0; i < n; i += 3) {
@@ -1649,6 +1727,21 @@
                     chev.position.set(cx, 1.6, cz);
                     chev.rotation.y = this.toThreeYaw(seg.heading);
                     this.scene.add(chev);
+                }
+                if (i % 6 === 0) {
+                    const lampSide = (i % 12 === 0) ? -1 : 1;
+                    const lx = this.toThreeX(seg.x + seg.nx * (seg.halfWidth + 1.2) * lampSide);
+                    const lz = this.toThreeZ(seg.z + seg.nz * (seg.halfWidth + 1.2) * lampSide);
+                    const pole = new THREE.Mesh(poleGeo, poleMat);
+                    pole.position.set(lx, 3.1, lz);
+                    const bulb = new THREE.Mesh(bulbGeo, bulbMat);
+                    bulb.position.set(
+                        this.toThreeX(seg.x + seg.nx * (seg.halfWidth - 0.3) * lampSide),
+                        6.1,
+                        this.toThreeZ(seg.z + seg.nz * (seg.halfWidth - 0.3) * lampSide)
+                    );
+                    bulb.rotation.y = this.toThreeYaw(seg.heading);
+                    this.scene.add(pole, bulb);
                 }
                 if (i % 12 === 0) {
                     const bSide = (i % 24 === 0) ? -1 : 1;
@@ -1669,12 +1762,50 @@
             const bodyGroup = new THREE.Group();
             rootGroup.add(bodyGroup);
 
+            const applyPlateIfAvailable = (targetMesh) => {
+                if (targetMesh && styling && styling.plate !== undefined && c3d && typeof c3d.applyLicensePlateToModel === 'function') {
+                    try {
+                        c3d.applyLicensePlateToModel(
+                            THREE,
+                            targetMesh,
+                            styling.plate,
+                            styling.frameStyle || 'none',
+                            styling.plateStyle || 'classic'
+                        );
+                    } catch (_) {}
+                }
+            };
+
             let wheels = [];
-            if (c3d && typeof c3d.buildDetailedCarModel === 'function') {
+            let glbLoadedSync = false;
+
+            // Load real high-detail .glb 3D model when available (swaps out procedural fallback)
+            if (c3d && typeof c3d.loadCarModel === 'function') {
+                try {
+                    c3d.loadCarModel(THREE, carName, styling, (loadedModel) => {
+                        if (this._destroyed || !loadedModel) return;
+                        glbLoadedSync = true;
+                        while (bodyGroup.children.length > 0) {
+                            const prev = bodyGroup.children[0];
+                            bodyGroup.remove(prev);
+                            if (c3d && typeof c3d.deepDispose === 'function') {
+                                try { c3d.deepDispose(prev); } catch (_) {}
+                            }
+                        }
+                        applyPlateIfAvailable(loadedModel);
+                        bodyGroup.add(loadedModel);
+                    });
+                } catch (_) {}
+            }
+
+            if (!glbLoadedSync && c3d && typeof c3d.buildDetailedCarModel === 'function') {
                 try {
                     const built = c3d.buildDetailedCarModel(THREE, carName, styling);
                     const mesh = built && built.root ? built.root : built;
-                    if (mesh) bodyGroup.add(mesh);
+                    if (mesh) {
+                        applyPlateIfAvailable(mesh);
+                        bodyGroup.add(mesh);
+                    }
                     if (built && Array.isArray(built.wheels)) wheels = built.wheels;
                 } catch (_) {}
             }
@@ -1690,11 +1821,46 @@
         }
 
         _buildCars3D() {
-            if (!this.THREE || !this.scene) return;
+            const THREE = this.THREE;
+            if (!THREE || !this.scene) return;
             const pBuilt = this._createCarMesh(this.carConfig.carName, this.carConfig.styling);
             this.playerCar = pBuilt.rootGroup;
             this.playerCarBodyGroup = pBuilt.bodyGroup;
             this.playerWheels = pBuilt.wheels;
+
+            // Attach forward headlight beam + rear brake/nitro glow lights to player car
+            if (THREE.SpotLight) {
+                try {
+                    const hl = new THREE.SpotLight(0xfffbeb, 2.8, 95, Math.PI / 3.5, 0.45, 1.1);
+                    hl.position.set(0, 1.05, 1.8);
+                    if (hl.target) {
+                        hl.target.position.set(0, 0.35, 28);
+                        this.playerCar.add(hl.target);
+                    }
+                    this.playerCar.add(hl);
+                    this.playerHeadlight = hl;
+                } catch (_) {}
+            } else if (THREE.PointLight) {
+                try {
+                    const pl = new THREE.PointLight(0xfffbeb, 2.2, 45);
+                    pl.position.set(0, 1.2, 3.0);
+                    this.playerCar.add(pl);
+                    this.playerHeadlight = pl;
+                } catch (_) {}
+            }
+
+            if (THREE.PointLight) {
+                try {
+                    this.playerTailLight = new THREE.PointLight(0xff1e42, 1.2, 7.5);
+                    this.playerTailLight.position.set(0, 0.75, -2.35);
+                    this.playerCar.add(this.playerTailLight);
+
+                    this.playerNitroLight = new THREE.PointLight(0x38bdf8, 0, 11);
+                    this.playerNitroLight.position.set(0, 0.55, -2.55);
+                    this.playerCar.add(this.playerNitroLight);
+                } catch (_) {}
+            }
+
             this.scene.add(this.playerCar);
 
             for (const rival of this.rivals) {
@@ -1802,6 +1968,12 @@
                 this.playerCarBodyGroup.rotation.x = p.pitch;
                 this.playerCarBodyGroup.rotation.z = p.roll;
             }
+            if (this.playerTailLight) {
+                this.playerTailLight.intensity = (this.keys && (this.keys.brake || this.keys.drift)) ? 3.2 : 1.1;
+            }
+            if (this.playerNitroLight) {
+                this.playerNitroLight.intensity = p.isNitroActive ? 3.8 : 0;
+            }
 
             for (const rival of this.rivals) {
                 if (rival.mesh) {
@@ -1887,26 +2059,46 @@
         _initCircuitOverlayDOM() {
             if (typeof document === 'undefined' || !this.container || typeof document.createElement !== 'function') return;
 
+            const hostEl = this.container.parentElement || this.container;
+            if (typeof hostEl.querySelectorAll === 'function') {
+                const oldOverlays = hostEl.querySelectorAll('.nfs-circuit-hud-overlay');
+                for (const old of oldOverlays) {
+                    if (old && old.parentNode) old.parentNode.removeChild(old);
+                }
+            }
+
             // Create HUD badge for Position, Lap, Lap Time, and Speedbreaker + Top-Right Mini-Map
             const overlay = document.createElement('div');
             overlay.className = 'nfs-circuit-hud-overlay';
-            overlay.style.cssText = 'position:absolute;inset:0;pointer-events:none;z-index:12;font-family:Inter,sans-serif;';
+            overlay.style.cssText = 'position:absolute;inset:0;pointer-events:none;z-index:18;font-family:Inter,sans-serif;';
 
             const banner = document.createElement('div');
             banner.id = 'nfs-circuit-telemetry-bar';
-            banner.style.cssText = 'position:absolute;top:54px;left:12px;background:rgba(10,15,29,0.88);border:1px solid rgba(56,189,248,0.4);border-radius:10px;padding:7px 11px;color:#fff;font-size:11px;line-height:1.45;backdrop-filter:blur(6px);';
+            banner.style.cssText = 'position:absolute;top:56px;left:50%;transform:translateX(-50%);background:rgba(10,15,29,0.86);border:1px solid rgba(56,189,248,0.45);border-radius:12px;padding:6px 14px;color:#fff;font-size:11px;line-height:1.4;backdrop-filter:blur(8px);text-align:center;white-space:nowrap;box-shadow:0 6px 20px rgba(0,0,0,0.45);';
             overlay.appendChild(banner);
             this.circuitTelemetryEl = banner;
 
             const mapCanvas = document.createElement('canvas');
+            mapCanvas.className = 'nfs-minimap-canvas';
             mapCanvas.width = 136;
             mapCanvas.height = 136;
-            mapCanvas.style.cssText = 'position:absolute;top:54px;right:12px;width:124px;height:124px;background:rgba(10,15,29,0.86);border:1.5px solid rgba(56,189,248,0.45);border-radius:12px;';
+            mapCanvas.style.cssText = 'position:absolute;top:68px;right:16px;width:132px;height:132px;background:rgba(10,15,29,0.82);border:1.5px solid rgba(56,189,248,0.5);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.5);';
+            if (mapCanvas.style && typeof mapCanvas.style.setProperty === 'function') {
+                mapCanvas.style.setProperty('width', '132px', 'important');
+                mapCanvas.style.setProperty('height', '132px', 'important');
+                mapCanvas.style.setProperty('top', '68px', 'important');
+                mapCanvas.style.setProperty('right', '16px', 'important');
+                mapCanvas.style.setProperty('position', 'absolute', 'important');
+            }
             overlay.appendChild(mapCanvas);
             this.minimapCanvas = mapCanvas;
             this.minimapCtx = typeof mapCanvas.getContext === 'function' ? mapCanvas.getContext('2d') : null;
 
-            this.container.appendChild(overlay);
+            if (typeof hostEl.appendChild === 'function') {
+                hostEl.appendChild(overlay);
+            } else if (typeof this.container.appendChild === 'function') {
+                this.container.appendChild(overlay);
+            }
             this.circuitHudEl = overlay;
             this._updateCircuitOverlayDOM();
         }
@@ -1916,16 +2108,14 @@
                 const st = this.state;
                 const bestStr = st.bestLapTimeSec !== null ? `${st.bestLapTimeSec.toFixed(2)}с` : '—';
                 const wrongWayHtml = st.isWrongWay
-                    ? `<div style="color:#ef4444;font-weight:900;">⚠️ РАЗВЕРНИТЕСЬ!</div>`
+                    ? `<div style="color:#ef4444;font-weight:900;font-size:12px;margin-top:2px;">⚠️ НЕВЕРНОЕ НАПРАВЛЕНИЕ — РАЗВЕРНИТЕСЬ!</div>`
                     : '';
                 const countdownHtml = st.racePhase === 'countdown'
-                    ? `<div style="color:#fbbf24;font-weight:900;font-size:13px;">🚦 СТАРТ ЧЕРЕЗ: ${st.countdownText}</div>`
+                    ? `<div style="color:#fbbf24;font-weight:900;font-size:13px;margin-top:2px;">🚦 СТАРТ ЧЕРЕЗ: ${st.countdownText}</div>`
                     : '';
                 this.circuitTelemetryEl.innerHTML =
-                    `<div style="font-weight:900;color:#38bdf8;">🏆 ${st.trackName}</div>` +
-                    `<div>Позиция: <b style="color:#fbbf24;font-size:13px;">${st.position} / ${st.totalRacers}</b> · Круг: <b style="color:#34d399;">${st.currentLap} / ${st.totalLaps}</b></div>` +
-                    `<div>⏱️ Круг: <b>${st.lapTimeSec.toFixed(1)}с</b> · Лучший: <b style="color:#c084fc;">${bestStr}</b></div>` +
-                    `<div style="font-size:10px;color:#94a3b8;">⚡ Speedbreaker [G]: <b>${Math.round(st.speedbreakerCharge)}%</b> ${st.isSpeedbreakerActive ? '🔥 АКТИВЕН' : ''}</div>` +
+                    `<div style="font-weight:900;color:#38bdf8;font-size:12px;">🏆 ${st.trackName} · Позиция: <b style="color:#fbbf24;font-size:13px;">${st.position}/${st.totalRacers}</b> · Круг: <b style="color:#34d399;">${st.currentLap}/${st.totalLaps}</b></div>` +
+                    `<div style="color:#e2e8f0;">⏱️ Круг: <b>${st.lapTimeSec.toFixed(1)}с</b> · Лучший: <b style="color:#c084fc;">${bestStr}</b> · ⚡ Speedbreaker [G]: <b style="color:#38bdf8;">${Math.round(st.speedbreakerCharge)}%</b> ${st.isSpeedbreakerActive ? '🔥' : ''}</div>` +
                     countdownHtml +
                     wrongWayHtml;
             }
