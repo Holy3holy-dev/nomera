@@ -11601,8 +11601,148 @@
             return group;
         }
 
+        hasSpecialPlateImmunity() {
+            if (this.hasSgu || (this.styling && (this.styling.sgu === 'installed' || this.styling.sgu === true))) return true;
+            const cfgPlate = (this.config && this.config.plate) ? (typeof this.config.plate === 'string' ? this.config.plate : (this.config.plate.text || '')) : '';
+            const rawPlate = cfgPlate || ((this.styling && typeof this.styling.plate === 'string') ? this.styling.plate : '');
+            if (!rawPlate || rawPlate === 'none') return false;
+            const latinToCyr = { A: 'А', B: 'В', E: 'Е', K: 'К', M: 'М', H: 'Н', O: 'О', P: 'Р', C: 'С', T: 'Т', Y: 'У', X: 'Х' };
+            const upper = String(rawPlate).toUpperCase();
+            const norm = upper.replace(/[ABEKMHOPCTYX]/g, ch => latinToCyr[ch] || ch);
+            const mainPart = norm.split('|')[0] || norm;
+            const lettersOnly = mainPart.replace(/[^А-ЯЁ]/g, '');
+            const govSeries = ['АМР', 'ЕКХ', 'ООО', 'СКР', 'ФСО'];
+            for (const s of govSeries) {
+                if (norm.includes(s) || lettersOnly.includes(s)) return true;
+            }
+            const digits = (mainPart.match(/\d+/g) || []).join('');
+            if (digits.length === 1 && (upper.includes('UAE') || upper.includes('DUBAI') || upper.includes('ABU') || /^\s*[A-ZА-ЯЁ]?\s*\d\s*(\||$)/i.test(upper))) {
+                return true;
+            }
+            return false;
+        }
+
+        createCollectibleMesh(type) {
+            const THREE = this.THREE;
+            const group = new THREE.Group();
+            group.name = 'HighwayCollectible_' + type;
+
+            const colors = {
+                fuel: { main: 0xef4444, ring: 0x10b981 },
+                nitro: { main: 0x2563eb, ring: 0x38bdf8 },
+                cash: { main: 0xfbbf24, ring: 0x10b981 },
+                repair: { main: 0xf97316, ring: 0xe2e8f0 }
+            };
+            const palette = colors[type] || colors.cash;
+
+            const ringGeo = new THREE.TorusGeometry(0.68, 0.06, 8, 20);
+            const ringMat = new THREE.MeshStandardMaterial({
+                color: palette.ring,
+                emissive: palette.ring,
+                emissiveIntensity: 1.4,
+                roughness: 0.2,
+                metalness: 0.6
+            });
+            const ring = new THREE.Mesh(ringGeo, ringMat);
+            group.add(ring);
+
+            const coreMat = new THREE.MeshStandardMaterial({
+                color: palette.main,
+                emissive: palette.main,
+                emissiveIntensity: 0.9,
+                roughness: 0.25,
+                metalness: 0.5
+            });
+            let coreMesh;
+            if (type === 'nitro') {
+                coreMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.72, 12), coreMat);
+            } else if (type === 'fuel') {
+                coreMesh = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.62, 0.28), coreMat);
+            } else if (type === 'repair') {
+                coreMesh = new THREE.Mesh(new THREE.BoxGeometry(0.54, 0.42, 0.36), coreMat);
+            } else {
+                coreMesh = new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.40, 0.18), coreMat);
+            }
+            group.add(coreMesh);
+
+            group.userData = {
+                type: type,
+                collected: false,
+                phase: Math.random() * Math.PI * 2
+            };
+            return group;
+        }
+
+        initCollectibles() {
+            if (!this.scene || !this.THREE) return;
+            if (this.collectibles && this.collectibles.length > 0) {
+                this.collectibles.forEach(c => {
+                    try { this.scene.remove(c); } catch (_) {}
+                });
+            }
+            this.collectibles = [];
+            const types = ['fuel', 'nitro', 'cash', 'repair'];
+            for (let i = 0; i < types.length; i++) {
+                const mesh = this.createCollectibleMesh(types[i]);
+                const laneIdx = i % 4;
+                mesh.position.set(this.trafficLanes[laneIdx], 0.75, 220 + i * 85);
+                mesh.userData.laneIndex = laneIdx;
+                this.scene.add(mesh);
+                this.collectibles.push(mesh);
+            }
+        }
+
+        updateCollectibles(dt) {
+            if (!this.collectibles || this.collectibles.length === 0) return;
+            const state = this.state;
+            for (let i = 0; i < this.collectibles.length; i++) {
+                const item = this.collectibles[i];
+                const u = item.userData || {};
+                u.phase = (u.phase || 0) + dt * 3.2;
+                item.rotation.y += dt * 2.4;
+                item.position.y = 0.75 + Math.sin(u.phase) * 0.14;
+
+                const dz = Math.abs(item.position.z - state.z);
+                const dx = Math.abs(item.position.x - state.x);
+                if (!u.collected && dz < 3.2 && dx < 1.65) {
+                    u.collected = true;
+                    u.pickupCount = (u.pickupCount || 0) + 1;
+                    const cType = u.type || 'cash';
+                    if (cType === 'fuel') {
+                        const maxFuel = state.fuelTankCapacity || 45;
+                        state.fuelCurrent = Math.min(maxFuel, (state.fuelCurrent || 0) + 15);
+                        if (typeof state.fuel === 'number') {
+                            state.fuel = Math.min(100, state.fuel + 15);
+                        }
+                        if (this.options.onPopup) this.options.onPopup('⛽ КАНИСТРА ТОПЛИВА +15 Л!', '#10b981');
+                    } else if (cType === 'nitro') {
+                        state.nitroLevel = Math.min(100, (state.nitroLevel || 0) + 50);
+                        if (this.options.onPopup) this.options.onPopup('🚀 БАЛЛОН N2O +50%!', '#38bdf8');
+                    } else if (cType === 'repair') {
+                        state.damageTaken = Math.max(0, (state.damageTaken || 0) - 25);
+                        if (this.options.onPopup) this.options.onPopup('🔧 РЕМОНТ КУЗОВА +25%!', '#f59e0b');
+                    } else {
+                        const bonus = Math.round(5000 * (state.rewardMult || 1.0));
+                        state.earnedCash += bonus;
+                        this.earnedCash = state.earnedCash;
+                        if (this.options.onPopup) this.options.onPopup(`💰 КЕЙС НА ДОРОГЕ! +${bonus.toLocaleString('ru-RU')} ₽`, '#fbbf24');
+                    }
+                    if (this.options.onSound) this.options.onSound('cash');
+                    item.position.z = state.z - 60; // trigger recycle below
+                }
+
+                if (item.position.z < state.z - 25) {
+                    const nextLane = Math.floor(Math.random() * 4);
+                    item.position.set(this.trafficLanes[nextLane], 0.75, state.z + 210 + i * 65 + Math.random() * 45);
+                    u.laneIndex = nextLane;
+                    u.collected = false;
+                }
+            }
+        }
+
         start(config = {}) {
             this._destroyed = false;
+            this.config = Object.assign({}, config || {});
             this.mode = config.mode || 'circuit';
             this.state.raceMode = this.mode;
             this.carName = config.carName || 'ВАЗ-2107 «Жигули»';
@@ -11753,8 +11893,9 @@
             this.camLook.set(this.state.x, initialMode.lookOffset.y, this.state.z + initialMode.lookOffset.z);
             this.camRoll = 0;
 
-            // Re-initialize traffic pool at start
+            // Re-initialize traffic pool and highway collectibles at start
             this.initTraffic();
+            this.initCollectibles();
 
             // Load Player's authentic 3D car model
             this.loadPlayerCar();
@@ -12184,6 +12325,7 @@
             const prev = this.state.wantedStars || 0;
             const next = Math.min(5, Math.max(0, prev + amount));
             this.state.wantedStars = next;
+            this.state.wantedLevel = next;
             this.state.escapeTimer = 8.0;
             if (next > prev) {
                 this.state.isPursuitActive = true;
@@ -12198,6 +12340,7 @@
 
         clearPursuit() {
             this.state.wantedStars = 0;
+            this.state.wantedLevel = 0;
             this.state.escapeTimer = 0;
             this.state.isPursuitActive = false;
             this.state.bustedTimer = 0;
@@ -12897,8 +13040,9 @@
             this.updateTraffic(dt);
             if (!this.isRunning || state.crashed || state.isBusted) return;
 
-            // 8. HIGHWAY ROAD CHUNKS RECYCLING
+            // 8. HIGHWAY ROAD CHUNKS RECYCLING & 3D COLLECTIBLES
             this.updateRoadChunks();
+            this.updateCollectibles(dt);
 
             // 9. SMOKE & SPARK PARTICLES & MODULAR VFX UPDATE
             if (this.vfx && typeof this.vfx.update === 'function') {
@@ -13149,6 +13293,21 @@
                             const blockSpeed = Math.max(80, Math.min(maxTgtSpeed, state.speed));
                             u.speed += (blockSpeed - u.speed) * Math.min(1.0, 1.4 * dt);
                         }
+                    }
+                }
+
+                // 1e. SGU / Horn VIP Lane-Clearing ([H]): civilian traffic ahead yields the lane when honked at
+                if (this.keys && this.keys.horn && u.type !== 'police' && u.type !== 'truck' && u.type !== 'kamaz') {
+                    if (dz > 3.0 && dz < 42.0 && dx < 1.9 && !u.changingLane) {
+                        const curLane = u.laneIndex !== undefined ? u.laneIndex : 1;
+                        const yieldLane = (curLane === 0) ? 1 : (curLane === 3) ? 2 : (car.position.x >= state.x ? Math.min(3, curLane + 1) : Math.max(0, curLane - 1));
+                        u.plannedLaneIndex = null;
+                        u.laneChangeDirection = (this.trafficLanes[yieldLane] > car.position.x) ? 1 : -1;
+                        u.laneIndex = yieldLane;
+                        u.targetX = this.trafficLanes[yieldLane];
+                        u.changingLane = true;
+                        u.yieldedToHorn = true;
+                        u.laneChangeTimer = 6.0;
                     }
                 }
 
@@ -13620,9 +13779,26 @@
         updateRoadChunks() {
             const state = this.state;
             this.roadChunks.forEach(chunk => {
+                const cu = chunk.userData || {};
+                const gantryWorldZ = chunk.position.z + (this.chunkLength || 50) * 0.4;
+                if (cu.hasGantry && !cu.radarTriggered && state.z >= 240 && (Math.abs(chunk.position.z - state.z) < 4.5 || Math.abs(gantryWorldZ - state.z) < 4.5)) {
+                    cu.radarTriggered = true;
+                    if (state.speed > 160 && this.mode !== 'drift') {
+                        if (this.hasSpecialPlateImmunity()) {
+                            const vipBonus = 2000;
+                            state.earnedCash += vipBonus;
+                            this.earnedCash = state.earnedCash;
+                            if (this.options.onPopup) this.options.onPopup('🛡️ ИММУНИТЕТ СПЕЦСЕРИИ! +2 000 ₽', '#38bdf8');
+                            if (this.options.onSound) this.options.onSound('cash');
+                        } else {
+                            this.addWantedStars(1, 'Камера Автоураган > 160 км/ч');
+                        }
+                    }
+                }
                 if (chunk.position.z < state.z - 50) {
                     chunk.position.z = this.highestChunkZ + this.chunkLength;
                     this.highestChunkZ = chunk.position.z;
+                    if (chunk.userData) chunk.userData.radarTriggered = false;
                 }
                 chunk.position.x = 0;
                 chunk.rotation.y = 0;
@@ -13814,6 +13990,8 @@
                 nearMissCount: this.nearMissCount || 0,
                 shashkiCombo: this.shashkiCombo || 0,
                 isDrafting: !!state.isDrafting,
+                damageTaken: Math.round(state.damageTaken || 0),
+                hullIntegrity: Math.max(0, 100 - Math.round(state.damageTaken || 0)),
                 cameraMode: this.cameraMode,
                 weather: this.currentActiveWeather,
                 weatherIcon: curPreset ? curPreset.icon : '🌃',

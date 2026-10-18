@@ -363,3 +363,50 @@ test('2D Drift Mode: Tire Temperature (tireHeat) heats up during drift, produces
     assert.equal(heatRes.hasHotSkidmark, true, 'Skidmarks should record tireHeat > 65%');
     assert.ok(heatRes.cooledTireHeat < heatRes.hotTireHeat, `Tires should cool down when driving straight without drifting (${heatRes.cooledTireHeat} < ${heatRes.hotTireHeat})`);
 });
+
+test('2D Drift Mode: road does not wiggle back and forth on its own (getCurveX === 0) and car stays straight without steering input', () => {
+    const app = createApp();
+    const res = app.run(`
+        myCars = [{ name: 'BMW M5 F90', plate: { text: 'Е 777 КХ | 77 RUS' } }];
+        selectedRaceCarName = 'BMW M5 F90';
+        selectedRaceCarIndex = 0;
+        setRaceMode('drift');
+        startRaceGame();
+
+        // 1. Stationary check: roadCurve and player.x must not move at all when stationary
+        const startX = racePlayer.x;
+        for (let i = 0; i < 40; i++) {
+            updateRacePhysics(0.05);
+        }
+        const stationaryX = racePlayer.x;
+        const stationaryCurve = roadCurve;
+
+        // 2. Driving straight check: even with non-zero roadCurve, getCurveX(y) stays 0 and car does not get pushed sideways
+        raceKeys.gas = true;
+        for (let i = 0; i < 60; i++) {
+            updateRacePhysics(0.05);
+        }
+        const drivingStraightX = racePlayer.x;
+        const sampleCurveXTop = getCurveX(0);
+        const sampleCurveXMid = getCurveX(300);
+        const sampleCurveXBot = getCurveX(600);
+
+        ({
+            startX,
+            stationaryX,
+            stationaryCurve,
+            drivingStraightX,
+            sampleCurveXTop,
+            sampleCurveXMid,
+            sampleCurveXBot
+        });
+    `);
+
+    assert.equal(res.stationaryX, res.startX, 'Stationary car must not move horizontally');
+    assert.equal(res.stationaryCurve, 0, 'roadCurve must stay 0 while car is stationary');
+    assert.equal(res.sampleCurveXTop, 0, 'Top of road must stay centered (getCurveX(0) === 0)');
+    assert.equal(res.sampleCurveXMid, 0, 'Middle of road must stay centered (getCurveX(300) === 0)');
+    assert.equal(res.sampleCurveXBot, 0, 'Bottom of road must stay centered (getCurveX(600) === 0)');
+    assert.equal(res.drivingStraightX, res.startX, 'Driving straight without left/right steering in Drift mode must not push the car sideways');
+});
+

@@ -13883,11 +13883,10 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             });
         }
 
-        // Перспективное смещение поворота дороги на высоте Y
+        // Перспективное смещение поворота дороги на высоте Y:
+        // В 2D режиме (вид сверху) дорожное полотно жестко зафиксировано по центру (50..350px) и не виляет из стороны в сторону.
         function getCurveX(y) {
-            const factor = Math.max(0, Math.min(1, (600 - y) / 600));
-            const exp = raceCurrentMode === 'drift' ? 1.45 : 1.8;
-            return roadCurve * Math.pow(factor, exp);
+            return 0;
         }
 
         // Система динамических биомов и атмосферы по дистанции / погоде
@@ -14902,14 +14901,22 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                             }
                         }
                         if (els.comboBadge) {
-                            const showCombo = hud.overtakeCombo > 1;
+                            const hasShashki = (hud.shashkiCombo || 0) > 0;
+                            const hasOvertake = (hud.overtakeCombo || 0) > 1;
+                            const hasDrafting = !!hud.isDrafting;
+                            const showCombo = hasShashki || hasOvertake || hasDrafting;
                             if (prevHudState.showCombo !== showCombo) {
                                 els.comboBadge.classList.toggle('hidden', !showCombo);
                                 prevHudState.showCombo = showCombo;
                             }
-                            if (showCombo && prevHudState.overtakeCombo !== hud.overtakeCombo) {
-                                els.comboBadge.textContent = `🔥 x${hud.overtakeCombo} ОБГОН`;
-                                prevHudState.overtakeCombo = hud.overtakeCombo;
+                            if (showCombo) {
+                                const badgeLabel = hasShashki
+                                    ? `⚡ ШАШКИ x${hud.shashkiCombo}`
+                                    : (hasDrafting ? `💨 СЛИПСТРИМ` : `🔥 x${hud.overtakeCombo} ОБГОН`);
+                                if (prevHudState.comboBadgeLabel !== badgeLabel) {
+                                    els.comboBadge.textContent = badgeLabel;
+                                    prevHudState.comboBadgeLabel = badgeLabel;
+                                }
                             }
                         }
 
@@ -15381,16 +15388,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             raceRoadOffset = 0;
             trafficSpawnTimer = 0;
             collectibleSpawnTimer = 0;
-            if (raceCurrentMode === 'drift') {
-                const initDir = Math.random() < 0.5 ? 1 : -1;
-                targetRoadCurve = initDir * (120 + Math.random() * 70);
-                roadCurve = targetRoadCurve * 0.45;
-                curveTimer = 0.35 + Math.random() * 0.25;
-            } else {
-                roadCurve = 0;
-                targetRoadCurve = 0;
-                curveTimer = 3.5;
-            }
+            roadCurve = 0;
+            targetRoadCurve = 0;
+            curveTimer = raceCurrentMode === 'drift' ? 1.5 : 3.5;
 
             document.getElementById('race-menu-container').classList.add('hidden');
             document.getElementById('race-play-container').classList.remove('hidden');
@@ -15470,34 +15470,34 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             const prevPlayerX = racePlayer.x;
             const wasDriftingOnEntry = !!racePlayer.isDrifting;
 
-            // 1. Динамические повороты трассы
-            curveTimer -= dt;
+            // 1. Динамические сектора трассы (обновляются только при движении автомобиля вперед)
+            const curveMoveFactor = racePlayer.speed > 5 ? Math.min(1.2, racePlayer.speed / 120) : 0;
+            curveTimer -= dt * (curveTimer <= 0 ? 1 : curveMoveFactor);
             if (curveTimer <= 0) {
                 if (raceCurrentMode === 'drift') {
-                    // Резкие повороты горного серпантина (Touge): непрерывные связки крутых шпилек и S-виражей без пустых прямых
-                    curveTimer = 0.40 + Math.random() * 0.35;
-                    const goRight = targetRoadCurve <= 0 ? (targetRoadCurve === 0 ? Math.random() < 0.5 : true) : (Math.random() < 0.12);
+                    // Сектора горного серпантина (Touge) для генерации апексов и знаков виражей
+                    curveTimer = 3.2 + Math.random() * 1.8;
+                    const goRight = targetRoadCurve <= 0 ? (targetRoadCurve === 0 ? Math.random() < 0.5 : true) : (Math.random() < 0.25);
                     if (goRight) {
                         targetRoadCurve = 120 + Math.random() * 70; // крутой вираж вправо (120..190)
                     } else {
                         targetRoadCurve = -(120 + Math.random() * 70); // крутой вираж влево (-120..-190)
                     }
                 } else {
-                    curveTimer = 4.0 + Math.random() * 3.5;
+                    curveTimer = 4.5 + Math.random() * 3.5;
                     const r = Math.random();
-                    if (r < 0.35) targetRoadCurve = 0;
-                    else if (r < 0.68) targetRoadCurve = 45 + Math.random() * 50;
+                    if (r < 0.45) targetRoadCurve = 0;
+                    else if (r < 0.72) targetRoadCurve = 45 + Math.random() * 50;
                     else targetRoadCurve = -(45 + Math.random() * 50);
                 }
             }
-            const curveTransitionRate = raceCurrentMode === 'drift' ? 6.0 : 1.5;
+            const curveTransitionRate = (raceCurrentMode === 'drift' ? 1.2 : 0.8) * curveMoveFactor;
             roadCurve += (targetRoadCurve - roadCurve) * curveTransitionRate * dt;
 
-            // Центробежная сила при прохождении поворота
+            // В 2D виде сверху машина управляется строго игроком без самопроизвольного бокового сноса трассой
             if (Math.abs(roadCurve) > 8) {
                 const centrifugalFactor = raceCurrentMode === 'drift' ? 120 : 45;
-                const centrifugalPush = -(roadCurve / 75) * (racePlayer.speed / 130) * centrifugalFactor * dt;
-                racePlayer.vx += centrifugalPush;
+                void centrifugalFactor;
             }
 
             // 2. Нитро логика: надёжная защита от бесконечного буста и спама при 0%
@@ -16245,8 +16245,10 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 spawnTrafficCar();
             }
 
-            // Спавн бонусов
-            collectibleSpawnTimer += dt;
+            // Спавн бонусов (только при движении автомобиля)
+            if (racePlayer.speed > 5) {
+                collectibleSpawnTimer += dt;
+            }
             if (collectibleSpawnTimer > 3.0) {
                 collectibleSpawnTimer = 0;
                 spawnCollectible();
@@ -16256,7 +16258,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             // РЕЖИМ ДРИФТА: СПАВН И ПРОХОЖДЕНИЕ КЛИППИНГ-ЗОН (АПЕКСОВ)
             // ---------------------------------------------------------
             if (raceCurrentMode === 'drift') {
-                clippingSpawnTimer += dt;
+                if (racePlayer.speed > 5) {
+                    clippingSpawnTimer += dt;
+                }
                 if (clippingSpawnTimer > 1.15) {
                     clippingSpawnTimer = 0;
                     const lastSide = raceClippingZones.length > 0 ? raceClippingZones[raceClippingZones.length - 1].side : null;

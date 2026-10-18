@@ -420,3 +420,96 @@ test('5. 3D Collisions & Near-Miss «Шашки»: sideswipe vs rear-end impact 
         engine.destroy();
     }
 });
+
+test('6. 3D Highway Collectibles (Fuel/Nitro/Cash/Repair), Horn [H] VIP Lane Clearing, and Gantry Speed Radar + Special Plate Immunity', () => {
+    const { Car3DManager } = setupTestContext();
+    const mockContainer = { clientWidth: 800, clientHeight: 500, style: {}, appendChild: () => {}, removeChild: () => {} };
+    const popups = [];
+    const engine = new Car3DManager.Car3DRacingEngine(mockContainer, {
+        onPopup: (msg, color) => popups.push({ msg, color })
+    });
+
+    try {
+        engine.start({
+            carName: 'BMW M5 F90',
+            plate: { text: 'А 777 МР | 97 RUS', isSpecial: true },
+            performance: { speed: 260, accel: 3.0, handling: 6.0 }
+        });
+
+        // 1. Verify 3D Highway Collectibles exist and picking up Fuel & Repair restores state
+        assert.ok(Array.isArray(engine.collectibles) && engine.collectibles.length >= 4, '3D engine must spawn highway collectibles');
+        const fuelItem = engine.collectibles.find(c => c.userData.type === 'fuel') || engine.collectibles[0];
+        fuelItem.userData.type = 'fuel';
+        fuelItem.userData.collected = false;
+        fuelItem.position.set(2.125, 0.7, 250);
+
+        engine.state.x = 2.125;
+        engine.state.z = 250;
+        engine.state.fuel = 40;
+        engine.updateCollectibles(0.05);
+        assert.ok((fuelItem.userData.pickupCount || 0) >= 1, 'Fuel collectible must record pickup');
+        assert.equal(engine.state.fuel, 55, 'Fuel collectible must restore +15L fuel');
+
+        const repairItem = engine.collectibles[1];
+        repairItem.userData.type = 'repair';
+        repairItem.userData.collected = false;
+        repairItem.position.set(2.125, 0.7, 260);
+        engine.state.x = 2.125;
+        engine.state.z = 260;
+        engine.state.damageTaken = 45;
+        engine.updateCollectibles(0.05);
+        assert.ok((repairItem.userData.pickupCount || 0) >= 1, 'Repair collectible must record pickup');
+        assert.equal(engine.state.damageTaken, 20, 'Repair collectible must repair 25% hull damage');
+
+        // 2. Horn [H] / SGU VIP Lane Clearing: civilian car ahead yields to adjacent lane
+        const yieldCar = engine.trafficCars.find(c => c.userData.type !== 'police');
+        yieldCar.userData.isWrecked = false;
+        yieldCar.userData.changingLane = false;
+        yieldCar.userData.yieldedToHorn = false;
+        yieldCar.userData.laneIndex = 2;
+        yieldCar.position.set(2.125, 0, 320);
+
+        engine.state.x = 2.125;
+        engine.state.z = 300; // 20m behind yieldCar in same lane
+        engine.state.speed = 150;
+        engine.keys.horn = true;
+        engine.updateTraffic(0.05);
+        engine.keys.horn = false;
+
+        assert.equal(yieldCar.userData.yieldedToHorn, true, 'Civilian traffic car ahead must yield when player presses Horn [H]');
+        assert.equal(yieldCar.userData.changingLane, true, 'Yielding traffic car must initiate lane change out of player lane');
+
+        // 3. 3D Gantry Speed Radar: Special Plate (АМР) gets VIP immunity + 2000 ₽, regular plate gets +1 Wanted Star
+        assert.equal(engine.hasSpecialPlateImmunity(), true, 'А 777 МР plate must grant special plate immunity');
+        const gantryChunk = engine.roadChunks.find(ch => ch.userData && ch.userData.hasGantry);
+        assert.ok(gantryChunk, 'Must have at least one HighwayGantry chunk');
+        gantryChunk.position.z = 400; // Gantry at world z = 400 + 20 = 420
+        gantryChunk.userData.radarTriggered = false;
+
+        const cashBeforeRadar = engine.earnedCash;
+        engine.state.z = 420;
+        engine.state.speed = 210; // > 160 km/h
+        engine.state.wantedLevel = 0;
+        engine.updateRoadChunks();
+
+        assert.equal(gantryChunk.userData.radarTriggered, true, 'Gantry radar must trigger when player passes under it at > 160 km/h');
+        assert.equal(engine.state.wantedLevel, 0, 'Special plate АМР must be immune to gantry speed radar wanted level');
+        assert.ok(engine.earnedCash >= cashBeforeRadar + 2000, 'Special plate АМР must receive +2000 ₽ immunity bonus under radar gantry');
+
+        // Regular plate check
+        engine.config.plate = { text: 'В 123 СМ | 77 RUS', isSpecial: false };
+        engine.hasSgu = false;
+        assert.equal(engine.hasSpecialPlateImmunity(), false, 'Regular plate without SGU must not have radar immunity');
+        gantryChunk.position.z = 500; // Gantry at world z = 520
+        gantryChunk.userData.radarTriggered = false;
+        engine.state.z = 520;
+        engine.state.speed = 205;
+        engine.updateRoadChunks();
+
+        assert.equal(gantryChunk.userData.radarTriggered, true, 'Gantry radar must trigger for regular plate');
+        assert.equal(engine.state.wantedLevel, 1, 'Regular plate exceeding 160 km/h under 3D gantry radar must receive +1 Wanted Star');
+    } finally {
+        engine.destroy();
+    }
+});
+
