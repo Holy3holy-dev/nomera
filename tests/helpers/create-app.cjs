@@ -38,11 +38,25 @@ function createApp({saved = null, denyStorage = false, cloud = null} = {}) {
         setItem(k,v){if(denyStorage)throw Error();data.set(k,v);},
         removeItem(k){if(denyStorage)throw Error();data.delete(k);}
     };
+    const crypto = require('node:crypto');
     const events = new Map();
     const context = {
         console, URL, Math, Date, JSON, Number, String, Object, Array, Promise,
         document:{getElementById:element, querySelector:()=>({offsetWidth:400,offsetHeight:200}), querySelectorAll:()=>[], addEventListener:(name,fn)=>events.set('document:'+name,fn),
-            createElement:(tag)=>({ getContext:()=>ctx, style:{}, classList:{add(){},remove(){},toggle(){}}, setAttribute(){}, appendChild(){}, width:44, height:68 }),body:{classList:{add(){},remove(){}}},hidden:false},
+            createElement:(tag)=>{
+                const ops = [];
+                const c2d = new Proxy({}, {
+                    get: (_, key) => {
+                        if (key === 'measureText') return () => ({width:20});
+                        if (key === 'createLinearGradient' || key === 'createRadialGradient') {
+                            return (...args) => { ops.push(`${String(key)}:${args.join(',')}`); return { addColorStop: (s, c) => ops.push(`stop:${s}:${c}`) }; };
+                        }
+                        return (...args) => { ops.push(`${String(key)}:${args.join(',')}`); };
+                    },
+                    set: (t, k, v) => { t[k] = v; ops.push(`${String(k)}=${String(v)}`); return true; }
+                });
+                return { getContext:()=>c2d, toDataURL:()=>'data:image/png;base64,'+crypto.createHash('sha256').update(ops.join('|')).digest('base64'), style:{}, classList:{add(){},remove(){},toggle(){}}, setAttribute(){}, appendChild(){}, width:44, height:68 };
+            },body:{classList:{add(){},remove(){}}},hidden:false},
         localStorage:storage, sessionStorage:storage, innerWidth:390,innerHeight:844,
         addEventListener:(name,fn)=>events.set(name,fn),
         performance:{now:()=>1000},requestAnimationFrame:()=>1,cancelAnimationFrame(){},

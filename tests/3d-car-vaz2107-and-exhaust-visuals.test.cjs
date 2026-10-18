@@ -105,10 +105,12 @@ test('VAZ-2107 GLTF loader setup does not flip vaz2107 by Math.PI and preserves 
         rotationMatch && !rotationMatch[1].includes('vaz2107'),
         "vaz2107 must NOT be in the Math.PI rotation check that turns it backward towards camera"
     );
-    assert.ok(
-        car3dCode.includes("if (carId === 'vaz2109' || carId === 'sf90' || carId === 'rs6' || carId === 'silvia' || carId === 'vesta')"),
-        "vaz2109, sf90, rs6, silvia, and vesta should have Math.PI rotation applied"
-    );
+    for (const id of ['vaz2109', 'sf90', 'rs6', 'silvia', 'vesta']) {
+        assert.ok(
+            rotationMatch && rotationMatch[1].includes(`'${id}'`),
+            `${id} should have Math.PI rotation applied`
+        );
+    }
 });
 
 test('Nitro exhaust flames are streamlined, realistic, and use additive blending without giant opaque cones', () => {

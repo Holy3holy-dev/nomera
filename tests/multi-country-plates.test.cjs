@@ -1327,5 +1327,116 @@ describe('Collector Book & Car-Plate Synergy (RUS / KZ / USA / UAE)', () => {
     assert.equal(app.run("balance"), 5011500);
     assert.equal(app.run("document.getElementById('btn-sell-all-plates').disabled"), true);
   });
+
+  test('Dubai RTA & UAE 1-to-5 digit hierarchy, real-world auction records (P 7, D 5, AA 9, G 63, P 911, 1971, 77777), and inspectUaePlate cultural passport', () => {
+    const { createApp } = require('./helpers/create-app.cjs');
+    const app = createApp();
+    const { Car3DManager, drawnTexts } = setup3DPlateTestEnv();
+
+    // 1. Golden Rule of UAE Plates: 1-digit > 2-digit twin > 3-digit triple > 3-digit plain
+    const p1 = c.inspectUaePlate('D 1 | DXB UAE');
+    const p7 = c.inspectUaePlate('P 7 | DXB UAE');
+    const d5 = c.inspectUaePlate('D 5 | DXB UAE');
+    const aa9 = c.inspectUaePlate('AA 9 | DXB UAE');
+    const d77 = c.inspectUaePlate('D 77 | DXB UAE');
+    const d777 = c.inspectUaePlate('D 777 | DXB UAE');
+    const g63 = c.inspectUaePlate('G 63 | DXB UAE');
+    const p911 = c.inspectUaePlate('P 911 | DXB UAE');
+    const d1971 = c.inspectUaePlate('D 1971 | DXB UAE');
+    const d7777 = c.inspectUaePlate('D 7777 | DXB UAE');
+    const d77777 = c.inspectUaePlate('D 77777 | DXB UAE');
+    const ad50 = c.inspectUaePlate('50 1 | AUH UAE');
+
+    // Guinness World Record P 7 ($15M / 55M AED) is the #1 plate in Dubai
+    assert.ok(p7.price > p1.price, `Expected Guinness record P 7 (${p7.price}) > D 1 (${p1.price})`);
+    assert.match(p7.realWorldNote, /55 000 000 AED/);
+    assert.match(d5.realWorldNote, /33 000 000 AED/);
+    assert.match(aa9.realWorldNote, /38 000 000 AED/);
+    assert.equal(aa9.isDoubleCode, true);
+
+    // 2-digit twin (D 77) is strictly more valuable than 3-digit triple (D 777) in real UAE market
+    assert.ok(d77.price > d777.price, `Expected 2-digit twin D 77 (${d77.price}) > 3-digit triple D 777 (${d777.price})`);
+
+    // Iconic model/heritage combinations (G 63, P 911, D 1971, D 7777, D 77777, Abu Dhabi Golden Jubilee 50)
+    assert.ok(g63.price > 3000000, `Expected G 63 Brabus combo > 3M, got ${g63.price}`);
+    assert.ok(p911.price > 850000, `Expected P 911 Porsche combo > 850k, got ${p911.price}`);
+    assert.ok(d1971.price > 1000000 && d1971.digitCount === 4, `Expected 4-digit UAE founding year D 1971 > 1M, got ${d1971.price}`);
+    assert.ok(d7777.price > 4000000 && d7777.digitCount === 4, `Expected 4-digit quad D 7777 > 4M, got ${d7777.price}`);
+    assert.ok(d77777.price > 3000000 && d77777.digitCount === 5, `Expected 5-digit quint D 77777 > 3M, got ${d77777.price}`);
+    assert.ok(ad50.price > 50000000 && ad50.code === '50', `Expected Abu Dhabi Golden Jubilee 50 1 > 50M, got ${ad50.price}`);
+
+    // Client and server parity for all 1..5 digit UAE plates
+    for (const plateStr of ['P 7 | DXB UAE', 'AA 9 | DXB UAE', 'D 77 | DXB UAE', 'G 63 | DXB UAE', 'P 911 | DXB UAE', 'D 1971 | DXB UAE', 'D 77777 | DXB UAE']) {
+      const srv = c.inspectUaePlate(plateStr);
+      const cli = app.run(`inspectUaePlate('${plateStr}')`);
+      assert.equal(cli.price, srv.price, `Client and server price must match for ${plateStr}`);
+      assert.equal(cli.estimatedAed, srv.estimatedAed, `Client and server AED estimate must match for ${plateStr}`);
+    }
+
+    // 2D UI cultural passport & 3D bumper plate rendering for 4-digit and 5-digit UAE plates
+    app.run(`
+      selectPlateCountry('UAE');
+      currentL1 = 'P'; currentL2 = 'X'; currentL3 = 'Z'; currentNum = '007'; currentReg = 'DXB';
+      boardHasLetters = true; boardHasNumbers = true;
+      checkCanSaveButton();
+    `);
+    assert.match(app.run("document.getElementById('current-price-display').innerHTML"), /AED/);
+    assert.match(app.run("document.getElementById('gen-rarity').innerText"), /ROYAL 1-DIGIT/);
+
+    drawnTexts.length = 0;
+    Car3DManager.createLicensePlate('D 77777 | DXB UAE');
+    assert.ok(drawnTexts.some(d => d.text === '77777'), '3D UAE plate must render 5-digit quint 77777');
+
+    // Ordinary 3-digit plate with 2-letter code (SS 730 | DXB UAE) must be Uncommon (< 18,000 ₽), not multi-million
+    const ss730 = c.inspectUaePlate('SS 730 | DXB UAE');
+    assert.ok(ss730.price < 18000, `Expected SS 730 | DXB UAE < 18,000 ₽, got ${ss730.price}`);
+    assert.equal(c.rarityOfPrice(ss730.price), 'Необычный');
+
+    // Dubai spin generator rolls 3, 4, and 5 digit plates on ordinary spins, and 1-2 digits on legendary/epic
+    const serverLengths = new Set();
+    const clientLengths = new Set();
+    for (let i = 0; i < 120; i++) {
+      serverLengths.add(c.secureRoll('both', 0, 'UAE').num.length);
+      clientLengths.add(app.run("generateLuckyNumberLocal(null, 0, 'UAE')").length);
+    }
+    assert.ok(serverLengths.has(3) && serverLengths.has(4) && serverLengths.has(5), `Server UAE rolls must include 3, 4, and 5 digit numbers, got lengths: ${[...serverLengths]}`);
+    assert.ok(clientLengths.has(3) && clientLengths.has(4) && clientLengths.has(5), `Client UAE rolls must include 3, 4, and 5 digit numbers, got lengths: ${[...clientLengths]}`);
+
+    // Dynamic 1..5 cell visibility on #plate-box during and after Dubai spins
+    for (const sampleNum of ['7', '77', '730', '1971', '48291']) {
+      const expectedLen = sampleNum.length;
+      const cellState = app.run(`(() => {
+        selectPlateCountry('UAE');
+        currentL1 = 'D'; currentL2 = 'X'; currentL3 = 'Z';
+        currentNum = '${sampleNum}';
+        boardHasLetters = true;
+        boardHasNumbers = true;
+        executeCellSpin(['cell-l1', 'cell-n1', 'cell-n2', 'cell-n3', 'cell-l2', 'cell-l3'], {
+          'cell-l1': 'D', 'cell-l2': 'X', 'cell-l3': 'Z',
+          'cell-n1': '${sampleNum[0]}', 'cell-n2': '${sampleNum[1] || '-'}', 'cell-n3': '${sampleNum[2] || '-'}'
+        });
+        const visibleWhileSpinning = ['cell-n1', 'cell-n2', 'cell-n3', 'cell-n4', 'cell-n5'].filter(
+          id => !document.getElementById(id).classList.contains('uae-cell-hidden')
+        );
+        const spinningCells = ['cell-n1', 'cell-n2', 'cell-n3', 'cell-n4', 'cell-n5'].filter(
+          id => document.getElementById(id).classList.contains('spinning')
+        );
+        isSpinning = false;
+        syncPlateBoxCellsLayout();
+        const charsAfter = visibleWhileSpinning.map(id => document.getElementById(id).querySelector('.char-span').textContent).join('');
+        return {
+          hasDigitsClass: document.getElementById('plate-box').classList.contains('uae-digits-' + ${expectedLen}),
+          visibleCount: visibleWhileSpinning.length,
+          spinningCount: spinningCells.length,
+          charsAfter
+        };
+      })()`);
+      assert.equal(cellState.hasDigitsClass, true, `Expected uae-digits-${expectedLen} class on #plate-box for ${sampleNum}`);
+      assert.equal(cellState.visibleCount, expectedLen, `Expected ${expectedLen} visible number cells for ${sampleNum}`);
+      assert.equal(cellState.spinningCount, expectedLen, `Expected ${expectedLen} spinning number cells for ${sampleNum}`);
+      assert.equal(cellState.charsAfter, sampleNum, `Expected displayed cell characters to match ${sampleNum}`);
+    }
+  });
 });
+
 

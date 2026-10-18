@@ -325,10 +325,10 @@ test('12. ИИ-соперники проходят замкнутую трасс
     }
     assert.ok(lastHud && lastHud.position >= 1 && lastHud.position <= 4, 'HUD должен передавать текущую позицию в гонке (1..4)');
 
-    // Проверяем работу Speedbreaker
+    // Проверяем, что замедление времени (Speedbreaker) отключено
     const sbActivated = engine.toggleSpeedbreaker();
-    assert.equal(sbActivated, true, 'Speedbreaker должен активироваться при заряде >= 25%');
-    assert.equal(engine.speedbreakerActive, true);
+    assert.equal(sbActivated, false, 'Замедление времени должно быть отключено');
+    assert.equal(engine.speedbreakerActive, false);
 
     // Проверяем закрытие всех промежуточных чекпоинтов и засчитывание круга на финише (checkpoint 0)
     engine.playerProgress.checkpointsPassed = engine.track.checkpoints.length - 1;
@@ -345,27 +345,27 @@ test('12. ИИ-соперники проходят замкнутую трасс
     assert.equal(engine.isRunning, false, 'После destroy() движок должен быть остановлен');
 });
 
-test('13. Интеграция режима 3D Круг (NFS MW) во все точки входа UI (index.html и js/app.js)', () => {
+test('13. Интеграция режима 3D Круг во все точки входа UI (index.html и js/app.js)', () => {
     const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
     const appJs = fs.readFileSync(path.join(__dirname, '..', 'js', 'app.js'), 'utf8');
 
-    assert.ok(html.includes('id="nav-tab-nfs-race"'), 'В верхней панели навигации должна быть вкладка #nav-tab-nfs-race (3D NFS Кольцо)');
-    assert.ok(html.includes('id="nfs-quickstart-hero"'), 'В меню гонок должен быть баннер быстрого старта новых трасс NFS MW (#nfs-quickstart-hero)');
-    assert.ok(html.includes('id="btn-garage-podium-nfs-race"'), 'На 3D-подиуме гаража должна быть кнопка быстрого старта в 3D Кольцо NFS');
-    assert.ok(html.includes('id="btn-switch-nfs-3d"'), 'В 3D HUD должна быть кнопка переключения в Кольцо NFS / смены трассы');
-    assert.ok(html.includes('id="btn-race-mode-nfs"'), 'В index.html должна быть вкладка режима 3D Круг (NFS)');
-    assert.ok(html.includes('id="btn-mode-nfs-circuit"'), 'В index.html должна быть кнопка выбора режима 3D Круг (NFS MW)');
+    assert.ok(html.includes('id="nav-tab-nfs-race"'), 'В верхней панели навигации должна быть вкладка #nav-tab-nfs-race (3D Кольцо)');
+    assert.ok(html.includes('id="nfs-quickstart-hero"'), 'В меню гонок должен быть баннер быстрого старта кольцевых трасс (#nfs-quickstart-hero)');
+    assert.ok(html.includes('id="btn-garage-podium-nfs-race"'), 'На 3D-подиуме гаража должна быть кнопка быстрого старта в 3D Кольцо');
+    assert.ok(html.includes('id="btn-switch-nfs-3d"'), 'В 3D HUD должна быть кнопка переключения в 3D Кольцо / смены трассы');
+    assert.ok(html.includes('id="btn-race-mode-nfs"'), 'В index.html должна быть вкладка режима 3D Круг');
+    assert.ok(html.includes('id="btn-mode-nfs-circuit"'), 'В index.html должна быть кнопка выбора режима 3D Круг');
     assert.ok(html.includes('id="nfs-circuit-settings-card"'), 'В index.html должна быть карточка выбора трассы и сложности ИИ');
     assert.ok(html.includes('./js/nfs-physics.js'), 'В index.html должен быть подключён скрипт nfs-physics.js');
     assert.ok(html.includes('./js/nfs-circuit-race.js'), 'В index.html должен быть подключён скрипт nfs-circuit-race.js');
 
-    assert.ok(appJs.includes('NomeraCircuitRace.NomeraCircuitRaceEngine'), 'В js/app.js должен создаваться экземпляр NomeraCircuitRaceEngine для режима NFS');
+    assert.ok(appJs.includes('NomeraCircuitRace.NomeraCircuitRaceEngine'), 'В js/app.js должен создаваться экземпляр NomeraCircuitRaceEngine для кольцевого режима');
     assert.ok(appJs.includes('function setNfsCircuitTrack('), 'В js/app.js должна быть функция выбора трассы setNfsCircuitTrack');
     assert.ok(appJs.includes('function setNfsCircuitDifficulty('), 'В js/app.js должна быть функция выбора сложности setNfsCircuitDifficulty');
     assert.ok(appJs.includes('function quickStartNfsCircuit('), 'В js/app.js должна быть функция быстрого запуска трассы quickStartNfsCircuit');
-    assert.ok(appJs.includes('function startNfsRaceWithCar('), 'В js/app.js должна быть функция запуска NFS гонки с карточки машины в гараже');
-    assert.ok(appJs.includes('function startNfsRaceWithActiveGarageCar('), 'В js/app.js должна быть функция запуска NFS гонки с 3D-подиума гаража');
-    assert.ok(appJs.includes('function toggle3DSpeedbreaker('), 'В js/app.js должна быть функция активации Speedbreaker');
+    assert.ok(appJs.includes('function startNfsRaceWithCar('), 'В js/app.js должна быть функция запуска кольцевой гонки с карточки машины в гараже');
+    assert.ok(appJs.includes('function startNfsRaceWithActiveGarageCar('), 'В js/app.js должна быть функция запуска кольцевой гонки с 3D-подиума гаража');
+    assert.ok(appJs.includes('function toggle3DSpeedbreaker('), 'В js/app.js должна быть функция-заглушка toggle3DSpeedbreaker');
 });
 
 test('14. Изоляция миникарты (.nfs-minimap-canvas) от растягивания на весь экран и подключение 3D GLB моделей + студийного освещения', () => {
@@ -394,19 +394,19 @@ test('14. Изоляция миникарты (.nfs-minimap-canvas) от рас�
     );
 });
 
-test('15. Интеграция физики и механик NFS Most Wanted (Speedbreaker, Blacklist-соперники, 3-2-1 Старт, круги и подиум) в основной движок Car3DRacingEngine (js/car-3d.js)', () => {
+test('15. Интеграция кольцевых гонок (соперники, 3-2-1 Старт, круги и подиум без замедления времени) в основной движок Car3DRacingEngine (js/car-3d.js)', () => {
     const car3dJs = fs.readFileSync(path.join(__dirname, '..', 'js', 'car-3d.js'), 'utf8');
 
-    assert.ok(car3dJs.includes('initNfsRivals('), 'В Car3DRacingEngine должен быть метод инициализации соперников Чёрного списка initNfsRivals');
+    assert.ok(car3dJs.includes('initNfsRivals('), 'В Car3DRacingEngine должен быть метод инициализации соперников initNfsRivals');
     assert.ok(car3dJs.includes('updateNfsRivals('), 'В Car3DRacingEngine должен быть метод обновления ИИ-соперников updateNfsRivals');
     assert.ok(car3dJs.includes('initNfsCheckpointGate('), 'В Car3DRacingEngine должен быть метод 3D-арки чекпоинта initNfsCheckpointGate');
     assert.ok(car3dJs.includes('updateNfsCircuitProgress('), 'В Car3DRacingEngine должен быть метод подсчёта секторов, кругов и подиума updateNfsCircuitProgress');
-    assert.ok(car3dJs.includes('toggleSpeedbreaker('), 'В Car3DRacingEngine должен быть метод активации Speedbreaker toggleSpeedbreaker');
-    assert.ok(car3dJs.includes('ИДЕАЛЬНЫЙ СТАРТ NFS!'), 'В Car3DRacingEngine должен поддерживаться Идеальный Старт (Perfect Launch) на отсчёте 3-2-1');
-    assert.ok(car3dJs.includes('Рейзор (#1 Blacklist)'), 'В Car3DRacingEngine должен присутствовать главный босс Чёрного списка Рейзор (#1 Blacklist)');
+    assert.ok(car3dJs.includes('toggleSpeedbreaker('), 'В Car3DRacingEngine должен быть метод toggleSpeedbreaker (отключён)');
+    assert.ok(car3dJs.includes('ИДЕАЛЬНЫЙ СТАРТ!'), 'В Car3DRacingEngine должен поддерживаться Идеальный Старт (Perfect Launch) на отсчёте 3-2-1');
+    assert.ok(car3dJs.includes("driverName: 'Ford Mustang GT'"), 'В Car3DRacingEngine должен присутствовать соперник Ford Mustang GT');
 });
 
-test('16. Оригинальные 3D GLB-рипы из NFS Most Wanted 2005 (BMW M3 E46 GTR, Corvette C6.R Кросса, Mustang GT Рейзора)', () => {
+test('16. 3D GLB-модели (BMW M3 E46 GTR, Chevrolet Corvette C6.R, Ford Mustang GT)', () => {
     const modelsDir = path.join(__dirname, '..', 'assets', 'models');
     const expectedGlbs = [
         { file: 'bmw_m3_gtr.glb', minBytes: 1000000 },
@@ -430,47 +430,47 @@ test('16. Оригинальные 3D GLB-рипы из NFS Most Wanted 2005 (BM
     assert.ok(car3dJs.includes("m3gtr: './assets/models/bmw_m3_gtr.glb'"), 'GLB_MODEL_MAP должен мапить m3gtr на bmw_m3_gtr.glb');
     assert.ok(car3dJs.includes("corvette_cross: './assets/models/corvette_cross.glb'"), 'GLB_MODEL_MAP должен мапить corvette_cross на corvette_cross.glb');
     assert.ok(car3dJs.includes("mustang_razor: './assets/models/mustang_razor.glb'"), 'GLB_MODEL_MAP должен мапить mustang_razor на mustang_razor.glb');
-    assert.ok(car3dJs.includes('preserveLiveryMap'), 'applyStylingToGLTF должен сохранять оригинальные ливреи NFS Most Wanted (preserveLiveryMap)');
+    assert.ok(car3dJs.includes('preserveLiveryMap'), 'applyStylingToGLTF должен сохранять оригинальные ливреи (preserveLiveryMap)');
 
     const appJs = fs.readFileSync(path.join(__dirname, '..', 'js', 'app.js'), 'utf8');
-    assert.ok(appJs.includes('function claimAndSelectNfsMwCar('), 'В js/app.js должна быть функция выдачи и выбора легенд NFS MW claimAndSelectNfsMwCar');
-    assert.ok(appJs.includes('"BMW M3 E46 GTR (NFS Most Wanted)"'), 'В carRaceStats должен быть BMW M3 E46 GTR (NFS Most Wanted)');
-    assert.ok(appJs.includes('"Chevrolet Corvette C6.R (Cross NFS MW)"'), 'В carRaceStats должен быть Chevrolet Corvette C6.R (Cross NFS MW)');
-    assert.ok(appJs.includes('"Ford Mustang GT (Razor NFS MW)"'), 'В carRaceStats должен быть Ford Mustang GT (Razor NFS MW)');
+    assert.ok(appJs.includes('function claimAndSelectNfsMwCar('), 'В js/app.js должна быть функция выдачи и выбора трековых машин claimAndSelectNfsMwCar');
+    assert.ok(appJs.includes('"BMW M3 E46 GTR"'), 'В carRaceStats должен быть BMW M3 E46 GTR');
+    assert.ok(appJs.includes('"Chevrolet Corvette C6.R"'), 'В carRaceStats должен быть Chevrolet Corvette C6.R');
+    assert.ok(appJs.includes('"Ford Mustang GT"'), 'В carRaceStats должен быть Ford Mustang GT');
 });
 
-test('17. Полный перенос NFS Most Wanted: все 18 профилей Чёрного списка #15–#1, 3D-бодикиты/воздухозаборники/капоты, пакеты Junkman + Pro-тюнинг и звук прямозубой КПП M3 GTR + Speedbreaker', () => {
-    const blacklistCars = [
-        'BMW M3 E46 GTR (NFS Most Wanted)',
-        'Chevrolet Corvette C6.R (Cross NFS MW)',
-        'Ford Mustang GT (Razor NFS MW)',
-        'Mercedes-Benz SLR McLaren (Bull #2 MW)',
-        'Aston Martin DB9 (Ronnie #3 MW)',
-        'Dodge Viper SRT10 (JV #4 MW)',
-        'Chevrolet Corvette C6 (Webster #5 MW)',
-        'Lamborghini Gallardo (Ming #6 MW)',
-        'Mercedes-Benz CLK 500 (Kaze #7 MW)',
-        'Ford Mustang GT (Jewels #8 MW)',
-        'Mitsubishi Lancer Evo VIII (Earl #9 MW)',
-        'Porsche Cayman S (Baron #10 MW)',
-        'Mitsubishi Eclipse GT (Big Lou #11 MW)',
-        'Mazda RX-8 (Izzy #12 MW)',
-        'Toyota Supra MK4 (Vic #13 MW)',
-        'Lexus IS300 (Taz #14 MW)',
-        'Volkswagen Golf GTI (Sonny #15 MW)',
-        'Audi Le Mans Quattro R8 (Darius MW)'
+test('17. Все 18 трековых профилей автомобилей, 3D-бодикиты/воздухозаборники/капоты, пакеты Pro-тюнинга и звук прямозубой КПП M3 GTR', () => {
+    const trackCars = [
+        'BMW M3 E46 GTR',
+        'Chevrolet Corvette C6.R',
+        'Ford Mustang GT',
+        'Mercedes-Benz SLR McLaren',
+        'Aston Martin DB9',
+        'Dodge Viper SRT10',
+        'Chevrolet Corvette C6',
+        'Lamborghini Gallardo',
+        'Mercedes-Benz CLK 500',
+        'Ford Mustang GT Coupe',
+        'Mitsubishi Lancer Evo VIII',
+        'Porsche Cayman S',
+        'Mitsubishi Eclipse GT',
+        'Mazda RX-8',
+        'Toyota Supra MK4',
+        'Lexus IS300',
+        'Volkswagen Golf GTI',
+        'Audi Le Mans Quattro R8'
     ];
 
-    for (const carName of blacklistCars) {
+    for (const carName of trackCars) {
         assert.ok(NfsPhysics.VEHICLE_PROFILES[carName], `В VEHICLE_PROFILES должен быть профиль ${carName}`);
         const prof = NfsPhysics.resolveVehicleProfile(carName);
         assert.ok(prof.maxSpeedKmh >= 285, `Профиль ${carName} должен иметь валидную максимальную скорость`);
     }
 
-    // Проверяем влияние деталей старьёвщика (Junkman) и Pro-настроек КПП/Аэро/Зацепа
-    const baseM3 = NfsPhysics.resolveVehicleProfile('BMW M3 E46 GTR (NFS Most Wanted)', {}, {});
+    // Проверяем влияние Pro-деталей (Junkman) и Pro-настроек КПП/Аэро/Зацепа
+    const baseM3 = NfsPhysics.resolveVehicleProfile('BMW M3 E46 GTR', {}, {});
     const junkmanM3 = NfsPhysics.resolveVehicleProfile(
-        'BMW M3 E46 GTR (NFS Most Wanted)',
+        'BMW M3 E46 GTR',
         {
             junkmanEngine: true,
             junkmanTurbo: true,
@@ -482,10 +482,10 @@ test('17. Полный перенос NFS Most Wanted: все 18 профиле�
         },
         { bodykit: 'nfsmw_gtr', spoiler: 'gtr' }
     );
-    assert.ok(junkmanM3.peakEngineForce > baseM3.peakEngineForce, 'Junkman Engine + Turbo должны повышать пиковую тягу двигателя');
-    assert.ok(junkmanM3.maxSpeedKmh > baseM3.maxSpeedKmh, 'Junkman + длинная КПП должны повышать максимальную скорость');
-    assert.ok(junkmanM3.frontCorneringStiffness > baseM3.frontCorneringStiffness, 'Junkman Tires + Grip Bias + обвес GTR должны усиливать боковой зацеп шин');
-    assert.ok(junkmanM3.nitroForceMultiplier > baseM3.nitroForceMultiplier, 'Junkman N2O должен усиливать тягу закиси азота');
+    assert.ok(junkmanM3.peakEngineForce > baseM3.peakEngineForce, 'Pro Engine + Turbo должны повышать пиковую тягу двигателя');
+    assert.ok(junkmanM3.maxSpeedKmh > baseM3.maxSpeedKmh, 'Pro-пакет + длинная КПП должны повышать максимальную скорость');
+    assert.ok(junkmanM3.frontCorneringStiffness > baseM3.frontCorneringStiffness, 'Pro Tires + Grip Bias + обвес GTR должны усиливать боковой зацеп шин');
+    assert.ok(junkmanM3.nitroForceMultiplier > baseM3.nitroForceMultiplier, 'Pro N2O должен усиливать тягу закиси азота');
 
     // Проверяем наличие 3D-тюнинга BodyShop и звуков в исходниках
     const car3dJs = fs.readFileSync(path.join(__dirname, '..', 'js', 'car-3d.js'), 'utf8');

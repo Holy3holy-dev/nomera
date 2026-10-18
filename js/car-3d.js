@@ -55,25 +55,25 @@
     function identifyCarModel(name) {
         const n = String(name || '').toLowerCase();
 
-        // 0. NFS Most Wanted (2005) Iconic Hero & Full Blacklist #15-#1 Rips (before generic 'gtr' or 'bmw')
-        if (n.includes('m3 gtr') || n.includes('m3 e46') || n.includes('e46 gtr') || n.includes('most wanted')) return 'm3gtr';
-        if (n.includes('webster') || n.includes('вебстер')) return 'corvette_webster';
-        if (n.includes('corvette') || n.includes('корвет') || n.includes('c6.r') || n.includes('c6r') || n.includes('кросс')) return 'corvette_cross';
-        if (n.includes('jewels') || n.includes('джуэлс')) return 'mustang_jewels';
-        if (n.includes('mustang') || n.includes('мустанг') || n.includes('рейзор')) return 'mustang_razor';
-        if (n.includes('supra') || n.includes('супра') || n.includes('вик') || n.includes('vic #13')) return 'supra';
-        if (n.includes('rx-8') || n.includes('rx8') || n.includes('rx-7') || n.includes('rx7') || n.includes('mazda') || n.includes('мазда') || n.includes('иззи') || n.includes('izzy')) return 'rx7';
-        if (n.includes('aston') || n.includes('db9') || n.includes('астон') || n.includes('ронни') || n.includes('ronnie')) return 'db9';
-        if (n.includes('mclaren') || n.includes('макларен') || n.includes('slr') || n.includes('булл') || n.includes('bull #2')) return 'mclaren';
-        if (n.includes('r8') || n.includes('le mans') || n.includes('дариус') || n.includes('darius')) return 'audir8';
-        if (n.includes('viper') || n.includes('вайпер') || n.includes('jv #4') || n.includes('джей ви')) return 'viper_jv';
-        if (n.includes('gallardo') || n.includes('гальярдо') || n.includes('минг') || n.includes('ming #6')) return 'gallardo_ming';
-        if (n.includes('clk') || n.includes('камикадзе') || n.includes('kaze #7')) return 'clk_kaze';
-        if (n.includes('evo') || n.includes('lancer') || n.includes('лансер') || n.includes('эрл') || n.includes('earl #9')) return 'evo8_earl';
-        if (n.includes('cayman') || n.includes('кайман') || n.includes('барон') || n.includes('baron #10')) return 'cayman_baron';
-        if (n.includes('eclipse') || n.includes('эклипс') || n.includes('биг лу') || n.includes('big lou') || n.includes('veloster')) return 'eclipse_lou';
-        if (n.includes('is300') || n.includes('lexus') || n.includes('лексус') || n.includes('таз #14') || n.includes('taz #14')) return 'is300_taz';
-        if (n.includes('golf gti') || n.includes('сонни') || n.includes('sonny #15')) return 'golf_sonny';
+        // 0. Sports, GT & Supercar 3D Models (before generic 'gtr' or 'bmw')
+        if (n.includes('m3 gtr') || n.includes('m3 e46') || n.includes('e46 gtr')) return 'm3gtr';
+        if (n === 'chevrolet corvette c6' || n.includes('corvette c6 ') || (n.includes('corvette c6') && !n.includes('c6.r') && !n.includes('c6r'))) return 'corvette_webster';
+        if (n.includes('corvette') || n.includes('корвет') || n.includes('c6.r') || n.includes('c6r')) return 'corvette_cross';
+        if (n.includes('mustang gt coupe')) return 'mustang_jewels';
+        if (n.includes('mustang') || n.includes('мустанг')) return 'mustang_razor';
+        if (n.includes('supra') || n.includes('супра')) return 'supra';
+        if (n.includes('rx-8') || n.includes('rx8') || n.includes('rx-7') || n.includes('rx7') || n.includes('mazda') || n.includes('мазда')) return 'rx7';
+        if (n.includes('aston') || n.includes('db9') || n.includes('астон')) return 'db9';
+        if (n.includes('mclaren') || n.includes('макларен') || n.includes('slr')) return 'mclaren';
+        if (n.includes('r8') || n.includes('le mans')) return 'audir8';
+        if (n.includes('viper') || n.includes('вайпер')) return 'viper_jv';
+        if (n.includes('gallardo') || n.includes('гальярдо')) return 'gallardo_ming';
+        if (n.includes('clk')) return 'clk_kaze';
+        if (n.includes('evo') || n.includes('lancer') || n.includes('лансер')) return 'evo8_earl';
+        if (n.includes('cayman') || n.includes('кайман')) return 'cayman_baron';
+        if (n.includes('eclipse') || n.includes('эклипс') || n.includes('veloster')) return 'eclipse_lou';
+        if (n.includes('is300') || n.includes('lexus') || n.includes('лексус')) return 'is300_taz';
+        if (n.includes('golf gti')) return 'golf_sonny';
 
         // 0b. Bonus GLB models in assets/models/
         if (n.includes('m3 g80') || n.includes('m3 sedan')) return 'm3_g80';
@@ -193,6 +193,10 @@
             reflectivity: 0.95,
             name: 'CarPaint'
         });
+        if (styling.vinyl && styling.vinyl !== 'none') {
+            const vinylTex = createVinylCanvasTexture(THREE, styling.vinyl, bodyHex);
+            if (vinylTex) paint.map = vinylTex;
+        }
 
         // Window Glass & Tint
         let glassOpacity = 0.38;
@@ -1142,11 +1146,14 @@
                         let codePart = String(comp.uaeCode || letters || (emirateKey === 'AUH' ? '5' : 'D')).toUpperCase();
                         const numStr = String(comp.uaeDigits || digits || '1');
 
-                        // Map numeric 01..20 category codes to AUH while preserving category number in codePart
-                        if (/^(?:0?[1-9]|1\d|20)$/.test(emirateKey)) {
-                            codePart = emirateKey;
+                        // Map numeric 01..22 & 50 category codes to AUH while preserving category number in codePart
+                        if (/^(?:50|0?[1-9]|1\d|2[0-2])$/.test(emirateKey)) {
+                            codePart = String(parseInt(emirateKey, 10) || emirateKey);
                             emirateKey = 'AUH';
-                        } else if (/^(?:0?[1-9]|1\d|20)$/.test(codePart)) {
+                        } else if (/^(?:50|0?[1-9]|1\d|2[0-2])$/.test(codePart)) {
+                            codePart = String(parseInt(codePart, 10) || codePart);
+                            if (emirateKey === 'AD') emirateKey = 'AUH';
+                        } else if (emirateKey === 'AD') {
                             emirateKey = 'AUH';
                         }
 
@@ -1161,7 +1168,9 @@
                         };
                         const emirateMeta = UAE_EMIRATE_META[emirateKey] || UAE_EMIRATE_META.DXB;
                         const isVipShortNum = numStr.length <= 2;
-                        const digitFontPx = numStr.length === 1 ? 98 : (isVipShortNum ? 94 : 86);
+                        const digitFontPx = numStr.length === 1
+                            ? 102
+                            : (isVipShortNum ? 94 : (numStr.length === 3 ? 86 : (numStr.length === 4 ? 74 : 64)));
 
                         if (typeof ctx.createLinearGradient === 'function') {
                             const grad = ctx.createLinearGradient(0, 0, 0, 128);
@@ -1186,9 +1195,9 @@
                             ctx.font = 'bold 20px sans-serif';
                             ctx.fillText('أبوظبي', 48, 84);
 
-                            // Category number (01..20) or code letter at x = 136, y = 66
+                            // Category number (1..22, 50) or code letter at x = 136, y = 66
                             ctx.fillStyle = '#090d16';
-                            ctx.font = '900 48px "Inter", "Arial Black", sans-serif';
+                            ctx.font = codePart.length >= 2 ? '900 44px "Inter", "Arial Black", sans-serif' : '900 50px "Inter", "Arial Black", sans-serif';
                             ctx.fillText(codePart, 136, 66);
 
                             // Sleek Black Outer Border
@@ -1212,7 +1221,7 @@
                             const emirateTitle = emirateMeta.en;
                             const emirateArabic = emirateMeta.ar;
 
-                            // Left compartment (x = 10..188): Top-left Emirate EN & Arabic, and RTA Code Letter on x = 148, y = 66
+                            // Left compartment (x = 10..188): Top-left Emirate EN & Arabic, and RTA Code Letter(s) on x = 148, y = 66
                             ctx.fillStyle = emirateMeta.accent || '#090d16';
                             ctx.font = emirateTitle.length >= 7 ? '900 19px "Inter", "Arial Black", sans-serif' : '900 22px "Inter", "Arial Black", sans-serif';
                             ctx.fillText(emirateTitle, 64, 40);
@@ -1220,7 +1229,7 @@
                             ctx.fillText(emirateArabic, 64, 82);
 
                             ctx.fillStyle = '#090d16';
-                            ctx.font = '900 54px "Inter", "Arial Black", sans-serif';
+                            ctx.font = codePart.length >= 2 ? '900 46px "Inter", "Arial Black", sans-serif' : '900 54px "Inter", "Arial Black", sans-serif';
                             ctx.fillText(codePart, 148, 66);
 
                             // Sleek Black Outer Border
@@ -5168,7 +5177,7 @@
             const wing = new THREE.Mesh(wingGeo, mats.carbon);
             wing.position.set(0, trunkY + 0.29, trunkZ - 0.02);
             spoilerGroup.add(wing);
-        } else if (styling.spoiler === 'gt') {
+        } else if (styling.spoiler === 'gt' || styling.spoiler === 'gtr') {
             const wingGeo = new THREE.BoxGeometry(spec.bodyWidth * 0.96, 0.04, 0.32);
             const wing = new THREE.Mesh(wingGeo, mats.carbon);
             wing.position.set(0, trunkY + 0.32, trunkZ);
@@ -7338,7 +7347,7 @@
                         return mats.glass;
                     }
 
-                    // 9. Car Body Paint (Preserve authentic NFS Most Wanted livery textures only on M3 GTR, Cross Corvette, and Razor Mustang unless custom vinyl/paint override is active)
+                    // 9. Car Body Paint (Preserve authentic factory/racing livery textures on M3 GTR, Corvette C6.R, and Mustang GT unless custom vinyl/paint override is active)
                     if (role === 'body') {
                         const origBodyMat = child.userData._origBodyMats && child.userData._origBodyMats[idx];
                         if ((carId === 'm3gtr' || carId === 'corvette_cross' || carId === 'mustang_razor') && origBodyMat && origBodyMat.map && !styling.customPaintOverride && (!styling.vinyl || styling.vinyl === 'none')) {
@@ -7504,7 +7513,7 @@
             modelRoot.add(spoilerGroup);
         }
 
-        // 3D NFS Most Wanted Bodykits (Recessed Under-Bumper Carbon Splitter, Rocker Sill Blades & Rear Diffuser)
+        // 3D Aero Bodykits (Recessed Under-Bumper Carbon Splitter, Rocker Sill Blades & Rear Diffuser)
         // Skip duplicate BoxGeometry aero on models that already have native widebody/GT aero sculpted into the GLB mesh
         const hasNativeWidebodyMesh = (
             baseCarId === 'm3gtr' ||
@@ -7547,7 +7556,7 @@
             modelRoot.add(bkGroup);
         }
 
-        // 3D NFS Most Wanted Roof Scoops (Single, Dual, Vortex Generators)
+        // 3D Roof Scoops (Single, Dual, Vortex Generators)
         if (styling.roofScoop && styling.roofScoop !== 'none') {
             const rsGroup = new THREE.Group();
             rsGroup.name = 'GLB_RoofScoopGroup';
@@ -7577,7 +7586,7 @@
             modelRoot.add(rsGroup);
         }
 
-        // 3D NFS Most Wanted Custom Hoods (Carbon Hood, GTR Louver Vents, Muscle Supercharger Blower)
+        // 3D Custom Hoods (Carbon Hood, GTR Louver Vents, Muscle Supercharger Blower)
         if (styling.hood && styling.hood !== 'stock' && styling.hood !== 'none') {
             const hoodGroup = new THREE.Group();
             hoodGroup.name = 'GLB_HoodGroup';
@@ -8222,7 +8231,9 @@
             this.width = this.container.clientWidth || 320;
             this.height = this.container.clientHeight || 200;
             this.active = false;
+            this.paused = false;
             this.animFrameId = null;
+            this._tempRainbowColor = new this.THREE.Color();
 
             // Camera angles and orbit controls (current & target for smooth animation)
             this.cameraAngleY = Math.PI / 4.2;
@@ -9654,14 +9665,25 @@
             this.needsRender = true;
         }
 
+        pause() {
+            this.paused = true;
+            this.stop();
+        }
+
+        resume() {
+            this.paused = false;
+            this.needsRender = true;
+            this.start();
+        }
+
         start() {
-            if (this.active) return;
+            if (this.active || this.paused) return;
             if (typeof document !== 'undefined' && document.hidden) {
                 return;
             }
             if (this.container && this.container.offsetParent === null) {
                 setTimeout(() => {
-                    if (!this.active && this.container && this.container.offsetParent !== null) {
+                    if (!this.active && !this.paused && this.container && this.container.offsetParent !== null) {
                         this.start();
                     }
                 }, 100);
@@ -9672,17 +9694,33 @@
             let lastTime = performance.now();
 
             const loop = (time) => {
-                if (!this.active) return;
+                if (!this.active || this.paused) return;
                 lastTime = time;
 
-                // Stop rendering cleanly if hidden or container disconnected
+                // Stop rendering cleanly if hidden, container disconnected, or race is active
                 if (typeof document !== 'undefined' && document.hidden) {
+                    this.stop();
+                    return;
+                }
+                if (typeof window !== 'undefined' && window.isRaceRunning) {
                     this.stop();
                     return;
                 }
                 if (this.container && this.container.offsetParent === null) {
                     this.stop();
                     return;
+                }
+
+                // Skip rendering background garage-preview-3d-wrap while #styling-modal is open so two WebGL showrooms never render at 60 FPS simultaneously
+                if (this.container && this.container.id === 'garage-preview-3d-wrap' && typeof document !== 'undefined' && typeof document.getElementById === 'function') {
+                    const stylingModal = document.getElementById('styling-modal');
+                    if (stylingModal && stylingModal.classList && typeof stylingModal.classList.contains === 'function') {
+                        const isModalHidden = stylingModal.classList.contains('hidden') || (stylingModal.classList.contains('modal-overlay') && !stylingModal.classList.contains('show'));
+                        if (!isModalHidden) {
+                            this.animFrameId = requestAnimationFrame(loop);
+                            return;
+                        }
+                    }
                 }
 
                 if (this.options.autoRotate && !this.isDragging) {
@@ -9759,7 +9797,8 @@
                 // Dynamic Neon Modes: Rainbow / Pulse
                 if (this.currentStyling.neonMode === 'rainbow') {
                     const hue = (time * 0.0006) % 1.0;
-                    const rCol = new this.THREE.Color().setHSL(hue, 1.0, 0.55);
+                    if (!this._tempRainbowColor) this._tempRainbowColor = new this.THREE.Color();
+                    const rCol = this._tempRainbowColor.setHSL(hue, 1.0, 0.55);
                     if (this.neonLight) {
                         this.neonLight.color = rCol;
                         this.neonLight.intensity = 1.8;
@@ -9957,15 +9996,46 @@
         const s = styling.suspension || 'stock';
         const n = styling.neon || 'none';
         const sp = styling.spoiler || 'none';
+        const v = styling.vinyl || 'none';
+        const bk = styling.bodykit || 'stock';
+        const hd = styling.hood || 'stock';
+        const rs = styling.roofScoop || 'none';
         const sg = styling.sgu || 'none';
         const pl = styling.plate || '';
-        return `${carName}__${c}_${t}_${w}_${s}_${n}_${sp}_${sg}_${pl}`;
+        return `${carName}__${c}_${t}_${w}_${s}_${n}_${sp}_${v}_${bk}_${hd}_${rs}_${sg}_${pl}`;
+    }
+
+    function hasCustomStylingForThumbnail(styling, carName = '') {
+        if (!styling || typeof styling !== 'object') return false;
+        if (styling.color && styling.color !== 'none' && styling.color !== 'stock') {
+            if (carName) {
+                const defHex = getDefaultCarColor(carName);
+                const colHex = parseColor(styling.color, defHex);
+                if (colHex !== defHex) return true;
+            } else {
+                return true;
+            }
+        }
+        if (styling.wheels && styling.wheels !== 'stock') return true;
+        if (styling.spoiler && styling.spoiler !== 'none' && styling.spoiler !== 'stock') return true;
+        if (styling.vinyl && styling.vinyl !== 'none') return true;
+        if (styling.bodykit && styling.bodykit !== 'stock' && styling.bodykit !== 'none') return true;
+        if (styling.hood && styling.hood !== 'stock' && styling.hood !== 'none') return true;
+        if (styling.roofScoop && styling.roofScoop !== 'none' && styling.roofScoop !== 'stock') return true;
+        if (styling.sgu && styling.sgu !== 'none') return true;
+        if (styling.neon && styling.neon !== 'none') return true;
+        if (styling.suspension && styling.suspension !== 'stock') return true;
+        if (styling.tint && styling.tint !== 0 && styling.tint !== '0' && styling.tint !== 'none') return true;
+        return false;
     }
 
     function getSideThumbnail(carName, styling = {}) {
         const key = getThumbnailKey(carName, styling);
         if (sideThumbnailCache.has(key)) {
             return sideThumbnailCache.get(key);
+        }
+        if (hasCustomStylingForThumbnail(styling, carName)) {
+            return null;
         }
         return getStaticThumbnail(carName);
     }
@@ -10065,66 +10135,74 @@
             });
             isProcessingQueue = false;
             if (thumbnailQueue.length > 0 && !(typeof window !== 'undefined' && window.isRaceRunning)) {
-                setTimeout(() => processThumbnailQueue(THREE), 24);
+                setTimeout(() => processThumbnailQueue(THREE), 4);
+            }
+        };
+
+        const finishWithModel = (model) => {
+            if (model && offscreenRenderer && offscreenScene && offscreenCamera) {
+                try {
+                    model.updateMatrixWorld(true);
+                    const box = new THREE.Box3().setFromObject(model);
+                    const center = box.getCenter(new THREE.Vector3());
+
+                    // Center model horizontally and position flush on floor
+                    model.position.x -= center.x;
+                    model.position.z -= center.z;
+                    model.position.y -= box.min.y;
+                    model.updateMatrixWorld(true);
+
+                    offscreenScene.add(model);
+
+                    // Compute framing for side camera (+X axis looking towards -X)
+                    const finalBox = new THREE.Box3().setFromObject(model);
+                    const carHeight = Math.max(1.0, finalBox.max.y - finalBox.min.y);
+                    const targetY = finalBox.min.y + carHeight * 0.46;
+                    const carLength = Math.max(3.8, finalBox.max.z - finalBox.min.z);
+                    const camDist = Math.max(8.2, carLength * 1.88);
+
+                    // Dynamic 3D 3/4 perspective to reveal car bodywork, hood, wheels and front styling
+                    const camX = camDist * 0.90;
+                    const camY = targetY + carHeight * 0.32;
+                    const camZ = carLength * 0.40;
+                    offscreenCamera.position.set(camX, camY, camZ);
+                    offscreenCamera.lookAt(0, targetY, 0);
+
+                    offscreenRenderer.render(offscreenScene, offscreenCamera);
+                    let dataUrl = null;
+                    if (offscreenRenderer.domElement && typeof offscreenRenderer.domElement.toDataURL === 'function') {
+                        try {
+                            dataUrl = offscreenRenderer.domElement.toDataURL('image/png');
+                        } catch (_) {
+                            dataUrl = null;
+                        }
+                    }
+                    if (!dataUrl) {
+                        dataUrl = 'data:image/png;base64,mock3d';
+                    }
+
+                    offscreenScene.remove(model);
+                    deepDispose(model);
+
+                    onThumbnailDone(dataUrl);
+                } catch (renderErr) {
+                    console.warn('Error during offscreen thumbnail render:', renderErr);
+                    onThumbnailDone(null);
+                }
+            } else {
+                onThumbnailDone(null);
             }
         };
 
         try {
-            // Load authentic GLTF model for realistic 3D thumbnails (falls back to detailed procedural if GLTF unavailable)
-            loadCarModel(THREE, task.carName, task.styling, (model) => {
-                if (model && offscreenRenderer && offscreenScene && offscreenCamera) {
-                    try {
-                        model.updateMatrixWorld(true);
-                        const box = new THREE.Box3().setFromObject(model);
-                        const center = box.getCenter(new THREE.Vector3());
-
-                        // Center model horizontally and position flush on floor
-                        model.position.x -= center.x;
-                        model.position.z -= center.z;
-                        model.position.y -= box.min.y;
-                        model.updateMatrixWorld(true);
-
-                        offscreenScene.add(model);
-
-                        // Compute framing for side camera (+X axis looking towards -X)
-                        const finalBox = new THREE.Box3().setFromObject(model);
-                        const carHeight = Math.max(1.0, finalBox.max.y - finalBox.min.y);
-                        const targetY = finalBox.min.y + carHeight * 0.46;
-                        const carLength = Math.max(3.8, finalBox.max.z - finalBox.min.z);
-                        const camDist = Math.max(8.2, carLength * 1.88);
-
-                        // Dynamic 3D 3/4 perspective to reveal car bodywork, hood, wheels and front styling
-                        const camX = camDist * 0.90;
-                        const camY = targetY + carHeight * 0.32;
-                        const camZ = carLength * 0.40;
-                        offscreenCamera.position.set(camX, camY, camZ);
-                        offscreenCamera.lookAt(0, targetY, 0);
-
-                        offscreenRenderer.render(offscreenScene, offscreenCamera);
-                        let dataUrl = null;
-                        if (offscreenRenderer.domElement && typeof offscreenRenderer.domElement.toDataURL === 'function') {
-                            try {
-                                dataUrl = offscreenRenderer.domElement.toDataURL('image/png');
-                            } catch (_) {
-                                dataUrl = null;
-                            }
-                        }
-                        if (!dataUrl) {
-                            dataUrl = 'data:image/png;base64,mock3d';
-                        }
-
-                        offscreenScene.remove(model);
-                        deepDispose(model);
-
-                        onThumbnailDone(dataUrl);
-                    } catch (renderErr) {
-                        console.warn('Error during offscreen thumbnail render:', renderErr);
-                        onThumbnailDone(null);
-                    }
-                } else {
-                    onThumbnailDone(null);
-                }
-            });
+            const carId = identifyCarModel(task.carName);
+            const modelUrl = GLB_MODEL_MAP[carId];
+            if (modelUrl && rawGLBCache.has(modelUrl)) {
+                loadCarModel(THREE, task.carName, task.styling, finishWithModel);
+            } else {
+                const proc = buildDetailedCarModel(THREE, task.carName, task.styling);
+                finishWithModel(proc);
+            }
         } catch (err) {
             console.warn('Error rendering 3D thumbnail:', err);
             onThumbnailDone(null);
@@ -10211,6 +10289,8 @@
             this.camPos = new this.THREE.Vector3(0, 2.05, -5.8);
             this.camLook = new this.THREE.Vector3(0, 1.05, 14.0);
             this.camRoll = 0;
+            this._lastCameraFov = 0;
+            this._tempRainbowColor = new this.THREE.Color();
 
             // Controls state
             this.keys = {
@@ -10325,7 +10405,7 @@
                 countdownTimer: 0,
                 countdownText: '',
                 trackId: 'rockport_eastfield',
-                trackName: 'Рокпорт · Кольцо Истфилд',
+                trackName: 'Городское Кольцо',
                 checkpointIndex: 1,
                 totalCheckpoints: 4,
 
@@ -12669,9 +12749,9 @@
             this.performance = Object.assign({}, config.performance || {});
 
             const trackCatalog = {
-                rockport_eastfield: { id: 'rockport_eastfield', name: 'Рокпорт · Кольцо Истфилд', lapLength: 1000, checkpoints: 4, curveAmp: 0.85 },
-                canyon_pass: { id: 'canyon_pass', name: 'Каньон Карбон · Серпантин', lapLength: 1200, checkpoints: 4, curveAmp: 1.45 },
-                bayview_sprint: { id: 'bayview_sprint', name: 'Бэйвью · Ночной спринт', lapLength: 1250, checkpoints: 5, curveAmp: 0.70 }
+                rockport_eastfield: { id: 'rockport_eastfield', name: 'Городское Кольцо', lapLength: 1000, checkpoints: 4, curveAmp: 0.85 },
+                canyon_pass: { id: 'canyon_pass', name: 'Горный Каньон · Серпантин', lapLength: 1200, checkpoints: 4, curveAmp: 1.45 },
+                bayview_sprint: { id: 'bayview_sprint', name: 'Ночная Магистраль · Порт', lapLength: 1250, checkpoints: 5, curveAmp: 0.70 }
             };
             const trackId = config.trackId || (this.options && this.options.trackId) || 'rockport_eastfield';
             this.nfsTrackMeta = trackCatalog[trackId] || trackCatalog.rockport_eastfield;
@@ -12927,97 +13007,96 @@
             const diffScale = difficulty === 'hard' ? 1.04 : (difficulty === 'easy' ? 0.88 : 0.96);
             const playerBaseMax = this.state.maxSpeed || 200;
 
-            const blacklistPool = [
+            const rivalPool = [
                 {
-                    id: 'razor',
-                    driverName: 'Рейзор (#1 Blacklist)',
-                    shortTag: '#1 РЕЙЗОР',
-                    carName: 'BMW M3 E46 GTR (NFS Most Wanted)',
+                    id: 'm3_gtr',
+                    driverName: 'BMW M3 E46 GTR',
+                    shortTag: 'M3 GTR',
+                    carName: 'BMW M3 E46 GTR',
                     skill: 1.02 * diffScale,
-                    styling: { color: '#cbd5e1', vinyl: 'none', spoiler: 'gtr', neon: '#38bdf8', plate: 'M 001 MW | 777 RUS' }
+                    styling: { color: '#cbd5e1', vinyl: 'none', spoiler: 'gtr', neon: '#38bdf8', plate: 'M 001 GT | 777 RUS' }
                 },
                 {
-                    id: 'cross',
-                    driverName: 'Сержант Кросс (C6.R)',
-                    shortTag: '🚓 КРОСС',
-                    carName: 'Chevrolet Corvette C6.R (Cross NFS MW)',
+                    id: 'corvette_c6r',
+                    driverName: 'Chevrolet Corvette C6.R',
+                    shortTag: 'C6.R',
+                    carName: 'Chevrolet Corvette C6.R',
                     skill: 0.99 * diffScale,
-                    styling: { color: '#1e293b', vinyl: 'none', spoiler: 'none', neon: '#ef4444', sgu: true, plate: 'К 001 РО | 77 RUS' }
+                    styling: { color: '#1e293b', vinyl: 'none', spoiler: 'none', neon: '#ef4444', sgu: true, plate: 'К 001 СР | 77 RUS' }
                 },
                 {
-                    id: 'bull',
-                    driverName: 'Булл (#2 Blacklist)',
-                    shortTag: '#2 БУЛЛ',
-                    carName: 'Mercedes-Benz SLR McLaren (Bull #2 MW)',
+                    id: 'slr_mclaren',
+                    driverName: 'Mercedes-Benz SLR McLaren',
+                    shortTag: 'SLR',
+                    carName: 'Mercedes-Benz SLR McLaren',
                     skill: 0.98 * diffScale,
-                    styling: { color: '#18181b', vinyl: 'mw_blacklist', spoiler: 'gt', neon: '#ef4444', plate: 'В 002 УЛ | 777 RUS' }
+                    styling: { color: '#18181b', vinyl: 'mw_blacklist', spoiler: 'gt', neon: '#ef4444', plate: 'С 002 ЛР | 777 RUS' }
                 },
                 {
-                    id: 'ronnie',
-                    driverName: 'Ронни (#3 Blacklist)',
-                    shortTag: '#3 РОННИ',
-                    carName: 'Aston Martin DB9 (Ronnie #3 MW)',
+                    id: 'aston_db9',
+                    driverName: 'Aston Martin DB9',
+                    shortTag: 'DB9',
+                    carName: 'Aston Martin DB9',
                     skill: 0.96 * diffScale,
-                    styling: { color: '#eab308', vinyl: 'stripes', spoiler: 'gt', neon: '#fbbf24', plate: 'Р 003 ОН | 777 RUS' }
+                    styling: { color: '#eab308', vinyl: 'stripes', spoiler: 'gt', neon: '#fbbf24', plate: 'А 003 МТ | 777 RUS' }
                 },
                 {
-                    id: 'jv',
-                    driverName: 'Джей Ви (#4 Blacklist)',
-                    shortTag: '#4 ДЖЕЙ ВИ',
-                    carName: 'Dodge Viper SRT10 (JV #4 MW)',
+                    id: 'dodge_viper',
+                    driverName: 'Dodge Viper SRT10',
+                    shortTag: 'VIPER',
+                    carName: 'Dodge Viper SRT10',
                     skill: 0.95 * diffScale,
-                    styling: { color: '#16a34a', vinyl: 'mw_blacklist', spoiler: 'gtr', neon: '#22c55e', plate: 'В 004 АЙ | 777 RUS' }
+                    styling: { color: '#16a34a', vinyl: 'mw_blacklist', spoiler: 'gtr', neon: '#22c55e', plate: 'В 004 СР | 777 RUS' }
                 },
                 {
-                    id: 'ming',
-                    driverName: 'Минг (#6 Blacklist)',
-                    shortTag: '#6 МИНГ',
-                    carName: 'Lamborghini Gallardo (Ming #6 MW)',
+                    id: 'gallardo',
+                    driverName: 'Lamborghini Gallardo',
+                    shortTag: 'GALLARDO',
+                    carName: 'Lamborghini Gallardo',
                     skill: 0.95 * diffScale,
-                    styling: { color: '#334155', vinyl: 'stripes', spoiler: 'none', neon: '#f59e0b', plate: 'М 006 ИН | 777 RUS' }
+                    styling: { color: '#334155', vinyl: 'stripes', spoiler: 'none', neon: '#f59e0b', plate: 'Л 006 ГЛ | 777 RUS' }
                 },
                 {
-                    id: 'earl',
-                    driverName: 'Эрл (#9 Blacklist)',
-                    shortTag: '#9 ЭРЛ',
-                    carName: 'Mitsubishi Lancer Evo VIII (Earl #9 MW)',
+                    id: 'lancer_evo',
+                    driverName: 'Mitsubishi Lancer Evo VIII',
+                    shortTag: 'EVO VIII',
+                    carName: 'Mitsubishi Lancer Evo VIII',
                     skill: 0.94 * diffScale,
-                    styling: { color: '#f8fafc', vinyl: 'drift', spoiler: 'gt', roofScoop: 'vortex', neon: '#ef4444', plate: 'Э 009 РЛ | 777 RUS' }
+                    styling: { color: '#f8fafc', vinyl: 'drift', spoiler: 'gt', roofScoop: 'vortex', neon: '#ef4444', plate: 'Е 009 ВО | 777 RUS' }
                 },
                 {
-                    id: 'izzy',
-                    driverName: 'Иззи (#12 Blacklist)',
-                    shortTag: '#12 ИЗЗИ',
-                    carName: 'Mazda RX-8 (Izzy #12 MW)',
+                    id: 'mazda_rx8',
+                    driverName: 'Mazda RX-8',
+                    shortTag: 'RX-8',
+                    carName: 'Mazda RX-8',
                     skill: 0.93 * diffScale,
-                    styling: { color: '#ef4444', vinyl: 'drift', spoiler: 'gt', neon: '#38bdf8', plate: 'И 012 ЗИ | 777 RUS' }
+                    styling: { color: '#ef4444', vinyl: 'drift', spoiler: 'gt', neon: '#38bdf8', plate: 'Р 012 Х8 | 777 RUS' }
                 },
                 {
-                    id: 'vic',
-                    driverName: 'Вик (#13 Blacklist)',
-                    shortTag: '#13 ВИК',
-                    carName: 'Toyota Supra MK4 (Vic #13 MW)',
+                    id: 'toyota_supra',
+                    driverName: 'Toyota Supra MK4',
+                    shortTag: 'SUPRA',
+                    carName: 'Toyota Supra MK4',
                     skill: 0.93 * diffScale,
-                    styling: { color: '#f97316', vinyl: 'mw_blacklist', spoiler: 'gtr', bodykit: 'widebody', neon: '#f97316', plate: 'В 013 ИК | 777 RUS' }
+                    styling: { color: '#f97316', vinyl: 'mw_blacklist', spoiler: 'gtr', bodykit: 'widebody', neon: '#f97316', plate: 'С 013 ПР | 777 RUS' }
                 },
                 {
-                    id: 'razor_mustang',
-                    driverName: 'Рейзор (#15 Mustang GT)',
-                    shortTag: '#15 МУСТАНГ',
-                    carName: 'Ford Mustang GT (Razor NFS MW)',
+                    id: 'mustang_gt',
+                    driverName: 'Ford Mustang GT',
+                    shortTag: 'MUSTANG',
+                    carName: 'Ford Mustang GT',
                     skill: 0.94 * diffScale,
-                    styling: { color: '#0f172a', vinyl: 'none', spoiler: 'none', neon: '#f59e0b', plate: 'Р 015 МВ | 77 RUS' }
+                    styling: { color: '#0f172a', vinyl: 'none', spoiler: 'none', neon: '#f59e0b', plate: 'М 015 ГТ | 77 RUS' }
                 }
             ];
 
-            // Always feature #1 Razor M3 GTR & Cross C6.R, plus a 3rd Blacklist boss (Mustang GT or rotating boss by track)
-            const thirdBossIdx = (this.nfsTrackMeta && this.nfsTrackMeta.id === 'canyon_pass')
+            const thirdRivalIdx = (this.nfsTrackMeta && this.nfsTrackMeta.id === 'canyon_pass')
                 ? 2
                 : ((this.nfsTrackMeta && this.nfsTrackMeta.id === 'bayview_sprint') ? 8 : 9);
             const roster = [
-                Object.assign({}, blacklistPool[0], { laneIndex: 1, startZ: 14, name: blacklistPool[0].driverName }),
-                Object.assign({}, blacklistPool[1], { laneIndex: 2, startZ: 9.5, name: blacklistPool[1].driverName }),
-                Object.assign({}, blacklistPool[thirdBossIdx] || blacklistPool[9], { laneIndex: 0, startZ: 5.0, name: (blacklistPool[thirdBossIdx] || blacklistPool[9]).driverName })
+                Object.assign({}, rivalPool[0], { laneIndex: 1, startZ: 14, name: rivalPool[0].driverName }),
+                Object.assign({}, rivalPool[1], { laneIndex: 2, startZ: 9.5, name: rivalPool[1].driverName }),
+                Object.assign({}, rivalPool[thirdRivalIdx] || rivalPool[9], { laneIndex: 0, startZ: 5.0, name: (rivalPool[thirdRivalIdx] || rivalPool[9]).driverName })
             ];
 
             for (let i = 0; i < roster.length; i++) {
@@ -13203,7 +13282,7 @@
                     : '';
                 this.circuitTelemetryEl.innerHTML =
                     `<div style="font-weight:900;color:#38bdf8;font-size:12px;">🏆 ${st.trackName} · Место: <b style="color:#fbbf24;font-size:13px;">#${st.position}/${st.totalRacers}</b> · Круг: <b style="color:#34d399;">${st.currentLap}/${st.totalLaps}</b> · Чекпоинт: <b>${st.checkpointIndex}/${st.totalCheckpoints}</b></div>` +
-                    `<div style="color:#e2e8f0;">⏱️ Круг: <b>${st.lapTimeSec.toFixed(1)}с</b> · Лучший: <b style="color:#c084fc;">${bestStr}</b> · ⚡ Speedbreaker [G]: <b style="color:#38bdf8;">${Math.round(st.speedbreakerCharge)}%</b> ${st.isSpeedbreakerActive ? '🔥 АКТИВЕН' : ''}</div>` +
+                    `<div style="color:#e2e8f0;">⏱️ Круг: <b>${st.lapTimeSec.toFixed(1)}с</b> · Лучший круг: <b style="color:#c084fc;">${bestStr}</b></div>` +
                     countdownHtml;
             }
 
@@ -14112,30 +14191,13 @@
                 if (key === 'drift' && isDown && !this.keys.drift) {
                     if (this.options.onSound) this.options.onSound('handbrake');
                 }
-                if (key === 'speedbreaker' && isDown && !this.keys.speedbreaker) {
-                    this.toggleSpeedbreaker();
-                }
                 this.keys[key] = !!isDown;
             }
         }
 
         toggleSpeedbreaker() {
-            const st = this.state;
-            if (!st) return false;
-            if (st.isSpeedbreakerActive) {
-                st.isSpeedbreakerActive = false;
-                if (this.options && this.options.onPopup) {
-                    this.options.onPopup('⏱️ SPEEDBREAKER ВЫКЛ', '#38bdf8');
-                }
-                return false;
-            }
-            if ((st.speedbreakerCharge || 0) >= 20) {
-                st.isSpeedbreakerActive = true;
-                if (this.options && this.options.onPopup) {
-                    this.options.onPopup('⏱️ SPEEDBREAKER: ЗАМЕДЛЕНИЕ ВРЕМЕНИ И ТАРАННАЯ МАССА!', '#38bdf8');
-                }
-                if (this.options && this.options.onHaptic) this.options.onHaptic('medium');
-                return true;
+            if (this.state) {
+                this.state.isSpeedbreakerActive = false;
             }
             return false;
         }
@@ -14230,28 +14292,11 @@
             const state = this.state;
             const keys = this.keys;
 
-            // NFS Most Wanted Speedbreaker charge & time-dilation handling
-            if (state.isSpeedbreakerActive && !this._wasSpeedbreakerActive) {
-                if (this.options && this.options.onSound) this.options.onSound('speedbreakerOn');
-            } else if (!state.isSpeedbreakerActive && this._wasSpeedbreakerActive) {
-                if (this.options && this.options.onSound) this.options.onSound('speedbreakerOff');
-            }
-            this._wasSpeedbreakerActive = !!state.isSpeedbreakerActive;
+            state.isSpeedbreakerActive = false;
+            this._wasSpeedbreakerActive = false;
+            const dt = rawDt;
 
-            if (state.isSpeedbreakerActive) {
-                state.speedbreakerCharge = Math.max(0, (state.speedbreakerCharge || 0) - 28 * rawDt);
-                if (state.speedbreakerCharge <= 0) {
-                    state.isSpeedbreakerActive = false;
-                    this._wasSpeedbreakerActive = false;
-                    if (this.options && this.options.onSound) this.options.onSound('speedbreakerOff');
-                }
-            } else {
-                const sbRecharge = (4.2 + (state.speed || 0) / 42 + (state.isDrifting ? 6.5 : 0)) * rawDt;
-                state.speedbreakerCharge = Math.min(100, (state.speedbreakerCharge || 0) + sbRecharge);
-            }
-            const dt = state.isSpeedbreakerActive ? rawDt * 0.55 : rawDt;
-
-            // NFS Most Wanted 3-2-1 Starting Grid Countdown
+            // 3-2-1 Starting Grid Countdown
             if (this.isNfsCircuit && state.racePhase === 'countdown') {
                 state.countdownTimer -= rawDt;
                 const prevCd = state.countdownText;
@@ -14269,7 +14314,7 @@
                         state.backfireTimer = 0.22;
                         state.backfireColor = 'blue';
                         if (this.options && this.options.onPopup) {
-                            this.options.onPopup('⚡ ИДЕАЛЬНЫЙ СТАРТ NFS! +46 КМ/Ч!', '#10b981');
+                            this.options.onPopup('⚡ ИДЕАЛЬНЫЙ СТАРТ! +46 КМ/Ч!', '#10b981');
                         }
                         if (this.options && this.options.onSound) this.options.onSound('backfire');
                     } else {
@@ -14518,7 +14563,8 @@
             if (this.playerNeonLight && this.styling) {
                 if (this.styling.neonMode === 'rainbow') {
                     const hue = ((this.lastTime || 0) * 0.00025) % 1.0;
-                    const rCol = new this.THREE.Color().setHSL(hue, 1.0, 0.55);
+                    if (!this._tempRainbowColor) this._tempRainbowColor = new this.THREE.Color();
+                    const rCol = this._tempRainbowColor.setHSL(hue, 1.0, 0.55);
                     this.playerNeonLight.color = rCol;
                     if (this.playerNeonMesh && this.playerNeonMesh.material) {
                         this.playerNeonMesh.material.color = rCol;
@@ -15110,7 +15156,7 @@
             this.updateTraffic(dt);
             if (!this.isRunning || state.crashed || state.isBusted) return;
 
-            // 7b. NFS MOST WANTED BLACKLIST RIVALS & CIRCUIT LAP PROGRESS
+            // 7b. CIRCUIT RIVALS & LAP PROGRESS
             if (this.isNfsCircuit) {
                 this.updateNfsRivals(dt);
                 this.updateNfsCircuitProgress(dt);
@@ -15229,32 +15275,13 @@
                 const dxNow = Math.abs(state.x - r.x);
                 if (dxNow < 1.95 && Math.abs(dzNow) < 4.1) {
                     const pushDir = (state.x >= r.x) ? 1 : -1;
-                    const isSbActive = !!state.isSpeedbreakerActive;
-                    if (isSbActive) {
-                        // Speedbreaker Heavy Mass Ram: knock rival aside heavily!
-                        r.x = Math.max(-7.8, Math.min(7.8, r.x - pushDir * 1.35));
-                        r.targetX = r.x;
-                        r.speed = Math.max(80, r.speed - 45);
-                        state.x = Math.max(-8.0, Math.min(8.0, state.x + pushDir * 0.25));
-                        this.spawnSparks((state.x + r.x) * 0.5, 0.55, state.z, 18);
-                        if ((this.rivalRamPopupTimer || 0) <= 0) {
-                            this.rivalRamPopupTimer = 2.0;
-                            const ramBonus = Math.round(5000 * (state.rewardMult || 1.0));
-                            state.earnedCash += ramBonus;
-                            this.earnedCash = state.earnedCash;
-                            if (this.options && typeof this.options.onPopup === 'function') {
-                                this.options.onPopup(`💥 ТАРАН BLACKLIST (${r.name})! +${ramBonus.toLocaleString('ru-RU')} ₽`, '#38bdf8');
-                            }
-                        }
-                    } else {
-                        state.x = Math.max(-8.0, Math.min(8.0, state.x + pushDir * 0.42));
-                        r.x = Math.max(-7.8, Math.min(7.8, r.x - pushDir * 0.42));
-                        state.vx += pushDir * 2.8;
-                        state.shakeAmount = Math.max(state.shakeAmount || 0, 0.32);
-                        this.spawnSparks((state.x + r.x) * 0.5, 0.5, state.z, 10);
-                        if (this.options && typeof this.options.onSound === 'function') {
-                            this.options.onSound('scrape');
-                        }
+                    state.x = Math.max(-8.0, Math.min(8.0, state.x + pushDir * 0.42));
+                    r.x = Math.max(-7.8, Math.min(7.8, r.x - pushDir * 0.42));
+                    state.vx += pushDir * 2.8;
+                    state.shakeAmount = Math.max(state.shakeAmount || 0, 0.32);
+                    this.spawnSparks((state.x + r.x) * 0.5, 0.5, state.z, 10);
+                    if (this.options && typeof this.options.onSound === 'function') {
+                        this.options.onSound('scrape');
                     }
                 } else if (prevDz < -1.0 && dzNow >= 1.2 && state.speed > 90 && (r.overtakeCooldown || 0) <= 0) {
                     r.overtakeCooldown = 5.0;
@@ -15263,7 +15290,7 @@
                     state.earnedCash += ovBonus;
                     this.earnedCash = state.earnedCash;
                     if (this.options && typeof this.options.onPopup === 'function') {
-                        this.options.onPopup(`🔥 ОБГОН BLACKLIST (${r.name})! +${ovBonus.toLocaleString('ru-RU')} ₽`, '#f59e0b');
+                        this.options.onPopup(`🔥 ЧИСТЫЙ ОБГОН (${r.name})! +${ovBonus.toLocaleString('ru-RU')} ₽`, '#f59e0b');
                     }
                 }
                 if ((r.overtakeCooldown || 0) > 0) r.overtakeCooldown -= dt;
@@ -16227,7 +16254,10 @@
                 targetFov = this.vfx.enhanceCameraFOV(targetFov, state);
             }
             this.camera.fov += (targetFov - this.camera.fov) * Math.min(1.0, 5.0 * dt);
-            this.camera.updateProjectionMatrix();
+            if (Math.abs(this.camera.fov - (this._lastCameraFov || 0)) > 0.05) {
+                this._lastCameraFov = this.camera.fov;
+                this.camera.updateProjectionMatrix();
+            }
 
             // Starfield follows camera Z
             if (this.starfield) {
@@ -16502,6 +16532,7 @@
         identifyCarModel,
         STATIC_3D_THUMBNAILS,
         getStaticThumbnail,
+        hasCustomStylingForThumbnail,
         renderSideThumbnail,
         getSideThumbnail,
         loadCarModel,

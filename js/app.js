@@ -268,7 +268,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 name: "ВАЗ-2107 «Жигули»",
                 basePrice: 80000,
                 category: "Седан",
-                img: "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/d4/Lada_2107_front_20080116.jpg/800px-Lada_2107_front_20080116.jpg",
+                img: DEFAULT_CAR_IMG,
                 plate: null
             }
         ];
@@ -1835,6 +1835,18 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 dailyQuests,
                 achievements,
                 pityCounterBoth,
+                generatorBoard: {
+                    l1: currentL1,
+                    l2: currentL2,
+                    l3: currentL3,
+                    num: currentNum,
+                    reg: currentReg,
+                    country: currentCountry || 'RUS',
+                    hasLet: Boolean(boardHasLetters),
+                    hasNum: Boolean(boardHasNumbers),
+                    spunLet: Boolean(hasSpunLetSinceSave),
+                    spunNum: Boolean(hasSpunNumSinceSave)
+                },
                 raceRecords: (typeof getRaceRecords === 'function' ? getRaceRecords() : null),
                 updatedAt: Date.now()
             };
@@ -1891,6 +1903,34 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     dailyQuests = d.dailyQuests || { date: null, progress: { spins: 0, distance: 0, tune: 0 }, claimed: {} };
                     achievements = d.achievements || {};
                     pityCounterBoth = typeof d.pityCounterBoth === 'number' ? d.pityCounterBoth : 0;
+                    if (d.generatorBoard && typeof d.generatorBoard === 'object') {
+                        const gb = d.generatorBoard;
+                        if (typeof gb.country === 'string' && COUNTRY_CONFIGS && COUNTRY_CONFIGS[gb.country]) {
+                            currentCountry = gb.country;
+                        }
+                        if (typeof gb.l1 === 'string') currentL1 = gb.l1;
+                        if (typeof gb.l2 === 'string') currentL2 = gb.l2;
+                        if (typeof gb.l3 === 'string') currentL3 = gb.l3;
+                        if (typeof gb.num === 'string') currentNum = gb.num;
+                        if (typeof gb.reg === 'string') currentReg = gb.reg;
+                        if (typeof gb.hasLet === 'boolean') boardHasLetters = gb.hasLet;
+                        if (typeof gb.hasNum === 'boolean') boardHasNumbers = gb.hasNum;
+                        if (typeof gb.spunLet === 'boolean') hasSpunLetSinceSave = gb.spunLet;
+                        if (typeof gb.spunNum === 'boolean') hasSpunNumSinceSave = gb.spunNum;
+                        if (typeof syncPlateCountryDOM === 'function') syncPlateCountryDOM();
+                        if (typeof setCellChar === 'function') {
+                            setCellChar('l1', currentL1);
+                            setCellChar('n1', currentNum[0] || '-');
+                            setCellChar('n2', currentNum[1] || '-');
+                            setCellChar('n3', currentNum[2] || '-');
+                            setCellChar('l2', currentL2);
+                            setCellChar('l3', currentL3);
+                        }
+                        const regEl = document.getElementById('reg-code');
+                        if (regEl) regEl.innerText = currentReg;
+                        if (typeof syncPlateBoxCellsLayout === 'function') syncPlateBoxCellsLayout();
+                        if (typeof checkCanSaveButton === 'function') checkCanSaveButton();
+                    }
                     if (d.raceRecords && typeof setRaceRecords === 'function') {
                         setRaceRecords(d.raceRecords);
                     }
@@ -1977,9 +2017,6 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     const hasValidBal = Number.isFinite(srvBal);
                     const newBal = hasValidBal ? Math.max(0, Math.floor(srvBal)) : prevBal;
 
-                    if (hasValidBal) {
-                        onlineProfile.balance = newBal;
-                    }
                     if (data.avatarData && data.avatarData !== avatarData) {
                         avatarData = data.avatarData;
                         onlineProfile.avatarData = data.avatarData;
@@ -1997,10 +2034,12 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
                     renderOnlineAccount();
 
-                    // Never credit funds during active spins or when the roll is in flight
+                    // Never credit funds or overwrite onlineProfile.balance during active spins or when the roll is in flight
                     if (isSpinning || serverSpinBusy) return;
 
                     if (!hasValidBal) return;
+
+                    onlineProfile.balance = newBal;
 
                     if (newBal > prevBal && prevBal > 0) {
                         const diff = newBal - prevBal;
@@ -2253,7 +2292,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             avatarData = AVATAR_PRESETS[0];
             inventory = [];
             myCars = [{name:'ВАЗ-2107 «Жигули»',basePrice:80000,category:'Седан',
-                img:'https://thumb.wikimedia.org/wikipedia/commons/thumb/d/d4/Lada_2107_front_20080116.jpg/800px-Lada_2107_front_20080116.jpg',
+                img:DEFAULT_CAR_IMG,
                 plate:null,condition:100,upgrades:{engine:0,handling:0,economy:0,nitro:0}}];
             saveProgress(); updateBalance(); updateExpUI(); renderInventory(); renderCars();
         }
@@ -2261,6 +2300,10 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             if (!profile || typeof profile.nickname !== 'string') throw Error('Сервер вернул некорректный профиль');
             const saved = localStore.json('nomera_player_account', null);
             const same = saved && sanitizeKey(saved.nickname) === sanitizeKey(profile.nickname);
+            const isSwitchingOnlineAccounts = !same && Boolean(
+                (onlineProfile && onlineProfile.nickname && sanitizeKey(onlineProfile.nickname) !== sanitizeKey(profile.nickname)) ||
+                (saved && saved.nickname && !String(saved.nickname).startsWith('Гость') && !String(saved.nickname).startsWith('Игрок_'))
+            );
             if (reset) {
                 resetLocalGameFor(profile.nickname);
             } else if (!same) {
@@ -2272,7 +2315,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 playerExp = Number.isFinite(Number(profile.playerExp)) && Number(profile.playerExp) >= 0 ? Number(profile.playerExp) : 0;
                 inventory = Array.isArray(profile.inventory) ? [...profile.inventory] : [];
                 const serverCars = Array.isArray(profile.myCars) && profile.myCars.length > 0 ? [...profile.myCars] : [];
-                const localCars = Array.isArray(myCars) ? [...myCars] : [];
+                const localCars = (!isSwitchingOnlineAccounts && Array.isArray(myCars)) ? [...myCars] : [];
                 if (serverCars.length > 0) {
                     const serverCarNames = new Set(serverCars.map(c => c && c.name));
                     const extraLocal = localCars.filter(lc => lc && !serverCarNames.has(lc.name));
@@ -2281,7 +2324,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     myCars = localCars;
                 } else {
                     myCars = [{name:'ВАЗ-2107 «Жигули»',basePrice:80000,category:'Седан',
-                        img:'https://thumb.wikimedia.org/wikipedia/commons/thumb/d/d4/Lada_2107_front_20080116.jpg/800px-Lada_2107_front_20080116.jpg',
+                        img:DEFAULT_CAR_IMG,
                         plate:null,condition:100,upgrades:{engine:0,handling:0,economy:0,nitro:0}}];
                 }
                 localStore.set('nomera_player_account', JSON.stringify({nickname: profile.nickname, balance, playerLevel, playerExp}));
@@ -2350,7 +2393,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     name: "ВАЗ-2107 «Жигули»",
                     basePrice: 80000,
                     category: "Седан",
-                    img: "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/d4/Lada_2107_front_20080116.jpg/800px-Lada_2107_front_20080116.jpg",
+                    img: DEFAULT_CAR_IMG,
                     plate: null,
                     condition: 100,
                     upgrades: { engine: 0, handling: 0, economy: 0, nitro: 0 }
@@ -4192,130 +4235,143 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             }catch(e){notifyUser('Не удалось выставить номер: '+e.message,'error');}
             finally{sellPlateBusy=false;}
         }
+        let marketActionBusy = false;
         async function buyMarketLot(lotId) {
+            if (marketActionBusy) return;
             const lot = marketLots[lotId];
             if (!lot) return notifyUser('Лот недоступен', 'error');
-            const itemName = lot.type === 'car' ? `автомобиль «${lot.car?.name}»` : `номер «${lot.plate?.text}»`;
-            if (!(await confirmAction(`Купить ${itemName} за ${lot.price.toLocaleString('ru-RU')} ₽?`))) return;
-            const curBal = (onlineProfile && Number.isFinite(Number(onlineProfile.balance))) ? Math.max(balance, Number(onlineProfile.balance)) : balance;
-            if (curBal < lot.price) return notifyUser('Недостаточно средств', 'error');
+            marketActionBusy = true;
+            try {
+                const itemName = lot.type === 'car' ? `автомобиль «${lot.car?.name}»` : `номер «${lot.plate?.text}»`;
+                if (!(await confirmAction(`Купить ${itemName} за ${lot.price.toLocaleString('ru-RU')} ₽?`))) return;
+                const curBal = (onlineProfile && Number.isFinite(Number(onlineProfile.balance))) ? Math.max(balance, Number(onlineProfile.balance)) : balance;
+                if (curBal < lot.price) return notifyUser('Недостаточно средств', 'error');
 
-            if (onlineProfile) {
-                try {
-                    const data = await onlineRequest('buy', { lotId });
-                    setOnlineProfile(data.profile, true);
-                    await refreshOnlinePublic();
-                    notifyUser(lot.type === 'car' ? `✅ Автомобиль «${lot.car?.name}» успешно приобретён!` : '✅ Покупка подтверждена сервером', 'success');
-                    playCashSound();
-                    return;
-                } catch (e) {
-                    notifyUser(e.message, 'error');
-                    return;
-                }
-            }
-
-            if (lot.type === 'car') {
-                deductPlayerBalance(lot.price, `Покупка автомобиля ${lot.car?.name || ''}`);
-                myCars.push(lot.car);
                 if (onlineProfile) {
-                    onlineProfile.myCars = JSON.parse(JSON.stringify(myCars));
-                }
-                if (db) {
-                    db.ref('onlineV4/market/' + lotId).remove().catch(() => {});
-                    if (lot.sellerKey) {
-                        db.ref('onlineV4/accounts/' + lot.sellerKey + '/balance').transaction(cur => {
-                            return (Number(cur) || 0) + lot.price;
-                        }).catch(() => {});
-                        db.ref('users/' + lot.sellerKey + '/balance').transaction(cur => {
-                            return (Number(cur) || 0) + lot.price;
-                        }).catch(() => {});
-                        db.ref('leaderboard/' + lot.sellerKey + '/balance').transaction(cur => {
-                            return (Number(cur) || 0) + lot.price;
-                        }).catch(() => {});
-                    }
-                    if (onlineProfile) {
-                        const buyerKey = sanitizeKey(onlineProfile.nickname);
-                        const now = Date.now();
-                        db.ref('onlineV4/accounts/' + buyerKey).update({
-                            myCars: onlineProfile.myCars,
-                            balance: onlineProfile.balance,
-                            updatedAt: now
-                        }).catch(() => {});
-                        db.ref('users/' + buyerKey).update({
-                            myCars: onlineProfile.myCars,
-                            balance: onlineProfile.balance,
-                            updatedAt: now
-                        }).catch(() => {});
-                        db.ref('leaderboard/' + buyerKey).update({
-                            carsCount: myCars.length,
-                            balance: onlineProfile.balance,
-                            updatedAt: now
-                        }).catch(() => {});
+                    try {
+                        const data = await onlineRequest('buy', { lotId });
+                        setOnlineProfile(data.profile, true);
+                        await refreshOnlinePublic();
+                        notifyUser(lot.type === 'car' ? `✅ Автомобиль «${lot.car?.name}» успешно приобретён!` : '✅ Покупка подтверждена сервером', 'success');
+                        playCashSound();
+                        return;
+                    } catch (e) {
+                        notifyUser(e.message, 'error');
+                        return;
                     }
                 }
-                delete marketLots[lotId];
-                playCashSound();
-                renderCars();
-                saveProgress();
-                if (typeof syncCloudGarage === 'function') syncCloudGarage(true);
-                renderMarketListings();
-                notifyUser(`✅ Автомобиль «${lot.car?.name}» успешно приобретён!`, 'success');
-                return;
-            }
 
-            if (!ensureOnlineAccess()) return;
+                if (lot.type === 'car') {
+                    deductPlayerBalance(lot.price, `Покупка автомобиля ${lot.car?.name || ''}`);
+                    myCars.push(lot.car);
+                    if (onlineProfile) {
+                        onlineProfile.myCars = JSON.parse(JSON.stringify(myCars));
+                    }
+                    if (db) {
+                        db.ref('onlineV4/market/' + lotId).remove().catch(() => {});
+                        if (lot.sellerKey) {
+                            db.ref('onlineV4/accounts/' + lot.sellerKey + '/balance').transaction(cur => {
+                                return (Number(cur) || 0) + lot.price;
+                            }).catch(() => {});
+                            db.ref('users/' + lot.sellerKey + '/balance').transaction(cur => {
+                                return (Number(cur) || 0) + lot.price;
+                            }).catch(() => {});
+                            db.ref('leaderboard/' + lot.sellerKey + '/balance').transaction(cur => {
+                                return (Number(cur) || 0) + lot.price;
+                            }).catch(() => {});
+                        }
+                        if (onlineProfile) {
+                            const buyerKey = sanitizeKey(onlineProfile.nickname);
+                            const now = Date.now();
+                            db.ref('onlineV4/accounts/' + buyerKey).update({
+                                myCars: onlineProfile.myCars,
+                                balance: onlineProfile.balance,
+                                updatedAt: now
+                            }).catch(() => {});
+                            db.ref('users/' + buyerKey).update({
+                                myCars: onlineProfile.myCars,
+                                balance: onlineProfile.balance,
+                                updatedAt: now
+                            }).catch(() => {});
+                            db.ref('leaderboard/' + buyerKey).update({
+                                carsCount: myCars.length,
+                                balance: onlineProfile.balance,
+                                updatedAt: now
+                            }).catch(() => {});
+                        }
+                    }
+                    delete marketLots[lotId];
+                    playCashSound();
+                    renderCars();
+                    saveProgress();
+                    if (typeof syncCloudGarage === 'function') syncCloudGarage(true);
+                    renderMarketListings();
+                    notifyUser(`✅ Автомобиль «${lot.car?.name}» успешно приобретён!`, 'success');
+                    return;
+                }
+
+                if (!ensureOnlineAccess()) return;
+            } finally {
+                marketActionBusy = false;
+            }
         }
         async function cancelMarketLot(lotId) {
+            if (marketActionBusy) return;
             const lot = marketLots[lotId];
-            if (!(await confirmAction('Снять лот с продажи?'))) return;
+            marketActionBusy = true;
+            try {
+                if (!(await confirmAction('Снять лот с продажи?'))) return;
 
-            if (onlineProfile) {
-                try {
-                    const data = await onlineRequest('cancel', { lotId });
-                    setOnlineProfile(data.profile, true);
-                    await refreshOnlinePublic();
-                    notifyUser(lot?.type === 'car' ? '✅ Автомобиль возвращён в ваш гараж' : '✅ Лот снят, номер возвращён в онлайн-инвентарь');
-                    return;
-                } catch (e) {
-                    notifyUser(e.message, 'error');
-                    return;
-                }
-            }
-
-            if (lot && lot.type === 'car') {
-                myCars.push(lot.car);
                 if (onlineProfile) {
-                    onlineProfile.myCars = JSON.parse(JSON.stringify(myCars));
-                }
-                if (db) {
-                    db.ref('onlineV4/market/' + lotId).remove().catch(() => {});
-                    if (onlineProfile) {
-                        const sellerKey = sanitizeKey(onlineProfile.nickname);
-                        const now = Date.now();
-                        db.ref('onlineV4/accounts/' + sellerKey).update({
-                            myCars: onlineProfile.myCars,
-                            updatedAt: now
-                        }).catch(() => {});
-                        db.ref('users/' + sellerKey).update({
-                            myCars: onlineProfile.myCars,
-                            updatedAt: now
-                        }).catch(() => {});
-                        db.ref('leaderboard/' + sellerKey).update({
-                            carsCount: myCars.length,
-                            updatedAt: now
-                        }).catch(() => {});
+                    try {
+                        const data = await onlineRequest('cancel', { lotId });
+                        setOnlineProfile(data.profile, true);
+                        await refreshOnlinePublic();
+                        notifyUser(lot?.type === 'car' ? '✅ Автомобиль возвращён в ваш гараж' : '✅ Лот снят, номер возвращён в онлайн-инвентарь');
+                        return;
+                    } catch (e) {
+                        notifyUser(e.message, 'error');
+                        return;
                     }
                 }
-                delete marketLots[lotId];
-                renderCars();
-                saveProgress();
-                if (typeof syncCloudGarage === 'function') syncCloudGarage(true);
-                renderMarketListings();
-                notifyUser('✅ Автомобиль возвращён в ваш гараж');
-                return;
-            }
 
-            if (!ensureOnlineAccess()) return;
+                if (lot && lot.type === 'car') {
+                    myCars.push(lot.car);
+                    if (onlineProfile) {
+                        onlineProfile.myCars = JSON.parse(JSON.stringify(myCars));
+                    }
+                    if (db) {
+                        db.ref('onlineV4/market/' + lotId).remove().catch(() => {});
+                        if (onlineProfile) {
+                            const sellerKey = sanitizeKey(onlineProfile.nickname);
+                            const now = Date.now();
+                            db.ref('onlineV4/accounts/' + sellerKey).update({
+                                myCars: onlineProfile.myCars,
+                                updatedAt: now
+                            }).catch(() => {});
+                            db.ref('users/' + sellerKey).update({
+                                myCars: onlineProfile.myCars,
+                                updatedAt: now
+                            }).catch(() => {});
+                            db.ref('leaderboard/' + sellerKey).update({
+                                carsCount: myCars.length,
+                                updatedAt: now
+                            }).catch(() => {});
+                        }
+                    }
+                    delete marketLots[lotId];
+                    renderCars();
+                    saveProgress();
+                    if (typeof syncCloudGarage === 'function') syncCloudGarage(true);
+                    renderMarketListings();
+                    notifyUser('✅ Автомобиль возвращён в ваш гараж');
+                    return;
+                }
+
+                if (!ensureOnlineAccess()) return;
+            } finally {
+                marketActionBusy = false;
+            }
         }
         async function fetchMarketListings() {
             try { await refreshOnlinePublic(); notifyUser('Рынок обновлён'); }
@@ -4388,6 +4444,10 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     const car = lot.car;
                     const plateHtml = car.plate ? `<div class="mini-plate ${getMiniPlateCountryClass(car.plate.text)}" style="font-size:13px; padding:3px 8px; margin-top:4px;">${renderMiniPlateInnerHtml(car.plate.text)}</div>` : '<small style="color:var(--text-dim);">Без номера</small>';
                     const stylingBadge = car.styling?.neon && car.styling.neon !== 'none' ? `<span style="font-size:9px; color:${car.styling.neon}; font-weight:800; margin-left:4px;">💡 НЕОН</span>` : '';
+                    const thumb3d = (typeof Car3DManager !== 'undefined' && typeof Car3DManager.getSideThumbnail === 'function')
+                        ? Car3DManager.getSideThumbnail(car.name, car.styling)
+                        : null;
+                    const carThumbSrc = thumb3d || getCarSpriteDataUrl(car.name, car.styling);
 
                     html += `
                         <div class="market-card">
@@ -4403,7 +4463,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                             <div style="text-align:center; margin:6px 0;">
                                 <div style="font-size:15px; font-weight:800; color:#fff;">🏎️ ${escapeHtml(car.name)} ${stylingBadge}</div>
                                 <div class="car-img-wrap" style="height: 110px; border-radius: var(--radius-sm); margin: 6px 0;">
-                                    <img src="${getCarSpriteDataUrl(car.name, car.styling)}" class="car-img car-sprite-img" alt="${escapeHtml(car.name)}">
+                                    <img src="${carThumbSrc}" class="car-img car-sprite-img" alt="${escapeHtml(car.name)}">
                                 </div>
                                 ${plateHtml}
                                 <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">Состояние: ${Math.round(car.condition || 100)}%</div>
@@ -4417,7 +4477,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                             <div>
                                 ${isMine
                                     ? `<button class="btn btn-close" style="width:100%; padding:8px; font-size:12px;" onclick="cancelMarketLot(${jsArg(lot.lotId)})">Снять авто с продажи</button>`
-                                    : `<button class="btn btn-green" style="width:100%; padding:9px; font-size:13px;" onclick="buyMarketLot(${jsArg(lot.lotId)})">🛒 Купить авто за ${lot.price.toLocaleString('ru-RU')} ₽</button>`
+                                    : `<button class="btn btn-green" style="width:100%; padding:9px; font-size:13px;" onclick="buyMarketLot(${jsArg(lot.lotId)})">🛒 Купить авто</button>`
                                 }
                             </div>
                         </div>
@@ -4449,7 +4509,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                             <div>
                                 ${isMine
                                     ? `<button class="btn btn-close" style="width:100%; padding:8px; font-size:12px;" onclick="cancelMarketLot(${jsArg(lot.lotId)})">Снять с продажи</button>`
-                                    : `<button class="btn btn-green" style="width:100%; padding:9px; font-size:13px;" onclick="buyMarketLot(${jsArg(lot.lotId)})">🛒 Купить за ${lot.price.toLocaleString('ru-RU')} ₽</button>`
+                                    : `<button class="btn btn-green" style="width:100%; padding:9px; font-size:13px;" onclick="buyMarketLot(${jsArg(lot.lotId)})">🛒 Купить номер</button>`
                                 }
                             </div>
                         </div>
@@ -7127,7 +7187,10 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 jpn_box: '🇯🇵',
                 uae_box: '🇦🇪',
                 special_box: '☭',
-                car_box: '🏎️'
+                car_box: '🏎️',
+                car_standard: '🚗',
+                car_luxury: '🏎️',
+                car_hyper: '🚀'
             };
             return map[type] || '📦';
         }
@@ -7536,8 +7599,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         }
         window.quickOpenCase = quickOpenCase;
 
-        function openCaseAgain(count = lastOpenedCaseCount || 1) {
+        function openCaseAgain(count = lastOpenedCaseCount || 1, evt = null) {
             if (!activeCaseType || !caseConfigs[activeCaseType]) return;
+            if (isSpinning && evt && evt.detail > 1) return;
             clearCaseAnimationTimers();
             activeSingleRevealCallback = null;
             isSpinning = false;
@@ -7646,6 +7710,10 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         function sellSingleBatchDrop(idx) {
             const item = batchCaseResults[idx];
             if (!item || item._sold) return;
+            if (item.isCar && myCars.length <= 1) {
+                notifyUser('В гараже должен остаться хотя бы один автомобиль!', 'warn');
+                return;
+            }
             item._sold = true;
             const sellPrice = item.isCar ? Math.floor((Number(item.price) || 0) * 0.9) : (Number(item.price) || 0);
             if (item.isCar) {
@@ -7672,9 +7740,14 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             if (!Array.isArray(batchCaseResults) || batchCaseResults.length === 0) return;
             let totalCredited = 0;
             let soldItemsCount = 0;
+            let skippedLastCar = false;
             batchCaseResults.forEach(item => {
                 if (!item || item._sold) return;
                 if (onlyDuplicates && !item._isDuplicate) return;
+                if (item.isCar && myCars.length <= 1) {
+                    skippedLastCar = true;
+                    return;
+                }
                 item._sold = true;
                 soldItemsCount++;
                 const sellPrice = item.isCar ? Math.floor((Number(item.price) || 0) * 0.9) : (Number(item.price) || 0);
@@ -7688,7 +7761,11 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 }
             });
             if (soldItemsCount === 0) {
-                notifyUser(onlyDuplicates ? 'Дубликатов для продажи нет' : 'Все предметы уже проданы', 'info');
+                if (skippedLastCar) {
+                    notifyUser('В гараже должен остаться хотя бы один автомобиль!', 'warn');
+                } else {
+                    notifyUser(onlyDuplicates ? 'Дубликатов для продажи нет' : 'Все предметы уже проданы', 'info');
+                }
                 return;
             }
             creditPlayerBalance(totalCredited, `Продажа предметов из серии кейсов (${soldItemsCount} шт.)`);
@@ -8452,6 +8529,32 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             const rarityFilter = collectionFilterState.rarity || 'all';
             const catFilter = collectionFilterState.category || 'all';
 
+            const equippedByText = new Map();
+            if (Array.isArray(myCars)) {
+                for (let i = 0; i < myCars.length; i++) {
+                    const c = myCars[i];
+                    const t = c && c.plate ? String(c.plate.text || '').trim() : '';
+                    if (t && !equippedByText.has(t)) {
+                        equippedByText.set(t, { status: 'equipped', label: `🚗 ${c.name}`, carIndex: i, carName: c.name });
+                    }
+                }
+            }
+            const marketSet = new Set();
+            if (typeof activeMarketListings !== 'undefined' && Array.isArray(activeMarketListings)) {
+                for (let i = 0; i < activeMarketListings.length; i++) {
+                    const l = activeMarketListings[i];
+                    const t = l ? String(l.plateText || '').trim() : '';
+                    if (t) marketSet.add(t);
+                }
+            }
+            const fastUsageMeta = (plateText) => {
+                const norm = String(plateText || '').trim();
+                if (!norm) return { status: 'collection', label: 'В коллекции', carIndex: -1, carName: '' };
+                if (equippedByText.has(norm)) return equippedByText.get(norm);
+                if (marketSet.has(norm)) return { status: 'market', label: '🏪 На рынке', carIndex: -1, carName: '' };
+                return { status: 'collection', label: 'В коллекции', carIndex: -1, carName: '' };
+            };
+
             entries = entries.filter(({ item, fromGarageCarIdx }) => {
                 if (!item) return false;
                 if (q && !String(item.text || '').toLowerCase().includes(q)) return false;
@@ -8461,11 +8564,11 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 if (catFilter === 'fav' && !item.favorite) return false;
                 if (catFilter === 'duplicates' && (textFreq[String(item.text || '').trim()] || 0) <= 1) return false;
                 if (catFilter === 'equipped') {
-                    const usage = getPlateUsageMeta(item.text);
+                    const usage = fastUsageMeta(item.text);
                     if (fromGarageCarIdx === -1 && usage.status !== 'equipped') return false;
                 }
                 if (catFilter === 'market') {
-                    const usage = getPlateUsageMeta(item.text);
+                    const usage = fastUsageMeta(item.text);
                     if (usage.status !== 'market') return false;
                 }
                 return true;
@@ -8494,18 +8597,23 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             entries.forEach(({ item, index, fromGarageCarIdx }) => {
                 const price = Number(item.price) || 0;
                 const r = (item.rarity && item.rarity.text) ? item.rarity : getRarity(price);
-                const bucket = detectPlateRarityBucket(item);
-                const tierClass = bucket === 'legendary'
-                    ? (price >= 1000000 ? 'tier-mythic' : 'tier-legend')
-                    : bucket === 'epic'
-                        ? 'tier-epic'
-                        : bucket === 'rare'
-                            ? 'tier-rare'
-                            : 'tier-common';
+                const tierClass = price >= 3000000
+                    ? 'tier-mythic'
+                    : price >= 1000000
+                        ? 'tier-legend'
+                        : price >= 250000
+                            ? 'tier-epic'
+                            : price >= 80000
+                                ? 'tier-super'
+                                : price >= 18000
+                                    ? 'tier-rare'
+                                    : price >= 10000
+                                        ? 'tier-uncommon'
+                                        : 'tier-common';
 
                 const usage = fromGarageCarIdx !== -1
                     ? { status: 'equipped', label: `🚗 ${myCars[fromGarageCarIdx]?.name || 'В гараже'}`, carIndex: fromGarageCarIdx }
-                    : getPlateUsageMeta(item.text);
+                    : fastUsageMeta(item.text);
 
                 const statusBadgeClass = usage.status === 'equipped'
                     ? 'status-garage'
@@ -8520,8 +8628,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 const clickAttr = index >= 0 ? `onclick="openPlateDetailModal(${index})"` : '';
                 const actionBtnHtml = index >= 0
                     ? `<div style="display:flex; gap:6px; margin-top:4px;" onclick="event.stopPropagation()">
-                            <button type="button" class="case-open-btn" style="flex:1; padding:7px 8px;" onclick="openPlateDetailModal(${index})">🔍 Действия</button>
-                            <button type="button" class="btn btn-close" style="flex:1; margin:0; padding:7px 8px; font-size:11.5px;" onclick="sellPlate(${index})">💰 ${price.toLocaleString('ru-RU')} ₽</button>
+                            <button type="button" class="case-open-btn" style="flex:1; padding:7px 8px;" onclick="openPlateDetailModal(${index})">🔍 Управление</button>
                        </div>`
                     : `<button type="button" class="case-open-btn" style="width:100%;" onclick="switchTab('garage')">🚗 Перейти в гараж</button>`;
 
@@ -9331,9 +9438,6 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             renderCars();
             renderInventory();
             saveProgress();
-            if (garage3DShowroom) {
-                selectGarageCarForPodium(activeGarageCarIndex);
-            }
             if (typeof syncCloudGarage === 'function') syncCloudGarage(true);
             notifyUser('Госномер успешно снят и возвращён в инвентарь!', 'success');
         }
@@ -9415,7 +9519,6 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             renderInventory();
             saveProgress();
             if (garage3DShowroom) {
-                selectGarageCarForPodium(activeGarageCarIndex);
                 setGarageViewMode('plate_front');
             }
             if (typeof syncCloudGarage === 'function') syncCloudGarage(true);
@@ -10980,9 +11083,6 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             playCashSound();
             renderCars();
             saveProgress();
-            if (garage3DShowroom) {
-                selectGarageCarForPodium(activeGarageCarIndex);
-            }
             if (typeof syncCloudGarage === 'function') syncCloudGarage(true);
             closeStylingModal();
             notifyUser(`Стайлинг применён! Списано ${cost.toLocaleString('ru-RU')} ₽.`, 'success');
@@ -12083,7 +12183,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     </div>
                     <button type="button" class="btn btn-dark" style="padding: 8px 14px; font-size: 12px; width: auto; margin: 0;" onclick="refreshVipOrders()">🔄 Сменить заказы (${nextRefreshCost})</button>
                 </div>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px;">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: 12px;">
                     ${cardsHtml}
                 </div>
             `;
@@ -12442,7 +12542,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                         </div>
                     </div>
 
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; align-items: start;">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: 14px; align-items: start;">
                         <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 16px; text-align: center;">
                             <span style="font-size: 10px; font-weight: 800; padding: 3px 10px; border-radius: 999px; background: rgba(245, 158, 11, 0.2); color: #fbbf24;">${escapeHtml(st.rarityText)} · ${escapeHtml(st.country)}</span>
                             <div style="margin: 14px auto; display: flex; justify-content: center;">
@@ -13899,7 +13999,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             }
         }
 
+        let sellCarBusy = false;
         async function confirmSellCar() {
+            if (sellCarBusy) return;
             if (myCars.length <= 1) {
                 notifyUser('Нельзя продать единственный автомобиль!', 'error');
                 return;
@@ -13914,68 +14016,73 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 return;
             }
 
-            if (onlineProfile) {
-                try {
-                    await syncCloudGarage(true);
-                    const res = await onlineRequest('sell', { type: 'car', carIndex: idx, car, price, lotId: 'lot_car_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8) });
-                    if (res.profile) setOnlineProfile(res.profile, true);
-                    else {
-                        myCars.splice(idx, 1);
-                        onlineProfile.myCars = JSON.parse(JSON.stringify(myCars));
-                        saveProgress();
-                        renderCars();
-                    }
-                    closeSellCarModal();
-                    await refreshOnlinePublic();
-                    notifyUser(`Автомобиль «${car.name}» выставлен на авторынок за ${price.toLocaleString('ru-RU')} ₽!`, 'success');
-                    return;
-                } catch (e) {
-                    notifyUser('Не удалось выставить авто: ' + e.message, 'error');
-                    return;
-                }
-            }
-
-            const lotId = 'lot_car_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
-            const lot = {
-                id: lotId,
-                lotId,
-                type: 'car',
-                seller: onlineProfile?.nickname || nickname,
-                sellerName: onlineProfile?.nickname || nickname,
-                sellerKey: sanitizeKey(onlineProfile?.nickname || nickname),
-                sellerAvatar: avatarData || DEFAULT_AVATAR,
-                car: JSON.parse(JSON.stringify(car)),
-                price,
-                createdAt: Date.now()
-            };
-
-            myCars.splice(idx, 1);
-            if (onlineProfile) {
-                onlineProfile.myCars = JSON.parse(JSON.stringify(myCars));
-            }
-            if (db) {
-                db.ref('onlineV4/market/' + lotId).set(lot).catch(() => {});
+            sellCarBusy = true;
+            try {
                 if (onlineProfile) {
-                    const sellerKey = sanitizeKey(onlineProfile.nickname);
-                    const now = Date.now();
-                    db.ref('onlineV4/accounts/' + sellerKey).update({
-                        myCars: onlineProfile.myCars,
-                        updatedAt: now
-                    }).catch(() => {});
-                    db.ref('leaderboard/' + sellerKey).update({
-                        carsCount: myCars.length,
-                        updatedAt: now
-                    }).catch(() => {});
+                    try {
+                        await syncCloudGarage(true);
+                        const res = await onlineRequest('sell', { type: 'car', carIndex: idx, car, price, lotId: 'lot_car_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8) });
+                        if (res.profile) setOnlineProfile(res.profile, true);
+                        else {
+                            myCars.splice(idx, 1);
+                            onlineProfile.myCars = JSON.parse(JSON.stringify(myCars));
+                            saveProgress();
+                            renderCars();
+                        }
+                        closeSellCarModal();
+                        await refreshOnlinePublic();
+                        notifyUser(`Автомобиль «${car.name}» выставлен на авторынок за ${price.toLocaleString('ru-RU')} ₽!`, 'success');
+                        return;
+                    } catch (e) {
+                        notifyUser('Не удалось выставить авто: ' + e.message, 'error');
+                        return;
+                    }
                 }
-            }
-            marketLots[lotId] = lot;
 
-            saveProgress();
-            renderCars();
-            if (typeof syncCloudGarage === 'function') syncCloudGarage(true);
-            closeSellCarModal();
-            fetchMarketListings();
-            notifyUser(`Автомобиль «${car.name}» выставлен на авторынок за ${price.toLocaleString('ru-RU')} ₽!`, 'success');
+                const lotId = 'lot_car_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+                const lot = {
+                    id: lotId,
+                    lotId,
+                    type: 'car',
+                    seller: onlineProfile?.nickname || nickname,
+                    sellerName: onlineProfile?.nickname || nickname,
+                    sellerKey: sanitizeKey(onlineProfile?.nickname || nickname),
+                    sellerAvatar: avatarData || DEFAULT_AVATAR,
+                    car: JSON.parse(JSON.stringify(car)),
+                    price,
+                    createdAt: Date.now()
+                };
+
+                myCars.splice(idx, 1);
+                if (onlineProfile) {
+                    onlineProfile.myCars = JSON.parse(JSON.stringify(myCars));
+                }
+                if (db) {
+                    db.ref('onlineV4/market/' + lotId).set(lot).catch(() => {});
+                    if (onlineProfile) {
+                        const sellerKey = sanitizeKey(onlineProfile.nickname);
+                        const now = Date.now();
+                        db.ref('onlineV4/accounts/' + sellerKey).update({
+                            myCars: onlineProfile.myCars,
+                            updatedAt: now
+                        }).catch(() => {});
+                        db.ref('leaderboard/' + sellerKey).update({
+                            carsCount: myCars.length,
+                            updatedAt: now
+                        }).catch(() => {});
+                    }
+                }
+                marketLots[lotId] = lot;
+
+                saveProgress();
+                renderCars();
+                if (typeof syncCloudGarage === 'function') syncCloudGarage(true);
+                closeSellCarModal();
+                fetchMarketListings();
+                notifyUser(`Автомобиль «${car.name}» выставлен на авторынок за ${price.toLocaleString('ru-RU')} ₽!`, 'success');
+            } finally {
+                sellCarBusy = false;
+            }
         }
 
         function filterMarketListings(filterType) {
@@ -15938,6 +16045,345 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     break;
                 }
 
+                case "Volkswagen Golf GTI": {
+                    const bt = getBodyTones(options.color || "#dc2626");
+                    drawShadow(20, 44);
+                    drawWheels(17.5, 22, "#e2e8f0", null, "#ef4444");
+                    fillRound(-8.5, -22.5, 17, 44, 3, bt.mid, bt.dark, 1);
+                    px(-7.5, -22, 15, 0.9, "#ef4444"); // Red GTI grille stripe
+                    drawHeadlights(-6.5, 6.5, -22, 3.4, 2.2, "#f8fafc");
+                    fillRound(-7.5, -19.5, 15, 9.5, 1.8, bt.light);
+                    drawMirrors(17.5, -9.5, bt.dark, "#38bdf8");
+                    drawGlass(-7.6, -9.5, 15.2, 6.2, "#0f172a", true);
+                    fillRound(-7.2, -3.3, 14.4, 15.5, 1.5, bt.mid);
+                    drawGlass(-7.4, 12.2, 14.8, 5.2, "#0f172a", false);
+                    fillRound(-7.6, 17.5, 15.2, 2.2, 0.8, bt.dark); // Hatch roof spoiler
+                    drawTaillights(-6.8, 6.8, 19.5, 3.6, 2.0, "#dc2626");
+                    break;
+                }
+
+                case "Hyundai Elantra N": {
+                    const bt = getBodyTones(options.color || "#38bdf8");
+                    drawShadow(20, 48);
+                    drawWheels(18, 24, "#1e293b", "#ef4444", "#ef4444");
+                    fillRound(-8.6, -24.5, 17.2, 47.5, 2.8, bt.mid, bt.dark, 1);
+                    px(-8.2, -24.3, 16.4, 1.2, "#ef4444"); // N red front splitter accent
+                    fillRound(-6.5, -24, 13, 2.4, 0.8, "#09090b");
+                    drawHeadlights(-6.8, 6.8, -23.8, 3.5, 2.0, "#e0f2fe");
+                    fillRound(-7.6, -21, 15.2, 10.5, 1.8, bt.light);
+                    drawMirrors(18, -10, "#09090b", "#38bdf8");
+                    drawGlass(-7.8, -10, 15.6, 6.4, "#0f172a", true);
+                    fillRound(-7.3, -3.6, 14.6, 13.5, 1.5, bt.mid);
+                    drawGlass(-7.5, 10, 15, 5.5, "#0f172a", true);
+                    fillRound(-8.2, 19.8, 16.4, 2.0, 0.6, "#09090b"); // Black N wing
+                    px(-8.2, 22.0, 16.4, 1.0, "#ef4444");
+                    drawTaillights(-7.2, 7.2, 21, 3.6, 1.8, "#ef4444");
+                    break;
+                }
+
+                case "Lexus IS300": {
+                    const bt = getBodyTones(options.color || "#eab308");
+                    drawShadow(20, 47);
+                    drawWheels(18, 24, "#cbd5e1", null, "#475569");
+                    fillRound(-8.5, -24, 17, 46.5, 2.8, bt.mid, bt.dark, 1);
+                    drawHeadlights(-6.5, 6.5, -23.6, 3.5, 2.2, "#fef9c3");
+                    fillRound(-7.5, -21, 15, 10.5, 1.8, bt.light);
+                    drawMirrors(18, -10, bt.dark, "#38bdf8");
+                    drawGlass(-7.6, -10, 15.2, 6.2, "#0f172a", true);
+                    fillRound(-7.2, -3.8, 14.4, 13.5, 1.5, bt.mid);
+                    drawGlass(-7.4, 9.8, 14.8, 5.4, "#0f172a", true);
+                    drawTaillights(-6.8, 6.8, 20.8, 3.6, 2.0, "#f8fafc"); // Altezza chrome-style tail lamps
+                    px(-7.4, 21.2, 2.2, 1.2, "#ef4444");
+                    px(5.2, 21.2, 2.2, 1.2, "#ef4444");
+                    break;
+                }
+
+                case "Mitsubishi Eclipse GT": {
+                    const bt = getBodyTones(options.color || "#a855f7");
+                    drawShadow(20, 46);
+                    drawWheels(18, 23, "#e2e8f0", null, "#3b82f6");
+                    fillRound(-8.8, -23.5, 17.6, 46, 4, bt.mid, bt.dark, 1);
+                    drawHeadlights(-6.8, 6.8, -23, 3.6, 2.4, "#f8fafc");
+                    fillRound(-7.6, -20.5, 15.2, 10.5, 2.5, bt.light);
+                    drawMirrors(18, -9.5, bt.dark, "#38bdf8");
+                    drawGlass(-7.8, -9.5, 15.6, 6.5, "#0f172a", true);
+                    fillRound(-7.2, -3, 14.4, 11.5, 2, bt.mid);
+                    drawGlass(-7.4, 8.5, 14.8, 6.8, "#0f172a", true);
+                    fillRound(-8.0, 18.5, 16, 2.4, 1, bt.dark);
+                    drawTaillights(-7.0, 7.0, 20.5, 3.8, 2.0, "#ef4444");
+                    break;
+                }
+
+                case "Mazda RX-8": {
+                    const bt = getBodyTones(options.color || "#ef4444");
+                    drawShadow(20, 46);
+                    drawWheels(18.2, 23, "#cbd5e1", null, "#f59e0b");
+                    fillRound(-8.8, -23.5, 17.6, 46, 3.5, bt.mid, bt.dark, 1);
+                    drawHeadlights(-6.8, 6.8, -23, 3.6, 2.2, "#e0f2fe");
+                    fillRound(-7.6, -20.5, 15.2, 10.5, 2.2, bt.light);
+                    fillPoly([[-2.5, -18], [2.5, -18], [0, -13]], bt.dark); // Rotary rotor hood bulge
+                    drawMirrors(18.2, -9.5, bt.dark, "#38bdf8");
+                    drawGlass(-7.8, -9.5, 15.6, 6.2, "#0f172a", true);
+                    fillRound(-7.2, -3.3, 14.4, 12.5, 1.8, bt.mid);
+                    drawGlass(-7.4, 9.2, 14.8, 5.8, "#0f172a", true);
+                    drawTaillights(-6.8, 6.8, 20.5, 3.6, 2.0, "#dc2626");
+                    break;
+                }
+
+                case "Mitsubishi Lancer Evo VIII": {
+                    const bt = getBodyTones(options.color || "#facc15");
+                    drawShadow(20, 47);
+                    drawWheels(18.2, 24, "#1e293b", null, "#dc2626");
+                    fillRound(-8.6, -24, 17.2, 47, 2.5, bt.mid, bt.dark, 1);
+                    drawHeadlights(-6.8, 6.8, -23.6, 3.6, 2.2, "#f8fafc");
+                    fillRound(-7.6, -21, 15.2, 10.5, 1.8, bt.light);
+                    fillRound(-4.2, -18.5, 8.4, 3.8, 0.8, "#09090b"); // Evo carbon hood vent
+                    drawMirrors(18, -10, bt.dark, "#38bdf8");
+                    drawGlass(-7.8, -10, 15.6, 6.2, "#0f172a", true);
+                    fillRound(-7.3, -3.8, 14.6, 13.5, 1.5, bt.mid);
+                    drawGlass(-7.5, 9.7, 15, 5.2, "#0f172a", true);
+                    fillRound(-8.4, 19.2, 16.8, 2.8, 0.6, "#09090b"); // High Evo carbon wing
+                    drawTaillights(-7.0, 7.0, 21.2, 3.6, 2.0, "#dc2626");
+                    break;
+                }
+
+                case "Porsche Cayman S": {
+                    const bt = getBodyTones(options.color || "#3b82f6");
+                    drawShadow(20, 45);
+                    drawWheels(18.5, 22.5, "#cbd5e1", null, "#ef4444");
+                    fillRound(-9, -23, 18, 45, 4.2, bt.mid, bt.dark, 1);
+                    drawHeadlights(-7.0, 7.0, -22.2, 3.2, 2.8, "#f8fafc");
+                    fillRound(-7.4, -19.5, 14.8, 9.5, 2.2, bt.light);
+                    drawMirrors(18.5, -9, bt.dark, "#38bdf8");
+                    drawGlass(-7.6, -9.5, 15.2, 6.0, "#0f172a", true);
+                    fillRound(-7.0, -3.5, 14, 10.5, 2, bt.mid);
+                    px(-8.8, 4, 1.4, 4.5, "#09090b"); // Mid-engine side intakes
+                    px(7.4, 4, 1.4, 4.5, "#09090b");
+                    drawGlass(-7.0, 7.0, 14, 7.2, "#0f172a", true);
+                    drawTaillights(-7.0, 7.0, 20.0, 3.8, 2.0, "#dc2626");
+                    break;
+                }
+
+                case "Mercedes-Benz CLK 500": {
+                    const bt = getBodyTones(options.color || "#94a3b8");
+                    drawShadow(20, 48);
+                    drawWheels(18.2, 24, "#e2e8f0", null, "#475569");
+                    fillRound(-8.6, -24.5, 17.2, 47.5, 3.2, bt.mid, bt.dark, 1);
+                    drawHeadlights(-6.8, 6.8, -24, 3.8, 2.4, "#e0f2fe");
+                    fillRound(-7.6, -21.5, 15.2, 11, 2, bt.light);
+                    drawMirrors(18.2, -10, bt.dark, "#38bdf8");
+                    drawGlass(-7.8, -10, 15.6, 6.4, "#0f172a", true);
+                    fillRound(-7.2, -3.6, 14.4, 13, 1.8, bt.mid);
+                    drawGlass(-7.4, 9.4, 14.8, 5.8, "#0f172a", true);
+                    drawTaillights(-7.0, 7.0, 21.2, 3.8, 2.0, "#dc2626");
+                    break;
+                }
+
+                case "Toyota Supra MK4": {
+                    const bt = getBodyTones(options.color || "#f97316");
+                    drawShadow(21, 47);
+                    drawWheels(18.6, 23.5, "#cbd5e1", null, "#ef4444");
+                    fillRound(-9.0, -24, 18, 46.5, 4, bt.mid, bt.dark, 1);
+                    drawHeadlights(-6.8, 6.8, -23.2, 3.8, 2.5, "#f8fafc");
+                    fillRound(-7.8, -20.5, 15.6, 11, 2.2, bt.light);
+                    fillRound(-3.5, -18, 7, 3.2, 0.8, "#09090b"); // Supra hood vent
+                    drawMirrors(18.6, -9, bt.dark, "#38bdf8");
+                    drawGlass(-7.8, -9, 15.6, 6.2, "#0f172a", true);
+                    fillRound(-7.2, -2.8, 14.4, 11, 2, bt.mid);
+                    drawGlass(-7.4, 8.2, 14.8, 6.5, "#0f172a", true);
+                    fillRound(-8.6, 18.8, 17.2, 3.0, 1.2, bt.dark); // Iconic high arch TRD wing
+                    drawTaillights(-7.0, 7.0, 20.8, 4.0, 2.0, "#dc2626");
+                    break;
+                }
+
+                case "BMW M3 G80 Competition": {
+                    const bt = getBodyTones(options.color || "#10b981");
+                    drawShadow(21, 48);
+                    drawWheels(18.6, 24.5, "#09090b", "#334155", "#eab308");
+                    fillRound(-8.8, -24.5, 17.6, 48, 3, bt.mid, bt.dark, 1);
+                    fillRound(-2.6, -24.5, 2.2, 2.8, 0.5, "#09090b"); // G80 vertical kidney grilles
+                    fillRound(0.4, -24.5, 2.2, 2.8, 0.5, "#09090b");
+                    drawHeadlights(-6.8, 6.8, -24, 3.6, 2.2, "#fef08a"); // Yellow CSL/Comp DRLs
+                    fillRound(-7.8, -21.5, 15.6, 11, 2, bt.light);
+                    px(-3.2, -19, 1.6, 5, bt.dark);
+                    px(1.6, -19, 1.6, 5, bt.dark);
+                    drawMirrors(18.6, -10, "#09090b", "#38bdf8");
+                    drawGlass(-8.0, -10, 16, 6.4, "#0f172a", true);
+                    fillRound(-7.4, -3.6, 14.8, 13.6, 1.5, "#09090b"); // Carbon roof
+                    drawGlass(-7.6, 10, 15.2, 5.5, "#0f172a", true);
+                    fillRound(-8.2, 20.8, 16.4, 1.8, 0.6, "#09090b"); // Carbon lip spoiler
+                    drawTaillights(-7.2, 7.2, 21.8, 3.8, 2.0, "#dc2626");
+                    break;
+                }
+
+                case "Chevrolet Corvette C6": {
+                    const bt = getBodyTones(options.color || "#dc2626");
+                    drawShadow(21, 47);
+                    drawWheels(19, 24, "#cbd5e1", null, "#dc2626");
+                    fillRound(-9.2, -24.5, 18.4, 47.5, 3.8, bt.mid, bt.dark, 1);
+                    drawHeadlights(-7.2, 7.2, -23.8, 3.8, 2.6, "#f8fafc");
+                    fillRound(-8.0, -21, 16, 12, 2.2, bt.light);
+                    px(-3.5, -19.5, 7, 1.2, "#09090b"); // Z06 nose scoop
+                    drawMirrors(19, -8.5, bt.dark, "#38bdf8");
+                    drawGlass(-8.0, -8.5, 16, 6.2, "#0f172a", true);
+                    fillRound(-7.4, -2.3, 14.8, 10, 1.8, bt.mid);
+                    drawGlass(-7.6, 7.7, 15.2, 8.2, "#0f172a", true);
+                    drawTaillights(-6.8, 6.8, 21.2, 4.2, 2.0, "#dc2626");
+                    break;
+                }
+
+                case "Dodge Viper SRT10": {
+                    const bt = getBodyTones(options.color || "#ef4444");
+                    drawShadow(22, 48);
+                    drawWheels(19.5, 24, "#e2e8f0", null, "#dc2626");
+                    fillRound(-9.5, -24.5, 19, 47.5, 4, bt.mid, bt.dark, 1);
+                    // Twin white racing stripes
+                    px(-3.2, -24.2, 2.4, 47, "#f8fafc");
+                    px(0.8, -24.2, 2.4, 47, "#f8fafc");
+                    drawHeadlights(-7.4, 7.4, -23.8, 3.8, 2.4, "#f8fafc");
+                    fillRound(-5, -18, 10, 4.5, 1, "#09090b"); // V10 hood scoop
+                    drawMirrors(19.5, -8, bt.dark, "#38bdf8");
+                    drawGlass(-8.0, -8, 16, 6.0, "#0f172a", true);
+                    drawGlass(-7.6, 8.0, 15.2, 7.0, "#0f172a", true);
+                    drawTaillights(-7.2, 7.2, 21.2, 4.0, 2.0, "#dc2626");
+                    break;
+                }
+
+                case "Aston Martin DB9": {
+                    const bt = getBodyTones(options.color || "#065f46");
+                    drawShadow(21, 48);
+                    drawWheels(18.8, 24.5, "#e2e8f0", null, "#10b981");
+                    fillRound(-9.0, -24.5, 18, 48, 3.8, bt.mid, bt.dark, 1);
+                    fillRound(-5.5, -24.3, 11, 1.8, 0.6, "#cbd5e1"); // Iconic Aston chrome grille
+                    drawHeadlights(-7.0, 7.0, -23.8, 3.6, 2.4, "#f8fafc");
+                    fillRound(-7.8, -21, 15.6, 11.5, 2.2, bt.light);
+                    drawMirrors(18.8, -9, bt.dark, "#38bdf8");
+                    drawGlass(-8.0, -9, 16, 6.2, "#0f172a", true);
+                    fillRound(-7.4, -2.8, 14.8, 11.5, 2, bt.mid);
+                    drawGlass(-7.6, 8.7, 15.2, 6.8, "#0f172a", true);
+                    drawTaillights(-7.0, 7.0, 21.5, 3.8, 2.0, "#dc2626");
+                    break;
+                }
+
+                case "BMW X5M Competition": {
+                    const bt = getBodyTones(options.color || "#1d4ed8");
+                    drawShadow(23, 50);
+                    drawWheels(20, 25, "#09090b", "#475569", "#3b82f6");
+                    fillRound(-9.8, -25, 19.6, 49.5, 3.2, bt.mid, bt.dark, 1.2);
+                    fillRound(-5.5, -24.8, 11, 2.2, 0.5, "#09090b");
+                    drawHeadlights(-7.6, 7.6, -24.5, 4.0, 2.4, "#e0f2fe");
+                    fillRound(-8.6, -21.8, 17.2, 10.5, 2, bt.light);
+                    drawMirrors(20, -10.5, "#09090b", "#38bdf8");
+                    drawGlass(-8.6, -10.8, 17.2, 6.8, "#0f172a", true);
+                    fillRound(-8.2, -4, 16.4, 18.5, 1.8, bt.mid);
+                    fillRound(-6.2, -2, 12.4, 11, 1.2, "#09090b"); // Panoramic roof
+                    drawGlass(-8.4, 14.5, 16.8, 5.2, "#0f172a", false);
+                    drawTaillights(-7.8, 7.8, 22.2, 4.2, 2.2, "#dc2626");
+                    break;
+                }
+
+                case "Audi RS7 Sportback": {
+                    const bt = getBodyTones(options.color || "#334155");
+                    drawShadow(21, 50);
+                    drawWheels(19.2, 25.5, "#1e293b", "#cbd5e1", "#ef4444");
+                    fillRound(-9.2, -25, 18.4, 49.5, 3.2, bt.mid, bt.dark, 1);
+                    fillRound(-5.8, -24.8, 11.6, 2.4, 0.6, "#09090b"); // Honeycomb Singleframe grille
+                    drawHeadlights(-7.2, 7.2, -24.2, 3.8, 2.2, "#e0f2fe");
+                    fillRound(-8.0, -21.5, 16, 11, 2, bt.light);
+                    drawMirrors(19.2, -10, "#94a3b8", "#38bdf8");
+                    drawGlass(-8.2, -10, 16.4, 6.5, "#0f172a", true);
+                    fillRound(-7.6, -3.5, 15.2, 13.5, 1.8, bt.mid);
+                    drawGlass(-7.8, 10, 15.6, 7.5, "#0f172a", true);
+                    px(-8.0, 22.5, 16, 1.5, "#ef4444"); // Full-width LED lightbar
+                    break;
+                }
+
+                case "Porsche Panamera Turbo": {
+                    const bt = getBodyTones(options.color || "#7c2d12");
+                    drawShadow(21, 50);
+                    drawWheels(19.2, 25.5, "#cbd5e1", null, "#eab308");
+                    fillRound(-9.2, -25, 18.4, 49.5, 3.8, bt.mid, bt.dark, 1);
+                    drawHeadlights(-7.2, 7.2, -24.0, 3.6, 2.8, "#f8fafc");
+                    fillRound(-8.0, -21, 16, 10.5, 2.2, bt.light);
+                    drawMirrors(19.2, -10, bt.dark, "#38bdf8");
+                    drawGlass(-8.2, -10, 16.4, 6.5, "#0f172a", true);
+                    fillRound(-7.6, -3.5, 15.2, 14, 2, bt.mid);
+                    drawGlass(-7.8, 10.5, 15.6, 7.0, "#0f172a", true);
+                    px(-8.0, 22.2, 16, 1.4, "#dc2626");
+                    break;
+                }
+
+                case "Maserati GranTurismo": {
+                    const bt = getBodyTones(options.color || "#1e3a8a");
+                    drawShadow(21, 48);
+                    drawWheels(19, 24.5, "#e2e8f0", null, "#3b82f6");
+                    fillRound(-9.0, -24.5, 18, 48.5, 3.8, bt.mid, bt.dark, 1);
+                    fillRound(-5.2, -24.4, 10.4, 2.2, 0.8, "#09090b"); // Maserati oval concave grille
+                    drawHeadlights(-7.0, 7.0, -23.8, 3.6, 2.6, "#f8fafc");
+                    fillRound(-7.8, -21, 15.6, 11.5, 2.2, bt.light);
+                    drawMirrors(19, -9, bt.dark, "#38bdf8");
+                    drawGlass(-8.0, -9, 16, 6.2, "#0f172a", true);
+                    fillRound(-7.4, -2.8, 14.8, 12, 2, bt.mid);
+                    drawGlass(-7.6, 9.2, 15.2, 6.5, "#0f172a", true);
+                    drawTaillights(-7.0, 7.0, 21.8, 3.8, 2.0, "#dc2626");
+                    break;
+                }
+
+                case "Lamborghini Gallardo": {
+                    const bt = getBodyTones(options.color || "#eab308");
+                    drawShadow(22, 46);
+                    drawWheels(19.5, 23, "#1e293b", "#cbd5e1", "#eab308");
+                    fillRound(-9.5, -23.5, 19, 46.5, 3.2, bt.mid, bt.dark, 1);
+                    drawHeadlights(-7.4, 7.4, -22.8, 3.4, 2.8, "#f8fafc");
+                    fillRound(-7.8, -19.5, 15.6, 8.5, 1.8, bt.light);
+                    drawMirrors(19.5, -10.5, bt.dark, "#38bdf8");
+                    drawGlass(-8.2, -10.5, 16.4, 6.8, "#0f172a", true);
+                    fillRound(-7.6, -3.7, 15.2, 10, 1.5, bt.mid);
+                    // Rear V10 engine louver vents
+                    fillRound(-6.0, 7.0, 12, 9.5, 1, "#09090b");
+                    for (let ly = 8; ly <= 15; ly += 2.2) px(-5.2, ly, 10.4, 0.8, "#334155");
+                    drawTaillights(-7.4, 7.4, 20.5, 4.0, 2.0, "#dc2626");
+                    break;
+                }
+
+                case "Audi Le Mans Quattro R8": {
+                    const bt = getBodyTones(options.color || "#64748b");
+                    drawShadow(22, 46);
+                    drawWheels(19.5, 23, "#cbd5e1", null, "#ef4444");
+                    fillRound(-9.5, -23.5, 19, 46.5, 3.8, bt.mid, bt.dark, 1);
+                    fillRound(-5.2, -23.4, 10.4, 2.0, 0.6, "#09090b");
+                    drawHeadlights(-7.4, 7.4, -22.8, 3.6, 2.2, "#e0f2fe");
+                    fillRound(-7.8, -19.8, 15.6, 9, 2, bt.light);
+                    drawMirrors(19.5, -10, "#09090b", "#38bdf8");
+                    drawGlass(-8.2, -10.2, 16.4, 6.5, "#0f172a", true);
+                    fillRound(-7.6, -3.7, 15.2, 10, 1.8, bt.mid);
+                    // Carbon sideblades
+                    px(-9.4, 1.5, 1.6, 7.5, "#09090b");
+                    px(7.8, 1.5, 1.6, 7.5, "#09090b");
+                    drawGlass(-6.2, 6.5, 12.4, 9.5, "#0f172a", true);
+                    drawTaillights(-7.4, 7.4, 20.5, 4.0, 2.0, "#dc2626");
+                    break;
+                }
+
+                case "Mercedes-Benz SLR McLaren": {
+                    const bt = getBodyTones(options.color || "#94a3b8");
+                    drawShadow(22, 48);
+                    drawWheels(19.5, 24.5, "#cbd5e1", "#334155", "#ef4444");
+                    fillRound(-9.4, -24.5, 18.8, 48, 3.8, bt.mid, bt.dark, 1);
+                    fillRound(-2.8, -24.5, 5.6, 4.5, 1.8, bt.light); // F1-inspired pointed nose cone
+                    drawHeadlights(-7.2, 7.2, -23.5, 3.8, 2.6, "#e0f2fe");
+                    fillRound(-8.0, -20.5, 16, 13, 2.2, bt.light);
+                    // Side gill vents & exhausts behind front wheels
+                    px(-9.2, -12, 1.8, 4.5, "#09090b");
+                    px(7.4, -12, 1.8, 4.5, "#09090b");
+                    drawMirrors(19.5, -7, bt.dark, "#38bdf8");
+                    drawGlass(-8.0, -7, 16, 6.0, "#0f172a", true);
+                    fillRound(-7.4, -1.0, 14.8, 10.5, 1.8, bt.mid);
+                    drawGlass(-7.6, 9.5, 15.2, 6.5, "#0f172a", true);
+                    drawTaillights(-7.2, 7.2, 21.2, 4.0, 2.0, "#dc2626");
+                    break;
+                }
+
                 default: {
                     const bt = getBodyTones("#3b82f6");
                     drawShadow(20, 48);
@@ -16608,6 +17054,186 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     fillPoly([[-1.5, -6], [1.5, -6], [0.8, -9], [-0.8, -9]], '#f97316');
                     if (options.tilt) ctx.restore();
                     return;
+                case "Volkswagen Golf GTI":
+                    cfg = {
+                        rWx: -23, fWx: 23, rearBumperX: -39, frontBumperX: 41,
+                        hoodFrontY: -3.5, hoodBackX: 15, hoodBackY: -4.8,
+                        roofFrontX: 5, roofRearX: -24, roofY: -13.6,
+                        rearGlassEndX: -37, trunkY: -4.2, chinDrop: 0.4, noseDrop: 0,
+                        bPillars: [-4], model: 'golf_gti', defaultColor: '#dc2626'
+                    };
+                    break;
+                case "Hyundai Elantra N":
+                    cfg = {
+                        rWx: -24, fWx: 24, rearBumperX: -43, frontBumperX: 43,
+                        hoodFrontY: -3.4, hoodBackX: 16, hoodBackY: -4.6,
+                        roofFrontX: 5, roofRearX: -16, roofY: -13.0,
+                        rearGlassEndX: -31, trunkY: -4.4, chinDrop: 0.6, noseDrop: 0,
+                        bPillars: [0], model: 'elantra_n', defaultColor: '#38bdf8'
+                    };
+                    break;
+                case "Lexus IS300":
+                    cfg = {
+                        rWx: -24, fWx: 24, rearBumperX: -42, frontBumperX: 42,
+                        hoodFrontY: -3.6, hoodBackX: 16, hoodBackY: -4.8,
+                        roofFrontX: 6, roofRearX: -16, roofY: -13.2,
+                        rearGlassEndX: -28, trunkY: -4.4, chinDrop: 0.4, noseDrop: 0,
+                        bPillars: [0], model: 'is300', defaultColor: '#eab308'
+                    };
+                    break;
+                case "Mitsubishi Eclipse GT":
+                    cfg = {
+                        rWx: -23, fWx: 23, rearBumperX: -41, frontBumperX: 42,
+                        hoodFrontY: -3.2, hoodBackX: 14, hoodBackY: -4.5,
+                        roofFrontX: 3, roofRearX: -15, roofY: -12.2,
+                        rearGlassEndX: -33, trunkY: -4.2, chinDrop: 0.5, noseDrop: 0,
+                        bPillars: [], model: 'eclipse_gt', defaultColor: '#a855f7'
+                    };
+                    break;
+                case "Mazda RX-8":
+                    cfg = {
+                        rWx: -24, fWx: 24, rearBumperX: -41, frontBumperX: 42,
+                        hoodFrontY: -3.2, hoodBackX: 15, hoodBackY: -4.5,
+                        roofFrontX: 4, roofRearX: -14, roofY: -12.4,
+                        rearGlassEndX: -29, trunkY: -4.2, chinDrop: 0.6, noseDrop: 0,
+                        bPillars: [-2], model: 'rx8', defaultColor: '#ef4444'
+                    };
+                    break;
+                case "Mitsubishi Lancer Evo VIII":
+                    cfg = {
+                        rWx: -24, fWx: 24, rearBumperX: -42, frontBumperX: 42,
+                        hoodFrontY: -3.8, hoodBackX: 16, hoodBackY: -4.8,
+                        roofFrontX: 6, roofRearX: -16, roofY: -13.4,
+                        rearGlassEndX: -28, trunkY: -4.5, chinDrop: 0.7, noseDrop: 0,
+                        bPillars: [0], model: 'evo8', defaultColor: '#facc15'
+                    };
+                    break;
+                case "Porsche Cayman S":
+                    cfg = {
+                        rWx: -23, fWx: 23, rearBumperX: -41, frontBumperX: 42,
+                        hoodFrontY: -3.0, hoodBackX: 13, hoodBackY: -4.3,
+                        roofFrontX: 3, roofRearX: -12, roofY: -11.6,
+                        rearGlassEndX: -32, trunkY: -3.6, chinDrop: 0.6, noseDrop: 0,
+                        bPillars: [], model: 'cayman_s', defaultColor: '#3b82f6'
+                    };
+                    break;
+                case "Mercedes-Benz CLK 500":
+                    cfg = {
+                        rWx: -24, fWx: 24, rearBumperX: -43, frontBumperX: 43,
+                        hoodFrontY: -3.8, hoodBackX: 16, hoodBackY: -4.8,
+                        roofFrontX: 5, roofRearX: -15, roofY: -12.8,
+                        rearGlassEndX: -30, trunkY: -4.4, chinDrop: 0.4, noseDrop: 0,
+                        bPillars: [], model: 'clk500', defaultColor: '#94a3b8'
+                    };
+                    break;
+                case "Toyota Supra MK4":
+                    cfg = {
+                        rWx: -24, fWx: 24, rearBumperX: -42, frontBumperX: 43,
+                        hoodFrontY: -3.4, hoodBackX: 16, hoodBackY: -4.6,
+                        roofFrontX: 4, roofRearX: -14, roofY: -12.0,
+                        rearGlassEndX: -31, trunkY: -4.2, chinDrop: 0.7, noseDrop: 0,
+                        bPillars: [], model: 'supra_mk4', defaultColor: '#f97316'
+                    };
+                    break;
+                case "BMW M3 G80 Competition":
+                    cfg = {
+                        rWx: -24, fWx: 25, rearBumperX: -43, frontBumperX: 43,
+                        hoodFrontY: -3.8, hoodBackX: 16, hoodBackY: -4.8,
+                        roofFrontX: 5, roofRearX: -16, roofY: -13.0,
+                        rearGlassEndX: -29, trunkY: -4.5, chinDrop: 0.7, noseDrop: 0,
+                        bPillars: [0], model: 'm3_g80', defaultColor: '#10b981'
+                    };
+                    break;
+                case "Chevrolet Corvette C6":
+                    cfg = {
+                        rWx: -24, fWx: 25, rearBumperX: -43, frontBumperX: 43,
+                        hoodFrontY: -3.0, hoodBackX: 15, hoodBackY: -4.3,
+                        roofFrontX: 3, roofRearX: -13, roofY: -11.4,
+                        rearGlassEndX: -32, trunkY: -3.8, chinDrop: 0.8, noseDrop: 0,
+                        bPillars: [], model: 'corvette_c6', defaultColor: '#dc2626'
+                    };
+                    break;
+                case "Dodge Viper SRT10":
+                    cfg = {
+                        rWx: -24, fWx: 25, rearBumperX: -43, frontBumperX: 44,
+                        hoodFrontY: -3.2, hoodBackX: 17, hoodBackY: -4.5,
+                        roofFrontX: 4, roofRearX: -13, roofY: -11.4,
+                        rearGlassEndX: -30, trunkY: -4.0, chinDrop: 0.8, noseDrop: 0,
+                        bPillars: [], model: 'viper_srt10', defaultColor: '#ef4444'
+                    };
+                    break;
+                case "Aston Martin DB9":
+                    cfg = {
+                        rWx: -24, fWx: 25, rearBumperX: -43, frontBumperX: 43,
+                        hoodFrontY: -3.4, hoodBackX: 16, hoodBackY: -4.6,
+                        roofFrontX: 4, roofRearX: -15, roofY: -12.0,
+                        rearGlassEndX: -32, trunkY: -4.0, chinDrop: 0.6, noseDrop: 0,
+                        bPillars: [], model: 'db9', defaultColor: '#065f46'
+                    };
+                    break;
+                case "BMW X5M Competition":
+                    cfg = {
+                        rWx: -25, fWx: 25, rearBumperX: -44, frontBumperX: 44,
+                        hoodFrontY: -6.2, hoodBackX: 17, hoodBackY: -7.2,
+                        roofFrontX: 7, roofRearX: -28, roofY: -16.8,
+                        rearGlassEndX: -41, trunkY: -6.5, chinDrop: 0.4, noseDrop: 0,
+                        bPillars: [0, -14], model: 'x5m', defaultColor: '#1d4ed8'
+                    };
+                    break;
+                case "Audi RS7 Sportback":
+                    cfg = {
+                        rWx: -25, fWx: 25, rearBumperX: -45, frontBumperX: 45,
+                        hoodFrontY: -3.6, hoodBackX: 16, hoodBackY: -4.8,
+                        roofFrontX: 5, roofRearX: -18, roofY: -12.6,
+                        rearGlassEndX: -38, trunkY: -4.0, chinDrop: 0.7, noseDrop: 0,
+                        bPillars: [0], model: 'rs7', defaultColor: '#334155'
+                    };
+                    break;
+                case "Porsche Panamera Turbo":
+                    cfg = {
+                        rWx: -25, fWx: 25, rearBumperX: -45, frontBumperX: 45,
+                        hoodFrontY: -3.4, hoodBackX: 15, hoodBackY: -4.6,
+                        roofFrontX: 4, roofRearX: -18, roofY: -12.5,
+                        rearGlassEndX: -39, trunkY: -3.8, chinDrop: 0.6, noseDrop: 0,
+                        bPillars: [0], model: 'panamera', defaultColor: '#7c2d12'
+                    };
+                    break;
+                case "Maserati GranTurismo":
+                    cfg = {
+                        rWx: -24, fWx: 25, rearBumperX: -44, frontBumperX: 44,
+                        hoodFrontY: -3.2, hoodBackX: 16, hoodBackY: -4.5,
+                        roofFrontX: 4, roofRearX: -15, roofY: -12.0,
+                        rearGlassEndX: -31, trunkY: -4.0, chinDrop: 0.7, noseDrop: 0,
+                        bPillars: [], model: 'granturismo', defaultColor: '#1e3a8a'
+                    };
+                    break;
+                case "Lamborghini Gallardo":
+                    cfg = {
+                        rWx: -24, fWx: 24, rearBumperX: -43, frontBumperX: 43,
+                        hoodFrontY: -2.6, hoodBackX: 11, hoodBackY: -4.2,
+                        roofFrontX: 1, roofRearX: -13, roofY: -11.0,
+                        rearGlassEndX: -33, trunkY: -3.2, chinDrop: 0.8, noseDrop: 0,
+                        bPillars: [], model: 'gallardo', defaultColor: '#eab308'
+                    };
+                    break;
+                case "Audi Le Mans Quattro R8":
+                    cfg = {
+                        rWx: -24, fWx: 24, rearBumperX: -43, frontBumperX: 43,
+                        hoodFrontY: -2.8, hoodBackX: 12, hoodBackY: -4.3,
+                        roofFrontX: 2, roofRearX: -13, roofY: -11.2,
+                        rearGlassEndX: -32, trunkY: -3.4, chinDrop: 0.8, noseDrop: 0,
+                        bPillars: [], model: 'audi_r8', defaultColor: '#64748b'
+                    };
+                    break;
+                case "Mercedes-Benz SLR McLaren":
+                    cfg = {
+                        rWx: -24, fWx: 25, rearBumperX: -43, frontBumperX: 45,
+                        hoodFrontY: -3.0, hoodBackX: 18, hoodBackY: -4.5,
+                        roofFrontX: 5, roofRearX: -14, roofY: -11.6,
+                        rearGlassEndX: -32, trunkY: -3.8, chinDrop: 0.8, noseDrop: 0,
+                        bPillars: [], model: 'slr_mclaren', defaultColor: '#94a3b8'
+                    };
+                    break;
                 default:
                     cfg = {
                         rWx: -24, fWx: 24, rearBumperX: -42, frontBumperX: 42,
@@ -17077,6 +17703,42 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 fillRound(34, hoodFrontY + bodyYOffset - 1, 4.5, 6, 1, '#18181b', '#09090b', 0.5);
                 px(35, hoodFrontY + bodyYOffset + 0.5, 3.0, 1.0, '#f8fafc');
                 px(28, sillY - 0.5, 6, 1.5, '#475569');
+            } else if (model === 'golf_gti') {
+                // Красная полоса GTI и козырек-спойлер хэтчбека
+                px(rWx + 9, sillY - 1.2, (fWx - rWx - 18), 1.0, '#ef4444');
+                fillPoly([[roofRearX, roofY + bodyYOffset], [roofRearX - 4.5, roofY + bodyYOffset - 0.8], [roofRearX - 3.5, roofY + bodyYOffset + 1.5]], bt.dark);
+            } else if (model === 'elantra_n') {
+                // Красная линия обвеса Hyundai N и черное антикрыло
+                px(rearBumperX + 2, sillY - 0.8, (frontBumperX - rearBumperX - 4), 1.1, '#ef4444');
+                fillPoly([[-36, trunkY + bodyYOffset], [-39, trunkY + bodyYOffset - 3.5], [-42, trunkY + bodyYOffset - 3.5], [-38, trunkY + bodyYOffset]], '#09090b');
+            } else if (model === 'evo8') {
+                // Воздухозаборник на капоте и высокое карбоновое антикрыло Lancer Evo VIII
+                fillRound(hoodBackX + 3, hoodBackY + bodyYOffset - 1.6, 5.0, 1.6, 0.5, '#09090b');
+                fillPoly([[-36, trunkY + bodyYOffset], [-37, trunkY + bodyYOffset - 5.2], [-41, trunkY + bodyYOffset - 5.2], [-39, trunkY + bodyYOffset]], '#09090b');
+            } else if (model === 'cayman_s' || model === 'gallardo') {
+                // Боковой воздухозаборник среднемоторного купе перед задней аркой
+                fillPoly([[-14, hoodBackY + bodyYOffset + 1.5], [-8, hoodBackY + bodyYOffset + 0.8], [-9, sillY - 2], [-15, sillY - 2]], '#09090b');
+            } else if (model === 'supra_mk4') {
+                // Фирменное высокое дугообразное антикрыло Supra MK4 TRD
+                fillPoly([[-34, trunkY + bodyYOffset], [-36, trunkY + bodyYOffset - 5.5], [-41, trunkY + bodyYOffset - 5.0], [-38, trunkY + bodyYOffset]], bt.mid);
+            } else if (model === 'm3_g80' || model === 'corvette_c6' || model === 'db9' || model === 'granturismo') {
+                // Боковые жабры за передним колесом
+                fillRound(fWx - 11.5, hoodBackY + bodyYOffset + 1.8, 3.2, 2.5, 0.5, '#09090b');
+            } else if (model === 'viper_srt10') {
+                // Боковой выхлоп Viper в пороге и глубокая жабра за передним колесом
+                fillRound(fWx - 12, hoodBackY + bodyYOffset + 1.5, 4.0, 3.2, 0.6, '#09090b');
+                fillRound(-10, sillY - 1.8, 4.2, 1.8, 0.6, '#cbd5e1', '#09090b', 0.5);
+            } else if (model === 'audi_r8') {
+                // Знаменитый карбоновый сайдблейд (Sideblade) Audi R8 за дверью
+                fillPoly([[-8, roofY + bodyYOffset + 1.2], [-2, roofY + bodyYOffset + 1.8], [-4, sillY - 1.5], [-11, sillY - 1.5]], '#09090b');
+            } else if (model === 'slr_mclaren') {
+                // Сдвоенные боковые выхлопные трубы и жабры SLR McLaren за передней аркой
+                fillRound(fWx - 12.5, hoodBackY + bodyYOffset + 1.2, 5.0, 2.8, 0.6, '#09090b');
+                fillRound(fWx - 11.5, sillY - 2.0, 3.6, 1.4, 0.4, '#e2e8f0');
+            } else if (model === 'x5m') {
+                // Массивный порог и жабра M Competition
+                fillRound(rWx + 9.5, sillY - 0.8, (fWx - rWx - 19), 2.0, 0.5, '#09090b');
+                fillRound(fWx - 11, hoodBackY + bodyYOffset + 2.0, 2.8, 3.0, 0.4, '#09090b');
             }
 
             // 9. Боковые стекла и тонировка
@@ -20156,7 +20818,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             isRaceRunning = true;
             window.isRaceRunning = true;
             updatePlayerPresence('🏎️ В заезде', `${selectedRaceCarName}`);
-            document.body.classList.add("race-active");
+            if (document.body && document.body.classList) document.body.classList.add("race-active");
             sound.start();
             updateRaceRadioHUD();
             if (raceRadioStation !== 'off') startRaceRadioAudio();
@@ -20177,7 +20839,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             }
             sound.stopEngine();
             if (typeof sound?.setSiren === 'function') sound.setSiren(false);
-            document.body.classList.remove("race-active");
+            if (document.body && document.body.classList) document.body.classList.remove("race-active");
             resetRaceKeys();
             isRaceRunning = false;
             window.isRaceRunning = false;
@@ -22401,73 +23063,128 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 ctx.restore();
             }
 
-            // 3. Дорожное полотно с изгибом (построчная отрисовка ломтиками по 6px)
+            // 3. Дорожное полотно с изгибом (с быстрым путём для прямого участка трассы)
             const sliceH = 6;
             const isTougeDrift = (raceCurrentMode === 'drift');
-            for (let y = 0; y < H; y += sliceH) {
-                const curX = getCurveX(y);
-                const lEdge = 50 + curX;
-                const rEdge = 350 + curX;
+            const isStraightRoad = (roadCurve === 0 && getCurveX(0) === 0);
 
-                // Обочины
+            if (isStraightRoad) {
+                const lEdge = 50;
+                const rEdge = 350;
+                // Пакетная заливка обочин, асфальта и сплошных краевых линий за один вызов на всю высоту
                 ctx.fillStyle = biome.border;
-                ctx.fillRect(0, y, Math.max(0, lEdge), sliceH);
-                ctx.fillRect(Math.min(W, rEdge), y, Math.max(0, W - rEdge), sliceH);
+                ctx.fillRect(0, 0, lEdge, H);
+                ctx.fillRect(rEdge, 0, Math.max(0, W - rEdge), H);
 
-                // Особенности обочин биома
-                if (biome.id === 'forest') {
-                    // Силуэты елей на обочинах
-                    if (y % 36 === 0) {
-                        ctx.fillStyle = "#062316";
-                        ctx.beginPath();
-                        ctx.moveTo(lEdge - 24, y); ctx.lineTo(lEdge - 8, y + 28); ctx.lineTo(lEdge - 40, y + 28); ctx.fill();
-                        ctx.beginPath();
-                        ctx.moveTo(rEdge + 24, y); ctx.lineTo(rEdge + 8, y + 28); ctx.lineTo(rEdge + 40, y + 28); ctx.fill();
-                    }
-                } else if (biome.id === 'bridge') {
-                    // Водная рябь на реке
-                    if ((y + raceRoadOffset * 2) % 40 < 8) {
-                        ctx.fillStyle = "rgba(56, 189, 248, 0.25)";
-                        ctx.fillRect(Math.max(0, lEdge - 38), y, 32, 2);
-                        ctx.fillRect(Math.min(W - 32, rEdge + 6), y, 32, 2);
-                    }
-                } else if (biome.id === 'neon') {
-                    // Предупреждающие шевроны на стенах туннеля
-                    if ((y + raceRoadOffset) % 50 < 18) {
-                        ctx.fillStyle = "rgba(236, 72, 153, 0.35)";
-                        ctx.fillRect(Math.max(0, lEdge - 28), y, 18, sliceH);
-                        ctx.fillRect(Math.min(W - 18, rEdge + 10), y, 18, sliceH);
-                    }
-                }
-
-                // Асфальт
                 ctx.fillStyle = biome.asphalt;
-                ctx.fillRect(lEdge, y, rEdge - lEdge, sliceH);
+                ctx.fillRect(lEdge, 0, rEdge - lEdge, H);
 
-                // Отбойники и поребрики (в режиме Дрифта — широкие Touge-поребрики красно-белые / жёлто-чёрные на виражах)
-                const isCurb1 = ((y + raceRoadOffset) % 32) < 16;
-                if (isTougeDrift && Math.abs(roadCurve) > 18) {
-                    ctx.fillStyle = isCurb1 ? '#ef4444' : '#f8fafc';
-                    ctx.fillRect(lEdge - 6, y, 6, sliceH);
-                    ctx.fillRect(rEdge, y, 6, sliceH);
-                } else {
+                ctx.fillStyle = isTougeDrift ? "#fbbf24" : "#f1f5f9";
+                ctx.fillRect(lEdge + 2, 0, 2.5, H);
+                ctx.fillRect(rEdge - 4.5, 0, 2.5, H);
+
+                for (let y = 0; y < H; y += sliceH) {
+                    if (biome.id === 'forest') {
+                        if (y % 36 === 0) {
+                            ctx.fillStyle = "#062316";
+                            ctx.beginPath();
+                            ctx.moveTo(lEdge - 24, y); ctx.lineTo(lEdge - 8, y + 28); ctx.lineTo(lEdge - 40, y + 28); ctx.fill();
+                            ctx.beginPath();
+                            ctx.moveTo(rEdge + 24, y); ctx.lineTo(rEdge + 8, y + 28); ctx.lineTo(rEdge + 40, y + 28); ctx.fill();
+                        }
+                    } else if (biome.id === 'bridge') {
+                        if ((y + raceRoadOffset * 2) % 40 < 8) {
+                            ctx.fillStyle = "rgba(56, 189, 248, 0.25)";
+                            ctx.fillRect(Math.max(0, lEdge - 38), y, 32, 2);
+                            ctx.fillRect(Math.min(W - 32, rEdge + 6), y, 32, 2);
+                        }
+                    } else if (biome.id === 'neon') {
+                        if ((y + raceRoadOffset) % 50 < 18) {
+                            ctx.fillStyle = "rgba(236, 72, 153, 0.35)";
+                            ctx.fillRect(Math.max(0, lEdge - 28), y, 18, sliceH);
+                            ctx.fillRect(Math.min(W - 18, rEdge + 10), y, 18, sliceH);
+                        }
+                    }
+
+                    const isCurb1 = ((y + raceRoadOffset) % 32) < 16;
                     ctx.fillStyle = isCurb1 ? biome.curb1 : biome.curb2;
                     ctx.fillRect(lEdge - 4, y, 4, sliceH);
                     ctx.fillRect(rEdge, y, 4, sliceH);
+
+                    const isDash = ((y + raceRoadOffset) % 40) < 22;
+                    if (isDash) {
+                        ctx.fillStyle = biome.lineCol;
+                        ctx.fillRect(lEdge + 75, y, 2.5, sliceH);
+                        ctx.fillRect(lEdge + 150, y, 2.5, sliceH);
+                        ctx.fillRect(lEdge + 225, y, 2.5, sliceH);
+                    }
                 }
+            } else {
+                for (let y = 0; y < H; y += sliceH) {
+                    const curX = getCurveX(y);
+                    const lEdge = 50 + curX;
+                    const rEdge = 350 + curX;
 
-                // Сплошные краевые линии (в режиме Touge — двойные жёлтые направляющие линии каньона)
-                ctx.fillStyle = isTougeDrift ? "#fbbf24" : "#f1f5f9";
-                ctx.fillRect(lEdge + 2, y, 2.5, sliceH);
-                ctx.fillRect(rEdge - 4.5, y, 2.5, sliceH);
+                    // Обочины
+                    ctx.fillStyle = biome.border;
+                    ctx.fillRect(0, y, Math.max(0, lEdge), sliceH);
+                    ctx.fillRect(Math.min(W, rEdge), y, Math.max(0, W - rEdge), sliceH);
 
-                // Прерывистые разделительные полосы (3 линии разметки)
-                const isDash = ((y + raceRoadOffset) % 40) < 22;
-                if (isDash) {
-                    ctx.fillStyle = biome.lineCol;
-                    ctx.fillRect(lEdge + 75, y, 2.5, sliceH);
-                    ctx.fillRect(lEdge + 150, y, 2.5, sliceH);
-                    ctx.fillRect(lEdge + 225, y, 2.5, sliceH);
+                    // Особенности обочин биома
+                    if (biome.id === 'forest') {
+                        // Силуэты елей на обочинах
+                        if (y % 36 === 0) {
+                            ctx.fillStyle = "#062316";
+                            ctx.beginPath();
+                            ctx.moveTo(lEdge - 24, y); ctx.lineTo(lEdge - 8, y + 28); ctx.lineTo(lEdge - 40, y + 28); ctx.fill();
+                            ctx.beginPath();
+                            ctx.moveTo(rEdge + 24, y); ctx.lineTo(rEdge + 8, y + 28); ctx.lineTo(rEdge + 40, y + 28); ctx.fill();
+                        }
+                    } else if (biome.id === 'bridge') {
+                        // Водная рябь на реке
+                        if ((y + raceRoadOffset * 2) % 40 < 8) {
+                            ctx.fillStyle = "rgba(56, 189, 248, 0.25)";
+                            ctx.fillRect(Math.max(0, lEdge - 38), y, 32, 2);
+                            ctx.fillRect(Math.min(W - 32, rEdge + 6), y, 32, 2);
+                        }
+                    } else if (biome.id === 'neon') {
+                        // Предупреждающие шевроны на стенах туннеля
+                        if ((y + raceRoadOffset) % 50 < 18) {
+                            ctx.fillStyle = "rgba(236, 72, 153, 0.35)";
+                            ctx.fillRect(Math.max(0, lEdge - 28), y, 18, sliceH);
+                            ctx.fillRect(Math.min(W - 18, rEdge + 10), y, 18, sliceH);
+                        }
+                    }
+
+                    // Асфальт
+                    ctx.fillStyle = biome.asphalt;
+                    ctx.fillRect(lEdge, y, rEdge - lEdge, sliceH);
+
+                    // Отбойники и поребрики (в режиме Дрифта — широкие Touge-поребрики красно-белые / жёлто-чёрные на виражах)
+                    const isCurb1 = ((y + raceRoadOffset) % 32) < 16;
+                    if (isTougeDrift && Math.abs(roadCurve) > 18) {
+                        ctx.fillStyle = isCurb1 ? '#ef4444' : '#f8fafc';
+                        ctx.fillRect(lEdge - 6, y, 6, sliceH);
+                        ctx.fillRect(rEdge, y, 6, sliceH);
+                    } else {
+                        ctx.fillStyle = isCurb1 ? biome.curb1 : biome.curb2;
+                        ctx.fillRect(lEdge - 4, y, 4, sliceH);
+                        ctx.fillRect(rEdge, y, 4, sliceH);
+                    }
+
+                    // Сплошные краевые линии (в режиме Touge — двойные жёлтые направляющие линии каньона)
+                    ctx.fillStyle = isTougeDrift ? "#fbbf24" : "#f1f5f9";
+                    ctx.fillRect(lEdge + 2, y, 2.5, sliceH);
+                    ctx.fillRect(rEdge - 4.5, y, 2.5, sliceH);
+
+                    // Прерывистые разделительные полосы (3 линии разметки)
+                    const isDash = ((y + raceRoadOffset) % 40) < 22;
+                    if (isDash) {
+                        ctx.fillStyle = biome.lineCol;
+                        ctx.fillRect(lEdge + 75, y, 2.5, sliceH);
+                        ctx.fillRect(lEdge + 150, y, 2.5, sliceH);
+                        ctx.fillRect(lEdge + 225, y, 2.5, sliceH);
+                    }
                 }
             }
 

@@ -4,8 +4,8 @@
  * Built on top of the clean-room `NomeraNfsPhysics` vehicle simulation core (`js/nfs-physics.js`).
  *
  * Features:
- * 1. Closed-loop Catmull-Rom track spline generator (`TRACK_PRESETS`: Rockport Industrial Ring,
- *    Carbon Canyon Pass, Bayview Harbor Sprint) with variable track width, apex curbs,
+ * 1. Closed-loop Catmull-Rom track spline generator (`TRACK_PRESETS`: Industrial Ring,
+ *    Canyon Pass, Harbor Sprint) with variable track width, apex curbs,
  *    chevron barriers, checkpoints, and physics-derived corner speed hints.
  * 2. Fast O(1) spatial track projection (`projectPointToTrack`) returning arc-length `s`,
  *    signed lateral offset, track tangent/normal vectors, surface type (`asphalt`, `curb`,
@@ -14,10 +14,10 @@
  *    rigid-body simulation, following racing-line offsets, braking for upcoming curvature,
  *    using Nitro on straights, and overtaking slower traffic/cars.
  * 4. Checkpoint validation, lap timing (`currentLap`, `totalLaps`, `bestLapTime`), live race
- *    standings (`position: 1..N`), wrong-way detection, and `Speedbreaker` time dilation.
+ *    standings (`position: 1..N`), wrong-way detection, and time dilation.
  * 5. Optimized Three.js 3D renderer with merged track ribbon geometry, pooled tire smoke &
  *    collision sparks, true 3D chase/hood/bumper/far cameras following vehicle heading &
- *    velocity vectors, and a live top-right NFS mini-map radar overlay.
+ *    velocity vectors, and a live top-right mini-map radar overlay.
  */
 (function (root, factory) {
     if (typeof module === 'object' && module.exports) {
@@ -48,8 +48,8 @@
     const TRACK_PRESETS = {
         rockport_ring: {
             id: 'rockport_ring',
-            name: 'Кольцо Рокпорт-Индастриал',
-            subtitle: 'Скоростные прямые, S-шикана порта и крутая шпилька',
+            name: 'Городское Кольцо',
+            subtitle: 'Скоростные прямые, S-шикана и крутая шпилька',
             defaultLaps: 2,
             halfWidth: 10.0, // 20m wide arcade circuit road
             waypoints: [
@@ -70,7 +70,7 @@
         },
         canyon_pass: {
             id: 'canyon_pass',
-            name: 'Каньон-Кольцо (Дрифт и Дуэль)',
+            name: 'Горный Каньон (Серпантин)',
             subtitle: 'Техничный серпантин с глубокими апексами и перекладками',
             defaultLaps: 2,
             halfWidth: 9.5,
@@ -90,7 +90,7 @@
         },
         bayview_sprint: {
             id: 'bayview_sprint',
-            name: 'Прибрежное Кольцо Бэйвью',
+            name: 'Ночная Магистраль (Порт)',
             subtitle: 'Широкая скоростная магистраль для гиперкаров 300+ км/ч',
             defaultLaps: 2,
             halfWidth: 11.0,
@@ -410,120 +410,120 @@
     // =========================================================================
     const AI_RIVAL_ROSTER = [
         {
-            id: 'razor_m3',
-            driverName: 'Рейзор (Blacklist #1)',
-            carName: 'BMW M3 E46 GTR (NFS Most Wanted)',
-            plate: 'M 001 MW | 777 RUS',
+            id: 'm3_gtr',
+            driverName: 'BMW M3 E46 GTR',
+            carName: 'BMW M3 E46 GTR',
+            plate: 'M 001 GT | 777 RUS',
             color: '#cbd5e1',
             vinyl: 'none',
             spoiler: 'gtr',
             preferredLineOffset: -2.2
         },
         {
-            id: 'cross_corvette',
-            driverName: 'Сержант Кросс (C6.R)',
-            carName: 'Chevrolet Corvette C6.R (Cross NFS MW)',
-            plate: 'K 001 PO | 77 RUS',
+            id: 'corvette_c6r',
+            driverName: 'Chevrolet Corvette C6.R',
+            carName: 'Chevrolet Corvette C6.R',
+            plate: 'K 001 CP | 77 RUS',
             color: '#1e293b',
             vinyl: 'none',
             spoiler: 'none',
             preferredLineOffset: 2.2
         },
         {
-            id: 'razor_mustang',
-            driverName: 'Рейзор (#15 Mustang GT)',
-            carName: 'Ford Mustang GT (Razor NFS MW)',
-            plate: 'P 015 MB | 99 RUS',
+            id: 'mustang_gt',
+            driverName: 'Ford Mustang GT',
+            carName: 'Ford Mustang GT',
+            plate: 'M 015 GT | 99 RUS',
             color: '#0f172a',
             vinyl: 'none',
             spoiler: 'none',
             preferredLineOffset: -2.4
         },
         {
-            id: 'bull_slr',
-            driverName: 'Булл (#2 SLR McLaren)',
-            carName: 'Mercedes-Benz SLR McLaren (Bull #2 MW)',
-            plate: 'B 002 MW | 777 RUS',
+            id: 'slr_mclaren',
+            driverName: 'Mercedes-Benz SLR McLaren',
+            carName: 'Mercedes-Benz SLR McLaren',
+            plate: 'C 002 MP | 777 RUS',
             color: '#18181b',
             vinyl: 'mw_blacklist',
             spoiler: 'gt',
             preferredLineOffset: 2.0
         },
         {
-            id: 'ronnie_db9',
-            driverName: 'Ронни (#3 Aston Martin DB9)',
-            carName: 'Aston Martin DB9 (Ronnie #3 MW)',
-            plate: 'R 003 MW | 777 RUS',
+            id: 'aston_db9',
+            driverName: 'Aston Martin DB9',
+            carName: 'Aston Martin DB9',
+            plate: 'A 003 MT | 777 RUS',
             color: '#eab308',
             vinyl: 'stripes',
             spoiler: 'gt',
             preferredLineOffset: -1.8
         },
         {
-            id: 'jv_viper',
-            driverName: 'Джей Ви (#4 Dodge Viper)',
-            carName: 'Dodge Viper SRT10 (JV #4 MW)',
-            plate: 'J 004 MW | 777 RUS',
+            id: 'dodge_viper',
+            driverName: 'Dodge Viper SRT10',
+            carName: 'Dodge Viper SRT10',
+            plate: 'B 004 CP | 777 RUS',
             color: '#16a34a',
             vinyl: 'mw_blacklist',
             spoiler: 'gtr',
             preferredLineOffset: 1.8
         },
         {
-            id: 'ming_gallardo',
-            driverName: 'Минг (#6 Gallardo)',
-            carName: 'Lamborghini Gallardo (Ming #6 MW)',
-            plate: 'M 006 MW | 777 RUS',
+            id: 'gallardo',
+            driverName: 'Lamborghini Gallardo',
+            carName: 'Lamborghini Gallardo',
+            plate: 'M 006 KO | 777 RUS',
             color: '#334155',
             vinyl: 'stripes',
             spoiler: 'none',
             preferredLineOffset: -2.0
         },
         {
-            id: 'earl_evo',
-            driverName: 'Эрл (#9 Lancer Evo VIII)',
-            carName: 'Mitsubishi Lancer Evo VIII (Earl #9 MW)',
-            plate: 'E 009 MW | 78 RUS',
+            id: 'lancer_evo',
+            driverName: 'Mitsubishi Lancer Evo VIII',
+            carName: 'Mitsubishi Lancer Evo VIII',
+            plate: 'E 009 BO | 78 RUS',
             color: '#f8fafc',
             vinyl: 'drift',
             spoiler: 'gt',
             preferredLineOffset: 2.4
         },
         {
-            id: 'izzy_rx8',
-            driverName: 'Иззи (#12 Mazda RX-8)',
-            carName: 'Mazda RX-8 (Izzy #12 MW)',
-            plate: 'X 012 MW | 777 RUS',
+            id: 'mazda_rx8',
+            driverName: 'Mazda RX-8',
+            carName: 'Mazda RX-8',
+            plate: 'X 012 PX | 777 RUS',
             color: '#ef4444',
             vinyl: 'drift',
             spoiler: 'gt',
             preferredLineOffset: -1.6
         },
         {
-            id: 'vic_supra',
-            driverName: 'Вик (#13 Toyota Supra)',
-            carName: 'Toyota Supra MK4 (Vic #13 MW)',
-            plate: 'V 013 MW | 777 RUS',
+            id: 'toyota_supra',
+            driverName: 'Toyota Supra MK4',
+            carName: 'Toyota Supra MK4',
+            plate: 'C 013 MK | 777 RUS',
             color: '#f97316',
             vinyl: 'mw_blacklist',
             spoiler: 'gtr',
             preferredLineOffset: 1.6
         },
         {
-            id: 'taz_is300',
-            driverName: 'Винс «Таз» (#14 Lexus IS300)',
-            carName: 'Lexus IS300 (Taz #14 MW)',
-            plate: 'T 014 MW | 125 RUS',
+            id: 'lexus_is300',
+            driverName: 'Lexus IS300',
+            carName: 'Lexus IS300',
+            plate: 'T 014 KC | 125 RUS',
             color: '#ca8a04',
             vinyl: 'drift',
             spoiler: 'ducktail',
             preferredLineOffset: 0.0
         },
         {
-            id: 'sonny_golf',
-            driverName: 'Сонни (#15 VW Golf GTI)',
-            carName: 'Volkswagen Golf GTI (Sonny #15 MW)',
-            plate: 'S 015 MW | 777 RUS',
+            id: 'golf_gti',
+            driverName: 'Volkswagen Golf GTI',
+            carName: 'Volkswagen Golf GTI',
+            plate: 'C 015 GT | 777 RUS',
             color: '#1d4ed8',
             vinyl: 'drift',
             spoiler: 'ducktail',
@@ -544,7 +544,7 @@
         },
         medium: {
             id: 'medium',
-            name: 'Средний (NFS MW)',
+            name: 'Средний',
             cornerSpeedFactor: 0.95,
             throttleLimit: 0.96,
             nitroChance: 0.55,
@@ -554,7 +554,7 @@
         },
         hard: {
             id: 'hard',
-            name: 'Босс (Blacklist)',
+            name: 'Профи',
             cornerSpeedFactor: 1.04,
             throttleLimit: 1.00,
             nitroChance: 0.85,
@@ -924,9 +924,6 @@
             if (this.keys[key] !== undefined) {
                 this.keys[key] = val;
             }
-            if (key === 'speedbreaker' && val && this.playerPhysics) {
-                this.toggleSpeedbreaker();
-            }
         }
 
         resetKeys() {
@@ -934,25 +931,18 @@
         }
 
         toggleSpeedbreaker() {
-            if (!this.playerPhysics) return false;
-            const st = this.playerPhysics.state;
-            const nextState = !st.isSpeedbreakerActive;
-            this.playerPhysics.setSpeedbreaker(nextState);
-            this.state.isSpeedbreakerActive = st.isSpeedbreakerActive;
-            if (this.options.onPopup) {
-                this.options.onPopup(
-                    st.isSpeedbreakerActive ? '⏱️ SPEEDBREAKER: ЗАМЕДЛЕНИЕ ВРЕМЕНИ!' : '⏱️ SPEEDBREAKER ВЫКЛ',
-                    '#38bdf8'
-                );
+            if (this.playerPhysics) {
+                this.playerPhysics.setSpeedbreaker(false);
             }
-            return st.isSpeedbreakerActive;
+            this.state.isSpeedbreakerActive = false;
+            return false;
         }
 
         cycleCamera() {
             this.cameraModeIndex = (this.cameraModeIndex + 1) % this.cameraModes.length;
             this.cameraMode = this.cameraModes[this.cameraModeIndex];
             const labels = {
-                chase: '🎥 КАМЕРА: БЛИЖНЯЯ (NFS)',
+                chase: '🎥 КАМЕРА: БЛИЖНЯЯ',
                 far: '🎥 КАМЕРА: ДАЛЬНЯЯ (ОБЗОР)',
                 hood: '🎥 КАМЕРА: С КАПОТА',
                 bumper: '🎥 КАМЕРА: БАМПЕР (АСФАЛЬТ)'
@@ -985,7 +975,7 @@
             const presets = {
                 day: { id: 'day', name: 'Солнечный день', icon: '☀️', sky: 0x38bdf8, fog: 0x7dd3fc, ambient: 1.25, sun: 1.55 },
                 sunset: { id: 'sunset', name: 'Золотой закат', icon: '🌅', sky: 0x5b21b6, fog: 0x9a3412, ambient: 1.10, sun: 1.40 },
-                night: { id: 'night', name: 'Ночной Рокпорт', icon: '🌃', sky: 0x0c192c, fog: 0x11223b, ambient: 0.98, sun: 1.18 },
+                night: { id: 'night', name: 'Ночной город', icon: '🌃', sky: 0x0c192c, fog: 0x11223b, ambient: 0.98, sun: 1.18 },
                 rain: { id: 'rain', name: 'Грозовой ливень', icon: '🌧️', sky: 0x0f2032, fog: 0x162b40, ambient: 0.92, sun: 1.05 },
                 fog: { id: 'fog', name: 'Густой туман', icon: '🌫️', sky: 0x64748b, fog: 0x64748b, ambient: 1.00, sun: 0.85 },
                 snow: { id: 'snow', name: 'Зимний гололёд', icon: '❄️', sky: 0x3b4d63, fog: 0x475569, ambient: 1.15, sun: 1.20 }
@@ -2185,6 +2175,7 @@
         _updateCircuitOverlayDOM() {
             if (this.circuitTelemetryEl) {
                 const st = this.state;
+                const speedInt = Math.round(st.speedKmh || 0);
                 const bestStr = st.bestLapTimeSec !== null ? `${st.bestLapTimeSec.toFixed(2)}с` : '—';
                 const wrongWayHtml = st.isWrongWay
                     ? `<div style="color:#ef4444;font-weight:900;font-size:12px;margin-top:2px;">⚠️ НЕВЕРНОЕ НАПРАВЛЕНИЕ — РАЗВЕРНИТЕСЬ!</div>`
@@ -2192,11 +2183,15 @@
                 const countdownHtml = st.racePhase === 'countdown'
                     ? `<div style="color:#fbbf24;font-weight:900;font-size:13px;margin-top:2px;">🚦 СТАРТ ЧЕРЕЗ: ${st.countdownText}</div>`
                     : '';
-                this.circuitTelemetryEl.innerHTML =
-                    `<div style="font-weight:900;color:#38bdf8;font-size:12px;">🏆 ${st.trackName} · Позиция: <b style="color:#fbbf24;font-size:13px;">${st.position}/${st.totalRacers}</b> · Круг: <b style="color:#34d399;">${st.currentLap}/${st.totalLaps}</b></div>` +
-                    `<div style="color:#e2e8f0;">⏱️ Круг: <b>${st.lapTimeSec.toFixed(1)}с</b> · Лучший: <b style="color:#c084fc;">${bestStr}</b> · ⚡ Speedbreaker [G]: <b style="color:#38bdf8;">${Math.round(st.speedbreakerCharge)}%</b> ${st.isSpeedbreakerActive ? '🔥' : ''}</div>` +
+                const nextTelemetryHtml =
+                    `<div style="font-weight:900;color:#38bdf8;font-size:12px;" data-speed="${speedInt}">🏆 ${st.trackName} · Позиция: <b style="color:#fbbf24;font-size:13px;">${st.position}/${st.totalRacers}</b> · Круг: <b style="color:#34d399;">${st.currentLap}/${st.totalLaps}</b></div>` +
+                    `<div style="color:#e2e8f0;">⏱️ Круг: <b>${st.lapTimeSec.toFixed(1)}с</b> · Лучший круг: <b style="color:#c084fc;">${bestStr}</b></div>` +
                     countdownHtml +
                     wrongWayHtml;
+                if (this._lastTelemetryHtml !== nextTelemetryHtml) {
+                    this._lastTelemetryHtml = nextTelemetryHtml;
+                    this.circuitTelemetryEl.innerHTML = nextTelemetryHtml;
+                }
             }
 
             if (this.minimapCtx && this.minimapCanvas) {
@@ -2206,14 +2201,18 @@
                 ctx.clearRect(0, 0, W, H);
 
                 const segs = this.track.segments;
-                let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
-                for (let i = 0; i < segs.length; i += 2) {
-                    const s = segs[i];
-                    if (s.x < minX) minX = s.x;
-                    if (s.x > maxX) maxX = s.x;
-                    if (s.z < minZ) minZ = s.z;
-                    if (s.z > maxZ) maxZ = s.z;
+                if (!this.track._cachedBounds) {
+                    let bMinX = Infinity, bMaxX = -Infinity, bMinZ = Infinity, bMaxZ = -Infinity;
+                    for (let i = 0; i < segs.length; i += 2) {
+                        const s = segs[i];
+                        if (s.x < bMinX) bMinX = s.x;
+                        if (s.x > bMaxX) bMaxX = s.x;
+                        if (s.z < bMinZ) bMinZ = s.z;
+                        if (s.z > bMaxZ) bMaxZ = s.z;
+                    }
+                    this.track._cachedBounds = { minX: bMinX, maxX: bMaxX, minZ: bMinZ, maxZ: bMaxZ };
                 }
+                const { minX, maxX, minZ, maxZ } = this.track._cachedBounds;
                 const spanX = Math.max(10, maxX - minX);
                 const spanZ = Math.max(10, maxZ - minZ);
                 const pad = 16;

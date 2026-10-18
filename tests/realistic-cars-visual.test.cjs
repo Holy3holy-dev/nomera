@@ -2,11 +2,11 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const { createApp } = require('./helpers/create-app.cjs');
 
-test('all 25 realistic prototype cars render cleanly via getCarSpriteDataUrl and drawPixelCar', () => {
+test('all 49 realistic prototype cars render cleanly via getCarSpriteDataUrl and drawPixelCar', () => {
     const app = createApp();
     const cars = app.run('carsData.map(c => c.name)');
 
-    assert.equal(cars.length, 25, 'There should be exactly 25 car models in dealership');
+    assert.equal(cars.length, 49, 'There should be exactly 49 car models in dealership');
 
     for (const carName of cars) {
         // Test base styling

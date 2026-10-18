@@ -1,5 +1,5 @@
 /**
- * 🏎️ H3H NOMERA — Clean-Room Vehicle Physics Engine (Inspired by NFS: Most Wanted 2005)
+ * 🏎️ H3H NOMERA — Clean-Room Vehicle Physics Engine
  *
  * Independent, deterministic 2D/3D rigid-body & 4-wheel dynamic vehicle simulation module.
  * Implements the mathematical principles documented in `docs/NFS_PHYSICS_RESEARCH.md`
@@ -332,9 +332,9 @@
             springStiffness: 96000, dampingRate: 11000, rollBalance: 0.46, yawSpeedMult: 1.42
         },
         // =========================================================================
-        // NFS MOST WANTED BLACKLIST #15-#1 & BONUS 3D MODELS
+        // 3D SPORT, SUPERCAR & TUNER MODELS
         // =========================================================================
-        "BMW M3 E46 GTR (NFS Most Wanted)": {
+        "BMW M3 E46 GTR": {
             id: 'm3gtr', category: 'nfsmw', drivetrain: 'RWD', torqueSplit: 0.0,
             massKg: 1120, wheelbase: 2.73, trackWidth: 1.64, cgHeight: 0.37, frontWeightBias: 0.50,
             idleRpm: 1150, peakTorqueRpm: 7200, redlineRpm: 8800, maxRpm: 9200,
@@ -344,7 +344,7 @@
             springStiffness: 94000, dampingRate: 10800, rollBalance: 0.49, yawSpeedMult: 1.46,
             engineSoundClass: 'm3gtr'
         },
-        "Chevrolet Corvette C6.R (Cross NFS MW)": {
+        "Chevrolet Corvette C6.R": {
             id: 'corvette_cross', category: 'nfsmw', drivetrain: 'RWD', torqueSplit: 0.0,
             massKg: 1290, wheelbase: 2.69, trackWidth: 1.66, cgHeight: 0.39, frontWeightBias: 0.51,
             idleRpm: 950, peakTorqueRpm: 5400, redlineRpm: 7400, maxRpm: 7700,
@@ -354,7 +354,7 @@
             springStiffness: 88000, dampingRate: 10000, rollBalance: 0.48, yawSpeedMult: 1.38,
             engineSoundClass: 'v8'
         },
-        "Ford Mustang GT (Razor NFS MW)": {
+        "Ford Mustang GT": {
             id: 'mustang_razor', category: 'nfsmw', drivetrain: 'RWD', torqueSplit: 0.0,
             massKg: 1540, wheelbase: 2.72, trackWidth: 1.59, cgHeight: 0.45, frontWeightBias: 0.54,
             idleRpm: 880, peakTorqueRpm: 4600, redlineRpm: 6800, maxRpm: 7100,
@@ -364,7 +364,7 @@
             springStiffness: 72000, dampingRate: 8400, rollBalance: 0.46, yawSpeedMult: 1.36,
             engineSoundClass: 'v8'
         },
-        "Mercedes-Benz SLR McLaren (Bull #2 MW)": {
+        "Mercedes-Benz SLR McLaren": {
             id: 'mclaren', category: 'nfsmw', drivetrain: 'RWD', torqueSplit: 0.0,
             massKg: 1690, wheelbase: 2.70, trackWidth: 1.64, cgHeight: 0.41, frontWeightBias: 0.49,
             idleRpm: 900, peakTorqueRpm: 4000, redlineRpm: 7000, maxRpm: 7300,
@@ -374,7 +374,7 @@
             springStiffness: 84000, dampingRate: 9600, rollBalance: 0.48, yawSpeedMult: 1.34,
             engineSoundClass: 'v8'
         },
-        "Aston Martin DB9 (Ronnie #3 MW)": {
+        "Aston Martin DB9": {
             id: 'db9', category: 'nfsmw', drivetrain: 'RWD', torqueSplit: 0.0,
             massKg: 1710, wheelbase: 2.74, trackWidth: 1.57, cgHeight: 0.43, frontWeightBias: 0.50,
             idleRpm: 950, peakTorqueRpm: 5000, redlineRpm: 7300, maxRpm: 7600,
@@ -384,7 +384,7 @@
             springStiffness: 78000, dampingRate: 9000, rollBalance: 0.49, yawSpeedMult: 1.32,
             engineSoundClass: 'supercar'
         },
-        "Dodge Viper SRT10 (JV #4 MW)": {
+        "Dodge Viper SRT10": {
             id: 'viper_jv', category: 'nfsmw', drivetrain: 'RWD', torqueSplit: 0.0,
             massKg: 1530, wheelbase: 2.51, trackWidth: 1.65, cgHeight: 0.40, frontWeightBias: 0.49,
             idleRpm: 850, peakTorqueRpm: 4200, redlineRpm: 6400, maxRpm: 6700,
@@ -394,7 +394,7 @@
             springStiffness: 82000, dampingRate: 9400, rollBalance: 0.46, yawSpeedMult: 1.40,
             engineSoundClass: 'v8'
         },
-        "Chevrolet Corvette C6 (Webster #5 MW)": {
+        "Chevrolet Corvette C6": {
             id: 'corvette_webster', category: 'nfsmw', drivetrain: 'RWD', torqueSplit: 0.0,
             massKg: 1460, wheelbase: 2.68, trackWidth: 1.62, cgHeight: 0.41, frontWeightBias: 0.51,
             idleRpm: 900, peakTorqueRpm: 4800, redlineRpm: 7000, maxRpm: 7300,
@@ -404,7 +404,7 @@
             springStiffness: 80000, dampingRate: 9200, rollBalance: 0.48, yawSpeedMult: 1.35,
             engineSoundClass: 'v8'
         },
-        "Lamborghini Gallardo (Ming #6 MW)": {
+        "Lamborghini Gallardo": {
             id: 'gallardo_ming', category: 'nfsmw', drivetrain: 'AWD', torqueSplit: 0.30,
             massKg: 1430, wheelbase: 2.56, trackWidth: 1.64, cgHeight: 0.40, frontWeightBias: 0.42,
             idleRpm: 1050, peakTorqueRpm: 6200, redlineRpm: 8200, maxRpm: 8500,
@@ -414,7 +414,7 @@
             springStiffness: 84000, dampingRate: 9600, rollBalance: 0.48, yawSpeedMult: 1.36,
             engineSoundClass: 'supercar'
         },
-        "Mercedes-Benz CLK 500 (Kaze #7 MW)": {
+        "Mercedes-Benz CLK 500": {
             id: 'clk_kaze', category: 'nfsmw', drivetrain: 'RWD', torqueSplit: 0.0,
             massKg: 1580, wheelbase: 2.71, trackWidth: 1.56, cgHeight: 0.45, frontWeightBias: 0.53,
             idleRpm: 850, peakTorqueRpm: 4200, redlineRpm: 6800, maxRpm: 7100,
@@ -424,7 +424,7 @@
             springStiffness: 72000, dampingRate: 8300, rollBalance: 0.48, yawSpeedMult: 1.28,
             engineSoundClass: 'v8'
         },
-        "Ford Mustang GT (Jewels #8 MW)": {
+        "Ford Mustang GT Coupe": {
             id: 'mustang_jewels', category: 'nfsmw', drivetrain: 'RWD', torqueSplit: 0.0,
             massKg: 1550, wheelbase: 2.72, trackWidth: 1.58, cgHeight: 0.45, frontWeightBias: 0.54,
             idleRpm: 860, peakTorqueRpm: 4500, redlineRpm: 6700, maxRpm: 7000,
@@ -434,7 +434,7 @@
             springStiffness: 70000, dampingRate: 8100, rollBalance: 0.46, yawSpeedMult: 1.32,
             engineSoundClass: 'v8'
         },
-        "Mitsubishi Lancer Evo VIII (Earl #9 MW)": {
+        "Mitsubishi Lancer Evo VIII": {
             id: 'evo8_earl', category: 'nfsmw', drivetrain: 'AWD', torqueSplit: 0.42,
             massKg: 1410, wheelbase: 2.62, trackWidth: 1.52, cgHeight: 0.46, frontWeightBias: 0.56,
             idleRpm: 950, peakTorqueRpm: 4500, redlineRpm: 7600, maxRpm: 7900,
@@ -444,7 +444,7 @@
             springStiffness: 74000, dampingRate: 8600, rollBalance: 0.50, yawSpeedMult: 1.35,
             engineSoundClass: 'sport'
         },
-        "Porsche Cayman S (Baron #10 MW)": {
+        "Porsche Cayman S": {
             id: 'cayman_baron', category: 'nfsmw', drivetrain: 'RWD', torqueSplit: 0.0,
             massKg: 1340, wheelbase: 2.41, trackWidth: 1.54, cgHeight: 0.41, frontWeightBias: 0.44,
             idleRpm: 950, peakTorqueRpm: 4800, redlineRpm: 7500, maxRpm: 7800,
@@ -454,7 +454,7 @@
             springStiffness: 78000, dampingRate: 9000, rollBalance: 0.48, yawSpeedMult: 1.36,
             engineSoundClass: 'sport'
         },
-        "Mitsubishi Eclipse GT (Big Lou #11 MW)": {
+        "Mitsubishi Eclipse GT": {
             id: 'eclipse_lou', category: 'nfsmw', drivetrain: 'FWD', torqueSplit: 1.0,
             massKg: 1480, wheelbase: 2.57, trackWidth: 1.55, cgHeight: 0.46, frontWeightBias: 0.59,
             idleRpm: 880, peakTorqueRpm: 4400, redlineRpm: 7000, maxRpm: 7300,
@@ -464,7 +464,7 @@
             springStiffness: 66000, dampingRate: 7700, rollBalance: 0.54, yawSpeedMult: 1.24,
             engineSoundClass: 'sport'
         },
-        "Mazda RX-8 (Izzy #12 MW)": {
+        "Mazda RX-8": {
             id: 'rx7', category: 'nfsmw', drivetrain: 'RWD', torqueSplit: 0.0,
             massKg: 1310, wheelbase: 2.70, trackWidth: 1.52, cgHeight: 0.43, frontWeightBias: 0.50,
             idleRpm: 1100, peakTorqueRpm: 5800, redlineRpm: 9000, maxRpm: 9400,
@@ -474,7 +474,7 @@
             springStiffness: 70000, dampingRate: 8200, rollBalance: 0.46, yawSpeedMult: 1.42,
             engineSoundClass: 'sport'
         },
-        "Toyota Supra MK4 (Vic #13 MW)": {
+        "Toyota Supra MK4": {
             id: 'supra', category: 'nfsmw', drivetrain: 'RWD', torqueSplit: 0.0,
             massKg: 1490, wheelbase: 2.55, trackWidth: 1.54, cgHeight: 0.44, frontWeightBias: 0.53,
             idleRpm: 950, peakTorqueRpm: 4800, redlineRpm: 7600, maxRpm: 8000,
@@ -484,7 +484,7 @@
             springStiffness: 72000, dampingRate: 8400, rollBalance: 0.46, yawSpeedMult: 1.38,
             engineSoundClass: 'sport'
         },
-        "Lexus IS300 (Taz #14 MW)": {
+        "Lexus IS300": {
             id: 'is300_taz', category: 'nfsmw', drivetrain: 'RWD', torqueSplit: 0.0,
             massKg: 1470, wheelbase: 2.67, trackWidth: 1.51, cgHeight: 0.46, frontWeightBias: 0.53,
             idleRpm: 880, peakTorqueRpm: 4500, redlineRpm: 7200, maxRpm: 7500,
@@ -494,7 +494,7 @@
             springStiffness: 64000, dampingRate: 7500, rollBalance: 0.47, yawSpeedMult: 1.32,
             engineSoundClass: 'sport'
         },
-        "Volkswagen Golf GTI (Sonny #15 MW)": {
+        "Volkswagen Golf GTI": {
             id: 'golf_sonny', category: 'nfsmw', drivetrain: 'FWD', torqueSplit: 1.0,
             massKg: 1330, wheelbase: 2.58, trackWidth: 1.53, cgHeight: 0.47, frontWeightBias: 0.60,
             idleRpm: 850, peakTorqueRpm: 4200, redlineRpm: 6900, maxRpm: 7200,
@@ -504,7 +504,7 @@
             springStiffness: 62000, dampingRate: 7300, rollBalance: 0.56, yawSpeedMult: 1.24,
             engineSoundClass: 'sport'
         },
-        "Audi Le Mans Quattro R8 (Darius MW)": {
+        "Audi Le Mans Quattro R8": {
             id: 'audir8', category: 'nfsmw', drivetrain: 'AWD', torqueSplit: 0.30,
             massKg: 1530, wheelbase: 2.65, trackWidth: 1.66, cgHeight: 0.40, frontWeightBias: 0.43,
             idleRpm: 1050, peakTorqueRpm: 6400, redlineRpm: 8500, maxRpm: 8800,
@@ -533,24 +533,24 @@
         let base = VEHICLE_PROFILES[name];
         if (!base) {
             const lower = name.toLowerCase();
-            if (lower.includes('m3 e46') || lower.includes('m3 gtr') || lower.includes('m3gtr')) base = VEHICLE_PROFILES["BMW M3 E46 GTR (NFS Most Wanted)"];
-            else if (lower.includes('corvette c6.r') || lower.includes('cross')) base = VEHICLE_PROFILES["Chevrolet Corvette C6.R (Cross NFS MW)"];
-            else if (lower.includes('webster') || lower.includes('corvette')) base = VEHICLE_PROFILES["Chevrolet Corvette C6 (Webster #5 MW)"];
-            else if (lower.includes('razor') || (lower.includes('mustang') && lower.includes('razor'))) base = VEHICLE_PROFILES["Ford Mustang GT (Razor NFS MW)"];
-            else if (lower.includes('mustang') || lower.includes('jewels')) base = VEHICLE_PROFILES["Ford Mustang GT (Jewels #8 MW)"];
-            else if (lower.includes('slr') || lower.includes('mclaren') || lower.includes('bull')) base = VEHICLE_PROFILES["Mercedes-Benz SLR McLaren (Bull #2 MW)"];
-            else if (lower.includes('db9') || lower.includes('aston') || lower.includes('ronnie')) base = VEHICLE_PROFILES["Aston Martin DB9 (Ronnie #3 MW)"];
-            else if (lower.includes('viper') || lower.includes('jv')) base = VEHICLE_PROFILES["Dodge Viper SRT10 (JV #4 MW)"];
-            else if (lower.includes('gallardo') || lower.includes('ming')) base = VEHICLE_PROFILES["Lamborghini Gallardo (Ming #6 MW)"];
-            else if (lower.includes('clk') || lower.includes('kaze')) base = VEHICLE_PROFILES["Mercedes-Benz CLK 500 (Kaze #7 MW)"];
-            else if (lower.includes('evo') || lower.includes('lancer') || lower.includes('earl')) base = VEHICLE_PROFILES["Mitsubishi Lancer Evo VIII (Earl #9 MW)"];
-            else if (lower.includes('cayman') || lower.includes('baron')) base = VEHICLE_PROFILES["Porsche Cayman S (Baron #10 MW)"];
-            else if (lower.includes('eclipse') || lower.includes('big lou') || lower.includes('veloster')) base = VEHICLE_PROFILES["Mitsubishi Eclipse GT (Big Lou #11 MW)"];
-            else if (lower.includes('rx-8') || lower.includes('rx-7') || lower.includes('rx7') || lower.includes('rx8') || lower.includes('izzy')) base = VEHICLE_PROFILES["Mazda RX-8 (Izzy #12 MW)"];
-            else if (lower.includes('supra') || lower.includes('vic')) base = VEHICLE_PROFILES["Toyota Supra MK4 (Vic #13 MW)"];
-            else if (lower.includes('is300') || lower.includes('lexus') || lower.includes('taz')) base = VEHICLE_PROFILES["Lexus IS300 (Taz #14 MW)"];
-            else if (lower.includes('golf') || lower.includes('sonny')) base = VEHICLE_PROFILES["Volkswagen Golf GTI (Sonny #15 MW)"];
-            else if (lower.includes('le mans') || lower.includes('r8') || lower.includes('darius')) base = VEHICLE_PROFILES["Audi Le Mans Quattro R8 (Darius MW)"];
+            if (lower.includes('m3 e46') || lower.includes('m3 gtr') || lower.includes('m3gtr')) base = VEHICLE_PROFILES["BMW M3 E46 GTR"];
+            else if (lower.includes('corvette c6.r') || lower.includes('c6r')) base = VEHICLE_PROFILES["Chevrolet Corvette C6.R"];
+            else if (lower.includes('corvette')) base = VEHICLE_PROFILES["Chevrolet Corvette C6"];
+            else if (lower.includes('mustang gt coupe')) base = VEHICLE_PROFILES["Ford Mustang GT Coupe"];
+            else if (lower.includes('mustang')) base = VEHICLE_PROFILES["Ford Mustang GT"];
+            else if (lower.includes('slr') || lower.includes('mclaren')) base = VEHICLE_PROFILES["Mercedes-Benz SLR McLaren"];
+            else if (lower.includes('db9') || lower.includes('aston')) base = VEHICLE_PROFILES["Aston Martin DB9"];
+            else if (lower.includes('viper')) base = VEHICLE_PROFILES["Dodge Viper SRT10"];
+            else if (lower.includes('gallardo')) base = VEHICLE_PROFILES["Lamborghini Gallardo"];
+            else if (lower.includes('clk')) base = VEHICLE_PROFILES["Mercedes-Benz CLK 500"];
+            else if (lower.includes('evo') || lower.includes('lancer')) base = VEHICLE_PROFILES["Mitsubishi Lancer Evo VIII"];
+            else if (lower.includes('cayman')) base = VEHICLE_PROFILES["Porsche Cayman S"];
+            else if (lower.includes('eclipse') || lower.includes('veloster')) base = VEHICLE_PROFILES["Mitsubishi Eclipse GT"];
+            else if (lower.includes('rx-8') || lower.includes('rx-7') || lower.includes('rx7') || lower.includes('rx8')) base = VEHICLE_PROFILES["Mazda RX-8"];
+            else if (lower.includes('supra')) base = VEHICLE_PROFILES["Toyota Supra MK4"];
+            else if (lower.includes('is300') || lower.includes('lexus')) base = VEHICLE_PROFILES["Lexus IS300"];
+            else if (lower.includes('golf')) base = VEHICLE_PROFILES["Volkswagen Golf GTI"];
+            else if (lower.includes('le mans') || lower.includes('r8')) base = VEHICLE_PROFILES["Audi Le Mans Quattro R8"];
             if (!base) {
                 for (const [k, prof] of Object.entries(VEHICLE_PROFILES)) {
                     if (k.toLowerCase().includes(lower) || lower.includes(prof.id) || lower.includes(k.toLowerCase())) {
@@ -918,16 +918,10 @@
 
         setSpeedbreaker(active) {
             const s = this.state;
-            if (active && s.speedbreakerCharge >= 15) {
-                this._speedbreakerLatch = true;
-                s.isSpeedbreakerActive = true;
-                s.timeScale = 0.48;
-            } else {
-                this._speedbreakerLatch = false;
-                s.isSpeedbreakerActive = false;
-                s.timeScale = 1.0;
-            }
-            return s.isSpeedbreakerActive;
+            this._speedbreakerLatch = false;
+            s.isSpeedbreakerActive = false;
+            s.timeScale = 1.0;
+            return false;
         }
 
         setWeather(weatherId) {
@@ -1033,27 +1027,11 @@
             if (controls.shiftUp) this.shiftUp();
             if (controls.shiftDown) this.shiftDown();
 
-            // 2. Speedbreaker (NFS MW GameBreaker mechanic)
-            const wantSpeedbreaker = Boolean((controls.speedbreaker || this._speedbreakerLatch) && s.speedbreakerCharge > 2);
-            if (wantSpeedbreaker) {
-                s.isSpeedbreakerActive = true;
-                s.speedbreakerCharge = Math.max(0, s.speedbreakerCharge - 24 * dt);
-                s.timeScale = 0.48;
-                if (s.speedbreakerCharge <= 2) {
-                    this._speedbreakerLatch = false;
-                    s.isSpeedbreakerActive = false;
-                    s.timeScale = 1.0;
-                }
-            } else {
-                this._speedbreakerLatch = false;
-                s.isSpeedbreakerActive = false;
-                s.timeScale = 1.0;
-                if (s.speedKmh > 55) {
-                    const chargeRate = s.isDrifting ? 14.0 : 4.5;
-                    s.speedbreakerCharge = Math.min(100, s.speedbreakerCharge + chargeRate * dt);
-                }
-            }
-            const gameBreaker = s.isSpeedbreakerActive ? 1.0 : 0.0;
+            // 2. Time scale (Speedbreaker disabled)
+            this._speedbreakerLatch = false;
+            s.isSpeedbreakerActive = false;
+            s.timeScale = 1.0;
+            const gameBreaker = 0.0;
 
             // 3. Surface & Weather continuous grip read (MWEncyclopedia Chapter 44)
             const surfPreset = SURFACE_PRESETS[controls.surface || s.surface] || SURFACE_PRESETS.asphalt;

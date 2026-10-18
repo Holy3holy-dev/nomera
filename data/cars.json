@@ -48,15 +48,33 @@
     "img": "./icons/car-placeholder.svg"
   },
   {
+    "name": "Volkswagen Golf GTI",
+    "category": "Хот-хэтч",
+    "price": 1650000,
+    "img": "./icons/car-placeholder.svg"
+  },
+  {
     "name": "Subaru Impreza WRX STI",
     "category": "Ралли-спорт",
     "price": 1850000,
     "img": "./icons/car-placeholder.svg"
   },
   {
+    "name": "Lexus IS300",
+    "category": "Спорт-седан",
+    "price": 2100000,
+    "img": "./icons/car-placeholder.svg"
+  },
+  {
     "name": "BMW M5 E60 V10",
     "category": "Легенда",
     "price": 2200000,
+    "img": "./icons/car-placeholder.svg"
+  },
+  {
+    "name": "Mitsubishi Eclipse GT",
+    "category": "Спорткупе",
+    "price": 2450000,
     "img": "./icons/car-placeholder.svg"
   },
   {
@@ -72,9 +90,51 @@
     "img": "./icons/car-placeholder.svg"
   },
   {
+    "name": "Mazda RX-8",
+    "category": "Ротор-спорт",
+    "price": 2950000,
+    "img": "./icons/car-placeholder.svg"
+  },
+  {
+    "name": "Hyundai Elantra N",
+    "category": "Спорт-седан",
+    "price": 3400000,
+    "img": "./icons/car-placeholder.svg"
+  },
+  {
+    "name": "Ford Mustang GT Coupe",
+    "category": "Маслкар",
+    "price": 3800000,
+    "img": "./icons/car-placeholder.svg"
+  },
+  {
+    "name": "Mitsubishi Lancer Evo VIII",
+    "category": "Ралли-легенда",
+    "price": 4200000,
+    "img": "./icons/car-placeholder.svg"
+  },
+  {
+    "name": "Mercedes-Benz CLK 500",
+    "category": "Гран-туризмо",
+    "price": 4600000,
+    "img": "./icons/car-placeholder.svg"
+  },
+  {
+    "name": "Toyota Supra MK4",
+    "category": "Легенда JDM",
+    "price": 5200000,
+    "img": "./icons/car-placeholder.svg"
+  },
+  {
     "name": "Toyota Land Cruiser 300",
     "category": "Внедорожник",
     "price": 5500000,
+    "img": "./icons/car-placeholder.svg"
+  },
+  {
+    "name": "Porsche Cayman S",
+    "category": "Спорткар",
+    "price": 5800000,
     "img": "./icons/car-placeholder.svg"
   },
   {
@@ -90,9 +150,27 @@
     "img": "./icons/car-placeholder.svg"
   },
   {
+    "name": "Ford Mustang GT",
+    "category": "Маслкар V8",
+    "price": 8500000,
+    "img": "./icons/car-placeholder.svg"
+  },
+  {
     "name": "Audi RS6 Avant",
     "category": "Универсал-ракета",
     "price": 9200000,
+    "img": "./icons/car-placeholder.svg"
+  },
+  {
+    "name": "Chevrolet Corvette C6",
+    "category": "Суперкар V8",
+    "price": 9400000,
+    "img": "./icons/car-placeholder.svg"
+  },
+  {
+    "name": "Dodge Viper SRT10",
+    "category": "Суперкар V10",
+    "price": 11200000,
     "img": "./icons/car-placeholder.svg"
   },
   {
@@ -102,9 +180,57 @@
     "img": "./icons/car-placeholder.svg"
   },
   {
+    "name": "BMW M3 G80 Competition",
+    "category": "Спорт-седан",
+    "price": 11800000,
+    "img": "./icons/car-placeholder.svg"
+  },
+  {
+    "name": "Aston Martin DB9",
+    "category": "Гран-туризмо V12",
+    "price": 12800000,
+    "img": "./icons/car-placeholder.svg"
+  },
+  {
+    "name": "BMW X5M Competition",
+    "category": "Спорт-кроссовер",
+    "price": 13500000,
+    "img": "./icons/car-placeholder.svg"
+  },
+  {
     "name": "BMW M8 Gran Coupe",
     "category": "Гран-туризмо",
     "price": 14500000,
+    "img": "./icons/car-placeholder.svg"
+  },
+  {
+    "name": "Lamborghini Gallardo",
+    "category": "Суперкар V10",
+    "price": 14500000,
+    "img": "./icons/car-placeholder.svg"
+  },
+  {
+    "name": "Chevrolet Corvette C6.R",
+    "category": "Трек-кар GT1",
+    "price": 14800000,
+    "img": "./icons/car-placeholder.svg"
+  },
+  {
+    "name": "Audi RS7 Sportback",
+    "category": "Гран-туризмо",
+    "price": 15200000,
+    "img": "./icons/car-placeholder.svg"
+  },
+  {
+    "name": "Porsche Panamera Turbo",
+    "category": "Премиум Гран-туризмо",
+    "price": 16400000,
+    "img": "./icons/car-placeholder.svg"
+  },
+  {
+    "name": "Maserati GranTurismo",
+    "category": "Итальянское Гран-туризмо",
+    "price": 17500000,
     "img": "./icons/car-placeholder.svg"
   },
   {
@@ -114,9 +240,27 @@
     "img": "./icons/car-placeholder.svg"
   },
   {
+    "name": "BMW M3 E46 GTR",
+    "category": "Легенда трека",
+    "price": 19500000,
+    "img": "./icons/car-placeholder.svg"
+  },
+  {
+    "name": "Mercedes-Benz SLR McLaren",
+    "category": "Суперкар GT",
+    "price": 24500000,
+    "img": "./icons/car-placeholder.svg"
+  },
+  {
     "name": "Porsche 911 Turbo S",
     "category": "Суперкар",
     "price": 25000000,
+    "img": "./icons/car-placeholder.svg"
+  },
+  {
+    "name": "Audi Le Mans Quattro R8",
+    "category": "Суперкар V10",
+    "price": 26500000,
     "img": "./icons/car-placeholder.svg"
   },
   {

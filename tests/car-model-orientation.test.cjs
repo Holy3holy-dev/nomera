@@ -96,14 +96,17 @@ test('GLTF setupModel aligns rs6, silvia, and vesta forward facing along +Z with
     const car3dCode = fs.readFileSync(path.join(__dirname, '../js/car-3d.js'), 'utf8');
 
     // Verify rs6, silvia, and vesta are included in the rotation check
-    assert.ok(
-        car3dCode.includes("if (carId === 'vaz2109' || carId === 'sf90' || carId === 'rs6' || carId === 'silvia' || carId === 'vesta')"),
-        "rs6, silvia, and vesta must be rotated 180° so their front faces +Z"
-    );
+    const rotationMatch = car3dCode.match(/if\s*\(([^)]+)\)\s*\{\s*clonedScene\.rotation\.y\s*\+=\s*Math\.PI/);
+    for (const id of ['vaz2109', 'sf90', 'rs6', 'silvia', 'vesta']) {
+        assert.ok(
+            rotationMatch && rotationMatch[1].includes(`'${id}'`),
+            `${id} must be rotated 180° so its front faces +Z`
+        );
+    }
 
     // Verify vaz2107 is NOT included in the Math.PI rotation check
     assert.ok(
-        !car3dCode.includes("carId === 'vaz2107' || carId === 'vaz2109' || carId === 'sf90'"),
+        rotationMatch && !rotationMatch[1].includes('vaz2107'),
         "vaz2107 must remain naturally oriented facing +Z without Math.PI rotation"
     );
 });

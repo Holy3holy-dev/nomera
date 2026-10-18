@@ -2727,8 +2727,12 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            z-index: 1000;
+            z-index: 1400 !important;
             padding: 16px;
+        }
+
+        #admin-modal {
+            z-index: 1450 !important;
         }
 
         .modal-overlay.show { display: flex; }
@@ -3914,7 +3918,7 @@
     --text-muted: #bda5a8;
     --text-dim: #887276;
     --border-subtle: #3a151b;
-    --border-active: #74222f;
+    --border-active: rgba(255, 255, 255, 0.18);
     --radius-md: 16px;
     --radius-lg: 22px;
     --shadow-card: 0 18px 48px rgba(0,0,0,.5);
@@ -4050,7 +4054,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .car-category-pill { background:#260f15; border-color:#631e2b; color:#fca5a5; }
 .car-info-body { padding:18px; }
 .case-card { padding:22px; }
-.case-card::before { width:3px; }
+.case-card::before { width: 100%; height: 3px; }
 .case-card:hover { transform:translateY(-3px); box-shadow:0 12px 22px rgba(0,0,0,.5); }
 .lead-row,.podium-slot { background:#190e12; border-color:#3a161d; border-radius:12px; }
 .lead-row.is-me { background:#2d1218; border-color:#7c2432; }
@@ -4895,8 +4899,17 @@ body.race-active .brand-bar,
 body.race-active .header-hud,
 body.race-active .save-status,
 body.race-active .nav-tabs,
-body.race-active .market-type-nav {
+body.race-active .market-type-nav,
+body.race-active .top-game-header,
+body.race-active .mobile-bottom-nav,
+body.race-active #mobile-more-sheet {
     display: none !important;
+}
+
+body.race-active main.container,
+body.race-active .container,
+body.race-active .main-container {
+    z-index: auto !important;
 }
 
 body.race-active .main-container {
@@ -7903,6 +7916,22 @@ body {
     gap: 14px;
 }
 
+@media (min-width: 641px) {
+    .inventory-grid .mini-plate {
+        font-size: clamp(16px, 1.35vw, 20px) !important;
+        padding: 7px 14px !important;
+        min-height: 44px !important;
+        border-width: 2.5px !important;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.48) !important;
+    }
+
+    .inventory-grid .mini-plate-region {
+        min-width: 34px !important;
+        font-size: 0.72em !important;
+    }
+}
+
+.inv-plate-card,
 .inv-item.luxury-plate-card {
     position: relative;
     background: linear-gradient(180deg, #1B222D 0%, #121821 100%);
@@ -7917,29 +7946,56 @@ body {
     cursor: pointer;
 }
 
+.inv-plate-card:hover,
 .inv-item.luxury-plate-card:hover {
     transform: translateY(-3px);
     box-shadow: 0 12px 28px rgba(0, 0, 0, 0.55);
 }
 
-.inv-item.luxury-plate-card.tier-rare {
-    border-color: rgba(59, 130, 246, 0.45);
-    box-shadow: inset 0 1px 0 rgba(59, 130, 246, 0.25);
+.inv-plate-card.tier-common,
+.inv-item.luxury-plate-card.tier-common {
+    border-color: rgba(255, 255, 255, 0.08);
 }
 
+.inv-plate-card.tier-uncommon,
+.inv-item.luxury-plate-card.tier-uncommon {
+    border-color: rgba(16, 185, 129, 0.35);
+    background: linear-gradient(165deg, rgba(16, 185, 129, 0.08) 0%, rgba(18, 24, 33, 0.96) 55%);
+}
+
+.inv-plate-card.tier-rare,
+.inv-item.luxury-plate-card.tier-rare {
+    border-color: rgba(59, 130, 246, 0.42);
+    background: linear-gradient(165deg, rgba(59, 130, 246, 0.10) 0%, rgba(18, 24, 33, 0.96) 55%);
+    box-shadow: 0 8px 24px rgba(37, 99, 235, 0.14);
+}
+
+.inv-plate-card.tier-super,
+.inv-item.luxury-plate-card.tier-super {
+    border-color: rgba(6, 182, 212, 0.45);
+    background: linear-gradient(165deg, rgba(6, 182, 212, 0.12) 0%, rgba(18, 24, 33, 0.96) 55%);
+    box-shadow: 0 8px 26px rgba(6, 182, 212, 0.16);
+}
+
+.inv-plate-card.tier-epic,
 .inv-item.luxury-plate-card.tier-epic {
     border-color: rgba(168, 85, 247, 0.5);
-    box-shadow: 0 6px 22px rgba(168, 85, 247, 0.14);
+    background: linear-gradient(165deg, rgba(168, 85, 247, 0.14) 0%, rgba(18, 24, 33, 0.96) 55%);
+    box-shadow: 0 10px 28px rgba(168, 85, 247, 0.2);
 }
 
+.inv-plate-card.tier-legend,
 .inv-item.luxury-plate-card.tier-legend {
     border-color: rgba(245, 158, 11, 0.6);
-    box-shadow: 0 8px 26px rgba(245, 158, 11, 0.18);
+    background: linear-gradient(165deg, rgba(245, 158, 11, 0.16) 0%, rgba(18, 24, 33, 0.96) 60%);
+    box-shadow: 0 12px 32px rgba(245, 158, 11, 0.24);
 }
 
+.inv-plate-card.tier-mythic,
 .inv-item.luxury-plate-card.tier-mythic {
-    border-color: rgba(231, 36, 62, 0.7);
-    box-shadow: 0 8px 28px rgba(231, 36, 62, 0.25);
+    border-color: rgba(231, 36, 62, 0.68);
+    background: linear-gradient(165deg, rgba(231, 36, 62, 0.18) 0%, rgba(18, 24, 33, 0.96) 60%);
+    box-shadow: 0 14px 36px rgba(231, 36, 62, 0.28);
 }
 
 .plate-card-top-bar {
@@ -8265,6 +8321,22 @@ body {
     flex-direction: column;
     align-items: center;
     text-align: center;
+}
+
+.case-card::before {
+    width: 100% !important;
+    height: 3px !important;
+}
+
+.case-icon-box svg.case-art-svg {
+    width: 68px;
+    height: 68px;
+    filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.55));
+    transition: transform 0.25s ease;
+}
+
+.case-card:hover .case-icon-box svg.case-art-svg {
+    transform: translateY(-4px) scale(1.06);
 }
 
 .case-tier-badge {
@@ -8797,6 +8869,45 @@ body {
     margin: 3px 0 0 0;
     font-size: 12px;
     color: var(--text-muted);
+}
+
+.market-card {
+    background: linear-gradient(180deg, #1B222D 0%, #121821 100%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.09) !important;
+    border-radius: 16px !important;
+    padding: 16px !important;
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45) !important;
+    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease !important;
+}
+
+.market-card:hover {
+    transform: translateY(-3px) !important;
+    border-color: rgba(255, 255, 255, 0.22) !important;
+    box-shadow: 0 14px 34px rgba(0, 0, 0, 0.6) !important;
+}
+
+.market-card-car-preview {
+    background: radial-gradient(circle at 50% 55%, rgba(30, 41, 59, 0.75) 0%, #090D13 100%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 110px;
+    overflow: hidden;
+}
+
+.market-card .btn-green {
+    background: linear-gradient(135deg, #10B981, #059669) !important;
+    border: 1px solid rgba(52, 211, 153, 0.45) !important;
+    color: #ffffff !important;
+    box-shadow: 0 6px 18px rgba(16, 185, 129, 0.28) !important;
+}
+
+.market-card .btn-green:hover:not(:disabled) {
+    background: linear-gradient(135deg, #34D399, #10B981) !important;
+    box-shadow: 0 8px 24px rgba(16, 185, 129, 0.42) !important;
 }
 
 /* 8. МОБИЛЬНАЯ НИЖНЯЯ НАВИГАЦИЯ И КНОПКА ФИЛЬТРОВ (ПО УМОЛЧАНИЮ СКРЫТЫ НА ДЕСКТОПЕ > 860px) */
@@ -9485,13 +9596,22 @@ body {
 }
 
 /* 3-колоночная сетка внутри гаражной арены */
+.gen-garage-arena.gen-luxury-grid,
 .gen-garage-arena .gen-luxury-grid {
     position: relative;
     z-index: 2;
     display: grid;
-    grid-template-columns: 320px minmax(0, 1fr) 330px !important;
-    gap: 28px !important;
+    grid-template-columns: 300px minmax(0, 1fr) 310px !important;
+    gap: 24px !important;
     align-items: start;
+}
+
+@media (min-width: 1440px) {
+    .gen-garage-arena.gen-luxury-grid,
+    .gen-garage-arena .gen-luxury-grid {
+        grid-template-columns: 320px minmax(0, 1fr) 330px !important;
+        gap: 28px !important;
+    }
 }
 
 /* Левый заголовок «Генератор номеров» */
@@ -9660,6 +9780,11 @@ body {
     transition: background 0.35s ease, transform 0.35s ease;
 }
 
+.gen-garage-arena #gen-plate-stage[data-rarity-tier="uncommon"] .podium-rarity-rays,
+#gen-plate-stage[data-rarity-tier="uncommon"] .podium-rarity-rays {
+    background: radial-gradient(ellipse 66% 56% at 50% 52%, rgba(16, 185, 129, 0.22) 0%, transparent 72%);
+}
+
 #gen-plate-stage[data-rarity-tier="rare"] .podium-rarity-rays {
     background: radial-gradient(ellipse 68% 58% at 50% 52%, rgba(16, 185, 129, 0.26) 0%, transparent 72%);
 }
@@ -9746,9 +9871,13 @@ body {
     justify-content: center;
 }
 
+.gen-garage-arena .podium-base-ring,
 .podium-base-ring {
     position: absolute;
     inset: 0;
+    width: auto;
+    height: auto;
+    margin-top: 0;
     border-radius: 50% / 34%;
     background:
         radial-gradient(ellipse 68% 55% at 50% 25%, rgba(251, 191, 36, 0.16) 0%, rgba(18, 25, 36, 0.92) 56%, rgba(8, 12, 18, 0.98) 100%);
@@ -9760,6 +9889,13 @@ body {
         inset 0 2px 14px rgba(255, 255, 255, 0.08);
     pointer-events: none;
     transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.gen-garage-arena #gen-plate-stage[data-rarity-tier="uncommon"] .podium-base-ring,
+.podium-pedestal-3d[data-rarity-tier="uncommon"] .podium-base-ring {
+    border-color: rgba(16, 185, 129, 0.35);
+    border-top-color: rgba(16, 185, 129, 0.55);
+    box-shadow: 0 20px 46px rgba(0, 0, 0, 0.85), 0 -4px 24px rgba(16, 185, 129, 0.22);
 }
 
 .podium-pedestal-3d[data-rarity-tier="rare"] .podium-base-ring {
@@ -9799,9 +9935,16 @@ body {
 }
 
 .podium-price-value,
+.gen-garage-arena #current-price-display,
+.gen-garage-arena .current-price-badge,
 #current-price-display {
     font-size: 15px;
     color: #F5F6F8;
+    background: rgba(11, 15, 22, 0.72);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 6px 18px;
+    margin: 0;
 }
 
 #current-price-display .price-hero-value {
@@ -9921,7 +10064,8 @@ body {
     margin: 0 auto;
 }
 
-#btn-spin-both.btn-spin-hero {
+#btn-spin-both.btn-spin-hero,
+.gen-controls-dock #btn-spin-both.btn-spin-full {
     width: 100%;
     min-height: 64px !important;
     padding: 12px 28px !important;
@@ -9941,7 +10085,8 @@ body {
     transition: transform 0.16s ease, box-shadow 0.16s ease, filter 0.16s ease;
 }
 
-#btn-spin-both.btn-spin-hero:hover {
+#btn-spin-both.btn-spin-hero:hover,
+.gen-controls-dock #btn-spin-both.btn-spin-full:hover {
     transform: translateY(-2px);
     filter: brightness(1.07);
     box-shadow:
@@ -9972,9 +10117,13 @@ body {
     gap: 10px !important;
 }
 
-.btn-spin-sub,
-.gen-secondary-actions-grid .btn-save-plate,
-.gen-secondary-actions-grid .btn-sell-plate {
+.gen-controls-dock .btn-spin-sub,
+.gen-controls-dock .btn-numbers,
+.gen-controls-dock .btn-letters,
+.gen-controls-dock .btn-save-plate,
+.gen-controls-dock #btn-save.btn-save,
+.gen-controls-dock .btn-sell-plate,
+.gen-controls-dock #btn-sell-gen.btn-sell-direct {
     min-height: 50px !important;
     padding: 8px 12px !important;
     border-radius: 13px !important;
@@ -9986,26 +10135,45 @@ body {
     font-size: 13.5px !important;
     font-weight: 800 !important;
     background: rgba(20, 27, 38, 0.9) !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border: 1px solid rgba(255, 255, 255, 0.14) !important;
     color: #F5F6F8 !important;
+    margin: 0 !important;
 }
 
-.btn-spin-sub small,
-.gen-secondary-actions-grid .btn-sell-plate small {
+.gen-controls-dock .btn-save-plate,
+.gen-controls-dock #btn-save.btn-save {
+    margin: 0 !important;
+    border: 1px solid rgba(255, 255, 255, 0.14) !important;
+}
+
+.gen-controls-dock .btn-sell-plate,
+.gen-controls-dock #btn-sell-gen.btn-sell-direct {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.14), rgba(20, 27, 38, 0.92)) !important;
+    border: 1px solid rgba(16, 185, 129, 0.35) !important;
+    color: #ecfdf5 !important;
+}
+
+.gen-controls-dock .btn-spin-sub small,
+.gen-controls-dock .btn-numbers small,
+.gen-controls-dock .btn-letters small,
+.gen-controls-dock .btn-sell-plate small,
+.gen-controls-dock #btn-sell-gen.btn-sell-direct small {
     font-size: 12px !important;
     font-weight: 800 !important;
     color: #fde047 !important;
 }
 
-.gen-secondary-actions-grid .btn-save-plate.can-save {
+.gen-controls-dock .btn-save-plate.can-save,
+.gen-controls-dock #btn-save.btn-save.can-save {
     background: linear-gradient(135deg, rgba(16, 185, 129, 0.28), rgba(5, 150, 105, 0.16)) !important;
     border-color: rgba(16, 185, 129, 0.65) !important;
     color: #ecfdf5 !important;
 }
 
-.gen-secondary-actions-grid .btn-sell-plate.can-sell {
-    background: linear-gradient(135deg, rgba(245, 158, 11, 0.25), rgba(180, 83, 9, 0.14)) !important;
-    border-color: rgba(245, 158, 11, 0.6) !important;
+.gen-controls-dock .btn-sell-plate.can-sell,
+.gen-controls-dock #btn-sell-gen.btn-sell-direct.can-sell {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.28), rgba(16, 185, 129, 0.22)) !important;
+    border-color: rgba(245, 158, 11, 0.68) !important;
     color: #fef3c7 !important;
 }
 
@@ -10073,6 +10241,7 @@ body {
 
 /* Нижняя полоса шансов редкости (.gen-rarity-odds-strip) */
 .gen-rarity-odds-strip {
+    grid-column: 1 / -1;
     position: relative;
     z-index: 2;
     margin: 22px -26px 0 -26px;
@@ -10140,6 +10309,7 @@ body {
 
 /* 8. Адаптивность Этапа 2 для ноутбуков, планшетов и смартфонов */
 @media (max-width: 1220px) {
+    .gen-garage-arena.gen-luxury-grid,
     .gen-garage-arena .gen-luxury-grid {
         grid-template-columns: 270px minmax(0, 1fr) 280px !important;
         gap: 18px !important;
@@ -10147,6 +10317,7 @@ body {
 }
 
 @media (max-width: 1040px) {
+    .gen-garage-arena.gen-luxury-grid,
     .gen-garage-arena .gen-luxury-grid {
         grid-template-columns: 1fr 1fr !important;
     }
@@ -10487,12 +10658,31 @@ body {
         gap: 8px !important;
     }
 
-    /* Во время активного заезда (2D или 3D) скрываем нижнюю навигацию, чтобы не мешала педалям и рулю */
+    .modal-overlay {
+        z-index: 1400 !important;
+    }
+
+    #admin-modal {
+        z-index: 1450 !important;
+    }
+
+    /* Во время активного заезда (2D или 3D) скрываем шапку и нижнюю навигацию, чтобы не мешала педалям и рулю */
+    body.race-active .top-game-header,
+    body.race-active .mobile-bottom-nav,
+    body.race-active #mobile-more-sheet,
+    body:has(#race-play-container:not(.hidden)) .top-game-header,
+    body:has(#race-3d-play-container:not(.hidden)) .top-game-header,
     body:has(#race-play-container:not(.hidden)) .mobile-bottom-nav,
     body:has(#race-3d-play-container:not(.hidden)) .mobile-bottom-nav,
     body:has(#race-play-container:not(.hidden)) .mobile-more-sheet,
     body:has(#race-3d-play-container:not(.hidden)) .mobile-more-sheet {
         display: none !important;
+    }
+
+    body.race-active main.container,
+    body.race-active .container,
+    body.race-active .main-container {
+        z-index: auto !important;
     }
 
     /* ----------------------------------------------------------------------
@@ -10973,7 +11163,7 @@ body {
 
     #garage-preview-3d-wrap,
     #garage-preview-3d-wrap canvas {
-        touch-action: none !important;
+        touch-action: pan-y !important;
     }
 
     .garage-view-switch,
@@ -11041,8 +11231,29 @@ body {
        7. МОБИЛЬНЫЕ КЕЙСЫ (#cases и #roulette-modal): ПОЛНОЕ ПОМЕЩЕНИЕ В ЭКРАН
        ---------------------------------------------------------------------- */
     .case-card .case-open-btn {
-        min-height: 42px !important;
+        min-height: 44px !important;
         font-size: 13px !important;
+    }
+
+    .region-btn-close {
+        width: 40px !important;
+        height: 40px !important;
+        min-width: 40px !important;
+        min-height: 40px !important;
+    }
+
+    .market-type-btn,
+    .mobile-filter-toggle-btn,
+    .podium-dock-btn,
+    .case-country-btn,
+    .case-anim-mode-btn,
+    .roulette-skip-btn {
+        min-height: 44px !important;
+    }
+
+    .inv-fav-btn {
+        width: 36px !important;
+        height: 36px !important;
     }
 
     #roulette-modal .modal-box {
@@ -11102,6 +11313,18 @@ body {
     }
 }
 
+@media (max-width: 480px) {
+    .plate-container.country-usa .plate-bolt.bolt-right {
+        box-shadow: none !important;
+    }
+
+    .admin-car-picker-grid,
+    .collector-book-grid,
+    .achievements-grid {
+        grid-template-columns: 1fr !important;
+    }
+}
+
 /* Сверхкомпактные смартфоны (320px–390px) */
 @media (max-width: 390px) {
     .top-game-header {
@@ -11142,6 +11365,3 @@ body {
         height: calc(100dvh - 54px) !important;
     }
 }
-
-
-

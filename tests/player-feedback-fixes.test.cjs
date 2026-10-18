@@ -321,14 +321,14 @@ test('adminGiveUserCar and adminGiveAllCars grant 25 realistic cars and sync act
     assert(app.run('myCars.some(c => c.name === "Koenigsegg Jesko Attack")'), 'Granted car must appear in active player garage');
     assert(app.run('onlineProfile.myCars.some(c => c.name === "Koenigsegg Jesko Attack")'), 'Granted car must update onlineProfile');
 
-    // 2. Give all 25 cars
+    // 2. Give all 49 cars
     app.run('isAdmin = true;');
     await app.run('adminGiveAllCars();');
     const finalCarReqs = adminRequests.filter(r => r.action === 'giveCar' || r.action === 'giveAllCars');
     assert.equal(finalCarReqs[1].action, 'giveAllCars');
     assert.equal(finalCarReqs[1].data.key, 'adminboss', 'Default target must be the active player');
-    assert.equal(app.run('myCars.length'), 25, 'Garage must contain all 25 cars');
-    assert.equal(app.run('onlineProfile.myCars.length'), 25);
+    assert.equal(app.run('myCars.length'), 49, 'Garage must contain all 49 cars');
+    assert.equal(app.run('onlineProfile.myCars.length'), 49);
     const carNames = app.run('myCars.map(c => c.name)');
     assert(carNames.includes('Ferrari SF90 Stradale'));
     assert(carNames.includes('Bugatti Chiron Super Sport'));

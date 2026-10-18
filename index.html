@@ -60,7 +60,7 @@
     <!-- Подключение Firebase SDK для базы данных, аккаунтов и мультиплеера -->
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
-    <link rel="stylesheet" href="./styles.css?v=5c004317388b">
+    <link rel="stylesheet" href="./styles.css?v=b9123222930a">
     <style>
         /* Collector's Book («Книга коллекционера») & Car-Plate Synergy UI */
         .collector-book-summary {
@@ -1023,7 +1023,7 @@
 
                     <!-- Карточка выбранного авто и быстрый переключатель машины для Дрэга -->
                     <div id="drag-car-summary-bar" style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.92), rgba(30, 41, 59, 0.85)); border: 1px solid rgba(56, 189, 248, 0.32); border-radius: 14px; padding: 12px 14px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-                        <div style="display: flex; flex-direction: column; gap: 4px; min-width: 210px; flex: 1;">
+                        <div style="display: flex; flex-direction: column; gap: 4px; min-width: min(100%, 180px); flex: 1;">
                             <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                                 <span style="font-size: 11px; font-weight: 800; color: #38bdf8; text-transform: uppercase; letter-spacing: 0.5px;">🏎️ Ваше авто на старте:</span>
                                 <b id="drag-active-car-name" style="font-size: 14px; color: #fff;">ВАЗ-2107 «Жигули»</b>
@@ -1036,7 +1036,7 @@
                         </div>
                         <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                             <label for="drag-car-select" style="font-size: 11px; font-weight: 700; color: var(--text-muted);">Сменить авто:</label>
-                            <select id="drag-car-select" class="control-select" style="min-width: 185px; height: 34px; font-size: 12px; font-weight: 700;" onchange="selectDragCarFromDropdown(this.value)"></select>
+                            <select id="drag-car-select" class="control-select" style="min-width: min(100%, 150px); min-height: 40px; font-size: 12px; font-weight: 700;" onchange="selectDragCarFromDropdown(this.value)"></select>
                         </div>
                     </div>
 
@@ -1052,7 +1052,7 @@
                                 <div class="drag-light false-start" id="drag-light-false" title="Фальстарт"></div>
                             </div>
 
-                            <div id="drag-race-status-text" style="font-size: 12px; font-weight: 900; color: #fbbf24; letter-spacing: 0.4px; text-align: center; flex: 1; min-width: 180px;">
+                            <div id="drag-race-status-text" style="font-size: 12px; font-weight: 900; color: #fbbf24; letter-spacing: 0.4px; text-align: center; flex: 1; min-width: min(100%, 160px);">
                                 🚦 ГОТОВ К СТАРТУ НА 402 М
                             </div>
 
@@ -1080,8 +1080,8 @@
                             <div id="drag-rpm-bar" style="height: 100%; width: 15%; background: linear-gradient(90deg, #38bdf8 0%, #10b981 75%, #ef4444 100%); transition: width 0.05s linear;"></div>
                         </div>
                         <div style="display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap;">
-                            <button type="button" class="btn btn-blue" id="btn-drag-shift" onclick="shiftDragGear()" style="flex: 2; min-width: 200px; margin: 0; padding: 10px 14px; font-size: 12.5px; font-weight: 900;">⚡ ПЕРЕКЛЮЧИТЬ ПЕРЕДАЧУ (SHIFT / ПРОБЕЛ)</button>
-                            <button type="button" class="btn btn-gold" id="btn-drag-nitro" onclick="activateDragNitro()" style="flex: 1; min-width: 160px; margin: 0; padding: 10px 14px; font-size: 12px; font-weight: 900;">🚀 ЗАКИСЬ АЗОТА N2O (N)</button>
+                            <button type="button" class="btn btn-blue" id="btn-drag-shift" onclick="shiftDragGear()" style="flex: 2; min-width: min(100%, 140px); margin: 0; padding: 10px 14px; font-size: 12.5px; font-weight: 900;">⚡ ПЕРЕКЛЮЧИТЬ ПЕРЕДАЧУ (SHIFT / ПРОБЕЛ)</button>
+                            <button type="button" class="btn btn-gold" id="btn-drag-nitro" onclick="activateDragNitro()" style="flex: 1; min-width: min(100%, 140px); margin: 0; padding: 10px 14px; font-size: 12px; font-weight: 900;">🚀 ЗАКИСЬ АЗОТА N2O (N)</button>
                         </div>
                         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; margin-top: 7px; font-size: 11px; color: var(--text-dim);">
                             <span>💡 Управление с клавиатуры: <b>Пробел / Shift / ↑</b> — переключить передачу, <b>N / E</b> — закись азота N2O</span>
@@ -1116,7 +1116,7 @@
                             </div>
                             <span id="drag-boss-progress-badge" style="font-size: 11px; font-weight: 800; color: #34d399; background: rgba(16,185,129,0.14); border: 1px solid rgba(16,185,129,0.35); padding: 4px 10px; border-radius: 999px;">Побеждено: 0 / 5</span>
                         </div>
-                        <div id="drag-boss-list" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 10px;"></div>
+                        <div id="drag-boss-list" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr)); gap: 10px;"></div>
                     </div>
                 </div>
 
@@ -1660,7 +1660,31 @@
                     <!-- 1. Обычный Box -->
                     <div class="case-card case-normal" onclick="openCasePreview('normal')">
                         <div class="case-tier-badge tier-common">БАЗОВЫЙ</div>
-                        <div class="case-icon-box">📦</div>
+                        <div class="case-icon-box">
+                            <svg class="case-art-svg" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                                <defs>
+                                    <linearGradient id="cg-norm-body" x1="10" y1="16" x2="70" y2="68" gradientUnits="userSpaceOnUse">
+                                        <stop offset="0%" stop-color="#475569"/>
+                                        <stop offset="50%" stop-color="#1e293b"/>
+                                        <stop offset="100%" stop-color="#0f172a"/>
+                                    </linearGradient>
+                                    <linearGradient id="cg-norm-rim" x1="10" y1="14" x2="70" y2="66" gradientUnits="userSpaceOnUse">
+                                        <stop offset="0%" stop-color="#cbd5e1"/>
+                                        <stop offset="100%" stop-color="#475569"/>
+                                    </linearGradient>
+                                </defs>
+                                <ellipse cx="40" cy="68" rx="28" ry="5" fill="rgba(148,163,184,0.2)"/>
+                                <path d="M28 18C28 14.5 30.5 12 34 12H46C49.5 12 52 14.5 52 18V22H28V18Z" stroke="#94a3b8" stroke-width="3" fill="#0f172a"/>
+                                <rect x="10" y="20" width="60" height="44" rx="9" fill="url(#cg-norm-body)" stroke="url(#cg-norm-rim)" stroke-width="2"/>
+                                <rect x="14" y="24" width="52" height="36" rx="6" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>
+                                <line x1="10" y1="41" x2="70" y2="41" stroke="#0f172a" stroke-width="3"/>
+                                <line x1="10" y1="40" x2="70" y2="40" stroke="#94a3b8" stroke-width="1" stroke-opacity="0.5"/>
+                                <rect x="21" y="19" width="6" height="46" rx="2" fill="#334155" stroke="#94a3b8" stroke-width="1"/>
+                                <rect x="53" y="19" width="6" height="46" rx="2" fill="#334155" stroke="#94a3b8" stroke-width="1"/>
+                                <rect x="31" y="34" width="18" height="14" rx="3.5" fill="#0f172a" stroke="#cbd5e1" stroke-width="1.5"/>
+                                <circle cx="40" cy="41" r="2.5" fill="#38bdf8"/>
+                            </svg>
+                        </div>
                         <div class="case-card-title">Обычный Box</div>
                         <div class="case-card-sub">Базовые и редкие госномера</div>
                         <div class="case-card-price" id="case-price-normal">5 000 ₽</div>
@@ -1675,7 +1699,30 @@
                     <!-- 2. Супер Box -->
                     <div class="case-card case-super" onclick="openCasePreview('super')">
                         <div class="case-tier-badge tier-epic">ЭПИЧЕСКИЙ</div>
-                        <div class="case-icon-box">🎁</div>
+                        <div class="case-icon-box">
+                            <svg class="case-art-svg" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                                <defs>
+                                    <linearGradient id="cg-sup-body" x1="10" y1="18" x2="70" y2="66" gradientUnits="userSpaceOnUse">
+                                        <stop offset="0%" stop-color="#3b0764"/>
+                                        <stop offset="50%" stop-color="#1e1b4b"/>
+                                        <stop offset="100%" stop-color="#0f172a"/>
+                                    </linearGradient>
+                                    <linearGradient id="cg-sup-rim" x1="10" y1="18" x2="70" y2="66" gradientUnits="userSpaceOnUse">
+                                        <stop offset="0%" stop-color="#e879f9"/>
+                                        <stop offset="50%" stop-color="#a855f7"/>
+                                        <stop offset="100%" stop-color="#38bdf8"/>
+                                    </linearGradient>
+                                </defs>
+                                <ellipse cx="40" cy="68" rx="30" ry="6" fill="rgba(168,85,247,0.32)"/>
+                                <path d="M27 18C27 14 30 11 34 11H46C50 11 53 14 53 18V21H27V18Z" stroke="#c084fc" stroke-width="3" fill="#1e1b4b"/>
+                                <rect x="9" y="19" width="62" height="45" rx="10" fill="url(#cg-sup-body)" stroke="url(#cg-sup-rim)" stroke-width="2.2"/>
+                                <path d="M15 25L25 19M65 25L55 19M15 58L25 64M65 58L55 64" stroke="#c084fc" stroke-width="1.5" stroke-opacity="0.6"/>
+                                <line x1="9" y1="41" x2="71" y2="41" stroke="#e879f9" stroke-width="1.8" stroke-opacity="0.8"/>
+                                <polygon points="40,28 51,41 40,54 29,41" fill="#1e1b4b" stroke="#e879f9" stroke-width="2"/>
+                                <polygon points="40,32 47,41 40,50 33,41" fill="#a855f7"/>
+                                <circle cx="40" cy="41" r="3" fill="#f0abfc"/>
+                            </svg>
+                        </div>
                         <div class="case-card-title" style="color: #c084fc;">Супер Box</div>
                         <div class="case-card-sub">Редкие и эпические серии</div>
                         <div class="case-card-price" id="case-price-super">50 000 ₽</div>
@@ -1690,7 +1737,30 @@
                     <!-- 3. Mega Box -->
                     <div class="case-card case-mega" onclick="openCasePreview('mega')">
                         <div class="case-tier-badge tier-legend">ЛЕГЕНДАРНЫЙ</div>
-                        <div class="case-icon-box">💎</div>
+                        <div class="case-icon-box">
+                            <svg class="case-art-svg" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                                <defs>
+                                    <linearGradient id="cg-mega-body" x1="8" y1="16" x2="72" y2="66" gradientUnits="userSpaceOnUse">
+                                        <stop offset="0%" stop-color="#451a03"/>
+                                        <stop offset="50%" stop-color="#1c1917"/>
+                                        <stop offset="100%" stop-color="#090d16"/>
+                                    </linearGradient>
+                                    <linearGradient id="cg-mega-gold" x1="10" y1="14" x2="70" y2="66" gradientUnits="userSpaceOnUse">
+                                        <stop offset="0%" stop-color="#fef08a"/>
+                                        <stop offset="50%" stop-color="#f59e0b"/>
+                                        <stop offset="100%" stop-color="#b45309"/>
+                                    </linearGradient>
+                                </defs>
+                                <ellipse cx="40" cy="68" rx="31" ry="6" fill="rgba(245,158,11,0.38)"/>
+                                <path d="M26 18C26 13.5 29 11 33.5 11H46.5C51 11 54 13.5 54 18V21H26V18Z" stroke="url(#cg-mega-gold)" stroke-width="3" fill="#1c1917"/>
+                                <rect x="8" y="19" width="64" height="45" rx="10" fill="url(#cg-mega-body)" stroke="url(#cg-mega-gold)" stroke-width="2.5"/>
+                                <rect x="13" y="24" width="54" height="35" rx="7" stroke="#fbbf24" stroke-width="1" stroke-opacity="0.4"/>
+                                <line x1="8" y1="41" x2="72" y2="41" stroke="url(#cg-mega-gold)" stroke-width="2.2"/>
+                                <polygon points="40,25 54,37 48,55 32,55 26,37" fill="#291502" stroke="url(#cg-mega-gold)" stroke-width="2"/>
+                                <path d="M31 44L33 34L40 39L47 34L49 44H31Z" fill="url(#cg-mega-gold)"/>
+                                <circle cx="40" cy="31" r="2" fill="#fef08a"/>
+                            </svg>
+                        </div>
                         <div class="case-card-title" style="color: #fbbf24;">Mega Box</div>
                         <div class="case-card-sub">Блатные и легендарные номера</div>
                         <div class="case-card-price" id="case-price-mega">200 000 ₽</div>
@@ -1705,7 +1775,29 @@
                     <!-- 4. Казахстан VIP Box -->
                     <div class="case-card case-super" style="border-top-color: #00afca;" onclick="openCasePreview('kz_box')">
                         <div class="case-tier-badge tier-rare">КАЗАХСТАН VIP</div>
-                        <div class="case-icon-box">🇰🇿</div>
+                        <div class="case-icon-box">
+                            <svg class="case-art-svg" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                                <defs>
+                                    <linearGradient id="cg-kz-body" x1="10" y1="18" x2="70" y2="66" gradientUnits="userSpaceOnUse">
+                                        <stop offset="0%" stop-color="#0284c7"/>
+                                        <stop offset="55%" stop-color="#0369a1"/>
+                                        <stop offset="100%" stop-color="#082f49"/>
+                                    </linearGradient>
+                                    <linearGradient id="cg-kz-gold" x1="10" y1="16" x2="70" y2="64" gradientUnits="userSpaceOnUse">
+                                        <stop offset="0%" stop-color="#fde047"/>
+                                        <stop offset="100%" stop-color="#f59e0b"/>
+                                    </linearGradient>
+                                </defs>
+                                <ellipse cx="40" cy="68" rx="29" ry="5.5" fill="rgba(0,175,202,0.34)"/>
+                                <path d="M27 18C27 14 30 11 34 11H46C50 11 53 14 53 18V21H27V18Z" stroke="url(#cg-kz-gold)" stroke-width="2.8" fill="#082f49"/>
+                                <rect x="9" y="19" width="62" height="45" rx="10" fill="url(#cg-kz-body)" stroke="url(#cg-kz-gold)" stroke-width="2.2"/>
+                                <rect x="14" y="23" width="52" height="37" rx="7" stroke="#38bdf8" stroke-width="1" stroke-opacity="0.5"/>
+                                <circle cx="40" cy="35" r="7" fill="url(#cg-kz-gold)"/>
+                                <path d="M26 42C31 39 35 40 40 42C45 40 49 39 54 42C49 45 31 45 26 42Z" fill="url(#cg-kz-gold)"/>
+                                <rect x="25" y="47" width="30" height="12" rx="4" fill="#082f49" stroke="url(#cg-kz-gold)" stroke-width="1.5"/>
+                                <text x="40" y="56" text-anchor="middle" fill="#fde047" font-family="system-ui,sans-serif" font-weight="900" font-size="9.5" letter-spacing="1.2">KZ</text>
+                            </svg>
+                        </div>
                         <div class="case-card-title" style="color: #38bdf8;">Казахстан VIP Box</div>
                         <div class="case-card-sub">Номера 01/02 KZ · VIP серии</div>
                         <div class="case-card-price" id="case-price-kz">45 000 ₽</div>
@@ -1720,7 +1812,27 @@
                     <!-- 5. Америка State Box -->
                     <div class="case-card case-super" style="border-top-color: #3b82f6;" onclick="openCasePreview('usa_box')">
                         <div class="case-tier-badge tier-rare">USA STATE</div>
-                        <div class="case-icon-box">🇺🇸</div>
+                        <div class="case-icon-box">
+                            <svg class="case-art-svg" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                                <defs>
+                                    <linearGradient id="cg-usa-body" x1="9" y1="19" x2="71" y2="64" gradientUnits="userSpaceOnUse">
+                                        <stop offset="0%" stop-color="#1e3a8a"/>
+                                        <stop offset="60%" stop-color="#172554"/>
+                                        <stop offset="100%" stop-color="#0f172a"/>
+                                    </linearGradient>
+                                </defs>
+                                <ellipse cx="40" cy="68" rx="29" ry="5.5" fill="rgba(59,130,246,0.34)"/>
+                                <path d="M27 18C27 14 30 11 34 11H46C50 11 53 14 53 18V21H27V18Z" stroke="#93c5fd" stroke-width="2.8" fill="#172554"/>
+                                <rect x="9" y="19" width="62" height="45" rx="10" fill="url(#cg-usa-body)" stroke="#60a5fa" stroke-width="2.2"/>
+                                <path d="M11 28H69" stroke="#ef4444" stroke-width="3.5"/>
+                                <path d="M11 35H69" stroke="#f8fafc" stroke-width="2.5" stroke-opacity="0.85"/>
+                                <path d="M11 42H69" stroke="#ef4444" stroke-width="3.5"/>
+                                <rect x="13" y="22" width="24" height="17" rx="4" fill="#1e40af" stroke="#93c5fd" stroke-width="1"/>
+                                <polygon points="25,25 26.8,29 31,29.3 27.7,32 28.8,36 25,33.7 21.2,36 22.3,32 19,29.3 23.2,29" fill="#f8fafc"/>
+                                <rect x="22" y="46" width="36" height="13" rx="4" fill="#0f172a" stroke="#93c5fd" stroke-width="1.5"/>
+                                <text x="40" y="55.5" text-anchor="middle" fill="#f8fafc" font-family="system-ui,sans-serif" font-weight="900" font-size="9.5" letter-spacing="1.2">USA</text>
+                            </svg>
+                        </div>
                         <div class="case-card-title" style="color: #60a5fa;">Америка State Box</div>
                         <div class="case-card-sub">Штаты CA, NY, FL, TX, NV</div>
                         <div class="case-card-price" id="case-price-usa">110 000 ₽</div>
@@ -1735,7 +1847,24 @@
                     <!-- 6. Токио JDM Box -->
                     <div class="case-card case-super" style="border-top-color: #10b981;" onclick="openCasePreview('jpn_box')">
                         <div class="case-tier-badge tier-epic">TOKYO JDM</div>
-                        <div class="case-icon-box">🇯🇵</div>
+                        <div class="case-icon-box">
+                            <svg class="case-art-svg" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                                <defs>
+                                    <linearGradient id="cg-jpn-body" x1="9" y1="19" x2="71" y2="64" gradientUnits="userSpaceOnUse">
+                                        <stop offset="0%" stop-color="#f8fafc"/>
+                                        <stop offset="65%" stop-color="#e2e8f0"/>
+                                        <stop offset="100%" stop-color="#cbd5e1"/>
+                                    </linearGradient>
+                                </defs>
+                                <ellipse cx="40" cy="68" rx="29" ry="5.5" fill="rgba(16,185,129,0.34)"/>
+                                <path d="M27 18C27 14 30 11 34 11H46C50 11 53 14 53 18V21H27V18Z" stroke="#10b981" stroke-width="2.8" fill="#0f172a"/>
+                                <rect x="9" y="19" width="62" height="45" rx="10" fill="url(#cg-jpn-body)" stroke="#10b981" stroke-width="2.4"/>
+                                <circle cx="40" cy="36" r="10.5" fill="#e11d48"/>
+                                <rect x="14" y="23" width="12" height="5" rx="2" fill="#facc15" stroke="#0f172a" stroke-width="1"/>
+                                <rect x="22" y="46" width="36" height="13" rx="4" fill="#064e3b" stroke="#34d399" stroke-width="1.5"/>
+                                <text x="40" y="55.5" text-anchor="middle" fill="#6ee7b7" font-family="system-ui,sans-serif" font-weight="900" font-size="9.5" letter-spacing="1.2">JDM</text>
+                            </svg>
+                        </div>
                         <div class="case-card-title" style="color: #34d399;">Токио JDM Box</div>
                         <div class="case-card-sub">Номера TKY, OSK, YKH · JDM серии</div>
                         <div class="case-card-price" id="case-price-jpn">160 000 ₽</div>
@@ -1750,7 +1879,31 @@
                     <!-- 7. Дубай Sheikh Box -->
                     <div class="case-card case-mega" style="border-top-color: #d97706;" onclick="openCasePreview('uae_box')">
                         <div class="case-tier-badge tier-legend">DUBAI ROYAL</div>
-                        <div class="case-icon-box">🇦🇪</div>
+                        <div class="case-icon-box">
+                            <svg class="case-art-svg" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                                <defs>
+                                    <linearGradient id="cg-uae-body" x1="9" y1="19" x2="71" y2="64" gradientUnits="userSpaceOnUse">
+                                        <stop offset="0%" stop-color="#27272a"/>
+                                        <stop offset="50%" stop-color="#18181b"/>
+                                        <stop offset="100%" stop-color="#09090b"/>
+                                    </linearGradient>
+                                    <linearGradient id="cg-uae-gold" x1="9" y1="16" x2="71" y2="64" gradientUnits="userSpaceOnUse">
+                                        <stop offset="0%" stop-color="#fde047"/>
+                                        <stop offset="50%" stop-color="#f59e0b"/>
+                                        <stop offset="100%" stop-color="#b45309"/>
+                                    </linearGradient>
+                                </defs>
+                                <ellipse cx="40" cy="68" rx="30" ry="6" fill="rgba(245,158,11,0.38)"/>
+                                <path d="M27 18C27 14 30 11 34 11H46C50 11 53 14 53 18V21H27V18Z" stroke="url(#cg-uae-gold)" stroke-width="2.8" fill="#18181b"/>
+                                <rect x="9" y="19" width="62" height="45" rx="10" fill="url(#cg-uae-body)" stroke="url(#cg-uae-gold)" stroke-width="2.4"/>
+                                <rect x="13" y="23" width="10" height="20" rx="2" fill="#dc2626"/>
+                                <rect x="23" y="23" width="44" height="6.6" rx="1" fill="#16a34a"/>
+                                <rect x="23" y="29.6" width="44" height="6.6" fill="#f8fafc"/>
+                                <rect x="23" y="36.2" width="44" height="6.8" rx="1" fill="#09090b"/>
+                                <rect x="22" y="46" width="36" height="13" rx="4" fill="#1c1917" stroke="url(#cg-uae-gold)" stroke-width="1.6"/>
+                                <text x="40" y="55.5" text-anchor="middle" fill="#fde047" font-family="system-ui,sans-serif" font-weight="900" font-size="9.5" letter-spacing="1.2">DXB</text>
+                            </svg>
+                        </div>
                         <div class="case-card-title" style="color: #fbbf24;">Дубай Sheikh Box</div>
                         <div class="case-card-sub">Элитные номера DXB & AUH</div>
                         <div class="case-card-price" id="case-price-uae">320 000 ₽</div>
@@ -1765,7 +1918,24 @@
                     <!-- 8. Спец-Архив Box -->
                     <div class="case-card case-mega" style="border-top-color: #dc2626;" onclick="openCasePreview('special_box')">
                         <div class="case-tier-badge tier-mythic">СПЕЦСЕРИИ</div>
-                        <div class="case-icon-box">☭</div>
+                        <div class="case-icon-box">
+                            <svg class="case-art-svg" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                                <defs>
+                                    <linearGradient id="cg-spec-body" x1="9" y1="19" x2="71" y2="64" gradientUnits="userSpaceOnUse">
+                                        <stop offset="0%" stop-color="#991b1b"/>
+                                        <stop offset="55%" stop-color="#7f1d1d"/>
+                                        <stop offset="100%" stop-color="#450a0a"/>
+                                    </linearGradient>
+                                </defs>
+                                <ellipse cx="40" cy="68" rx="30" ry="6" fill="rgba(220,38,38,0.4)"/>
+                                <path d="M27 18C27 14 30 11 34 11H46C50 11 53 14 53 18V21H27V18Z" stroke="#fbbf24" stroke-width="2.8" fill="#450a0a"/>
+                                <rect x="9" y="19" width="62" height="45" rx="10" fill="url(#cg-spec-body)" stroke="#fbbf24" stroke-width="2.4"/>
+                                <rect x="13" y="23" width="54" height="37" rx="7" stroke="#fca5a5" stroke-width="1" stroke-opacity="0.35"/>
+                                <polygon points="40,23 43.2,30 50.8,30.8 45,35.8 46.7,43.2 40,39.2 33.3,43.2 35,35.8 29.2,30.8 36.8,30" fill="#fbbf24" stroke="#fef08a" stroke-width="1"/>
+                                <rect x="20" y="46" width="40" height="12" rx="4" fill="#450a0a" stroke="#fbbf24" stroke-width="1.4"/>
+                                <text x="40" y="55" text-anchor="middle" fill="#fde047" font-family="system-ui,sans-serif" font-weight="900" font-size="8.5" letter-spacing="1">ГОСТ·CD</text>
+                            </svg>
+                        </div>
                         <div class="case-card-title" style="color: #fca5a5;">Спец-Архив Box</div>
                         <div class="case-card-sub">СССР ГОСТ • CD МИД • МВД • МО • ФСО</div>
                         <div class="case-card-price" id="case-price-special">250 000 ₽</div>
@@ -1780,7 +1950,24 @@
                     <!-- 9. Авто-Кейс -->
                     <div class="case-card case-normal" style="border-top-color: #10b981;" onclick="openCasePreview('car_standard')">
                         <div class="case-tier-badge tier-rare">АВТОПАРК</div>
-                        <div class="case-icon-box">🏎️</div>
+                        <div class="case-icon-box">
+                            <svg class="case-art-svg" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                                <defs>
+                                    <linearGradient id="cg-car1-body" x1="9" y1="18" x2="71" y2="65" gradientUnits="userSpaceOnUse">
+                                        <stop offset="0%" stop-color="#065f46"/>
+                                        <stop offset="55%" stop-color="#0f172a"/>
+                                        <stop offset="100%" stop-color="#022c22"/>
+                                    </linearGradient>
+                                </defs>
+                                <ellipse cx="40" cy="68" rx="30" ry="5.5" fill="rgba(16,185,129,0.34)"/>
+                                <rect x="9" y="18" width="62" height="46" rx="10" fill="url(#cg-car1-body)" stroke="#34d399" stroke-width="2.2"/>
+                                <line x1="15" y1="24" x2="65" y2="24" stroke="#10b981" stroke-width="1.5" stroke-opacity="0.5"/>
+                                <path d="M19 46L25 35H49L57 41L62 43V49H18V46Z" fill="#10b981" fill-opacity="0.28" stroke="#6ee7b7" stroke-width="2" stroke-linejoin="round"/>
+                                <circle cx="28" cy="49" r="5" fill="#0f172a" stroke="#e2e8f0" stroke-width="2.2"/>
+                                <circle cx="53" cy="49" r="5" fill="#0f172a" stroke="#e2e8f0" stroke-width="2.2"/>
+                                <text x="40" y="31" text-anchor="middle" fill="#a7f3d0" font-family="system-ui,sans-serif" font-weight="900" font-size="7.5" letter-spacing="1.5">GARAGE</text>
+                            </svg>
+                        </div>
                         <div class="case-card-title" style="color: #34d399;">Авто-Кейс</div>
                         <div class="case-card-sub">Седаны, стрит и JDM авто</div>
                         <div class="case-card-price">650 000 ₽</div>
@@ -1795,7 +1982,28 @@
                     <!-- 10. Элит Авто Box -->
                     <div class="case-card case-mega" style="border-top-color: #f59e0b;" onclick="openCasePreview('car_luxury')">
                         <div class="case-tier-badge tier-legend">ПРЕМИУМ АВТО</div>
-                        <div class="case-icon-box">👑</div>
+                        <div class="case-icon-box">
+                            <svg class="case-art-svg" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                                <defs>
+                                    <linearGradient id="cg-car2-body" x1="9" y1="18" x2="71" y2="65" gradientUnits="userSpaceOnUse">
+                                        <stop offset="0%" stop-color="#581c87"/>
+                                        <stop offset="50%" stop-color="#2e1065"/>
+                                        <stop offset="100%" stop-color="#1c1917"/>
+                                    </linearGradient>
+                                    <linearGradient id="cg-car2-gold" x1="9" y1="18" x2="71" y2="65" gradientUnits="userSpaceOnUse">
+                                        <stop offset="0%" stop-color="#fef08a"/>
+                                        <stop offset="50%" stop-color="#fbbf24"/>
+                                        <stop offset="100%" stop-color="#d97706"/>
+                                    </linearGradient>
+                                </defs>
+                                <ellipse cx="40" cy="68" rx="31" ry="6" fill="rgba(245,158,11,0.4)"/>
+                                <rect x="9" y="18" width="62" height="46" rx="10" fill="url(#cg-car2-body)" stroke="url(#cg-car2-gold)" stroke-width="2.4"/>
+                                <path d="M32 31L34 24L40 28L46 24L48 31H32Z" fill="url(#cg-car2-gold)"/>
+                                <path d="M17 47L24 37H50L59 42L63 45V50H17V47Z" fill="rgba(251,191,36,0.22)" stroke="url(#cg-car2-gold)" stroke-width="2" stroke-linejoin="round"/>
+                                <circle cx="27" cy="50" r="5" fill="#1c1917" stroke="#fde047" stroke-width="2.2"/>
+                                <circle cx="53" cy="50" r="5" fill="#1c1917" stroke="#fde047" stroke-width="2.2"/>
+                            </svg>
+                        </div>
                         <div class="case-card-title" style="color: #fbbf24;">Элит Авто Box</div>
                         <div class="case-card-sub">Премиум, спорткары и Гелик</div>
                         <div class="case-card-price">7 500 000 ₽</div>
@@ -1810,7 +2018,29 @@
                     <!-- 11. Гиперкар Box -->
                     <div class="case-card case-mega" style="border-top-color: #ef4444;" onclick="openCasePreview('car_hyper')">
                         <div class="case-tier-badge tier-mythic">ГИПЕРКАРЫ</div>
-                        <div class="case-icon-box">🔥</div>
+                        <div class="case-icon-box">
+                            <svg class="case-art-svg" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                                <defs>
+                                    <linearGradient id="cg-car3-body" x1="8" y1="18" x2="72" y2="65" gradientUnits="userSpaceOnUse">
+                                        <stop offset="0%" stop-color="#7f1d1d"/>
+                                        <stop offset="50%" stop-color="#18181b"/>
+                                        <stop offset="100%" stop-color="#09090b"/>
+                                    </linearGradient>
+                                    <linearGradient id="cg-car3-rim" x1="8" y1="18" x2="72" y2="65" gradientUnits="userSpaceOnUse">
+                                        <stop offset="0%" stop-color="#f87171"/>
+                                        <stop offset="50%" stop-color="#ef4444"/>
+                                        <stop offset="100%" stop-color="#fbbf24"/>
+                                    </linearGradient>
+                                </defs>
+                                <ellipse cx="40" cy="68" rx="32" ry="6.5" fill="rgba(239,68,68,0.45)"/>
+                                <rect x="8" y="18" width="64" height="46" rx="10" fill="url(#cg-car3-body)" stroke="url(#cg-car3-rim)" stroke-width="2.5"/>
+                                <path d="M22 25L40 32L58 25" stroke="#fbbf24" stroke-width="2" stroke-linecap="round"/>
+                                <path d="M15 48L24 38H48L62 43L65 47V50H15V48Z" fill="rgba(239,68,68,0.28)" stroke="url(#cg-car3-rim)" stroke-width="2" stroke-linejoin="round"/>
+                                <circle cx="27" cy="50" r="5.2" fill="#09090b" stroke="#fbbf24" stroke-width="2.2"/>
+                                <circle cx="54" cy="50" r="5.2" fill="#09090b" stroke="#fbbf24" stroke-width="2.2"/>
+                                <text x="40" y="29" text-anchor="middle" fill="#fca5a5" font-family="system-ui,sans-serif" font-weight="900" font-size="7.5" letter-spacing="1.6">HYPER</text>
+                            </svg>
+                        </div>
                         <div class="case-card-title" style="color: #f87171;">Гиперкар Box</div>
                         <div class="case-card-sub">Гиперкары Bugatti, Jesko, SF90</div>
                         <div class="case-card-price">45 000 000 ₽</div>
@@ -2054,7 +2284,7 @@
     <!-- МОДАЛЬНОЕ ОКНО: АДМИНИСТРАТИВНАЯ ПАНЕЛЬ (h3h) -->
     <div id="admin-modal" class="modal-overlay">
         <div class="modal-box admin-modal-box">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; border-bottom: 1px solid var(--border-subtle); padding-bottom: 10px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; border-bottom: 1px solid var(--border-subtle); padding-bottom: 10px;">
                 <div style="display: flex; align-items: center; gap: 8px;">
                     <span style="font-size: 22px;">👑</span>
                     <h3 style="margin: 0; color: #fbbf24; font-size: 18px;">Админ-Панель Сервера (h3h)</h3>
@@ -2127,7 +2357,7 @@
             <!-- Вкладка: Кто что крутит (Журнал событий) -->
             <div id="adm-panel-activity" class="hidden">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
-                    <input type="text" id="admin-act-search" placeholder="Поиск по никнейму или действию..." style="padding: 8px 12px; background: rgba(255,255,255,0.06); border: 1px solid var(--border-subtle); color: #fff; border-radius: var(--radius-sm); font-size: 13px; min-width: 240px;" oninput="renderAdminActivity()">
+                    <input type="text" id="admin-act-search" placeholder="Поиск по никнейму или действию..." style="padding: 8px 12px; background: rgba(255,255,255,0.06); border: 1px solid var(--border-subtle); color: #fff; border-radius: var(--radius-sm); font-size: 13px; min-width: min(100%, 200px); flex: 1;" oninput="renderAdminActivity()">
                     <button class="test-btn" onclick="clearActivityLogs()" style="color: #ef4444; border-color: rgba(239, 68, 68, 0.3);">🗑️ Очистить журнал</button>
                 </div>
                 <div id="admin-activity-list" style="max-height: 440px; overflow-y: auto; background: rgba(0,0,0,0.3); border: 1px solid var(--border-subtle); border-radius: var(--radius-md);">
@@ -2137,7 +2367,7 @@
 
             <!-- Вкладка: Быстрые действия -->
             <div id="adm-panel-tools" class="hidden">
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px;">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr)); gap: 12px;">
                     <div style="background: rgba(255,255,255,0.03); padding: 14px; border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
                         <h4 style="margin: 0 0 8px 0; color: #fff;">💰 Выдать себе баланс</h4>
                         <p style="font-size: 12px; color: var(--text-dim); margin-bottom: 10px;">Начислить 100 000 000 ₽ на баланс активного игрового профиля (не аккаунта администратора):</p>
@@ -2165,8 +2395,12 @@
     </div>
 
     <!-- МОДАЛЬНОЕ ОКНО: АККАУНТ И ОБЛАЧНАЯ СИНХРОНИЗАЦИЯ -->
-    <div id="auth-modal" class="modal-overlay">
+    <div id="auth-modal" class="modal-overlay" onclick="if(event.target===this)closeProfileModal()">
         <div class="modal-box" style="max-width: 440px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <span class="luxury-panel-eyebrow">АККАУНТ И ПРОФИЛЬ ИГРОКА</span>
+                <button type="button" class="region-btn-close" onclick="closeProfileModal()" aria-label="Закрыть">✕</button>
+            </div>
             <div class="auth-tabs">
                 <button class="auth-tab-btn active" id="tab-btn-auth-profile" onclick="switchAuthTab('profile')">👤 Профиль</button>
                 <button class="auth-tab-btn" id="tab-btn-auth-login" onclick="switchAuthTab('login')">🔑 Вход</button>
@@ -2319,9 +2553,12 @@
     </div>
 
     <!-- МОДАЛЬНОЕ ОКНО: ВЫБОР НОМЕРА ДЛЯ АВТО -->
-    <div id="attach-modal" class="modal-overlay">
+    <div id="attach-modal" class="modal-overlay" onclick="if(event.target===this)closeAttachModal()">
         <div class="modal-box">
-            <h3 style="margin-top:0; color: #fff; margin-bottom: 12px;">Выберите номер</h3>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <h3 style="margin: 0; color: #fff;">Выберите номер</h3>
+                <button type="button" class="region-btn-close" onclick="closeAttachModal()" aria-label="Закрыть">✕</button>
+            </div>
             <div id="attach-list" class="modal-scrollable"></div>
             <button class="btn btn-close" onclick="closeAttachModal()">Отмена</button>
         </div>
@@ -2846,8 +3083,8 @@
     </script>
     <script src="./js/race-effects.js?v=6883d3af7d80"></script>
     <script src="./js/nfs-physics.js?v=8345fce74626"></script>
-    <script src="./js/nfs-circuit-race.js?v=05bfeab9b9a0"></script>
-    <script src="./js/car-3d.js?v=f4537ffff2a5"></script>
-    <script src="./js/app.js?v=5260a8010ca4"></script>
+    <script src="./js/nfs-circuit-race.js?v=6b87132535ec"></script>
+    <script src="./js/car-3d.js?v=2ab04d039b88"></script>
+    <script src="./js/app.js?v=38e81a895310"></script>
 </body>
 </html>

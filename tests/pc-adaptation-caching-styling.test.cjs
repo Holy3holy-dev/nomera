@@ -40,7 +40,7 @@ test('HTML: Race header HUD includes touch controls toggle and styling modal use
 test('GLB Caching & Browser Cache: car-3d.js enables THREE.Cache and implements fetchCachedGLBBuffer', () => {
     const car3dCode = fs.readFileSync(path.join(__dirname, '../js/car-3d.js'), 'utf8');
 
-    assert.ok(car3dCode.includes('nomera-glb-cache-v1'), 'Must use nomera-glb-cache-v1 cache name');
+    assert.match(car3dCode, /nomera-glb-cache-v\d+/, 'Must use versioned nomera-glb-cache cache name');
     assert.ok(car3dCode.includes('fetchCachedGLBBuffer'), 'Must define fetchCachedGLBBuffer');
     assert.ok(car3dCode.includes('THREE.Cache.enabled = true'), 'Must enable THREE.Cache for persistent in-memory caching');
     assert.ok(car3dCode.includes('loader.parse'), 'Must support parsing ArrayBuffer from disk cache');

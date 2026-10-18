@@ -1336,20 +1336,20 @@
                 tone(260, 0.28, 0.09, 0.02, 'triangle', 95);
             },
             speedbreakerOn() {
-                // NFS Most Wanted Speedbreaker time-dilation activation: deep sub-bass drop + metallic time-warp
+                // Time-dilation activation: deep sub-bass drop + metallic time-warp
                 noiseBurst({ duration: 0.42, gain: 0.11, filterType: 'lowpass', filterFreq: 1400, filterEndFreq: 120, filterQ: 2.2 });
                 tone(260, 0.45, 0.22, 0, 'sawtooth', 42);
                 tone(130, 0.50, 0.26, 0.02, 'triangle', 28);
                 tone(520, 0.30, 0.09, 0, 'sine', 95);
             },
             speedbreakerOff() {
-                // NFS Most Wanted Speedbreaker deactivation: upward pitch time-snap recovery
+                // Time-dilation deactivation: upward pitch time-snap recovery
                 noiseBurst({ duration: 0.26, gain: 0.08, filterType: 'bandpass', filterFreq: 220, filterEndFreq: 1800, filterQ: 1.8 });
                 tone(55, 0.28, 0.18, 0, 'triangle', 280);
                 tone(110, 0.25, 0.12, 0.02, 'sawtooth', 560);
             },
             countdownBeep(stage = 1) {
-                // Authentic NFS MW 3-2-1-GO race start synth beep
+                // 3-2-1-GO race start synth beep
                 if (stage === 'go' || stage === 0) {
                     tone(880, 0.36, 0.18, 0, 'sawtooth', 880);
                     tone(1318.5, 0.38, 0.14, 0.01, 'triangle', 1318.5);
@@ -1367,7 +1367,7 @@
                 tone(baseWhine * 1.5, 0.20, 0.045, 0.01, 'triangle', baseWhine * 1.65);
             },
             superchargerWhine(speed = 160) {
-                // Roots/Twin-screw V8 supercharger whine (Mustang Razor / Corvette C6.R / SLR McLaren)
+                // Roots/Twin-screw V8 supercharger whine (Ford Mustang GT / Corvette C6.R / SLR McLaren)
                 const v = Math.max(40, Math.min(400, Number(speed) || 160));
                 const f = 520 + v * 2.6;
                 tone(f, 0.22, 0.065, 0, 'triangle', f * 1.15);

@@ -112,7 +112,7 @@ async function handle(request,context={}){
       : Math.min(120,Math.max(0,Math.floor(Number(data?.pity)||0)));
     const txnInput={...data,pity:spinPity,lotId:action==='sell'?'lot_'+uniqueId():data.lotId,
       plateId:action==='claim'?'plate_'+uniqueId():data.plateId,
-      roll:action==='roll'?core.secureRoll(data.mode, spinPity):undefined,
+      roll:action==='roll'?core.secureRoll(data.mode, spinPity, data.country):undefined,
       messageId:'msg_'+String(Date.now()).padStart(13,'0')+'_'+uniqueId()};
     const update=core.makeOnlineTransactionUpdate(current,action,key,txnInput,Date.now());
     const tx=await stateRef.transaction(update.update,undefined,false);

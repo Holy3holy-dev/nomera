@@ -7,7 +7,7 @@ const { createApp } = require('./helpers/create-app.cjs');
 
 test('HTML structure: Sell button is located next to To Collection button in generator', () => {
     const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
-    assert.match(html, /<div class="generator-action-row">\s*<button[^>]+id="btn-save"[^>]*>[\s\S]*?<\/button>\s*<button[^>]+id="btn-sell-direct"[^>]*>[\s\S]*?<\/button>\s*<\/div>/);
+    assert.match(html, /<div class="(?:generator-action-row|gen-secondary-actions-grid)">\s*<button[^>]+id="btn-save"[^>]*>[\s\S]*?<\/button>\s*<button[^>]+id="btn-sell-direct"[^>]*>[\s\S]*?<\/button>/);
     assert.match(html, /onclick="sellCurrentPlate\(\)"/);
 });
 

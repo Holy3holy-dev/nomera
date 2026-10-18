@@ -2,12 +2,12 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const { createApp } = require('./helpers/create-app.cjs');
 
-test('all 25 cars are defined in carsData and carRaceStats with valid attributes', () => {
+test('all 49 cars are defined in carsData and carRaceStats with valid attributes', () => {
     const app = createApp();
     const cars = app.run('carsData');
     const stats = app.run('carRaceStats');
 
-    assert.equal(cars.length, 25, 'carsData must have exactly 25 cars');
+    assert.equal(cars.length, 49, 'carsData must have exactly 49 cars');
 
     const names = new Set();
     for (const car of cars) {
@@ -27,7 +27,7 @@ test('all 25 cars are defined in carsData and carRaceStats with valid attributes
     }
 });
 
-test('pixel art car sprite generator creates valid data URLs for all 25 cars', () => {
+test('pixel art car sprite generator creates valid data URLs for all 49 cars', () => {
     const app = createApp();
     const cars = app.run('carsData.map(c => c.name)');
 
@@ -106,9 +106,9 @@ test('dealership category filters correctly isolate price tiers', () => {
     const app = createApp();
     app.run('renderCars()');
 
-    // Default 'all': 25 cars rendered
+    // Default 'all': 49 cars rendered
     const listAll = app.run('document.getElementById("garage-list").innerHTML');
-    assert.equal((listAll.match(/class="car-shop-card"/g) || []).length, 25);
+    assert.equal((listAll.match(/class="car-shop-card"/g) || []).length, 49);
 
     // 'hyper': 5 cars (Huracan, Cullinan, SF90, Chiron, Jesko)
     app.run('filterShopCars("hyper")');
@@ -556,3 +556,69 @@ test('syncMyLeaderboardEntry synchronizes player stats, level and avatarData to 
     assert.ok(lbWrite.val.avatarData.startsWith('data:image/svg+xml;base64,'));
     assert.equal(app.run('avatarData'), app.run('AVATAR_PRESETS[3]'));
 });
+
+test('all 24 additional 3D sports/GT/supercar models use clean real-world names, are in dealership and cases, and require payment when bought via quick-select', () => {
+    const app = createApp({
+        saved: {
+            nickname: 'CleanCarBuyer',
+            balance: 50000000,
+            achievements: { first_million: true },
+            myCars: [{ name: 'ВАЗ-2107 «Жигули»', basePrice: 120000, condition: 100 }]
+        }
+    });
+    app.run('loadProgress()');
+
+    const cars = app.run('carsData');
+    const configs = app.run('caseConfigs');
+    const forbiddenPattern = /\b(nfs|most wanted|blacklist|razor|cross|bull|ronnie|webster|ming|kaze|jewels|earl|baron|big lou|izzy|vic|taz|sonny|darius|рейзор|кросс|булл|ронни|вебстер|минг|камикадзе|джуэлс|эрл|барон|биг лу|иззи|вик|таз|сонни|дариус|чёрный список|черный список)\b/i;
+
+    for (const c of cars) {
+        assert.ok(!forbiddenPattern.test(c.name), `Car name "${c.name}" must not contain NFS MW or character names`);
+    }
+
+    const allCaseCarNames = new Set([
+        ...configs.car_standard.cars.map(c => c.name),
+        ...configs.car_luxury.cars.map(c => c.name),
+        ...configs.car_hyper.cars.map(c => c.name)
+    ]);
+
+    const added24 = [
+        'Volkswagen Golf GTI',
+        'Lexus IS300',
+        'Mitsubishi Eclipse GT',
+        'Hyundai Elantra N',
+        'Mazda RX-8',
+        'Ford Mustang GT Coupe',
+        'Mitsubishi Lancer Evo VIII',
+        'Porsche Cayman S',
+        'Mercedes-Benz CLK 500',
+        'Toyota Supra MK4',
+        'BMW M3 G80 Competition',
+        'Chevrolet Corvette C6',
+        'Porsche Panamera Turbo',
+        'Ford Mustang GT',
+        'Audi RS7 Sportback',
+        'BMW X5M Competition',
+        'Maserati GranTurismo',
+        'Dodge Viper SRT10',
+        'Aston Martin DB9',
+        'Lamborghini Gallardo',
+        'Chevrolet Corvette C6.R',
+        'Mercedes-Benz SLR McLaren',
+        'BMW M3 E46 GTR',
+        'Audi Le Mans Quattro R8'
+    ];
+
+    for (const name of added24) {
+        const inShop = cars.find(c => c.name === name);
+        assert.ok(inShop && inShop.price > 0, `${name} must be in dealership with positive price`);
+        assert.ok(allCaseCarNames.has(name), `${name} must be included in car cases`);
+    }
+
+    // Buying an unowned car via claimAndSelectNfsMwCar deducts its dealership price
+    const beforeBal = app.run('balance');
+    const idx = app.run('claimAndSelectNfsMwCar("m3gtr", false)');
+    assert.ok(idx >= 0, 'claimAndSelectNfsMwCar must add BMW M3 E46 GTR when player has sufficient funds');
+    assert.equal(app.run('balance'), beforeBal - 25000000, 'Must deduct 25,000,000 ₽ for BMW M3 E46 GTR');
+});
+
