@@ -562,6 +562,34 @@ test('7. 3D Biomes (Lefortovo Tunnel & Cable-Stayed Bridge), 1st-Person Cockpit 
         assert.equal(engine.cameraMode, 4, 'setCameraMode("cockpit") must select index 4');
         assert.equal(engine.cockpitGroup.visible, true, 'Cockpit rig must be visible in cockpit camera mode');
 
+        // Verify cockpit view does not obstruct the road:
+        // 1) Steering wheel top rim sits well below driver eye height and horizon look-at height
+        const cockpitCamCfg = engine.cameraModes[4];
+        const wheelTopY = engine.cockpitSteeringWheel.position.y + 0.142;
+        assert.ok(wheelTopY < cockpitCamCfg.lookOffset.y - 0.15, `Steering wheel top (${wheelTopY}) must sit below horizon lookOffset.y (${cockpitCamCfg.lookOffset.y}) so road is visible`);
+        assert.ok(cockpitCamCfg.offset.y >= 1.20, 'Cockpit camera eye height must be elevated for clear road view');
+        // 2) Exterior car body/windshield meshes are hidden while in cockpit mode so tinted glass or roofs never block the road
+        let nonCockpitMeshVisibleCount = 0;
+        engine.playerCar.traverse(child => {
+            if (!child.isMesh) return;
+            let p = child;
+            while (p) {
+                if (p === engine.cockpitGroup) return;
+                p = p.parent;
+            }
+            if (child.visible) nonCockpitMeshVisibleCount++;
+        });
+        assert.equal(nonCockpitMeshVisibleCount, 0, 'All non-cockpit car body/glass meshes must be hidden in cockpit mode so road is never blocked');
+
+        // Switching back to chase camera (mode 0) must restore exterior car meshes
+        engine.setCameraMode(0);
+        let restoredMeshCount = 0;
+        engine.playerCar.traverse(child => {
+            if (child.isMesh && child.visible) restoredMeshCount++;
+        });
+        assert.ok(restoredMeshCount > 5, 'Switching back to chase mode must restore exterior car mesh visibility');
+        engine.setCameraMode('cockpit');
+
         // Steering wheel rotation & wiper animation in rain
         engine.setBiome('highway');
         engine.state.z = 100;
@@ -580,6 +608,7 @@ test('7. 3D Biomes (Lefortovo Tunnel & Cable-Stayed Bridge), 1st-Person Cockpit 
         // 3. Verify 300+ km/h Hypersonic Fire Trails («Огненный след»), Brake Disc Glow, and Active Aero Wing
         assert.ok(engine.playerFireTrails && engine.playerFireTrails.length === 2, 'Must attach twin HypersonicFireTrail meshes');
         assert.ok(engine.playerBrakeDiscs && engine.playerBrakeDiscs.length >= 4, 'Must have 4 glowing brake disc rotors');
+        assert.ok(engine.playerBrakeDiscs.every(d => d.name === 'BrakeDiscRotor' || d.name.startsWith('BrakeDiscGlowMesh_')), 'Procedural car brake discs must use actual wheel BrakeDiscRotor or invisible-when-cold glow meshes');
         assert.ok(engine.playerActiveAero && engine.playerActiveAero.length >= 1, 'Must have deployable active aero wing');
 
         engine.state.speed = 315; // 300+ km/h hypersonic threshold

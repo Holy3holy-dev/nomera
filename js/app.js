@@ -16040,6 +16040,24 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         let raceRadioStation = 'off';
         let raceRadioTimerId = null;
         let raceRadioStep = 0;
+        let raceRadioAudioCtx = null;
+
+        function ensureRaceRadioAudioContext() {
+            try {
+                if (typeof initAudio === 'function') initAudio();
+                if (!raceRadioAudioCtx && typeof window !== 'undefined') {
+                    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                    if (AudioCtx) {
+                        raceRadioAudioCtx = window._nomeraRadioAudioCtx || new AudioCtx();
+                        window._nomeraRadioAudioCtx = raceRadioAudioCtx;
+                    }
+                }
+                if (raceRadioAudioCtx && raceRadioAudioCtx.state === 'suspended' && typeof raceRadioAudioCtx.resume === 'function') {
+                    raceRadioAudioCtx.resume().catch(() => {});
+                }
+            } catch (_) {}
+            return raceRadioAudioCtx;
+        }
 
         function getRaceRadioStationMeta(stationId = raceRadioStation) {
             return RACE_RADIO_STATIONS.find(s => s.id === stationId) || RACE_RADIO_STATIONS[0];
@@ -16069,87 +16087,130 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
         function playRaceRadioStepSound() {
             if (typeof isMuted !== 'undefined' && isMuted) return;
+            if (typeof sound !== 'undefined' && sound && typeof sound.preferences === 'function') {
+                const prefs = sound.preferences();
+                if (prefs && prefs.muted) return;
+            }
             if (!isRaceRunning || raceRadioStation === 'off') return;
-            if (typeof initAudio === 'function') initAudio();
-            if (!audioCtx || audioCtx.state === 'suspended') return;
+            const ctx = ensureRaceRadioAudioContext();
+            if (!ctx) return;
 
-            const now = audioCtx.currentTime;
+            const prefsVol = (typeof sound !== 'undefined' && sound && typeof sound.preferences === 'function')
+                ? (sound.preferences().volume ?? 0.55)
+                : 0.55;
+            const volScale = Math.max(0.25, Math.min(1.6, prefsVol * 1.45));
+
+            const now = ctx.currentTime;
             const step = raceRadioStep++ % 16;
 
             try {
                 if (raceRadioStation === 'phonk') {
                     // 1. Cowbell-мелодия (Memphis Drift Phonk)
-                    const cowbellNotes = [587.33, 0, 587.33, 698.46, 783.99, 0, 698.46, 587.33, 523.25, 0, 587.33, 698.46, 880.0, 783.99, 698.46, 0];
+                    const cowbellNotes = [587.33, 0, 587.33, 698.46, 783.99, 0, 698.46, 587.33, 523.25, 0, 587.33, 698.46, 880.0, 783.99, 698.46, 587.33];
                     const noteFreq = cowbellNotes[step];
                     if (noteFreq > 0) {
-                        const osc1 = audioCtx.createOscillator();
-                        const osc2 = audioCtx.createOscillator();
-                        const filter = audioCtx.createBiquadFilter();
-                        const gain = audioCtx.createGain();
+                        const osc1 = ctx.createOscillator();
+                        const osc2 = ctx.createOscillator();
+                        const filter = ctx.createBiquadFilter();
+                        const gain = ctx.createGain();
                         osc1.type = 'square';
                         osc2.type = 'sawtooth';
                         osc1.frequency.setValueAtTime(noteFreq, now);
                         osc2.frequency.setValueAtTime(noteFreq * 1.48, now);
                         filter.type = 'bandpass';
-                        filter.frequency.setValueAtTime(950, now);
-                        filter.Q.setValueAtTime(3.2, now);
-                        gain.gain.setValueAtTime(0.032, now);
-                        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.11);
+                        filter.frequency.setValueAtTime(1050, now);
+                        filter.Q.setValueAtTime(2.6, now);
+                        gain.gain.setValueAtTime(0.13 * volScale, now);
+                        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.13);
                         osc1.connect(filter);
                         osc2.connect(filter);
                         filter.connect(gain);
-                        gain.connect(audioCtx.destination);
+                        gain.connect(ctx.destination);
                         osc1.start(now);
                         osc2.start(now);
-                        osc1.stop(now + 0.12);
-                        osc2.stop(now + 0.12);
+                        osc1.stop(now + 0.14);
+                        osc2.stop(now + 0.14);
                     }
                     // 2. 808 Sub-Bass Kick на долях 0, 3, 6, 8, 11, 14
                     if (step === 0 || step === 3 || step === 6 || step === 8 || step === 11 || step === 14) {
-                        const sub = audioCtx.createOscillator();
-                        const subGain = audioCtx.createGain();
+                        const sub = ctx.createOscillator();
+                        const subGain = ctx.createGain();
                         sub.type = 'triangle';
-                        sub.frequency.setValueAtTime(115, now);
-                        sub.frequency.exponentialRampToValueAtTime(46, now + 0.14);
-                        subGain.gain.setValueAtTime(0.055, now);
-                        subGain.gain.exponentialRampToValueAtTime(0.001, now + 0.16);
+                        sub.frequency.setValueAtTime(135, now);
+                        sub.frequency.exponentialRampToValueAtTime(48, now + 0.16);
+                        subGain.gain.setValueAtTime(0.22 * volScale, now);
+                        subGain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
                         sub.connect(subGain);
-                        subGain.connect(audioCtx.destination);
+                        subGain.connect(ctx.destination);
                         sub.start(now);
-                        sub.stop(now + 0.17);
+                        sub.stop(now + 0.19);
+                    }
+                    // 3. Чёткий хай-хэт / снейр-импульс
+                    if (step === 4 || step === 12 || step % 2 === 1) {
+                        const hatOsc = ctx.createOscillator();
+                        const hatFilter = ctx.createBiquadFilter();
+                        const hatGain = ctx.createGain();
+                        hatOsc.type = 'square';
+                        hatOsc.frequency.setValueAtTime((step === 4 || step === 12) ? 240 : 4200, now);
+                        hatFilter.type = 'highpass';
+                        hatFilter.frequency.setValueAtTime((step === 4 || step === 12) ? 180 : 2800, now);
+                        hatGain.gain.setValueAtTime(((step === 4 || step === 12) ? 0.09 : 0.035) * volScale, now);
+                        hatGain.gain.exponentialRampToValueAtTime(0.001, now + ((step === 4 || step === 12) ? 0.09 : 0.035));
+                        hatOsc.connect(hatFilter);
+                        hatFilter.connect(hatGain);
+                        hatGain.connect(ctx.destination);
+                        hatOsc.start(now);
+                        hatOsc.stop(now + 0.095);
                     }
                 } else if (raceRadioStation === 'synthwave') {
-                    // Retrowave Arpeggio (A-minor -> F -> C -> G)
+                    // 1. Retrowave Arpeggio (A-minor -> F -> C -> G)
                     const arpNotes = [220, 261.63, 329.63, 440, 174.61, 220, 261.63, 349.23, 196.0, 246.94, 293.66, 392.0, 164.81, 196.0, 246.94, 329.63];
                     const freq = arpNotes[step];
-                    const osc = audioCtx.createOscillator();
-                    const filter = audioCtx.createBiquadFilter();
-                    const gain = audioCtx.createGain();
+                    const osc = ctx.createOscillator();
+                    const filter = ctx.createBiquadFilter();
+                    const gain = ctx.createGain();
                     osc.type = 'sawtooth';
                     osc.frequency.setValueAtTime(freq, now);
                     filter.type = 'lowpass';
-                    filter.frequency.setValueAtTime(1400, now);
-                    filter.frequency.exponentialRampToValueAtTime(420, now + 0.14);
-                    gain.gain.setValueAtTime(0.028, now);
-                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+                    filter.frequency.setValueAtTime(1850, now);
+                    filter.frequency.exponentialRampToValueAtTime(480, now + 0.15);
+                    gain.gain.setValueAtTime(0.125 * volScale, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.16);
                     osc.connect(filter);
                     filter.connect(gain);
-                    gain.connect(audioCtx.destination);
+                    gain.connect(ctx.destination);
                     osc.start(now);
-                    osc.stop(now + 0.16);
+                    osc.stop(now + 0.17);
+
+                    // 2. Пульсирующий аналоговый бас (Sub-Octave)
+                    const bassNotes = [110, 110, 110, 110, 87.31, 87.31, 87.31, 87.31, 98.0, 98.0, 98.0, 98.0, 82.41, 82.41, 82.41, 82.41];
+                    const bassOsc = ctx.createOscillator();
+                    const bassGain = ctx.createGain();
+                    bassOsc.type = 'triangle';
+                    bassOsc.frequency.setValueAtTime(bassNotes[step], now);
+                    bassGain.gain.setValueAtTime((step % 2 === 0 ? 0.16 : 0.11) * volScale, now);
+                    bassGain.gain.exponentialRampToValueAtTime(0.001, now + 0.14);
+                    bassOsc.connect(bassGain);
+                    bassGain.connect(ctx.destination);
+                    bassOsc.start(now);
+                    bassOsc.stop(now + 0.15);
                 } else if (raceRadioStation === 'dps') {
-                    // Рация ДПС: периодические бипы связи и радарный импульс
-                    if (step === 0 || step === 8) {
-                        const beep = audioCtx.createOscillator();
-                        const bGain = audioCtx.createGain();
-                        beep.type = 'sine';
-                        beep.frequency.setValueAtTime(step === 0 ? 1320 : 980, now);
-                        bGain.gain.setValueAtTime(0.022, now);
-                        bGain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+                    // Рация ДПС: характерные бипы эфира, радарный импульс и диспетчерский сигнал
+                    if (step === 0 || step === 4 || step === 8 || step === 11 || step === 14) {
+                        const beep = ctx.createOscillator();
+                        const bGain = ctx.createGain();
+                        beep.type = (step === 4 || step === 14) ? 'triangle' : 'sine';
+                        const tone = step === 0 ? 1320 : (step === 8 ? 980 : (step === 11 ? 1480 : 760));
+                        beep.frequency.setValueAtTime(tone, now);
+                        if (step === 4 || step === 14) {
+                            beep.frequency.exponentialRampToValueAtTime(1180, now + 0.08);
+                        }
+                        bGain.gain.setValueAtTime(0.11 * volScale, now);
+                        bGain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
                         beep.connect(bGain);
-                        bGain.connect(audioCtx.destination);
+                        bGain.connect(ctx.destination);
                         beep.start(now);
-                        beep.stop(now + 0.09);
+                        beep.stop(now + 0.10);
                     }
                 }
             } catch (_) {}
@@ -16158,10 +16219,12 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         function startRaceRadioAudio() {
             stopRaceRadioAudio();
             if (raceRadioStation === 'off') return;
+            ensureRaceRadioAudioContext();
             const meta = getRaceRadioStationMeta(raceRadioStation);
             const bpm = meta.bpm || 128;
             const stepMs = Math.max(95, Math.round((60000 / bpm) / 2));
             raceRadioStep = 0;
+            playRaceRadioStepSound();
             if (typeof setInterval === 'function') {
                 raceRadioTimerId = setInterval(playRaceRadioStepSound, stepMs);
             }

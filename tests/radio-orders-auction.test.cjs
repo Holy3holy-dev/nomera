@@ -2,9 +2,36 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const { createApp } = require('./helpers/create-app.cjs');
 
-test('Item 4: Built-in Car Radio cycles stations (off -> phonk -> synthwave -> dps -> off) and stops on race exit', () => {
+test('Item 4: Built-in Car Radio cycles stations (off -> phonk -> synthwave -> dps -> off), synthesizes WebAudio notes, and stops on race exit', () => {
     const app = createApp();
     app.run(`
+        window._oscCount = 0;
+        window.AudioContext = function MockAudioContext() {
+            this.state = 'running';
+            this.currentTime = 0;
+            this.destination = {};
+            this.resume = () => Promise.resolve();
+            this.createOscillator = () => {
+                window._oscCount++;
+                return {
+                    type: 'sine',
+                    frequency: { setValueAtTime() {}, exponentialRampToValueAtTime() {} },
+                    connect() {},
+                    start() {},
+                    stop() {}
+                };
+            };
+            this.createBiquadFilter = () => ({
+                type: 'lowpass',
+                frequency: { setValueAtTime() {}, exponentialRampToValueAtTime() {} },
+                Q: { setValueAtTime() {} },
+                connect() {}
+            });
+            this.createGain = () => ({
+                gain: { setValueAtTime() {}, exponentialRampToValueAtTime() {} },
+                connect() {}
+            });
+        };
         myCars = [{ name: 'Toyota Camry 3.5', condition: 100 }];
         selectedRaceCarName = 'Toyota Camry 3.5';
         selectedRaceCarIndex = 0;
@@ -16,14 +43,19 @@ test('Item 4: Built-in Car Radio cycles stations (off -> phonk -> synthwave -> d
     const st1 = app.run('cycleRaceRadio()');
     assert.equal(st1, 'phonk');
     assert.ok(app.run('Boolean(raceRadioTimerId)'), 'Radio scheduler should run while in phonk station during active race');
+    assert.ok(app.run('window._oscCount > 0'), 'Switching to Phonk FM must immediately synthesize WebAudio oscillators');
     assert.match(app.elements.get('hud-2d-radio-text').textContent, /Phonk FM/i);
 
+    const oscBeforeSynth = app.run('window._oscCount');
     const st2 = app.run('cycleRaceRadio()');
     assert.equal(st2, 'synthwave');
+    assert.ok(app.run('window._oscCount > ' + oscBeforeSynth), 'Switching to Synthwave FM must synthesize WebAudio oscillators');
     assert.match(app.elements.get('hud-2d-radio-text').textContent, /Synthwave/i);
 
+    const oscBeforeDps = app.run('window._oscCount');
     const st3 = app.run('cycleRaceRadio()');
     assert.equal(st3, 'dps');
+    assert.ok(app.run('window._oscCount > ' + oscBeforeDps), 'Switching to DPS radio wave must synthesize WebAudio oscillators');
     assert.match(app.elements.get('hud-2d-radio-text').textContent, /Волна ДПС/i);
 
     // Exiting the race must stop the radio audio loop so music never leaks into menus
