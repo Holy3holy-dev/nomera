@@ -55,6 +55,16 @@
     function identifyCarModel(name) {
         const n = String(name || '').toLowerCase();
 
+        // 0. NFS Most Wanted (2005) Iconic Hero & Blacklist Rips (before generic 'gtr' or 'bmw')
+        if (n.includes('m3 gtr') || n.includes('m3 e46') || n.includes('e46 gtr') || n.includes('most wanted')) return 'm3gtr';
+        if (n.includes('corvette') || n.includes('корвет') || n.includes('c6.r') || n.includes('c6r') || n.includes('кросс')) return 'corvette_cross';
+        if (n.includes('mustang') || n.includes('мустанг') || n.includes('рейзор')) return 'mustang_razor';
+        if (n.includes('supra') || n.includes('супра')) return 'supra';
+        if (n.includes('rx-7') || n.includes('rx7') || n.includes('mazda') || n.includes('мазда')) return 'rx7';
+        if (n.includes('aston') || n.includes('db9') || n.includes('астон')) return 'db9';
+        if (n.includes('mclaren') || n.includes('макларен') || n.includes('slr')) return 'mclaren';
+        if (n.includes('r8') || n.includes('le mans')) return 'audir8';
+
         // 1. Specific supercars & hypercars first to avoid substring collisions (e.g. sf90 vs f90)
         if (n.includes('sf90') || n.includes('ferrari') || n.includes('феррари')) return 'sf90';
         if (n.includes('chiron') || n.includes('широн') || n.includes('bugatti') || n.includes('бугатти')) return 'chiron';
@@ -97,6 +107,14 @@
     function getDefaultCarColor(name = '', id = '') {
         const carId = id || identifyCarModel(name);
         const map = {
+            m3gtr: 0xcbd5e1,          // NFS Most Wanted Silver & Blue M3 GTR
+            corvette_cross: 0x1e293b, // Sergeant Cross Federal Interceptor
+            mustang_razor: 0x0f172a,  // Razor Blacklist #15 Mustang GT
+            supra: 0xf97316,          // Vic #13 Supra
+            rx7: 0xef4444,            // Mia / Izzy RX-7
+            db9: 0x0284c7,            // Ronnie #3 Aston Martin DB9
+            mclaren: 0x18181b,        // Bull #2 SLR McLaren
+            audir8: 0xdc2626,         // Darius Le Mans Quattro R8
             vaz2107: 0x991b1b,    // Ruby cherry red (iconic Zhiguli)
             vaz2109: 0x475569,    // Wet asphalt metallic
             gaz24: 0x0f172a,      // Deep black KGB Volga
@@ -5416,6 +5434,16 @@
     // 🚘 GLB / GLTF REAL 3D MODEL LOADER & STYLING ENGINE
     // =========================================================================
     const GLB_MODEL_MAP = {
+        // NFS Most Wanted (2005) Authentic 3D Rips & Blacklist Icons
+        m3gtr: './assets/models/bmw_m3_gtr.glb',             // 2005 BMW M3 E46 GTR — NFS Most Wanted Hero Livery (5.9 MB)
+        corvette_cross: './assets/models/corvette_cross.glb', // Sergeant Cross Chevrolet Corvette C6.R Interceptor (9.0 MB)
+        mustang_razor: './assets/models/mustang_razor.glb',   // Razor (#15 Blacklist) 2005 Ford Mustang GT Widebody (1.76 MB)
+        supra: './assets/models/toyota_supra.glb',            // Vic (#13 Blacklist) Toyota Supra
+        rx7: './assets/models/mazda_rx7.glb',                 // Mia / Izzy (#12 Blacklist) Mazda RX-7
+        db9: './assets/models/aston_martin.glb',              // Ronnie (#3 Blacklist) Aston Martin DB9
+        mclaren: './assets/models/mclaren.glb',               // Bull (#2 Blacklist) McLaren
+        audir8: './assets/models/audi_r8.glb',                // Darius Audi Le Mans Quattro / R8
+
         // Budget & Classic Russian
         vaz2107: './assets/models/vaz2107.glb',       // Real VAZ-2107 «Жигули» (57.45 MB, 724 meshes)
         vaz2109: './assets/models/vaz2109.glb',       // Authentic VAZ-2109 «Девятка» (3.83 MB)
@@ -5721,7 +5749,10 @@
                     const matList = isMulti ? child.material : [child.material];
                     const updated = matList.map((m, idx) => {
                         const role = child.userData._stylingRoles[idx];
-                        if (role === 'body') return styledPaint;
+                        if (role === 'body') {
+                            if (m && m.userData && m.userData.preserveLiveryMap && !styling.customPaintOverride) return m;
+                            return styledPaint;
+                        }
                         if (role === 'glass') return mats.glass;
                         if (role === 'chrome') return mats.chrome;
                         if (role === 'trim') return mats.trim;
@@ -5731,7 +5762,9 @@
                     });
                     child.material = isMulti ? updated : updated[0];
                 } else if (child.userData.isInteractiveBody) {
-                    child.material = styledPaint;
+                    if (!(child.material && child.material.userData && child.material.userData.preserveLiveryMap && !styling.customPaintOverride)) {
+                        child.material = styledPaint;
+                    }
                 } else if (child.userData.isInteractiveGlass) {
                     child.material = mats.glass;
                 } else if (child.userData.isInteractiveNeon && styling && styling.neon && styling.neon !== 'none') {
@@ -6531,6 +6564,9 @@
             if (carId === 'sf90' && (mn === 'tires' || ms === 'wheel')) return true;
             if (carId === 'chiron' && (mn === 'tyre' || ((ms.includes('wheel_fl') || ms.includes('wheel_fr') || ms.includes('wheel_rl') || ms.includes('wheel_rr')) && (mn.includes('tyre') || mn.includes('rubber'))))) return true;
             if (carId === 'jesko' && (mn === 'tyre_rubber' || ms.includes('wheel_fl_tyre') || ms.includes('tyre'))) return true;
+            if (carId === 'm3gtr' && (mn === 'tire' || ms.includes('m_tire_high'))) return true;
+            if (carId === 'corvette_cross' && (ms.includes('front_tire_a') && mn === '1_car_paint.005')) return true;
+            if (carId === 'mustang_razor' && (ms.includes('oz_style01') && mn === 'llantas')) return true;
             return (
                 mn.includes('tire') ||
                 mn.includes('tyre') ||
@@ -6549,6 +6585,7 @@
             if (mn.includes('light') || mn.includes('lamp') || mn.includes('glass') || ms.includes('light') || ms.includes('lamp') || ms.includes('glass')) return false;
             if (ms.includes('pedal') || ms.includes('parking') || ms.includes('handbrake') || ms.includes('lever')) return false;
             if (mn.includes('wheel_disc') || ms.includes('wheel_disc') || ms.includes('wheel_disk') || ms.includes('wheel00')) return false;
+            if (carId === 'm3gtr' && ms.includes('sm_hub_')) return false;
             if (carId === 'subaru' && (ms === 'object_4' || ms === 'object_16' || mn === 'material_1' || mn === 'material_13')) return true;
             if (carId === 'vaz2109' && mn === 'standardmater48') return true;
             if (carId === 'polo' && mn.includes('callipergloss')) return true;
@@ -6565,6 +6602,7 @@
             if (carId === 'cullinan' && mn === 'brake_3') return true;
             if (carId === 'sf90' && (ms === 'brake' || ms === 'brakes')) return true;
             if (carId === 'chiron' && (mn === 'caliper' || mn === 'brake_disc')) return true;
+            if (carId === 'm3gtr' && (mn === 'mmat_details_disk1' || (mn === 'mmat_tire_brake_048' && ms.includes('sm_brake_')))) return true;
             return (
                 mn.includes('caliper') ||
                 mn.includes('rotor') ||
@@ -6610,6 +6648,9 @@
             if (carId === 'sf90' && (mn === 'taillight_glass' || mn === 'projector_glass' || mn === 'turn_signal_led' || ms === 'lights_red' || ms === 'steering_red_lights')) return true;
             if (carId === 'chiron' && (mn.includes('headlight') || mn.includes('taillight'))) return true;
             if (carId === 'jesko' && (mn === 'light_white' || mn === 'light_red' || ms.includes('frontlight') || ms.includes('taillight'))) return true;
+            if (carId === 'm3gtr' && (mn === 'mmat_lights_014' || mn === 'red_glass')) return true;
+            if (carId === 'corvette_cross' && (ms.includes('headlight') || ms.includes('brakeligh') || mn === 'faros' || mn === 'material.050')) return true;
+            if (carId === 'mustang_razor' && (ms.includes('headlight') || ms.includes('brakelight') || mn === 'faros' || mn === 'luces_traseras' || mn === 'direccionales')) return true;
             return (
                 mn.includes('taillight') ||
                 mn.includes('headlight') ||
@@ -6679,11 +6720,15 @@
             if (carId === 'lc300' && (mn.includes('tmi_cabin') || mn.includes('tmi_dashboard'))) return true;
             if (carId === 'e63' && mn === 'interior_plastic') return true;
             if (carId === 'rs6' && mn.includes('mat_details_int')) return true;
+            if (carId === 'm5f90' && (mn.includes('i8elite_2017interior') || mn.includes('interiortillingcolourzone'))) return true;
             if (carId === 'm8' && (mn.includes('i8elite_2017interior') || mn.includes('interiortillingcolourzone'))) return true;
             if (carId === 'g63' && (mn.includes('anthracite cabin') || mn.includes('deep oxblood nappa') || mn.includes('mbux display'))) return true;
             if (carId === 'huracan' && (mn === 'mt_interior_black' || ms.includes('digital_gauge') || ms.includes('bump_plastic3'))) return true;
             if (carId === 'cullinan' && (mn.includes('interior_side_box') || mn.includes('interior_ac') || mn.includes('inside_button') || mn.includes('car_stearning') || mn.includes('steering_box') || mn.includes('back_speaker'))) return true;
             if (carId === 'sf90' && (mn.includes('leather') || mn.includes('interior') || mn === 'carpet' || ms.includes('steering'))) return true;
+            if (carId === 'm3gtr' && (mn.includes('mmat_details_int') || mn === 'driver')) return true;
+            if (carId === 'corvette_cross' && (ms.includes('base_b') || mn === 'material.052' || mn === 'material.051')) return true;
+            if (carId === 'mustang_razor' && mn === 'interiores') return true;
             return (
                 mn.includes('interior') ||
                 mn.includes('salon') ||
@@ -6717,6 +6762,7 @@
             if (carId === 'cullinan' && mn === 'font_grill_cover') return true;
             if (carId === 'chiron' && mn === 'grill') return true;
             if (carId === 'jesko' && (mn === 'hypercar_intakeblack' || ms.includes('intake') || ms.includes('diffuser'))) return true;
+            if (carId === 'm3gtr' && (mn.includes('mmat_details_grid') || mn === 'mmat_details_1')) return true;
             return (
                 mn.includes('grille') ||
                 mn.includes('grill') ||
@@ -6758,6 +6804,9 @@
             if (carId === 'sf90' && mn === 'glass_gray') return true;
             if (carId === 'chiron' && (mn === 'glass_window' || mn === 'mirror_glass')) return true;
             if (carId === 'jesko' && (mn === 'glass_darktint' || ms.includes('canopy'))) return true;
+            if (carId === 'm3gtr' && mn === 'mmat_glass_013') return true;
+            if (carId === 'corvette_cross' && mn.includes('gl_basic_glass')) return true;
+            if (carId === 'mustang_razor' && (mn === 'ventans' || mn === 'detalles_ventanas' || mn === 'detalle_parabrisas')) return true;
 
             if (mat && (mat.transparent === true || (mat.opacity !== undefined && mat.opacity < 0.85))) {
                 if (mn === 'body' || mn.includes('paint') || mn.includes('light') || mn.includes('lamp') || mn.includes('blinker') || mn.includes('indicator') || mn.includes('brake') || mn.includes('wheel') || mn.includes('interior')) {
@@ -6812,6 +6861,9 @@
             if (carId === 'sf90' && (ms.startsWith('rim_') || (mn === 'metal_gray' && ms.includes('rim')))) return true;
             if (carId === 'chiron' && (mn === 'rim' || mn === 'rim_accent' || mn === 'wheel_nut')) return true;
             if (carId === 'jesko' && (mn === 'wheel_disc' || ms.includes('wheel_fl_disc') || ms.includes('wheel_fl_ring') || ms.includes('wheel_fl_cap'))) return true;
+            if (carId === 'm3gtr' && (mn === 'mmat_tire_brake_048' && ms.includes('sm_hub_'))) return true;
+            if (carId === 'corvette_cross' && (ms.includes('oz_style01') || (ms.includes('front_tire_a') && mn === 'material.021'))) return true;
+            if (carId === 'mustang_razor' && (ms.includes('oz_style01') && mn !== 'llantas')) return true;
 
             return (
                 mn.includes('rim') ||
@@ -6877,6 +6929,9 @@
             if (carId === 'sf90') return mn === 'body_color' || mn === '_0098_dodgerblue';
             if (carId === 'chiron') return mn === 'paint_primary' || mn === 'paint_secondary';
             if (carId === 'jesko') return mn === 'paint_satingraphite' || ms.includes('hypercar_body');
+            if (carId === 'm3gtr') return mn === 'mmat_carpaint_blue1' || mn === 'mmat_details_mat_025';
+            if (carId === 'corvette_cross') return mn === 'material.040' || mn === 'fibra_carbono';
+            if (carId === 'mustang_razor') return mn === 'carroceria';
 
             return (
                 mn.includes('carpaint') ||
@@ -6918,7 +6973,7 @@
             if (isIgnoredAccessoryOrRigNode(child, modelRoot)) return;
             const mName = String(child.name || '').toLowerCase();
             // Automatically hide any stray manufacturer badge/logo planes on base models
-            if (mName.includes('logo_plane') || mName.includes('emblem') || mName.includes('badge') || mName.includes('bmw_logo') || mName.includes('hyundai_logo') || mName.includes('logo') || mName.includes('license_plate') || mName.includes('illinois') || mName.includes('symbol') || mName.includes('reg plate') || mName.includes('2025_103') || mName.includes('object_174')) {
+            if (mName.includes('logo_plane') || mName.includes('emblem') || mName.includes('badge') || mName.includes('bmw_logo') || mName.includes('hyundai_logo') || mName.includes('logo') || mName.includes('license_plate') || mName.includes('illinois') || mName.includes('symbol') || mName.includes('reg plate') || mName.includes('2025_103') || mName.includes('object_174') || mName.includes('plane_material.046') || mName.includes('placa') || mName.includes('backlogo')) {
                 child.visible = false;
             }
 
@@ -6941,7 +6996,7 @@
                     child.userData._stylingRoles = matList.map(mat => {
                         if (!mat) return 'stock';
                         const matName = String(mat.name || '').toLowerCase();
-                        if (matName.includes('badge') || matName.includes('emblem') || matName.includes('logo') || matName.includes('illinois') || matName.includes('philippine_license') || matName === 'plate' || matName.includes('2020-2026')) {
+                        if (matName.includes('badge') || matName.includes('emblem') || matName.includes('logo') || matName.includes('illinois') || matName.includes('philippine_license') || matName === 'plate' || matName === 'placa' || matName === 'material.046' || matName.includes('2020-2026')) {
                             child.visible = false;
                             return 'badge';
                         }
@@ -6965,6 +7020,7 @@
                         return 'stock';
                     });
                     child.userData._origMatNames = matList.map(mat => mat ? (mat.name || '') : '');
+                    child.userData._origBodyMats = matList.map(mat => (mat && mat.map) ? mat.clone() : null);
                 }
 
                 const updatedMats = matList.map((mat, idx) => {
@@ -6993,7 +7049,7 @@
                         } else if (styling.wheels === 'forged') {
                             return new THREE.MeshStandardMaterial({ color: 0xc89d4c, roughness: 0.25, metalness: 0.88, name: 'Rim_Forged' });
                         }
-                        // If model has baked wheel texture (e.g. Golf, RS3, i8) and stock wheels, enhance PBR with sheen
+                        // If model has baked wheel texture (e.g. Golf, RS3, i8, M3 GTR BBS) and stock wheels, enhance PBR with sheen
                         if (mat.map && (!styling.wheels || styling.wheels === 'stock')) {
                             mat.roughness = 0.24;
                             mat.metalness = 0.78;
@@ -7073,8 +7129,20 @@
                         return mats.glass;
                     }
 
-                    // 9. Car Body Paint
+                    // 9. Car Body Paint (Preserve authentic NFS Most Wanted livery textures unless custom vinyl/paint override is active)
                     if (role === 'body') {
+                        const origBodyMat = child.userData._origBodyMats && child.userData._origBodyMats[idx];
+                        if ((carId === 'm3gtr' || carId === 'corvette_cross' || carId === 'mustang_razor') && origBodyMat && origBodyMat.map && !styling.customPaintOverride) {
+                            const liveryMat = origBodyMat.clone();
+                            liveryMat.roughness = 0.15;
+                            liveryMat.metalness = 0.52;
+                            if (liveryMat.color && THREE && THREE.Color) {
+                                liveryMat.color.setHex(0xffffff);
+                            }
+                            liveryMat.userData = Object.assign({}, liveryMat.userData, { preserveLiveryMap: true });
+                            liveryMat.needsUpdate = true;
+                            return liveryMat;
+                        }
                         return styledPaint;
                     }
 
@@ -7156,8 +7224,8 @@
         const size = box.getSize(new THREE.Vector3());
         const center = box.getCenter(new THREE.Vector3());
 
-        // 3D Spoilers on GLB models
-        if (styling.spoiler && styling.spoiler !== 'none') {
+        // 3D Spoilers on GLB models (skip duplicate procedural wing on BMW M3 GTR which has its built-in 3D GTR wing)
+        if (styling.spoiler && styling.spoiler !== 'none' && carId !== 'm3gtr') {
             const spoilerGroup = new THREE.Group();
             spoilerGroup.name = 'GLB_SpoilerGroup';
 
@@ -12448,27 +12516,27 @@
                     laneIndex: 1,
                     startZ: 14,
                     skill: 1.02 * diffScale,
-                    styling: { color: '#cbd5e1', vinyl: 'stripe', spoiler: 'gtr', neon: '#38bdf8', plate: 'M3 GTR | 77 RUS' }
+                    styling: { color: '#cbd5e1', vinyl: 'none', spoiler: 'gtr', neon: '#38bdf8', plate: 'M 001 MW | 777 RUS' }
                 },
                 {
                     id: 'cross',
-                    driverName: 'Кросс (Перехватчик)',
-                    shortTag: '#2 КРОСС',
-                    carName: 'Porsche 911 Turbo S',
+                    driverName: 'Сержант Кросс (C6.R)',
+                    shortTag: '🚓 КРОСС',
+                    carName: 'Chevrolet Corvette C6.R (Cross NFS MW)',
                     laneIndex: 2,
                     startZ: 9.5,
                     skill: 0.98 * diffScale,
-                    styling: { color: '#1e293b', vinyl: 'camouflage', spoiler: 'carbon', neon: '#ef4444', plate: 'К001РО | 77 RUS' }
+                    styling: { color: '#1e293b', vinyl: 'none', spoiler: 'none', neon: '#ef4444', sgu: true, plate: 'К 001 РО | 77 RUS' }
                 },
                 {
-                    id: 'ming',
-                    driverName: 'Минг (#6 Blacklist)',
-                    shortTag: '#6 МИНГ',
-                    carName: 'Lamborghini Huracán',
+                    id: 'razor_mustang',
+                    driverName: 'Рейзор (#15 Mustang GT)',
+                    shortTag: '#15 МУСТАНГ',
+                    carName: 'Ford Mustang GT (Razor NFS MW)',
                     laneIndex: 0,
                     startZ: 5.0,
                     skill: 0.94 * diffScale,
-                    styling: { color: '#eab308', vinyl: 'flame', spoiler: 'gt', neon: '#f59e0b', plate: 'М666ММ | 77 RUS' }
+                    styling: { color: '#0f172a', vinyl: 'none', spoiler: 'none', neon: '#f59e0b', plate: 'Р 015 МВ | 77 RUS' }
                 }
             ];
 

@@ -579,6 +579,24 @@
                             ↔️ Свайп влево/вправо или кнопки ◀ ▶ — вращение авто · ↕️ Свайп вверх/вниз — прокрутка страницы
                         </div>
                     </div>
+
+                    <!-- 3D Легенды NFS Most Wanted (2005): быстрый выбор и выдача на подиум -->
+                    <div id="garage-nfsmw-legends-bar" style="margin-top: 10px; padding: 10px 12px; background: linear-gradient(135deg, rgba(2, 132, 199, 0.16), rgba(15, 23, 42, 0.88)); border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 12px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+                        <div style="font-size: 11.5px; font-weight: 800; color: #bae6fd;">
+                            🏆 3D-рипы из NFS Most Wanted (2005) — выставить на подиум и забрать в гараж:
+                        </div>
+                        <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                            <button type="button" class="styling-chip" style="background: rgba(2, 132, 199, 0.25); border-color: rgba(56, 189, 248, 0.6); color: #fff; font-weight: 800;" onclick="claimAndSelectNfsMwCar('m3gtr', 'garage')">
+                                🏎️ BMW M3 E46 GTR (#1 MW)
+                            </button>
+                            <button type="button" class="styling-chip" style="background: rgba(239, 68, 68, 0.22); border-color: rgba(248, 113, 113, 0.55); color: #fff; font-weight: 800;" onclick="claimAndSelectNfsMwCar('corvette_cross', 'garage')">
+                                🚓 Corvette C6.R (Кросс)
+                            </button>
+                            <button type="button" class="styling-chip" style="background: rgba(245, 158, 11, 0.22); border-color: rgba(251, 191, 36, 0.55); color: #fff; font-weight: 800;" onclick="claimAndSelectNfsMwCar('mustang_razor', 'garage')">
+                                🔥 Mustang GT (Рейзор #15)
+                            </button>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- 💼 ПАССИВНЫЙ БИЗНЕС: VIP-КОРТЕЖ И ПРОКАТ АВТОПАРКА -->
@@ -590,7 +608,7 @@
                                 <b style="font-size: 16px; color: #fff;">💼 VIP-Кортеж и Прокат автопарка</b>
                             </div>
                             <p style="font-size: 12px; color: var(--text-muted); margin: 4px 0 0 0;">
-                                Ваши машины и установленные на них блатные госномера (особенно с активной синергией) приносят пассивную выручку каждую минуту.
+                                Ваши машины и установленные на них блатные госномера (особенно с активной синергии) приносят пассивную выручку каждую минуту.
                             </p>
                         </div>
                         <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
@@ -770,12 +788,12 @@
                                 <span style="font-size: 20px;">🏆</span>
                                 <div>
                                     <div style="font-size: 14px; font-weight: 900; color: #fff; letter-spacing: 0.3px;">НОВЫЕ 3D ГОНКИ: NFS MOST WANTED 2005</div>
-                                    <div style="font-size: 11px; color: #bae6fd;">Свободные повороты на 360° &bull; Реальная физика заноса &bull; Соперники Чёрного списка &bull; Speedbreaker [G]</div>
+                                    <div style="font-size: 11px; color: #bae6fd;">Оригинальные 3D-рипы (BMW M3 E46 GTR, Corvette C6.R Кросса, Mustang GT Рейзора) &bull; Физика заноса &bull; Speedbreaker [G]</div>
                                 </div>
                             </div>
-                            <span style="background: linear-gradient(135deg, #0284c7, #10b981); color: #fff; font-size: 10px; font-weight: 900; padding: 3px 9px; border-radius: 999px;">3 НОВЫЕ ТРАССЫ</span>
+                            <span style="background: linear-gradient(135deg, #0284c7, #10b981); color: #fff; font-size: 10px; font-weight: 900; padding: 3px 9px; border-radius: 999px;">3D МОДЕЛИ NFS MW</span>
                         </div>
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 8px;">
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 8px; margin-bottom: 8px;">
                             <button type="button" class="btn btn-blue" style="padding: 9px 10px; font-size: 12px; font-weight: 800; background: linear-gradient(135deg, #0284c7, #0369a1); border: 1px solid rgba(125, 211, 252, 0.45);" onclick="quickStartNfsCircuit('rockport_ring')">
                                 🏙️ Старт: Рокпорт-Кольцо (2 круга)
                             </button>
@@ -785,6 +803,20 @@
                             <button type="button" class="btn btn-blue" style="padding: 9px 10px; font-size: 12px; font-weight: 800; background: linear-gradient(135deg, #7c3aed, #4f46e5); border: 1px solid rgba(196, 181, 253, 0.45);" onclick="quickStartNfsCircuit('bayview_sprint')">
                                 🌉 Старт: Бэйвью-Магистраль (Ночь)
                             </button>
+                        </div>
+                        <div style="padding-top: 8px; border-top: 1px solid rgba(125, 211, 252, 0.2); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+                            <span style="font-size: 11px; font-weight: 800; color: #e0f2fe;">🔥 Сесть за руль оригинальной 3D-легенды NFS MW:</span>
+                            <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                                <button type="button" class="styling-chip" style="background: rgba(2, 132, 199, 0.3); border-color: rgba(56, 189, 248, 0.65); color: #fff; font-weight: 800;" onclick="claimAndSelectNfsMwCar('m3gtr', 'race')">
+                                    🏎️ BMW M3 E46 GTR (#1 MW)
+                                </button>
+                                <button type="button" class="styling-chip" style="background: rgba(239, 68, 68, 0.25); border-color: rgba(248, 113, 113, 0.6); color: #fff; font-weight: 800;" onclick="claimAndSelectNfsMwCar('corvette_cross', 'race')">
+                                    🚓 Corvette C6.R (Кросс)
+                                </button>
+                                <button type="button" class="styling-chip" style="background: rgba(245, 158, 11, 0.25); border-color: rgba(251, 191, 36, 0.6); color: #fff; font-weight: 800;" onclick="claimAndSelectNfsMwCar('mustang_razor', 'race')">
+                                    🔥 Mustang GT (Рейзор #15)
+                                </button>
+                            </div>
                         </div>
                     </div>
 
@@ -2068,8 +2100,8 @@
     </script>
     <script src="./js/race-effects.js?v=6883d3af7d80"></script>
     <script src="./js/nfs-physics.js?v=ff50e03112fb"></script>
-    <script src="./js/nfs-circuit-race.js?v=e2fcd450de99"></script>
-    <script src="./js/car-3d.js?v=bb63bc40d392"></script>
-    <script src="./js/app.js?v=2e1aed112a00"></script>
+    <script src="./js/nfs-circuit-race.js?v=c4d499efbc0c"></script>
+    <script src="./js/car-3d.js?v=ae207407a181"></script>
+    <script src="./js/app.js?v=5faac24f9dbc"></script>
 </body>
 </html>

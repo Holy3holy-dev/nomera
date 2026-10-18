@@ -405,3 +405,37 @@ test('15. Интеграция физики и механик NFS Most Wanted (S
     assert.ok(car3dJs.includes('ИДЕАЛЬНЫЙ СТАРТ NFS!'), 'В Car3DRacingEngine должен поддерживаться Идеальный Старт (Perfect Launch) на отсчёте 3-2-1');
     assert.ok(car3dJs.includes('Рейзор (#1 Blacklist)'), 'В Car3DRacingEngine должен присутствовать главный босс Чёрного списка Рейзор (#1 Blacklist)');
 });
+
+test('16. Оригинальные 3D GLB-рипы из NFS Most Wanted 2005 (BMW M3 E46 GTR, Corvette C6.R Кросса, Mustang GT Рейзора)', () => {
+    const modelsDir = path.join(__dirname, '..', 'assets', 'models');
+    const expectedGlbs = [
+        { file: 'bmw_m3_gtr.glb', minBytes: 1000000 },
+        { file: 'corvette_cross.glb', minBytes: 1000000 },
+        { file: 'mustang_razor.glb', minBytes: 500000 }
+    ];
+
+    for (const item of expectedGlbs) {
+        const fullPath = path.join(modelsDir, item.file);
+        assert.ok(fs.existsSync(fullPath), `Файл 3D-модели ${item.file} должен существовать в assets/models/`);
+        const stat = fs.statSync(fullPath);
+        assert.ok(stat.size >= item.minBytes, `Файл ${item.file} должен быть полноценной 3D-моделью (${stat.size} байт)`);
+        const fd = fs.openSync(fullPath, 'r');
+        const header = Buffer.alloc(4);
+        fs.readSync(fd, header, 0, 4, 0);
+        fs.closeSync(fd);
+        assert.equal(header.toString('ascii'), 'glTF', `Файл ${item.file} должен иметь валидный бинарный заголовок glTF`);
+    }
+
+    const car3dJs = fs.readFileSync(path.join(__dirname, '..', 'js', 'car-3d.js'), 'utf8');
+    assert.ok(car3dJs.includes("m3gtr: './assets/models/bmw_m3_gtr.glb'"), 'GLB_MODEL_MAP должен мапить m3gtr на bmw_m3_gtr.glb');
+    assert.ok(car3dJs.includes("corvette_cross: './assets/models/corvette_cross.glb'"), 'GLB_MODEL_MAP должен мапить corvette_cross на corvette_cross.glb');
+    assert.ok(car3dJs.includes("mustang_razor: './assets/models/mustang_razor.glb'"), 'GLB_MODEL_MAP должен мапить mustang_razor на mustang_razor.glb');
+    assert.ok(car3dJs.includes('preserveLiveryMap'), 'applyStylingToGLTF должен сохранять оригинальные ливреи NFS Most Wanted (preserveLiveryMap)');
+
+    const appJs = fs.readFileSync(path.join(__dirname, '..', 'js', 'app.js'), 'utf8');
+    assert.ok(appJs.includes('function claimAndSelectNfsMwCar('), 'В js/app.js должна быть функция выдачи и выбора легенд NFS MW claimAndSelectNfsMwCar');
+    assert.ok(appJs.includes('"BMW M3 E46 GTR (NFS Most Wanted)"'), 'В carRaceStats должен быть BMW M3 E46 GTR (NFS Most Wanted)');
+    assert.ok(appJs.includes('"Chevrolet Corvette C6.R (Cross NFS MW)"'), 'В carRaceStats должен быть Chevrolet Corvette C6.R (Cross NFS MW)');
+    assert.ok(appJs.includes('"Ford Mustang GT (Razor NFS MW)"'), 'В carRaceStats должен быть Ford Mustang GT (Razor NFS MW)');
+});
+

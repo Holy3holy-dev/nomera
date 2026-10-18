@@ -12240,6 +12240,20 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             "Koenigsegg Jesko Attack": {
                 speed: 480, accel: 8.2, handling: 9.6, boost: 5.0, rewardMult: 45.0, driftFactor: 1.6,
                 desc: "Шведский монстр на биотопливе E85 с коробкой LST. Король скорости за гранью возможного!"
+            },
+
+            // 6. Эксклюзивные 3D-легенды NFS Most Wanted (2005)
+            "BMW M3 E46 GTR (NFS Most Wanted)": {
+                speed: 395, accel: 7.4, handling: 9.8, boost: 4.5, rewardMult: 28.0, driftFactor: 1.5,
+                desc: "Легенда Рокпорта #1 Blacklist (NFS Most Wanted 2005): атмосферный 4.0L V8 P60B40, оригинальная бело-синяя ливрея, расширение кузова и карбоновое антикрыло GTR!"
+            },
+            "Chevrolet Corvette C6.R (Cross NFS MW)": {
+                speed: 405, accel: 7.5, handling: 9.5, boost: 4.6, rewardMult: 26.0, driftFactor: 1.4,
+                desc: "Федеральный перехватчик Сержанта Кросса из NFS Most Wanted (2005): гоночный обвес C6.R, перехватчик полиции Рокпорта и 7.0L V8 LS7.R!"
+            },
+            "Ford Mustang GT (Razor NFS MW)": {
+                speed: 345, accel: 6.2, handling: 8.6, boost: 3.9, rewardMult: 18.0, driftFactor: 1.65,
+                desc: "Мустанг Кларенса «Рейзора» Каллахана (#15 Blacklist NFS Most Wanted): компрессорный 4.6L V8, огненный винил и агрессивный боди-кит!"
             }
         };
 
@@ -14305,6 +14319,33 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                         bPillars: [], model: 'jesko', defaultColor: '#e2e8f0'
                     };
                     break;
+                case "BMW M3 E46 GTR (NFS Most Wanted)":
+                    cfg = {
+                        rWx: -24, fWx: 24, rearBumperX: -42, frontBumperX: 42,
+                        hoodFrontY: -3.5, hoodBackX: 15, hoodBackY: -4.6,
+                        roofFrontX: 5, roofRearX: -15, roofY: -12.5,
+                        rearGlassEndX: -28, trunkY: -4.2, chinDrop: 0.8, noseDrop: 0,
+                        bPillars: [0], model: 'm3gtr', defaultColor: '#cbd5e1'
+                    };
+                    break;
+                case "Chevrolet Corvette C6.R (Cross NFS MW)":
+                    cfg = {
+                        rWx: -24, fWx: 25, rearBumperX: -43, frontBumperX: 43,
+                        hoodFrontY: -3.2, hoodBackX: 14, hoodBackY: -4.4,
+                        roofFrontX: 3, roofRearX: -14, roofY: -11.5,
+                        rearGlassEndX: -30, trunkY: -3.8, chinDrop: 0.9, noseDrop: 0,
+                        bPillars: [], model: 'corvette_cross', defaultColor: '#1e293b'
+                    };
+                    break;
+                case "Ford Mustang GT (Razor NFS MW)":
+                    cfg = {
+                        rWx: -24, fWx: 24, rearBumperX: -42, frontBumperX: 42,
+                        hoodFrontY: -4.0, hoodBackX: 15, hoodBackY: -5.0,
+                        roofFrontX: 4, roofRearX: -15, roofY: -12.8,
+                        rearGlassEndX: -29, trunkY: -4.5, chinDrop: 0.7, noseDrop: 0,
+                        bPillars: [0], model: 'mustang_razor', defaultColor: '#0f172a'
+                    };
+                    break;
                 case "ДПС / Полиция":
                     cfg = {
                         rWx: -24, fWx: 24, rearBumperX: -42, frontBumperX: 42,
@@ -15469,6 +15510,87 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             startRaceGame();
         }
         window.quickStartNfsCircuit = quickStartNfsCircuit;
+
+        const NFS_MW_LEGEND_CARS = {
+            m3gtr: {
+                key: 'm3gtr',
+                name: 'BMW M3 E46 GTR (NFS Most Wanted)',
+                category: 'Легенда NFS MW',
+                basePrice: 38000000,
+                styling: { color: '#cbd5e1', vinyl: 'none', spoiler: 'gtr', neon: '#38bdf8' }
+            },
+            corvette_cross: {
+                key: 'corvette_cross',
+                name: 'Chevrolet Corvette C6.R (Cross NFS MW)',
+                category: 'Перехватчик NFS MW',
+                basePrice: 34000000,
+                styling: { color: '#1e293b', vinyl: 'none', spoiler: 'none', neon: '#ef4444', sgu: 'installed' }
+            },
+            mustang_razor: {
+                key: 'mustang_razor',
+                name: 'Ford Mustang GT (Razor NFS MW)',
+                category: 'Босс #15 NFS MW',
+                basePrice: 19500000,
+                styling: { color: '#0f172a', vinyl: 'none', spoiler: 'none', neon: '#f59e0b' }
+            }
+        };
+
+        function claimAndSelectNfsMwCar(carKey, action = 'race') {
+            const meta = NFS_MW_LEGEND_CARS[carKey] || NFS_MW_LEGEND_CARS.m3gtr;
+            if (!Array.isArray(myCars)) myCars = [];
+            let carIdx = myCars.findIndex(c => c && c.name === meta.name);
+            let newlyAdded = false;
+            if (carIdx < 0) {
+                const newCar = {
+                    name: meta.name,
+                    category: meta.category,
+                    basePrice: meta.basePrice,
+                    plate: null,
+                    condition: 100,
+                    upgrades: { engine: 2, handling: 2, economy: 1, nitro: 2 },
+                    styling: Object.assign({}, meta.styling)
+                };
+                if (typeof NomeraRaceEconomy !== 'undefined' && typeof NomeraRaceEconomy.ensureCar === 'function') {
+                    NomeraRaceEconomy.ensureCar(newCar);
+                }
+                myCars.push(newCar);
+                carIdx = myCars.length - 1;
+                newlyAdded = true;
+                if (typeof saveProgress === 'function') saveProgress();
+            }
+
+            selectedRaceCarName = meta.name;
+            selectedRaceCarIndex = carIdx;
+            if (typeof activeGarageCarIndex !== 'undefined') {
+                activeGarageCarIndex = carIdx;
+            }
+            if (typeof Car3DManager !== 'undefined' && Car3DManager.preloadCarModel && window.THREE) {
+                try { Car3DManager.preloadCarModel(window.THREE, meta.name); } catch (_) {}
+            }
+
+            if (typeof renderCars === 'function') renderCars();
+            if (typeof renderRaceCarPicker === 'function') renderRaceCarPicker();
+            if (typeof updateRaceCarShowcase === 'function') updateRaceCarShowcase();
+
+            if (action === 'garage') {
+                const garageTab = document.querySelector('.nav-tab[onclick*="garage"]');
+                if (typeof switchTab === 'function') switchTab('garage', garageTab);
+                if (typeof selectGarage3DCar === 'function') selectGarage3DCar(carIdx);
+                notifyUser(newlyAdded ? `🏆 ${meta.name} добавлен в ваш гараж и выставлен на 3D-подиум!` : `🏎️ ${meta.name} выбран на 3D-подиуме гаража!`, 'success');
+                return carIdx;
+            }
+
+            if (action === 'select') {
+                notifyUser(newlyAdded ? `🏆 ${meta.name} получен в гараж и выбран для гонки!` : `🏁 Выбран болид: ${meta.name}`, 'success');
+                return carIdx;
+            }
+
+            // По умолчанию: запускаем 3D круговую гонку NFS Most Wanted на выбранном болиде
+            switchRaceMode('nfs');
+            startRaceWithCar(meta.name, carIdx);
+            return carIdx;
+        }
+        window.claimAndSelectNfsMwCar = claimAndSelectNfsMwCar;
 
         function switch3DRaceSubMode() {
             const tracks = ['rockport_ring', 'canyon_pass', 'bayview_sprint'];
