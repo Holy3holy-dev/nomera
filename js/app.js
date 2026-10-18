@@ -5674,6 +5674,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
         // --- КЕЙСЫ (CS:GO HORIZONTAL ROULETTE) ---
         function getRarityObjForTier(targetRarity, fallbackPrice = 0) {
+            if (targetRarity === 'Ультра-спец' || targetRarity === 'УЛЬТРА-СПЕЦ') {
+                return { text: "БЛАТНОЙ", color: "white", bg: "linear-gradient(45deg, #b91c1c, #d97706)", border: "1px solid #ffd700", glow: "blatnoy" };
+            }
             if (targetRarity === 'Мифический' || targetRarity === 'МИФИЧЕСКИЙ') {
                 return { text: "Мифический", color: "white", bg: "linear-gradient(45deg, #e0115f, #ffd700)", border: "1px solid #ffd700", glow: "blatnoy" };
             }
@@ -5917,14 +5920,38 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 icon: "💎",
                 type: "plate",
                 contents: [
-                    { r: 'Супер редкий', count: 15, weight: 85 },
+                    { r: 'Супер редкий', count: 12, weight: 84.5 },
                     { r: 'Эпический', count: 4, weight: 12 },
-                    { r: 'Легендарный', count: 5, weight: 3 }
+                    { r: 'Легендарный', count: 4, weight: 3 },
+                    { r: 'Ультра-спец', count: 2, weight: 0.5 }
                 ],
                 probs: [
-                    { r: 'Супер редкий', p: 0.85 },
+                    { r: 'Супер редкий', p: 0.845 },
                     { r: 'Эпический', p: 0.12 },
-                    { r: 'Легендарный', p: 0.03 }
+                    { r: 'Легендарный', p: 0.03 },
+                    { r: 'Ультра-спец', p: 0.005 }
+                ]
+            },
+            'special_box': {
+                title: "☭ Спец-Архив Box",
+                name: "Спец-Архив Box",
+                price: 250000,
+                icon: "☭",
+                type: "plate",
+                fixedCountry: "RUS",
+                contents: [
+                    { r: 'Редкий', weight: 46, count: 6 },
+                    { r: 'Супер редкий', weight: 34, count: 5 },
+                    { r: 'Эпический', weight: 14, count: 4 },
+                    { r: 'Легендарный', weight: 4.5, count: 3 },
+                    { r: 'Ультра-спец', weight: 1.5, count: 5 }
+                ],
+                probs: [
+                    { r: 'Редкий', p: 0.46 },
+                    { r: 'Супер редкий', p: 0.34 },
+                    { r: 'Эпический', p: 0.14 },
+                    { r: 'Легендарный', p: 0.045 },
+                    { r: 'Ультра-спец', p: 0.015 }
                 ]
             },
             'kz_box': {
@@ -6017,7 +6044,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     { r: 'Супер редкий', weight: 8.5, count: 4 },
                     { r: 'Эпический', weight: 3.1, count: 3 },
                     { r: 'Легендарный', weight: 1.0, count: 2 },
-                    { r: 'Мифический', weight: 0.4, count: 2 }
+                    { r: 'Ультра-спец', weight: 0.4, count: 2 }
                 ],
                 probs: [
                     { r: 'Обычный', p: 0.34 },
@@ -6026,7 +6053,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     { r: 'Супер редкий', p: 0.085 },
                     { r: 'Эпический', p: 0.031 },
                     { r: 'Легендарный', p: 0.010 },
-                    { r: 'Мифический', p: 0.004 }
+                    { r: 'Ультра-спец', p: 0.004 }
                 ]
             },
             'car_standard': {
@@ -6264,10 +6291,27 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 }
             } else {
                 currentCaseData = [];
+                const distinctSpecialRus = ['МОС', 'КМН', 'УМВ', 'ВМО', 'КРМ'];
+                const distinctSpecialJpn = ['JDM', 'GTR'];
                 config.contents.forEach(ct => {
                     const count = ct.count || Math.max(2, Math.round((ct.weight || 10) / 5));
                     for (let i = 0; i < count; i++) {
-                        currentCaseData.push(forcePlate(ct.r, caseCountry));
+                        if ((ct.r === 'Ультра-спец' || ct.r === 'УЛЬТРА-СПЕЦ') && (caseCountry === 'RUS' || caseCountry === 'JPN')) {
+                            const s = caseCountry === 'JPN'
+                                ? distinctSpecialJpn[i % distinctSpecialJpn.length]
+                                : distinctSpecialRus[i % distinctSpecialRus.length];
+                            const num = i === 0 ? '001' : (i === 1 ? '777' : '001');
+                            const reg = caseCountry === 'JPN' ? 'TKY' : '77';
+                            const price = calculatePlatePriceForCountry(caseCountry, s[0], s[1], s[2], num, reg);
+                            currentCaseData.push({
+                                text: formatPlateText(s[0], s[1], s[2], num, reg, caseCountry),
+                                price,
+                                rarity: getRarityObjForTier('Ультра-спец', price),
+                                country: caseCountry
+                            });
+                        } else {
+                            currentCaseData.push(forcePlate(ct.r, caseCountry));
+                        }
                     }
                 });
 
@@ -6275,13 +6319,17 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
                 if (list) {
                     currentCaseData.forEach(item => {
-                        let rHtml = item.rarity.text !== "Обычный" ? `<span style="font-size: 10px; padding: 2px 6px; border-radius:4px; background:${item.rarity.bg}; color:${item.rarity.color}; margin-right: 6px; font-weight:700;">${escapeHtml(item.rarity.text)}</span>` : '';
+                        const spMeta = getUltraSpecialPlateMeta(item.text);
+                        const rLabel = spMeta ? `${spMeta.badge} • ${item.rarity.text}` : item.rarity.text;
+                        let rHtml = item.rarity.text !== "Обычный" ? `<span style="font-size: 10px; padding: 2px 6px; border-radius:4px; background:${item.rarity.bg}; color:${item.rarity.color}; margin-right: 6px; font-weight:700;">${escapeHtml(rLabel)}</span>` : '';
+                        const spSubHtml = spMeta ? `<small style="display:block; width:100%; font-size:10px; color:#fbbf24; font-weight:800; margin-top:2px;">${escapeHtml(spMeta.title)}</small>` : '';
                         const plateClass = getMiniPlateCountryClass(item.text);
                         list.innerHTML += `
-                            <div style="background: rgba(255,255,255,0.04); border: 1px solid var(--border-subtle); padding: 10px 14px; border-radius: var(--radius-sm); display: flex; justify-content: space-between; align-items: center; gap: 8px;">
+                            <div style="background: rgba(255,255,255,0.04); border: 1px solid ${spMeta ? 'rgba(245,158,11,0.45)' : 'var(--border-subtle)'}; padding: 10px 14px; border-radius: var(--radius-sm); display: flex; justify-content: space-between; align-items: center; gap: 8px;">
                                 <div style="display:flex; align-items:center; flex-wrap:wrap; gap:6px;">
                                     ${rHtml}
                                     <span class="mini-plate ${plateClass}" style="font-size:12px; padding:2px 8px;">${renderMiniPlateInnerHtml(item.text)}</span>
+                                    ${spSubHtml}
                                 </div>
                                 <small style="color: var(--accent-green); font-weight:700; white-space:nowrap;">${Number(item.price || 0).toLocaleString('ru-RU')} ₽</small>
                             </div>`;
