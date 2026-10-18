@@ -7045,6 +7045,171 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         let recentRareDrops = [];
         let batchCaseResults = [];
         let lastOpenedCaseCount = 1;
+        let caseAnimMode = 'standard';
+        let batchRevealTimeouts = [];
+        let activeSingleRevealCallback = null;
+
+        try {
+            const savedCaseAnimMode = typeof localStorage !== 'undefined' ? localStorage.getItem('nomera_case_anim_mode') : null;
+            if (savedCaseAnimMode && ['standard', 'fast', 'instant'].includes(savedCaseAnimMode)) {
+                caseAnimMode = savedCaseAnimMode;
+            }
+        } catch (_) {}
+
+        function setCaseAnimMode(mode) {
+            caseAnimMode = ['standard', 'fast', 'instant'].includes(mode) ? mode : 'standard';
+            try {
+                if (typeof localStorage !== 'undefined') {
+                    localStorage.setItem('nomera_case_anim_mode', caseAnimMode);
+                }
+            } catch (_) {}
+            if (typeof document !== 'undefined') {
+                if (typeof document.querySelectorAll === 'function') {
+                    document.querySelectorAll('.case-anim-mode-btn').forEach(btn => {
+                        const btnMode = (btn.dataset && btn.dataset.animMode) || (typeof btn.getAttribute === 'function' ? btn.getAttribute('data-anim-mode') : '');
+                        btn.classList.toggle('active', btnMode === caseAnimMode);
+                    });
+                }
+                ['standard', 'fast', 'instant'].forEach(m => {
+                    const el1 = document.getElementById(`btn-case-anim-${m}`);
+                    if (el1 && el1.classList) el1.classList.toggle('active', m === caseAnimMode);
+                    const el2 = document.getElementById(`case-anim-mode-${m}`);
+                    if (el2 && el2.classList) el2.classList.toggle('active', m === caseAnimMode);
+                });
+            }
+            return caseAnimMode;
+        }
+        window.setCaseAnimMode = setCaseAnimMode;
+
+        function clearCaseAnimationTimers() {
+            if (caseRouletteTimeout) {
+                clearTimeout(caseRouletteTimeout);
+                caseRouletteTimeout = null;
+            }
+            if (Array.isArray(batchRevealTimeouts) && batchRevealTimeouts.length > 0) {
+                batchRevealTimeouts.forEach(tid => clearTimeout(tid));
+                batchRevealTimeouts = [];
+            }
+        }
+        window.clearCaseAnimationTimers = clearCaseAnimationTimers;
+
+        function getCaseIconEmoji(type) {
+            const map = {
+                normal: '📦',
+                super: '🎁',
+                mega: '💎',
+                kz_box: '🇰🇿',
+                usa_box: '🇺🇸',
+                jpn_box: '🇯🇵',
+                uae_box: '🇦🇪',
+                special_box: '☭',
+                car_box: '🏎️'
+            };
+            return map[type] || '📦';
+        }
+        window.getCaseIconEmoji = getCaseIconEmoji;
+
+        function getRarityTierClass(rarityText) {
+            const rt = String(rarityText || '').trim();
+            if (rt === 'МИФИЧЕСКИЙ' || rt === 'Мифический' || rt === 'БЛАТНОЙ' || rt === 'Легендарный' || /МИФИЧ|БЛАТНОЙ|Легендар|Ультра/i.test(rt)) {
+                return 'rarity-tier-legendary';
+            }
+            if (rt === 'Эпический' || rt === 'Супер редкий' || /Эпич|Супер редкий/i.test(rt)) {
+                return 'rarity-tier-epic';
+            }
+            if (rt === 'Редкий' || /Редкий|Необычный/i.test(rt)) {
+                return 'rarity-tier-rare';
+            }
+            return '';
+        }
+        window.getRarityTierClass = getRarityTierClass;
+
+        function triggerCaseUnsealStage(type, bestRarityColor, labelText, durationMs) {
+            const stage = document.getElementById('case-unseal-stage');
+            const iconEl = document.getElementById('case-unseal-crate-icon');
+            const beamEl = document.getElementById('case-unseal-beam');
+            const labelEl = document.getElementById('case-unseal-label');
+            const glow = bestRarityColor || '#f59e0b';
+            const emoji = getCaseIconEmoji(type);
+            if (iconEl) {
+                iconEl.textContent = emoji;
+                iconEl.innerText = emoji;
+            }
+            if (beamEl && beamEl.style) {
+                beamEl.style.background = glow;
+            }
+            if (labelEl) {
+                labelEl.textContent = labelText || '🎲 Открываем кейс...';
+                labelEl.innerText = labelText || '🎲 Открываем кейс...';
+            }
+            if (stage) {
+                if (stage.style) {
+                    if (typeof stage.style.setProperty === 'function') {
+                        stage.style.setProperty('--unseal-glow', glow);
+                    }
+                    stage.style['--unseal-glow'] = glow;
+                }
+                stage.classList.remove('hidden');
+                if (durationMs > 0 && typeof setTimeout === 'function') {
+                    const tid = setTimeout(() => {
+                        stage.classList.add('hidden');
+                    }, durationMs);
+                    batchRevealTimeouts.push(tid);
+                }
+            }
+        }
+        window.triggerCaseUnsealStage = triggerCaseUnsealStage;
+
+        function skipCaseAnimation() {
+            clearCaseAnimationTimers();
+            document.getElementById('case-unseal-stage')?.classList.add('hidden');
+            document.getElementById('btn-skip-roulette')?.classList.add('hidden');
+
+            if (typeof activeSingleRevealCallback === 'function') {
+                const cb = activeSingleRevealCallback;
+                activeSingleRevealCallback = null;
+                cb();
+                return;
+            }
+
+            const batchStage = document.getElementById('batch-roulette-stage');
+            const reelsTrack = document.getElementById('batch-reels-track');
+            const grid = document.getElementById('roulette-batch-grid');
+            const hasBatchActive = (batchStage && !batchStage.classList.contains('hidden')) ||
+                (grid && typeof grid.innerHTML === 'string' && grid.innerHTML.includes('revealing-card')) ||
+                (Array.isArray(batchCaseResults) && batchCaseResults.length > 0);
+
+            if (hasBatchActive) {
+                if (reelsTrack) {
+                    const reels = typeof reelsTrack.querySelectorAll === 'function' ? reelsTrack.querySelectorAll('.batch-mini-reel') : [];
+                    if (reels && reels.length > 0) {
+                        reels.forEach(r => r.classList.add('locked'));
+                    } else if (typeof reelsTrack.innerHTML === 'string') {
+                        reelsTrack.innerHTML = reelsTrack.innerHTML.replace(/class="batch-mini-reel(?![^"]*\blocked\b)/g, 'class="batch-mini-reel locked');
+                    }
+                }
+                const statusEl = document.getElementById('batch-reveal-status');
+                if (statusEl) {
+                    statusEl.textContent = '✓ ВСЕ НАГРАДЫ ОТКРЫТЫ';
+                    statusEl.innerText = '✓ ВСЕ НАГРАДЫ ОТКРЫТЫ';
+                }
+                if (grid) {
+                    const cards = typeof grid.querySelectorAll === 'function' ? grid.querySelectorAll('.batch-drop-card') : [];
+                    if (cards && cards.length > 0) {
+                        cards.forEach(c => {
+                            c.classList.remove('revealing-card');
+                            c.classList.add('revealed-card');
+                        });
+                    } else if (typeof grid.innerHTML === 'string') {
+                        grid.innerHTML = grid.innerHTML.replace(/\brevealing-card\b/g, 'revealed-card');
+                    }
+                }
+                document.getElementById('btn-skip-batch-anim')?.classList.add('hidden');
+                playLockSound(1.35);
+                isSpinning = false;
+            }
+        }
+        window.skipCaseAnimation = skipCaseAnimation;
 
         function recordRecentRareDrop(entry) {
             if (!entry) return;
@@ -7223,11 +7388,11 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         }
 
         function closeRouletteModal() {
-            if (caseRouletteTimeout) {
-                clearTimeout(caseRouletteTimeout);
-                caseRouletteTimeout = null;
-            }
+            clearCaseAnimationTimers();
+            activeSingleRevealCallback = null;
             isSpinning = false;
+            document.getElementById('case-unseal-stage')?.classList.add('hidden');
+            document.getElementById('btn-skip-roulette')?.classList.add('hidden');
             document.getElementById('roulette-modal')?.classList.remove('show');
         }
         window.closeRouletteModal = closeRouletteModal;
@@ -7349,10 +7514,8 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
         function openCaseAgain(count = lastOpenedCaseCount || 1) {
             if (!activeCaseType || !caseConfigs[activeCaseType]) return;
-            if (caseRouletteTimeout) {
-                clearTimeout(caseRouletteTimeout);
-                caseRouletteTimeout = null;
-            }
+            clearCaseAnimationTimers();
+            activeSingleRevealCallback = null;
             isSpinning = false;
             buyCase(activeCaseType, count);
         }
@@ -7399,6 +7562,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     const borderColor = r.bg && r.bg !== 'transparent'
                         ? (String(r.bg).startsWith('linear') ? '#f59e0b' : r.bg)
                         : 'rgba(255,255,255,0.14)';
+                    const tierClass = getRarityTierClass(r.text);
+                    const revealClass = caseAnimMode !== 'instant' ? 'revealing-card' : 'revealed-card';
+                    const delayMs = idx * (caseAnimMode === 'fast' ? 65 : 130);
                     const dupTag = item._isDuplicate
                         ? `<span style="position:absolute; top:6px; right:6px; font-size:9px; font-weight:800; background:rgba(245,158,11,0.2); color:#fbbf24; padding:1px 5px; border-radius:6px;">♊ Дубликат</span>`
                         : '';
@@ -7412,7 +7578,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                         : `<button type="button" class="case-open-btn" style="width:100%; font-size:10.5px; padding:5px;" onclick="sellSingleBatchDrop(${idx})">💰 Продать (+${sellPrice.toLocaleString('ru-RU')} ₽)</button>`;
 
                     return `
-                        <div class="batch-drop-card ${item._sold ? 'sold-out' : ''}" style="border-color:${borderColor};">
+                        <div class="batch-drop-card ${tierClass} ${revealClass} ${item._sold ? 'sold-out' : ''}" id="batch-drop-card-${idx}" style="border-color:${borderColor}; --reveal-delay:${delayMs}ms;">
                             ${dupTag}
                             <span style="font-size:9.5px; font-weight:800; padding:2px 6px; border-radius:999px; background:${r.bg}; color:${r.color};">${escapeHtml(r.text)}</span>
                             ${visualHtml}
@@ -7523,6 +7689,8 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         window.claimBatchCaseResults = claimBatchCaseResults;
 
         function buyCase(type = activeCaseType, count = 1) {
+            clearCaseAnimationTimers();
+            activeSingleRevealCallback = null;
             if (isSpinning) return;
             if (type && caseConfigs[type]) {
                 activeCaseType = type;
@@ -7553,7 +7721,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             wonPlateObj = null;
             batchCaseResults = [];
 
-            // Пакетное открытие (×5 или ×10): мгновенный расчёт и сводный экран
+            // Пакетное открытие (×5 или ×10): синхронное автосохранение + синхронные мини-барабаны
             if (openCount > 1) {
                 for (let i = 0; i < openCount; i++) {
                     const rolled = rollSingleCaseItem(config, activeCaseType, caseCountry);
@@ -7575,8 +7743,121 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 document.getElementById('roulette-batch-result')?.classList.remove('hidden');
                 document.getElementById('roulette-modal')?.classList.add('show');
                 initAudio();
-                playLockSound(1.3);
                 renderBatchCaseResultsUI(caseLabel, openCount, totalCost, effectivePrice);
+
+                // Находим лучший цвет редкости серии и заполняем синхронные мини-барабаны (#batch-reels-track)
+                let bestBatchItem = batchCaseResults[0];
+                batchCaseResults.forEach(it => {
+                    if ((Number(it.price) || 0) > (Number(bestBatchItem?.price) || 0)) bestBatchItem = it;
+                });
+                const bestR = (bestBatchItem && bestBatchItem.rarity) || { bg: '#f59e0b' };
+                const bestColor = (bestR.bg && bestR.bg !== 'transparent')
+                    ? (String(bestR.bg).startsWith('linear') ? '#ef4444' : bestR.bg)
+                    : '#f59e0b';
+
+                const reelsTrack = document.getElementById('batch-reels-track');
+                if (reelsTrack) {
+                    reelsTrack.innerHTML = batchCaseResults.map((item, i) => {
+                        const r = item.rarity || { text: 'Обычный', bg: '#334155', color: '#fff' };
+                        const rColor = (r.bg && r.bg !== 'transparent')
+                            ? (String(r.bg).startsWith('linear') ? '#f59e0b' : r.bg)
+                            : '#64748b';
+                        const tierCls = getRarityTierClass(r.text);
+                        const lockedCls = caseAnimMode === 'instant' ? 'locked' : '';
+                        let decoy1 = 'А 100 АА';
+                        let decoy2 = 'В 777 ВВ';
+                        let finalVisual = '';
+                        if (item.isCar) {
+                            const c1 = (currentCaseCars && currentCaseCars[i % Math.max(1, currentCaseCars.length)]) || carsData[0] || { name: 'Авто' };
+                            const c2 = (currentCaseCars && currentCaseCars[(i + 2) % Math.max(1, currentCaseCars.length)]) || carsData[1] || c1;
+                            decoy1 = c1.name;
+                            decoy2 = c2.name;
+                            finalVisual = `<span class="batch-mini-reel-car">${escapeHtml(item.name)}</span>`;
+                        } else {
+                            finalVisual = `<span class="mini-plate ${getMiniPlateCountryClass(item.text)}" style="font-size:9.5px; padding:1px 5px;">${renderMiniPlateInnerHtml(item.text)}</span>`;
+                        }
+                        return `
+                            <div class="batch-mini-reel ${tierCls} ${lockedCls}" id="batch-mini-reel-${i}" style="--reel-color:${rColor}; border-color:${rColor};">
+                                <div class="batch-mini-reel-slot">#${i + 1}</div>
+                                <div class="batch-mini-reel-window">
+                                    <div class="batch-mini-reel-strip">
+                                        <div class="batch-mini-reel-decoy">${escapeHtml(decoy1)}</div>
+                                        <div class="batch-mini-reel-decoy">${escapeHtml(decoy2)}</div>
+                                        <div class="batch-mini-reel-target">${finalVisual}</div>
+                                    </div>
+                                </div>
+                                <div class="batch-mini-reel-rarity" style="color:${rColor};">${escapeHtml(r.text)}</div>
+                            </div>`;
+                    }).join('');
+                }
+
+                if (caseAnimMode === 'instant') {
+                    document.getElementById('case-unseal-stage')?.classList.add('hidden');
+                    document.getElementById('btn-skip-roulette')?.classList.add('hidden');
+                    document.getElementById('batch-roulette-stage')?.classList.add('hidden');
+                    document.getElementById('btn-skip-batch-anim')?.classList.add('hidden');
+                    const statusEl = document.getElementById('batch-reveal-status');
+                    if (statusEl) {
+                        statusEl.textContent = `✓ ВСЕ НАГРАДЫ ОТКРЫТЫ`;
+                        statusEl.innerText = `✓ ВСЕ НАГРАДЫ ОТКРЫТЫ`;
+                    }
+                    playLockSound(1.3);
+                } else {
+                    const stepMs = caseAnimMode === 'fast' ? 75 : 150;
+                    document.getElementById('btn-skip-roulette')?.classList.remove('hidden');
+                    document.getElementById('batch-roulette-stage')?.classList.remove('hidden');
+                    document.getElementById('btn-skip-batch-anim')?.classList.remove('hidden');
+                    const statusEl = document.getElementById('batch-reveal-status');
+                    if (statusEl) {
+                        statusEl.textContent = `🎰 ОТКРЫВАЕМ СЕРИЮ ×${openCount}...`;
+                        statusEl.innerText = `🎰 ОТКРЫВАЕМ СЕРИЮ ×${openCount}...`;
+                    }
+                    triggerCaseUnsealStage(activeCaseType, bestColor, `🎁 Распечатываем серию ×${openCount}...`, stepMs * 2);
+
+                    for (let i = 0; i < openCount; i++) {
+                        const tid = setTimeout(() => {
+                            const reelEl = document.getElementById(`batch-mini-reel-${i}`);
+                            if (reelEl) reelEl.classList.add('locked');
+                            if (reelsTrack && typeof reelsTrack.querySelectorAll === 'function') {
+                                const allReels = reelsTrack.querySelectorAll('.batch-mini-reel');
+                                if (allReels[i]) allReels[i].classList.add('locked');
+                            }
+                            const cardEl = document.getElementById(`batch-drop-card-${i}`);
+                            if (cardEl) {
+                                cardEl.classList.remove('revealing-card');
+                                cardEl.classList.add('revealed-card');
+                            }
+                            const gridEl = document.getElementById('roulette-batch-grid');
+                            if (gridEl && typeof gridEl.querySelectorAll === 'function') {
+                                const allCards = gridEl.querySelectorAll('.batch-drop-card');
+                                if (allCards[i]) {
+                                    allCards[i].classList.remove('revealing-card');
+                                    allCards[i].classList.add('revealed-card');
+                                }
+                            }
+                            playTick();
+                            if (i === openCount - 1) {
+                                playLockSound(1.4);
+                                document.getElementById('btn-skip-roulette')?.classList.add('hidden');
+                                document.getElementById('btn-skip-batch-anim')?.classList.add('hidden');
+                                const stEl = document.getElementById('batch-reveal-status');
+                                if (stEl) {
+                                    stEl.textContent = `🎉 СЕРИЯ ×${openCount} ОТКРЫТА!`;
+                                    stEl.innerText = `🎉 СЕРИЯ ×${openCount} ОТКРЫТА!`;
+                                }
+                                const hasHighTier = batchCaseResults.some(it => {
+                                    const rt = (it && it.rarity && it.rarity.text) || '';
+                                    return rt === 'Легендарный' || rt === 'МИФИЧЕСКИЙ' || rt === 'Мифический' || rt === 'БЛАТНОЙ';
+                                });
+                                if (hasHighTier) {
+                                    triggerConfetti();
+                                    playWinJingle('Легендарный');
+                                }
+                            }
+                        }, (i + 1) * stepMs);
+                        batchRevealTimeouts.push(tid);
+                    }
+                }
                 return;
             }
 
@@ -7597,6 +7878,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
             document.getElementById('case-roulette-container')?.classList.remove('hidden');
             document.getElementById('roulette-batch-result')?.classList.add('hidden');
+            document.getElementById('batch-roulette-stage')?.classList.add('hidden');
 
             const track = document.getElementById('case-roulette-track') || document.getElementById('roulette-track');
             if (track) {
@@ -7649,28 +7931,24 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             document.getElementById('roulette-modal')?.classList.add('show');
             initAudio();
 
+            const singleWinColor = isCar && wonCarObj
+                ? (wonCarObj.rarity.bg.startsWith('linear') ? '#ef4444' : wonCarObj.rarity.bg)
+                : (wonPlateObj && wonPlateObj.rarity.bg !== 'transparent'
+                    ? (wonPlateObj.rarity.bg.startsWith('linear') ? '#f59e0b' : wonPlateObj.rarity.bg)
+                    : '#10b981');
+
             const containerWidth = document.querySelector?.('.case-roulette-container')?.offsetWidth || 400;
             const targetX = -(winningIndex * cardWidth + (cardWidth / 2) - (containerWidth / 2) + (Math.random() * 40 - 20));
 
-            let tickDelay = 70;
-            function playCaseReelTicks() {
-                playTick();
-                tickDelay *= 1.15;
-                if (tickDelay < 480) {
-                    caseRouletteTimeout = setTimeout(playCaseReelTicks, tickDelay);
-                }
-            }
-            playCaseReelTicks();
-
-            setTimeout(() => {
+            const finalizeSingleSpin = () => {
+                isSpinning = false;
+                activeSingleRevealCallback = null;
+                document.getElementById('btn-skip-roulette')?.classList.add('hidden');
+                document.getElementById('case-unseal-stage')?.classList.add('hidden');
                 if (track) {
-                    track.style.transition = 'transform 4.0s cubic-bezier(0.12, 0.8, 0.22, 1)';
+                    track.style.transition = 'none';
                     track.style.transform = `translateX(${targetX}px)`;
                 }
-            }, 60);
-
-            caseRouletteTimeout = setTimeout(() => {
-                isSpinning = false;
                 playLockSound(1.4);
 
                 const winningCard = document.getElementById(`rcard-${winningIndex}`);
@@ -7779,7 +8057,54 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                         playWinJingle(wonPlateObj.rarity.text);
                     }
                 }
-            }, 4150);
+            };
+
+            activeSingleRevealCallback = finalizeSingleSpin;
+
+            if (caseAnimMode === 'instant') {
+                document.getElementById('case-unseal-stage')?.classList.add('hidden');
+                document.getElementById('btn-skip-roulette')?.classList.add('hidden');
+                if (track) {
+                    track.style.transition = 'none';
+                    track.style.transform = `translateX(${targetX}px)`;
+                }
+                finalizeSingleSpin();
+                caseRouletteTimeout = setTimeout(() => {
+                    if (typeof activeSingleRevealCallback === 'function') finalizeSingleSpin();
+                }, 0);
+                return;
+            }
+
+            document.getElementById('btn-skip-roulette')?.classList.remove('hidden');
+            triggerCaseUnsealStage(activeCaseType, singleWinColor, '🎲 Открываем кейс...', caseAnimMode === 'fast' ? 320 : 650);
+
+            let tickDelay = caseAnimMode === 'fast' ? 45 : 70;
+            const maxTickDelay = caseAnimMode === 'fast' ? 240 : 480;
+            function playCaseReelTicks() {
+                playTick();
+                tickDelay *= 1.15;
+                if (tickDelay < maxTickDelay) {
+                    const tid = setTimeout(playCaseReelTicks, tickDelay);
+                    batchRevealTimeouts.push(tid);
+                }
+            }
+            playCaseReelTicks();
+
+            const spinTransition = 'transform ' + (caseAnimMode === 'fast' ? '1.6s' : '4.0s') + ' cubic-bezier(0.12, 0.8, 0.22, 1)';
+            if (track) {
+                void track.offsetWidth;
+                track.style.transition = spinTransition;
+                track.style.transform = `translateX(${targetX}px)`;
+            }
+            const startTid = setTimeout(() => {
+                if (track && isSpinning) {
+                    track.style.transition = spinTransition;
+                    track.style.transform = `translateX(${targetX}px)`;
+                }
+            }, 60);
+            batchRevealTimeouts.push(startTid);
+
+            caseRouletteTimeout = setTimeout(finalizeSingleSpin, caseAnimMode === 'fast' ? 1680 : 4100);
         }
 
         function rouletteSell() {
@@ -22983,7 +23308,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         function toggleNavMoreMenu(evt) {
             if (evt && typeof evt.stopPropagation === 'function') evt.stopPropagation();
             const menu = document.getElementById('nav-more-menu');
-            const btn = document.getElementById('nav-tab-more');
+            const btn = document.getElementById('nav-tab-more') || document.getElementById('btn-nav-more');
             if (!menu) return;
             const isHidden = menu.classList.toggle('hidden');
             if (btn) btn.setAttribute('aria-expanded', isHidden ? 'false' : 'true');
@@ -22992,11 +23317,60 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
         function closeNavMoreMenu() {
             const menu = document.getElementById('nav-more-menu');
-            const btn = document.getElementById('nav-tab-more');
+            const btn = document.getElementById('nav-tab-more') || document.getElementById('btn-nav-more');
             if (menu) menu.classList.add('hidden');
             if (btn) btn.setAttribute('aria-expanded', 'false');
         }
         window.closeNavMoreMenu = closeNavMoreMenu;
+
+        if (typeof document !== 'undefined') {
+            document.getElementById('mobile-more-sheet')?.classList.add('hidden');
+        }
+
+        function toggleMobileMoreSheet(evt) {
+            if (evt && typeof evt.stopPropagation === 'function') evt.stopPropagation();
+            const sheet = document.getElementById('mobile-more-sheet');
+            const btn = document.getElementById('btn-mobile-more');
+            if (!sheet) return false;
+            const isHidden = sheet.classList.toggle('hidden');
+            if (btn) {
+                btn.classList.toggle('sheet-open', !isHidden);
+                btn.setAttribute('aria-expanded', isHidden ? 'false' : 'true');
+            }
+            return !isHidden;
+        }
+        window.toggleMobileMoreSheet = toggleMobileMoreSheet;
+
+        function closeMobileMoreSheet() {
+            const sheet = document.getElementById('mobile-more-sheet');
+            const btn = document.getElementById('btn-mobile-more');
+            if (sheet) sheet.classList.add('hidden');
+            if (btn) {
+                btn.classList.remove('sheet-open');
+                btn.setAttribute('aria-expanded', 'false');
+            }
+        }
+        window.closeMobileMoreSheet = closeMobileMoreSheet;
+
+        function toggleMobileCollectionFilters() {
+            const inv = document.getElementById('inventory');
+            const qSidebar = (inv && typeof inv.querySelector === 'function') ? inv.querySelector('.col-filter-sidebar') : null;
+            const sidebar = (qSidebar && qSidebar.classList)
+                ? qSidebar
+                : document.getElementById('col-filter-sidebar');
+            if (!sidebar || !sidebar.classList) return false;
+            const isCollapsed = sidebar.classList.toggle('mobile-collapsed');
+            const btn = document.getElementById('btn-mobile-col-filters');
+            if (btn) {
+                if (btn.classList) btn.classList.toggle('active', !isCollapsed);
+                if (typeof btn.setAttribute === 'function') btn.setAttribute('aria-expanded', isCollapsed ? 'false' : 'true');
+                const label = isCollapsed ? '🎛️ Показать фильтры' : '🎛️ Фильтры';
+                btn.textContent = label;
+                btn.innerText = label;
+            }
+            return isCollapsed;
+        }
+        window.toggleMobileCollectionFilters = toggleMobileCollectionFilters;
 
         if (typeof document !== 'undefined' && typeof document.addEventListener === 'function') {
             document.addEventListener('click', (e) => {
@@ -23024,10 +23398,51 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
         function switchTab(tabId, element, raceMode) {
             closeNavMoreMenu();
-            if (tabId !== 'generator' && isAutoSpinning) {
+            closeMobileMoreSheet();
+
+            if (typeof document !== 'undefined') {
+                if (typeof document.querySelectorAll === 'function') {
+                    document.querySelectorAll('#mobile-bottom-nav .mobile-nav-btn').forEach(btn => {
+                        const mTab = typeof btn.getAttribute === 'function' ? btn.getAttribute('data-mobile-tab') : (btn.dataset && btn.dataset.mobileTab);
+                        const isActive = mTab === tabId ||
+                            (mTab === 'cars' && tabId === 'garage') ||
+                            (mTab === 'garage' && tabId === 'cars') ||
+                            (mTab === 'market' && tabId === 'multiplayer') ||
+                            (mTab === 'race' && tabId === 'racegame');
+                        btn.classList.toggle('active', isActive);
+                    });
+                }
+                const mobIdMap = {
+                    generator: 'mob-nav-generator',
+                    inventory: 'mob-nav-inventory',
+                    collection: 'mob-nav-inventory',
+                    cars: 'mob-nav-cars',
+                    garage: 'mob-nav-cars',
+                    market: 'mob-nav-market',
+                    multiplayer: 'mob-nav-market',
+                    race: 'mob-nav-race',
+                    racegame: 'mob-nav-race',
+                    cases: 'mob-nav-cases'
+                };
+                ['mob-nav-generator', 'mob-nav-inventory', 'mob-nav-cars', 'mob-nav-market', 'mob-nav-race', 'mob-nav-cases'].forEach(id => {
+                    const b = document.getElementById(id);
+                    if (b && b.classList) b.classList.toggle('active', mobIdMap[tabId] === id);
+                });
+                const btnMobMore = document.getElementById('btn-mobile-more');
+                if (btnMobMore && btnMobMore.classList) {
+                    btnMobMore.classList.toggle('active', ['leaderboard', 'profile', 'Pass', 'online', 'admin'].includes(tabId));
+                }
+            }
+
+            const resolvedTabId = (tabId === 'cars' && !document.getElementById('cars')) ? 'garage'
+                : (tabId === 'market' && !document.getElementById('market')) ? 'multiplayer'
+                : (tabId === 'race' && !document.getElementById('race')) ? 'racegame'
+                : tabId;
+
+            if (resolvedTabId !== 'generator' && isAutoSpinning) {
                 stopAutoSpin();
             }
-            if (tabId !== 'racegame') {
+            if (resolvedTabId !== 'racegame') {
                 if (raceGameOverModalTimeout) {
                     clearTimeout(raceGameOverModalTimeout);
                     raceGameOverModalTimeout = null;
@@ -23043,7 +23458,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             }
             document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
             document.querySelectorAll('.nav-tab').forEach(el => { el.classList.remove('active'); el.setAttribute('aria-selected', 'false'); });
-            const target = document.getElementById(tabId);
+            const target = document.getElementById(resolvedTabId);
             if (target) target.classList.remove('hidden');
             if (!element) {
                 const mapId = {
@@ -23054,22 +23469,22 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     multiplayer: 'nav-tab-market',
                     racegame: 'nav-tab-racegame',
                     cases: 'nav-tab-cases'
-                }[tabId];
+                }[resolvedTabId];
                 if (mapId) element = document.getElementById(mapId);
             }
             if (element) { element.classList.add('active'); element.setAttribute('aria-selected', 'true'); }
-            if (tabId === 'cases' && typeof selectCaseCountry === 'function') {
+            if (resolvedTabId === 'cases' && typeof selectCaseCountry === 'function') {
                 selectCaseCountry(currentCaseCountry || currentCountry || 'RUS', true);
             }
-            if ((tabId === 'inventory' || tabId === 'collection') && typeof renderCollectorBook === 'function') {
+            if ((resolvedTabId === 'inventory' || resolvedTabId === 'collection') && typeof renderCollectorBook === 'function') {
                 renderCollectorBook();
             }
-            if (tabId === 'leaderboard') renderLeaderboard();
-            if (tabId === 'multiplayer') {
+            if (resolvedTabId === 'leaderboard') renderLeaderboard();
+            if (resolvedTabId === 'multiplayer') {
                 if (activeMultiSubTab === 'market') renderMarketListings();
                 if (activeMultiSubTab === 'chat') renderChatMessages();
             }
-            if (tabId === 'racegame') {
+            if (resolvedTabId === 'racegame') {
                 initRaceGameTab();
                 if (raceMode) {
                     switchRaceMode(raceMode);
@@ -23079,7 +23494,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     switchRaceMode('3d');
                 }
             }
-            if (tabId === 'garage') {
+            if (resolvedTabId === 'garage') {
                 try { preloadUserGarageModels(); } catch (_) {}
                 initGarage3DShowroom();
                 if (typeof renderFleetBusiness === 'function') renderFleetBusiness();
@@ -23098,7 +23513,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     'city3d': ['🏙️ Город 3D', 'Исследование карты'],
                     'racegame': ['🏎️ Гоночный трек', 'Подготовка к заезду']
                 };
-                const tabInfo = tabNames[tabId] || ['🎮 В игре', tabId];
+                const tabInfo = tabNames[resolvedTabId] || ['🎮 В игре', resolvedTabId];
                 updatePlayerPresence(tabInfo[0], tabInfo[1]);
             }
         }

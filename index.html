@@ -60,7 +60,7 @@
     <!-- Подключение Firebase SDK для базы данных, аккаунтов и мультиплеера -->
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
-    <link rel="stylesheet" href="./styles.css?v=ee38a956fb3a">
+    <link rel="stylesheet" href="./styles.css?v=843b145eb0dd">
     <style>
         /* Collector's Book («Книга коллекционера») & Car-Plate Synergy UI */
         .collector-book-summary {
@@ -211,7 +211,7 @@
     <!-- Canvas для праздничного салюта -->
     <canvas id="fx-canvas"></canvas>
 
-    <div class="main-container">
+    <div class="main-container app-shell">
         <header class="brand-bar top-game-header">
             <a class="brand-lockup" href="./index.html" aria-label="H3H Nomera — главная">
                 <span class="brand-mark">H3H<span class="brand-mark-line"></span></span>
@@ -597,12 +597,15 @@
                         <div class="section-title"><span>🎒</span> Коллекция номеров</div>
                         <div style="font-size: 12.5px; color: var(--text-muted); margin-top: 2px;" id="col-plates-summary">Всего в коллекции: 0 шт. • На сумму: 0 ₽</div>
                     </div>
-                    <div class="market-type-nav" style="margin: 0; flex-wrap: wrap;">
-                        <button class="market-type-btn active" id="btn-col-plates" onclick="switchCollectionTab('plates')">🎒 Все номера</button>
-                        <button class="market-type-btn" id="btn-col-orders" onclick="switchCollectionTab('orders')">📋 Спецзаказы VIP <span id="vip-orders-badge" style="background:linear-gradient(135deg,#10b981,#059669);color:#fff;font-size:10px;padding:1px 6px;border-radius:999px;margin-left:4px;display:none;">0</span></button>
-                        <button class="market-type-btn" id="btn-col-auction" onclick="switchCollectionTab('auction')">🔨 VIP-Аукцион</button>
-                        <button class="market-type-btn" id="btn-col-album" onclick="switchCollectionTab('album')">📘 Книга коллекционера <span id="collector-book-badge" style="background:linear-gradient(135deg,#f59e0b,#ea580c);color:#fff;font-size:10px;padding:1px 6px;border-radius:999px;margin-left:4px;display:none;">!</span></button>
-                        <button class="market-type-btn" id="btn-col-achieve" onclick="switchCollectionTab('achieve')">🏆 Достижения</button>
+                    <div class="col-header-actions" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                        <div class="market-type-nav" style="margin: 0; flex-wrap: wrap;">
+                            <button class="market-type-btn active" id="btn-col-plates" onclick="switchCollectionTab('plates')">🎒 Все номера</button>
+                            <button class="market-type-btn" id="btn-col-orders" onclick="switchCollectionTab('orders')">📋 Спецзаказы VIP <span id="vip-orders-badge" style="background:linear-gradient(135deg,#10b981,#059669);color:#fff;font-size:10px;padding:1px 6px;border-radius:999px;margin-left:4px;display:none;">0</span></button>
+                            <button class="market-type-btn" id="btn-col-auction" onclick="switchCollectionTab('auction')">🔨 VIP-Аукцион</button>
+                            <button class="market-type-btn" id="btn-col-album" onclick="switchCollectionTab('album')">📘 Книга коллекционера <span id="collector-book-badge" style="background:linear-gradient(135deg,#f59e0b,#ea580c);color:#fff;font-size:10px;padding:1px 6px;border-radius:999px;margin-left:4px;display:none;">!</span></button>
+                            <button class="market-type-btn" id="btn-col-achieve" onclick="switchCollectionTab('achieve')">🏆 Достижения</button>
+                        </div>
+                        <button type="button" class="btn btn-dark btn-compact mobile-filter-toggle-btn" id="btn-mobile-col-filters" onclick="toggleMobileCollectionFilters()">🎛️ Фильтры</button>
                     </div>
                 </div>
 
@@ -640,7 +643,7 @@
 
                     <div class="col-workspace-grid">
                         <!-- Боковая панель быстрых категорий коллекции -->
-                        <aside class="col-sidebar" aria-label="Категории коллекции">
+                        <aside class="col-sidebar col-filter-sidebar" id="col-filter-sidebar" aria-label="Категории коллекции">
                             <div class="col-sidebar-group">
                                 <div class="col-sidebar-title">КАТЕГОРИИ</div>
                                 <button type="button" class="col-side-btn active" id="col-cat-all" onclick="setCollectionQuickCategory('all')">
@@ -1537,32 +1540,39 @@
                         <div class="section-title">🎁 Кейсы с номерами и авто</div>
                         <div id="case-country-subtitle" class="case-country-subtitle" style="margin:4px 0 0 0;">Выбрана база номеров: 🇷🇺 Россия (ГОСТ) — стандартная стоимость кейсов</div>
                     </div>
-                    <div class="case-country-bar" id="case-country-bar" role="group" aria-label="Страна номеров в кейсах" style="margin:0;">
-                        <button type="button" class="case-country-btn active" id="btn-case-country-RUS" data-country="RUS" onclick="selectCaseCountry('RUS')">
-                            <span class="country-flag-badge">🇷🇺</span>
-                            <span>РФ</span>
-                            <small>x1</small>
-                        </button>
-                        <button type="button" class="case-country-btn" id="btn-case-country-KZ" data-country="KZ" onclick="selectCaseCountry('KZ')">
-                            <span class="country-flag-badge">🇰🇿</span>
-                            <span>Казахстан</span>
-                            <small>x1.8</small>
-                        </button>
-                        <button type="button" class="case-country-btn" id="btn-case-country-USA" data-country="USA" onclick="selectCaseCountry('USA')">
-                            <span class="country-flag-badge">🇺🇸</span>
-                            <span>США</span>
-                            <small>x3.5</small>
-                        </button>
-                        <button type="button" class="case-country-btn" id="btn-case-country-UAE" data-country="UAE" onclick="selectCaseCountry('UAE')">
-                            <span class="country-flag-badge">🇦🇪</span>
-                            <span>Дубай</span>
-                            <small>x8.0</small>
-                        </button>
-                        <button type="button" class="case-country-btn" id="btn-case-country-JPN" data-country="JPN" onclick="selectCaseCountry('JPN')">
-                            <span class="country-flag-badge">🇯🇵</span>
-                            <span>Япония</span>
-                            <small>x5.0</small>
-                        </button>
+                    <div class="case-header-controls" style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                        <div class="case-country-bar" id="case-country-bar" role="group" aria-label="Страна номеров в кейсах" style="margin:0;">
+                            <button type="button" class="case-country-btn active" id="btn-case-country-RUS" data-country="RUS" onclick="selectCaseCountry('RUS')">
+                                <span class="country-flag-badge">🇷🇺</span>
+                                <span>РФ</span>
+                                <small>x1</small>
+                            </button>
+                            <button type="button" class="case-country-btn" id="btn-case-country-KZ" data-country="KZ" onclick="selectCaseCountry('KZ')">
+                                <span class="country-flag-badge">🇰🇿</span>
+                                <span>Казахстан</span>
+                                <small>x1.8</small>
+                            </button>
+                            <button type="button" class="case-country-btn" id="btn-case-country-USA" data-country="USA" onclick="selectCaseCountry('USA')">
+                                <span class="country-flag-badge">🇺🇸</span>
+                                <span>США</span>
+                                <small>x3.5</small>
+                            </button>
+                            <button type="button" class="case-country-btn" id="btn-case-country-UAE" data-country="UAE" onclick="selectCaseCountry('UAE')">
+                                <span class="country-flag-badge">🇦🇪</span>
+                                <span>Дубай</span>
+                                <small>x8.0</small>
+                            </button>
+                            <button type="button" class="case-country-btn" id="btn-case-country-JPN" data-country="JPN" onclick="selectCaseCountry('JPN')">
+                                <span class="country-flag-badge">🇯🇵</span>
+                                <span>Япония</span>
+                                <small>x5.0</small>
+                            </button>
+                        </div>
+                        <div class="case-anim-mode-bar" id="case-anim-mode-bar" role="group" aria-label="Режим анимации открытия кейсов">
+                            <button type="button" class="case-anim-mode-btn active" id="btn-case-anim-standard" data-anim-mode="standard" onclick="setCaseAnimMode('standard')" title="Полная анимация рулетки и раскрытия">🎬 Анимация</button>
+                            <button type="button" class="case-anim-mode-btn" id="btn-case-anim-fast" data-anim-mode="fast" onclick="setCaseAnimMode('fast')" title="Ускоренная анимация открытия">⚡ Быстро</button>
+                            <button type="button" class="case-anim-mode-btn" id="btn-case-anim-instant" data-anim-mode="instant" onclick="setCaseAnimMode('instant')" title="Мгновенное открытие без ожидания">⏭️ Сразу</button>
+                        </div>
                     </div>
                 </div>
 
@@ -1875,6 +1885,46 @@
             </div>
         </div>
 
+    </div>
+
+    <!-- МОБИЛЬНАЯ НИЖНЯЯ НАВИГАЦИЯ И ШТОРКА «ЕЩЁ» -->
+    <nav id="mobile-bottom-nav" class="mobile-bottom-nav" aria-label="Мобильная навигация">
+        <button type="button" class="mobile-nav-btn active" id="mob-nav-generator" data-mobile-tab="generator" onclick="switchTab('generator')">
+            <span>🎲</span><small>Номера</small>
+        </button>
+        <button type="button" class="mobile-nav-btn" id="mob-nav-inventory" data-mobile-tab="inventory" onclick="switchTab('inventory')">
+            <span>🗂️</span><small>Коллекция</small>
+        </button>
+        <button type="button" class="mobile-nav-btn" id="mob-nav-cars" data-mobile-tab="cars" onclick="switchTab('cars')">
+            <span>🏎️</span><small>Гараж</small>
+        </button>
+        <button type="button" class="mobile-nav-btn" id="mob-nav-market" data-mobile-tab="market" onclick="switchTab('market')">
+            <span>🏛️</span><small>Рынок</small>
+        </button>
+        <button type="button" class="mobile-nav-btn" id="mob-nav-race" data-mobile-tab="race" onclick="switchTab('race')">
+            <span>🏁</span><small>Гонки</small>
+        </button>
+        <button type="button" class="mobile-nav-btn" id="mob-nav-cases" data-mobile-tab="cases" onclick="switchTab('cases')">
+            <span>🎁</span><small>Кейсы</small>
+        </button>
+        <button type="button" class="mobile-nav-btn" id="btn-mobile-more" onclick="toggleMobileMoreSheet(event)">
+            <span>☰</span><small>Ещё</small>
+        </button>
+    </nav>
+
+    <div id="mobile-more-sheet" class="mobile-more-sheet hidden">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <span class="luxury-panel-eyebrow">ДОПОЛНИТЕЛЬНЫЕ РАЗДЕЛЫ</span>
+            <button type="button" class="region-btn-close" onclick="closeMobileMoreSheet()" aria-label="Закрыть">✕</button>
+        </div>
+        <div class="mobile-more-grid">
+            <button type="button" class="mobile-more-btn" onclick="closeMobileMoreSheet(); switchTab('leaderboard')">🏆 Рейтинг и рекорды</button>
+            <button type="button" class="mobile-more-btn" onclick="closeMobileMoreSheet(); switchTab('profile')">👤 Профиль и достижения</button>
+            <button type="button" class="mobile-more-btn" onclick="closeMobileMoreSheet(); switchTab('Pass')">👑 VIP Клуб</button>
+            <button type="button" class="mobile-more-btn" onclick="closeMobileMoreSheet(); switchTab('online')">🌐 Онлайн и синхронизация</button>
+            <button type="button" class="mobile-more-btn" onclick="closeMobileMoreSheet(); openDailyModal()">🎁 Бонус дня и квесты</button>
+            <button type="button" class="mobile-more-btn" onclick="closeMobileMoreSheet(); openSettings()">🔊 Настройки звука</button>
+        </div>
     </div>
 
     <!-- БАННЕР ПРИВЕТСТВИЯ ПРИ ВХОДЕ (ВХОД / РЕГИСТРАЦИЯ / БЫСТРЫЙ ГОСТЬ) -->
@@ -2224,7 +2274,16 @@
         <div class="modal-box roulette-modal-box" id="roulette-modal-box" style="text-align: center; max-width: 720px; width: 94%;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
                 <h3 style="margin:0; color: #fff; transition: color 0.3s; font-size: 18px;" id="roulette-modal-title">🎲 Крутим рулетку...</h3>
-                <button type="button" class="region-btn-close" id="btn-roulette-close-x" onclick="closeRouletteModal()" aria-label="Закрыть">✕</button>
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <button type="button" class="roulette-skip-btn hidden" id="btn-skip-roulette" onclick="skipCaseAnimation()">⏩ Пропустить</button>
+                    <button type="button" class="region-btn-close" id="btn-roulette-close-x" onclick="closeRouletteModal()" aria-label="Закрыть">✕</button>
+                </div>
+            </div>
+
+            <div id="case-unseal-stage" class="case-unseal-stage hidden">
+                <div class="case-unseal-beam" id="case-unseal-beam"></div>
+                <div class="case-unseal-crate-icon" id="case-unseal-crate-icon">🎁</div>
+                <div class="case-unseal-label" id="case-unseal-label">Распечатываем кейс...</div>
             </div>
 
             <div class="case-roulette-container" id="case-roulette-container">
@@ -2285,6 +2344,13 @@
 
             <!-- РЕЗУЛЬТАТ МАССОВОГО ОТКРЫТИЯ КЕЙСОВ (×5 / ×10) -->
             <div id="roulette-batch-result" class="hidden">
+                <div id="batch-roulette-stage" class="batch-roulette-stage hidden">
+                    <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:8px; flex-wrap:wrap;">
+                        <span class="luxury-panel-eyebrow" id="batch-reveal-status">🎰 СИНХРОННАЯ РУЛЕТКА СЕРИИ...</span>
+                        <button type="button" class="roulette-skip-btn" id="btn-skip-batch-anim" onclick="skipCaseAnimation()">⏩ Открыть все сразу</button>
+                    </div>
+                    <div class="batch-reels-track" id="batch-reels-track"></div>
+                </div>
                 <div class="batch-result-layout">
                     <div class="batch-drops-grid" id="roulette-batch-grid"></div>
                     <aside class="batch-summary-card" id="roulette-batch-summary"></aside>
@@ -2685,6 +2751,6 @@
     <script src="./js/nfs-physics.js?v=8345fce74626"></script>
     <script src="./js/nfs-circuit-race.js?v=05bfeab9b9a0"></script>
     <script src="./js/car-3d.js?v=f4537ffff2a5"></script>
-    <script src="./js/app.js?v=38265ceefe5c"></script>
+    <script src="./js/app.js?v=2da96b06b4df"></script>
 </body>
 </html>

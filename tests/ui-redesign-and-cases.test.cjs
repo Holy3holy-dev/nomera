@@ -137,3 +137,65 @@ test('Collection filters (search, country, rarity, favorites, duplicates) and Re
   `);
   assert.ok(app.run(`document.getElementById('generator-recent-drops').innerHTML`).includes('777'));
 });
+
+test('Case Animation Modes (standard, fast, instant), skipCaseAnimation(), batch multi-reel stage, and Mobile UI helpers work accurately', () => {
+  const app = createApp();
+
+  app.run(`
+    balance = 5000000;
+    inventory = [];
+    myCars = [];
+    currentCaseCountry = 'RUS';
+  `);
+
+  // 1. Animation mode switching & persistence
+  assert.equal(app.run(`setCaseAnimMode('fast')`), 'fast');
+  assert.equal(app.run(`localStorage.getItem('nomera_case_anim_mode')`), 'fast');
+  assert.equal(app.run(`document.getElementById('btn-case-anim-fast').classList.contains('active')`), true);
+
+  assert.equal(app.run(`setCaseAnimMode('instant')`), 'instant');
+  assert.equal(app.run(`localStorage.getItem('nomera_case_anim_mode')`), 'instant');
+  assert.equal(app.run(`document.getElementById('btn-case-anim-instant').classList.contains('active')`), true);
+
+  // Instant mode x1 opening finishes immediately without waiting for timeout
+  app.run(`buyCase('normal', 1);`);
+  assert.equal(app.run(`isSpinning`), false, 'instant mode x1 must finish immediately');
+  assert.equal(app.run(`document.getElementById('roulette-result').classList.contains('hidden')`), false);
+
+  // 2. Standard mode x1 opening + skipCaseAnimation()
+  assert.equal(app.run(`setCaseAnimMode('standard')`), 'standard');
+  app.run(`buyCase('normal', 1);`);
+  assert.equal(app.run(`isSpinning`), true, 'standard mode x1 starts spinning');
+  assert.equal(app.run(`document.getElementById('case-unseal-stage').classList.contains('hidden')`), false);
+  app.run(`skipCaseAnimation();`);
+  assert.equal(app.run(`isSpinning`), false, 'skipCaseAnimation() must immediately finish x1 spin');
+  assert.equal(app.run(`document.getElementById('roulette-result').classList.contains('hidden')`), false);
+  assert.equal(app.run(`document.getElementById('case-unseal-stage').classList.contains('hidden')`), true);
+
+  // 3. Batch (x5) multi-reel stage population (#batch-reels-track) & skipCaseAnimation()
+  app.run(`setCaseAnimMode('fast');`);
+  app.run(`buyCase('normal', 5);`);
+  const reelsHtml = app.run(`document.getElementById('batch-reels-track').innerHTML`);
+  assert.ok(reelsHtml.includes('batch-mini-reel'), '#batch-reels-track must contain .batch-mini-reel slots');
+  assert.equal(app.run(`document.getElementById('batch-roulette-stage').classList.contains('hidden')`), false);
+  assert.ok(app.run(`document.getElementById('roulette-batch-grid').innerHTML`).includes('revealing-card'));
+
+  app.run(`skipCaseAnimation();`);
+  assert.ok(app.run(`document.getElementById('roulette-batch-grid').innerHTML`).includes('revealed-card'));
+  assert.ok(!app.run(`document.getElementById('roulette-batch-grid').innerHTML`).includes('revealing-card'));
+  assert.equal(app.run(`document.getElementById('batch-reveal-status').textContent`), '✓ ВСЕ НАГРАДЫ ОТКРЫТЫ');
+
+  // 4. Mobile helpers: toggleMobileMoreSheet & toggleMobileCollectionFilters & switchTab
+  assert.equal(app.run(`document.getElementById('mobile-more-sheet').classList.contains('hidden')`), true);
+  app.run(`toggleMobileMoreSheet();`);
+  assert.equal(app.run(`document.getElementById('mobile-more-sheet').classList.contains('hidden')`), false);
+  app.run(`switchTab('leaderboard');`);
+  assert.equal(app.run(`document.getElementById('mobile-more-sheet').classList.contains('hidden')`), true);
+  assert.equal(app.run(`document.getElementById('btn-mobile-more').classList.contains('active')`), true);
+
+  app.run(`toggleMobileCollectionFilters();`);
+  assert.equal(app.run(`document.getElementById('col-filter-sidebar').classList.contains('mobile-collapsed')`), true);
+  app.run(`toggleMobileCollectionFilters();`);
+  assert.equal(app.run(`document.getElementById('col-filter-sidebar').classList.contains('mobile-collapsed')`), false);
+});
+
