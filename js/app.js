@@ -6298,6 +6298,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     </div>`;
                 updateBadge();
                 if (typeof renderCollectorBook === 'function') renderCollectorBook();
+                if (typeof updateVipOrdersBadge === 'function') updateVipOrdersBadge();
                 return;
             }
 
@@ -6321,6 +6322,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             list.innerHTML = html;
             updateBadge();
             if (typeof renderCollectorBook === 'function') renderCollectorBook();
+            if (typeof updateVipOrdersBadge === 'function') updateVipOrdersBadge();
         }
 
         function sellPlate(index) {
@@ -8838,23 +8840,880 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         function switchCollectionTab(tab) {
             activeCollectionTab = tab;
             const btnPlates = document.getElementById('btn-col-plates');
+            const btnOrders = document.getElementById('btn-col-orders');
+            const btnAuction = document.getElementById('btn-col-auction');
             const btnAlbum = document.getElementById('btn-col-album');
             const btnAchieve = document.getElementById('btn-col-achieve');
+
             const subPlates = document.getElementById('col-subtab-plates');
+            const subOrders = document.getElementById('col-subtab-orders');
+            const subAuction = document.getElementById('col-subtab-auction');
             const subAlbum = document.getElementById('col-subtab-album');
             const subAchieve = document.getElementById('col-subtab-achieve');
 
             if (btnPlates) btnPlates.classList.toggle('active', tab === 'plates');
+            if (btnOrders) btnOrders.classList.toggle('active', tab === 'orders');
+            if (btnAuction) btnAuction.classList.toggle('active', tab === 'auction');
             if (btnAlbum) btnAlbum.classList.toggle('active', tab === 'album');
             if (btnAchieve) btnAchieve.classList.toggle('active', tab === 'achieve');
+
             if (subPlates) subPlates.classList.toggle('hidden', tab !== 'plates');
+            if (subOrders) subOrders.classList.toggle('hidden', tab !== 'orders');
+            if (subAuction) subAuction.classList.toggle('hidden', tab !== 'auction');
             if (subAlbum) subAlbum.classList.toggle('hidden', tab !== 'album');
             if (subAchieve) subAchieve.classList.toggle('hidden', tab !== 'achieve');
 
             if (tab === 'achieve') renderAchievements();
             else if (tab === 'album') renderCollectorBook();
-            else renderInventory();
+            else if (tab === 'orders') renderVipOrders();
+            else if (tab === 'auction') {
+                if (!vipAuctionState) startVipAuctionLot();
+                renderVipAuction();
+            } else renderInventory();
         }
+        window.switchCollectionTab = switchCollectionTab;
+
+        // =========================================================
+        // 4.1. 📋 СПЕЦЗАКАЗЫ VIP (КОНТРАКТЫ ДНЯ ОТ ШЕЙХОВ И ЭЛИТЫ)
+        // =========================================================
+        function extractPlateInspection(plateObjOrText) {
+            const raw = String(plateObjOrText?.text || plateObjOrText || '').trim().toUpperCase();
+            const parts = raw.split('|');
+            const mainPart = (parts[0] || '').trim();
+            const regionPart = (parts[1] || '').trim();
+            let country = 'RUS';
+            if (/\bUAE$/i.test(regionPart) || /\bUAE$/i.test(raw)) country = 'UAE';
+            else if (/\bUSA$/i.test(regionPart) || /\bUSA$/i.test(raw)) country = 'USA';
+            else if (/\bKZ$/i.test(regionPart) || /\bKZ$/i.test(raw)) country = 'KZ';
+
+            const digitsMatch = mainPart.match(/\d+/);
+            const digitsRaw = digitsMatch ? digitsMatch[0] : '';
+            const digits3 = digitsRaw ? digitsRaw.padStart(3, '0').slice(-3) : '000';
+            const lettersOnly = mainPart.replace(/[^А-ЯЁA-Z]/gi, '').toUpperCase();
+            const price = Number(plateObjOrText?.price) || 0;
+            const d1 = digits3[0], d2 = digits3[1], d3 = digits3[2];
+            const isMirror = digitsRaw.length >= 2 && (digitsRaw.length === 2 ? false : (d1 === d3 && d1 !== d2));
+            const isTriple = digitsRaw.length === 3 && d1 === d2 && d2 === d3;
+            const isRoundHundred = /^[1-9]00$/.test(digits3) && digitsRaw.length === 3;
+            const isFirstTen = (digitsRaw.length === 1 && /^[1-9]$/.test(digitsRaw)) || (/^00[1-9]$/.test(digits3));
+            const isSameLetters = lettersOnly.length >= 2 && lettersOnly.split('').every(ch => ch === lettersOnly[0]);
+            const isLadder = ['123', '234', '345', '456', '567', '678', '789', '987', '876', '765', '654', '543', '432', '321', '012'].includes(digits3);
+            return {
+                raw,
+                mainPart,
+                regionPart,
+                country,
+                digitsRaw,
+                digits3,
+                lettersOnly,
+                price,
+                isMirror,
+                isTriple,
+                isRoundHundred,
+                isFirstTen,
+                isSameLetters,
+                isLadder
+            };
+        }
+
+        const VIP_ORDER_TEMPLATES = [
+            {
+                id: 'order_mirror',
+                client: 'Автоблогер-миллионник',
+                role: 'YouTube / Drift Media',
+                avatar: '📹',
+                title: 'Зеркалка для нового проекта',
+                desc: 'Ищу любой зеркальный госномер (например 101, 707, 818, 050) на съёмки обзора.',
+                badge: 'Зеркальные цифры',
+                multiplier: 3.4,
+                minPayout: 48000,
+                xpReward: 70,
+                matchesPlate: (plate) => {
+                    const info = extractPlateInspection(plate);
+                    return info.isMirror;
+                }
+            },
+            {
+                id: 'order_round_hundred',
+                client: 'Советник из Министерства',
+                role: 'Деловой Кортеж',
+                avatar: '🏛️',
+                title: 'Ровная сотня в сопровождение',
+                desc: 'Нужен строгий номер с ровной сотней (100, 200, 300, 500, 700, 900) любой страны.',
+                badge: 'Ровная сотня (-00)',
+                multiplier: 3.2,
+                minPayout: 68000,
+                xpReward: 85,
+                matchesPlate: (plate) => {
+                    const info = extractPlateInspection(plate);
+                    return info.isRoundHundred;
+                }
+            },
+            {
+                id: 'order_triple_digits',
+                client: 'Крипто-магнат из Сити',
+                role: 'Башня Федерация',
+                avatar: '💎',
+                title: 'Три одинаковые цифры (Триплет)',
+                desc: 'Куплю номер с тремя одинаковыми цифрами (111–999) на суперкар. Плачу тройной прайс!',
+                badge: 'Триплет (111–999)',
+                multiplier: 2.8,
+                minPayout: 145000,
+                xpReward: 120,
+                matchesPlate: (plate) => {
+                    const info = extractPlateInspection(plate);
+                    return info.isTriple;
+                }
+            },
+            {
+                id: 'order_first_ten',
+                client: 'Генерал Ведомства',
+                role: 'Спецгараж Центр',
+                avatar: '🎖️',
+                title: 'Первая десятка (001–009)',
+                desc: 'Требуется статусный номер из первой десятки (001–009 или однозначный ОАЭ 1–9).',
+                badge: 'Первая десятка (001–009)',
+                multiplier: 2.9,
+                minPayout: 185000,
+                xpReward: 140,
+                matchesPlate: (plate) => {
+                    const info = extractPlateInspection(plate);
+                    return info.isFirstTen;
+                }
+            },
+            {
+                id: 'order_same_letters',
+                client: 'Продюсер с Рублёвки',
+                role: 'Барвиха Luxury',
+                avatar: '🥂',
+                title: 'Одинаковые буквы или Спецсерия',
+                desc: 'Ищу номер с одинаковыми буквами (ААА, ВВВ, ХХХ, ООО, МММ, ZZZ) или спецсерией (АМР, ЕКХ, VIP).',
+                badge: 'Одинаковые буквы / Спецсерия',
+                multiplier: 2.85,
+                minPayout: 155000,
+                xpReward: 130,
+                matchesPlate: (plate) => {
+                    const info = extractPlateInspection(plate);
+                    return info.isSameLetters || /^(АМР|ЕКХ|ВОР|СКР|VIP|DXB|SHK|AMG|BMW|GOD)$/.test(info.lettersOnly);
+                }
+            },
+            {
+                id: 'order_uae_sheikh',
+                client: 'Шейх Аль-Мактум',
+                role: 'Dubai Royal Club',
+                avatar: '🐪',
+                title: 'Эксклюзив Эмиратов (UAE)',
+                desc: 'Выкуплю престижный номер ОАЭ (1–2 цифры или ценный номер Дубая/Абу-Даби от 18 000 ₽).',
+                badge: 'ОАЭ (UAE) · Престиж',
+                multiplier: 3.0,
+                minPayout: 110000,
+                xpReward: 115,
+                matchesPlate: (plate) => {
+                    const info = extractPlateInspection(plate);
+                    return info.country === 'UAE' && (info.digitsRaw.length <= 2 || info.isTriple || info.isMirror || info.isRoundHundred || info.price >= 18000);
+                }
+            },
+            {
+                id: 'order_usa_custom',
+                client: 'Коллекционер из Майами',
+                role: 'Ocean Drive Motors',
+                avatar: '🌴',
+                title: 'Американский Стиль (USA)',
+                desc: 'Приобрету интересный номер США (зеркальный, ровный, триплет, лесенка или от 15 000 ₽).',
+                badge: 'США (USA) · Кастом',
+                multiplier: 3.1,
+                minPayout: 85000,
+                xpReward: 100,
+                matchesPlate: (plate) => {
+                    const info = extractPlateInspection(plate);
+                    return info.country === 'USA' && (info.isMirror || info.isTriple || info.isRoundHundred || info.isFirstTen || info.isLadder || info.isSameLetters || info.price >= 15000);
+                }
+            },
+            {
+                id: 'order_kz_elite',
+                client: 'Казахский Магнат',
+                role: 'Astana Motors VIP',
+                avatar: '🦅',
+                title: 'Золотой резерв Казахстана (KZ)',
+                desc: 'Нужен статусный номер Казахстана (KZ) с красивыми цифрами или редкой серией.',
+                badge: 'Казахстан (KZ) · Элита',
+                multiplier: 3.15,
+                minPayout: 65000,
+                xpReward: 95,
+                matchesPlate: (plate) => {
+                    const info = extractPlateInspection(plate);
+                    return info.country === 'KZ' && (info.isMirror || info.isTriple || info.isRoundHundred || info.isFirstTen || info.isLadder || info.isSameLetters || info.price >= 9000);
+                }
+            },
+            {
+                id: 'order_ladder',
+                client: 'Стритрейсер «Шашечник»',
+                role: 'Night M-11 Crew',
+                avatar: '🔥',
+                title: 'Лесенка на удачу (123 / 789)',
+                desc: 'Срочно ищу номер с цифрами по порядку (123, 234, 345, 456, 567, 678, 789, 987, 321).',
+                badge: 'Лесенка (123 / 789)',
+                multiplier: 3.5,
+                minPayout: 58000,
+                xpReward: 80,
+                matchesPlate: (plate) => {
+                    const info = extractPlateInspection(plate);
+                    return info.isLadder;
+                }
+            },
+            {
+                id: 'order_rare_any',
+                client: 'Закрытый Автоклуб «Империал»',
+                role: 'Частный дилер',
+                avatar: '🎩',
+                title: 'Ценитель редких комбинаций',
+                desc: 'Выкупаем любой номер с оценкой от 6 000 ₽ или с любой особенностью (зеркалка, ровный, лесенка).',
+                badge: 'Любой ценный номер',
+                multiplier: 2.6,
+                minPayout: 36000,
+                xpReward: 60,
+                matchesPlate: (plate) => {
+                    const info = extractPlateInspection(plate);
+                    return info.price >= 6000 || info.isMirror || info.isRoundHundred || info.isTriple || info.isFirstTen || info.isLadder || info.isSameLetters;
+                }
+            }
+        ];
+
+        let vipActiveOrders = [];
+        let vipOrdersRefreshCount = 0;
+
+        function initVipOrders(forceNew = false) {
+            if (!forceNew && Array.isArray(vipActiveOrders) && vipActiveOrders.length === 4) {
+                return vipActiveOrders;
+            }
+            const accessibleIds = ['order_rare_any', 'order_mirror', 'order_round_hundred', 'order_ladder'];
+            const firstId = accessibleIds[Math.floor(Math.random() * accessibleIds.length)];
+            const firstTpl = VIP_ORDER_TEMPLATES.find(t => t.id === firstId) || VIP_ORDER_TEMPLATES[0];
+
+            const restPool = VIP_ORDER_TEMPLATES.filter(t => t.id !== firstTpl.id);
+            for (let i = restPool.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                const tmp = restPool[i];
+                restPool[i] = restPool[j];
+                restPool[j] = tmp;
+            }
+
+            const chosen = [firstTpl, ...restPool.slice(0, 3)];
+            vipActiveOrders = chosen.map((tpl, idx) => ({
+                slotId: 'vip_slot_' + Date.now() + '_' + idx,
+                templateId: tpl.id,
+                client: tpl.client,
+                role: tpl.role,
+                avatar: tpl.avatar,
+                title: tpl.title,
+                desc: tpl.desc,
+                badge: tpl.badge,
+                multiplier: tpl.multiplier,
+                minPayout: tpl.minPayout,
+                xpReward: tpl.xpReward
+            }));
+            updateVipOrdersBadge();
+            return vipActiveOrders;
+        }
+        window.initVipOrders = initVipOrders;
+
+        function getVipOrderTemplate(order) {
+            if (!order) return null;
+            return VIP_ORDER_TEMPLATES.find(t => t.id === (order.templateId || order.id)) || null;
+        }
+
+        function calculateVipOrderPayout(order, plate) {
+            const tpl = getVipOrderTemplate(order) || order;
+            const mult = Number(tpl?.multiplier || order?.multiplier || 2.8);
+            const minPayout = Number(tpl?.minPayout || order?.minPayout || 40000);
+            const basePrice = Math.max(2000, Number(plate?.price) || 0);
+            return Math.max(minPayout, Math.round(basePrice * mult));
+        }
+        window.calculateVipOrderPayout = calculateVipOrderPayout;
+
+        function getMatchingInventoryForVipOrder(order) {
+            const tpl = getVipOrderTemplate(order);
+            if (!tpl || typeof tpl.matchesPlate !== 'function' || !Array.isArray(inventory)) return [];
+            const matches = [];
+            inventory.forEach((plate, idx) => {
+                if (plate && tpl.matchesPlate(plate)) {
+                    matches.push({
+                        index: idx,
+                        plate,
+                        payout: calculateVipOrderPayout(order, plate)
+                    });
+                }
+            });
+            return matches;
+        }
+        window.getMatchingInventoryForVipOrder = getMatchingInventoryForVipOrder;
+
+        function updateVipOrdersBadge() {
+            if (!Array.isArray(vipActiveOrders) || vipActiveOrders.length === 0) {
+                initVipOrders(false);
+            }
+            const badge = document.getElementById('vip-orders-badge');
+            if (!badge) return;
+            let readyCount = 0;
+            for (const ord of vipActiveOrders) {
+                if (getMatchingInventoryForVipOrder(ord).length > 0) {
+                    readyCount++;
+                }
+            }
+            if (readyCount > 0) {
+                badge.textContent = String(readyCount);
+                badge.style.display = 'inline-block';
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+        window.updateVipOrdersBadge = updateVipOrdersBadge;
+
+        function deliverVipOrder(templateOrSlotId, invIndex) {
+            initVipOrders(false);
+            const ordIdx = vipActiveOrders.findIndex(o => o.slotId === templateOrSlotId || o.templateId === templateOrSlotId);
+            if (ordIdx === -1) return false;
+            const order = vipActiveOrders[ordIdx];
+            const tpl = getVipOrderTemplate(order);
+            if (!tpl) return false;
+
+            let targetIdx = Number(invIndex);
+            if (!Number.isInteger(targetIdx) || targetIdx < 0 || targetIdx >= inventory.length || !tpl.matchesPlate(inventory[targetIdx])) {
+                const matches = getMatchingInventoryForVipOrder(order);
+                if (matches.length === 0) {
+                    notifyUser('В вашей коллекции пока нет подходящего номера для этого спецзаказа!', 'info');
+                    return false;
+                }
+                targetIdx = matches[0].index;
+            }
+
+            const plate = inventory[targetIdx];
+            const payout = calculateVipOrderPayout(order, plate);
+            const xp = Number(order.xpReward || tpl.xpReward || 75);
+
+            inventory.splice(targetIdx, 1);
+            creditPlayerBalance(payout, `Спецзаказ VIP («${order.client}»): ${plate.text}`);
+            if (typeof addExp === 'function') addExp(xp);
+            achievements.vipOrdersCompleted = (Number(achievements.vipOrdersCompleted) || 0) + 1;
+            achievements.vipOrdersEarned = (Number(achievements.vipOrdersEarned) || 0) + payout;
+
+            // Заменяем выполненный заказ новым из пула
+            const activeIds = new Set(vipActiveOrders.map(o => o.templateId));
+            const candidates = VIP_ORDER_TEMPLATES.filter(t => !activeIds.has(t.id));
+            const nextTpl = candidates.length > 0
+                ? candidates[Math.floor(Math.random() * candidates.length)]
+                : VIP_ORDER_TEMPLATES[Math.floor(Math.random() * VIP_ORDER_TEMPLATES.length)];
+
+            vipActiveOrders[ordIdx] = {
+                slotId: 'vip_slot_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
+                templateId: nextTpl.id,
+                client: nextTpl.client,
+                role: nextTpl.role,
+                avatar: nextTpl.avatar,
+                title: nextTpl.title,
+                desc: nextTpl.desc,
+                badge: nextTpl.badge,
+                multiplier: nextTpl.multiplier,
+                minPayout: nextTpl.minPayout,
+                xpReward: nextTpl.xpReward
+            };
+
+            if (typeof playCashSound === 'function') playCashSound();
+            if (typeof triggerConfetti === 'function' && payout >= 100000) triggerConfetti();
+            if (typeof logPlayerActivity === 'function') {
+                logPlayerActivity('Спецзаказ VIP', `Сдал номер «${plate.text}» клиенту «${order.client}» за ${payout.toLocaleString('ru-RU')} ₽ (x${order.multiplier})`);
+            }
+            notifyUser(`🤝 Контракт выполнен! «${order.client}» заплатил +${payout.toLocaleString('ru-RU')} ₽ (+${xp} XP) за номер «${plate.text}»!`, 'success');
+
+            if (typeof checkAchievements === 'function') checkAchievements();
+            if (typeof saveProgress === 'function') saveProgress();
+            renderInventory();
+            renderVipOrders();
+            return { payout, xp, plateText: plate.text, client: order.client };
+        }
+        window.deliverVipOrder = deliverVipOrder;
+
+        function refreshVipOrders() {
+            const refreshCost = vipOrdersRefreshCount === 0 ? 0 : 15000;
+            if (refreshCost > 0) {
+                if (balance < refreshCost) {
+                    notifyUser(`Недостаточно средств для обновления базы заказов (${refreshCost.toLocaleString('ru-RU')} ₽)!`);
+                    return false;
+                }
+                deductPlayerBalance(refreshCost, 'Обновление VIP-спецзаказов');
+            }
+            vipOrdersRefreshCount++;
+            initVipOrders(true);
+            if (typeof playTick === 'function') playTick();
+            renderVipOrders();
+            notifyUser('📋 Список VIP-спецзаказов обновлён!', 'success');
+            return true;
+        }
+        window.refreshVipOrders = refreshVipOrders;
+
+        function renderVipOrders() {
+            initVipOrders(false);
+            updateVipOrdersBadge();
+            const container = document.getElementById('vip-orders-container');
+            if (!container) return;
+
+            const completedCount = Number(achievements.vipOrdersCompleted || 0);
+            const totalEarned = Number(achievements.vipOrdersEarned || 0);
+            const nextRefreshCost = vipOrdersRefreshCount === 0 ? 'Бесплатно (1-й раз)' : '15 000 ₽';
+
+            const cardsHtml = vipActiveOrders.map((ord) => {
+                const matches = getMatchingInventoryForVipOrder(ord);
+                const hasMatch = matches.length > 0;
+                const bestMatch = hasMatch ? matches.reduce((a, b) => (b.payout > a.payout ? b : a), matches[0]) : null;
+
+                const matchingButtonsHtml = hasMatch
+                    ? matches.slice(0, 3).map(m => `
+                        <button type="button" class="btn btn-green" style="padding: 8px 12px; font-size: 12px; width: 100%; margin-top: 6px; display: flex; justify-content: space-between; align-items: center; gap: 8px;" onclick="deliverVipOrder('${ord.slotId}', ${m.index})">
+                            <span>🤝 Сдать <b>${escapeHtml(m.plate.text)}</b></span>
+                            <span style="background: rgba(0,0,0,0.25); padding: 2px 8px; border-radius: 999px; font-weight: 900;">+${m.payout.toLocaleString('ru-RU')} ₽</span>
+                        </button>
+                    `).join('')
+                    : `
+                        <div style="margin-top: 8px; padding: 8px 10px; border-radius: 8px; background: rgba(255,255,255,0.03); border: 1px dashed rgba(255,255,255,0.12); font-size: 11px; color: var(--text-dim); display: flex; justify-content: space-between; align-items: center; gap: 8px;">
+                            <span>В коллекции пока нет подходящего номера</span>
+                            <button type="button" class="btn btn-dark" style="padding: 4px 10px; font-size: 11px; width: auto; margin: 0;" onclick="navigateToTab('generator')">🎰 Выбить ↗</button>
+                        </div>
+                    `;
+
+                return `
+                    <div class="vip-order-card" style="background: ${hasMatch ? 'linear-gradient(145deg, rgba(16, 185, 129, 0.12), rgba(15, 23, 42, 0.9))' : 'rgba(15, 23, 42, 0.78)'}; border: 1px solid ${hasMatch ? 'rgba(16, 185, 129, 0.5)' : 'rgba(255, 255, 255, 0.1)'}; border-radius: 14px; padding: 14px; display: flex; flex-direction: column; justify-content: space-between; gap: 10px;">
+                        <div>
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <div style="width: 40px; height: 40px; border-radius: 12px; background: rgba(255,255,255,0.06); display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0;">${ord.avatar}</div>
+                                    <div>
+                                        <div style="font-size: 13px; font-weight: 800; color: #fff;">${escapeHtml(ord.client)}</div>
+                                        <div style="font-size: 10px; color: var(--text-dim);">${escapeHtml(ord.role)}</div>
+                                    </div>
+                                </div>
+                                <span style="font-size: 11px; font-weight: 900; padding: 3px 8px; border-radius: 999px; background: rgba(245, 158, 11, 0.18); border: 1px solid rgba(245, 158, 11, 0.45); color: #fbbf24; white-space: nowrap;">🔥 x${ord.multiplier} (от ${ord.minPayout.toLocaleString('ru-RU')} ₽)</span>
+                            </div>
+                            <div style="margin-top: 10px; font-size: 14px; font-weight: 800; color: #f8fafc;">${escapeHtml(ord.title)}</div>
+                            <div style="margin-top: 4px; font-size: 12px; color: var(--text-muted); line-height: 1.4;">${escapeHtml(ord.desc)}</div>
+                            <div style="margin-top: 8px; display: flex; gap: 6px; flex-wrap: wrap; align-items: center;">
+                                <span style="font-size: 10px; padding: 2px 8px; border-radius: 6px; background: rgba(56, 189, 248, 0.14); color: #38bdf8; font-weight: 700;">🎯 ${escapeHtml(ord.badge)}</span>
+                                <span style="font-size: 10px; padding: 2px 8px; border-radius: 6px; background: rgba(168, 85, 247, 0.14); color: #c084fc; font-weight: 700;">✨ +${ord.xpReward} XP</span>
+                                ${bestMatch ? `<span style="font-size: 10px; padding: 2px 8px; border-radius: 6px; background: rgba(16, 185, 129, 0.2); color: #34d399; font-weight: 800;">✓ В наличии (${matches.length} шт.)</span>` : ''}
+                            </div>
+                        </div>
+                        <div>
+                            ${matchingButtonsHtml}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            container.innerHTML = `
+                <div style="background: linear-gradient(135deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.95)); border: 1px solid rgba(251, 191, 36, 0.3); border-radius: 14px; padding: 14px 16px; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+                    <div>
+                        <div style="font-size: 15px; font-weight: 900; color: #fff;">📋 Доска VIP-Спецзаказов (Контракты Элиты)</div>
+                        <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">Шейхи, чиновники и блогеры платят <b>x2.6–x3.5</b> рыночной цены за нужные им комбинации!</div>
+                        <div style="font-size: 11px; color: #fbbf24; margin-top: 4px; font-weight: 700;">Выполнено контрактов: <b>${completedCount}</b> · Заработано на спецзаказах: <b>${totalEarned.toLocaleString('ru-RU')} ₽</b></div>
+                    </div>
+                    <button type="button" class="btn btn-dark" style="padding: 8px 14px; font-size: 12px; width: auto; margin: 0;" onclick="refreshVipOrders()">🔄 Сменить заказы (${nextRefreshCost})</button>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px;">
+                    ${cardsHtml}
+                </div>
+            `;
+        }
+        window.renderVipOrders = renderVipOrders;
+
+        function openVipOrders() {
+            if (typeof navigateToTab === 'function') navigateToTab('inventory');
+            switchCollectionTab('orders');
+        }
+        window.openVipOrders = openVipOrders;
+
+        // =========================================================
+        // 4.2. 🔨 ЖИВОЙ VIP-АУКЦИОН РЕДКИХ НОМЕРОВ («ТОРГИ С МАГНАТАМИ»)
+        // =========================================================
+        const VIP_AUCTION_CATALOG = [
+            { text: 'А 007 МР | 97', country: 'RUS', marketValue: 850000, rarityText: 'Легендарный', desc: 'Ведомственная серия Москвы с семёркой первой десятки' },
+            { text: 'Е 777 КХ | 77', country: 'RUS', marketValue: 1600000, rarityText: 'Мифический', desc: 'Культовая спецсерия столицы с тремя семёрками' },
+            { text: 'О 001 ОО | 99', country: 'RUS', marketValue: 1100000, rarityText: 'Легендарный', desc: 'Флагманский номер 001 спецсерии Москвы' },
+            { text: 'Х 888 ХХ | 777', country: 'RUS', marketValue: 920000, rarityText: 'Легендарный', desc: 'Шestикратный триплет букв и цифр 777 региона' },
+            { text: 'D 88 | DXB UAE', country: 'UAE', marketValue: 1450000, rarityText: 'Легендарный', desc: 'Дубайский двузначный дубль восьмёрок (RTA Auction)' },
+            { text: 'A 50 | DXB UAE', country: 'UAE', marketValue: 780000, rarityText: 'Эпический', desc: 'Королевский короткий двузначный номер Эмирата Дубай' },
+            { text: 'VIP 777 | CA USA', country: 'USA', marketValue: 1250000, rarityText: 'Легендарный', desc: 'Эксклюзивный калифорнийский номер Беверли-Хиллз' },
+            { text: 'AMG 001 | FL USA', country: 'USA', marketValue: 640000, rarityText: 'Эпический', desc: 'Клубный номер Майами Первой Десятки' },
+            { text: '777 ZZZ | 01 KZ', country: 'KZ', marketValue: 680000, rarityText: 'Эпический', desc: 'Золотой триплет Астаны с тройными буквами' },
+            { text: '001 VIP | 02 KZ', country: 'KZ', marketValue: 750000, rarityText: 'Эпический', desc: 'Первый номер спецсерии Южной столицы (Алматы)' },
+            { text: 'В 500 ВВ | 78', country: 'RUS', marketValue: 260000, rarityText: 'Супер редкий', desc: 'Ровная сотня Санкт-Петербурга с тремя буквами В' },
+            { text: 'К 707 КК | 23', country: 'RUS', marketValue: 210000, rarityText: 'Супер редкий', desc: 'Южный зеркальный номер с одинаковыми буквами' }
+        ];
+
+        const VIP_AUCTION_RIVALS = [
+            { id: 'reseller', name: '🎩 Перекуп с Авторынка', minCapRatio: 0.50, maxCapRatio: 0.65 },
+            { id: 'official', name: '💼 Чиновник Инкогнито', minCapRatio: 0.62, maxCapRatio: 0.78 },
+            { id: 'sheikh', name: '🐪 Дерзкий Магнат', minCapRatio: 0.72, maxCapRatio: 0.88 }
+        ];
+
+        let vipAuctionState = null;
+        let vipAuctionTimerId = null;
+        let vipAuctionLotCursor = 0;
+
+        function stopVipAuctionTimer() {
+            if (vipAuctionTimerId) {
+                clearInterval(vipAuctionTimerId);
+                vipAuctionTimerId = null;
+            }
+        }
+
+        function startVipAuctionLot(customLotIndex) {
+            stopVipAuctionTimer();
+            const idx = Number.isInteger(customLotIndex)
+                ? ((customLotIndex % VIP_AUCTION_CATALOG.length) + VIP_AUCTION_CATALOG.length) % VIP_AUCTION_CATALOG.length
+                : (vipAuctionLotCursor++ % VIP_AUCTION_CATALOG.length);
+            const lot = VIP_AUCTION_CATALOG[idx];
+            const startBid = Math.round((lot.marketValue * 0.35) / 5000) * 5000;
+            const bidStep = Math.max(10000, Math.round((lot.marketValue * 0.07) / 5000) * 5000);
+            const buyoutPrice = Math.round((lot.marketValue * 0.95) / 5000) * 5000;
+
+            const rivals = VIP_AUCTION_RIVALS.map(r => {
+                const ratio = r.minCapRatio + Math.random() * (r.maxCapRatio - r.minCapRatio);
+                return {
+                    id: r.id,
+                    name: r.name,
+                    maxBudget: Math.round((lot.marketValue * ratio) / 5000) * 5000,
+                    passed: false
+                };
+            });
+
+            const openingRival = rivals[0];
+            vipAuctionState = {
+                lotIndex: idx,
+                plateText: lot.text,
+                country: lot.country,
+                marketValue: lot.marketValue,
+                rarityText: lot.rarityText,
+                desc: lot.desc,
+                currentBid: startBid,
+                bidStep,
+                buyoutPrice,
+                highestBidder: 'rival',
+                highestBidderName: openingRival.name,
+                timeLeft: 25,
+                status: 'active', // 'active' | 'won' | 'lost'
+                rivals,
+                bidHistory: [
+                    { bidder: openingRival.name, amount: startBid, isPlayer: false, note: 'Стартовая ставка' }
+                ]
+            };
+
+            if (typeof window !== 'undefined' && typeof setInterval === 'function') {
+                vipAuctionTimerId = setInterval(() => {
+                    if (!vipAuctionState || vipAuctionState.status !== 'active') {
+                        stopVipAuctionTimer();
+                        return;
+                    }
+                    if (activeCollectionTab !== 'auction') return;
+                    vipAuctionState.timeLeft = Math.max(0, vipAuctionState.timeLeft - 1);
+                    if (vipAuctionState.timeLeft <= 0) {
+                        resolveVipAuction();
+                    } else {
+                        renderVipAuction();
+                    }
+                }, 1000);
+            }
+
+            renderVipAuction();
+            return vipAuctionState;
+        }
+        window.startVipAuctionLot = startVipAuctionLot;
+
+        function triggerRivalCounterBidIfAny() {
+            if (!vipAuctionState || vipAuctionState.status !== 'active') return false;
+            if (vipAuctionState.highestBidder !== 'player') return false;
+
+            const nextRequiredBid = vipAuctionState.currentBid + vipAuctionState.bidStep;
+            const eligibleRivals = [];
+            for (const r of vipAuctionState.rivals) {
+                if (r.maxBudget >= nextRequiredBid && nextRequiredBid < vipAuctionState.buyoutPrice) {
+                    eligibleRivals.push(r);
+                } else {
+                    r.passed = true;
+                }
+            }
+
+            if (eligibleRivals.length === 0) {
+                return false;
+            }
+
+            const chosenRival = eligibleRivals[Math.floor(Math.random() * eligibleRivals.length)];
+            vipAuctionState.currentBid = nextRequiredBid;
+            vipAuctionState.highestBidder = 'rival';
+            vipAuctionState.highestBidderName = chosenRival.name;
+            vipAuctionState.timeLeft = Math.max(vipAuctionState.timeLeft, 12);
+            vipAuctionState.bidHistory.unshift({
+                bidder: chosenRival.name,
+                amount: nextRequiredBid,
+                isPlayer: false,
+                note: 'Перебил ставку!'
+            });
+            if (vipAuctionState.bidHistory.length > 8) vipAuctionState.bidHistory.length = 8;
+            renderVipAuction();
+            return true;
+        }
+
+        function placeVipAuctionBid(stepMultiplier = 1, options = {}) {
+            if (!vipAuctionState || vipAuctionState.status !== 'active') {
+                startVipAuctionLot();
+            }
+            const mult = Math.max(1, Math.min(5, Math.round(Number(stepMultiplier) || 1)));
+            const newBid = vipAuctionState.currentBid + vipAuctionState.bidStep * mult;
+
+            if (balance < newBid) {
+                notifyUser(`Недостаточно средств для ставки ${newBid.toLocaleString('ru-RU')} ₽!`);
+                return false;
+            }
+
+            vipAuctionState.currentBid = newBid;
+            vipAuctionState.highestBidder = 'player';
+            vipAuctionState.highestBidderName = '👑 Вы (Лидер торгов)';
+            vipAuctionState.timeLeft = Math.max(vipAuctionState.timeLeft, 12);
+            vipAuctionState.bidHistory.unshift({
+                bidder: '👑 Вы',
+                amount: newBid,
+                isPlayer: true,
+                note: mult > 1 ? `Мощный шаг x${mult}!` : 'Ставка поднята'
+            });
+            if (vipAuctionState.bidHistory.length > 8) vipAuctionState.bidHistory.length = 8;
+
+            // Отмечаем соперников, чей бюджет уже превышен
+            const nextRivalBid = newBid + vipAuctionState.bidStep;
+            vipAuctionState.rivals.forEach(r => {
+                if (r.maxBudget < nextRivalBid) {
+                    r.passed = true;
+                }
+            });
+
+            if (typeof playTick === 'function') playTick();
+            renderVipAuction();
+
+            if (options && options.instantRivalResponse) {
+                triggerRivalCounterBidIfAny();
+            } else if (typeof setTimeout === 'function') {
+                const lotSnap = vipAuctionState;
+                setTimeout(() => {
+                    if (vipAuctionState === lotSnap && vipAuctionState.status === 'active' && vipAuctionState.highestBidder === 'player') {
+                        triggerRivalCounterBidIfAny();
+                    }
+                }, 420);
+            }
+            return true;
+        }
+        window.placeVipAuctionBid = placeVipAuctionBid;
+
+        function mintAuctionPlateToInventory(lotState, paidAmount) {
+            const rarityObj = typeof getRarity === 'function' ? getRarity(lotState.marketValue) : { text: lotState.rarityText, bg: '#f59e0b', color: '#000' };
+            const plateObj = {
+                text: lotState.plateText,
+                price: lotState.marketValue,
+                rarity: rarityObj,
+                country: lotState.country
+            };
+            inventory.unshift(plateObj);
+            achievements.vipAuctionsWon = (Number(achievements.vipAuctionsWon) || 0) + 1;
+            if (typeof addExp === 'function') addExp(120);
+            if (typeof playCashSound === 'function') playCashSound();
+            if (typeof triggerConfetti === 'function') triggerConfetti();
+            if (typeof logPlayerActivity === 'function') {
+                logPlayerActivity('VIP-Аукцион', `Выиграл лот «${lotState.plateText}» за ${paidAmount.toLocaleString('ru-RU')} ₽ (рыночная цена ${lotState.marketValue.toLocaleString('ru-RU')} ₽)`);
+            }
+            if (typeof checkAchievements === 'function') checkAchievements();
+            if (typeof saveProgress === 'function') saveProgress();
+            renderInventory();
+            return plateObj;
+        }
+
+        function resolveVipAuction() {
+            if (!vipAuctionState || vipAuctionState.status !== 'active') return null;
+            stopVipAuctionTimer();
+
+            if (vipAuctionState.highestBidder === 'player') {
+                const winBid = vipAuctionState.currentBid;
+                if (balance < winBid) {
+                    vipAuctionState.status = 'lost';
+                    notifyUser('Не хватило средств на момент удара молотка — лот ушёл сопернику!');
+                    renderVipAuction();
+                    return { won: false };
+                }
+                deductPlayerBalance(winBid, `Выигрыш на VIP-Аукционе: ${vipAuctionState.plateText}`);
+                vipAuctionState.status = 'won';
+                const plateObj = mintAuctionPlateToInventory(vipAuctionState, winBid);
+                const profit = Math.max(0, vipAuctionState.marketValue - winBid);
+                notifyUser(`🔨 Продано! Вы выиграли номер «${vipAuctionState.plateText}» за ${winBid.toLocaleString('ru-RU')} ₽ (выгода +${profit.toLocaleString('ru-RU')} ₽)!`, 'success');
+                renderVipAuction();
+                return { won: true, paid: winBid, profit, plate: plateObj };
+            } else {
+                vipAuctionState.status = 'lost';
+                notifyUser(`🔨 Торги завершены! Лот «${vipAuctionState.plateText}» забрал ${vipAuctionState.highestBidderName}.`, 'info');
+                renderVipAuction();
+                return { won: false };
+            }
+        }
+        window.resolveVipAuction = resolveVipAuction;
+
+        function buyoutVipAuctionLot() {
+            if (!vipAuctionState || vipAuctionState.status !== 'active') {
+                startVipAuctionLot();
+            }
+            const price = vipAuctionState.buyoutPrice;
+            if (balance < price) {
+                notifyUser(`Недостаточно средств для блиц-выкупа (${price.toLocaleString('ru-RU')} ₽)!`);
+                return false;
+            }
+            stopVipAuctionTimer();
+            deductPlayerBalance(price, `Блиц-выкуп на VIP-Аукционе: ${vipAuctionState.plateText}`);
+            vipAuctionState.currentBid = price;
+            vipAuctionState.highestBidder = 'player';
+            vipAuctionState.highestBidderName = '👑 Вы (Блиц-выкуп)';
+            vipAuctionState.status = 'won';
+            const plateObj = mintAuctionPlateToInventory(vipAuctionState, price);
+            notifyUser(`⚡ Блиц-выкуп! Госномер «${vipAuctionState.plateText}» мгновенно добавлен в вашу коллекцию!`, 'success');
+            renderVipAuction();
+            return { won: true, paid: price, plate: plateObj };
+        }
+        window.buyoutVipAuctionLot = buyoutVipAuctionLot;
+
+        function nextVipAuctionLot() {
+            startVipAuctionLot();
+            if (typeof playTick === 'function') playTick();
+        }
+        window.nextVipAuctionLot = nextVipAuctionLot;
+
+        function renderVipAuction() {
+            const container = document.getElementById('vip-auction-container');
+            if (!container) return;
+            if (!vipAuctionState) {
+                startVipAuctionLot();
+                return;
+            }
+
+            const st = vipAuctionState;
+            const plateClass = typeof getMiniPlateCountryClass === 'function' ? getMiniPlateCountryClass(st.plateText) : '';
+            const plateInner = typeof renderMiniPlateInnerHtml === 'function' ? renderMiniPlateInnerHtml(st.plateText) : escapeHtml(st.plateText);
+            const nextBid1 = st.currentBid + st.bidStep;
+            const nextBid2 = st.currentBid + st.bidStep * 2;
+            const allRivalsPassed = st.rivals.every(r => r.passed);
+            const potentialProfit = Math.max(0, st.marketValue - st.currentBid);
+
+            const rivalsHtml = st.rivals.map(r => `
+                <div style="padding: 8px 10px; border-radius: 10px; background: rgba(255,255,255,0.04); border: 1px solid ${r.passed ? 'rgba(255,255,255,0.06)' : 'rgba(245, 158, 11, 0.3)'}; display: flex; justify-content: space-between; align-items: center; gap: 8px; opacity: ${r.passed ? '0.55' : '1'};">
+                    <span style="font-size: 12px; font-weight: 700; color: #fff;">${escapeHtml(r.name)}</span>
+                    <span style="font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 999px; background: ${r.passed ? 'rgba(148, 163, 184, 0.15)' : 'rgba(245, 158, 11, 0.2)'}; color: ${r.passed ? '#94a3b8' : '#fbbf24'};">
+                        ${r.passed ? '🏳️ Спасовал' : '🔥 В торгах'}
+                    </span>
+                </div>
+            `).join('');
+
+            const historyHtml = st.bidHistory.map(h => `
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 5px 8px; border-radius: 6px; background: ${h.isPlayer ? 'rgba(16, 185, 129, 0.12)' : 'rgba(255,255,255,0.03)'}; font-size: 11px;">
+                    <span style="font-weight: 700; color: ${h.isPlayer ? '#34d399' : '#e2e8f0'};">${escapeHtml(h.bidder)} <small style="color: var(--text-dim);">(${escapeHtml(h.note)})</small></span>
+                    <b style="color: #fbbf24;">${h.amount.toLocaleString('ru-RU')} ₽</b>
+                </div>
+            `).join('');
+
+            let actionBlockHtml = '';
+            if (st.status === 'active') {
+                actionBlockHtml = `
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px;">
+                        <button type="button" class="btn btn-green" style="flex: 1; min-width: 170px; padding: 10px 14px; font-size: 13px; margin: 0;" onclick="placeVipAuctionBid(1)">
+                            🔨 Ставка +${st.bidStep.toLocaleString('ru-RU')} ₽ (${nextBid1.toLocaleString('ru-RU')} ₽)
+                        </button>
+                        <button type="button" class="btn btn-dark" style="flex: 1; min-width: 170px; padding: 10px 14px; font-size: 12px; margin: 0; border-color: rgba(245, 158, 11, 0.5); color: #fbbf24;" onclick="placeVipAuctionBid(2)">
+                            🔥 Давление x2 (${nextBid2.toLocaleString('ru-RU')} ₽)
+                        </button>
+                        <button type="button" class="btn btn-dark" style="padding: 10px 14px; font-size: 12px; width: auto; margin: 0;" onclick="buyoutVipAuctionLot()">
+                            ⚡ Блиц-выкуп (${st.buyoutPrice.toLocaleString('ru-RU')} ₽)
+                        </button>
+                    </div>
+                    ${st.highestBidder === 'player' ? `
+                        <div style="margin-top: 10px; display: flex; justify-content: space-between; align-items: center; gap: 8px; background: rgba(16, 185, 129, 0.14); border: 1px solid rgba(16, 185, 129, 0.45); padding: 8px 12px; border-radius: 10px;">
+                            <span style="font-size: 12px; color: #34d399; font-weight: 800;">
+                                ${allRivalsPassed ? '🏆 Все конкуренты спасовали! Можете забрать лот прямо сейчас!' : '👑 Ваша ставка лидирует! Выгода к рынку: +' + potentialProfit.toLocaleString('ru-RU') + ' ₽'}
+                            </span>
+                            <button type="button" class="btn btn-green" style="padding: 6px 12px; font-size: 11px; width: auto; margin: 0;" onclick="resolveVipAuction()">🔨 Удар молотка (Забрать)</button>
+                        </div>
+                    ` : ''}
+                `;
+            } else {
+                actionBlockHtml = `
+                    <div style="margin-top: 12px; padding: 12px; border-radius: 12px; background: ${st.status === 'won' ? 'rgba(16, 185, 129, 0.16)' : 'rgba(239, 68, 68, 0.14)'}; border: 1px solid ${st.status === 'won' ? 'rgba(16, 185, 129, 0.5)' : 'rgba(239, 68, 68, 0.4)'}; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                        <div style="font-size: 13px; font-weight: 800; color: #fff;">
+                            ${st.status === 'won'
+                                ? `🎉 Лот «${escapeHtml(st.plateText)}» выигран за ${st.currentBid.toLocaleString('ru-RU')} ₽ и добавлен в коллекцию!`
+                                : `Торги окончены. Победитель: ${escapeHtml(st.highestBidderName)} (${st.currentBid.toLocaleString('ru-RU')} ₽)`}
+                        </div>
+                        <button type="button" class="btn btn-green" style="padding: 8px 16px; font-size: 12px; width: auto; margin: 0;" onclick="nextVipAuctionLot()">⏭️ Следующий лот ↗</button>
+                    </div>
+                `;
+            }
+
+            container.innerHTML = `
+                <div style="background: linear-gradient(145deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9)); border: 1px solid rgba(251, 191, 36, 0.35); border-radius: 16px; padding: 16px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 14px;">
+                        <div>
+                            <div style="font-size: 16px; font-weight: 900; color: #fff;">🔨 Закрытый VIP-Аукцион Госномеров</div>
+                            <div style="font-size: 12px; color: var(--text-muted);">Перебивайте ставки перекупов и шейхов, чтобы урвать редкие номера ниже рынка!</div>
+                        </div>
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            <span style="font-size: 12px; font-weight: 900; padding: 5px 12px; border-radius: 999px; background: ${st.timeLeft <= 6 ? 'rgba(239, 68, 68, 0.25)' : 'rgba(56, 189, 248, 0.16)'}; color: ${st.timeLeft <= 6 ? '#f87171' : '#38bdf8'};">⏱️ ${st.status === 'active' ? st.timeLeft + ' сек' : 'Завершён'}</span>
+                            <button type="button" class="btn btn-dark" style="padding: 6px 12px; font-size: 11px; width: auto; margin: 0;" onclick="nextVipAuctionLot()">🔄 Сменить лот</button>
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; align-items: start;">
+                        <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 16px; text-align: center;">
+                            <span style="font-size: 10px; font-weight: 800; padding: 3px 10px; border-radius: 999px; background: rgba(245, 158, 11, 0.2); color: #fbbf24;">${escapeHtml(st.rarityText)} · ${escapeHtml(st.country)}</span>
+                            <div style="margin: 14px auto; display: flex; justify-content: center;">
+                                <div class="mini-plate ${plateClass}" style="font-size: 20px; padding: 6px 16px;">${plateInner}</div>
+                            </div>
+                            <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">${escapeHtml(st.desc)}</div>
+
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; text-align: left; background: rgba(0,0,0,0.28); padding: 10px 12px; border-radius: 10px;">
+                                <div>
+                                    <div style="font-size: 10px; color: var(--text-dim);">ТЕКУЩАЯ СТАВКА</div>
+                                    <div style="font-size: 16px; font-weight: 900; color: #fbbf24;">${st.currentBid.toLocaleString('ru-RU')} ₽</div>
+                                    <div style="font-size: 10px; color: ${st.highestBidder === 'player' ? '#34d399' : '#f87171'}; font-weight: 700;">${escapeHtml(st.highestBidderName)}</div>
+                                </div>
+                                <div>
+                                    <div style="font-size: 10px; color: var(--text-dim);">РЫНОЧНАЯ ОЦЕНКА</div>
+                                    <div style="font-size: 15px; font-weight: 800; color: #34d399;">${st.marketValue.toLocaleString('ru-RU')} ₽</div>
+                                    <div style="font-size: 10px; color: var(--text-muted);">Дисконт: <b>−${Math.max(0, Math.round((1 - st.currentBid / st.marketValue) * 100))}%</b></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style="display: flex; flex-direction: column; gap: 10px;">
+                            <div style="font-size: 12px; font-weight: 800; color: #cbd5e1;">🎩 Конкуренты за столом:</div>
+                            <div style="display: flex; flex-direction: column; gap: 6px;">
+                                ${rivalsHtml}
+                            </div>
+                            <div style="font-size: 12px; font-weight: 800; color: #cbd5e1; margin-top: 4px;">📜 Лента торгов:</div>
+                            <div style="display: flex; flex-direction: column; gap: 4px; max-height: 120px; overflow-y: auto;">
+                                ${historyHtml}
+                            </div>
+                        </div>
+                    </div>
+
+                    ${actionBlockHtml}
+                </div>
+            `;
+        }
+        window.renderVipAuction = renderVipAuction;
+
+        function openVipAuction() {
+            if (typeof navigateToTab === 'function') navigateToTab('inventory');
+            switchCollectionTab('auction');
+        }
+        window.openVipAuction = openVipAuction;
 
         // --- 5. ДРЭГ-РЕЙСИНГ (1/4 МИЛИ · 402 М) И ДУЭЛИ С БОССАМИ ---
         let dragCountdownTimeouts = [];
@@ -14673,6 +15532,12 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 cycle3DWeather();
                 e.preventDefault();
             }
+
+            // 7. АВТОРАДИО В ГОНКАХ (2D и 3D): Клавиша R (К на русской раскладке)
+            if (code === 'KeyR' || key === 'r' || key === 'к') {
+                cycleRaceRadio();
+                e.preventDefault();
+            }
         });
 
         window.addEventListener('keyup', (e) => {
@@ -15079,6 +15944,8 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 }, 80);
                 init3DRaceTouchControls();
                 syncMobileTouchControlsVisibility();
+                updateRaceRadioHUD();
+                if (raceRadioStation !== 'off') startRaceRadioAudio();
             } catch (err) {
                 console.error('Failed to initialize 3D race engine:', err);
                 isRaceRunning = false;
@@ -15113,6 +15980,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         }
 
         function exit3DRaceGame() {
+            stopRaceRadioAudio();
             if (car3DRacingEngine) {
                 const st = car3DRacingEngine.getState();
                 racePlayer.speed = st.speed;
@@ -15158,6 +16026,177 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             }
         }
         window.cycle3DWeather = cycle3DWeather;
+
+        // ==========================================
+        // 📻 АВТОРАДИО В ГОНКАХ (PHONK FM / SYNTHWAVE / РАЦИЯ ДПС)
+        // ==========================================
+        const RACE_RADIO_STATIONS = [
+            { id: 'off', icon: '🔇', name: 'Выкл', fullTitle: 'Радио Выкл', color: '#94a3b8' },
+            { id: 'phonk', icon: '🔥', name: 'Phonk FM', fullTitle: '🔥 Drift Phonk FM (104.5)', color: '#f97316', bpm: 145 },
+            { id: 'synthwave', icon: '🌆', name: 'Synthwave', fullTitle: '🌆 Night Synthwave FM (88.4)', color: '#c084fc', bpm: 118 },
+            { id: 'dps', icon: '🚓', name: 'Волна ДПС', fullTitle: '🚓 Рация Перехват ДПС (148.2)', color: '#38bdf8', bpm: 96 }
+        ];
+
+        let raceRadioStation = 'off';
+        let raceRadioTimerId = null;
+        let raceRadioStep = 0;
+
+        function getRaceRadioStationMeta(stationId = raceRadioStation) {
+            return RACE_RADIO_STATIONS.find(s => s.id === stationId) || RACE_RADIO_STATIONS[0];
+        }
+        window.getRaceRadioStationMeta = getRaceRadioStationMeta;
+
+        function updateRaceRadioHUD() {
+            const meta = getRaceRadioStationMeta(raceRadioStation);
+            const lbl2d = document.getElementById('hud-2d-radio-text');
+            if (lbl2d) {
+                lbl2d.textContent = meta.id === 'off' ? 'Радио: Выкл [R]' : `${meta.icon} ${meta.name} [R]`;
+            }
+            const lbl3d = document.getElementById('hud-3d-radio-text');
+            if (lbl3d) {
+                lbl3d.textContent = meta.id === 'off' ? 'Радио [R]' : `${meta.icon} ${meta.name} [R]`;
+            }
+        }
+        window.updateRaceRadioHUD = updateRaceRadioHUD;
+
+        function stopRaceRadioAudio() {
+            if (raceRadioTimerId) {
+                clearInterval(raceRadioTimerId);
+                raceRadioTimerId = null;
+            }
+        }
+        window.stopRaceRadioAudio = stopRaceRadioAudio;
+
+        function playRaceRadioStepSound() {
+            if (typeof isMuted !== 'undefined' && isMuted) return;
+            if (!isRaceRunning || raceRadioStation === 'off') return;
+            if (typeof initAudio === 'function') initAudio();
+            if (!audioCtx || audioCtx.state === 'suspended') return;
+
+            const now = audioCtx.currentTime;
+            const step = raceRadioStep++ % 16;
+
+            try {
+                if (raceRadioStation === 'phonk') {
+                    // 1. Cowbell-мелодия (Memphis Drift Phonk)
+                    const cowbellNotes = [587.33, 0, 587.33, 698.46, 783.99, 0, 698.46, 587.33, 523.25, 0, 587.33, 698.46, 880.0, 783.99, 698.46, 0];
+                    const noteFreq = cowbellNotes[step];
+                    if (noteFreq > 0) {
+                        const osc1 = audioCtx.createOscillator();
+                        const osc2 = audioCtx.createOscillator();
+                        const filter = audioCtx.createBiquadFilter();
+                        const gain = audioCtx.createGain();
+                        osc1.type = 'square';
+                        osc2.type = 'sawtooth';
+                        osc1.frequency.setValueAtTime(noteFreq, now);
+                        osc2.frequency.setValueAtTime(noteFreq * 1.48, now);
+                        filter.type = 'bandpass';
+                        filter.frequency.setValueAtTime(950, now);
+                        filter.Q.setValueAtTime(3.2, now);
+                        gain.gain.setValueAtTime(0.032, now);
+                        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.11);
+                        osc1.connect(filter);
+                        osc2.connect(filter);
+                        filter.connect(gain);
+                        gain.connect(audioCtx.destination);
+                        osc1.start(now);
+                        osc2.start(now);
+                        osc1.stop(now + 0.12);
+                        osc2.stop(now + 0.12);
+                    }
+                    // 2. 808 Sub-Bass Kick на долях 0, 3, 6, 8, 11, 14
+                    if (step === 0 || step === 3 || step === 6 || step === 8 || step === 11 || step === 14) {
+                        const sub = audioCtx.createOscillator();
+                        const subGain = audioCtx.createGain();
+                        sub.type = 'triangle';
+                        sub.frequency.setValueAtTime(115, now);
+                        sub.frequency.exponentialRampToValueAtTime(46, now + 0.14);
+                        subGain.gain.setValueAtTime(0.055, now);
+                        subGain.gain.exponentialRampToValueAtTime(0.001, now + 0.16);
+                        sub.connect(subGain);
+                        subGain.connect(audioCtx.destination);
+                        sub.start(now);
+                        sub.stop(now + 0.17);
+                    }
+                } else if (raceRadioStation === 'synthwave') {
+                    // Retrowave Arpeggio (A-minor -> F -> C -> G)
+                    const arpNotes = [220, 261.63, 329.63, 440, 174.61, 220, 261.63, 349.23, 196.0, 246.94, 293.66, 392.0, 164.81, 196.0, 246.94, 329.63];
+                    const freq = arpNotes[step];
+                    const osc = audioCtx.createOscillator();
+                    const filter = audioCtx.createBiquadFilter();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(freq, now);
+                    filter.type = 'lowpass';
+                    filter.frequency.setValueAtTime(1400, now);
+                    filter.frequency.exponentialRampToValueAtTime(420, now + 0.14);
+                    gain.gain.setValueAtTime(0.028, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+                    osc.connect(filter);
+                    filter.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.16);
+                } else if (raceRadioStation === 'dps') {
+                    // Рация ДПС: периодические бипы связи и радарный импульс
+                    if (step === 0 || step === 8) {
+                        const beep = audioCtx.createOscillator();
+                        const bGain = audioCtx.createGain();
+                        beep.type = 'sine';
+                        beep.frequency.setValueAtTime(step === 0 ? 1320 : 980, now);
+                        bGain.gain.setValueAtTime(0.022, now);
+                        bGain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+                        beep.connect(bGain);
+                        bGain.connect(audioCtx.destination);
+                        beep.start(now);
+                        beep.stop(now + 0.09);
+                    }
+                }
+            } catch (_) {}
+        }
+
+        function startRaceRadioAudio() {
+            stopRaceRadioAudio();
+            if (raceRadioStation === 'off') return;
+            const meta = getRaceRadioStationMeta(raceRadioStation);
+            const bpm = meta.bpm || 128;
+            const stepMs = Math.max(95, Math.round((60000 / bpm) / 2));
+            raceRadioStep = 0;
+            if (typeof setInterval === 'function') {
+                raceRadioTimerId = setInterval(playRaceRadioStepSound, stepMs);
+            }
+        }
+        window.startRaceRadioAudio = startRaceRadioAudio;
+
+        function setRaceRadioStation(stationId) {
+            const meta = getRaceRadioStationMeta(stationId);
+            raceRadioStation = meta.id;
+            updateRaceRadioHUD();
+
+            if (raceRadioStation === 'off' || !isRaceRunning) {
+                stopRaceRadioAudio();
+            } else {
+                startRaceRadioAudio();
+            }
+
+            if (isRaceRunning) {
+                const msg = meta.id === 'off' ? '📻 АВТОРАДИО: ВЫКЛ' : `📻 ${meta.fullTitle.toUpperCase()}`;
+                if (activeRaceMode === '3d') {
+                    show3DRacePopup(msg, meta.color);
+                } else {
+                    showRacePopup(msg, meta.color);
+                }
+            }
+            return raceRadioStation;
+        }
+        window.setRaceRadioStation = setRaceRadioStation;
+
+        function cycleRaceRadio() {
+            const curIdx = RACE_RADIO_STATIONS.findIndex(s => s.id === raceRadioStation);
+            const nextIdx = (curIdx + 1) % RACE_RADIO_STATIONS.length;
+            return setRaceRadioStation(RACE_RADIO_STATIONS[nextIdx].id);
+        }
+        window.cycleRaceRadio = cycleRaceRadio;
 
         function toggle3DTouchControls() {
             const touchEl = document.getElementById('race-3d-touch-controls');
@@ -15448,12 +16487,15 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             updatePlayerPresence('🏎️ В заезде', `${selectedRaceCarName}`);
             document.body.classList.add("race-active");
             sound.start();
+            updateRaceRadioHUD();
+            if (raceRadioStation !== 'off') startRaceRadioAudio();
             lastRaceTime = performance.now();
             if (raceAnimFrame) cancelAnimationFrame(raceAnimFrame);
             raceAnimFrame = requestAnimationFrame(raceGameLoop);
         }
 
         function exitRaceGame() {
+            stopRaceRadioAudio();
             if (isRaceRunning) {
                 if (activeRaceMode === '3d') {
                     exit3DRaceGame();
@@ -17357,6 +18399,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
         // Single settlement path for accidents AND early exit. No duplicate payouts.
         function settleRaceRun(crashed) {
+            stopRaceRadioAudio();
             if (!isRaceRunning) return;
             isRaceRunning = false;
             window.isRaceRunning = false;
@@ -18548,6 +19591,21 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             ctx.fillStyle = "rgba(255, 255, 255, 0.6)";
             ctx.font = "700 9px sans-serif";
             ctx.fillText(raceCurrentMode === 'drift' ? '🏁 Дрифт' : '🏁 Шоссе', W - 16, 46);
+
+            if (typeof raceRadioStation !== 'undefined' && raceRadioStation !== 'off') {
+                const rMeta = getRaceRadioStationMeta(raceRadioStation);
+                ctx.fillStyle = "rgba(10, 15, 29, 0.82)";
+                ctx.beginPath();
+                ctx.roundRect(W - 135, 56, 125, 18, 6);
+                ctx.fill();
+                ctx.strokeStyle = rMeta.color || "#38bdf8";
+                ctx.lineWidth = 1;
+                ctx.stroke();
+                ctx.fillStyle = rMeta.color || "#38bdf8";
+                ctx.font = "800 9px sans-serif";
+                ctx.textAlign = "right";
+                ctx.fillText(`📻 ${rMeta.name} [R]`, W - 16, 68);
+            }
 
 
             // В режиме Дрифта: предупреждение о крутых шпильках серпантина

@@ -446,6 +446,8 @@
                     <div class="summary-stat"><strong id="garage-stat">1</strong><span>в гараже</span></div>
                     <button class="text-action" onclick="navigateToTab('garage')">В гараж ↗</button>
                     <button class="text-action" onclick="openCollectorBook()" style="margin-top:4px;">📘 Книга коллекционера ↗</button>
+                    <button class="text-action" onclick="openVipOrders()" style="margin-top:4px;">📋 Спецзаказы VIP ↗</button>
+                    <button class="text-action" onclick="openVipAuction()" style="margin-top:4px;">🔨 VIP-Аукцион ↗</button>
                 </div>
                 <div class="race-invite">
                     <span class="eyebrow">ГОНКА</span>
@@ -465,8 +467,10 @@
                     </div>
                 </div>
 
-                <div class="market-type-nav" style="margin-bottom: 14px;">
+                <div class="market-type-nav" style="margin-bottom: 14px; flex-wrap: wrap;">
                     <button class="market-type-btn active" id="btn-col-plates" onclick="switchCollectionTab('plates')">🎒 Номера</button>
+                    <button class="market-type-btn" id="btn-col-orders" onclick="switchCollectionTab('orders')">📋 Спецзаказы VIP <span id="vip-orders-badge" style="background:linear-gradient(135deg,#10b981,#059669);color:#fff;font-size:10px;padding:1px 6px;border-radius:999px;margin-left:4px;display:none;">0</span></button>
+                    <button class="market-type-btn" id="btn-col-auction" onclick="switchCollectionTab('auction')">🔨 VIP-Аукцион</button>
                     <button class="market-type-btn" id="btn-col-album" onclick="switchCollectionTab('album')">📘 Книга коллекционера <span id="collector-book-badge" style="background:linear-gradient(135deg,#f59e0b,#ea580c);color:#fff;font-size:10px;padding:1px 6px;border-radius:999px;margin-left:4px;display:none;">!</span></button>
                     <button class="market-type-btn" id="btn-col-achieve" onclick="switchCollectionTab('achieve')">🏆 Достижения (Ачивки)</button>
                 </div>
@@ -477,6 +481,14 @@
                         <button class="btn btn-close" style="font-size: 11px; padding: 6px 12px; width: auto; margin: 0;" onclick="sellAllPlates('all')">💸 Продать ВСЕ номера</button>
                     </div>
                     <div class="inventory-grid" id="inventory-list"></div>
+                </div>
+
+                <div id="col-subtab-orders" class="hidden">
+                    <div id="vip-orders-container"></div>
+                </div>
+
+                <div id="col-subtab-auction" class="hidden">
+                    <div id="vip-auction-container"></div>
                 </div>
 
                 <div id="col-subtab-album" class="hidden">
@@ -853,7 +865,7 @@
                     </button>
 
                     <div class="race-controls-hint">
-                        <b>Управление на ПК:</b> <b>W A S D</b> / ◀ ▶ ▲ ▼ &bull; <b>ПРОБЕЛ</b> — Ручник (занос) &bull; <b>SHIFT</b> — Нитро
+                        <b>Управление на ПК:</b> <b>W A S D</b> / ◀ ▶ ▲ ▼ &bull; <b>ПРОБЕЛ</b> — Ручник (занос) &bull; <b>SHIFT</b> — Нитро &bull; <b>R</b> — Авторадио
                     </div>
                 </div>
 
@@ -861,7 +873,8 @@
                 <div id="race-play-container" class="hidden">
                     <div class="race-header-hud">
                         <button class="btn btn-close race-hud-close-btn" style="padding: 6px 12px; font-size: 12px; width: auto; margin: 0;" onclick="exitRaceGame()">✕ Выход в меню</button>
-                        <div style="display: flex; gap: 8px; align-items: center;">
+                        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                            <button type="button" class="btn race-hud-action-btn" id="btn-race-radio-2d" onclick="cycleRaceRadio()" title="Переключить авторадио [R]" style="padding: 5px 10px; font-size: 11px; width: auto; margin: 0;">📻 <span id="hud-2d-radio-text" class="race-hud-btn-lbl">Радио: Выкл [R]</span></button>
                             <span id="game-shield-badge" class="race-badge-shield hidden">🛡️ ЩИТ</span>
                             <span id="game-drift-badge" class="race-badge-combo hidden" style="background: linear-gradient(135deg, #f59e0b, #ea580c); border-color: #fbbf24; color: #fff;">🌪️ ДРИФТ x1</span>
                             <span id="game-drift-quality" class="race-badge-combo hidden" style="background: linear-gradient(135deg, #0284c7, #0369a1); border-color: #38bdf8; color: #fff;">⚡ УГОЛ</span>
@@ -943,6 +956,7 @@
                         <div class="race-header-actions" id="race-3d-header-actions" style="display: flex; gap: 6px; align-items: center; flex-wrap: nowrap;">
                             <button type="button" class="btn race-hud-action-btn" id="btn-camera-view-3d" onclick="toggle3DCameraView()" title="Переключить камеру [C]">📷 <span class="race-hud-btn-lbl">Камера [C]</span></button>
                             <button type="button" class="btn race-hud-action-btn" id="btn-weather-cycle-3d" onclick="cycle3DWeather()" title="Сменить погоду [T]">🌦️ <span id="hud-3d-weather-text" class="race-hud-btn-lbl">Погода [T]</span></button>
+                            <button type="button" class="btn race-hud-action-btn" id="btn-race-radio-3d" onclick="cycleRaceRadio()" title="Переключить авторадио [R]">📻 <span id="hud-3d-radio-text" class="race-hud-btn-lbl">Радио [R]</span></button>
                             <button type="button" class="btn race-hud-action-btn" id="btn-toggle-touch-controls" onclick="toggle3DTouchControls()" title="Сенсорный руль">🎮 <span id="btn-toggle-touch-text" class="race-hud-btn-lbl">Экранный руль</span></button>
                             <span id="game-3d-drift-badge" class="race-badge-combo hidden" style="background: linear-gradient(135deg, #f59e0b, #ea580c); border-color: #fbbf24; color: #fff;">🌪️ ДРИФТ x1</span>
                             <span id="game-3d-combo-badge" class="race-badge-combo hidden">🔥 x2 ОБГОН</span>
@@ -1971,6 +1985,6 @@
     </script>
     <script src="./js/race-effects.js?v=6883d3af7d80"></script>
     <script src="./js/car-3d.js?v=f3db99896f43"></script>
-    <script src="./js/app.js?v=8043e28c7078"></script>
+    <script src="./js/app.js?v=cdb88ecf16ca"></script>
 </body>
 </html>
