@@ -642,6 +642,9 @@
                     <button class="market-type-btn active" id="btn-race-mode-3d" onclick="switchRaceMode('3d')" style="position: relative; border-color: rgba(255, 46, 76, 0.45); font-weight: 800;">
                         🏎️ 3D Шоссе (Вид сзади) <span style="background: linear-gradient(135deg, #ef4444, #f59e0b); color: #fff; font-size: 8px; padding: 2px 6px; border-radius: 999px; margin-left: 4px; vertical-align: middle;">HOT</span>
                     </button>
+                    <button class="market-type-btn" id="btn-race-mode-nfs" onclick="switchRaceMode('nfs')" style="position: relative; border-color: rgba(56, 189, 248, 0.55); font-weight: 800;">
+                        🏆 3D Кольцо NFS (MW Физика) <span style="background: linear-gradient(135deg, #0284c7, #10b981); color: #fff; font-size: 8px; padding: 2px 6px; border-radius: 999px; margin-left: 4px; vertical-align: middle;">MW 2005</span>
+                    </button>
                 </div>
 
                 <!-- Меню Дрэг-рейсинга -->
@@ -836,7 +839,7 @@
                     </div>
 
                     <div class="race-tariff-note">⛽ Бензин: <b>82 ₽/л</b> (игровой тариф). После заезда стоимость сожжённого топлива вычитается из заработка. Тюнинг экономичности снижает расход, ремонт возвращает характеристики.</div>
-                    <!-- Выбор режима гонки (Шоссе / Дрифт) -->
+                    <!-- Выбор режима гонки (Шоссе / Дрифт / Кольцо NFS) -->
                     <div class="race-weather-card" style="margin-bottom: 8px;">
                         <div class="race-weather-header">
                             <span class="race-weather-title">🏁 Режим заезда:</span>
@@ -845,10 +848,29 @@
                         <div class="race-weather-buttons">
                             <button type="button" class="race-weather-btn active" id="btn-mode-highway" onclick="setRaceMode('highway')">🛣️ Шоссе (Трафик)</button>
                             <button type="button" class="race-weather-btn" id="btn-mode-drift" onclick="setRaceMode('drift')">🌪️ Дрифт (Серпантин)</button>
+                            <button type="button" class="race-weather-btn" id="btn-mode-nfs-circuit" onclick="setRaceMode('nfs_circuit')">🏆 Кольцо NFS (3D Соперники)</button>
                         </div>
                         <p id="race-mode-desc" style="font-size: 11px; color: var(--text-dim); margin: 6px 0 0 0; line-height: 1.4;">
                             Скоростные прямые, плотный трафик, обгоны, радары скорости и патрули ДПС.
                         </p>
+                    </div>
+
+                    <!-- Настройки Кольцевой гонки NFS (Трасса и Сложность соперников ИИ) -->
+                    <div class="race-weather-card hidden" id="nfs-circuit-settings-card" style="margin-bottom: 8px; border-color: rgba(56, 189, 248, 0.4);">
+                        <div class="race-weather-header">
+                            <span class="race-weather-title">🗺️ Трасса и Соперники NFS:</span>
+                            <span id="nfs-track-label" class="race-weather-label" style="color: #38bdf8;">Кольцо Рокпорт-Индастриал · 2 круга</span>
+                        </div>
+                        <div class="race-weather-buttons" style="margin-bottom: 6px;">
+                            <button type="button" class="race-weather-btn active" data-nfs-track="rockport_ring" onclick="setNfsCircuitTrack('rockport_ring')">🏙️ Рокпорт-Кольцо</button>
+                            <button type="button" class="race-weather-btn" data-nfs-track="canyon_pass" onclick="setNfsCircuitTrack('canyon_pass')">⛰️ Каньон Карбон</button>
+                            <button type="button" class="race-weather-btn" data-nfs-track="bayview_sprint" onclick="setNfsCircuitTrack('bayview_sprint')">🌉 Бэйвью-Магистраль</button>
+                        </div>
+                        <div class="race-weather-buttons">
+                            <button type="button" class="race-weather-btn" data-nfs-diff="easy" onclick="setNfsCircuitDifficulty('easy')">🟢 ИИ: Лёгкий</button>
+                            <button type="button" class="race-weather-btn active" data-nfs-diff="medium" onclick="setNfsCircuitDifficulty('medium')">🟡 ИИ: Средний (MW)</button>
+                            <button type="button" class="race-weather-btn" data-nfs-diff="hard" onclick="setNfsCircuitDifficulty('hard')">🔴 ИИ: Blacklist Боссы</button>
+                        </div>
                     </div>
 
                     <!-- Атмосфера и погода заезда -->
@@ -876,7 +898,7 @@
                     </button>
 
                     <div class="race-controls-hint">
-                        <b>Управление на ПК:</b> <b>W A S D</b> / ◀ ▶ ▲ ▼ &bull; <b>ПРОБЕЛ</b> — Ручник (занос) &bull; <b>SHIFT</b> — Нитро &bull; <b>R</b> — Авторадио
+                        <b>Управление на ПК:</b> <b>W A S D</b> / ◀ ▶ ▲ ▼ &bull; <b>ПРОБЕЛ</b> — Ручник (занос) &bull; <b>SHIFT</b> — Нитро &bull; <b>G</b> — Speedbreaker &bull; <b>R</b> — Авторадио
                     </div>
                 </div>
 
@@ -968,6 +990,7 @@
                             <button type="button" class="btn race-hud-action-btn" id="btn-camera-view-3d" onclick="toggle3DCameraView()" title="Переключить камеру [C]">📷 <span class="race-hud-btn-lbl">Камера [C]</span></button>
                             <button type="button" class="btn race-hud-action-btn" id="btn-weather-cycle-3d" onclick="cycle3DWeather()" title="Сменить погоду [T]">🌦️ <span id="hud-3d-weather-text" class="race-hud-btn-lbl">Погода [T]</span></button>
                             <button type="button" class="btn race-hud-action-btn" id="btn-race-radio-3d" onclick="cycleRaceRadio()" title="Переключить авторадио [R]">📻 <span id="hud-3d-radio-text" class="race-hud-btn-lbl">Радио [R]</span></button>
+                            <button type="button" class="btn race-hud-action-btn" id="btn-speedbreaker-3d" onclick="toggle3DSpeedbreaker()" title="Замедление времени Speedbreaker [G]">⏱️ <span class="race-hud-btn-lbl">Speedbreaker [G]</span></button>
                             <button type="button" class="btn race-hud-action-btn" id="btn-toggle-touch-controls" onclick="toggle3DTouchControls()" title="Сенсорный руль">🎮 <span id="btn-toggle-touch-text" class="race-hud-btn-lbl">Экранный руль</span></button>
                             <span id="game-3d-drift-badge" class="race-badge-combo hidden" style="background: linear-gradient(135deg, #f59e0b, #ea580c); border-color: #fbbf24; color: #fff;">🌪️ ДРИФТ x1</span>
                             <span id="game-3d-combo-badge" class="race-badge-combo hidden">🔥 x2 ОБГОН</span>
@@ -2014,7 +2037,9 @@
         }
     </script>
     <script src="./js/race-effects.js?v=6883d3af7d80"></script>
-    <script src="./js/car-3d.js?v=5185799fb037"></script>
-    <script src="./js/app.js?v=681b8e19b54e"></script>
+    <script src="./js/nfs-physics.js?v=ff50e03112fb"></script>
+    <script src="./js/nfs-circuit-race.js?v=51cf3726f926"></script>
+    <script src="./js/car-3d.js?v=533c88225f45"></script>
+    <script src="./js/app.js?v=5f998e36d7ba"></script>
 </body>
 </html>

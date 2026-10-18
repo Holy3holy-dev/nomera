@@ -10877,24 +10877,43 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             const btnCircuit = document.getElementById('btn-race-mode-circuit');
             const btnDrag = document.getElementById('btn-race-mode-drag');
             const btn3D = document.getElementById('btn-race-mode-3d');
+            const btnNfs = document.getElementById('btn-race-mode-nfs');
             const menuCircuit = document.getElementById('race-menu-container');
             const menuDrag = document.getElementById('drag-menu-container');
             const btnStart = document.getElementById('btn-start-race');
             const menuTitle = document.querySelector('#race-menu-container .section-title');
             const menuSub = document.querySelector('#race-menu-container .section-header p');
+            const nfsCard = document.getElementById('nfs-circuit-settings-card');
 
             if (btnCircuit) btnCircuit.classList.toggle('active', mode === 'circuit');
             if (btnDrag) btnDrag.classList.toggle('active', mode === 'drag');
             if (btn3D) btn3D.classList.toggle('active', mode === '3d');
+            if (btnNfs) btnNfs.classList.toggle('active', mode === 'nfs');
 
             if (menuDrag) menuDrag.classList.toggle('hidden', mode !== 'drag');
             if (menuCircuit) menuCircuit.classList.toggle('hidden', mode === 'drag');
 
-            if (mode === '3d') {
+            if (mode === 'nfs') {
+                if (typeof setRaceMode === 'function' && raceCurrentMode !== 'nfs_circuit') {
+                    setRaceMode('nfs_circuit');
+                }
+                if (nfsCard) nfsCard.classList.remove('hidden');
+                if (btnStart) btnStart.textContent = '🏁 Начать 3D Круговую гонку (NFS MW)';
+                if (menuTitle) menuTitle.textContent = '3D Круговая гонка (NFS Most Wanted)';
+                if (menuSub) menuSub.textContent = 'Полноценная физика: свободное управление на 360°, апексы, Speedbreaker [G] и соперники Чёрного списка.';
+            } else if (mode === '3d') {
+                if (raceCurrentMode === 'nfs_circuit' && typeof setRaceMode === 'function') {
+                    setRaceMode('highway');
+                }
+                if (nfsCard) nfsCard.classList.toggle('hidden', raceCurrentMode !== 'nfs_circuit');
                 if (btnStart) btnStart.textContent = '🚀 Начать 3D заезд (Вид сзади)';
                 if (menuTitle) menuTitle.textContent = '3D Скоростное шоссе (Вид сзади)';
                 if (menuSub) menuSub.textContent = 'Реалистичный 3D заезд от третьего лица: обгоны, плотный поток, нитро и дрифт.';
             } else if (mode === 'circuit') {
+                if (raceCurrentMode === 'nfs_circuit' && typeof setRaceMode === 'function') {
+                    setRaceMode('highway');
+                }
+                if (nfsCard) nfsCard.classList.add('hidden');
                 if (btnStart) btnStart.textContent = 'Начать заезд';
                 if (menuTitle) menuTitle.textContent = 'Скоростное шоссе';
                 if (menuSub) menuSub.textContent = 'Заезд в потоке транспорта. Награды за дистанцию и скорость.';
@@ -10903,7 +10922,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             const navTabRace = document.getElementById('nav-tab-racegame');
             const navTab3D = document.getElementById('nav-tab-3d-race');
             if (navTabRace && navTab3D) {
-                if (mode === '3d') {
+                if (mode === '3d' || mode === 'nfs') {
                     navTab3D.classList.add('active');
                     navTab3D.setAttribute('aria-selected', 'true');
                     navTabRace.classList.remove('active');
@@ -15314,29 +15333,78 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         }
 
         // -------------------------------------------------------------
-        // РЕЖИМ ГОНКИ: «Шоссе (Трафик)» vs «Дрифт (Заносы)»
+        // РЕЖИМ ГОНКИ: «Шоссе (Трафик)» vs «Дрифт (Заносы)» vs «3D Круг (NFS MW)»
         // -------------------------------------------------------------
-        let raceCurrentMode = 'highway'; // 'highway' | 'drift'
+        let raceCurrentMode = 'highway'; // 'highway' | 'drift' | 'nfs_circuit'
+        let nfsSelectedTrack = 'rockport_ring';
+        let nfsSelectedDifficulty = 'medium';
 
         function setRaceMode(mode) {
-            raceCurrentMode = mode === 'drift' ? 'drift' : 'highway';
+            if (mode === 'nfs_circuit') {
+                raceCurrentMode = 'nfs_circuit';
+                activeRaceMode = 'nfs';
+            } else {
+                raceCurrentMode = mode === 'drift' ? 'drift' : 'highway';
+                if (activeRaceMode === 'nfs') activeRaceMode = '3d';
+            }
             const lbl = typeof document !== 'undefined' ? document.getElementById('race-mode-label') : null;
             if (lbl) {
-                lbl.textContent = raceCurrentMode === 'drift' ? 'Дрифт (Заносы)' : 'Шоссе (Трафик)';
+                lbl.textContent = raceCurrentMode === 'nfs_circuit'
+                    ? '3D Круг (NFS MW)'
+                    : (raceCurrentMode === 'drift' ? 'Дрифт (Заносы)' : 'Шоссе (Трафик)');
             }
             const desc = typeof document !== 'undefined' ? document.getElementById('race-mode-desc') : null;
             if (desc) {
-                desc.textContent = raceCurrentMode === 'drift'
-                    ? 'Резкие повороты горного серпантина, глубокие заносы на ручнике, дым из-под колес и апексы!'
-                    : 'Скоростные прямые, плотный трафик, обгоны, радары скорости и патрули ДПС.';
+                desc.textContent = raceCurrentMode === 'nfs_circuit'
+                    ? 'Замкнутая 3D-трасса в стиле NFS Most Wanted (2005): свободное управление, повороты, соперники Чёрного списка и Speedbreaker!'
+                    : (raceCurrentMode === 'drift'
+                        ? 'Резкие повороты горного серпантина, глубокие заносы на ручнике, дым из-под колес и апексы!'
+                        : 'Скоростные прямые, плотный трафик, обгоны, радары скорости и патрули ДПС.');
             }
             if (typeof document !== 'undefined') {
                 const btnHighway = document.getElementById('btn-mode-highway');
                 const btnDrift = document.getElementById('btn-mode-drift');
+                const btnNfsCircuit = document.getElementById('btn-mode-nfs-circuit');
+                const nfsCard = document.getElementById('nfs-circuit-settings-card');
+                const topBtnNfs = document.getElementById('btn-race-mode-nfs');
+                const topBtn3D = document.getElementById('btn-race-mode-3d');
+                const topBtnCircuit = document.getElementById('btn-race-mode-circuit');
                 if (btnHighway) btnHighway.classList.toggle('active', raceCurrentMode === 'highway');
                 if (btnDrift) btnDrift.classList.toggle('active', raceCurrentMode === 'drift');
+                if (btnNfsCircuit) btnNfsCircuit.classList.toggle('active', raceCurrentMode === 'nfs_circuit');
+                if (nfsCard) nfsCard.classList.toggle('hidden', raceCurrentMode !== 'nfs_circuit');
+                if (topBtnNfs) topBtnNfs.classList.toggle('active', activeRaceMode === 'nfs');
+                if (topBtn3D) topBtn3D.classList.toggle('active', activeRaceMode === '3d');
+                if (topBtnCircuit) topBtnCircuit.classList.toggle('active', activeRaceMode === 'circuit');
             }
         }
+
+        function setNfsCircuitTrack(trackId) {
+            nfsSelectedTrack = trackId || 'rockport_ring';
+            const titles = {
+                rockport_ring: 'Рокпорт-Ринг (Город + Эстакада)',
+                canyon_pass: 'Каньон Карбон (Серпантин)',
+                bayview_sprint: 'Бэйвью-Спринт (Ночной порт)'
+            };
+            if (typeof document !== 'undefined') {
+                const lbl = document.getElementById('nfs-track-label');
+                if (lbl) lbl.textContent = titles[nfsSelectedTrack] || titles.rockport_ring;
+                document.querySelectorAll('.nfs-track-btn[data-track]').forEach(btn => {
+                    btn.classList.toggle('active', btn.getAttribute('data-track') === nfsSelectedTrack);
+                });
+            }
+        }
+        window.setNfsCircuitTrack = setNfsCircuitTrack;
+
+        function setNfsCircuitDifficulty(diffId) {
+            nfsSelectedDifficulty = diffId || 'medium';
+            if (typeof document !== 'undefined') {
+                document.querySelectorAll('.nfs-diff-btn[data-diff]').forEach(btn => {
+                    btn.classList.toggle('active', btn.getAttribute('data-diff') === nfsSelectedDifficulty);
+                });
+            }
+        }
+        window.setNfsCircuitDifficulty = setNfsCircuitDifficulty;
 
         // -------------------------------------------------------------
         // СИСТЕМА ПОГОДЫ И АТМОСФЕРЫ ЗАЕЗДА (День, Закат, Ночь, Дождь, Динамика)
@@ -15937,12 +16005,16 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             lastRaceTime = performance.now();
         });
 
+        function is3DOrNfsRaceActive() {
+            return activeRaceMode === '3d' || activeRaceMode === 'nfs' || raceCurrentMode === 'nfs_circuit';
+        }
+
         function setRaceKey(key, state) {
             if (raceKeys[key] !== undefined) {
                 raceKeys[key] = !!state;
                 updateTouchBtnUI(key, !!state);
             }
-            if (car3DRacingEngine && activeRaceMode === '3d') {
+            if (car3DRacingEngine && is3DOrNfsRaceActive()) {
                 car3DRacingEngine.setKey(key, !!state);
             }
         }
@@ -16074,26 +16146,27 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             if (!isRaceRunning) return;
             const code = e.code || '';
             const key = (e.key || '').toLowerCase();
+            const is3d = is3DOrNfsRaceActive();
 
             // 1. Привычные кнопки WASD и Стрелки (с поддержкой русской раскладки: W/Ц, A/Ф, S/Ы, D/В)
             if (code === 'KeyW' || code === 'ArrowUp' || key === 'w' || key === 'arrowup' || key === 'ц') {
                 raceKeys.gas = true;
-                if (car3DRacingEngine && activeRaceMode === '3d') car3DRacingEngine.setKey('gas', true);
+                if (car3DRacingEngine && is3d) car3DRacingEngine.setKey('gas', true);
                 e.preventDefault();
             }
             if (code === 'KeyS' || code === 'ArrowDown' || key === 's' || key === 'arrowdown' || key === 'ы') {
                 raceKeys.brake = true;
-                if (car3DRacingEngine && activeRaceMode === '3d') car3DRacingEngine.setKey('brake', true);
+                if (car3DRacingEngine && is3d) car3DRacingEngine.setKey('brake', true);
                 e.preventDefault();
             }
             if (code === 'KeyA' || code === 'ArrowLeft' || key === 'a' || key === 'arrowleft' || key === 'ф') {
                 raceKeys.left = true;
-                if (car3DRacingEngine && activeRaceMode === '3d') car3DRacingEngine.setKey('left', true);
+                if (car3DRacingEngine && is3d) car3DRacingEngine.setKey('left', true);
                 e.preventDefault();
             }
             if (code === 'KeyD' || code === 'ArrowRight' || key === 'd' || key === 'arrowright' || key === 'в') {
                 raceKeys.right = true;
-                if (car3DRacingEngine && activeRaceMode === '3d') car3DRacingEngine.setKey('right', true);
+                if (car3DRacingEngine && is3d) car3DRacingEngine.setKey('right', true);
                 e.preventDefault();
             }
 
@@ -16105,19 +16178,19 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     if (typeof sound?.haptic === 'function') sound.haptic('medium');
                 }
                 raceKeys.drift = true;
-                if (car3DRacingEngine && activeRaceMode === '3d') car3DRacingEngine.setKey('drift', true);
+                if (car3DRacingEngine && is3d) car3DRacingEngine.setKey('drift', true);
                 e.preventDefault();
             }
 
             // 3. НИТРО: Left/Right Shift, а также N (Т), F (А), E (У)
             if (code === 'ShiftLeft' || code === 'ShiftRight' || key === 'shift' || code === 'KeyN' || key === 'n' || key === 'т' || code === 'KeyF' || key === 'f' || key === 'а' || code === 'KeyE' || key === 'e' || key === 'у') {
                 raceKeys.nitro = true;
-                if (car3DRacingEngine && activeRaceMode === '3d') car3DRacingEngine.setKey('nitro', true);
+                if (car3DRacingEngine && is3d) car3DRacingEngine.setKey('nitro', true);
                 e.preventDefault();
             }
 
             // 4. СМЕНА КАМЕРЫ В 3D ГОНКЕ: Клавиша C (С на русской раскладке)
-            if ((code === 'KeyC' || key === 'c' || key === 'с') && activeRaceMode === '3d') {
+            if ((code === 'KeyC' || key === 'c' || key === 'с') && is3d) {
                 toggle3DCameraView();
                 e.preventDefault();
             }
@@ -16132,7 +16205,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             }
 
             // 6. СМЕНА ПОГОДЫ В 3D ГОНКЕ: Клавиша T (Е на русской раскладке)
-            if ((code === 'KeyT' || key === 't' || key === 'е') && activeRaceMode === '3d') {
+            if ((code === 'KeyT' || key === 't' || key === 'е') && is3d) {
                 cycle3DWeather();
                 e.preventDefault();
             }
@@ -16142,37 +16215,44 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 cycleRaceRadio();
                 e.preventDefault();
             }
+
+            // 8. SPEEDBREAKER (ЗАМЕДЛЕНИЕ ВРЕМЕНИ NFS MW): Клавиша G (П на русской раскладке)
+            if ((code === 'KeyG' || key === 'g' || key === 'п') && is3d) {
+                toggle3DSpeedbreaker();
+                e.preventDefault();
+            }
         });
 
         window.addEventListener('keyup', (e) => {
             const code = e.code || '';
             const key = (e.key || '').toLowerCase();
+            const is3d = is3DOrNfsRaceActive();
 
             if (code === 'KeyW' || code === 'ArrowUp' || key === 'w' || key === 'arrowup' || key === 'ц') {
                 raceKeys.gas = false;
-                if (car3DRacingEngine && activeRaceMode === '3d') car3DRacingEngine.setKey('gas', false);
+                if (car3DRacingEngine && is3d) car3DRacingEngine.setKey('gas', false);
             }
             if (code === 'KeyS' || code === 'ArrowDown' || key === 's' || key === 'arrowdown' || key === 'ы') {
                 raceKeys.brake = false;
-                if (car3DRacingEngine && activeRaceMode === '3d') car3DRacingEngine.setKey('brake', false);
+                if (car3DRacingEngine && is3d) car3DRacingEngine.setKey('brake', false);
             }
             if (code === 'KeyA' || code === 'ArrowLeft' || key === 'a' || key === 'arrowleft' || key === 'ф') {
                 raceKeys.left = false;
-                if (car3DRacingEngine && activeRaceMode === '3d') car3DRacingEngine.setKey('left', false);
+                if (car3DRacingEngine && is3d) car3DRacingEngine.setKey('left', false);
             }
             if (code === 'KeyD' || code === 'ArrowRight' || key === 'd' || key === 'arrowright' || key === 'в') {
                 raceKeys.right = false;
-                if (car3DRacingEngine && activeRaceMode === '3d') car3DRacingEngine.setKey('right', false);
+                if (car3DRacingEngine && is3d) car3DRacingEngine.setKey('right', false);
             }
 
             if (code === 'Space' || key === ' ' || key === 'space' || code === 'KeyX' || key === 'x' || key === 'ч' || code === 'ControlLeft' || code === 'ControlRight' || key === 'control') {
                 raceKeys.drift = false;
-                if (car3DRacingEngine && activeRaceMode === '3d') car3DRacingEngine.setKey('drift', false);
+                if (car3DRacingEngine && is3d) car3DRacingEngine.setKey('drift', false);
             }
 
             if (code === 'ShiftLeft' || code === 'ShiftRight' || key === 'shift' || code === 'KeyN' || key === 'n' || key === 'т' || code === 'KeyF' || key === 'f' || key === 'а' || code === 'KeyE' || key === 'e' || key === 'у') {
                 raceKeys.nitro = false;
-                if (car3DRacingEngine && activeRaceMode === '3d') car3DRacingEngine.setKey('nitro', false);
+                if (car3DRacingEngine && is3d) car3DRacingEngine.setKey('nitro', false);
             }
 
             if (code === 'KeyH' || key === 'h' || key === 'р') {
@@ -16226,7 +16306,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 raceGameOverModalTimeout = null;
             }
             if (isRaceRunning) {
-                if (activeRaceMode === '3d') {
+                if (is3DOrNfsRaceActive()) {
                     exit3DRaceGame();
                 } else {
                     exitRaceGame();
@@ -16234,7 +16314,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             }
             selectedRaceCarName = name;
             selectedRaceCarIndex = index;
-            const raceTab = activeRaceMode === '3d'
+            const raceTab = is3DOrNfsRaceActive()
                 ? (document.getElementById('nav-tab-3d-race') || document.getElementById('nav-tab-racegame'))
                 : (document.getElementById('nav-tab-racegame') || document.getElementById('nav-tab-3d-race'));
             if (raceTab) switchTab('racegame', raceTab, activeRaceMode);
@@ -16293,13 +16373,14 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             NomeraRaceEconomy.ensureCar(activeRaceCar);
             const baseStats = carRaceStats[selectedRaceCarName] || carRaceStats["ВАЗ-2107 «Жигули»"];
             const stats = NomeraRaceEconomy.performance(baseStats, activeRaceCar);
+            const isNfsCircuit = (activeRaceMode === 'nfs' || raceCurrentMode === 'nfs_circuit') && typeof NomeraCircuitRace !== 'undefined' && Boolean(NomeraCircuitRace.NomeraCircuitRaceEngine);
 
             racePlayer = {
                 x: 0,
                 y: 0,
                 vx: 0,
-                speed: 40,
-                peakSpeed: 40,
+                speed: isNfsCircuit ? 0 : 40,
+                peakSpeed: isNfsCircuit ? 0 : 40,
                 distanceKm: 0,
                 earnedCash: 0,
                 fuelLiters: 0,
@@ -16310,7 +16391,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 driftCombo: 1,
                 maxDriftCombo: 1,
                 damageTaken: 0,
-                tunedStats: stats
+                tunedStats: stats,
+                finishPosition: 1,
+                totalRacers: 4
             };
 
             const container = document.getElementById('race-3d-canvas-container');
@@ -16329,7 +16412,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             try {
                 isRaceRunning = true;
                 window.isRaceRunning = true;
-                updatePlayerPresence('🏎️ В 3D гонке', `${selectedRaceCarName}`);
+                updatePlayerPresence(isNfsCircuit ? '🏁 В 3D круговой гонке (NFS)' : '🏎️ В 3D гонке', `${selectedRaceCarName}`);
                 document.body.classList.add('race-active');
                 document.getElementById('race-menu-container').classList.add('hidden');
                 document.getElementById('race-play-container').classList.add('hidden');
@@ -16358,7 +16441,11 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 };
                 const prevHudState = {};
 
-                car3DRacingEngine = new Car3DManager.Car3DRacingEngine(container, {
+                const engineOptions = {
+                    trackId: nfsSelectedTrack,
+                    difficulty: nfsSelectedDifficulty,
+                    totalLaps: 2,
+                    rivalCount: 3,
                     onUpdateHUD: (hud) => {
                         const els = hud3DElements;
                         if (els.speedNum && prevHudState.speed !== hud.speed) {
@@ -16379,7 +16466,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                             if (els.nitroTouch) els.nitroTouch.textContent = hud.nitroLevel + '%';
                             prevHudState.nitroLevel = hud.nitroLevel;
                         }
-                        const distStr = hud.distanceKm.toFixed(2) + ' км';
+                        const distStr = hud.mode === 'nfs_circuit'
+                            ? `Круг ${hud.currentLap}/${hud.totalLaps} · Место #${hud.position}/${hud.totalRacers}`
+                            : (hud.distanceKm.toFixed(2) + ' км');
                         if (els.distEl && prevHudState.distStr !== distStr) {
                             els.distEl.textContent = distStr;
                             prevHudState.distStr = distStr;
@@ -16472,6 +16561,8 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                         racePlayer.overtakesCount = hud.overtakesCount;
                         racePlayer.driftScore = hud.driftScore;
                         if (hud.driftCombo > racePlayer.maxDriftCombo) racePlayer.maxDriftCombo = hud.driftCombo;
+                        if (hud.position) racePlayer.finishPosition = hud.position;
+                        if (hud.totalRacers) racePlayer.totalRacers = hud.totalRacers;
 
                         // Engine audio sync
                         const audioProfile = getCarAudioProfile(activeRaceCar);
@@ -16497,6 +16588,8 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                             racePlayer.overtakesCount = engineState.overtakesCount;
                             racePlayer.driftScore = engineState.driftScore;
                             racePlayer.damageTaken = engineState.damageTaken;
+                            if (engineState.position) racePlayer.finishPosition = engineState.position;
+                            if (engineState.totalRacers) racePlayer.totalRacers = engineState.totalRacers;
                         }
                         settleRaceRun(crashed);
                     },
@@ -16522,7 +16615,13 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     onHaptic: (pattern) => {
                         if (typeof sound?.haptic === 'function') sound.haptic(pattern);
                     }
-                });
+                };
+
+                if (isNfsCircuit) {
+                    car3DRacingEngine = new NomeraCircuitRace.NomeraCircuitRaceEngine(container, engineOptions);
+                } else {
+                    car3DRacingEngine = new Car3DManager.Car3DRacingEngine(container, engineOptions);
+                }
 
                 const raceStyling = Object.assign({}, activeRaceCar.styling || {}, {
                     plate: activeRaceCar.plate ? (activeRaceCar.plate.text || activeRaceCar.plate) : 'none'
@@ -16531,7 +16630,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     carName: selectedRaceCarName,
                     styling: raceStyling,
                     performance: stats,
-                    mode: raceCurrentMode,
+                    mode: isNfsCircuit ? 'nfs_circuit' : raceCurrentMode,
+                    trackId: nfsSelectedTrack,
+                    difficulty: nfsSelectedDifficulty,
                     weather: (typeof raceSelectedWeather !== 'undefined' ? raceSelectedWeather : 'night')
                 });
                 if (typeof requestAnimationFrame === 'function') {
@@ -16607,6 +16708,15 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 car3DRacingEngine.cycleCamera();
             }
         }
+
+        function toggle3DSpeedbreaker() {
+            if (car3DRacingEngine && typeof car3DRacingEngine.toggleSpeedbreaker === 'function') {
+                car3DRacingEngine.toggleSpeedbreaker();
+            } else {
+                show3DRacePopup('⏱️ SPEEDBREAKER ДОСТУПЕН В РЕЖИМЕ 3D КРУГ (NFS)', '#38bdf8');
+            }
+        }
+        window.toggle3DSpeedbreaker = toggle3DSpeedbreaker;
 
         function cycle3DWeather() {
             if (car3DRacingEngine) {
@@ -17218,7 +17328,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 clearTimeout(raceGameOverModalTimeout);
                 raceGameOverModalTimeout = null;
             }
-            if (activeRaceMode === '3d') {
+            if (is3DOrNfsRaceActive()) {
                 start3DRaceGame();
                 return;
             }
@@ -17360,7 +17470,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         function exitRaceGame() {
             stopRaceRadioAudio();
             if (isRaceRunning) {
-                if (activeRaceMode === '3d') {
+                if (is3DOrNfsRaceActive()) {
                     exit3DRaceGame();
                     return;
                 }
@@ -17389,7 +17499,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
         function closeGameOverToMenu() {
             document.getElementById('race-gameover-modal').classList.remove('show');
-            if (activeRaceMode === '3d') {
+            if (is3DOrNfsRaceActive()) {
                 exit3DRaceGame();
             } else {
                 exitRaceGame();
@@ -19269,7 +19379,13 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             resetRaceKeys();
             sound.stopEngine();
             if (typeof sound?.setSiren === 'function') sound.setSiren(false);
-            if (crashed) {
+            const isFinished = crashed === 'finished';
+            const isRealCrash = Boolean(crashed) && !isFinished && crashed !== 'fuel';
+            if (isFinished) {
+                if (typeof sound?.win === 'function') sound.win('БЛАТНОЙ');
+                else if (typeof sound?.cash === 'function') sound.cash();
+                if (typeof sound?.haptic === 'function') sound.haptic('heavy');
+            } else if (crashed) {
                 if (crashed !== 'busted') {
                     sound.crash();
                     triggerScreenShake();
@@ -19290,7 +19406,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             const gross = racePlayer.earnedCash + driftBonus;
             const receipt = NomeraRaceEconomy.settle(gross, racePlayer.fuelLiters || 0, balance);
             const finalXp = Math.max(5, Math.round(racePlayer.distanceKm * 8 + racePlayer.overtakesCount * 3 + (racePlayer.driftScore || 0) * 0.05));
-            const wear = Math.min(60, (racePlayer.damageTaken || 0) * 0.8 + racePlayer.distanceKm * 0.1 + (crashed ? 8 + Math.min(7, racePlayer.speed / 50) : 0));
+            const wear = Math.min(60, (racePlayer.damageTaken || 0) * 0.8 + racePlayer.distanceKm * 0.1 + (isRealCrash ? 8 + Math.min(7, racePlayer.speed / 50) : 0));
             if (activeRaceCar && myCars.includes(activeRaceCar)) {
                 NomeraRaceEconomy.ensureCar(activeRaceCar);
                 activeRaceCar.condition = Math.max(0, Number((activeRaceCar.condition - wear).toFixed(2)));
@@ -19310,7 +19426,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             }
             addExp(finalXp);
             updateBalance();
-            logPlayerActivity('Гонка', `Заезд ${crashed === 'fuel' ? 'закончился бензин' : (crashed === 'busted' ? 'задержание ДПС' : (crashed ? 'авария' : 'выход'))}: ${racePlayer.distanceKm.toFixed(2)} км, дрифт: ${Math.round(racePlayer.driftScore || 0)} pts, до расходов ${receipt.gross} ₽, бензин -${receipt.fuelCost} ₽, итог ${receipt.credited} ₽`);
+            logPlayerActivity('Гонка', `Заезд ${isFinished ? 'финиш' : (crashed === 'fuel' ? 'закончился бензин' : (crashed === 'busted' ? 'задержание ДПС' : (crashed ? 'авария' : 'выход')))}: ${racePlayer.distanceKm.toFixed(2)} км, дрифт: ${Math.round(racePlayer.driftScore || 0)} pts, до расходов ${receipt.gross} ₽, бензин -${receipt.fuelCost} ₽, итог ${receipt.credited} ₽`);
             // Race records track received net winnings, never fuel-free gross income.
             saveRaceRecords(NomeraRaceRecords.finishRecords(getRaceRecords(), racePlayer, Math.max(0, receipt.credited)));
             recordQuestProgress('distance', Math.round(racePlayer.distanceKm || 0));
@@ -19325,7 +19441,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             updateRaceRecordsUI();
             renderCars();
 
-            document.getElementById('gameover-title').innerText = crashed === 'fuel' ? '⛽ Закончился бензин!' : (crashed === 'busted' ? '🚔 Задержание ДПС!' : (crashed ? '💥 Заезд завершён!' : '🏁 Заезд завершён'));
+            document.getElementById('gameover-title').innerText = isFinished
+                ? `🏆 Финиш! Место #${racePlayer.finishPosition || 1}/${racePlayer.totalRacers || 4}`
+                : (crashed === 'fuel' ? '⛽ Закончился бензин!' : (crashed === 'busted' ? '🚔 Задержание ДПС!' : (crashed ? '💥 Заезд завершён!' : '🏁 Заезд завершён')));
             document.getElementById('go-stat-dist').innerText = `${racePlayer.distanceKm.toFixed(2)} км`;
             document.getElementById('go-stat-speed').innerText = `${Math.round(racePlayer.peakSpeed)} км/ч`;
             document.getElementById('go-stat-overtakes').innerText = `${racePlayer.overtakesCount}`;
