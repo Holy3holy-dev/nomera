@@ -9752,7 +9752,8 @@
                 right: false,
                 drift: false,
                 nitro: false,
-                horn: false
+                horn: false,
+                speedbreaker: false
             };
 
             // Player state
@@ -9842,6 +9843,24 @@
                 targetCurvature: 0,
                 curveTimer: 0.3,
 
+                // NFS Most Wanted Speedbreaker & Circuit Telemetry
+                speedbreakerCharge: 100,
+                isSpeedbreakerActive: false,
+                position: 1,
+                totalRacers: 4,
+                currentLap: 1,
+                totalLaps: 2,
+                lapTimeSec: 0,
+                bestLapTimeSec: null,
+                raceTimeSec: 0,
+                racePhase: 'racing',
+                countdownTimer: 0,
+                countdownText: '',
+                trackId: 'rockport_eastfield',
+                trackName: 'Рокпорт · Кольцо Истфилд',
+                checkpointIndex: 1,
+                totalCheckpoints: 4,
+
                 // Police Pursuit & Wanted Level
                 wantedStars: 0,
                 escapeTimer: 0,
@@ -9864,10 +9883,18 @@
             this.targetCurvature = 0;
             this.curveTimer = 0.3;
 
-            // Traffic
+            // Traffic & NFS Blacklist Rivals
             this.trafficCars = [];
             this.trafficCount = 10;
             this.trafficLanes = [-6.375, -2.125, 2.125, 6.375];
+            this.nfsRivals = [];
+            this.nfsCheckpointGate = null;
+            this.nfsNextCheckpointZ = 300;
+            this.nfsLapLength = 1200;
+            this.circuitHudEl = null;
+            this.circuitTelemetryEl = null;
+            this.minimapCanvas = null;
+            this.minimapCtx = null;
 
             // FX Particles
             this.smokeParticles = [];
@@ -12167,17 +12194,32 @@
             this._destroyed = false;
             this.config = Object.assign({}, config || {});
             this.mode = config.mode || 'circuit';
+            this.isNfsCircuit = (this.mode === 'nfs_circuit' || this.mode === 'nfs');
             this.state.raceMode = this.mode;
             this.carName = config.carName || 'ВАЗ-2107 «Жигули»';
             this.styling = Object.assign({}, config.styling || {});
             this.performance = Object.assign({}, config.performance || {});
-            if (this.mode === 'drift') {
+
+            const trackCatalog = {
+                rockport_eastfield: { id: 'rockport_eastfield', name: 'Рокпорт · Кольцо Истфилд', lapLength: 1000, checkpoints: 4, curveAmp: 0.85 },
+                canyon_pass: { id: 'canyon_pass', name: 'Каньон Карбон · Серпантин', lapLength: 1200, checkpoints: 4, curveAmp: 1.45 },
+                bayview_sprint: { id: 'bayview_sprint', name: 'Бэйвью · Ночной спринт', lapLength: 1250, checkpoints: 5, curveAmp: 0.70 }
+            };
+            const trackId = config.trackId || (this.options && this.options.trackId) || 'rockport_eastfield';
+            this.nfsTrackMeta = trackCatalog[trackId] || trackCatalog.rockport_eastfield;
+            this.nfsLapLength = this.nfsTrackMeta.lapLength;
+            this.nfsCheckpointsPerLap = this.nfsTrackMeta.checkpoints;
+            this.nfsCheckpointStep = this.nfsLapLength / this.nfsCheckpointsPerLap;
+            this.nfsNextCheckpointZ = this.nfsCheckpointStep;
+            this.nfsDifficulty = config.difficulty || (this.options && this.options.difficulty) || 'medium';
+
+            if (this.mode === 'drift' || (this.isNfsCircuit && trackId === 'canyon_pass')) {
                 const initSign = Math.random() < 0.5 ? 1 : -1;
-                this.targetRoadCurve = initSign > 0 ? (1.6 + Math.random() * 1.2) : -(1.6 + Math.random() * 1.2);
+                this.targetRoadCurve = initSign > 0 ? (1.4 + Math.random() * 1.1) : -(1.4 + Math.random() * 1.1);
                 this.roadCurve = this.targetRoadCurve * 0.45;
-                this.targetCurvature = initSign * (0.0055 + Math.random() * 0.0050);
+                this.targetCurvature = initSign * (0.0045 + Math.random() * 0.0045);
                 this.roadCurvature = this.targetCurvature * 0.45;
-                this.curveTimer = 0.25;
+                this.curveTimer = 0.35;
             } else {
                 this.roadCurve = 0;
                 this.targetRoadCurve = 0;
@@ -12197,7 +12239,7 @@
             this.state.vx = 0;
             this.state.bodyRoll = 0;
             this.camRoll = 0;
-            this.state.speed = 40; // rolling start
+            this.state.speed = this.isNfsCircuit ? 0 : 40; // standing grid start in NFS circuit, rolling start in highway
             this.state.targetSpeed = (this.performance.speed || 180) * 0.75;
             this.state.accel = 24 + ((this.performance.accel || 3.0) < 2.5 ? 12 : 6);
             this.state.maxSpeed = this.performance.speed || 190;
@@ -12208,7 +12250,7 @@
             this.state.fuelConsumption = this.performance.consumption || 9.0;
             this.state.fuelLiters = 0;
             this.state.distanceKm = 0;
-            this.state.peakSpeed = 40;
+            this.state.peakSpeed = this.isNfsCircuit ? 0 : 40;
             this.state.earnedCash = 0;
             this.earnedCash = 0;
             this.state.driftScore = 0;
@@ -12253,6 +12295,25 @@
             this.isDrafting = false;
             this.state.slipstreamFactor = 0;
             this.slipstreamFactor = 0;
+
+            // NFS Most Wanted Speedbreaker & Circuit Lap State
+            this.state.speedbreakerCharge = 100;
+            this.state.isSpeedbreakerActive = false;
+            this.state.trackId = this.nfsTrackMeta.id;
+            this.state.trackName = this.nfsTrackMeta.name;
+            this.state.currentLap = 1;
+            this.state.totalLaps = config.totalLaps || (this.options && this.options.totalLaps) || 2;
+            this.state.lapTimeSec = 0;
+            this.state.bestLapTimeSec = null;
+            this.state.raceTimeSec = 0;
+            this.state.checkpointIndex = 1;
+            this.state.totalCheckpoints = this.nfsCheckpointsPerLap;
+            this.state.position = this.isNfsCircuit ? 4 : 1;
+            this.state.totalRacers = 4;
+            const skipCd = !!(config.skipCountdown || (this.options && this.options.skipCountdown));
+            this.state.racePhase = (this.isNfsCircuit && !skipCd) ? 'countdown' : 'racing';
+            this.state.countdownTimer = this.state.racePhase === 'countdown' ? 1.8 : 0;
+            this.state.countdownText = '3';
 
             // Police pursuit & wanted state reset
             this.state.wantedStars = 0;
@@ -12320,6 +12381,14 @@
             this.initTraffic();
             this.initCollectibles();
 
+            // Initialize or clean up NFS Most Wanted Blacklist Rivals, 3D Checkpoint Arch & Circuit HUD
+            this.clearNfsCircuitEntities();
+            if (this.isNfsCircuit) {
+                this.initNfsRivals(this.nfsDifficulty);
+                this.initNfsCheckpointGate();
+                this.initNfsCircuitHud();
+            }
+
             // Load Player's authentic 3D car model
             this.loadPlayerCar();
 
@@ -12334,6 +12403,320 @@
             setTimeout(() => {
                 if (this._onResize) this._onResize();
             }, 60);
+        }
+
+        clearNfsCircuitEntities() {
+            if (this.nfsRivals && this.nfsRivals.length > 0) {
+                for (const r of this.nfsRivals) {
+                    if (r.mesh && this.scene) {
+                        try {
+                            this.scene.remove(r.mesh);
+                            deepDispose(r.mesh);
+                        } catch (_) {}
+                    }
+                }
+            }
+            this.nfsRivals = [];
+            if (this.nfsCheckpointGate && this.scene) {
+                try {
+                    this.scene.remove(this.nfsCheckpointGate);
+                    deepDispose(this.nfsCheckpointGate);
+                } catch (_) {}
+            }
+            this.nfsCheckpointGate = null;
+            if (this.circuitHudEl && this.circuitHudEl.parentNode) {
+                try { this.circuitHudEl.parentNode.removeChild(this.circuitHudEl); } catch (_) {}
+            }
+            this.circuitHudEl = null;
+            this.circuitTelemetryEl = null;
+            this.minimapCanvas = null;
+            this.minimapCtx = null;
+        }
+
+        initNfsRivals(difficulty = 'medium') {
+            const THREE = this.THREE;
+            if (!THREE || !this.scene) return;
+            const diffScale = difficulty === 'hard' ? 1.04 : (difficulty === 'easy' ? 0.88 : 0.96);
+            const playerBaseMax = this.state.maxSpeed || 200;
+
+            const roster = [
+                {
+                    id: 'razor',
+                    driverName: 'Рейзор (#1 Blacklist)',
+                    shortTag: '#1 РЕЙЗОР',
+                    carName: 'BMW M3 E46 GTR (NFS Most Wanted)',
+                    laneIndex: 1,
+                    startZ: 14,
+                    skill: 1.02 * diffScale,
+                    styling: { color: '#cbd5e1', vinyl: 'stripe', spoiler: 'gtr', neon: '#38bdf8', plate: 'M3 GTR | 77 RUS' }
+                },
+                {
+                    id: 'cross',
+                    driverName: 'Кросс (Перехватчик)',
+                    shortTag: '#2 КРОСС',
+                    carName: 'Porsche 911 Turbo S',
+                    laneIndex: 2,
+                    startZ: 9.5,
+                    skill: 0.98 * diffScale,
+                    styling: { color: '#1e293b', vinyl: 'camouflage', spoiler: 'carbon', neon: '#ef4444', plate: 'К001РО | 77 RUS' }
+                },
+                {
+                    id: 'ming',
+                    driverName: 'Минг (#6 Blacklist)',
+                    shortTag: '#6 МИНГ',
+                    carName: 'Lamborghini Huracán',
+                    laneIndex: 0,
+                    startZ: 5.0,
+                    skill: 0.94 * diffScale,
+                    styling: { color: '#eab308', vinyl: 'flame', spoiler: 'gt', neon: '#f59e0b', plate: 'М666ММ | 77 RUS' }
+                }
+            ];
+
+            for (let i = 0; i < roster.length; i++) {
+                const tpl = roster[i];
+                const rootGroup = new THREE.Group();
+                const bodyGroup = new THREE.Group();
+                rootGroup.add(bodyGroup);
+
+                const startX = this.trafficLanes[tpl.laneIndex] || 0;
+                rootGroup.position.set(startX, 0, tpl.startZ);
+
+                const attachRivalFX = (targetGroup) => {
+                    const nitroFlames = [];
+                    if (THREE.ConeGeometry && THREE.MeshBasicMaterial) {
+                        [-0.42, 0.42].forEach(ox => {
+                            const fGeo = new THREE.ConeGeometry(0.045, 0.42, 12);
+                            fGeo.rotateX(-Math.PI / 2);
+                            const fMat = new THREE.MeshBasicMaterial({
+                                color: 0x00d4ff,
+                                transparent: true,
+                                opacity: 0.8,
+                                blending: THREE.AdditiveBlending,
+                                depthWrite: false
+                            });
+                            const fMesh = new THREE.Mesh(fGeo, fMat);
+                            fMesh.position.set(ox, 0.24, -2.28);
+                            fMesh.visible = false;
+                            targetGroup.add(fMesh);
+                            nitroFlames.push(fMesh);
+                        });
+                    }
+                    return nitroFlames;
+                };
+
+                let wheels = [];
+                let syncLoaded = false;
+                try {
+                    loadCarModel(THREE, tpl.carName, tpl.styling, (loadedModel) => {
+                        if (this._destroyed || !loadedModel || !this.isNfsCircuit) return;
+                        syncLoaded = true;
+                        while (bodyGroup.children.length > 0) {
+                            const old = bodyGroup.children[0];
+                            bodyGroup.remove(old);
+                            try { deepDispose(old); } catch (_) {}
+                        }
+                        if (tpl.styling && tpl.styling.plate) {
+                            try {
+                                applyLicensePlateToModel(THREE, loadedModel, tpl.styling.plate, 'none', 'classic');
+                            } catch (_) {}
+                        }
+                        bodyGroup.add(loadedModel);
+                    });
+                } catch (_) {}
+
+                if (!syncLoaded) {
+                    try {
+                        const procModel = buildDetailedCarModel(THREE, tpl.carName, tpl.styling);
+                        if (procModel) {
+                            if (tpl.styling && tpl.styling.plate) {
+                                try {
+                                    applyLicensePlateToModel(THREE, procModel, tpl.styling.plate, 'none', 'classic');
+                                } catch (_) {}
+                            }
+                            bodyGroup.add(procModel);
+                        }
+                    } catch (_) {}
+                }
+
+                const nitroFlames = attachRivalFX(rootGroup);
+                this.scene.add(rootGroup);
+
+                this.nfsRivals.push({
+                    id: tpl.id,
+                    driverName: tpl.driverName,
+                    shortTag: tpl.shortTag,
+                    carName: tpl.carName,
+                    mesh: rootGroup,
+                    bodyGroup,
+                    wheels,
+                    nitroFlames,
+                    x: startX,
+                    z: tpl.startZ,
+                    vx: 0,
+                    speed: 0,
+                    maxSpeed: Math.max(175, Math.min(395, playerBaseMax * tpl.skill)),
+                    accel: (this.state.accel || 26) * tpl.skill,
+                    laneIndex: tpl.laneIndex,
+                    targetX: startX,
+                    laneTimer: 1.2 + i * 0.7,
+                    yawAngle: 0,
+                    bodyRoll: 0,
+                    pitchSquat: 0,
+                    isNitroActive: false,
+                    skill: tpl.skill,
+                    overtakenByPlayer: false
+                });
+            }
+        }
+
+        initNfsCheckpointGate() {
+            const THREE = this.THREE;
+            if (!THREE || !this.scene || !THREE.BoxGeometry) return;
+
+            const gate = new THREE.Group();
+            const pillarGeo = new THREE.BoxGeometry(0.65, 6.8, 0.65);
+            const pillarMat = new THREE.MeshBasicMaterial({ color: 0xfbbf24 });
+            const beamGeo = new THREE.BoxGeometry(19.2, 1.15, 0.9);
+            const beamMat = new THREE.MeshBasicMaterial({ color: 0x0f172a });
+            const neonStripGeo = new THREE.BoxGeometry(19.4, 0.24, 1.0);
+            const neonStripMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
+
+            const pL = new THREE.Mesh(pillarGeo, pillarMat);
+            pL.position.set(-9.1, 3.4, 0);
+            const pR = new THREE.Mesh(pillarGeo, pillarMat);
+            pR.position.set(9.1, 3.4, 0);
+            const beam = new THREE.Mesh(beamGeo, beamMat);
+            beam.position.set(0, 6.4, 0);
+            const stripTop = new THREE.Mesh(neonStripGeo, neonStripMat);
+            stripTop.position.set(0, 7.0, 0);
+            const stripBot = new THREE.Mesh(neonStripGeo, pillarMat);
+            stripBot.position.set(0, 5.8, 0);
+
+            gate.add(pL, pR, beam, stripTop, stripBot);
+            gate.position.set(0, 0, this.nfsNextCheckpointZ);
+            this.scene.add(gate);
+            this.nfsCheckpointGate = gate;
+            this.nfsGateNeonMat = neonStripMat;
+            this.nfsGatePillarMat = pillarMat;
+        }
+
+        initNfsCircuitHud() {
+            if (typeof document === 'undefined' || !this.container || typeof document.createElement !== 'function') return;
+            const hostEl = this.container.parentElement || this.container;
+            if (typeof hostEl.querySelectorAll === 'function') {
+                const oldList = hostEl.querySelectorAll('.nfs-circuit-hud-overlay');
+                for (const el of oldList) {
+                    if (el && el.parentNode) el.parentNode.removeChild(el);
+                }
+            }
+
+            const overlay = document.createElement('div');
+            overlay.className = 'nfs-circuit-hud-overlay';
+            overlay.style.cssText = 'position:absolute;inset:0;pointer-events:none;z-index:18;font-family:Inter,sans-serif;';
+
+            const banner = document.createElement('div');
+            banner.id = 'nfs-circuit-telemetry-bar';
+            banner.style.cssText = 'position:absolute;top:56px;left:50%;transform:translateX(-50%);background:rgba(10,15,29,0.88);border:1px solid rgba(56,189,248,0.48);border-radius:12px;padding:6px 14px;color:#fff;font-size:11px;line-height:1.4;backdrop-filter:blur(8px);text-align:center;white-space:nowrap;box-shadow:0 6px 20px rgba(0,0,0,0.45);';
+            overlay.appendChild(banner);
+            this.circuitTelemetryEl = banner;
+
+            const mapCanvas = document.createElement('canvas');
+            mapCanvas.className = 'nfs-minimap-canvas';
+            mapCanvas.width = 136;
+            mapCanvas.height = 136;
+            mapCanvas.style.cssText = 'position:absolute;top:68px;right:16px;width:132px;height:132px;background:rgba(10,15,29,0.84);border:1.5px solid rgba(56,189,248,0.52);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.5);';
+            if (mapCanvas.style && typeof mapCanvas.style.setProperty === 'function') {
+                mapCanvas.style.setProperty('width', '132px', 'important');
+                mapCanvas.style.setProperty('height', '132px', 'important');
+                mapCanvas.style.setProperty('top', '68px', 'important');
+                mapCanvas.style.setProperty('right', '16px', 'important');
+                mapCanvas.style.setProperty('position', 'absolute', 'important');
+            }
+            overlay.appendChild(mapCanvas);
+            this.minimapCanvas = mapCanvas;
+            this.minimapCtx = typeof mapCanvas.getContext === 'function' ? mapCanvas.getContext('2d') : null;
+
+            if (typeof hostEl.appendChild === 'function') {
+                hostEl.appendChild(overlay);
+            } else if (typeof this.container.appendChild === 'function') {
+                this.container.appendChild(overlay);
+            }
+            this.circuitHudEl = overlay;
+            this.updateNfsCircuitHud();
+        }
+
+        updateNfsCircuitHud() {
+            if (!this.isNfsCircuit) return;
+            const st = this.state;
+            if (this.circuitTelemetryEl) {
+                const bestStr = st.bestLapTimeSec !== null ? `${st.bestLapTimeSec.toFixed(2)}с` : '—';
+                const countdownHtml = st.racePhase === 'countdown'
+                    ? `<div style="color:#fbbf24;font-weight:900;font-size:13px;margin-top:2px;">🚦 СТАРТ ЧЕРЕЗ: ${st.countdownText} (ГАЗУЙ НА СТАРТЕ!)</div>`
+                    : '';
+                this.circuitTelemetryEl.innerHTML =
+                    `<div style="font-weight:900;color:#38bdf8;font-size:12px;">🏆 ${st.trackName} · Место: <b style="color:#fbbf24;font-size:13px;">#${st.position}/${st.totalRacers}</b> · Круг: <b style="color:#34d399;">${st.currentLap}/${st.totalLaps}</b> · Чекпоинт: <b>${st.checkpointIndex}/${st.totalCheckpoints}</b></div>` +
+                    `<div style="color:#e2e8f0;">⏱️ Круг: <b>${st.lapTimeSec.toFixed(1)}с</b> · Лучший: <b style="color:#c084fc;">${bestStr}</b> · ⚡ Speedbreaker [G]: <b style="color:#38bdf8;">${Math.round(st.speedbreakerCharge)}%</b> ${st.isSpeedbreakerActive ? '🔥 АКТИВЕН' : ''}</div>` +
+                    countdownHtml;
+            }
+
+            if (this.minimapCtx && this.minimapCanvas) {
+                const ctx = this.minimapCtx;
+                const W = this.minimapCanvas.width;
+                const H = this.minimapCanvas.height;
+                ctx.clearRect(0, 0, W, H);
+
+                const cx = W * 0.5;
+                const cy = H * 0.5;
+                const rx = 46;
+                const ry = 38;
+                const lapLen = Math.max(100, this.nfsLapLength || 1000);
+
+                // Draw track circuit loop
+                ctx.strokeStyle = 'rgba(148, 163, 184, 0.55)';
+                ctx.lineWidth = 6;
+                ctx.beginPath();
+                for (let a = 0; a <= Math.PI * 2 + 0.05; a += 0.1) {
+                    const wobble = Math.sin(a * 3) * 4.5;
+                    const px = cx + Math.sin(a) * (rx + wobble);
+                    const py = cy - Math.cos(a) * (ry - wobble * 0.6);
+                    if (a === 0) ctx.moveTo(px, py);
+                    else ctx.lineTo(px, py);
+                }
+                ctx.closePath();
+                ctx.stroke();
+
+                // Start/Finish marker at top of loop (angle = 0)
+                ctx.fillStyle = '#fbbf24';
+                ctx.fillRect(cx - 4, cy - ry - 4, 8, 8);
+
+                const pointForZ = (zVal) => {
+                    const a = ((zVal % lapLen) / lapLen) * Math.PI * 2;
+                    const wobble = Math.sin(a * 3) * 4.5;
+                    return {
+                        x: cx + Math.sin(a) * (rx + wobble),
+                        y: cy - Math.cos(a) * (ry - wobble * 0.6)
+                    };
+                };
+
+                // Rivals dots (Red)
+                for (const r of this.nfsRivals) {
+                    const pt = pointForZ(r.z);
+                    ctx.fillStyle = '#ef4444';
+                    ctx.beginPath();
+                    ctx.arc(pt.x, pt.y, 4.0, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                // Player dot (Emerald Green)
+                const pPt = pointForZ(st.z);
+                ctx.fillStyle = '#10b981';
+                ctx.beginPath();
+                ctx.arc(pPt.x, pPt.y, 5.2, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+            }
         }
 
         setPlayerPlate(plateText, frameStyle, plateStyle) {
@@ -13172,8 +13555,32 @@
                 if (key === 'drift' && isDown && !this.keys.drift) {
                     if (this.options.onSound) this.options.onSound('handbrake');
                 }
+                if (key === 'speedbreaker' && isDown && !this.keys.speedbreaker) {
+                    this.toggleSpeedbreaker();
+                }
                 this.keys[key] = !!isDown;
             }
+        }
+
+        toggleSpeedbreaker() {
+            const st = this.state;
+            if (!st) return false;
+            if (st.isSpeedbreakerActive) {
+                st.isSpeedbreakerActive = false;
+                if (this.options && this.options.onPopup) {
+                    this.options.onPopup('⏱️ SPEEDBREAKER ВЫКЛ', '#38bdf8');
+                }
+                return false;
+            }
+            if ((st.speedbreakerCharge || 0) >= 20) {
+                st.isSpeedbreakerActive = true;
+                if (this.options && this.options.onPopup) {
+                    this.options.onPopup('⏱️ SPEEDBREAKER: ЗАМЕДЛЕНИЕ ВРЕМЕНИ И ТАРАННАЯ МАССА!', '#38bdf8');
+                }
+                if (this.options && this.options.onHaptic) this.options.onHaptic('medium');
+                return true;
+            }
+            return false;
         }
 
         resetKeys() {
@@ -13262,9 +13669,71 @@
             }
         }
 
-        update(dt) {
+        update(rawDt) {
             const state = this.state;
             const keys = this.keys;
+
+            // NFS Most Wanted Speedbreaker charge & time-dilation handling
+            if (state.isSpeedbreakerActive) {
+                state.speedbreakerCharge = Math.max(0, (state.speedbreakerCharge || 0) - 28 * rawDt);
+                if (state.speedbreakerCharge <= 0) {
+                    state.isSpeedbreakerActive = false;
+                }
+            } else {
+                const sbRecharge = (4.2 + (state.speed || 0) / 42 + (state.isDrifting ? 6.5 : 0)) * rawDt;
+                state.speedbreakerCharge = Math.min(100, (state.speedbreakerCharge || 0) + sbRecharge);
+            }
+            const dt = state.isSpeedbreakerActive ? rawDt * 0.55 : rawDt;
+
+            // NFS Most Wanted 3-2-1 Starting Grid Countdown
+            if (this.isNfsCircuit && state.racePhase === 'countdown') {
+                state.countdownTimer -= rawDt;
+                const prevCd = state.countdownText;
+                if (state.countdownTimer > 1.2) state.countdownText = '3';
+                else if (state.countdownTimer > 0.6) state.countdownText = '2';
+                else if (state.countdownTimer > 0.0) state.countdownText = '1';
+                else {
+                    state.countdownText = '🟢 СТАРТ!';
+                    state.racePhase = 'racing';
+                    const isPerfectLaunch = state.rpm >= (state.maxRpm || 7500) * 0.62 && state.rpm <= (state.maxRpm || 7500) * 0.92;
+                    if (isPerfectLaunch) {
+                        state.speed = 46;
+                        state.pitchVelocity = -0.42;
+                        state.backfireTimer = 0.22;
+                        state.backfireColor = 'blue';
+                        if (this.options && this.options.onPopup) {
+                            this.options.onPopup('⚡ ИДЕАЛЬНЫЙ СТАРТ NFS! +46 КМ/Ч!', '#10b981');
+                        }
+                        if (this.options && this.options.onSound) this.options.onSound('backfire');
+                    } else {
+                        state.speed = 18;
+                        if (this.options && this.options.onPopup) {
+                            this.options.onPopup('🟢 СТАРТ ГОНКИ!', '#10b981');
+                        }
+                    }
+                }
+                if (state.countdownText !== prevCd && state.racePhase === 'countdown' && this.options && this.options.onPopup) {
+                    this.options.onPopup(`🚦 ${state.countdownText}...`, '#fbbf24');
+                }
+                if (keys.gas) {
+                    state.rpm = Math.min((state.maxRpm || 7500) * 0.90, (state.rpm || 1100) + 5200 * rawDt);
+                    if (Math.random() < 0.18) {
+                        state.backfireTimer = 0.14;
+                        state.backfireColor = 'orange';
+                    }
+                } else {
+                    state.rpm = Math.max(state.idleRpm || 1000, (state.rpm || 1100) - 3600 * rawDt);
+                }
+                this.updateChaseCamera(rawDt);
+                this.updateNfsCircuitHud();
+                this.notifyHUD();
+                return;
+            }
+
+            if (this.isNfsCircuit && state.racePhase === 'racing') {
+                state.raceTimeSec = (state.raceTimeSec || 0) + rawDt;
+                state.lapTimeSec = (state.lapTimeSec || 0) + rawDt;
+            }
 
             if (state.invulnerableTimer > 0) {
                 state.invulnerableTimer = Math.max(0, state.invulnerableTimer - dt);
@@ -13619,7 +14088,8 @@
             const isDriftMode = (this.mode === 'drift' || (state && state.raceMode === 'drift'));
             const driftMult = state.driftFactor || (isDriftMode ? 1.6 : 1.35);
             const curWeatherPreset = this.getWeatherPreset(this.currentActiveWeather || 'night');
-            const weatherGrip = (curWeatherPreset && typeof curWeatherPreset.gripMultiplier === 'number') ? curWeatherPreset.gripMultiplier : 1.0;
+            const baseWeatherGrip = (curWeatherPreset && typeof curWeatherPreset.gripMultiplier === 'number') ? curWeatherPreset.gripMultiplier : 1.0;
+            const weatherGrip = state.isSpeedbreakerActive ? Math.min(1.35, baseWeatherGrip * 1.35) : baseWeatherGrip;
             state.weatherGrip = weatherGrip;
             this.weatherGrip = weatherGrip;
 
@@ -13627,7 +14097,7 @@
             const speedStability = Math.max(0.68, 1.0 - (state.speed / 380) * 0.32);
             const highSpeedDownforceStabilization = state.speed > 200 ? Math.min(0.35, Math.pow((state.speed - 200) / 160, 1.4) * 0.35) : 0;
             const downforceGripMult = 1.0 + Math.min(0.22, Math.pow(state.speed / 380, 2) * 0.22);
-            const lateralMax = (state.handling * 2.8 * speedStability * downforceGripMult) * (isHandbrake ? (1 + (driftMult - 1) * 0.7) : 1.0);
+            const lateralMax = (state.handling * 2.8 * speedStability * downforceGripMult) * (isHandbrake ? (1 + (driftMult - 1) * 0.7) : 1.0) * (state.isSpeedbreakerActive ? 1.25 : 1.0);
 
             let steerInput = 0;
             if (keys.left) steerInput += 1;  // In Three.js with camera facing +Z: +X moves to screen LEFT
@@ -13636,7 +14106,7 @@
             // Steering authority: tied to forward rolling motion and throttle. Car cannot steer sideways on the spot when stationary!
             const speedSteerAuthority = Math.min(1.0, Math.max(0, state.speed / 18));
             const throttleSteerAuthority = gasActive ? 1.0 : (state.speed > 5 ? Math.min(1.0, 0.40 + (state.speed / 50) * 0.60) : 0);
-            const effectiveSteerAuthority = speedSteerAuthority * throttleSteerAuthority;
+            const effectiveSteerAuthority = speedSteerAuthority * throttleSteerAuthority * (state.isSpeedbreakerActive ? 1.45 : 1.0);
 
             // 2. TIRE GRIP & SLIP ANGLE (Pacejka-inspired curve scaled by weather grip)
             // Kinematic travel heading vs steering wheel angle
@@ -13686,7 +14156,7 @@
                 if (Math.abs(state.vx) < 0.01) state.vx = 0;
             }
 
-            // Dynamic Touge & Highway curves
+            // Dynamic Touge, NFS Circuit & Highway curves
             this.curveTimer = (this.curveTimer !== undefined ? this.curveTimer : 0.3) - dt;
             if (isDriftMode && Math.abs(this.targetRoadCurve || 0) < 0.1) {
                 this.curveTimer = 0;
@@ -13700,17 +14170,23 @@
                     if (nextSign > 0) this.targetRoadCurve = 1.6 + Math.random() * 1.2;
                     else this.targetRoadCurve = -(1.6 + Math.random() * 1.2);
                     this.targetCurvature = nextSign * (0.0050 + Math.random() * 0.0060);
+                } else if (this.isNfsCircuit && this.nfsTrackMeta) {
+                    this.curveTimer = 2.2 + Math.random() * 1.8;
+                    const amp = this.nfsTrackMeta.curveAmp || 1.2;
+                    const wave = Math.sin(state.z * 0.0045) + 0.5 * Math.cos(state.z * 0.0095);
+                    this.targetRoadCurve = Math.abs(wave) > 0.35 ? wave * amp * 0.65 : 0;
+                    this.targetCurvature = this.targetRoadCurve * 0.0022;
                 } else {
                     this.curveTimer = 3.5 + Math.random() * 3.0;
-                    // In non-drift modes (highway / circuit), eliminate arbitrary random lateral pushing on straight sections
+                    // In highway mode, eliminate arbitrary random lateral pushing on straight sections
                     this.targetRoadCurve = 0;
                     this.targetCurvature = 0;
                 }
             }
-            const curveRate = isDriftMode ? 4.2 : 1.2;
+            const curveRate = isDriftMode ? 4.2 : (this.isNfsCircuit ? 2.4 : 1.2);
             this.roadCurve = (this.roadCurve || 0) + (this.targetRoadCurve - (this.roadCurve || 0)) * Math.min(1.0, curveRate * dt);
             this.roadCurvature = (this.roadCurvature || 0) + ((this.targetCurvature || 0) - (this.roadCurvature || 0)) * Math.min(1.0, curveRate * dt);
-            if (!isDriftMode && Math.abs(this.roadCurve) < 0.01) {
+            if (!isDriftMode && !this.isNfsCircuit && Math.abs(this.roadCurve) < 0.01) {
                 this.roadCurve = 0;
                 this.roadCurvature = 0;
             }
@@ -13720,11 +14196,13 @@
             state.targetCurvature = this.targetCurvature || 0;
             state.curveTimer = this.curveTimer;
 
-            // Only apply centrifugal push in drift mode when actively steering or drifting;
-            // when steering is neutral and not drifting, track laser-straight down the lane without phantom lateral swaying
+            // Apply centrifugal push in drift mode when actively steering or drifting
             if (isDriftMode && Math.abs(this.roadCurve) > 0.15 && (steerInput !== 0 || isDriftingNow)) {
                 const centrifugal3D = -this.roadCurve * (state.speed / 105) * 8.2 * dt;
                 state.vx += centrifugal3D;
+            } else if (this.isNfsCircuit && Math.abs(this.roadCurve) > 0.25 && state.speed > 90 && !state.isSpeedbreakerActive) {
+                const circuitCentrifugal = -this.roadCurve * (state.speed / 195) * 2.4 * dt;
+                state.vx += circuitCentrifugal;
             }
 
             if (isDriftingNow) {
@@ -14060,6 +14538,14 @@
             this.updateTraffic(dt);
             if (!this.isRunning || state.crashed || state.isBusted) return;
 
+            // 7b. NFS MOST WANTED BLACKLIST RIVALS & CIRCUIT LAP PROGRESS
+            if (this.isNfsCircuit) {
+                this.updateNfsRivals(dt);
+                this.updateNfsCircuitProgress(dt);
+                if (!this.isRunning || state.finished) return;
+                this.updateNfsCircuitHud();
+            }
+
             // 8. HIGHWAY ROAD CHUNKS RECYCLING & 3D COLLECTIBLES
             this.updateRoadChunks();
             this.updateCollectibles(dt);
@@ -14091,6 +14577,241 @@
 
             // 11. NOTIFY HUD CALLBACK
             this.notifyHUD();
+        }
+
+        updateNfsRivals(dt) {
+            if (!this.isNfsCircuit || !this.nfsRivals || this.nfsRivals.length === 0) return;
+            const state = this.state;
+            const lanes = this.trafficLanes || [-6.375, -2.125, 2.125, 6.375];
+            const playerBaseRef = Math.max(210, (state.maxSpeed || 260) * 0.90);
+
+            for (let i = 0; i < this.nfsRivals.length; i++) {
+                const r = this.nfsRivals[i];
+                const prevDz = state.z - r.z;
+
+                // 1. Rubber-banding target speed around player's pace + rival skill
+                const gapToPlayer = state.z - r.z; // >0 means player is ahead of rival
+                let rubberBandBoost = 0;
+                if (gapToPlayer > 28) {
+                    rubberBandBoost = Math.min(52, (gapToPlayer - 28) * 0.45);
+                } else if (gapToPlayer < -36) {
+                    rubberBandBoost = Math.max(-42, (gapToPlayer + 36) * 0.38);
+                }
+                const cornerFactor = 1.0 - Math.min(0.14, Math.abs(this.roadCurve || 0) * 0.045);
+                const targetSpd = Math.max(125, (playerBaseRef * r.skill * cornerFactor) + rubberBandBoost);
+
+                const isUsingNitro = (gapToPlayer > 35 && r.nitroCharge > 20) || (r.speed < targetSpd - 18 && r.nitroCharge > 40);
+                if (isUsingNitro) {
+                    r.nitroCharge = Math.max(0, r.nitroCharge - 24 * dt);
+                } else {
+                    r.nitroCharge = Math.min(100, r.nitroCharge + 10 * dt);
+                }
+                const accelRate = isUsingNitro ? 58 : 38;
+                if (r.speed < targetSpd) {
+                    r.speed = Math.min(targetSpd + (isUsingNitro ? 22 : 0), r.speed + accelRate * dt);
+                } else {
+                    r.speed = Math.max(targetSpd, r.speed - 32 * dt);
+                }
+
+                // 2. Traffic & rival lane-change avoidance
+                r.laneChangeTimer = (r.laneChangeTimer || 1.2) - dt;
+                if (r.laneChangeTimer <= 0) {
+                    let laneBlocked = false;
+                    for (let tIdx = 0; tIdx < this.trafficCars.length; tIdx++) {
+                        const tCar = this.trafficCars[tIdx];
+                        if (!tCar || tCar.position.y < -100) continue;
+                        const dzT = tCar.position.z - r.z;
+                        const dxT = Math.abs(tCar.position.x - r.targetX);
+                        if (dzT > 0 && dzT < 38 && dxT < 2.2) {
+                            laneBlocked = true;
+                            break;
+                        }
+                    }
+                    if (laneBlocked || Math.random() < 0.28) {
+                        const candidates = [0, 1, 2, 3].filter(l => Math.abs(lanes[l] - r.x) > 1.5);
+                        const chosen = candidates[Math.floor(Math.random() * candidates.length)];
+                        if (chosen !== undefined) {
+                            r.targetX = lanes[chosen];
+                        }
+                    }
+                    r.laneChangeTimer = laneBlocked ? 0.55 : (1.5 + Math.random() * 1.8);
+                }
+
+                const steerErr = r.targetX - r.x;
+                const maxStep = 6.2 * dt;
+                const stepX = Math.max(-maxStep, Math.min(maxStep, steerErr * 4.2 * dt));
+                r.vx = stepX / Math.max(0.001, dt);
+                r.x = Math.max(-7.6, Math.min(7.6, r.x + stepX));
+                r.z += (r.speed / 3.6) * dt;
+
+                // Keep rivals within reasonable visual horizon so they don't disappear 800m away
+                if (r.z < state.z - 160) {
+                    r.z = state.z - 95 - i * 18;
+                    r.speed = Math.max(r.speed, state.speed + 25);
+                } else if (r.z > state.z + 240) {
+                    r.z = state.z + 185 + i * 16;
+                }
+
+                // 3. Door-to-door collision with player car
+                const dzNow = state.z - r.z;
+                const dxNow = Math.abs(state.x - r.x);
+                if (dxNow < 1.95 && Math.abs(dzNow) < 4.1) {
+                    const pushDir = (state.x >= r.x) ? 1 : -1;
+                    const isSbActive = !!state.isSpeedbreakerActive;
+                    if (isSbActive) {
+                        // Speedbreaker Heavy Mass Ram: knock rival aside heavily!
+                        r.x = Math.max(-7.8, Math.min(7.8, r.x - pushDir * 1.35));
+                        r.targetX = r.x;
+                        r.speed = Math.max(80, r.speed - 45);
+                        state.x = Math.max(-8.0, Math.min(8.0, state.x + pushDir * 0.25));
+                        this.spawnSparks((state.x + r.x) * 0.5, 0.55, state.z, 18);
+                        if ((this.rivalRamPopupTimer || 0) <= 0) {
+                            this.rivalRamPopupTimer = 2.0;
+                            const ramBonus = Math.round(5000 * (state.rewardMult || 1.0));
+                            state.earnedCash += ramBonus;
+                            this.earnedCash = state.earnedCash;
+                            if (this.options && typeof this.options.onPopup === 'function') {
+                                this.options.onPopup(`💥 ТАРАН BLACKLIST (${r.name})! +${ramBonus.toLocaleString('ru-RU')} ₽`, '#38bdf8');
+                            }
+                        }
+                    } else {
+                        state.x = Math.max(-8.0, Math.min(8.0, state.x + pushDir * 0.42));
+                        r.x = Math.max(-7.8, Math.min(7.8, r.x - pushDir * 0.42));
+                        state.vx += pushDir * 2.8;
+                        state.shakeAmount = Math.max(state.shakeAmount || 0, 0.32);
+                        this.spawnSparks((state.x + r.x) * 0.5, 0.5, state.z, 10);
+                        if (this.options && typeof this.options.onSound === 'function') {
+                            this.options.onSound('scrape');
+                        }
+                    }
+                } else if (prevDz < -1.0 && dzNow >= 1.2 && state.speed > 90 && (r.overtakeCooldown || 0) <= 0) {
+                    r.overtakeCooldown = 5.0;
+                    state.overtakesCount = (state.overtakesCount || 0) + 1;
+                    const ovBonus = Math.round(3500 * (state.rewardMult || 1.0));
+                    state.earnedCash += ovBonus;
+                    this.earnedCash = state.earnedCash;
+                    if (this.options && typeof this.options.onPopup === 'function') {
+                        this.options.onPopup(`🔥 ОБГОН BLACKLIST (${r.name})! +${ovBonus.toLocaleString('ru-RU')} ₽`, '#f59e0b');
+                    }
+                }
+                if ((r.overtakeCooldown || 0) > 0) r.overtakeCooldown -= dt;
+
+                // 4. Update Rival 3D Mesh, Nitro Flames & Wheel Spin
+                if (r.mesh) {
+                    r.mesh.position.set(r.x, 0, r.z);
+                    const targetYaw = Math.max(-0.14, Math.min(0.14, -steerErr * 0.06));
+                    r.mesh.rotation.y += (targetYaw - r.mesh.rotation.y) * Math.min(1, 10 * dt);
+                    r.mesh.rotation.z = -r.mesh.rotation.y * 0.35;
+                }
+                if (r.nitroFlames && r.nitroFlames.length > 0) {
+                    const flicker = 0.8 + Math.random() * 0.4;
+                    r.nitroFlames.forEach(flame => {
+                        flame.visible = isUsingNitro;
+                        if (isUsingNitro) flame.scale.set(1, 1, flicker);
+                    });
+                }
+            }
+            if ((this.rivalRamPopupTimer || 0) > 0) {
+                this.rivalRamPopupTimer = Math.max(0, this.rivalRamPopupTimer - dt);
+            }
+
+            // 5. Recompute live race standing (1..4)
+            let aheadCount = 0;
+            for (let i = 0; i < this.nfsRivals.length; i++) {
+                if (this.nfsRivals[i].z > state.z) aheadCount++;
+            }
+            state.position = 1 + aheadCount;
+            this.position = state.position;
+        }
+
+        updateNfsCircuitProgress(dt) {
+            if (!this.isNfsCircuit) return;
+            const state = this.state;
+            state.lapTimeSec = (state.lapTimeSec || 0) + dt;
+
+            // Animate checkpoint gantry arch pulse
+            if (this.nfsCheckpointGate) {
+                const u = this.nfsCheckpointGate.userData || {};
+                const pulse = 1.6 + Math.sin((state.time || 0) * 6.0) * 0.6;
+                if (u.postMat) u.postMat.emissiveIntensity = pulse;
+                if (u.flareMat) u.flareMat.opacity = 0.55 + Math.sin((state.time || 0) * 8.0) * 0.25;
+            }
+
+            // Check if player crossed the active checkpoint gate
+            if (state.z >= (this.nfsNextCheckpointZ || 225)) {
+                state.checkpointIndex = (state.checkpointIndex || 0) + 1;
+                const cpBonus = Math.round(3500 * (state.rewardMult || 1.0));
+                state.earnedCash += cpBonus;
+                this.earnedCash = state.earnedCash;
+                state.nitroLevel = Math.min(100, (state.nitroLevel || 0) + 18);
+                state.speedbreakerCharge = Math.min(100, (state.speedbreakerCharge || 0) + 15);
+                this.speedbreakerCharge = state.speedbreakerCharge;
+
+                // Advance checkpoint gate to next sector
+                this.nfsNextCheckpointZ += (this.nfsCheckpointStep || 225);
+                if (this.nfsCheckpointGate) {
+                    this.nfsCheckpointGate.position.z = this.nfsNextCheckpointZ;
+                }
+
+                // Check if this checkpoint completes a full lap
+                const currentCompletedLaps = Math.floor(state.z / (this.nfsLapLength || 900));
+                if (currentCompletedLaps >= state.currentLap) {
+                    const finishedLapTime = state.lapTimeSec;
+                    if (!state.bestLapTimeSec || finishedLapTime < state.bestLapTimeSec) {
+                        state.bestLapTimeSec = finishedLapTime;
+                    }
+                    if (currentCompletedLaps >= state.totalLaps) {
+                        // RACE FINISHED! Award Podium Purse!
+                        const podiumPrizes = [75000, 45000, 25000, 10000];
+                        const posIdx = Math.max(0, Math.min(3, (state.position || 1) - 1));
+                        const basePrize = podiumPrizes[posIdx] || 10000;
+                        const finalPrize = Math.round(basePrize * (state.rewardMult || 1.0));
+                        state.earnedCash += finalPrize;
+                        this.earnedCash = state.earnedCash;
+                        state.finished = true;
+                        state.racePhase = 'finished';
+                        this.racePhase = 'finished';
+
+                        const posMedals = ['🥇 1 МЕСТО (ПОБЕДА!)', '🥈 2 МЕСТО (ПОДИУМ!)', '🥉 3 МЕСТО (ПОДИУМ!)', '🏁 4 МЕСТО (ФИНИШ)'];
+                        const finishColor = posIdx === 0 ? '#fbbf24' : (posIdx <= 2 ? '#38bdf8' : '#94a3b8');
+                        if (this.options && typeof this.options.onPopup === 'function') {
+                            this.options.onPopup(`${posMedals[posIdx]} +${finalPrize.toLocaleString('ru-RU')} ₽`, finishColor);
+                        }
+                        if (this.options && typeof this.options.onSound === 'function') {
+                            this.options.onSound('cash');
+                        }
+
+                        this.updateNfsCircuitHud();
+                        this.notifyHUD();
+                        this.isRunning = false;
+                        this.stop();
+                        if (typeof this.onGameOver === 'function') {
+                            this.onGameOver(false, this.getState());
+                        } else if (this.options && typeof this.options.onGameOver === 'function') {
+                            this.options.onGameOver(false, this.getState());
+                        }
+                        return;
+                    } else {
+                        state.currentLap = currentCompletedLaps + 1;
+                        this.currentLap = state.currentLap;
+                        state.lapTimeSec = 0;
+                        const lapBonus = Math.round(15000 * (state.rewardMult || 1.0));
+                        state.earnedCash += lapBonus;
+                        this.earnedCash = state.earnedCash;
+                        if (this.options && typeof this.options.onPopup === 'function') {
+                            const lapStr = finishedLapTime.toFixed(1);
+                            this.options.onPopup(`🏁 КРУГ ${state.currentLap}/${state.totalLaps}! (${lapStr}с) +${lapBonus.toLocaleString('ru-RU')} ₽`, '#22c55e');
+                        }
+                        if (this.options && typeof this.options.onSound === 'function') {
+                            this.options.onSound('cash');
+                        }
+                    }
+                } else {
+                    if (this.options && typeof this.options.onPopup === 'function') {
+                        this.options.onPopup(`⏱️ СЕКТОР ПРОЙДЕН! +${cpBonus.toLocaleString('ru-RU')} ₽ (+НИТРО)`, '#38bdf8');
+                    }
+                }
+            }
         }
 
         updateTraffic(dt) {
@@ -14484,11 +15205,12 @@
                     // 💥 TAKEDOWN MECHANIC FOR POLICE: Player CAN ram & knock out pursuit cars!
                     if (u.type === 'police' && !u.isWrecked) {
                         const isNitroActive = !!(state.isNitroActive || state.nitroActive || (this.keys && this.keys.nitro));
+                        const isSpeedbreakerRam = !!state.isSpeedbreakerActive;
                         const isFastRam = state.speed > 80;
                         const isHardSideHit = Math.abs(state.vx) > 0.35 || (this.keys && (this.keys.left || this.keys.right));
                         const isOvertakeRam = (state.speed - u.speed) > 5;
                         const isDirectRam = dz > -1.0 && state.speed > 60;
-                        const isTakedown = (state.wantedStars > 0 || isNitroActive) && (isNitroActive || isFastRam || isHardSideHit || isOvertakeRam || isDirectRam);
+                        const isTakedown = isSpeedbreakerRam || ((state.wantedStars > 0 || isNitroActive) && (isNitroActive || isFastRam || isHardSideHit || isOvertakeRam || isDirectRam));
 
                         if (isTakedown) {
                             // TAKEDOWN! СБИТ ЭКИПАЖ ДПС!
@@ -14570,8 +15292,9 @@
                         state.x -= ramPushDir * 0.35;
                         car.position.x += ramPushDir * 0.35;
 
-                        // 3. Player progressive deceleration, pitch jolt & camera shake
-                        const dmg = (u.type === 'truck' || u.type === 'kamaz') ? 32 : 25;
+                        // 3. Player progressive deceleration, pitch jolt & camera shake (Speedbreaker heavy mass reduces damage & speed loss)
+                        const baseDmg = (u.type === 'truck' || u.type === 'kamaz') ? 32 : 25;
+                        const dmg = state.isSpeedbreakerActive ? Math.round(baseDmg * 0.35) : baseDmg;
                         state.damageTaken = Math.min(100, (state.damageTaken || 0) + dmg);
                         state.shakeAmount = 1.0;
                         state.cameraShake = 1.0;
@@ -14580,7 +15303,7 @@
                         state.pitchAngle = 0.055;
                         this.pitchAngle = 0.055;
                         state.invulnerableTimer = 1.2;
-                        state.speed = Math.max(45, state.speed * 0.48);
+                        state.speed = Math.max(45, state.speed * (state.isSpeedbreakerActive ? 0.80 : 0.48));
 
                         // 4. Dense collision sparks
                         this.spawnSparks((state.x + car.position.x) * 0.5, 0.8, state.z + 1.0, 48);
@@ -14636,9 +15359,9 @@
                         }
 
                         // 4. Progressive deceleration & moderate sideswipe damage
-                        const speedLoss = Math.min(20, 5 + Math.abs(speedDiff) * 0.10);
+                        const speedLoss = Math.min(20, 5 + Math.abs(speedDiff) * 0.10) * (state.isSpeedbreakerActive ? 0.35 : 1.0);
                         state.speed = state.speed > 0 ? Math.max(18, state.speed - speedLoss) : 0;
-                        state.damageTaken = Math.min(100, (state.damageTaken || 0) + 6.0);
+                        state.damageTaken = Math.min(100, (state.damageTaken || 0) + (state.isSpeedbreakerActive ? 2.0 : 6.0));
 
                         // 5. Tactical screen shake scaled to impact momentum
                         state.shakeAmount = Math.min(0.75, 0.35 + Math.abs(state.vx || 0) * 0.05);
@@ -14925,9 +15648,9 @@
             this.camRoll = (this.camRoll || 0) + (targetRoll - (this.camRoll || 0)) * Math.min(1.0, 5.0 * dt);
             this.camera.rotateZ(this.camRoll);
 
-            // 6. Dynamic FOV warp with speed & nitro + high-speed hypersonic expansion (250+ km/h)
+            // 6. Dynamic FOV warp with speed & nitro + Speedbreaker bullet-time zoom
             const speedRatio = Math.min(1.0, state.speed / state.maxSpeed);
-            let targetFov = mode.fov + (speedRatio * (isCockpit ? 8 : 14)) + (state.isNitroActive ? (isCockpit ? 4 : 7) : 0);
+            let targetFov = mode.fov + (speedRatio * (isCockpit ? 8 : 14)) + (state.isNitroActive ? (isCockpit ? 4 : 7) : 0) - (state.isSpeedbreakerActive ? 7 : 0);
             if (this.vfx && typeof this.vfx.enhanceCameraFOV === 'function') {
                 targetFov = this.vfx.enhanceCameraFOV(targetFov, state);
             }
@@ -15023,6 +15746,7 @@
             const curPreset = this.getWeatherPreset(this.currentActiveWeather);
 
             this.options.onUpdateHUD({
+                mode: this.mode,
                 speed: Math.round(state.speed),
                 gear: gear,
                 rpm: rpm,
@@ -15033,6 +15757,14 @@
                 fuelCurrent: state.fuelCurrent,
                 nitroLevel: Math.round(state.nitroLevel),
                 isNitroActive: state.isNitroActive,
+                speedbreakerCharge: Math.round(state.speedbreakerCharge || 0),
+                isSpeedbreakerActive: !!state.isSpeedbreakerActive,
+                position: state.position || 1,
+                totalRacers: state.totalRacers || 4,
+                currentLap: state.currentLap || 1,
+                totalLaps: state.totalLaps || 2,
+                lapTimeSec: state.lapTimeSec || 0,
+                bestLapTimeSec: state.bestLapTimeSec || 0,
                 isHypersonic: !!state.isHypersonic,
                 currentBiome: this.currentBiome || 'highway',
                 driftScore: Math.round(state.driftScore),
@@ -15109,6 +15841,7 @@
         destroy() {
             this._destroyed = true;
             this.stop();
+            this.clearNfsCircuitEntities();
             if (this._resizeObserver) {
                 try { this._resizeObserver.disconnect(); } catch (_) {}
                 this._resizeObserver = null;

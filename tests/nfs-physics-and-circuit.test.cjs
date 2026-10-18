@@ -394,3 +394,14 @@ test('14. Изоляция миникарты (.nfs-minimap-canvas) от рас�
     );
 });
 
+test('15. Интеграция физики и механик NFS Most Wanted (Speedbreaker, Blacklist-соперники, 3-2-1 Старт, круги и подиум) в основной движок Car3DRacingEngine (js/car-3d.js)', () => {
+    const car3dJs = fs.readFileSync(path.join(__dirname, '..', 'js', 'car-3d.js'), 'utf8');
+
+    assert.ok(car3dJs.includes('initNfsRivals('), 'В Car3DRacingEngine должен быть метод инициализации соперников Чёрного списка initNfsRivals');
+    assert.ok(car3dJs.includes('updateNfsRivals('), 'В Car3DRacingEngine должен быть метод обновления ИИ-соперников updateNfsRivals');
+    assert.ok(car3dJs.includes('initNfsCheckpointGate('), 'В Car3DRacingEngine должен быть метод 3D-арки чекпоинта initNfsCheckpointGate');
+    assert.ok(car3dJs.includes('updateNfsCircuitProgress('), 'В Car3DRacingEngine должен быть метод подсчёта секторов, кругов и подиума updateNfsCircuitProgress');
+    assert.ok(car3dJs.includes('toggleSpeedbreaker('), 'В Car3DRacingEngine должен быть метод активации Speedbreaker toggleSpeedbreaker');
+    assert.ok(car3dJs.includes('ИДЕАЛЬНЫЙ СТАРТ NFS!'), 'В Car3DRacingEngine должен поддерживаться Идеальный Старт (Perfect Launch) на отсчёте 3-2-1');
+    assert.ok(car3dJs.includes('Рейзор (#1 Blacklist)'), 'В Car3DRacingEngine должен присутствовать главный босс Чёрного списка Рейзор (#1 Blacklist)');
+});

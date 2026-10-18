@@ -16723,10 +16723,10 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     }
                 };
 
-                if (isNfsCircuit) {
-                    car3DRacingEngine = new NomeraCircuitRace.NomeraCircuitRaceEngine(container, engineOptions);
-                } else {
+                if (typeof Car3DManager !== 'undefined' && typeof Car3DManager.Car3DRacingEngine === 'function') {
                     car3DRacingEngine = new Car3DManager.Car3DRacingEngine(container, engineOptions);
+                } else if (isNfsCircuit && typeof NomeraCircuitRace !== 'undefined' && typeof NomeraCircuitRace.NomeraCircuitRaceEngine === 'function') {
+                    car3DRacingEngine = new NomeraCircuitRace.NomeraCircuitRaceEngine(container, engineOptions);
                 }
 
                 const raceStyling = Object.assign({}, activeRaceCar.styling || {}, {
