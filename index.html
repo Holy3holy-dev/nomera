@@ -60,7 +60,7 @@
     <!-- Подключение Firebase SDK для базы данных, аккаунтов и мультиплеера -->
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
-    <link rel="stylesheet" href="./styles.css?v=cefb2ff72d09">
+    <link rel="stylesheet" href="./styles.css?v=ee38a956fb3a">
     <style>
         /* Collector's Book («Книга коллекционера») & Car-Plate Synergy UI */
         .collector-book-summary {
@@ -212,289 +212,482 @@
     <canvas id="fx-canvas"></canvas>
 
     <div class="main-container">
-        <header class="brand-bar">
+        <header class="brand-bar top-game-header">
             <a class="brand-lockup" href="./index.html" aria-label="H3H Nomera — главная">
                 <span class="brand-mark">H3H<span class="brand-mark-line"></span></span>
                 <span class="brand-word">NOMERA</span>
             </a>
-            <div class="brand-right">
-                <button id="sound-toggle" class="sound-toggle" onclick="toggleSoundMute()" aria-label="Отключить звук" aria-pressed="false">ЗВУК ВКЛ</button>
+
+            <!-- ГЛАВНАЯ НАВИГАЦИЯ (6 ОСНОВНЫХ РАЗДЕЛОВ + МЕНЮ «ЕЩЁ») -->
+            <nav class="nav-tabs" aria-label="Разделы игры" role="tablist">
+                <button type="button" role="tab" class="nav-tab active" id="nav-tab-generator" onclick="switchTab('generator', this)" data-tab="generator" aria-controls="generator" aria-selected="true">
+                    <svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24"><use href="#icon-plate"/></svg>
+                    <span>Генератор</span>
+                </button>
+                <button type="button" role="tab" class="nav-tab" id="nav-tab-inventory" onclick="switchTab('inventory', this)" data-tab="inventory" aria-controls="inventory" aria-selected="false">
+                    <svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24"><use href="#icon-collection"/></svg>
+                    <span class="nav-label-long">Коллекция</span><span class="nav-label-short">Коллекция</span>
+                    <span class="nav-tab-badge" id="inv-count-badge">0</span>
+                </button>
+                <button type="button" role="tab" class="nav-tab" id="nav-tab-garage" onclick="switchTab('garage', this)" data-tab="garage" aria-controls="garage" aria-selected="false">
+                    <svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24"><use href="#icon-garage"/></svg>
+                    <span>Гараж</span>
+                    <span class="nav-tab-badge" id="garage-count-badge">1</span>
+                </button>
+                <button type="button" role="tab" class="nav-tab" id="nav-tab-market" onclick="openMarketSection('plates')" data-tab="multiplayer" aria-controls="multiplayer" aria-selected="false">
+                    <svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24"><use href="#icon-online"/></svg>
+                    <span>Рынок</span>
+                </button>
+                <button type="button" role="tab" class="nav-tab" id="nav-tab-racegame" onclick="switchTab('racegame', this, 'circuit')" data-tab="racegame" aria-controls="racegame" aria-selected="false">
+                    <svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24"><use href="#icon-race"/></svg>
+                    <span class="nav-label-long">Гонки</span><span class="nav-label-short">Гонки</span>
+                </button>
+                <button type="button" role="tab" class="nav-tab" id="nav-tab-cases" onclick="switchTab('cases', this)" data-tab="cases" aria-controls="cases" aria-selected="false">
+                    <svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24"><use href="#icon-case"/></svg>
+                    <span>Кейсы</span>
+                </button>
+
+                <!-- Компактное меню «Ещё» для второстепенных разделов и прямых 3D-режимов -->
+                <div class="nav-more-dropdown" id="nav-more-dropdown">
+                    <button type="button" class="nav-tab nav-more-trigger" id="btn-nav-more" onclick="toggleNavMoreMenu(event)" aria-expanded="false" aria-haspopup="true">
+                        <span>Ещё</span>
+                        <span class="nav-more-caret">▾</span>
+                    </button>
+                    <div class="nav-more-menu hidden" id="nav-more-menu" role="menu">
+                        <button type="button" role="menuitem" class="nav-tab nav-tab-3d nav-more-item" id="nav-tab-3d-race" onclick="switchTab('racegame', this, '3d'); closeNavMoreMenu();" data-tab="racegame-3d" aria-controls="racegame" aria-selected="false">
+                            <span class="nav-tab-3d-icon">🏎️</span>
+                            <span class="nav-label-long">3D Шоссе</span><span class="nav-label-short">3D</span>
+                            <span class="nav-tab-badge" style="background: linear-gradient(135deg, #ef4444, #f59e0b); color: #fff; font-size: 9px !important; font-weight: 800; padding: 1px 5px; border-radius: 999px;">HOT</span>
+                        </button>
+                        <button type="button" role="menuitem" class="nav-tab nav-tab-3d nav-more-item" id="nav-tab-nfs-race" onclick="switchTab('racegame', this, 'nfs'); closeNavMoreMenu();" data-tab="racegame-nfs" aria-controls="racegame" aria-selected="false">
+                            <span class="nav-tab-3d-icon">🏆</span>
+                            <span class="nav-label-long">3D Кольцо</span><span class="nav-label-short">Кольцо</span>
+                            <span class="nav-tab-badge" style="background: linear-gradient(135deg, #0284c7, #10b981); color: #fff; font-size: 9px !important; font-weight: 800; padding: 1px 5px; border-radius: 999px;">PRO</span>
+                        </button>
+                        <button type="button" role="menuitem" class="nav-tab nav-more-item" onclick="switchTab('leaderboard', this); closeNavMoreMenu();" data-tab="leaderboard" aria-controls="leaderboard" aria-selected="false">
+                            <svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24"><use href="#icon-rating"/></svg>
+                            <span>Рейтинг лидеров</span>
+                        </button>
+                        <button type="button" role="menuitem" class="nav-tab nav-more-item" onclick="openChatSection(); closeNavMoreMenu();">
+                            <span>💬</span>
+                            <span>Онлайн-чат</span>
+                        </button>
+                        <button type="button" role="menuitem" class="nav-tab nav-more-item" onclick="openCollectorBook(); closeNavMoreMenu();">
+                            <span>📘</span>
+                            <span>Книга коллекционера</span>
+                        </button>
+                        <button type="button" role="menuitem" class="nav-tab nav-more-item" onclick="openVipOrders(); closeNavMoreMenu();">
+                            <span>📋</span>
+                            <span>Спецзаказы VIP</span>
+                        </button>
+                        <button type="button" role="menuitem" class="nav-tab nav-more-item" onclick="openVipAuction(); closeNavMoreMenu();">
+                            <span>🔨</span>
+                            <span>VIP-Аукцион</span>
+                        </button>
+                        <button type="button" role="menuitem" class="nav-tab nav-more-item" onclick="switchTab('inventory'); switchCollectionTab('achieve'); closeNavMoreMenu();">
+                            <span>🏅</span>
+                            <span>Достижения</span>
+                        </button>
+                        <button type="button" role="menuitem" class="nav-tab nav-more-item hidden" id="nav-tab-admin" onclick="openAdminModal(); closeNavMoreMenu();" style="color: #fbbf24;">
+                            <span>👑</span>
+                            <span>Админ-панель</span>
+                        </button>
+                    </div>
+                </div>
+            </nav>
+
+            <!-- ВЕРХНИЙ HUD: БАЛАНС, УРОВЕНЬ/XP, ПРОФИЛЬ, УВЕДОМЛЕНИЯ, НАСТРОЙКИ -->
+            <div class="header-hud">
+                <div class="hud-balance-pill" onclick="openProfileModal()" title="Текущий игровой баланс">
+                    <span class="hud-coin-icon">₽</span>
+                    <div class="hud-balance">
+                        <span class="wallet-label">БАЛАНС</span>
+                        <span class="hud-balance-val"><span id="balance">50 000</span> ₽</span>
+                    </div>
+                </div>
+
+                <div class="hud-level-box" title="Уровень и прогресс опыта">
+                    <div class="hud-level-header">
+                        <span class="hud-lvl-pill">УР. <span id="player-level">1</span></span>
+                        <span class="hud-xp-text"><span id="current-exp">0</span> / <span id="needed-exp">10</span> XP</span>
+                    </div>
+                    <div class="hud-progress-bg">
+                        <div class="hud-progress-fill" id="exp-bar"></div>
+                    </div>
+                </div>
+
+                <div class="hud-player" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openProfileModal();}" onclick="openProfileModal()" title="Профиль и облачная синхронизация">
+                    <div class="avatar-wrap">
+                        <img id="header-avatar" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAxMDAgMTAwJz48cmVjdCB3aWR0aD0nMTAwJyBoZWlnaHQ9JzEwMCcgcng9JzUwJyBmaWxsPScjMjMyYzFjJy8+PGcgZmlsbD0nbm9uZScgc3Ryb2tlPScjZDJmNDY1JyBzdHJva2Utd2lkdGg9JzMnPjxwYXRoIGQ9J00yMCA1N2w5LTE3IDE1LTRoMjBsMTEgMTMgNyA0djE1SDIweicvPjxwYXRoIGQ9J00zNCA0MGgyN2w5IDEySDI3Jy8+PGNpcmNsZSBjeD0nMzQnIGN5PSc2Nycgcj0nNycgZmlsbD0nIzIzMmMxYycvPjxjaXJjbGUgY3g9JzY4JyBjeT0nNjcnIHI9JzcnIGZpbGw9JyMyMzJjMWMnLz48L2c+PC9zdmc+" class="avatar" alt="Аватар игрока" onerror="handleAvatarError(this, 0)">
+                        <div class="avatar-badge"></div>
+                    </div>
+                    <div class="hud-player-info">
+                        <div class="hud-player-name">
+                            <span id="player-name">Игрок</span>
+                            <span class="cloud-badge online" id="cloud-status-badge">🟢 Облако</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="hud-actions brand-right">
+                    <button class="hud-icon-btn admin-glow-btn hidden" id="hud-admin-btn" onclick="openAdminModal()" title="Админ-Панель">👑 АДМИН</button>
+                    <button class="hud-icon-btn" id="hud-daily-btn" onclick="openDailyModal()" title="Ежедневные бонусы и уведомления" aria-label="Бонусы и уведомления" style="position: relative;">
+                        🔔<span id="daily-badge-dot" style="display:none;position:absolute;top:4px;right:4px;width:8px;height:8px;background:#E7243E;border-radius:50%;box-shadow:0 0 8px #E7243E;"></span>
+                    </button>
+                    <button class="hud-icon-btn" onclick="openProfileModal()" title="Профиль и Аккаунт" aria-label="Профиль"><svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24"><use href="#icon-profile"/></svg></button>
+                    <button id="sound-toggle" class="hud-icon-btn sound-toggle" onclick="toggleSoundMute()" aria-label="Отключить звук" aria-pressed="false" title="Звуковые эффекты">🔊</button>
+                    <button class="hud-icon-btn" onclick="openSettings()" title="Настройки" aria-label="Настройки"><svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24"><use href="#icon-settings"/></svg></button>
+                </div>
             </div>
         </header>
 
-        <!-- GAMING HUD (ПРОФИЛЬ, БАЛАНС, УРОВЕНЬ, ОПЫТ, ОБЛАКО) -->
-        <div class="header-hud">
-            <div class="hud-player" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openProfileModal();}" onclick="openProfileModal()" title="Нажмите для настройки профиля и синхронизации">
-                <div class="avatar-wrap">
-                    <img id="header-avatar" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAxMDAgMTAwJz48cmVjdCB3aWR0aD0nMTAwJyBoZWlnaHQ9JzEwMCcgcng9JzUwJyBmaWxsPScjMjMyYzFjJy8+PGcgZmlsbD0nbm9uZScgc3Ryb2tlPScjZDJmNDY1JyBzdHJva2Utd2lkdGg9JzMnPjxwYXRoIGQ9J00yMCA1N2w5LTE3IDE1LTRoMjBsMTEgMTMgNyA0djE1SDIweicvPjxwYXRoIGQ9J00zNCA0MGgyN2w5IDEySDI3Jy8+PGNpcmNsZSBjeD0nMzQnIGN5PSc2Nycgcj0nNycgZmlsbD0nIzIzMmMxYycvPjxjaXJjbGUgY3g9JzY4JyBjeT0nNjcnIHI9JzcnIGZpbGw9JyMyMzJjMWMnLz48L2c+PC9zdmc+" class="avatar" alt="Аватар игрока" onerror="handleAvatarError(this, 0)">
-                    <div class="avatar-badge"></div>
-                </div>
-                <div class="hud-player-info">
-                    <div class="hud-player-name">
-                        <span id="player-name">Игрок</span>
-                        <span class="cloud-badge online" id="cloud-status-badge">🟢 Облако</span>
-                    </div>
-                    <div class="hud-balance">
-                        <span class="wallet-label">БАЛАНС</span><span id="balance">50 000</span> ₽
-                    </div>
-                </div>
-            </div>
-
-            <div class="hud-level-box">
-                <div class="hud-level-header">
-                    <span class="hud-lvl-pill">LVL <span id="player-level">1</span></span>
-                    <span class="hud-xp-text"><span id="current-exp">0</span> / <span id="needed-exp">10</span> XP</span>
-                </div>
-                <div class="hud-progress-bg">
-                    <div class="hud-progress-fill" id="exp-bar"></div>
-                </div>
-            </div>
-
-            <div class="hud-actions">
-                <button class="hud-icon-btn admin-glow-btn hidden" id="hud-admin-btn" onclick="openAdminModal()" title="Админ-Панель">👑 АДМИН</button>
-                <button class="hud-icon-btn" id="hud-daily-btn" onclick="openDailyModal()" title="Ежедневные бонусы и задания" aria-label="Бонусы" style="color: #c9f267; position: relative;">🎁<span id="daily-badge-dot" style="display:none;position:absolute;top:2px;right:2px;width:7px;height:7px;background:#ff2e4c;border-radius:50%;"></span></button>
-                <button class="hud-icon-btn" onclick="openProfileModal()" title="Профиль и Аккаунт" aria-label="Профиль"><svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24"><use href="#icon-profile"/></svg></button>
-                <button class="hud-icon-btn" onclick="openSettings()" title="Настройки" aria-label="Настройки"><svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24"><use href="#icon-settings"/></svg></button>
-            </div>
-        </div>
-
         <div id="save-status" class="save-status" role="status" aria-live="polite">Локальное сохранение</div>
-        <!-- НАВИГАЦИОННЫЕ ВКЛАДКИ -->
-        <nav class="nav-tabs" aria-label="Разделы игры" role="tablist">
-            <button type="button" role="tab" class="nav-tab active" onclick="switchTab('generator', this)" data-tab="generator" aria-controls="generator" aria-selected="true">
-                <svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24"><use href="#icon-plate"/></svg> Номера
-            </button>
-            <button type="button" role="tab" class="nav-tab" onclick="switchTab('inventory', this)" data-tab="inventory" aria-controls="inventory" aria-selected="false">
-                <svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24"><use href="#icon-collection"/></svg> <span class="nav-label-long">Коллекция</span><span class="nav-label-short">Мои</span> <span class="nav-tab-badge" id="inv-count-badge">0</span>
-            </button>
-            <button type="button" role="tab" class="nav-tab" onclick="switchTab('garage', this)" data-tab="garage" aria-controls="garage" aria-selected="false">
-                <svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24"><use href="#icon-garage"/></svg> Гараж <span class="nav-tab-badge" id="garage-count-badge">1</span>
-            </button>
-            <button type="button" role="tab" class="nav-tab" id="nav-tab-racegame" onclick="switchTab('racegame', this, 'circuit')" data-tab="racegame" aria-controls="racegame" aria-selected="false">
-                <svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24"><use href="#icon-race"/></svg> <span class="nav-label-long">Гонка 2D</span><span class="nav-label-short">2D</span>
-            </button>
-            <button type="button" role="tab" class="nav-tab nav-tab-3d" id="nav-tab-3d-race" onclick="switchTab('racegame', this, '3d')" data-tab="racegame-3d" aria-controls="racegame" aria-selected="false">
-                <span class="nav-tab-3d-icon">🏎️</span> <span class="nav-label-long">3D Шоссе</span><span class="nav-label-short">3D</span> <span class="nav-tab-badge" style="background: linear-gradient(135deg, #ef4444, #f59e0b); color: #fff; font-size: 8px !important; font-weight: 800; padding: 1px 4px; border-radius: 999px;">HOT</span>
-            </button>
-            <button type="button" role="tab" class="nav-tab nav-tab-3d" id="nav-tab-nfs-race" onclick="switchTab('racegame', this, 'nfs')" data-tab="racegame-nfs" aria-controls="racegame" aria-selected="false" style="border-color: rgba(56, 189, 248, 0.5);">
-                <span class="nav-tab-3d-icon">🏆</span> <span class="nav-label-long">3D NFS Кольцо</span><span class="nav-label-short">NFS</span> <span class="nav-tab-badge" style="background: linear-gradient(135deg, #0284c7, #10b981); color: #fff; font-size: 8px !important; font-weight: 800; padding: 1px 5px; border-radius: 999px;">MW</span>
-            </button>
-            <button type="button" role="tab" class="nav-tab" onclick="switchTab('cases', this)" data-tab="cases" aria-controls="cases" aria-selected="false">
-                <svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24"><use href="#icon-case"/></svg> Кейсы
-            </button>
-            <button type="button" role="tab" class="nav-tab" onclick="switchTab('leaderboard', this)" data-tab="leaderboard" aria-controls="leaderboard" aria-selected="false">
-                <svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24"><use href="#icon-rating"/></svg> Рейтинг
-            </button>
-            <button type="button" role="tab" class="nav-tab" onclick="switchTab('multiplayer', this)" data-tab="multiplayer" aria-controls="multiplayer" aria-selected="false">
-                <svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24"><use href="#icon-online"/></svg> Онлайн
-            </button>
-            <button type="button" role="tab" class="nav-tab hidden" id="nav-tab-admin" onclick="openAdminModal()" style="border-color: rgba(245, 158, 11, 0.4); color: #fbbf24;">
-                <span>👑</span> Админ
-            </button>
-        </nav>
 
-        <!-- 1. ВКЛАДКА: ГЕНЕРАТОР НОМЕРОВ -->
+        <!-- 1. ВКЛАДКА: ГЕНЕРАТОР НОМЕРОВ (PREMIUM COLLECTOR PODIUM) -->
         <div id="generator" class="tab-content">
-            <div class="generator-heading">
-                <div>
-                    <h1>Генератор номеров</h1>
-                    <p>Создание серий госномеров, аукционы и заезды.</p>
-                </div>
-            </div>
-            <div class="generator-layout"><section class="generator-workbench" aria-label="Генератор">
-
-            <!-- Панель опций прокрутки -->
-            <div class="spin-control-bar">
-                <div class="control-group">
-                    <span>Анимация</span>
-                    <select class="control-select" id="anim-style-select">
-                        <option value="cascade">🌊 Каскад (Слоты)</option>
-                        <option value="suspense">🎯 Интрига (Саспенс)</option>
-                        <option value="converge">🔀 От краёв к центру</option>
-                        <option value="chaos">🎲 Хаос (Случайно)</option>
-                        <option value="wave">💫 Эхо-Волна</option>
-                        <option value="sync">⚡ Синхрон</option>
-                    </select>
-                </div>
-
-                <label class="toggle-pill" title="Мгновенный темп прокрутки">
-                    <input type="checkbox" id="turbo-toggle"> ⚡ Турбо
-                </label>
-
-                <div class="control-group" style="display: inline-flex; align-items: center; gap: 6px;">
-                    <button class="btn-auto-toggle" id="btn-auto-spin" onclick="toggleAutoSpin()">🔄 Авто: ВЫКЛ</button>
-                    <select class="control-select" id="auto-spin-count" style="padding: 4px 6px; font-size: 11px; height: 30px; width: auto;" title="Количество авто-спинов">
-                        <option value="10">10</option>
-                        <option value="25">25</option>
-                        <option value="50">50</option>
-                        <option value="100">100</option>
-                        <option value="Infinity" selected>∞</option>
-                    </select>
-                </div>
-            </div>
-
-            <!-- Выбор страны госномера -->
-            <div class="plate-country-selector" id="plate-country-selector" role="group" aria-label="Страна госномера">
-                <button type="button" class="country-select-btn active" id="btn-country-RUS" data-country="RUS" onclick="selectPlateCountry('RUS')">
-                    <span class="country-btn-flag">🇷🇺</span>
-                    <span class="country-btn-info"><strong>Россия</strong><small>База • спин 900 ₽</small></span>
-                </button>
-                <button type="button" class="country-select-btn" id="btn-country-KZ" data-country="KZ" onclick="selectPlateCountry('KZ')">
-                    <span class="country-btn-flag">🇰🇿</span>
-                    <span class="country-btn-info"><strong>Казахстан</strong><small>x1.8 • спин 1 800 ₽</small></span>
-                </button>
-                <button type="button" class="country-select-btn" id="btn-country-USA" data-country="USA" onclick="selectPlateCountry('USA')">
-                    <span class="country-btn-flag">🇺🇸</span>
-                    <span class="country-btn-info"><strong>США</strong><small>x3.5 • спин 3 500 ₽</small></span>
-                </button>
-                <button type="button" class="country-select-btn" id="btn-country-UAE" data-country="UAE" onclick="selectPlateCountry('UAE')">
-                    <span class="country-btn-flag">🇦🇪</span>
-                    <span class="country-btn-info"><strong>Дубай</strong><small>x8.0 • спин 9 000 ₽</small></span>
-                </button>
-                <button type="button" class="country-select-btn" id="btn-country-JPN" data-country="JPN" onclick="selectPlateCountry('JPN')">
-                    <span class="country-btn-flag">🇯🇵</span>
-                    <span class="country-btn-info"><strong>Япония</strong><small>x5.0 • спин 5 000 ₽</small></span>
-                </button>
-            </div>
-
-            <!-- Реалистичный ячеистый номер -->
-            <div class="plate-stage">
-                <div id="gen-rarity" class="rarity-label hidden">Обычный</div>
-                <div id="region-editor" class="region-editor hidden" role="dialog" aria-modal="true" aria-label="Смена региона госномера">
-                    <div class="region-editor-header">
-                        <label for="region-edit-input" id="region-editor-label">Код региона РФ (2–3 цифры)</label>
-                        <button type="button" class="region-btn-close" onclick="cancelRegionEdit()" aria-label="Закрыть">✕</button>
-                    </div>
-                    <div class="region-input-row">
-                        <input id="region-edit-input" type="text" maxlength="3" placeholder="777" onkeydown="if(event.key==='Enter')saveRegionEdit();if(event.key==='Escape')cancelRegionEdit()">
-                        <button type="button" class="btn-save-region" onclick="saveRegionEdit()">Применить</button>
-                    </div>
-                    <div class="region-chips-label">Популярные регионы:</div>
-                    <div class="region-quick-chips" id="region-quick-chips">
-                        <button type="button" class="region-chip" onclick="saveRegionEdit('777')">777</button>
-                        <button type="button" class="region-chip" onclick="saveRegionEdit('77')">77</button>
-                        <button type="button" class="region-chip" onclick="saveRegionEdit('99')">99</button>
-                        <button type="button" class="region-chip" onclick="saveRegionEdit('78')">78</button>
-                        <button type="button" class="region-chip" onclick="saveRegionEdit('178')">178</button>
-                        <button type="button" class="region-chip" onclick="saveRegionEdit('16')">16</button>
-                        <button type="button" class="region-chip" onclick="saveRegionEdit('95')">95</button>
-                        <button type="button" class="region-chip" onclick="saveRegionEdit('23')">23</button>
-                        <button type="button" class="region-chip" onclick="saveRegionEdit('50')">50</button>
-                        <button type="button" class="region-chip" onclick="saveRegionEdit('05')">05</button>
-                    </div>
-                </div>
-                <div class="plate-container glow-none" id="plate-box" data-country="RUS" data-reg="777" data-state-title="California" data-state-slogan="dmv.ca.gov" data-emirate-en="DUBAI" data-emirate-ar="دبي">
-                    <div class="plate-bolt bolt-left"></div>
-                    <div class="plate-bolt bolt-right"></div>
-
-                    <div class="plate-kz-strip" aria-hidden="true">
-                        <div class="flag flag-kz"></div>
-                        <span>KZ</span>
+            <div class="generator-layout gen-luxury-grid">
+                <!-- ЛЕВАЯ ПАНЕЛЬ: СТРАНА, СЕРИЯ/РЕГИОН, АНИМАЦИЯ -->
+                <aside class="gen-left-panel" aria-label="Параметры генерации">
+                    <div class="luxury-panel-card">
+                        <div class="luxury-panel-header">
+                            <span class="luxury-panel-eyebrow">СТРАНА ГОСНОМЕРА</span>
+                        </div>
+                        <div class="plate-country-selector" id="plate-country-selector" role="group" aria-label="Страна госномера">
+                            <button type="button" class="country-select-btn active" id="btn-country-RUS" data-country="RUS" onclick="selectPlateCountry('RUS')">
+                                <span class="country-btn-flag">🇷🇺</span>
+                                <span class="country-btn-info"><strong>Россия</strong><small>ГОСТ • спин 900 ₽</small></span>
+                                <span class="country-mult-pill">x1.0</span>
+                            </button>
+                            <button type="button" class="country-select-btn" id="btn-country-KZ" data-country="KZ" onclick="selectPlateCountry('KZ')">
+                                <span class="country-btn-flag">🇰🇿</span>
+                                <span class="country-btn-info"><strong>Казахстан</strong><small>VIP • спин 1 800 ₽</small></span>
+                                <span class="country-mult-pill">x1.8</span>
+                            </button>
+                            <button type="button" class="country-select-btn" id="btn-country-USA" data-country="USA" onclick="selectPlateCountry('USA')">
+                                <span class="country-btn-flag">🇺🇸</span>
+                                <span class="country-btn-info"><strong>США</strong><small>State • спин 3 500 ₽</small></span>
+                                <span class="country-mult-pill">x3.5</span>
+                            </button>
+                            <button type="button" class="country-select-btn" id="btn-country-UAE" data-country="UAE" onclick="selectPlateCountry('UAE')">
+                                <span class="country-btn-flag">🇦🇪</span>
+                                <span class="country-btn-info"><strong>Дубай (ОАЭ)</strong><small>RTA • спин 9 000 ₽</small></span>
+                                <span class="country-mult-pill">x8.0</span>
+                            </button>
+                            <button type="button" class="country-select-btn" id="btn-country-JPN" data-country="JPN" onclick="selectPlateCountry('JPN')">
+                                <span class="country-btn-flag">🇯🇵</span>
+                                <span class="country-btn-info"><strong>Япония</strong><small>JDM • спин 5 000 ₽</small></span>
+                                <span class="country-mult-pill">x5.0</span>
+                            </button>
+                        </div>
                     </div>
 
-                    <div class="plate-cells-main" id="plate-cells-box">
-                        <div class="plate-cell letter-cell" id="cell-l1"><span class="char-span">-</span></div>
-                        <div class="plate-cell num-cell" id="cell-n1"><span class="char-span">-</span></div>
-                        <div class="plate-cell num-cell" id="cell-n2"><span class="char-span">-</span></div>
-                        <div class="plate-cell num-cell" id="cell-n3"><span class="char-span">-</span></div>
-                        <div class="plate-cell letter-cell" id="cell-l2"><span class="char-span">-</span></div>
-                        <div class="plate-cell letter-cell" id="cell-l3"><span class="char-span">-</span></div>
+                    <div class="luxury-panel-card">
+                        <div class="luxury-panel-header">
+                            <span class="luxury-panel-eyebrow">РЕГИОН И АНИМАЦИЯ</span>
+                        </div>
+                        <div class="gen-side-control-row">
+                            <span class="gen-side-label">Код региона / штата</span>
+                            <button type="button" class="btn-region-trigger" onclick="changeRegion()">
+                                <span>Сменить регион</span> <span>✎</span>
+                            </button>
+                        </div>
+                        <div class="control-group gen-anim-control">
+                            <label for="anim-style-select" class="gen-side-label">Режим анимации</label>
+                            <select class="control-select" id="anim-style-select">
+                                <option value="cascade">🌊 Каскад (Слоты)</option>
+                                <option value="suspense">🎯 Интрига (Саспенс)</option>
+                                <option value="converge">🔀 От краёв к центру</option>
+                                <option value="chaos">🎲 Хаос (Случайно)</option>
+                                <option value="wave">💫 Эхо-Волна</option>
+                                <option value="sync">⚡ Синхрон</option>
+                            </select>
+                        </div>
+                    </div>
+                </aside>
+
+                <!-- ЦЕНТРАЛЬНАЯ ОБЛАСТЬ: ПОДИУМ ГОСНОМЕРА И ГЛАВНЫЕ ДЕЙСТВИЯ -->
+                <section class="generator-workbench gen-center-stage" aria-label="Генератор номеров">
+                    <div class="gen-stage-header">
+                        <div class="gen-stage-title-wrap">
+                            <h1>ГЕНЕРАТОР НОМЕРОВ</h1>
+                            <p id="generator-online-wallet" class="generator-footnote" aria-live="polite">Загружаем онлайн-кошелёк…</p>
+                        </div>
+                        <div id="gen-rarity" class="rarity-label hidden">Обычный</div>
                     </div>
 
-                    <div class="plate-region" role="button" tabindex="0" aria-label="Сменить регион номера" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();changeRegion();}" onclick="changeRegion()" title="Нажмите, чтобы сменить регион">
-                        <span id="region">777</span>
-                        <div class="plate-region-text"><span id="plate-country-code">RUS</span> <div class="flag flag-rus" id="plate-country-flag"></div></div>
-                        <span class="region-edit-hint" aria-hidden="true" title="Сменить регион">✎</span>
+                    <!-- Подиум с госномером и подсветкой редкости -->
+                    <div class="plate-stage" id="gen-plate-stage">
+                        <div class="podium-spotlight" aria-hidden="true"></div>
+                        <div id="region-editor" class="region-editor hidden" role="dialog" aria-modal="true" aria-label="Смена региона госномера">
+                            <div class="region-editor-header">
+                                <label for="region-edit-input" id="region-editor-label">Код региона РФ (2–3 цифры)</label>
+                                <button type="button" class="region-btn-close" onclick="cancelRegionEdit()" aria-label="Закрыть">✕</button>
+                            </div>
+                            <div class="region-input-row">
+                                <input id="region-edit-input" type="text" maxlength="3" placeholder="777" onkeydown="if(event.key==='Enter')saveRegionEdit();if(event.key==='Escape')cancelRegionEdit()">
+                                <button type="button" class="btn-save-region" onclick="saveRegionEdit()">Применить</button>
+                            </div>
+                            <div class="region-chips-label">Популярные регионы:</div>
+                            <div class="region-quick-chips" id="region-quick-chips">
+                                <button type="button" class="region-chip" onclick="saveRegionEdit('777')">777</button>
+                                <button type="button" class="region-chip" onclick="saveRegionEdit('77')">77</button>
+                                <button type="button" class="region-chip" onclick="saveRegionEdit('99')">99</button>
+                                <button type="button" class="region-chip" onclick="saveRegionEdit('78')">78</button>
+                                <button type="button" class="region-chip" onclick="saveRegionEdit('178')">178</button>
+                                <button type="button" class="region-chip" onclick="saveRegionEdit('16')">16</button>
+                                <button type="button" class="region-chip" onclick="saveRegionEdit('95')">95</button>
+                                <button type="button" class="region-chip" onclick="saveRegionEdit('23')">23</button>
+                                <button type="button" class="region-chip" onclick="saveRegionEdit('50')">50</button>
+                                <button type="button" class="region-chip" onclick="saveRegionEdit('05')">05</button>
+                            </div>
+                        </div>
+
+                        <div class="plate-container glow-none" id="plate-box" data-country="RUS" data-reg="777" data-state-title="California" data-state-slogan="dmv.ca.gov" data-emirate-en="DUBAI" data-emirate-ar="دبي">
+                            <div class="plate-bolt bolt-left"></div>
+                            <div class="plate-bolt bolt-right"></div>
+
+                            <div class="plate-kz-strip" aria-hidden="true">
+                                <div class="flag flag-kz"></div>
+                                <span>KZ</span>
+                            </div>
+
+                            <div class="plate-cells-main" id="plate-cells-box">
+                                <div class="plate-cell letter-cell" id="cell-l1"><span class="char-span">-</span></div>
+                                <div class="plate-cell num-cell" id="cell-n1"><span class="char-span">-</span></div>
+                                <div class="plate-cell num-cell" id="cell-n2"><span class="char-span">-</span></div>
+                                <div class="plate-cell num-cell" id="cell-n3"><span class="char-span">-</span></div>
+                                <div class="plate-cell num-cell uae-extra-digit uae-cell-hidden" id="cell-n4"><span class="char-span">-</span></div>
+                                <div class="plate-cell num-cell uae-extra-digit uae-cell-hidden" id="cell-n5"><span class="char-span">-</span></div>
+                                <div class="plate-cell letter-cell" id="cell-l2"><span class="char-span">-</span></div>
+                                <div class="plate-cell letter-cell" id="cell-l3"><span class="char-span">-</span></div>
+                            </div>
+
+                            <div class="plate-region" role="button" tabindex="0" aria-label="Сменить регион номера" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();changeRegion();}" onclick="changeRegion()" title="Нажмите, чтобы сменить регион">
+                                <span id="region">777</span>
+                                <div class="plate-region-text"><span id="plate-country-code">RUS</span> <div class="flag flag-rus" id="plate-country-flag"></div></div>
+                                <span class="region-edit-hint" aria-hidden="true" title="Сменить регион">✎</span>
+                            </div>
+                        </div>
+
+                        <div class="podium-base-ring" id="gen-podium-base" aria-hidden="true"></div>
                     </div>
-                </div>
-            </div>
 
-            <div class="current-price-badge" id="current-price-display">
-                Сделай первый спин — узнай стоимость
-            </div>
+                    <!-- Оценочная стоимость и индикатор удачи -->
+                    <div class="gen-price-and-pity-row">
+                        <div class="current-price-badge" id="current-price-display">
+                            Сделай первый спин — узнай стоимость
+                        </div>
+                        <div class="pity-status-bar" id="pity-status-bar" aria-live="polite">
+                            <div class="pity-header">
+                                <span class="pity-title">🍀 Гарант удачи: <strong id="pity-count">0</strong> <span id="pity-boost-badge" class="pity-boost">+0%</span></span>
+                                <span class="pity-label" id="pity-next-milestone">До Редкого: 25</span>
+                            </div>
+                            <div class="pity-progress-track">
+                                <div class="pity-progress-fill" id="pity-progress-fill" style="width: 0%;"></div>
+                            </div>
+                        </div>
+                    </div>
 
-            <div class="pity-status-bar" id="pity-status-bar" aria-live="polite">
-                <div class="pity-header">
-                    <span class="pity-title">🍀 Удача: <strong id="pity-count">0</strong> <span id="pity-boost-badge" class="pity-boost">+0%</span></span>
-                    <span class="pity-label" id="pity-next-milestone">До Редкого: 25</span>
-                </div>
-                <div class="pity-progress-track">
-                    <div class="pity-progress-fill" id="pity-progress-fill" style="width: 0%;"></div>
-                </div>
-            </div>
+                    <!-- Панель главной кнопки генерации, частичных спинов и турбо/авто -->
+                    <div class="gen-controls-dock">
+                        <div class="btn-grid-spins">
+                            <button class="btn btn-spin-full" id="btn-spin-both" onclick="spinBoth()">
+                                <span class="spin-cta-main">🎲 СГЕНЕРИРОВАТЬ НОМЕР</span>
+                                <small id="spin-cost-both">900 ₽</small>
+                            </button>
+                            <button class="btn btn-numbers" id="btn-spin-num" onclick="spinNumbers()">
+                                <span>Только цифры</span>
+                                <small id="spin-cost-num">500 ₽</small>
+                            </button>
+                            <button class="btn btn-letters" id="btn-spin-let" onclick="spinLetters()">
+                                <span>Только буквы</span>
+                                <small id="spin-cost-let">500 ₽</small>
+                            </button>
+                        </div>
 
-            <!-- Кнопки управления генератором -->
-            <p id="generator-online-wallet" class="generator-footnote" aria-live="polite">Загружаем онлайн-кошелёк…</p>
-            <div class="btn-grid-spins">
-                <button class="btn btn-spin-full" id="btn-spin-both" onclick="spinBoth()">
-                    <span>Полный спин ↗</span><small id="spin-cost-both">900 ₽</small>
-                </button>
-                <button class="btn btn-numbers" id="btn-spin-num" onclick="spinNumbers()">
-                    <span>Цифры</span><small id="spin-cost-num">500 ₽</small>
-                </button>
-                <button class="btn btn-letters" id="btn-spin-let" onclick="spinLetters()">
-                    <span>Буквы</span><small id="spin-cost-let">500 ₽</small>
-                </button>
-            </div>
+                        <div class="spin-control-bar gen-quick-toggles">
+                            <label class="toggle-pill" title="Мгновенный темп прокрутки">
+                                <input type="checkbox" id="turbo-toggle"> ⚡ Турбо-режим
+                            </label>
+                            <div class="control-group" style="display: inline-flex; align-items: center; gap: 6px;">
+                                <button class="btn-auto-toggle" id="btn-auto-spin" onclick="toggleAutoSpin()">🔄 Автогенерация: ВЫКЛ</button>
+                                <select class="control-select" id="auto-spin-count" style="padding: 4px 8px; font-size: 11px; height: 32px; width: auto;" title="Количество авто-спинов">
+                                    <option value="10">10 спинов</option>
+                                    <option value="25">25 спинов</option>
+                                    <option value="50">50 спинов</option>
+                                    <option value="100">100 спинов</option>
+                                    <option value="Infinity" selected>∞ До редкого</option>
+                                </select>
+                            </div>
+                        </div>
 
-            <div class="generator-action-row">
-                <button class="btn btn-save" id="btn-save" onclick="savePlate()" disabled>
-                    ＋ В коллекцию
-                </button>
-                <button class="btn btn-sell-direct" id="btn-sell-direct" onclick="sellCurrentPlate()" disabled>
-                    <span>💰 Продать</span>
-                </button>
+                        <div class="generator-action-row">
+                            <button class="btn btn-save" id="btn-save" onclick="savePlate()" disabled>
+                                ＋ Сохранить в коллекцию
+                            </button>
+                            <button class="btn btn-sell-direct" id="btn-sell-direct" onclick="sellCurrentPlate()" disabled>
+                                <span>💰 Продать сразу</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Шкала категорий редкости и вероятностей -->
+                    <div class="gen-rarity-odds-strip" aria-label="Категории редкости">
+                        <div class="odds-chip odds-common"><span class="odds-dot"></span>Обычный <b>70%</b></div>
+                        <div class="odds-chip odds-rare"><span class="odds-dot"></span>Редкий <b>20%</b></div>
+                        <div class="odds-chip odds-epic"><span class="odds-dot"></span>Эпический <b>7.5%</b></div>
+                        <div class="odds-chip odds-legend"><span class="odds-dot"></span>Легендарный <b>2%</b></div>
+                        <div class="odds-chip odds-mythic"><span class="odds-dot"></span>Блатной / Уникальный <b>0.5%</b></div>
+                    </div>
+                </section>
+
+                <!-- ПРАВАЯ ПАНЕЛЬ: СТАТИСТИКА И ПОСЛЕДНИЕ РЕДКИЕ ВЫПАДЕНИЯ -->
+                <aside class="generator-aside gen-right-panel" aria-label="Игровая статистика">
+                    <div class="luxury-panel-card collection-summary">
+                        <div class="luxury-panel-header">
+                            <span class="luxury-panel-eyebrow">СТАТИСТИКА ИГРОКА</span>
+                        </div>
+                        <div class="gen-stats-list">
+                            <div class="summary-stat" onclick="navigateToTab('inventory')" style="cursor:pointer;">
+                                <span class="stat-label">📋 В коллекции</span>
+                                <div class="stat-val-wrap"><strong id="collection-stat">0</strong><span>номеров</span></div>
+                            </div>
+                            <div class="summary-stat" onclick="navigateToTab('garage')" style="cursor:pointer;">
+                                <span class="stat-label">🏎️ В гараже</span>
+                                <div class="stat-val-wrap"><strong id="garage-stat">1</strong><span>машин</span></div>
+                            </div>
+                            <div class="summary-stat" onclick="openMarketSection()" style="cursor:pointer;">
+                                <span class="stat-label">🏪 Активные лоты</span>
+                                <div class="stat-val-wrap"><strong id="market-active-stat">0</strong><span>на рынке</span></div>
+                            </div>
+                        </div>
+
+                        <div class="gen-quick-links">
+                            <button class="text-action" onclick="openCollectorBook()">📘 Книга коллекционера ↗</button>
+                            <button class="text-action" onclick="openVipOrders()">📋 Спецзаказы VIP ↗</button>
+                            <button class="text-action" onclick="openVipAuction()">🔨 VIP-Аукцион ↗</button>
+                            <button type="button" class="btn btn-close" id="btn-aside-sell-all-plates" onclick="sellAllPlates('all')" style="margin-top:6px; padding:7px 10px; font-size:11px; font-weight:700; width:100%;">💸 Продать все свободные</button>
+                        </div>
+                    </div>
+
+                    <div class="luxury-panel-card gen-recent-drops-card">
+                        <div class="luxury-panel-header">
+                            <span class="luxury-panel-eyebrow">ПОСЛЕДНИЕ РЕДКИЕ ВЫПАДЕНИЯ</span>
+                        </div>
+                        <div class="gen-recent-drops-list" id="generator-recent-drops">
+                            <div class="recent-drop-empty">Крутите генератор или открывайте кейсы — редкие находки появятся здесь.</div>
+                        </div>
+                    </div>
+
+                    <div class="luxury-panel-card race-invite">
+                        <span class="eyebrow">ГОНОЧНЫЙ КЛУБ</span>
+                        <h2>Трасса М-11 и 3D-Кольцо</h2>
+                        <p>Испытайте автопарк и бонусы блатных серий на скорости.</p>
+                        <button class="btn btn-green" onclick="navigateToTab('racegame')">🏁 В гонки ↗</button>
+                    </div>
+                </aside>
             </div>
-            <p class="generator-footnote">При входе в аккаунт спины оплачиваются из онлайн-кошелька, а сохранённые номера сразу доступны для рынка. Старые локальные номера на сервер не переносятся.</p>
-            </section>
-            <aside class="generator-aside">
-                <div class="collection-summary"><span class="eyebrow">КОЛЛЕКЦИЯ</span>
-                    <div class="summary-stat"><strong id="collection-stat">0</strong><span>номеров</span></div>
-                    <div class="summary-stat"><strong id="garage-stat">1</strong><span>в гараже</span></div>
-                    <button type="button" class="btn btn-close" id="btn-aside-sell-all-plates" onclick="sellAllPlates('all')" style="margin-top:6px; margin-bottom:4px; padding:7px 10px; font-size:11.5px; font-weight:800; width:100%; background:linear-gradient(135deg,#dc2626,#991b1b); color:#fff; border:1px solid rgba(252,165,165,0.4);">💸 Продать все номера</button>
-                    <button class="text-action" onclick="navigateToTab('garage')">В гараж ↗</button>
-                    <button class="text-action" onclick="openCollectorBook()" style="margin-top:4px;">📘 Книга коллекционера ↗</button>
-                    <button class="text-action" onclick="openVipOrders()" style="margin-top:4px;">📋 Спецзаказы VIP ↗</button>
-                    <button class="text-action" onclick="openVipAuction()" style="margin-top:4px;">🔨 VIP-Аукцион ↗</button>
-                </div>
-                <div class="race-invite">
-                    <span class="eyebrow">ГОНКА</span>
-                    <h2>Трасса М-11</h2>
-                    <p>Заезды на скорость, трафик и нитро.</p>
-                    <button class="btn btn-green" onclick="navigateToTab('racegame')">На трассу ↗</button>
-                </div>
-            </aside></div>
         </div>
 
-        <!-- 2. ВКЛАДКА: ИНВЕНТАРЬ И ДОСТИЖЕНИЯ -->
+        <!-- 2. ВКЛАДКА: КОЛЛЕКЦИЯ НОМЕРОВ И ДОСТИЖЕНИЯ -->
         <div id="inventory" class="tab-content hidden">
             <div class="section-box">
                 <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-                    <div class="section-title">
-                        <span>🎒</span> Моя коллекция
+                    <div>
+                        <div class="section-title"><span>🎒</span> Коллекция номеров</div>
+                        <div style="font-size: 12.5px; color: var(--text-muted); margin-top: 2px;" id="col-plates-summary">Всего в коллекции: 0 шт. • На сумму: 0 ₽</div>
                     </div>
-                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                        <button type="button" class="btn btn-close" id="btn-header-sell-all-plates" style="font-size: 12px; padding: 8px 14px; width: auto; margin: 0; font-weight: 800; background: linear-gradient(135deg, #dc2626, #991b1b); border: 1px solid rgba(251, 191, 36, 0.45); color: #fff;" onclick="sellAllPlates('all')">💸 Продать все номера</button>
+                    <div class="market-type-nav" style="margin: 0; flex-wrap: wrap;">
+                        <button class="market-type-btn active" id="btn-col-plates" onclick="switchCollectionTab('plates')">🎒 Все номера</button>
+                        <button class="market-type-btn" id="btn-col-orders" onclick="switchCollectionTab('orders')">📋 Спецзаказы VIP <span id="vip-orders-badge" style="background:linear-gradient(135deg,#10b981,#059669);color:#fff;font-size:10px;padding:1px 6px;border-radius:999px;margin-left:4px;display:none;">0</span></button>
+                        <button class="market-type-btn" id="btn-col-auction" onclick="switchCollectionTab('auction')">🔨 VIP-Аукцион</button>
+                        <button class="market-type-btn" id="btn-col-album" onclick="switchCollectionTab('album')">📘 Книга коллекционера <span id="collector-book-badge" style="background:linear-gradient(135deg,#f59e0b,#ea580c);color:#fff;font-size:10px;padding:1px 6px;border-radius:999px;margin-left:4px;display:none;">!</span></button>
+                        <button class="market-type-btn" id="btn-col-achieve" onclick="switchCollectionTab('achieve')">🏆 Достижения</button>
                     </div>
-                </div>
-
-                <div class="market-type-nav" style="margin-bottom: 14px; flex-wrap: wrap;">
-                    <button class="market-type-btn active" id="btn-col-plates" onclick="switchCollectionTab('plates')">🎒 Номера</button>
-                    <button class="market-type-btn" id="btn-col-orders" onclick="switchCollectionTab('orders')">📋 Спецзаказы VIP <span id="vip-orders-badge" style="background:linear-gradient(135deg,#10b981,#059669);color:#fff;font-size:10px;padding:1px 6px;border-radius:999px;margin-left:4px;display:none;">0</span></button>
-                    <button class="market-type-btn" id="btn-col-auction" onclick="switchCollectionTab('auction')">🔨 VIP-Аукцион</button>
-                    <button class="market-type-btn" id="btn-col-album" onclick="switchCollectionTab('album')">📘 Книга коллекционера <span id="collector-book-badge" style="background:linear-gradient(135deg,#f59e0b,#ea580c);color:#fff;font-size:10px;padding:1px 6px;border-radius:999px;margin-left:4px;display:none;">!</span></button>
-                    <button class="market-type-btn" id="btn-col-achieve" onclick="switchCollectionTab('achieve')">🏆 Достижения (Ачивки)</button>
                 </div>
 
                 <div id="col-subtab-plates">
-                    <div style="display: flex; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; align-items: center; justify-content: space-between; background: rgba(15, 23, 42, 0.65); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 10px 12px;" id="col-actions-bar">
-                        <div style="font-size: 12px; color: var(--text-muted); font-weight: 700;" id="col-plates-summary">Всего в коллекции: 0 шт. • На сумму: 0 ₽</div>
-                        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                            <button type="button" class="btn btn-dark" id="btn-sell-all-common" style="font-size: 12px; padding: 8px 14px; width: auto; font-weight: 700;" onclick="sellAllPlates('common')">💰 Продать обычные</button>
-                            <button type="button" class="btn btn-close" id="btn-sell-all-plates" style="font-size: 12px; padding: 8px 14px; width: auto; margin: 0; font-weight: 800; background: linear-gradient(135deg, #ef4444, #b91c1c); color: #fff; border: 1px solid rgba(252, 165, 165, 0.4);" onclick="sellAllPlates('all')">💸 Продать все номера</button>
+                    <!-- Панель поиска, фильтрации и сортировки -->
+                    <div class="col-filter-toolbar" id="col-actions-bar">
+                        <div class="col-search-wrap">
+                            <input type="text" id="inv-search-input" class="col-search-input" placeholder="🔍 Поиск по номеру или региону (А777АА, DXB, 77)..." oninput="setCollectionFilterState({ query: this.value })">
+                        </div>
+                        <div class="col-filters-group">
+                            <select id="inv-filter-country" class="control-select col-filter-select" onchange="setCollectionFilterState({ country: this.value })" aria-label="Фильтр по стране">
+                                <option value="all">🌍 Все страны</option>
+                                <option value="RUS">🇷🇺 Россия (RUS)</option>
+                                <option value="KZ">🇰🇿 Казахстан (KZ)</option>
+                                <option value="USA">🇺🇸 США (USA)</option>
+                                <option value="UAE">🇦🇪 ОАЭ (Дубай)</option>
+                                <option value="JPN">🇯🇵 Япония (JPN)</option>
+                                <option value="SPEC">☭ Спецсерии и Архив</option>
+                            </select>
+                            <select id="inv-filter-rarity" class="control-select col-filter-select" onchange="setCollectionFilterState({ rarity: this.value })" aria-label="Фильтр по редкости">
+                                <option value="all">✨ Все редкости</option>
+                                <option value="legendary">🟡 Легендарные и Блатные</option>
+                                <option value="epic">🟣 Эпические и Супер редкие</option>
+                                <option value="rare">🔵 Редкие и Необычные</option>
+                                <option value="common">⚪ Обычные</option>
+                            </select>
+                            <select id="inv-sort-select" class="control-select col-filter-select" onchange="setCollectionFilterState({ sort: this.value })" aria-label="Сортировка номеров">
+                                <option value="price_desc">💎 Сначала дорогие</option>
+                                <option value="rarity_desc">👑 По редкости</option>
+                                <option value="recent_desc">🕒 По времени получения</option>
+                                <option value="price_asc">📉 Сначала доступные</option>
+                            </select>
                         </div>
                     </div>
-                    <div class="inventory-grid" id="inventory-list"></div>
+
+                    <div class="col-workspace-grid">
+                        <!-- Боковая панель быстрых категорий коллекции -->
+                        <aside class="col-sidebar" aria-label="Категории коллекции">
+                            <div class="col-sidebar-group">
+                                <div class="col-sidebar-title">КАТЕГОРИИ</div>
+                                <button type="button" class="col-side-btn active" id="col-cat-all" onclick="setCollectionQuickCategory('all')">
+                                    <span>Все номера</span><span class="col-side-count" id="col-count-all">0</span>
+                                </button>
+                                <button type="button" class="col-side-btn rarity-cat-legend" id="col-cat-legendary" onclick="setCollectionQuickCategory('legendary')">
+                                    <span>🟡 Легендарные</span><span class="col-side-count" id="col-count-legendary">0</span>
+                                </button>
+                                <button type="button" class="col-side-btn rarity-cat-epic" id="col-cat-epic" onclick="setCollectionQuickCategory('epic')">
+                                    <span>🟣 Эпические</span><span class="col-side-count" id="col-count-epic">0</span>
+                                </button>
+                                <button type="button" class="col-side-btn rarity-cat-rare" id="col-cat-rare" onclick="setCollectionQuickCategory('rare')">
+                                    <span>🔵 Редкие</span><span class="col-side-count" id="col-count-rare">0</span>
+                                </button>
+                                <button type="button" class="col-side-btn rarity-cat-common" id="col-cat-common" onclick="setCollectionQuickCategory('common')">
+                                    <span>⚪ Обычные</span><span class="col-side-count" id="col-count-common">0</span>
+                                </button>
+                            </div>
+
+                            <div class="col-sidebar-group">
+                                <div class="col-sidebar-title">СТАТУС</div>
+                                <button type="button" class="col-side-btn" id="col-cat-fav" onclick="setCollectionQuickCategory('fav')">
+                                    <span>⭐ Избранные</span><span class="col-side-count" id="col-count-fav">0</span>
+                                </button>
+                                <button type="button" class="col-side-btn" id="col-cat-equipped" onclick="setCollectionQuickCategory('equipped')">
+                                    <span>🚗 В гараже</span><span class="col-side-count" id="col-count-equipped">0</span>
+                                </button>
+                                <button type="button" class="col-side-btn" id="col-cat-market" onclick="setCollectionQuickCategory('market')">
+                                    <span>🏪 На рынке</span><span class="col-side-count" id="col-count-market">0</span>
+                                </button>
+                                <button type="button" class="col-side-btn" id="col-cat-duplicates" onclick="setCollectionQuickCategory('duplicates')">
+                                    <span>♊ Дубликаты</span><span class="col-side-count" id="col-count-duplicates">0</span>
+                                </button>
+                            </div>
+
+                            <div class="col-sidebar-actions">
+                                <button type="button" class="btn btn-dark" id="btn-sell-all-common" style="font-size: 11.5px; padding: 8px 10px; width: 100%; font-weight: 700;" onclick="sellAllPlates('common')">💰 Продать обычные</button>
+                                <button type="button" class="btn btn-close" id="btn-sell-all-plates" style="font-size: 11.5px; padding: 8px 10px; width: 100%; margin: 6px 0 0 0; font-weight: 800;" onclick="sellAllPlates('all')">💸 Продать все свободные</button>
+                                <button type="button" class="hidden" id="btn-header-sell-all-plates" onclick="sellAllPlates('all')">Продать все</button>
+                            </div>
+                        </aside>
+
+                        <!-- Сетка карточек номеров -->
+                        <div class="col-main-grid-wrap">
+                            <div class="inventory-grid" id="inventory-list"></div>
+                        </div>
+                    </div>
                 </div>
 
                 <div id="col-subtab-orders" class="hidden">
@@ -517,111 +710,155 @@
             </div>
         </div>
 
-        <!-- 3. ВКЛАДКА: ГАРАЖ -->
+        <!-- 3. ВКЛАДКА: ГАРАЖ (3-КОЛОНОЧНЫЙ ПОДИУМ + АВТОСАЛОН) -->
         <div id="garage" class="tab-content hidden">
             <div class="section-box">
-                <div class="section-header">
-                    <div class="section-title">🏎️ Мой автопарк</div>
+                <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                    <div class="section-title">🏎️ Гараж и 3D-Шоурум</div>
+                    <div class="garage-quick-nav">
+                        <button type="button" class="market-type-btn active" onclick="document.getElementById('garage-3d-podium-card')?.scrollIntoView({behavior:'smooth'})">🏎️ 3D Подиум</button>
+                        <button type="button" class="market-type-btn" onclick="document.getElementById('my-cars')?.scrollIntoView({behavior:'smooth'})">📋 Все мои авто</button>
+                        <button type="button" class="market-type-btn" onclick="document.getElementById('garage-shop-section')?.scrollIntoView({behavior:'smooth'})">🏪 Автосалон (49)</button>
+                    </div>
                 </div>
-                <!-- 3D Подиум в гараже: интерактивный 3D-осмотр выбранного авто -->
-                <div class="garage-3d-podium-card" id="garage-3d-podium-card">
-                    <div class="garage-3d-podium-header">
-                        <div class="garage-3d-title-group">
-                            <span class="garage-3d-badge">3D ГАРАЖ</span>
-                            <b class="garage-3d-car-name" id="garage-3d-car-title">🏎️ Выберите автомобиль</b>
-                            <span class="car-category-pill" id="garage-3d-car-category" style="margin-left: 6px;">Спорт</span>
-                            <div id="garage-3d-car-plate-badge" style="cursor:pointer; display:inline-flex; align-items:center; margin-left:6px;" onclick="toggleGaragePlateView()" title="Нажмите, чтобы рассмотреть 3D-номер на бампере"></div>
+
+                <!-- 3-КОЛОНОЧНЫЙ ГАРАЖНЫЙ КОМПЛЕКС: СПИСОК АВТО СЛЕВА | 3D-ПОДИУМ В ЦЕНТРЕ | ИНСПЕКТОР И НОМЕР СПРАВА -->
+                <div class="garage-luxury-layout">
+                    <!-- Левая колонка: Список автомобилей игрока -->
+                    <aside class="garage-left-sidebar" aria-label="Мои автомобили">
+                        <div class="luxury-panel-header">
+                            <span class="luxury-panel-eyebrow">МОИ АВТОМОБИЛИ</span>
                         </div>
-                        <div class="garage-3d-header-actions">
-                            <button type="button" class="btn btn-secondary" id="btn-garage-podium-toggle" onclick="toggleGaragePodiumCollapse()" title="Свернуть / развернуть 3D подиум" style="padding: 6px 10px; font-size: 11px;">
-                                <span id="garage-podium-toggle-icon">▲</span> <span id="garage-podium-toggle-label">Свернуть 3D</span>
-                            </button>
-                            <button type="button" class="btn btn-blue" id="btn-garage-podium-styling" onclick="openStylingForActiveGarageCar()" title="Тюнинг и стайлинг этого авто">🎨 Тюнинг</button>
-                            <button type="button" class="btn btn-green" id="btn-garage-podium-nfs-race" onclick="startNfsRaceWithActiveGarageCar()" title="Круговая 3D гонка NFS Most Wanted с соперниками" style="background: linear-gradient(135deg, #0284c7, #10b981); color: #fff; font-weight: 800;">🏆 В 3D Кольцо NFS</button>
-                            <button type="button" class="btn btn-gold" id="btn-garage-podium-race" onclick="start3DRaceWithActiveGarageCar()" title="Быстрый старт на 3D шоссе">⚡ В 3D Шоссе</button>
+                        <div class="garage-car-sidebar-list" id="garage-car-sidebar-list"></div>
+                        <button type="button" class="btn btn-red-outline garage-buy-more-btn" onclick="document.getElementById('garage-shop-section')?.scrollIntoView({behavior:'smooth'})">
+                            ＋ Купить авто в салоне
+                        </button>
+                    </aside>
+
+                    <!-- Центральная колонка: Интерактивный 3D-подиум -->
+                    <div class="garage-3d-podium-card" id="garage-3d-podium-card">
+                        <div class="garage-3d-podium-header">
+                            <div class="garage-3d-title-group">
+                                <span class="garage-3d-badge">3D ПОДИУМ</span>
+                                <b class="garage-3d-car-name" id="garage-3d-car-title">🏎️ Выберите автомобиль</b>
+                                <span class="car-category-pill" id="garage-3d-car-category" style="margin-left: 6px;">Спорт</span>
+                                <div id="garage-3d-car-plate-badge" style="cursor:pointer; display:inline-flex; align-items:center; margin-left:6px;" onclick="toggleGaragePlateView()" title="Нажмите, чтобы рассмотреть 3D-номер на бампере"></div>
+                            </div>
+                            <div class="garage-3d-header-actions">
+                                <button type="button" class="btn btn-secondary" id="btn-garage-podium-toggle" onclick="toggleGaragePodiumCollapse()" title="Свернуть / развернуть 3D подиум" style="padding: 6px 10px; font-size: 11px;">
+                                    <span id="garage-podium-toggle-icon">▲</span> <span id="garage-podium-toggle-label">Свернуть 3D</span>
+                                </button>
+                                <button type="button" class="btn btn-blue" id="btn-garage-podium-styling" onclick="openStylingForActiveGarageCar()" title="Тюнинг и стайлинг этого авто">🎨 Стайлинг</button>
+                                <button type="button" class="btn btn-green" id="btn-garage-podium-nfs-race" onclick="startNfsRaceWithActiveGarageCar()" title="Круговая 3D гонка с соперниками" style="background: linear-gradient(135deg, #0284c7, #10b981); color: #fff; font-weight: 800;">🏆 3D Кольцо</button>
+                                <button type="button" class="btn btn-gold" id="btn-garage-podium-race" onclick="start3DRaceWithActiveGarageCar()" title="Быстрый старт на 3D шоссе">⚡ В гонку</button>
+                            </div>
+                        </div>
+
+                        <div class="styling-view-switch garage-view-switch" id="garage-view-switch">
+                            <button type="button" class="styling-view-btn active" id="btn-gview-3d" onclick="setGarageViewMode('3d')" title="Изометрический ракурс 3D (3/4)">🌟 3/4</button>
+                            <button type="button" class="styling-view-btn" id="btn-gview-front" onclick="setGarageViewMode('front')" title="Вид спереди">🏎️ Спереди</button>
+                            <button type="button" class="styling-view-btn" id="btn-gview-side" onclick="setGarageViewMode('side')" title="Вид сбоку (профиль)">🚘 Сбоку</button>
+                            <button type="button" class="styling-view-btn" id="btn-gview-rear" onclick="setGarageViewMode('rear')" title="Вид сзади">🏁 Сзади</button>
+                            <button type="button" class="styling-view-btn" id="btn-gview-top" onclick="setGarageViewMode('top')" title="Вид сверху">🔝 Сверху</button>
+                            <button type="button" class="styling-view-btn" id="btn-gview-turn-left" onclick="rotateGarageShowroom(-0.45)" title="Повернуть влево на 45°">◀ Влево</button>
+                            <button type="button" class="styling-view-btn" id="btn-gview-turn-right" onclick="rotateGarageShowroom(0.45)" title="Повернуть вправо на 45°">Вправо ▶</button>
+                            <button type="button" class="styling-view-btn" id="btn-gview-reset" onclick="resetGarageCamera()" title="Сбросить ракурс камеры">🔄 Сброс</button>
+                            <button type="button" class="styling-view-btn" id="btn-gview-autorotate" onclick="toggleGarageAutoRotate()" title="Включить / отключить автовращение">🔁 Вращение</button>
+                        </div>
+
+                        <div id="garage-preview-stage" class="garage-preview-stage">
+                            <div id="garage-preview-3d-wrap" class="garage-preview-3d-wrap"></div>
+                            <div id="garage-3d-loader" class="showroom-loading-overlay" style="display: none;">
+                                <div class="showroom-spinner"></div>
+                                <div class="showroom-loading-text" id="garage-3d-loader-text">⏳ Загрузка 3D модели...</div>
+                            </div>
+
+                            <!-- Интерактивный тулбар 3D осмотра в гараже -->
+                            <div class="showroom-interact-toolbar" id="garage-showroom-toolbar" style="display: flex; flex-wrap: wrap;">
+                                <button type="button" class="showroom-interact-btn" id="btn-gshow-doors" onclick="toggleGarageDoors()" title="Распахнуть двери">🚪 Двери</button>
+                                <button type="button" class="showroom-interact-btn" id="btn-gshow-hood" onclick="toggleGarageHood()" title="Открыть капот (двигатель)">⚙️ Капот</button>
+                                <button type="button" class="showroom-interact-btn" id="btn-gshow-trunk" onclick="toggleGarageTrunk()" title="Открыть багажник">🔊 Багажник</button>
+                                <button type="button" class="showroom-interact-btn" id="btn-gshow-lights" onclick="toggleGarageHeadlights()" title="Включить фары">💡 Фары</button>
+                                <button type="button" class="showroom-interact-btn" id="btn-gshow-horn" onclick="triggerGarageHorn()" title="Подать звуковой сигнал / СГУ">📢 Сигнал</button>
+                                <button type="button" class="showroom-interact-btn showroom-tool-btn" id="garage-view-plate" onclick="toggleGaragePlateView()" title="Крупный план 3D-номера на бампере">🏷️ 3D Номер</button>
+                                <button type="button" class="showroom-interact-btn showroom-tool-btn" id="btn-gshow-fso" onclick="toggleGarageFso()" title="Стробоскопы ФСО, мигалка и крякалка СГУ">🚨 ФСО / СГУ</button>
+                                <button type="button" class="showroom-interact-btn showroom-tool-btn" id="btn-gshow-pneumo" onclick="cycleGaragePneumo()" title="Пневмоподвеска (Штатная / Спорт / БПАН)">💨 Пневма: Штатная</button>
+                                <button type="button" class="showroom-interact-btn showroom-tool-btn" id="btn-gshow-env" onclick="cycleGarageEnvironment()" title="Атмосфера 3D-шоурума (Студия / Ночь / Закат / Ливень)">🌦️ Подиум: Студия</button>
+                                <button type="button" class="showroom-interact-btn showroom-tool-btn" id="btn-gshow-photo" onclick="captureGaragePhotoPoster()" title="Создать коллекционный 3D-постер автомобиля с госномером">📸 Постер</button>
+                            </div>
+
+                            <div id="garage-3d-hint" class="garage-3d-hint">
+                                ↔️ Вращайте авто мышью или свайпом · Выбирайте ракурс камеры и открывайте двери/капот
+                            </div>
+                        </div>
+
+                        <!-- Нижний док быстрых действий с выбранным автомобилем -->
+                        <div class="garage-podium-bottom-dock">
+                            <button type="button" class="podium-dock-btn" onclick="openActiveCarQuickAction('tuning')">🛠️ Тюнинг Stage</button>
+                            <button type="button" class="podium-dock-btn" onclick="openActiveCarQuickAction('plate')">🏷️ Установить номер</button>
+                            <button type="button" class="podium-dock-btn" onclick="openStylingForActiveGarageCar()">🎨 Цвет и Винилы</button>
+                            <button type="button" class="podium-dock-btn podium-dock-btn-race" onclick="start3DRaceWithActiveGarageCar()">🏁 Выехать в гонку</button>
+                        </div>
+
+                        <!-- Коллекция 3D спорткаров: быстрый выбор и покупка на подиум -->
+                        <div id="garage-nfsmw-legends-bar" style="margin-top: 10px; padding: 10px 12px; background: rgba(18, 24, 33, 0.9); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+                            <div style="font-size: 11.5px; font-weight: 800; color: var(--text-muted);">
+                                🏆 Быстрый тест-драйв и покупка 3D-спорткаров:
+                            </div>
+                            <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center;">
+                                <button type="button" class="styling-chip" onclick="claimAndSelectNfsMwCar('m3gtr', 'garage')">
+                                    🏎️ BMW M3 E46 GTR · 19.5 млн ₽
+                                </button>
+                                <button type="button" class="styling-chip" onclick="claimAndSelectNfsMwCar('corvette_c6r', 'garage')">
+                                    🏁 Corvette C6.R · 14.8 млн ₽
+                                </button>
+                                <button type="button" class="styling-chip" onclick="claimAndSelectNfsMwCar('mustang_gt', 'garage')">
+                                    🔥 Ford Mustang GT · 8.5 млн ₽
+                                </button>
+                                <select id="garage-nfsmw-blacklist-select" onchange="if(this.value) claimAndSelectNfsMwCar(this.value, 'garage')" style="background: #121821; color: #F5F6F8; border: 1px solid rgba(255,255,255,0.14); border-radius: 8px; padding: 5px 8px; font-size: 11px; font-weight: 700; cursor: pointer;">
+                                    <option value="">📋 Все спорткары 3D-коллекции (с ценниками)...</option>
+                                    <option value="golf_gti">Volkswagen Golf GTI — 1 650 000 ₽</option>
+                                    <option value="lexus_is300">Lexus IS300 — 2 100 000 ₽</option>
+                                    <option value="eclipse_gt">Mitsubishi Eclipse GT — 2 450 000 ₽</option>
+                                    <option value="mazda_rx8">Mazda RX-8 — 2 950 000 ₽</option>
+                                    <option value="elantra_n">Hyundai Elantra N — 3 400 000 ₽</option>
+                                    <option value="mustang_coupe">Ford Mustang GT Coupe — 3 800 000 ₽</option>
+                                    <option value="lancer_evo8">Mitsubishi Lancer Evo VIII — 4 200 000 ₽</option>
+                                    <option value="clk500">Mercedes-Benz CLK 500 — 4 600 000 ₽</option>
+                                    <option value="supra_mk4">Toyota Supra MK4 — 5 200 000 ₽</option>
+                                    <option value="cayman_s">Porsche Cayman S — 5 800 000 ₽</option>
+                                    <option value="mustang_gt">Ford Mustang GT — 8 500 000 ₽</option>
+                                    <option value="corvette_c6">Chevrolet Corvette C6 — 9 400 000 ₽</option>
+                                    <option value="viper_srt10">Dodge Viper SRT10 — 11 200 000 ₽</option>
+                                    <option value="m3_g80">BMW M3 G80 Competition — 11 800 000 ₽</option>
+                                    <option value="db9">Aston Martin DB9 — 12 800 000 ₽</option>
+                                    <option value="x5m">BMW X5M Competition — 13 500 000 ₽</option>
+                                    <option value="gallardo">Lamborghini Gallardo — 14 500 000 ₽</option>
+                                    <option value="corvette_c6r">Chevrolet Corvette C6.R — 14 800 000 ₽</option>
+                                    <option value="rs7">Audi RS7 Sportback — 15 200 000 ₽</option>
+                                    <option value="panamera">Porsche Panamera Turbo — 16 400 000 ₽</option>
+                                    <option value="maserati">Maserati GranTurismo — 17 500 000 ₽</option>
+                                    <option value="m3gtr">BMW M3 E46 GTR — 19 500 000 ₽</option>
+                                    <option value="mclaren">Mercedes-Benz SLR McLaren — 24 500 000 ₽</option>
+                                    <option value="audi_r8">Audi Le Mans Quattro R8 — 26 500 000 ₽</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="styling-view-switch garage-view-switch" id="garage-view-switch">
-                        <button type="button" class="styling-view-btn active" id="btn-gview-3d" onclick="setGarageViewMode('3d')" title="Изометрический ракурс 3D (3/4)">🌟 3/4</button>
-                        <button type="button" class="styling-view-btn" id="btn-gview-front" onclick="setGarageViewMode('front')" title="Вид спереди">🏎️ Спереди</button>
-                        <button type="button" class="styling-view-btn" id="btn-gview-side" onclick="setGarageViewMode('side')" title="Вид сбоку (профиль)">🚘 Сбоку</button>
-                        <button type="button" class="styling-view-btn" id="btn-gview-rear" onclick="setGarageViewMode('rear')" title="Вид сзади">🏁 Сзади</button>
-                        <button type="button" class="styling-view-btn" id="btn-gview-top" onclick="setGarageViewMode('top')" title="Вид сверху">🔝 Сверху</button>
-                        <button type="button" class="styling-view-btn" id="btn-gview-turn-left" onclick="rotateGarageShowroom(-0.45)" title="Повернуть влево на 45°">◀ Влево</button>
-                        <button type="button" class="styling-view-btn" id="btn-gview-turn-right" onclick="rotateGarageShowroom(0.45)" title="Повернуть вправо на 45°">Вправо ▶</button>
-                        <button type="button" class="styling-view-btn" id="btn-gview-reset" onclick="resetGarageCamera()" title="Сбросить ракурс камеры">🔄 Сброс</button>
-                        <button type="button" class="styling-view-btn" id="btn-gview-autorotate" onclick="toggleGarageAutoRotate()" title="Включить / отключить автовращение">🔁 Вращение</button>
-                    </div>
-
-                    <div id="garage-preview-stage" class="garage-preview-stage">
-                        <div id="garage-preview-3d-wrap" class="garage-preview-3d-wrap"></div>
-                        <div id="garage-3d-loader" class="showroom-loading-overlay" style="display: none;">
-                            <div class="showroom-spinner"></div>
-                            <div class="showroom-loading-text" id="garage-3d-loader-text">⏳ Загрузка 3D модели...</div>
+                    <!-- Правая колонка: Характеристики выбранного авто, госномер и управление -->
+                    <aside class="garage-right-inspector" id="garage-active-inspector" aria-label="Характеристики выбранного автомобиля">
+                        <div class="luxury-panel-header">
+                            <span class="luxury-panel-eyebrow">ИНСПЕКТОР АВТОМОБИЛЯ</span>
                         </div>
-
-                        <!-- Интерактивный тулбар 3D осмотра в гараже (Двери, Капот, Багажник, Фары, Сигнал, ФСО, Пневма, Погода, Постер) -->
-                        <div class="showroom-interact-toolbar" id="garage-showroom-toolbar" style="display: flex; flex-wrap: wrap;">
-                            <button type="button" class="showroom-interact-btn" id="btn-gshow-doors" onclick="toggleGarageDoors()" title="Распахнуть двери">🚪 Двери</button>
-                            <button type="button" class="showroom-interact-btn" id="btn-gshow-hood" onclick="toggleGarageHood()" title="Открыть капот (двигатель)">⚙️ Капот</button>
-                            <button type="button" class="showroom-interact-btn" id="btn-gshow-trunk" onclick="toggleGarageTrunk()" title="Открыть багажник">🔊 Багажник</button>
-                            <button type="button" class="showroom-interact-btn" id="btn-gshow-lights" onclick="toggleGarageHeadlights()" title="Включить фары">💡 Фары</button>
-                            <button type="button" class="showroom-interact-btn" id="btn-gshow-horn" onclick="triggerGarageHorn()" title="Подать звуковой сигнал / СГУ">📢 Сигнал</button>
-                            <button type="button" class="showroom-interact-btn showroom-tool-btn" id="garage-view-plate" onclick="toggleGaragePlateView()" title="Крупный план 3D-номера на бампере">🏷️ 3D Номер</button>
-                            <button type="button" class="showroom-interact-btn showroom-tool-btn" id="btn-gshow-fso" onclick="toggleGarageFso()" title="Стробоскопы ФСО, мигалка и крякалка СГУ">🚨 ФСО / СГУ</button>
-                            <button type="button" class="showroom-interact-btn showroom-tool-btn" id="btn-gshow-pneumo" onclick="cycleGaragePneumo()" title="Пневмоподвеска (Штатная / Спорт / БПАН)">💨 Пневма: Штатная</button>
-                            <button type="button" class="showroom-interact-btn showroom-tool-btn" id="btn-gshow-env" onclick="cycleGarageEnvironment()" title="Атмосфера 3D-шоурума (Студия / Ночь / Закат / Ливень)">🌦️ Подиум: Студия</button>
-                            <button type="button" class="showroom-interact-btn showroom-tool-btn" id="btn-gshow-photo" onclick="captureGaragePhotoPoster()" title="Создать коллекционный 3D-постер автомобиля с госномером">📸 Постер</button>
+                        <div id="garage-inspector-body">
+                            <div style="color: var(--text-muted); font-size: 13px; padding: 16px 0;">Выберите автомобиль для просмотра характеристик и установки госномера.</div>
                         </div>
-
-                        <div id="garage-3d-hint" class="garage-3d-hint">
-                            ↔️ Свайп влево/вправо или кнопки ◀ ▶ — вращение авто · ↕️ Свайп вверх/вниз — прокрутка страницы
-                        </div>
-                    </div>
-
-                    <!-- 3D Легенды NFS Most Wanted (2005): быстрый выбор и выдача на подиум (Все 15 Боссов Чёрного Списка) -->
-                    <div id="garage-nfsmw-legends-bar" style="margin-top: 10px; padding: 10px 12px; background: linear-gradient(135deg, rgba(2, 132, 199, 0.16), rgba(15, 23, 42, 0.88)); border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 12px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
-                        <div style="font-size: 11.5px; font-weight: 800; color: #bae6fd;">
-                            🏆 Все 3D-машины Blacklist #15–#1 из NFS Most Wanted (2005):
-                        </div>
-                        <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center;">
-                            <button type="button" class="styling-chip" style="background: rgba(2, 132, 199, 0.25); border-color: rgba(56, 189, 248, 0.6); color: #fff; font-weight: 800;" onclick="claimAndSelectNfsMwCar('m3gtr', 'garage')">
-                                🏎️ BMW M3 E46 GTR (#1 MW)
-                            </button>
-                            <button type="button" class="styling-chip" style="background: rgba(239, 68, 68, 0.22); border-color: rgba(248, 113, 113, 0.55); color: #fff; font-weight: 800;" onclick="claimAndSelectNfsMwCar('corvette_cross', 'garage')">
-                                🚓 Corvette C6.R (Кросс)
-                            </button>
-                            <button type="button" class="styling-chip" style="background: rgba(245, 158, 11, 0.22); border-color: rgba(251, 191, 36, 0.55); color: #fff; font-weight: 800;" onclick="claimAndSelectNfsMwCar('mustang_razor', 'garage')">
-                                🔥 Mustang GT (Рейзор #15)
-                            </button>
-                            <select id="garage-nfsmw-blacklist-select" onchange="if(this.value) claimAndSelectNfsMwCar(this.value, 'garage')" style="background: rgba(15, 23, 42, 0.92); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.55); border-radius: 8px; padding: 5px 8px; font-size: 11px; font-weight: 800; cursor: pointer;">
-                                <option value="">📋 Выбрать любого Босса Blacklist #15–#1...</option>
-                                <option value="m3gtr">#1 Игрок — BMW M3 E46 GTR</option>
-                                <option value="mustang_razor">#1 Рейзор — Ford Mustang GT</option>
-                                <option value="mclaren">#2 Булл — Mercedes-Benz SLR McLaren</option>
-                                <option value="db9">#3 Ронни — Aston Martin DB9</option>
-                                <option value="viper_jv">#4 Джей-Ви — Dodge Viper SRT10</option>
-                                <option value="corvette_webster">#5 Вебстер — Chevrolet Corvette C6</option>
-                                <option value="gallardo_ming">#6 Минг — Lamborghini Gallardo</option>
-                                <option value="clk_kaze">#7 Камикадзе — Mercedes-Benz CLK 500</option>
-                                <option value="mustang_jewels">#8 Джуэлс — Ford Mustang GT</option>
-                                <option value="evo8_earl">#9 Эрл — Mitsubishi Lancer Evo VIII</option>
-                                <option value="cayman_baron">#10 Барон — Porsche Cayman S</option>
-                                <option value="eclipse_lou">#11 Биг Лу — Mitsubishi Eclipse GT</option>
-                                <option value="rx8_izzy">#12 Иззи — Mazda RX-8</option>
-                                <option value="supra_vic">#13 Вик — Toyota Supra MK4</option>
-                                <option value="is300_taz">#14 Таз — Lexus IS300</option>
-                                <option value="golf_sonny">#15 Сонни — Volkswagen Golf GTI</option>
-                                <option value="corvette_cross">🚓 Сержант Кросс — Corvette C6.R</option>
-                                <option value="audir8_darius">👑 Дариус — Audi Le Mans Quattro R8</option>
-                            </select>
-                        </div>
-                    </div>
+                    </aside>
                 </div>
 
                 <!-- 💼 ПАССИВНЫЙ БИЗНЕС: VIP-КОРТЕЖ И ПРОКАТ АВТОПАРКА -->
-                <div class="garage-fleet-card" id="garage-fleet-card" style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.9), rgba(30, 41, 59, 0.85)); border: 1px solid rgba(251, 191, 36, 0.35); border-radius: 16px; padding: 16px; margin-bottom: 18px; box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);">
+                <div class="garage-fleet-card" id="garage-fleet-card" style="background: linear-gradient(135deg, rgba(18, 24, 33, 0.95), rgba(27, 34, 45, 0.9)); border: 1px solid rgba(251, 191, 36, 0.3); border-radius: 16px; padding: 16px; margin: 18px 0; box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);">
                     <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap;">
                         <div>
                             <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
@@ -629,7 +866,7 @@
                                 <b style="font-size: 16px; color: #fff;">💼 VIP-Кортеж и Прокат автопарка</b>
                             </div>
                             <p style="font-size: 12px; color: var(--text-muted); margin: 4px 0 0 0;">
-                                Ваши машины и установленные на них блатные госномера (особенно с активной синергии) приносят пассивную выручку каждую минуту.
+                                Ваши машины и установленные на них блатные госномера (особенно с активной синергией) приносят пассивную выручку каждую минуту.
                             </p>
                         </div>
                         <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
@@ -661,11 +898,11 @@
 
                 <div id="my-cars" style="margin-bottom: 24px;"></div>
 
-                <div class="section-header" style="border-top: 1px solid var(--border-subtle); padding-top: 20px; margin-top: 10px;">
-                    <div class="section-title">🏪 Автосалон (25 автомобилей)</div>
+                <div id="garage-shop-section" class="section-header" style="border-top: 1px solid var(--border-subtle); padding-top: 20px; margin-top: 10px;">
+                    <div class="section-title">🏪 Автосалон (49 автомобилей)</div>
                 </div>
                 <div class="dealership-filter-bar" id="dealership-filter-bar">
-                    <button type="button" class="dealership-filter-btn active" id="btn-shop-all" onclick="filterShopCars('all')">Все (25)</button>
+                    <button type="button" class="dealership-filter-btn active" id="btn-shop-all" onclick="filterShopCars('all')">Все (49)</button>
                     <button type="button" class="dealership-filter-btn" id="btn-shop-budget" onclick="filterShopCars('budget')">Бюджет / Стрит</button>
                     <button type="button" class="dealership-filter-btn" id="btn-shop-jdm" onclick="filterShopCars('jdm')">JDM & Дрифт</button>
                     <button type="button" class="dealership-filter-btn" id="btn-shop-premium" onclick="filterShopCars('premium')">Премиум & Спорт</button>
@@ -686,7 +923,7 @@
                         🏎️ 3D Шоссе (Вид сзади) <span style="background: linear-gradient(135deg, #ef4444, #f59e0b); color: #fff; font-size: 8px; padding: 2px 6px; border-radius: 999px; margin-left: 4px; vertical-align: middle;">HOT</span>
                     </button>
                     <button class="market-type-btn active" id="btn-race-mode-nfs" onclick="switchRaceMode('nfs')" style="position: relative; border-color: rgba(56, 189, 248, 0.55); font-weight: 800;">
-                        🏆 3D Кольцо NFS (MW Физика) <span style="background: linear-gradient(135deg, #0284c7, #10b981); color: #fff; font-size: 8px; padding: 2px 6px; border-radius: 999px; margin-left: 4px; vertical-align: middle;">MW 2005</span>
+                        🏆 3D Кольцо (Круговая) <span style="background: linear-gradient(135deg, #0284c7, #10b981); color: #fff; font-size: 8px; padding: 2px 6px; border-radius: 999px; margin-left: 4px; vertical-align: middle;">PRO</span>
                     </button>
                 </div>
 
@@ -802,61 +1039,67 @@
 
                 <!-- Меню выбора авто и рекордов (Кольцевая трасса) -->
                 <div id="race-menu-container">
-                    <!-- Баннер быстрого запуска новых 3D гонок NFS Most Wanted 2005 -->
+                    <!-- Баннер быстрого запуска 3D кольцевых гонок -->
                     <div id="nfs-quickstart-hero" style="background: linear-gradient(135deg, rgba(2, 132, 199, 0.22), rgba(16, 185, 129, 0.16), rgba(15, 23, 42, 0.92)); border: 1.5px solid rgba(56, 189, 248, 0.55); border-radius: 14px; padding: 12px 14px; margin-bottom: 14px; box-shadow: 0 6px 20px rgba(2, 132, 199, 0.2);">
                         <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 8px;">
                             <div style="display: flex; align-items: center; gap: 8px;">
                                 <span style="font-size: 20px;">🏆</span>
                                 <div>
-                                    <div style="font-size: 14px; font-weight: 900; color: #fff; letter-spacing: 0.3px;">НОВЫЕ 3D ГОНКИ: NFS MOST WANTED 2005</div>
-                                    <div style="font-size: 11px; color: #bae6fd;">Оригинальные 3D-рипы (BMW M3 E46 GTR, Corvette C6.R Кросса, Mustang GT Рейзора) &bull; Физика заноса &bull; Speedbreaker [G]</div>
+                                    <div style="font-size: 14px; font-weight: 900; color: #fff; letter-spacing: 0.3px;">3D КОЛЬЦЕВЫЕ ГОНКИ С СОПЕРНИКАМИ</div>
+                                    <div style="font-size: 11px; color: #bae6fd;">Детализированные 3D-модели (BMW M3 E46 GTR, Chevrolet Corvette C6.R, Ford Mustang GT) &bull; Физика заноса &bull; Соперники ИИ</div>
                                 </div>
                             </div>
-                            <span style="background: linear-gradient(135deg, #0284c7, #10b981); color: #fff; font-size: 10px; font-weight: 900; padding: 3px 9px; border-radius: 999px;">3D МОДЕЛИ NFS MW</span>
+                            <span style="background: linear-gradient(135deg, #0284c7, #10b981); color: #fff; font-size: 10px; font-weight: 900; padding: 3px 9px; border-radius: 999px;">3D КОЛЬЦО</span>
                         </div>
                         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 8px; margin-bottom: 8px;">
                             <button type="button" class="btn btn-blue" style="padding: 9px 10px; font-size: 12px; font-weight: 800; background: linear-gradient(135deg, #0284c7, #0369a1); border: 1px solid rgba(125, 211, 252, 0.45);" onclick="quickStartNfsCircuit('rockport_ring')">
-                                🏙️ Старт: Рокпорт-Кольцо (2 круга)
+                                🏙️ Старт: Городское Кольцо (2 круга)
                             </button>
                             <button type="button" class="btn btn-blue" style="padding: 9px 10px; font-size: 12px; font-weight: 800; background: linear-gradient(135deg, #d97706, #b45309); border: 1px solid rgba(253, 224, 71, 0.45);" onclick="quickStartNfsCircuit('canyon_pass')">
-                                ⛰️ Старт: Каньон Карбон (Серпантин)
+                                ⛰️ Старт: Горный Каньон (Серпантин)
                             </button>
                             <button type="button" class="btn btn-blue" style="padding: 9px 10px; font-size: 12px; font-weight: 800; background: linear-gradient(135deg, #7c3aed, #4f46e5); border: 1px solid rgba(196, 181, 253, 0.45);" onclick="quickStartNfsCircuit('bayview_sprint')">
-                                🌉 Старт: Бэйвью-Магистраль (Ночь)
+                                🌉 Старт: Ночная Магистраль (Порт)
                             </button>
                         </div>
                         <div style="padding-top: 8px; border-top: 1px solid rgba(125, 211, 252, 0.2); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
-                            <span style="font-size: 11px; font-weight: 800; color: #e0f2fe;">🔥 Сесть за руль любого Босса Blacklist #15–#1:</span>
+                            <span style="font-size: 11px; font-weight: 800; color: #e0f2fe;">🔥 Быстрый выбор спорткара из 3D-коллекции:</span>
                             <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center;">
                                 <button type="button" class="styling-chip" style="background: rgba(2, 132, 199, 0.3); border-color: rgba(56, 189, 248, 0.65); color: #fff; font-weight: 800;" onclick="claimAndSelectNfsMwCar('m3gtr', 'race')">
-                                    🏎️ BMW M3 E46 GTR (#1 MW)
+                                    🏎️ BMW M3 E46 GTR · 19.5 млн ₽
                                 </button>
-                                <button type="button" class="styling-chip" style="background: rgba(239, 68, 68, 0.25); border-color: rgba(248, 113, 113, 0.6); color: #fff; font-weight: 800;" onclick="claimAndSelectNfsMwCar('corvette_cross', 'race')">
-                                    🚓 Corvette C6.R (Кросс)
+                                <button type="button" class="styling-chip" style="background: rgba(239, 68, 68, 0.25); border-color: rgba(248, 113, 113, 0.6); color: #fff; font-weight: 800;" onclick="claimAndSelectNfsMwCar('corvette_c6r', 'race')">
+                                    🏁 Chevrolet Corvette C6.R · 14.8 млн ₽
                                 </button>
-                                <button type="button" class="styling-chip" style="background: rgba(245, 158, 11, 0.25); border-color: rgba(251, 191, 36, 0.6); color: #fff; font-weight: 800;" onclick="claimAndSelectNfsMwCar('mustang_razor', 'race')">
-                                    🔥 Mustang GT (Рейзор #15)
+                                <button type="button" class="styling-chip" style="background: rgba(245, 158, 11, 0.25); border-color: rgba(251, 191, 36, 0.6); color: #fff; font-weight: 800;" onclick="claimAndSelectNfsMwCar('mustang_gt', 'race')">
+                                    🔥 Ford Mustang GT · 8.5 млн ₽
                                 </button>
                                 <select id="race-nfsmw-blacklist-select" onchange="if(this.value) claimAndSelectNfsMwCar(this.value, 'race')" style="background: rgba(15, 23, 42, 0.92); color: #fde047; border: 1px solid rgba(250, 204, 21, 0.6); border-radius: 8px; padding: 5px 8px; font-size: 11px; font-weight: 800; cursor: pointer;">
-                                    <option value="">🏁 Все 18 болидов NFS MW (#15–#1)...</option>
-                                    <option value="m3gtr">#1 Игрок — BMW M3 E46 GTR</option>
-                                    <option value="mustang_razor">#1 Рейзор — Ford Mustang GT</option>
-                                    <option value="mclaren">#2 Булл — Mercedes-Benz SLR McLaren</option>
-                                    <option value="db9">#3 Ронни — Aston Martin DB9</option>
-                                    <option value="viper_jv">#4 Джей-Ви — Dodge Viper SRT10</option>
-                                    <option value="corvette_webster">#5 Вебстер — Chevrolet Corvette C6</option>
-                                    <option value="gallardo_ming">#6 Минг — Lamborghini Gallardo</option>
-                                    <option value="clk_kaze">#7 Камикадзе — Mercedes-Benz CLK 500</option>
-                                    <option value="mustang_jewels">#8 Джуэлс — Ford Mustang GT</option>
-                                    <option value="evo8_earl">#9 Эрл — Mitsubishi Lancer Evo VIII</option>
-                                    <option value="cayman_baron">#10 Барон — Porsche Cayman S</option>
-                                    <option value="eclipse_lou">#11 Биг Лу — Mitsubishi Eclipse GT</option>
-                                    <option value="rx8_izzy">#12 Иззи — Mazda RX-8</option>
-                                    <option value="supra_vic">#13 Вик — Toyota Supra MK4</option>
-                                    <option value="is300_taz">#14 Таз — Lexus IS300</option>
-                                    <option value="golf_sonny">#15 Сонни — Volkswagen Golf GTI</option>
-                                    <option value="corvette_cross">🚓 Сержант Кросс — Corvette C6.R</option>
-                                    <option value="audir8_darius">👑 Дариус — Audi Le Mans Quattro R8</option>
+                                    <option value="">🏁 Все спорткары 3D-коллекции (с ценниками)...</option>
+                                    <option value="golf_gti">Volkswagen Golf GTI — 1 650 000 ₽</option>
+                                    <option value="lexus_is300">Lexus IS300 — 2 100 000 ₽</option>
+                                    <option value="eclipse_gt">Mitsubishi Eclipse GT — 2 450 000 ₽</option>
+                                    <option value="mazda_rx8">Mazda RX-8 — 2 950 000 ₽</option>
+                                    <option value="elantra_n">Hyundai Elantra N — 3 400 000 ₽</option>
+                                    <option value="mustang_coupe">Ford Mustang GT Coupe — 3 800 000 ₽</option>
+                                    <option value="lancer_evo8">Mitsubishi Lancer Evo VIII — 4 200 000 ₽</option>
+                                    <option value="clk500">Mercedes-Benz CLK 500 — 4 600 000 ₽</option>
+                                    <option value="supra_mk4">Toyota Supra MK4 — 5 200 000 ₽</option>
+                                    <option value="cayman_s">Porsche Cayman S — 5 800 000 ₽</option>
+                                    <option value="mustang_gt">Ford Mustang GT — 8 500 000 ₽</option>
+                                    <option value="corvette_c6">Chevrolet Corvette C6 — 9 400 000 ₽</option>
+                                    <option value="viper_srt10">Dodge Viper SRT10 — 11 200 000 ₽</option>
+                                    <option value="m3_g80">BMW M3 G80 Competition — 11 800 000 ₽</option>
+                                    <option value="db9">Aston Martin DB9 — 12 800 000 ₽</option>
+                                    <option value="x5m">BMW X5M Competition — 13 500 000 ₽</option>
+                                    <option value="gallardo">Lamborghini Gallardo — 14 500 000 ₽</option>
+                                    <option value="corvette_c6r">Chevrolet Corvette C6.R — 14 800 000 ₽</option>
+                                    <option value="rs7">Audi RS7 Sportback — 15 200 000 ₽</option>
+                                    <option value="panamera">Porsche Panamera Turbo — 16 400 000 ₽</option>
+                                    <option value="maserati">Maserati GranTurismo — 17 500 000 ₽</option>
+                                    <option value="m3gtr">BMW M3 E46 GTR — 19 500 000 ₽</option>
+                                    <option value="mclaren">Mercedes-Benz SLR McLaren — 24 500 000 ₽</option>
+                                    <option value="audi_r8">Audi Le Mans Quattro R8 — 26 500 000 ₽</option>
                                 </select>
                             </div>
                         </div>
@@ -864,10 +1107,10 @@
 
                     <div class="section-header" style="text-align: center; display: block; margin-bottom: 14px;">
                         <div class="section-title" style="font-size: 18px; color: #fff; justify-content: center;">
-                            3D Круговая гонка (NFS Most Wanted)
+                            3D Кольцевая гонка
                         </div>
                         <p style="font-size: 12px; color: var(--text-dim); margin: 4px 0 0 0;">
-                            Полноценная физика: свободное управление на 360°, апексы, Speedbreaker [G] и соперники Чёрного списка.
+                            Полноценная физика: свободное управление на 360°, апексы, чекпоинты и борьба с соперниками.
                         </p>
                     </div>
 
@@ -942,37 +1185,37 @@
                     </div>
 
                     <div class="race-tariff-note">⛽ Бензин: <b>82 ₽/л</b> (игровой тариф). После заезда стоимость сожжённого топлива вычитается из заработка. Тюнинг экономичности снижает расход, ремонт возвращает характеристики.</div>
-                    <!-- Выбор режима гонки (Шоссе / Дрифт / Кольцо NFS) -->
+                    <!-- Выбор режима гонки (Шоссе / Дрифт / 3D Кольцо) -->
                     <div class="race-weather-card" style="margin-bottom: 8px;">
                         <div class="race-weather-header">
                             <span class="race-weather-title">🏁 Режим заезда:</span>
-                            <span id="race-mode-label" class="race-weather-label">3D Круг (NFS MW)</span>
+                            <span id="race-mode-label" class="race-weather-label">3D Кольцо (Круговая)</span>
                         </div>
                         <div class="race-weather-buttons">
                             <button type="button" class="race-weather-btn" id="btn-mode-highway" onclick="setRaceMode('highway')">🛣️ Шоссе (Трафик)</button>
                             <button type="button" class="race-weather-btn" id="btn-mode-drift" onclick="setRaceMode('drift')">🌪️ Дрифт (Серпантин)</button>
-                            <button type="button" class="race-weather-btn active" id="btn-mode-nfs-circuit" onclick="setRaceMode('nfs_circuit')">🏆 Кольцо NFS (3D Соперники)</button>
+                            <button type="button" class="race-weather-btn active" id="btn-mode-nfs-circuit" onclick="setRaceMode('nfs_circuit')">🏆 3D Кольцо (Соперники)</button>
                         </div>
                         <p id="race-mode-desc" style="font-size: 11px; color: var(--text-dim); margin: 6px 0 0 0; line-height: 1.4;">
-                            Замкнутая 3D-трасса в стиле NFS Most Wanted (2005): свободное управление, повороты, соперники Чёрного списка и Speedbreaker!
+                            Замкнутая 3D-трасса: свободное управление на 360°, апексы, чекпоинты и борьба с соперниками ИИ!
                         </p>
                     </div>
 
-                    <!-- Настройки Кольцевой гонки NFS (Трасса и Сложность соперников ИИ) -->
+                    <!-- Настройки Кольцевой гонки (Трасса и Сложность соперников ИИ) -->
                     <div class="race-weather-card" id="nfs-circuit-settings-card" style="margin-bottom: 8px; border-color: rgba(56, 189, 248, 0.4);">
                         <div class="race-weather-header">
-                            <span class="race-weather-title">🗺️ Трасса и Соперники NFS:</span>
-                            <span id="nfs-track-label" class="race-weather-label" style="color: #38bdf8;">Рокпорт-Ринг (Город + Эстакада)</span>
+                            <span class="race-weather-title">🗺️ Трасса и Соперники:</span>
+                            <span id="nfs-track-label" class="race-weather-label" style="color: #38bdf8;">Городское Кольцо (Город + Эстакада)</span>
                         </div>
                         <div class="race-weather-buttons" style="margin-bottom: 6px;">
-                            <button type="button" class="race-weather-btn nfs-track-btn active" data-nfs-track="rockport_ring" data-track="rockport_ring" onclick="setNfsCircuitTrack('rockport_ring')">🏙️ Рокпорт-Кольцо</button>
-                            <button type="button" class="race-weather-btn nfs-track-btn" data-nfs-track="canyon_pass" data-track="canyon_pass" onclick="setNfsCircuitTrack('canyon_pass')">⛰️ Каньон Карбон</button>
-                            <button type="button" class="race-weather-btn nfs-track-btn" data-nfs-track="bayview_sprint" data-track="bayview_sprint" onclick="setNfsCircuitTrack('bayview_sprint')">🌉 Бэйвью-Магистраль</button>
+                            <button type="button" class="race-weather-btn nfs-track-btn active" data-nfs-track="rockport_ring" data-track="rockport_ring" onclick="setNfsCircuitTrack('rockport_ring')">🏙️ Городское Кольцо</button>
+                            <button type="button" class="race-weather-btn nfs-track-btn" data-nfs-track="canyon_pass" data-track="canyon_pass" onclick="setNfsCircuitTrack('canyon_pass')">⛰️ Горный Каньон</button>
+                            <button type="button" class="race-weather-btn nfs-track-btn" data-nfs-track="bayview_sprint" data-track="bayview_sprint" onclick="setNfsCircuitTrack('bayview_sprint')">🌉 Ночная Магистраль</button>
                         </div>
                         <div class="race-weather-buttons">
                             <button type="button" class="race-weather-btn nfs-diff-btn" data-nfs-diff="easy" data-diff="easy" onclick="setNfsCircuitDifficulty('easy')">🟢 ИИ: Лёгкий</button>
-                            <button type="button" class="race-weather-btn nfs-diff-btn active" data-nfs-diff="medium" data-diff="medium" onclick="setNfsCircuitDifficulty('medium')">🟡 ИИ: Средний (MW)</button>
-                            <button type="button" class="race-weather-btn nfs-diff-btn" data-nfs-diff="hard" data-diff="hard" onclick="setNfsCircuitDifficulty('hard')">🔴 ИИ: Blacklist Боссы</button>
+                            <button type="button" class="race-weather-btn nfs-diff-btn active" data-nfs-diff="medium" data-diff="medium" onclick="setNfsCircuitDifficulty('medium')">🟡 ИИ: Средний</button>
+                            <button type="button" class="race-weather-btn nfs-diff-btn" data-nfs-diff="hard" data-diff="hard" onclick="setNfsCircuitDifficulty('hard')">🔴 ИИ: Эксперт (Профи)</button>
                         </div>
                     </div>
 
@@ -1001,7 +1244,7 @@
                     </button>
 
                     <div class="race-controls-hint">
-                        <b>Управление на ПК:</b> <b>W A S D</b> / ◀ ▶ ▲ ▼ &bull; <b>ПРОБЕЛ</b> — Ручник (занос) &bull; <b>SHIFT</b> — Нитро &bull; <b>G</b> — Speedbreaker &bull; <b>R</b> — Авторадио
+                        <b>Управление на ПК:</b> <b>W A S D</b> / ◀ ▶ ▲ ▼ &bull; <b>ПРОБЕЛ</b> — Ручник (занос) &bull; <b>SHIFT</b> — Нитро &bull; <b>R</b> — Авторадио
                     </div>
                 </div>
 
@@ -1090,11 +1333,10 @@
                     <div class="race-header-hud">
                         <button class="btn btn-close race-hud-close-btn" onclick="exit3DRaceGame()" title="Выход в меню">✕ <span class="race-hud-btn-lbl">Выход</span></button>
                         <div class="race-header-actions" id="race-3d-header-actions" style="display: flex; gap: 6px; align-items: center; flex-wrap: nowrap;">
-                            <button type="button" class="btn race-hud-action-btn" id="btn-switch-nfs-3d" onclick="switch3DRaceSubMode()" title="Переключить режим 3D: Кольцо NFS MW / 3D Шоссе" style="border-color: rgba(56, 189, 248, 0.6); background: rgba(2, 132, 199, 0.28); color: #fff; font-weight: 800;">🏆 <span id="hud-3d-submode-text" class="race-hud-btn-lbl">Кольцо NFS</span></button>
+                            <button type="button" class="btn race-hud-action-btn" id="btn-switch-nfs-3d" onclick="switch3DRaceSubMode()" title="Переключить режим 3D: 3D Кольцо / 3D Шоссе" style="border-color: rgba(56, 189, 248, 0.6); background: rgba(2, 132, 199, 0.28); color: #fff; font-weight: 800;">🏆 <span id="hud-3d-submode-text" class="race-hud-btn-lbl">3D Кольцо</span></button>
                             <button type="button" class="btn race-hud-action-btn" id="btn-camera-view-3d" onclick="toggle3DCameraView()" title="Переключить камеру [C]">📷 <span class="race-hud-btn-lbl">Камера [C]</span></button>
                             <button type="button" class="btn race-hud-action-btn" id="btn-weather-cycle-3d" onclick="cycle3DWeather()" title="Сменить погоду [T]">🌦️ <span id="hud-3d-weather-text" class="race-hud-btn-lbl">Погода [T]</span></button>
                             <button type="button" class="btn race-hud-action-btn" id="btn-race-radio-3d" onclick="cycleRaceRadio()" title="Переключить авторадио [R]">📻 <span id="hud-3d-radio-text" class="race-hud-btn-lbl">Радио [R]</span></button>
-                            <button type="button" class="btn race-hud-action-btn" id="btn-speedbreaker-3d" onclick="toggle3DSpeedbreaker()" title="Замедление времени Speedbreaker [G]">⏱️ <span class="race-hud-btn-lbl">Speedbreaker [G]</span></button>
                             <button type="button" class="btn race-hud-action-btn" id="btn-toggle-touch-controls" onclick="toggle3DTouchControls()" title="Сенсорный руль">🎮 <span id="btn-toggle-touch-text" class="race-hud-btn-lbl">Экранный руль</span></button>
                             <span id="game-3d-drift-badge" class="race-badge-combo hidden" style="background: linear-gradient(135deg, #f59e0b, #ea580c); border-color: #fbbf24; color: #fff;">🌪️ ДРИФТ x1</span>
                             <span id="game-3d-combo-badge" class="race-badge-combo hidden">🔥 x2 ОБГОН</span>
@@ -1290,119 +1532,210 @@
         <!-- 5. ВКЛАДКА: КЕЙСЫ -->
         <div id="cases" class="tab-content hidden">
             <div class="section-box">
-                <div class="section-header">
-                    <div class="section-title">🎁 Кейсы с номерами и авто</div>
+                <div class="section-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                    <div>
+                        <div class="section-title">🎁 Кейсы с номерами и авто</div>
+                        <div id="case-country-subtitle" class="case-country-subtitle" style="margin:4px 0 0 0;">Выбрана база номеров: 🇷🇺 Россия (ГОСТ) — стандартная стоимость кейсов</div>
+                    </div>
+                    <div class="case-country-bar" id="case-country-bar" role="group" aria-label="Страна номеров в кейсах" style="margin:0;">
+                        <button type="button" class="case-country-btn active" id="btn-case-country-RUS" data-country="RUS" onclick="selectCaseCountry('RUS')">
+                            <span class="country-flag-badge">🇷🇺</span>
+                            <span>РФ</span>
+                            <small>x1</small>
+                        </button>
+                        <button type="button" class="case-country-btn" id="btn-case-country-KZ" data-country="KZ" onclick="selectCaseCountry('KZ')">
+                            <span class="country-flag-badge">🇰🇿</span>
+                            <span>Казахстан</span>
+                            <small>x1.8</small>
+                        </button>
+                        <button type="button" class="case-country-btn" id="btn-case-country-USA" data-country="USA" onclick="selectCaseCountry('USA')">
+                            <span class="country-flag-badge">🇺🇸</span>
+                            <span>США</span>
+                            <small>x3.5</small>
+                        </button>
+                        <button type="button" class="case-country-btn" id="btn-case-country-UAE" data-country="UAE" onclick="selectCaseCountry('UAE')">
+                            <span class="country-flag-badge">🇦🇪</span>
+                            <span>Дубай</span>
+                            <small>x8.0</small>
+                        </button>
+                        <button type="button" class="case-country-btn" id="btn-case-country-JPN" data-country="JPN" onclick="selectCaseCountry('JPN')">
+                            <span class="country-flag-badge">🇯🇵</span>
+                            <span>Япония</span>
+                            <small>x5.0</small>
+                        </button>
+                    </div>
                 </div>
-                <div class="case-country-bar" id="case-country-bar" role="group" aria-label="Страна номеров в кейсах">
-                    <button type="button" class="case-country-btn active" id="btn-case-country-RUS" data-country="RUS" onclick="selectCaseCountry('RUS')">
-                        <span class="country-flag-badge">🇷🇺</span>
-                        <span>РФ</span>
-                        <small>x1</small>
-                    </button>
-                    <button type="button" class="case-country-btn" id="btn-case-country-KZ" data-country="KZ" onclick="selectCaseCountry('KZ')">
-                        <span class="country-flag-badge">🇰🇿</span>
-                        <span>Казахстан</span>
-                        <small>x1.8</small>
-                    </button>
-                    <button type="button" class="case-country-btn" id="btn-case-country-USA" data-country="USA" onclick="selectCaseCountry('USA')">
-                        <span class="country-flag-badge">🇺🇸</span>
-                        <span>США</span>
-                        <small>x3.5</small>
-                    </button>
-                    <button type="button" class="case-country-btn" id="btn-case-country-UAE" data-country="UAE" onclick="selectCaseCountry('UAE')">
-                        <span class="country-flag-badge">🇦🇪</span>
-                        <span>Дубай</span>
-                        <small>x8.0</small>
-                    </button>
-                    <button type="button" class="case-country-btn" id="btn-case-country-JPN" data-country="JPN" onclick="selectCaseCountry('JPN')">
-                        <span class="country-flag-badge">🇯🇵</span>
-                        <span>Япония</span>
-                        <small>x5.0</small>
-                    </button>
-                </div>
-                <div id="case-country-subtitle" class="case-country-subtitle">Выбрана база номеров: 🇷🇺 Россия (ГОСТ) — стандартная стоимость кейсов</div>
+
                 <div class="cases-grid">
+                    <!-- 1. Обычный Box -->
                     <div class="case-card case-normal" onclick="openCasePreview('normal')">
+                        <div class="case-tier-badge tier-common">БАЗОВЫЙ</div>
                         <div class="case-icon-box">📦</div>
                         <div class="case-card-title">Обычный Box</div>
                         <div class="case-card-sub">Базовые и редкие госномера</div>
                         <div class="case-card-price" id="case-price-normal">5 000 ₽</div>
+                        <div class="case-card-actions" onclick="event.stopPropagation()">
+                            <button type="button" class="case-open-btn case-open-primary" onclick="quickOpenCase('normal', 1, event)">Открыть ×1</button>
+                            <button type="button" class="case-open-btn" onclick="quickOpenCase('normal', 5, event)">×5</button>
+                            <button type="button" class="case-open-btn" onclick="quickOpenCase('normal', 10, event)">×10</button>
+                            <button type="button" class="case-open-btn case-info-btn" onclick="openCasePreview('normal')" title="Возможные награды">🔍</button>
+                        </div>
                     </div>
 
+                    <!-- 2. Супер Box -->
                     <div class="case-card case-super" onclick="openCasePreview('super')">
+                        <div class="case-tier-badge tier-epic">ЭПИЧЕСКИЙ</div>
                         <div class="case-icon-box">🎁</div>
                         <div class="case-card-title" style="color: #c084fc;">Супер Box</div>
                         <div class="case-card-sub">Редкие и эпические серии</div>
                         <div class="case-card-price" id="case-price-super">50 000 ₽</div>
+                        <div class="case-card-actions" onclick="event.stopPropagation()">
+                            <button type="button" class="case-open-btn case-open-primary" onclick="quickOpenCase('super', 1, event)">Открыть ×1</button>
+                            <button type="button" class="case-open-btn" onclick="quickOpenCase('super', 5, event)">×5</button>
+                            <button type="button" class="case-open-btn" onclick="quickOpenCase('super', 10, event)">×10</button>
+                            <button type="button" class="case-open-btn case-info-btn" onclick="openCasePreview('super')" title="Возможные награды">🔍</button>
+                        </div>
                     </div>
 
+                    <!-- 3. Mega Box -->
                     <div class="case-card case-mega" onclick="openCasePreview('mega')">
+                        <div class="case-tier-badge tier-legend">ЛЕГЕНДАРНЫЙ</div>
                         <div class="case-icon-box">💎</div>
                         <div class="case-card-title" style="color: #fbbf24;">Mega Box</div>
                         <div class="case-card-sub">Блатные и легендарные номера</div>
                         <div class="case-card-price" id="case-price-mega">200 000 ₽</div>
+                        <div class="case-card-actions" onclick="event.stopPropagation()">
+                            <button type="button" class="case-open-btn case-open-primary" onclick="quickOpenCase('mega', 1, event)">Открыть ×1</button>
+                            <button type="button" class="case-open-btn" onclick="quickOpenCase('mega', 5, event)">×5</button>
+                            <button type="button" class="case-open-btn" onclick="quickOpenCase('mega', 10, event)">×10</button>
+                            <button type="button" class="case-open-btn case-info-btn" onclick="openCasePreview('mega')" title="Возможные награды">🔍</button>
+                        </div>
                     </div>
 
+                    <!-- 4. Казахстан VIP Box -->
                     <div class="case-card case-super" style="border-top-color: #00afca;" onclick="openCasePreview('kz_box')">
+                        <div class="case-tier-badge tier-rare">КАЗАХСТАН VIP</div>
                         <div class="case-icon-box">🇰🇿</div>
                         <div class="case-card-title" style="color: #38bdf8;">Казахстан VIP Box</div>
                         <div class="case-card-sub">Номера 01/02 KZ · VIP серии</div>
                         <div class="case-card-price" id="case-price-kz">45 000 ₽</div>
+                        <div class="case-card-actions" onclick="event.stopPropagation()">
+                            <button type="button" class="case-open-btn case-open-primary" onclick="quickOpenCase('kz_box', 1, event)">Открыть ×1</button>
+                            <button type="button" class="case-open-btn" onclick="quickOpenCase('kz_box', 5, event)">×5</button>
+                            <button type="button" class="case-open-btn" onclick="quickOpenCase('kz_box', 10, event)">×10</button>
+                            <button type="button" class="case-open-btn case-info-btn" onclick="openCasePreview('kz_box')" title="Возможные награды">🔍</button>
+                        </div>
                     </div>
 
+                    <!-- 5. Америка State Box -->
                     <div class="case-card case-super" style="border-top-color: #3b82f6;" onclick="openCasePreview('usa_box')">
+                        <div class="case-tier-badge tier-rare">USA STATE</div>
                         <div class="case-icon-box">🇺🇸</div>
                         <div class="case-card-title" style="color: #60a5fa;">Америка State Box</div>
                         <div class="case-card-sub">Штаты CA, NY, FL, TX, NV</div>
                         <div class="case-card-price" id="case-price-usa">110 000 ₽</div>
+                        <div class="case-card-actions" onclick="event.stopPropagation()">
+                            <button type="button" class="case-open-btn case-open-primary" onclick="quickOpenCase('usa_box', 1, event)">Открыть ×1</button>
+                            <button type="button" class="case-open-btn" onclick="quickOpenCase('usa_box', 5, event)">×5</button>
+                            <button type="button" class="case-open-btn" onclick="quickOpenCase('usa_box', 10, event)">×10</button>
+                            <button type="button" class="case-open-btn case-info-btn" onclick="openCasePreview('usa_box')" title="Возможные награды">🔍</button>
+                        </div>
                     </div>
 
+                    <!-- 6. Токио JDM Box -->
                     <div class="case-card case-super" style="border-top-color: #10b981;" onclick="openCasePreview('jpn_box')">
+                        <div class="case-tier-badge tier-epic">TOKYO JDM</div>
                         <div class="case-icon-box">🇯🇵</div>
                         <div class="case-card-title" style="color: #34d399;">Токио JDM Box</div>
                         <div class="case-card-sub">Номера TKY, OSK, YKH · JDM серии</div>
                         <div class="case-card-price" id="case-price-jpn">160 000 ₽</div>
+                        <div class="case-card-actions" onclick="event.stopPropagation()">
+                            <button type="button" class="case-open-btn case-open-primary" onclick="quickOpenCase('jpn_box', 1, event)">Открыть ×1</button>
+                            <button type="button" class="case-open-btn" onclick="quickOpenCase('jpn_box', 5, event)">×5</button>
+                            <button type="button" class="case-open-btn" onclick="quickOpenCase('jpn_box', 10, event)">×10</button>
+                            <button type="button" class="case-open-btn case-info-btn" onclick="openCasePreview('jpn_box')" title="Возможные награды">🔍</button>
+                        </div>
                     </div>
 
+                    <!-- 7. Дубай Sheikh Box -->
                     <div class="case-card case-mega" style="border-top-color: #d97706;" onclick="openCasePreview('uae_box')">
+                        <div class="case-tier-badge tier-legend">DUBAI ROYAL</div>
                         <div class="case-icon-box">🇦🇪</div>
                         <div class="case-card-title" style="color: #fbbf24;">Дубай Sheikh Box</div>
                         <div class="case-card-sub">Элитные номера DXB & AUH</div>
                         <div class="case-card-price" id="case-price-uae">320 000 ₽</div>
+                        <div class="case-card-actions" onclick="event.stopPropagation()">
+                            <button type="button" class="case-open-btn case-open-primary" onclick="quickOpenCase('uae_box', 1, event)">Открыть ×1</button>
+                            <button type="button" class="case-open-btn" onclick="quickOpenCase('uae_box', 5, event)">×5</button>
+                            <button type="button" class="case-open-btn" onclick="quickOpenCase('uae_box', 10, event)">×10</button>
+                            <button type="button" class="case-open-btn case-info-btn" onclick="openCasePreview('uae_box')" title="Возможные награды">🔍</button>
+                        </div>
                     </div>
 
+                    <!-- 8. Спец-Архив Box -->
                     <div class="case-card case-mega" style="border-top-color: #dc2626;" onclick="openCasePreview('special_box')">
+                        <div class="case-tier-badge tier-mythic">СПЕЦСЕРИИ</div>
                         <div class="case-icon-box">☭</div>
                         <div class="case-card-title" style="color: #fca5a5;">Спец-Архив Box</div>
                         <div class="case-card-sub">СССР ГОСТ • CD МИД • МВД • МО • ФСО</div>
                         <div class="case-card-price" id="case-price-special">250 000 ₽</div>
+                        <div class="case-card-actions" onclick="event.stopPropagation()">
+                            <button type="button" class="case-open-btn case-open-primary" onclick="quickOpenCase('special_box', 1, event)">Открыть ×1</button>
+                            <button type="button" class="case-open-btn" onclick="quickOpenCase('special_box', 5, event)">×5</button>
+                            <button type="button" class="case-open-btn" onclick="quickOpenCase('special_box', 10, event)">×10</button>
+                            <button type="button" class="case-open-btn case-info-btn" onclick="openCasePreview('special_box')" title="Возможные награды">🔍</button>
+                        </div>
                     </div>
 
+                    <!-- 9. Авто-Кейс -->
                     <div class="case-card case-normal" style="border-top-color: #10b981;" onclick="openCasePreview('car_standard')">
+                        <div class="case-tier-badge tier-rare">АВТОПАРК</div>
                         <div class="case-icon-box">🏎️</div>
                         <div class="case-card-title" style="color: #34d399;">Авто-Кейс</div>
                         <div class="case-card-sub">Седаны, стрит и JDM авто</div>
                         <div class="case-card-price">650 000 ₽</div>
+                        <div class="case-card-actions" onclick="event.stopPropagation()">
+                            <button type="button" class="case-open-btn case-open-primary" onclick="quickOpenCase('car_standard', 1, event)">Открыть ×1</button>
+                            <button type="button" class="case-open-btn" onclick="quickOpenCase('car_standard', 5, event)">×5</button>
+                            <button type="button" class="case-open-btn" onclick="quickOpenCase('car_standard', 10, event)">×10</button>
+                            <button type="button" class="case-open-btn case-info-btn" onclick="openCasePreview('car_standard')" title="Возможные награды">🔍</button>
+                        </div>
                     </div>
 
+                    <!-- 10. Элит Авто Box -->
                     <div class="case-card case-mega" style="border-top-color: #f59e0b;" onclick="openCasePreview('car_luxury')">
+                        <div class="case-tier-badge tier-legend">ПРЕМИУМ АВТО</div>
                         <div class="case-icon-box">👑</div>
                         <div class="case-card-title" style="color: #fbbf24;">Элит Авто Box</div>
                         <div class="case-card-sub">Премиум, спорткары и Гелик</div>
                         <div class="case-card-price">7 500 000 ₽</div>
+                        <div class="case-card-actions" onclick="event.stopPropagation()">
+                            <button type="button" class="case-open-btn case-open-primary" onclick="quickOpenCase('car_luxury', 1, event)">Открыть ×1</button>
+                            <button type="button" class="case-open-btn" onclick="quickOpenCase('car_luxury', 5, event)">×5</button>
+                            <button type="button" class="case-open-btn" onclick="quickOpenCase('car_luxury', 10, event)">×10</button>
+                            <button type="button" class="case-open-btn case-info-btn" onclick="openCasePreview('car_luxury')" title="Возможные награды">🔍</button>
+                        </div>
                     </div>
 
+                    <!-- 11. Гиперкар Box -->
                     <div class="case-card case-mega" style="border-top-color: #ef4444;" onclick="openCasePreview('car_hyper')">
+                        <div class="case-tier-badge tier-mythic">ГИПЕРКАРЫ</div>
                         <div class="case-icon-box">🔥</div>
                         <div class="case-card-title" style="color: #f87171;">Гиперкар Box</div>
                         <div class="case-card-sub">Гиперкары Bugatti, Jesko, SF90</div>
                         <div class="case-card-price">45 000 000 ₽</div>
+                        <div class="case-card-actions" onclick="event.stopPropagation()">
+                            <button type="button" class="case-open-btn case-open-primary" onclick="quickOpenCase('car_hyper', 1, event)">Открыть ×1</button>
+                            <button type="button" class="case-open-btn" onclick="quickOpenCase('car_hyper', 5, event)">×5</button>
+                            <button type="button" class="case-open-btn" onclick="quickOpenCase('car_hyper', 10, event)">×10</button>
+                            <button type="button" class="case-open-btn case-info-btn" onclick="openCasePreview('car_hyper')" title="Возможные награды">🔍</button>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- 5. ВКЛАДКА: РЕЙТИНГ (МУЛЬТИПЛЕЕР) -->
+        <!-- 6. ВКЛАДКА: РЕЙТИНГ ЛИДЕРОВ -->
         <div id="leaderboard" class="tab-content hidden">
             <div class="section-box">
                 <div class="section-header">
@@ -1435,44 +1768,83 @@
             </div>
         </div>
 
-        <!-- 7. ВКЛАДКА: ОНЛАЙН (АВТОРЫНОК И ЧАТ) -->
+        <!-- 7. ВКЛАДКА: РЫНОК (НОМЕРА / АВТОМОБИЛИ) И ОНЛАЙН-ЧАТ -->
         <div id="multiplayer" class="tab-content hidden">
             <div class="section-box">
-                <div class="section-header">
-                    <div class="section-title">🌐 Онлайн Центр</div>
-                    <div style="display:flex; align-items:center; gap:8px;">
-                        <span id="multi-firebase-status" class="h3h-firebase-status" role="status">🟠 Firebase: подключение...</span>
+                <div class="section-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                    <div>
+                        <div class="section-title">🏪 Рынок и Биржа H3H</div>
+                        <div style="font-size:12px; color:var(--text-muted); margin-top:2px;">Покупка и продажа редких номеров и коллекционных автомобилей между игроками</div>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                        <span id="multi-firebase-status" class="h3h-firebase-status" role="status">🟠 Сервер: подключение...</span>
                         <button type="button" class="h3h-firebase-diagnose" onclick="diagnoseMultiplayer()" title="Проверить чтение рынка и чата">Проверить</button>
                         <span class="cloud-badge online" id="multi-online-count">⚪ Онлайн: —</span>
                     </div>
                 </div>
 
-                <div class="online-v44-bar">
-                    <div id="online-account-status">🔒 Онлайн-кошелёк отключён</div>
-                    <div class="online-v44-actions"><button class="test-btn" onclick="openOnlineAccess()">👤 Мой аккаунт / вход</button><button class="test-btn" onclick="restoreOnlineSession()">↻ Обновить</button><button class="test-btn" onclick="onlineLogout()">Выйти</button></div>
-                    <small>V4.4.5: один генератор и единый вход в аккаунт, рынок и чат. Первые 50 000 ₽ зачисляются на сервер один раз. Прогресс гонок и кейсов пока хранится на этом устройстве; их награды не переводятся в онлайн-кошелёк.</small>
-                </div>
-
-                <!-- Под-вкладки: Рынок / Чат -->
-                <div class="multi-nav-tabs">
-                    <button class="multi-nav-btn active" id="btn-subtab-market" onclick="switchMultiSubTab('market')">🛒 Рынок & Биржа</button>
-                    <button class="multi-nav-btn" id="btn-subtab-chat" onclick="switchMultiSubTab('chat')">💬 Общий Чат & События</button>
-                    <button class="btn btn-green" style="margin-left:auto; padding: 6px 10px; font-size:11px;" onclick="openSellPlateModal()">+ Номер</button>
-                    <button class="btn btn-blue" style="margin-left:6px; padding: 6px 10px; font-size:11px;" onclick="openSellCarModalFromMarket()">+ Авто</button>
+                <!-- ВЕРХНИЙ ПЕРЕКЛЮЧАТЕЛЬ РЫНКА: РЫНОК НОМЕРОВ | РЫНОК МАШИН | ОНЛАЙН-ЧАТ -->
+                <div class="market-master-switcher">
+                    <div class="market-master-tabs">
+                        <button type="button" class="market-master-btn active" id="btn-mkt-filter-plates" onclick="switchMarketMainSection('plates')">
+                            <span>🔢</span>
+                            <div><strong>Рынок номеров</strong><small>Госномера игроков и спецсерии</small></div>
+                        </button>
+                        <button type="button" class="market-master-btn" id="btn-mkt-filter-cars" onclick="switchMarketMainSection('cars')">
+                            <span>🏎️</span>
+                            <div><strong>Рынок машин</strong><small>Автомобили игроков и Автосалон</small></div>
+                        </button>
+                        <button type="button" class="market-master-btn" id="btn-mkt-filter-all" onclick="switchMarketMainSection('all')">
+                            <span>🛒</span>
+                            <div><strong>Все лоты</strong><small>Единая лента биржи</small></div>
+                        </button>
+                        <button type="button" class="market-master-btn" id="btn-subtab-chat" onclick="switchMultiSubTab('chat')">
+                            <span>💬</span>
+                            <div><strong>Онлайн-чат</strong><small>Живая лента и дропы</small></div>
+                        </button>
+                        <button type="button" class="hidden" id="btn-subtab-market" onclick="switchMultiSubTab('market')">Рынок</button>
+                    </div>
+                    <div class="market-master-actions">
+                        <button type="button" class="btn btn-red-cta" style="width:auto; padding:9px 14px; font-size:12px;" onclick="openSellPlateModal()">＋ Выставить номер</button>
+                        <button type="button" class="btn btn-blue" style="width:auto; padding:9px 14px; font-size:12px;" onclick="openSellCarModalFromMarket()">＋ Выставить авто</button>
+                        <button type="button" class="btn btn-dark" style="width:auto; padding:9px 12px; font-size:12px;" onclick="openVipAuction()">🔨 VIP-Аукцион</button>
+                    </div>
                 </div>
 
                 <!-- Подвкладка: Рынок номеров и автомобилей -->
                 <div id="multi-subtab-market">
-                    <div class="market-type-nav" style="margin-bottom: 12px;">
-                        <button class="market-type-btn active" id="btn-mkt-filter-all" onclick="filterMarketListings('all')">Все лоты</button>
-                        <button class="market-type-btn" id="btn-mkt-filter-plates" onclick="filterMarketListings('plates')">🔢 Номера</button>
-                        <button class="market-type-btn" id="btn-mkt-filter-cars" onclick="filterMarketListings('cars')">🏎️ Автомобили</button>
+                    <!-- Панель фильтрации рынка -->
+                    <div class="col-filter-toolbar market-filter-toolbar">
+                        <div class="col-search-wrap">
+                            <input type="text" id="mkt-search-input" class="col-search-input" placeholder="🔍 Поиск лота по номеру, модели авто или продавцу..." oninput="setMarketFilterState({ query: this.value })">
+                        </div>
+                        <div class="col-filters-group">
+                            <select id="mkt-country-filter" class="control-select col-filter-select" onchange="setMarketFilterState({ country: this.value })">
+                                <option value="all">🌍 Все страны</option>
+                                <option value="RUS">🇷🇺 Россия</option>
+                                <option value="KZ">🇰🇿 Казахстан</option>
+                                <option value="USA">🇺🇸 США</option>
+                                <option value="UAE">🇦🇪 ОАЭ</option>
+                                <option value="JPN">🇯🇵 Япония</option>
+                            </select>
+                            <select id="mkt-sort-select" class="control-select col-filter-select" onchange="setMarketFilterState({ sort: this.value })">
+                                <option value="newest">🕒 Сначала новые</option>
+                                <option value="price_asc">📉 Сначала дешевле</option>
+                                <option value="price_desc">💎 Сначала дороже</option>
+                            </select>
+                            <button type="button" class="test-btn" onclick="fetchMarketListings()" title="Обновить лоты">🔄 Обновить</button>
+                        </div>
                     </div>
 
-                    <div style="font-size:13px; color:var(--text-dim); margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
-                        <span>Активные лоты игроков (покупка и продажа номеров и авто):</span>
-                        <button class="test-btn" onclick="fetchMarketListings()" title="Обновить рынок">🔄</button>
+                    <!-- Баннер быстрого перехода в Автосалон при просмотре Рынка машин -->
+                    <div id="market-dealership-promo" class="market-dealership-promo hidden">
+                        <div>
+                            <strong>🏪 Официальный Автосалон H3H (49 моделей)</strong>
+                            <p>Ищете новый автомобиль без наценки игроков? В автосалоне доступны все 49 машин от седанов до Bugatti и Koenigsegg.</p>
+                        </div>
+                        <button type="button" class="btn btn-gold" style="width:auto; padding:10px 16px;" onclick="switchTab('garage'); setTimeout(()=>document.getElementById('garage-shop-section')?.scrollIntoView({behavior:'smooth'}), 120);">Перейти в Автосалон ↗</button>
                     </div>
+
                     <div id="market-listings-grid" class="market-grid">
                         <div style="grid-column: 1/-1; text-align:center; padding:30px; color:var(--text-dim);">Загрузка лотов авторынка...</div>
                     </div>
@@ -1486,13 +1858,19 @@
                             <span style="font-size:11px; color:var(--text-dim);">Обновляется каждые 12 секунд</span>
                         </div>
                         <div class="chat-messages" id="chat-messages-box">
-                            <div class="chat-bubble system">Добро пожаловать в общий чат Симулятора Номеров! Делитесь дропами и рекордами.</div>
+                            <div class="chat-bubble system">Добро пожаловать в общий чат H3H NOMERA! Делитесь дропами и рекордами.</div>
                         </div>
                         <div class="chat-input-bar">
                             <input type="text" id="chat-input-field" class="chat-input" placeholder="Напишите сообщение..." maxlength="120" onkeydown="if(event.key==='Enter') sendChatMessage()">
                             <button class="btn btn-green" style="padding: 8px 16px;" onclick="sendChatMessage()">Отправить</button>
                         </div>
                     </div>
+                </div>
+
+                <!-- Компактная строка статуса онлайн-сессии -->
+                <div class="online-v44-bar" style="margin-top:16px; margin-bottom:0;">
+                    <div id="online-account-status">🔒 Онлайн-кошелёк отключён</div>
+                    <div class="online-v44-actions"><button class="test-btn" onclick="openOnlineAccess()">👤 Мой аккаунт / вход</button><button class="test-btn" onclick="restoreOnlineSession()">↻ Обновить</button><button class="test-btn" onclick="onlineLogout()">Выйти</button></div>
                 </div>
             </div>
         </div>
@@ -1802,35 +2180,69 @@
         </div>
     </div>
 
+    <!-- МОДАЛЬНОЕ ОКНО: ИНСПЕКТОР ГОСНОМЕРА В КОЛЛЕКЦИИ -->
+    <div id="plate-detail-modal" class="modal-overlay" onclick="if(event.target===this)closePlateDetailModal()">
+        <div class="modal-box plate-detail-modal-box">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+                <div>
+                    <span class="luxury-panel-eyebrow">КАРТОЧКА КОЛЛЕКЦИОННОГО НОМЕРА</span>
+                    <h3 id="plate-detail-title" style="margin:2px 0 0 0; color:#fff; font-size:18px;">Госномер</h3>
+                </div>
+                <button type="button" class="region-btn-close" onclick="closePlateDetailModal()" aria-label="Закрыть">✕</button>
+            </div>
+            <div id="plate-detail-body"></div>
+        </div>
+    </div>
+
     <!-- МОДАЛЬНОЕ ОКНО: ПРЕДПРОСМОТР КЕЙСА -->
-    <div id="case-preview-modal" class="modal-overlay">
-        <div class="modal-box">
-            <h3 style="margin-top:0; color: #fff; margin-bottom: 12px;" id="case-preview-title">Содержимое кейса</h3>
+    <div id="case-preview-modal" class="modal-overlay" onclick="if(event.target===this)closeCasePreview()">
+        <div class="modal-box case-preview-modal-box" style="max-width: 560px; width: 94%;">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom: 12px;">
+                <div>
+                    <span class="luxury-panel-eyebrow">СОДЕРЖИМОЕ И ШАНСЫ КЕЙСА</span>
+                    <h3 style="margin:2px 0 0 0; color: #fff;" id="case-preview-title">Содержимое кейса</h3>
+                </div>
+                <button type="button" class="region-btn-close" onclick="closeCasePreview()" aria-label="Закрыть">✕</button>
+            </div>
+
             <div id="case-preview-list" class="modal-scrollable"></div>
-            <div style="display: flex; gap: 8px; margin-top: 10px;">
-                <button class="btn btn-green" id="btn-buy-case" onclick="buyCase()">Открыть кейс</button>
-                <button class="btn btn-close" onclick="closeCasePreview()">Закрыть</button>
+
+            <!-- Выбор количества открытий ×1 / ×5 / ×10 -->
+            <div class="case-preview-open-bar">
+                <div class="case-qty-buttons">
+                    <button type="button" class="btn btn-red-cta" id="btn-buy-case" onclick="buyCase(null, 1)">Открыть кейс ×1</button>
+                    <button type="button" class="btn btn-gold" id="btn-buy-case-5" onclick="buyCase(null, 5)">Открыть ×5</button>
+                    <button type="button" class="btn btn-blue" id="btn-buy-case-10" onclick="buyCase(null, 10)">Открыть ×10</button>
+                </div>
+                <button type="button" class="btn btn-close" style="margin-top:8px;" onclick="closeCasePreview()">Закрыть</button>
             </div>
         </div>
     </div>
 
-    <!-- МОДАЛЬНОЕ ОКНО: ГОРИЗОНТАЛЬНАЯ CS:GO РУЛЕТКА -->
+    <!-- МОДАЛЬНОЕ ОКНО: ОТКРЫТИЕ КЕЙСА (ОДИНОЧНОЕ И ПАКЕТНОЕ ×5 / ×10) -->
     <div id="roulette-modal" class="modal-overlay">
-        <div class="modal-box" style="text-align: center; max-width: 520px; width: 92%;">
-            <h3 style="margin-top:0; color: #fff; transition: color 0.3s; font-size: 18px;" id="roulette-modal-title">🎲 Крутим рулетку...</h3>
+        <div class="modal-box roulette-modal-box" id="roulette-modal-box" style="text-align: center; max-width: 720px; width: 94%;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                <h3 style="margin:0; color: #fff; transition: color 0.3s; font-size: 18px;" id="roulette-modal-title">🎲 Крутим рулетку...</h3>
+                <button type="button" class="region-btn-close" id="btn-roulette-close-x" onclick="closeRouletteModal()" aria-label="Закрыть">✕</button>
+            </div>
 
-            <div class="case-roulette-container">
+            <div class="case-roulette-container" id="case-roulette-container">
                 <div class="roulette-marker-top"></div>
                 <div class="roulette-marker-bottom"></div>
                 <div class="roulette-center-line"></div>
                 <div class="case-roulette-track" id="case-roulette-track"></div>
             </div>
 
+            <!-- РЕЗУЛЬТАТ ОДИНОЧНОГО ОТКРЫТИЯ (×1) -->
             <div id="roulette-result" class="hidden" style="margin-top: 14px;">
-                <div id="roulette-rarity" class="rarity-label" style="position:relative; display:inline-block; top:0; left:0; transform:none; margin-bottom:10px;">Редкость</div>
+                <div style="display:flex; justify-content:center; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:10px;">
+                    <div id="roulette-rarity" class="rarity-label" style="position:relative; display:inline-block; top:0; left:0; transform:none;">Редкость</div>
+                    <span id="roulette-autosave-pill" class="roulette-autosave-pill">✓ Сохранено в инвентарь</span>
+                </div>
 
                 <!-- Приз: Госномер -->
-                <div id="roulette-plate-prize-box" style="margin: 8px 0;">
+                <div id="roulette-plate-prize-box" style="margin: 10px 0;">
                     <div class="mini-plate" id="roulette-plate-card" style="font-size: 22px; padding: 8px 18px; border-width: 3px;">А 000 АА | 77 RUS</div>
                 </div>
 
@@ -1843,18 +2255,47 @@
                     <div id="roulette-car-name" style="font-size: 18px; font-weight: 800; color: #fff; margin-top: 10px; letter-spacing: -0.3px;">Модель автомобиля</div>
                 </div>
 
-                <div style="font-size: 20px; font-weight:800; margin-bottom: 16px; color:#fbbf24;" id="roulette-price">10 000 ₽</div>
+                <div style="font-size: 22px; font-weight:900; margin-bottom: 14px; color:#fbbf24;" id="roulette-price">10 000 ₽</div>
 
                 <!-- Кнопки для номера -->
-                <div style="display: flex; gap: 10px;" id="roulette-actions-plate">
-                    <button class="btn btn-blue" onclick="rouletteSell()">💰 Продать</button>
-                    <button class="btn btn-green" onclick="rouletteSave()">📥 В инвентарь</button>
+                <div class="roulette-action-row" id="roulette-actions-plate">
+                    <button type="button" class="btn btn-green" onclick="rouletteSave()">📥 В инвентарь</button>
+                    <button type="button" class="btn btn-blue" onclick="rouletteSell()">💰 Продать</button>
                 </div>
 
                 <!-- Кнопки для автомобиля -->
-                <div style="display: flex; gap: 10px;" id="roulette-actions-car" class="hidden">
-                    <button class="btn btn-blue" id="btn-roulette-sell-car" onclick="rouletteSellCar()">💰 Продать за 90%</button>
-                    <button class="btn btn-green" onclick="rouletteSaveCar()">🏎️ Забрать в гараж</button>
+                <div class="roulette-action-row hidden" id="roulette-actions-car">
+                    <button type="button" class="btn btn-green" onclick="rouletteSaveCar()">🏎️ Забрать в гараж</button>
+                    <button type="button" class="btn btn-blue" id="btn-roulette-sell-car" onclick="rouletteSellCar()">💰 Продать за 90%</button>
+                </div>
+
+                <!-- Быстрое повторное открытие того же кейса (×1 / ×5 / ×10) -->
+                <div class="roulette-reopen-bar" id="roulette-reopen-bar">
+                    <button type="button" class="btn btn-red-cta" id="btn-roulette-open-again" onclick="openCaseAgain(1)">
+                        🔄 Открыть снова (<span id="roulette-again-price-1">5 000 ₽</span>)
+                    </button>
+                    <button type="button" class="btn btn-dark" id="btn-roulette-open-again-5" onclick="openCaseAgain(5)">
+                        ×5 (<span id="roulette-again-price-5">25 000 ₽</span>)
+                    </button>
+                    <button type="button" class="btn btn-dark" id="btn-roulette-open-again-10" onclick="openCaseAgain(10)">
+                        ×10 (<span id="roulette-again-price-10">50 000 ₽</span>)
+                    </button>
+                </div>
+            </div>
+
+            <!-- РЕЗУЛЬТАТ МАССОВОГО ОТКРЫТИЯ КЕЙСОВ (×5 / ×10) -->
+            <div id="roulette-batch-result" class="hidden">
+                <div class="batch-result-layout">
+                    <div class="batch-drops-grid" id="roulette-batch-grid"></div>
+                    <aside class="batch-summary-card" id="roulette-batch-summary"></aside>
+                </div>
+                <div class="batch-actions-bar">
+                    <button type="button" class="btn btn-green" onclick="claimBatchCaseResults()">📥 Забрать всё</button>
+                    <button type="button" class="btn btn-blue" id="btn-batch-sell-dups" onclick="sellBatchCaseResults(true)">💰 Продать дубликаты</button>
+                    <button type="button" class="btn btn-dark" id="btn-batch-sell-all" onclick="sellBatchCaseResults(false)">💸 Продать всё</button>
+                    <button type="button" class="btn btn-red-cta" id="btn-batch-open-5" onclick="openCaseAgain(5)">🔄 Открыть снова ×5</button>
+                    <button type="button" class="btn btn-gold" id="btn-batch-open-10" onclick="openCaseAgain(10)">🔄 Открыть снова ×10</button>
+                    <button type="button" class="btn btn-close" style="margin:0; width:auto;" onclick="closeRouletteModal()">← К кейсам</button>
                 </div>
             </div>
         </div>
@@ -1999,22 +2440,22 @@
                             <button type="button" class="styling-chip" data-spoiler="none" onclick="selectStylingSpoiler('none')">Без спойлера (0 ₽)</button>
                             <button type="button" class="styling-chip" data-spoiler="ducktail" onclick="selectStylingSpoiler('ducktail')">Дактейл (20 000 ₽)</button>
                             <button type="button" class="styling-chip" data-spoiler="gt" onclick="selectStylingSpoiler('gt')">GT-крыло (50 000 ₽)</button>
-                            <button type="button" class="styling-chip" data-spoiler="gtr" onclick="selectStylingSpoiler('gtr')">🏆 Карбон GTR MW (85 000 ₽)</button>
+                            <button type="button" class="styling-chip" data-spoiler="gtr" onclick="selectStylingSpoiler('gtr')">🏆 Карбон GTR (85 000 ₽)</button>
                         </div>
                     </div>
 
                     <div style="margin-bottom:14px;">
-                        <div style="font-size:12px; color:#fff; font-weight:800; margin-bottom:6px;">🛡️ Кузовной обвес (Bodykit NFS MW):</div>
+                        <div style="font-size:12px; color:#fff; font-weight:800; margin-bottom:6px;">🛡️ Кузовной обвес (Bodykit):</div>
                         <div class="styling-options-row" id="styling-bodykit-chips">
                             <button type="button" class="styling-chip" data-bodykit="stock" onclick="selectStylingBodykit('stock')">Сток кузов (0 ₽)</button>
                             <button type="button" class="styling-chip" data-bodykit="street" onclick="selectStylingBodykit('street')">Стрит-сплиттер + Пороги (45 000 ₽)</button>
                             <button type="button" class="styling-chip" data-bodykit="widebody" onclick="selectStylingBodykit('widebody')">Widebody Арки + Канарды (90 000 ₽)</button>
-                            <button type="button" class="styling-chip" data-bodykit="nfsmw_gtr" onclick="selectStylingBodykit('nfsmw_gtr')">🏆 Обвес M3 GTR ALMS (140 000 ₽)</button>
+                            <button type="button" class="styling-chip" data-bodykit="nfsmw_gtr" onclick="selectStylingBodykit('nfsmw_gtr')">🏆 Обвес GTR ALMS (140 000 ₽)</button>
                         </div>
                     </div>
 
                     <div style="margin-bottom:14px;">
-                        <div style="font-size:12px; color:#fff; font-weight:800; margin-bottom:6px;">🌪️ Воздухозаборник на крышу (Roof Scoop NFS MW):</div>
+                        <div style="font-size:12px; color:#fff; font-weight:800; margin-bottom:6px;">🌪️ Воздухозаборник на крышу (Roof Scoop):</div>
                         <div class="styling-options-row" id="styling-roofscoop-chips">
                             <button type="button" class="styling-chip" data-roofscoop="none" onclick="selectStylingRoofScoop('none')">Без ковша (0 ₽)</button>
                             <button type="button" class="styling-chip" data-roofscoop="single" onclick="selectStylingRoofScoop('single')">Одинарный JDM (25 000 ₽)</button>
@@ -2024,7 +2465,7 @@
                     </div>
 
                     <div style="margin-bottom:14px;">
-                        <div style="font-size:12px; color:#fff; font-weight:800; margin-bottom:6px;">🔥 Капот (Custom Hood NFS MW):</div>
+                        <div style="font-size:12px; color:#fff; font-weight:800; margin-bottom:6px;">🔥 Капот (Custom Hood):</div>
                         <div class="styling-options-row" id="styling-hood-chips">
                             <button type="button" class="styling-chip" data-hood="stock" onclick="selectStylingHood('stock')">Заводской (0 ₽)</button>
                             <button type="button" class="styling-chip" data-hood="carbon" onclick="selectStylingHood('carbon')">Чистый Карбон (35 000 ₽)</button>
@@ -2034,15 +2475,15 @@
                     </div>
 
                     <div style="margin-bottom:18px;">
-                        <div style="font-size:12px; color:#fff; font-weight:800; margin-bottom:6px;">Винилография / Ливрея (включая NFS Most Wanted):</div>
+                        <div style="font-size:12px; color:#fff; font-weight:800; margin-bottom:6px;">Винилография / Гоночная ливрея:</div>
                         <div class="styling-options-row" id="styling-vinyl-chips">
                             <button type="button" class="styling-chip" data-vinyl="none" onclick="selectStylingVinyl('none')">Без винила (0 ₽)</button>
                             <button type="button" class="styling-chip" data-vinyl="stripes" onclick="selectStylingVinyl('stripes')">Две полосы (30 000 ₽)</button>
                             <button type="button" class="styling-chip" data-vinyl="drift" onclick="selectStylingVinyl('drift')">Дрифт-арт (60 000 ₽)</button>
-                            <button type="button" class="styling-chip" data-vinyl="mw_m3gtr" onclick="selectStylingVinyl('mw_m3gtr')">🏆 Ливрея M3 GTR #1 (120 000 ₽)</button>
-                            <button type="button" class="styling-chip" data-vinyl="mw_razor" onclick="selectStylingVinyl('mw_razor')">🔥 Пламя Рейзора (95 000 ₽)</button>
-                            <button type="button" class="styling-chip" data-vinyl="mw_cross" onclick="selectStylingVinyl('mw_cross')">🚓 Перехватчик Кросса (95 000 ₽)</button>
-                            <button type="button" class="styling-chip" data-vinyl="mw_blacklist" onclick="selectStylingVinyl('mw_blacklist')">☠️ Чёрный Список (85 000 ₽)</button>
+                            <button type="button" class="styling-chip" data-vinyl="mw_m3gtr" onclick="selectStylingVinyl('mw_m3gtr')">🏆 Ливрея GTR Motorsport (120 000 ₽)</button>
+                            <button type="button" class="styling-chip" data-vinyl="mw_razor" onclick="selectStylingVinyl('mw_razor')">🔥 Огненный Трайбл (95 000 ₽)</button>
+                            <button type="button" class="styling-chip" data-vinyl="mw_cross" onclick="selectStylingVinyl('mw_cross')">🚓 Перехватчик C6.R (95 000 ₽)</button>
+                            <button type="button" class="styling-chip" data-vinyl="mw_blacklist" onclick="selectStylingVinyl('mw_blacklist')">☠️ Карбон-Стрит (85 000 ₽)</button>
                         </div>
                     </div>
 
@@ -2051,7 +2492,7 @@
                             <div style="font-size:12px; color:#fff; font-weight:800; margin-bottom:6px;">🚀 Цвет пламени N2O (30 000 ₽):</div>
                             <div class="styling-options-row" id="styling-nitrocolor-chips">
                                 <button type="button" class="styling-chip" data-nitrocolor="blue" onclick="selectStylingNitroColor('blue')">💙 Синий N2O</button>
-                                <button type="button" class="styling-chip" data-nitrocolor="orange" onclick="selectStylingNitroColor('orange')">🧡 Огонь MW</button>
+                                <button type="button" class="styling-chip" data-nitrocolor="orange" onclick="selectStylingNitroColor('orange')">🧡 Огненный N2O</button>
                                 <button type="button" class="styling-chip" data-nitrocolor="purple" onclick="selectStylingNitroColor('purple')">💜 Ультрафиолет</button>
                                 <button type="button" class="styling-chip" data-nitrocolor="green" onclick="selectStylingNitroColor('green')">💚 Токсик</button>
                             </div>
@@ -2069,18 +2510,18 @@
                     </div>
 
                     <div style="margin-bottom:16px; padding:12px; border-radius:12px; background:linear-gradient(135deg, rgba(245, 158, 11, 0.14), rgba(15, 23, 42, 0.9)); border:1px solid rgba(251, 191, 36, 0.4);">
-                        <div style="font-size:12px; color:#fde047; font-weight:900; margin-bottom:6px;">⚙️ Детали Старьёвщика (Junkman Parts — Уникальный тюнинг Боссов NFS MW):</div>
+                        <div style="font-size:12px; color:#fde047; font-weight:900; margin-bottom:6px;">⚙️ Кованые Pro-детали (Stage+ тюнинг сверх лимита 5/5):</div>
                         <div style="font-size:11px; color:#cbd5e1; margin-bottom:8px;">Увеличивают максимальную скорость, крутящий момент, зацеп сликов и мощность N2O сверх лимита 5/5!</div>
                         <div class="styling-options-row" id="styling-junkman-chips">
-                            <button type="button" class="styling-chip" data-junkman="junkmanEngine" onclick="toggleStylingJunkman('junkmanEngine')">🔥 Двигатель Junkman (+18 км/ч · 150 000 ₽)</button>
-                            <button type="button" class="styling-chip" data-junkman="junkmanTurbo" onclick="toggleStylingJunkman('junkmanTurbo')">🐌 Турбо/Компрессор Junkman (+12% тяги · 140 000 ₽)</button>
-                            <button type="button" class="styling-chip" data-junkman="junkmanTires" onclick="toggleStylingJunkman('junkmanTires')">🛞 Гоночные слики Junkman (+10% держака · 125 000 ₽)</button>
-                            <button type="button" class="styling-chip" data-junkman="junkmanNitro" onclick="toggleStylingJunkman('junkmanNitro')">🚀 Закись N2O Junkman (+30% буста · 130 000 ₽)</button>
+                            <button type="button" class="styling-chip" data-junkman="junkmanEngine" onclick="toggleStylingJunkman('junkmanEngine')">🔥 Кованый Двигатель Stage+ (+18 км/ч · 150 000 ₽)</button>
+                            <button type="button" class="styling-chip" data-junkman="junkmanTurbo" onclick="toggleStylingJunkman('junkmanTurbo')">🐌 Битурбо/Компрессор Stage+ (+12% тяги · 140 000 ₽)</button>
+                            <button type="button" class="styling-chip" data-junkman="junkmanTires" onclick="toggleStylingJunkman('junkmanTires')">🛞 Гоночные слики Stage+ (+10% держака · 125 000 ₽)</button>
+                            <button type="button" class="styling-chip" data-junkman="junkmanNitro" onclick="toggleStylingJunkman('junkmanNitro')">🚀 Закись N2O Stage+ (+30% буста · 130 000 ₽)</button>
                         </div>
                     </div>
 
                     <div style="margin-bottom:16px; padding:12px; border-radius:12px; background:rgba(2, 132, 199, 0.12); border:1px solid rgba(56, 189, 248, 0.35);">
-                        <div style="font-size:12px; color:#38bdf8; font-weight:900; margin-bottom:8px;">🎛️ Тонкая Pro-Настройка Ходовой (NFS MW Pro Tuning — Бесплатно):</div>
+                        <div style="font-size:12px; color:#38bdf8; font-weight:900; margin-bottom:8px;">🎛️ Тонкая Pro-Настройка Ходовой (Бесплатно):</div>
                         <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:8px;">
                             <div>
                                 <div style="font-size:11px; color:#e2e8f0; font-weight:700; margin-bottom:4px;">КПП (Разгон ⇄ Максималка):</div>
@@ -2225,7 +2666,7 @@
     <script src="./js/storage.js?v=327dc7592b84"></script>
     <script src="./js/race-records.js?v=eaeaf8e59fc2"></script>
     <script src="./js/race-economy.js?v=2802923358a3"></script>
-    <script src="./js/audio.js?v=816cc43763e2"></script>
+    <script src="./js/audio.js?v=4a3929de4fb5"></script>
     <script src="./js/vendor/three.min.js"></script>
     <script>
         if (typeof THREE === 'undefined') {
@@ -2241,9 +2682,9 @@
         }
     </script>
     <script src="./js/race-effects.js?v=6883d3af7d80"></script>
-    <script src="./js/nfs-physics.js?v=f4af89e86f17"></script>
-    <script src="./js/nfs-circuit-race.js?v=a495d845d3b5"></script>
-    <script src="./js/car-3d.js?v=0312b172c724"></script>
-    <script src="./js/app.js?v=ecf17a16a9da"></script>
+    <script src="./js/nfs-physics.js?v=8345fce74626"></script>
+    <script src="./js/nfs-circuit-race.js?v=05bfeab9b9a0"></script>
+    <script src="./js/car-3d.js?v=f4537ffff2a5"></script>
+    <script src="./js/app.js?v=38265ceefe5c"></script>
 </body>
 </html>

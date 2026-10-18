@@ -2,7 +2,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
         const DEFAULT_CAR_IMG = "./icons/car-placeholder.svg";
 
-        // Автосалон (25 автомобилей всех ценовых категорий с пиксельными моделями)
+        // Автосалон (49 автомобилей всех ценовых категорий с 3D и 2D моделями)
         const carsData = [
             // 1. Бюджетный класс (до 1 000 000 ₽)
             { name: "ВАЗ-2107 «Жигули»", category: "Классика", price: 120000, img: DEFAULT_CAR_IMG },
@@ -15,22 +15,46 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
             // 2. Средний / JDM / Дрифт класс (1 000 000 — 7 000 000 ₽)
             { name: "Toyota Mark II Tourer V", category: "Дрифт-легенда", price: 1400000, img: DEFAULT_CAR_IMG },
+            { name: "Volkswagen Golf GTI", category: "Хот-хэтч", price: 1650000, img: DEFAULT_CAR_IMG },
             { name: "Subaru Impreza WRX STI", category: "Ралли-спорт", price: 1850000, img: DEFAULT_CAR_IMG },
+            { name: "Lexus IS300", category: "Спорт-седан", price: 2100000, img: DEFAULT_CAR_IMG },
             { name: "BMW M5 E60 V10", category: "Легенда", price: 2200000, img: DEFAULT_CAR_IMG },
+            { name: "Mitsubishi Eclipse GT", category: "Спорткупе", price: 2450000, img: DEFAULT_CAR_IMG },
             { name: "Nissan Silvia S15 Spec-R", category: "Икона дрифта", price: 2600000, img: DEFAULT_CAR_IMG },
             { name: "Toyota Camry 3.5", category: "Бизнес", price: 2800000, img: DEFAULT_CAR_IMG },
+            { name: "Mazda RX-8", category: "Ротор-спорт", price: 2950000, img: DEFAULT_CAR_IMG },
+            { name: "Hyundai Elantra N", category: "Спорт-седан", price: 3400000, img: DEFAULT_CAR_IMG },
+            { name: "Ford Mustang GT Coupe", category: "Маслкар", price: 3800000, img: DEFAULT_CAR_IMG },
+            { name: "Mitsubishi Lancer Evo VIII", category: "Ралли-легенда", price: 4200000, img: DEFAULT_CAR_IMG },
+            { name: "Mercedes-Benz CLK 500", category: "Гран-туризмо", price: 4600000, img: DEFAULT_CAR_IMG },
+            { name: "Toyota Supra MK4", category: "Легенда JDM", price: 5200000, img: DEFAULT_CAR_IMG },
             { name: "Toyota Land Cruiser 300", category: "Внедорожник", price: 5500000, img: DEFAULT_CAR_IMG },
+            { name: "Porsche Cayman S", category: "Спорткар", price: 5800000, img: DEFAULT_CAR_IMG },
             { name: "Nissan GT-R R35 Nismo", category: "Спорткупе", price: 6900000, img: DEFAULT_CAR_IMG },
 
             // 3. Премиум и Спорт (7 000 000 — 20 000 000 ₽)
             { name: "Mercedes-Benz E63s AMG", category: "Премиум-спорт", price: 7800000, img: DEFAULT_CAR_IMG },
+            { name: "Ford Mustang GT", category: "Маслкар V8", price: 8500000, img: DEFAULT_CAR_IMG },
             { name: "Audi RS6 Avant", category: "Универсал-ракета", price: 9200000, img: DEFAULT_CAR_IMG },
+            { name: "Chevrolet Corvette C6", category: "Суперкар V8", price: 9400000, img: DEFAULT_CAR_IMG },
+            { name: "Dodge Viper SRT10", category: "Суперкар V10", price: 11200000, img: DEFAULT_CAR_IMG },
             { name: "BMW M5 F90 Competition", category: "Спорткар", price: 11500000, img: DEFAULT_CAR_IMG },
+            { name: "BMW M3 G80 Competition", category: "Спорт-седан", price: 11800000, img: DEFAULT_CAR_IMG },
+            { name: "Aston Martin DB9", category: "Гран-туризмо V12", price: 12800000, img: DEFAULT_CAR_IMG },
+            { name: "BMW X5M Competition", category: "Спорт-кроссовер", price: 13500000, img: DEFAULT_CAR_IMG },
             { name: "BMW M8 Gran Coupe", category: "Гран-туризмо", price: 14500000, img: DEFAULT_CAR_IMG },
+            { name: "Lamborghini Gallardo", category: "Суперкар V10", price: 14500000, img: DEFAULT_CAR_IMG },
+            { name: "Chevrolet Corvette C6.R", category: "Трек-кар GT1", price: 14800000, img: DEFAULT_CAR_IMG },
+            { name: "Audi RS7 Sportback", category: "Гран-туризмо", price: 15200000, img: DEFAULT_CAR_IMG },
+            { name: "Porsche Panamera Turbo", category: "Премиум Гран-туризмо", price: 16400000, img: DEFAULT_CAR_IMG },
+            { name: "Maserati GranTurismo", category: "Итальянское Гран-туризмо", price: 17500000, img: DEFAULT_CAR_IMG },
             { name: "Mercedes-Benz G63 AMG «Гелик»", category: "Люкс Внедорожник", price: 18000000, img: DEFAULT_CAR_IMG },
+            { name: "BMW M3 E46 GTR", category: "Легенда трека", price: 19500000, img: DEFAULT_CAR_IMG },
 
             // 4. Суперкары и Ультра-Люкс (20 000 000 — 60 000 000 ₽)
+            { name: "Mercedes-Benz SLR McLaren", category: "Суперкар GT", price: 24500000, img: DEFAULT_CAR_IMG },
             { name: "Porsche 911 Turbo S", category: "Суперкар", price: 25000000, img: DEFAULT_CAR_IMG },
+            { name: "Audi Le Mans Quattro R8", category: "Суперкар V10", price: 26500000, img: DEFAULT_CAR_IMG },
             { name: "Lamborghini Huracan Performante", category: "Суперкар V10", price: 32000000, img: DEFAULT_CAR_IMG },
             { name: "Rolls-Royce Cullinan", category: "Ультра-Люкс", price: 55000000, img: DEFAULT_CAR_IMG },
 
@@ -541,8 +565,13 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             }
             let digits = '---';
             if (num && !String(num).includes('-')) {
-                const parsed = parseInt(String(num), 10);
-                digits = Number.isFinite(parsed) && parsed > 0 ? String(parsed) : '100';
+                const rawStr = String(num).trim().replace(/[^0-9]/g, '');
+                if (rawStr.length >= 4) {
+                    digits = rawStr.slice(0, 5).replace(/^0+/, '') || '1000';
+                } else {
+                    const parsed = parseInt(rawStr, 10);
+                    digits = Number.isFinite(parsed) && parsed > 0 ? String(parsed) : '100';
+                }
             }
             return { code, digits };
         }
@@ -589,6 +618,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         const UAE_EMIRATE_PLATE_META = {
             DXB: { en: 'DUBAI', ar: 'دبي' },
             AUH: { en: 'ABU DHABI', ar: 'أبوظبي' },
+            AD: { en: 'ABU DHABI', ar: 'أبوظبي' },
             SHJ: { en: 'SHARJAH', ar: 'الشارقة' },
             AJM: { en: 'AJMAN', ar: 'عجمان' },
             RAK: { en: 'R.A.K.', ar: 'رأس الخيمة' },
@@ -598,19 +628,38 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
         function syncPlateBoxCellsLayout() {
             if (typeof document === 'undefined' || typeof document.getElementById !== 'function') return;
+            const plateBox = document.getElementById('plate-box');
             const cL1 = document.getElementById('cell-l1');
             const cL2 = document.getElementById('cell-l2');
             const cL3 = document.getElementById('cell-l3');
             const cN1 = document.getElementById('cell-n1');
             const cN2 = document.getElementById('cell-n2');
             const cN3 = document.getElementById('cell-n3');
+            const cN4 = document.getElementById('cell-n4');
+            const cN5 = document.getElementById('cell-n5');
             const allCells = [cL1, cL2, cL3, cN1, cN2, cN3];
+            const numCells = [cN1, cN2, cN3, cN4, cN5];
             const cUpper = String(currentCountry || 'RUS').toUpperCase();
 
             if (cUpper !== 'UAE') {
+                if (plateBox) {
+                    if (plateBox.classList) {
+                        plateBox.classList.remove('uae-double-code', 'uae-digits-1', 'uae-digits-2', 'uae-digits-3', 'uae-digits-4', 'uae-digits-5');
+                    }
+                    if (typeof plateBox.removeAttribute === 'function') {
+                        plateBox.removeAttribute('data-uae-double');
+                        plateBox.removeAttribute('data-uae-digits');
+                    }
+                }
                 allCells.forEach(cell => {
                     if (cell && cell.classList) {
-                        cell.classList.remove('uae-cell-hidden', 'uae-single-digit');
+                        cell.classList.remove('uae-cell-hidden', 'uae-single-digit', 'uae-two-digit', 'uae-four-digit', 'uae-five-digit');
+                    }
+                });
+                [cN4, cN5].forEach(cell => {
+                    if (cell && cell.classList) {
+                        cell.classList.add('uae-cell-hidden');
+                        cell.classList.remove('uae-single-digit', 'uae-two-digit', 'uae-four-digit', 'uae-five-digit', 'spinning', 'stopped');
                     }
                 });
             }
@@ -667,41 +716,68 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 currentL1 === currentL2 &&
                 currentL2 === currentL3
             );
+            if (plateBox) {
+                plateBox.setAttribute('data-uae-double', isDoubleCode ? 'true' : 'false');
+                if (plateBox.classList) {
+                    plateBox.classList.toggle('uae-double-code', Boolean(isDoubleCode));
+                }
+            }
             if (cL2 && cL2.classList) {
                 if (isDoubleCode) cL2.classList.remove('uae-cell-hidden');
                 else cL2.classList.add('uae-cell-hidden');
             }
 
             const numStr = String(currentNum || '---');
-            if (isSpinning || !boardHasNumbers || numStr.includes('-')) {
+            if (!boardHasNumbers || numStr.includes('-')) {
+                if (plateBox) {
+                    plateBox.setAttribute('data-uae-digits', '3');
+                    if (plateBox.classList) {
+                        plateBox.classList.remove('uae-digits-1', 'uae-digits-2', 'uae-digits-4', 'uae-digits-5');
+                        plateBox.classList.add('uae-digits-3');
+                    }
+                }
                 [cN1, cN2, cN3].forEach(cell => {
                     if (cell && cell.classList) {
-                        cell.classList.remove('uae-cell-hidden', 'uae-single-digit');
+                        cell.classList.remove('uae-cell-hidden', 'uae-single-digit', 'uae-two-digit', 'uae-four-digit', 'uae-five-digit');
+                    }
+                });
+                [cN4, cN5].forEach(cell => {
+                    if (cell && cell.classList) {
+                        cell.classList.add('uae-cell-hidden');
+                        cell.classList.remove('uae-single-digit', 'uae-two-digit', 'uae-four-digit', 'uae-five-digit');
                     }
                 });
                 return;
             }
 
-            if (numStr.startsWith('00') && numStr !== '000') {
-                if (cN1 && cN1.classList) cN1.classList.add('uae-cell-hidden');
-                if (cN2 && cN2.classList) cN2.classList.add('uae-cell-hidden');
-                if (cN3 && cN3.classList) {
-                    cN3.classList.remove('uae-cell-hidden');
-                    cN3.classList.add('uae-single-digit');
+            const cleanDigits = getUaePlateDisplayParts(currentL1, currentL2, currentL3, numStr).digits;
+            const dLen = Math.min(5, Math.max(1, cleanDigits.length));
+            if (plateBox) {
+                plateBox.setAttribute('data-uae-digits', String(dLen));
+                if (plateBox.classList) {
+                    plateBox.classList.remove('uae-digits-1', 'uae-digits-2', 'uae-digits-3', 'uae-digits-4', 'uae-digits-5');
+                    plateBox.classList.add('uae-digits-' + dLen);
                 }
-            } else if (numStr.startsWith('0') && numStr !== '000') {
-                if (cN1 && cN1.classList) cN1.classList.add('uae-cell-hidden');
-                if (cN2 && cN2.classList) cN2.classList.remove('uae-cell-hidden');
-                if (cN3 && cN3.classList) {
-                    cN3.classList.remove('uae-cell-hidden', 'uae-single-digit');
-                }
-            } else {
-                [cN1, cN2, cN3].forEach(cell => {
-                    if (cell && cell.classList) {
-                        cell.classList.remove('uae-cell-hidden', 'uae-single-digit');
-                    }
-                });
             }
+
+            const sizeClass = dLen === 1
+                ? 'uae-single-digit'
+                : (dLen === 2 ? 'uae-two-digit' : (dLen === 4 ? 'uae-four-digit' : (dLen === 5 ? 'uae-five-digit' : '')));
+
+            numCells.forEach((cell, idx) => {
+                if (!cell || !cell.classList) return;
+                cell.classList.remove('uae-single-digit', 'uae-two-digit', 'uae-four-digit', 'uae-five-digit');
+                if (idx < dLen) {
+                    cell.classList.remove('uae-cell-hidden');
+                    if (sizeClass) cell.classList.add(sizeClass);
+                    if (!isSpinning && cleanDigits[idx] !== undefined) {
+                        setCellChar('cell-n' + (idx + 1), cleanDigits[idx]);
+                    }
+                } else {
+                    cell.classList.add('uae-cell-hidden');
+                    cell.classList.remove('spinning', 'stopped');
+                }
+            });
         }
         if (typeof window !== 'undefined') window.syncPlateBoxCellsLayout = syncPlateBoxCellsLayout;
 
@@ -1012,13 +1088,19 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 const mainPart = uaeMatch[1].trim();
                 const reg = uaeMatch[2].trim().toUpperCase();
                 let code = 'A', cleanDigits = '1';
-                const mAuth = mainPart.match(/^([A-ZА-ЯЁ]{1,2})\s+(\d{1,5})$/i);
+                const mAuth = mainPart.match(/^([A-ZА-ЯЁ]{1,2}|50|0?[1-9]|1\d|2[0-2])\s+(\d{1,5})$/i);
                 const mLeg3 = mainPart.match(/^([A-ZА-ЯЁ]{3})\s+(\d{1,5})$/i);
                 const mLegRus = mainPart.match(/^([A-ZА-ЯЁ])\s*(\d{3})\s*([A-ZА-ЯЁ]{2})$/i);
                 if (mAuth) {
-                    code = mAuth[1].toUpperCase();
-                    const parsed = parseInt(mAuth[2], 10);
-                    cleanDigits = Number.isFinite(parsed) && parsed > 0 ? String(parsed) : mAuth[2];
+                    const rawCode = mAuth[1].toUpperCase();
+                    code = /^\d+$/.test(rawCode) ? String(parseInt(rawCode, 10)) : rawCode;
+                    const dStr = mAuth[2];
+                    if (dStr.length >= 4) {
+                        cleanDigits = dStr.replace(/^0+/, '') || dStr;
+                    } else {
+                        const parsed = parseInt(dStr, 10);
+                        cleanDigits = Number.isFinite(parsed) && parsed > 0 ? String(parsed) : dStr;
+                    }
                 } else if (mLeg3) {
                     const l3 = mLeg3[1].toUpperCase();
                     const parts = getUaePlateDisplayParts(l3[0], l3[1], l3[2], mLeg3[2]);
@@ -1030,15 +1112,26 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     cleanDigits = parts.digits;
                 } else {
                     const lMatch = mainPart.replace(/[^A-ZА-ЯЁ]/gi, '').toUpperCase();
-                    const dMatch = mainPart.match(/\d+/);
-                    code = lMatch ? (lMatch.length >= 3 && lMatch[0] === lMatch[1] && lMatch[1] === lMatch[2] ? lMatch.slice(0, 2) : lMatch[0]) : 'A';
-                    if (dMatch) {
-                        const parsed = parseInt(dMatch[0], 10);
-                        cleanDigits = Number.isFinite(parsed) && parsed > 0 ? String(parsed) : dMatch[0];
+                    const dMatch = mainPart.match(/\d+/g);
+                    if (lMatch) {
+                        code = (lMatch.length >= 3 && lMatch[0] === lMatch[1] && lMatch[1] === lMatch[2]) ? lMatch.slice(0, 2) : lMatch[0];
+                    } else if (dMatch && dMatch.length >= 2) {
+                        code = String(parseInt(dMatch[0], 10) || '1');
+                    }
+                    const lastDigits = dMatch && dMatch.length ? dMatch[dMatch.length - 1] : '';
+                    if (lastDigits) {
+                        if (lastDigits.length >= 4) {
+                            cleanDigits = lastDigits.replace(/^0+/, '') || lastDigits;
+                        } else {
+                            const parsed = parseInt(lastDigits, 10);
+                            cleanDigits = Number.isFinite(parsed) && parsed > 0 ? String(parsed) : lastDigits;
+                        }
                     }
                 }
                 const uaeMeta = UAE_EMIRATE_PLATE_META[reg] || { en: reg, ar: 'دبي' };
-                return `<span class="mp-uae-left" data-emirate="${escapeHtml(reg)}" aria-hidden="true"><span class="mp-uae-em"><b>${escapeHtml(uaeMeta.en)}</b><small>${escapeHtml(uaeMeta.ar)}</small></span></span><span class="mp-uae-code">${escapeHtml(code)}</span><span class="mp-pipe-sr"> </span><span class="mp-main mp-uae-main"><span class="mp-num">${escapeHtml(cleanDigits)}</span></span><span class="mp-pipe-sr"> | ${escapeHtml(reg)} UAE</span>`;
+                const dLen = Math.min(5, Math.max(1, String(cleanDigits).length));
+                const vipClass = dLen === 1 ? ' mp-uae-royal' : (dLen === 2 ? ' mp-uae-vvip' : '');
+                return `<span class="mp-uae-left" data-emirate="${escapeHtml(reg)}" aria-hidden="true"><span class="mp-uae-em"><b>${escapeHtml(uaeMeta.en)}</b><small>${escapeHtml(uaeMeta.ar)}</small></span></span><span class="mp-uae-code" data-code-len="${code.length}">${escapeHtml(code)}</span><span class="mp-pipe-sr"> </span><span class="mp-main mp-uae-main${vipClass}" data-digits-len="${dLen}"><span class="mp-num">${escapeHtml(cleanDigits)}</span></span><span class="mp-pipe-sr"> | ${escapeHtml(reg)} UAE</span>`;
             }
 
             const rusMatch = raw.match(/^(.*?)\s*\|\s*(\d{2,3}|СССР|CD)(?:\s+RUS)?$/i);
@@ -3998,15 +4091,45 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         }
 
         // --- МУЛЬТИПЛЕЕР: АВТОРЫНОК (P2P ТОРГОВЛЯ НОМЕРАМИ) ---
+        let marketFilterState = {
+            query: '',
+            country: 'all',
+            sort: 'recent_desc'
+        };
+
         function switchMultiSubTab(tab) {
             activeMultiSubTab = tab;
-            document.getElementById('multi-subtab-market').classList.toggle('hidden', tab !== 'market');
-            document.getElementById('multi-subtab-chat').classList.toggle('hidden', tab !== 'chat');
-            document.getElementById('btn-subtab-market').classList.toggle('active', tab === 'market');
-            document.getElementById('btn-subtab-chat').classList.toggle('active', tab === 'chat');
+            document.getElementById('multi-subtab-market')?.classList.toggle('hidden', tab !== 'market');
+            document.getElementById('multi-subtab-chat')?.classList.toggle('hidden', tab !== 'chat');
+            document.getElementById('btn-subtab-market')?.classList.toggle('active', tab === 'market');
+            document.getElementById('btn-subtab-chat')?.classList.toggle('active', tab === 'chat');
             if (tab === 'market') renderMarketListings();
             if (tab === 'chat') renderChatMessages();
         }
+
+        function switchMarketMainSection(section = 'plates') {
+            if (section === 'chat') {
+                switchMultiSubTab('chat');
+            } else {
+                switchMultiSubTab('market');
+                filterMarketListings(section);
+                const dealerBanner = document.getElementById('market-dealership-banner');
+                if (dealerBanner) {
+                    dealerBanner.classList.toggle('hidden', section === 'plates');
+                }
+            }
+            ['plates', 'cars', 'all', 'chat'].forEach(k => {
+                const btn = document.getElementById(k === 'chat' ? 'btn-subtab-chat' : `btn-mkt-filter-${k}`);
+                if (btn) btn.classList.toggle('active', k === section);
+            });
+        }
+        window.switchMarketMainSection = switchMarketMainSection;
+
+        function setMarketFilterState(patch = {}) {
+            marketFilterState = { ...marketFilterState, ...patch };
+            renderMarketListings();
+        }
+        window.setMarketFilterState = setMarketFilterState;
 
         function openSellPlateModal() {
             if (!ensureOnlineAccess()) return;
@@ -4186,22 +4309,50 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         }
 
         function renderMarketListings() {
-            const grid = document.getElementById('market-listings-grid');
-            if (!grid) return;
-
-            const lotsArr = Object.entries(marketLots || {})
+            const allValidLots = Object.entries(marketLots || {})
                 .filter(([id, lot]) => {
                     if (!lot || typeof lot !== 'object' || !Number.isSafeInteger(lot.price) || lot.price < 1000) return false;
                     if (lot.type === 'car') return lot.car && typeof lot.car.name === 'string';
                     return lot.plate && typeof lot.plate.text === 'string';
                 })
-                .map(([id, lot]) => ({ ...lot, lotId: id }))
+                .map(([id, lot]) => ({ ...lot, lotId: id }));
+
+            const mktStat = document.getElementById('market-active-stat');
+            if (mktStat) mktStat.textContent = String(allValidLots.length);
+
+            const grid = document.getElementById('market-listings-grid');
+            if (!grid) return;
+
+            const q = String(marketFilterState.query || '').trim().toLowerCase();
+            const countryFilter = marketFilterState.country || 'all';
+            const sortMode = marketFilterState.sort || 'recent_desc';
+
+            const lotsArr = allValidLots
                 .filter(lot => {
-                    if (currentMarketFilter === 'plates') return lot.type !== 'car';
-                    if (currentMarketFilter === 'cars') return lot.type === 'car';
+                    if (currentMarketFilter === 'plates' && lot.type === 'car') return false;
+                    if (currentMarketFilter === 'cars' && lot.type !== 'car') return false;
+                    if (countryFilter !== 'all') {
+                        if (lot.type === 'car') {
+                            const carPlate = lot.car?.plate;
+                            if (!carPlate || detectPlateCountryBucket(carPlate) !== countryFilter) return false;
+                        } else {
+                            if (detectPlateCountryBucket(lot.plate) !== countryFilter) return false;
+                        }
+                    }
+                    if (q) {
+                        const hay = `${lot.sellerName || ''} ${lot.car?.name || ''} ${lot.car?.category || ''} ${lot.plate?.text || ''} ${lot.car?.plate?.text || ''}`.toLowerCase();
+                        if (!hay.includes(q)) return false;
+                    }
                     return true;
-                })
-                .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+                });
+
+            if (sortMode === 'price_asc') {
+                lotsArr.sort((a, b) => (Number(a.price) || 0) - (Number(b.price) || 0));
+            } else if (sortMode === 'price_desc') {
+                lotsArr.sort((a, b) => (Number(b.price) || 0) - (Number(a.price) || 0));
+            } else {
+                lotsArr.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+            }
 
             if (lotsArr.length === 0) {
                 grid.innerHTML = `
@@ -4470,8 +4621,570 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         }
 
         // --- ЛОГИКА РАСЧЕТА ЦЕНЫ И РЕДКОСТИ ---
+        const UAE_SPECIAL_3DIGIT_NUMBERS = [
+            '911','707','918','812','720','765','488','458','101','909','505','808','770','110','990','550','880'
+        ];
+        const UAE_LADDER_3DIGIT = ['123','234','345','456','567','678','789','987','876','765','654','543','432','321'];
+
+        function evaluateUaePlateDetails(l1, l2, l3, num, reg = 'DXB') {
+            const rawC1 = String(l1 || 'A').trim().toUpperCase();
+            const rawC2 = String(l2 || 'X').trim().toUpperCase();
+            const rawC3 = String(l3 || 'Z').trim().toUpperCase();
+            const isNumericCat = /^\d+$/.test(rawC1);
+            const c1 = isNumericCat ? rawC1 : (rawC1[0] || 'A');
+            const c2 = isNumericCat ? 'X' : (rawC2[0] || 'X');
+            const c3 = isNumericCat ? 'Z' : (rawC3[0] || 'Z');
+            const isDoubleCode = (!isNumericCat && c1 !== '-' && c1 === c2 && c2 === c3);
+            const code = isDoubleCode ? (c1 + c2) : c1;
+
+            const uaeParts = getUaePlateDisplayParts(c1, c2, c3, num);
+            const cleanDigits = uaeParts.digits === '---' ? '124' : uaeParts.digits;
+            const digitCount = cleanDigits.length;
+            const regUp = String(reg || 'DXB').trim().toUpperCase() || 'DXB';
+
+            // 1. Иерархия кода серии RTA / Эмирата
+            let codeTier = 'B_SINGLE';
+            let codeMult = 1.0;
+            let codeFlatBonus = 400;
+            let codePrestige = `Стандартная серия RTA (${code})`;
+
+            if (isDoubleCode) {
+                if (['AA', 'BB', 'CC', 'DD', 'OO', 'II', 'PP', 'XX', 'ZZ'].includes(code)) {
+                    codeTier = 'RTA_DOUBLE_PRIME';
+                    codeMult = 1.45;
+                    codeFlatBonus = 3200000;
+                    codePrestige = `Флагманская закрытая аукционная серия RTA (${code})`;
+                } else {
+                    codeTier = 'RTA_DOUBLE';
+                    codeMult = 1.30;
+                    codeFlatBonus = 2200000;
+                    codePrestige = `Эксклюзивная двухбуквенная серия RTA (${code})`;
+                }
+            } else if (isNumericCat) {
+                if (['1', '2', '50', '01', '02'].includes(code)) {
+                    codeTier = 'AD_PRIME_CAT';
+                    codeMult = 1.38;
+                    codeFlatBonus = 2000;
+                    codePrestige = code === '50'
+                        ? 'Юбилейная категория 50 — Golden Jubilee ОАЭ'
+                        : `Высшая правительственная категория Абу-Даби (Код ${parseInt(code, 10)})`;
+                } else {
+                    codeTier = 'AD_CAT';
+                    codeMult = 1.12;
+                    codeFlatBonus = 1000;
+                    codePrestige = `Категория эмирата (Код ${parseInt(code, 10) || code})`;
+                }
+            } else if (c1 === 'D') {
+                codeTier = 'S_SINGLE';
+                codeMult = 1.28;
+                codeFlatBonus = 2200;
+                codePrestige = 'Код D — заглавная буква DUBAI (высший престиж эмирата)';
+            } else if (c1 === 'A') {
+                codeTier = 'S_SINGLE';
+                codeMult = 1.24;
+                codeFlatBonus = 1800;
+                codePrestige = 'Код A — самая первая историческая серия Дубая (Old Money)';
+            } else if (c1 === 'P') {
+                codeTier = 'S_SINGLE';
+                codeMult = 1.24;
+                codeFlatBonus = 1800;
+                codePrestige = 'Код P — серия абсолютного мирового рекорда P 7 ($15M)';
+            } else if (c1 === 'O') {
+                codeTier = 'S_SINGLE';
+                codeMult = 1.22;
+                codeFlatBonus = 1800;
+                codePrestige = 'Код O — визуальная оптическая иллюзия нуля «0»';
+            } else if (c1 === 'I') {
+                codeTier = 'S_SINGLE';
+                codeMult = 1.20;
+                codeFlatBonus = 1800;
+                codePrestige = 'Код I — вертикальная оптическая иллюзия единицы «1»';
+            } else if (['X', 'V', 'Z', 'S', 'M', 'R', 'W', 'G', 'B', 'F', 'C'].includes(c1)) {
+                codeTier = 'A_SINGLE';
+                codeMult = 1.12;
+                codeFlatBonus = 1200;
+                const brandHint = {
+                    G: 'Mercedes-AMG G63 / Brabus',
+                    F: 'Ferrari Supercar Series',
+                    S: 'Maybach / S-Class Series',
+                    M: 'BMW M Motorsport Series',
+                    R: 'Rolls-Royce / Range Rover Series',
+                    W: 'Rolls-Royce Wraith / VIP Series',
+                    B: 'Bugatti / Brabus / Bentley Series',
+                    V: 'VIP / V12 Symmetry Series',
+                    X: 'Geometric X Symmetry Series',
+                    Z: 'Final Alphabet Z Series',
+                    C: 'Classic Prestige Series'
+                }[c1];
+                codePrestige = `Престижная серия RTA ${c1} (${brandHint})`;
+            }
+
+            // 2. Иерархия Эмирата (DXB / AUH / SHJ / Northern Emirates)
+            let emirateMult = 0.94;
+            let emirateFlatBonus = 900;
+            let emirateName = `Эмират ${regUp}`;
+            if (regUp === 'DXB') {
+                emirateMult = 1.15;
+                emirateFlatBonus = 2400;
+                emirateName = 'Дубай (RTA Dubai)';
+            } else if (['AUH', 'AD', '1', '2', '50', '01', '05'].includes(regUp)) {
+                emirateMult = 1.12;
+                emirateFlatBonus = 2200;
+                emirateName = 'Абу-Даби (Abu Dhabi)';
+            } else if (regUp === 'SHJ') {
+                emirateMult = 1.00;
+                emirateFlatBonus = 1200;
+                emirateName = 'Шарджа (Sharjah)';
+            } else if (regUp === 'AJM') {
+                emirateName = 'Аджман (Ajman)';
+            } else if (regUp === 'RAK') {
+                emirateName = 'Рас-эль-Хайма (R.A.K.)';
+            } else if (regUp === 'FUJ') {
+                emirateName = 'Фуджейра (Fujairah)';
+            } else if (regUp === 'UAQ') {
+                emirateName = 'Умм-эль-Кувейн (U.A.Q.)';
+            }
+
+            // 3. Золотое правило ОАЭ: Разрядность (1..5 цифр) и паттерны RTA
+            let isPrestigePattern = false;
+            let tierId = 'vip_3digit';
+            let tierBadge = '🇦🇪 DUBAI 3-DIGIT';
+            let tierTitle = 'Трёхзначный номер RTA';
+            let digitBase = 8200;
+            let synergyBonus = 0;
+            let realWorldNote = 'В ОАЭ ценность номера определяется прежде всего малым числом цифр (от 1 до 5 разрядов).';
+
+            const SINGLE_DIGIT_BASE = {
+                '1': 58000000,
+                '7': 48000000,
+                '5': 42000000,
+                '9': 36000000,
+                '2': 32000000,
+                '8': 30000000,
+                '3': 26000000,
+                '6': 24000000,
+                '4': 21000000
+            };
+
+            const TWIN_2DIGIT_BASE = {
+                '11': 9500000,
+                '77': 8500000,
+                '99': 7800000,
+                '55': 7200000,
+                '88': 6800000,
+                '22': 6200000,
+                '33': 5800000,
+                '66': 5400000,
+                '44': 5000000
+            };
+
+            const ROUND_2DIGIT_BASE = {
+                '10': 3400000,
+                '50': 3100000,
+                '70': 2800000,
+                '20': 2600000,
+                '90': 2500000,
+                '80': 2400000,
+                '30': 2200000,
+                '60': 2050000,
+                '40': 1950000
+            };
+
+            const TRIPLE_3DIGIT_BASE = {
+                '777': 5200000,
+                '111': 4400000,
+                '999': 4100000,
+                '555': 3700000,
+                '888': 3500000,
+                '222': 3100000,
+                '333': 2900000,
+                '666': 2700000,
+                '444': 2500000
+            };
+
+            const ROUND_3DIGIT_BASE = {
+                '100': 68000,
+                '700': 58000,
+                '500': 54000,
+                '900': 50000,
+                '800': 48000,
+                '600': 45000,
+                '300': 42000,
+                '200': 40000,
+                '400': 38000
+            };
+
+            if (digitCount === 1) {
+                isPrestigePattern = true;
+                tierId = 'royal_1digit';
+                tierBadge = '👑 ROYAL 1-DIGIT';
+                tierTitle = 'Королевский 1-значный номер шейха (Most Noble Numbers)';
+                digitBase = SINGLE_DIGIT_BASE[cleanDigits] || 25000000;
+
+                if (cleanDigits === '1') {
+                    realWorldNote = 'Цифра 1 — символ первого лица государства (Абу-Даби №1 продан за 52,2 млн AED / $14,2 млн).';
+                } else if (cleanDigits === '7') {
+                    realWorldNote = 'Цифра 7 символизирует 7 Эмиратов ОАЭ — самая почитаемая цифра страны после единицы.';
+                } else if (cleanDigits === '5') {
+                    realWorldNote = 'Цифра 5 входит в топ-3 королевских номеров Дубая и Абу-Даби.';
+                } else if (cleanDigits === '2') {
+                    realWorldNote = 'Цифра 2 символизирует 2 декабря — День объединения ОАЭ (Абу-Даби №2 продан за 23,3 млн AED).';
+                } else {
+                    realWorldNote = 'Однозначные номера в ОАЭ никогда не поступают в свободную продажу и разыгрываются только на флагманских аукционах RTA.';
+                }
+
+                if (code === 'P' && cleanDigits === '7') {
+                    synergyBonus += 35000000;
+                    realWorldNote = 'Абсолютный мировой рекорд Гиннесса: номер P 7 продан в Дубае за 55 000 000 AED ($15 млн)!';
+                } else if (code === 'D' && cleanDigits === '5') {
+                    synergyBonus += 5000000;
+                    realWorldNote = 'Легендарный лот RTA Open Auction: номер D 5 куплен в Дубае за 33 000 000 AED ($9 млн, D[4]+5=9)!';
+                } else if (code === 'AA' && (cleanDigits === '9' || cleanDigits === '8')) {
+                    synergyBonus += 18000000;
+                    realWorldNote = `Рекорд благотворительного аукциона Most Noble Numbers: AA ${cleanDigits} продан за ${cleanDigits === '9' ? '38' : '35'} 000 000 AED!`;
+                } else if (code === 'DD' && (cleanDigits === '5' || cleanDigits === '6')) {
+                    synergyBonus += 16000000;
+                    realWorldNote = `Флагманский рекорд Most Noble Numbers: DD ${cleanDigits} продан в Дубае за ${cleanDigits === '6' ? '37' : '35'} 000 000 AED!`;
+                } else if (code === 'O' && cleanDigits === '9') {
+                    synergyBonus += 12000000;
+                    realWorldNote = 'Знаменитый лот RTA O 9 (25 000 000 AED) с оптической иллюзией нуля!';
+                } else if (code === 'I' && cleanDigits === '1') {
+                    synergyBonus += 12000000;
+                    realWorldNote = 'Оптическая иллюзия двух вертикальных единиц (I 1) — закрытый трофей Дубая!';
+                }
+            } else if (digitCount === 2) {
+                isPrestigePattern = true;
+                if (cleanDigits[0] === cleanDigits[1]) {
+                    tierId = 'uhnw_2digit_twin';
+                    tierBadge = '💎 VVIP 2-DIGIT TWIN';
+                    tierTitle = `Двузначный парный дубль RTA (${cleanDigits})`;
+                    digitBase = TWIN_2DIGIT_BASE[cleanDigits] || 5500000;
+                    realWorldNote = 'По правилам рынка ОАЭ двузначный дубль (11..99) всегда ценится выше любого трёхзначного номера (включая 777).';
+
+                    if (code === 'O') {
+                        synergyBonus += 3500000;
+                        realWorldNote = `Оптическая иллюзия круга O ${cleanDigits} (читается как 0 ${cleanDigits}) — мультимиллионный лот RTA!`;
+                    } else if (code === 'I' && cleanDigits === '11') {
+                        synergyBonus += 4000000;
+                        realWorldNote = 'Визуальный триплет вертикальных единиц (I 11) — ультра-редкий трофей Дубая!';
+                    } else if (code === 'BB' && cleanDigits === '88') {
+                        synergyBonus += 4500000;
+                        realWorldNote = 'Аукционный рекорд Дубая: номер BB 88 продан за 14 000 000 AED ($3,8 млн)!';
+                    } else if (code === 'CC' && cleanDigits === '22') {
+                        synergyBonus += 3000000;
+                        realWorldNote = 'Аукционный рекорд RTA: номер CC 22 продан за 8 350 000 AED ($2,27 млн)!';
+                    }
+                } else if (cleanDigits[1] === '0') {
+                    tierId = 'uhnw_2digit_round';
+                    tierBadge = '🏛️ VIP 2-DIGIT ROUND';
+                    tierTitle = `Двузначный круглый десяток RTA (${cleanDigits})`;
+                    digitBase = ROUND_2DIGIT_BASE[cleanDigits] || 2100000;
+                    realWorldNote = cleanDigits === '50'
+                        ? 'Номер 50 символизирует Golden Jubilee (50-летие основания ОАЭ) и особо ценится коллекционерами.'
+                        : 'Круглые двузначные десятки (10..90) торгуются на аукционах RTA за 3,5–15 млн дирхамов.';
+                    if (code === 'O' && cleanDigits === '10') {
+                        synergyBonus += 2200000;
+                        realWorldNote = 'Бинарная оптическая иллюзия O 10 (0 10) — элитный лот Дубая!';
+                    }
+                } else if (['71', '63'].includes(cleanDigits)) {
+                    tierId = 'uhnw_2digit_iconic';
+                    tierBadge = '🔥 CULT 2-DIGIT';
+                    if (cleanDigits === '71') {
+                        digitBase = 1450000;
+                        tierTitle = 'Патриотический двузначный номер 71 (1971 — Год основания ОАЭ)';
+                        realWorldNote = 'Число 71 — главный национальный символ объединения Эмиратов в 1971 году.';
+                    } else {
+                        digitBase = 1350000;
+                        tierTitle = 'Культовый дубайский индекс 63 (Mercedes-AMG G63 Brabus)';
+                        realWorldNote = 'Двузначный номер 63 — главный статусный аксессуар для G63 AMG и Brabus в Дубае.';
+                        if (code === 'G' || code === 'GG') {
+                            synergyBonus += 1500000;
+                            realWorldNote = `Идеальное комбо ${code} 63 для дубайского Mercedes-AMG G63 Brabus!`;
+                        }
+                    }
+                } else {
+                    const is2Ladder = ['12','21','23','34','45','56','67','78','89','98','87','76','65','54','43','32'].includes(cleanDigits);
+                    tierId = 'uhnw_2digit';
+                    tierBadge = '🌟 2-DIGIT VIP';
+                    tierTitle = `Двузначный привилегированный номер RTA (${cleanDigits})`;
+                    digitBase = is2Ladder ? 165000 : 135000;
+                    realWorldNote = 'Любой двузначный номер в Дубае — элитный актив стоимостью от 1,4 млн AED на вторичном рынке.';
+                }
+            } else if (digitCount === 3) {
+                if (cleanDigits[0] === cleanDigits[1] && cleanDigits[1] === cleanDigits[2]) {
+                    isPrestigePattern = true;
+                    tierId = 'vip_3digit_triple';
+                    tierBadge = '🏆 RTA TRIPLE 3-DIGIT';
+                    tierTitle = `Трёхзначный аукционный триплет RTA (${cleanDigits})`;
+                    digitBase = TRIPLE_3DIGIT_BASE[cleanDigits] || 2800000;
+                    realWorldNote = 'Трёхзначные триплеты (777, 111, 999) — визитная карточка суперкаров в Downtown Dubai и Dubai Marina.';
+                    if (code === 'BB' && cleanDigits === '777') {
+                        synergyBonus += 2200000;
+                        realWorldNote = 'Рекорд аукциона Дубая: номер BB 777 продан за 6 000 000 AED ($1,63 млн)!';
+                    } else if (code === 'I' && cleanDigits === '111') {
+                        synergyBonus += 2500000;
+                        realWorldNote = 'Четыре вертикальные единицы подряд (I 111) — оптический шедевр RTA!';
+                    }
+                } else if (cleanDigits.endsWith('00')) {
+                    isPrestigePattern = true;
+                    tierId = 'vip_3digit_round';
+                    tierBadge = '✨ ROUND HUNDRED';
+                    tierTitle = `Трёхзначная круглая сотня RTA (${cleanDigits})`;
+                    digitBase = ROUND_3DIGIT_BASE[cleanDigits] || 42000;
+                    realWorldNote = 'Круглые сотни (100..900) визуально воспринимаются как однозначные номера с двумя нулями.';
+                    if (code === 'O' && cleanDigits === '100') {
+                        synergyBonus += 280000;
+                    } else if ((code === 'S' || code === 'G') && (cleanDigits === '500' || cleanDigits === '600')) {
+                        synergyBonus += 140000;
+                    } else if (code === 'B' && (cleanDigits === '800' || cleanDigits === '900')) {
+                        synergyBonus += 140000;
+                    }
+                } else if (UAE_SPECIAL_3DIGIT_NUMBERS.includes(cleanDigits)) {
+                    isPrestigePattern = true;
+                    tierId = 'vip_3digit_supercar';
+                    tierBadge = '🏎️ SUPERCAR / RADAR';
+                    tierTitle = `Индекс суперкара / радар-комбинация RTA (${cleanDigits})`;
+                    digitBase = ['911', '707', '101', '909'].includes(cleanDigits) ? 52000 : 38000;
+                    realWorldNote = 'В Дубае особым спросом пользуются номера под модель суперкара (911, 812, 720, 488, 707) и нулевые радары (101, 707, 909).';
+                    if ((code === 'P' || code === 'PP') && (cleanDigits === '911' || cleanDigits === '918')) {
+                        synergyBonus += 850000;
+                        realWorldNote = `Культовое комбо ${code} ${cleanDigits} для владельцев Porsche ${cleanDigits} в Дубае!`;
+                    } else if ((code === 'F' || code === 'FF') && ['812', '488', '458'].includes(cleanDigits)) {
+                        synergyBonus += 680000;
+                        realWorldNote = `Фирменный номер ${code} ${cleanDigits} для суперкаров Ferrari в Дубае!`;
+                    } else if ((code === 'M' || code === 'MM') && ['720', '765'].includes(cleanDigits)) {
+                        synergyBonus += 620000;
+                        realWorldNote = `Идеальный индекс ${code} ${cleanDigits} для McLaren ${cleanDigits}S/LT!`;
+                    } else if (code === 'AA' && cleanDigits === '707') {
+                        synergyBonus += 1500000;
+                        realWorldNote = 'Реальный лот аукциона Дубая AA 707 продан за 3 300 000 AED ($900 тыс.)!';
+                    } else if ((code === 'O' && cleanDigits === '909') || (code === 'I' && cleanDigits === '101')) {
+                        synergyBonus += 420000;
+                    }
+                } else if (UAE_LADDER_3DIGIT.includes(cleanDigits)) {
+                    isPrestigePattern = true;
+                    tierId = 'vip_3digit_pattern';
+                    tierBadge = '🎯 RTA LADDER';
+                    tierTitle = `Трёхзначная лесенка RTA (${cleanDigits})`;
+                    digitBase = ['123', '789', '321', '987'].includes(cleanDigits) ? 44000 : 34000;
+                    realWorldNote = 'Последовательные трёхзначные номера (123, 789) продаются на онлайн-аукционах RTA за 350k–1.2M AED.';
+                } else if (cleanDigits[0] === cleanDigits[2]) {
+                    isPrestigePattern = false;
+                    tierId = 'vip_3digit_mirror';
+                    tierBadge = '🇦🇪 MIRROR 3-DIGIT';
+                    tierTitle = `Зеркальный 3-значный номер ОАЭ (${cleanDigits})`;
+                    digitBase = 11200;
+                    realWorldNote = 'Симметричный трёхзначный номер (палиндром ABA).';
+                } else {
+                    isPrestigePattern = false;
+                    tierId = 'vip_3digit';
+                    tierBadge = '🇦🇪 DUBAI 3-DIGIT';
+                    tierTitle = 'Трёхзначный номер Дубая / ОАЭ';
+                    digitBase = 8200;
+                }
+            } else if (digitCount === 4) {
+                if (/^([1-9])\1{3}$/.test(cleanDigits)) {
+                    isPrestigePattern = true;
+                    tierId = 'collector_4digit_quad';
+                    tierBadge = '💎 RTA QUAD 4-DIGIT';
+                    tierTitle = `Четырёхзначный покер одинаковых цифр RTA (${cleanDigits})`;
+                    digitBase = (cleanDigits === '7777' || cleanDigits === '1111')
+                        ? 3800000
+                        : (['9999', '5555', '8888'].includes(cleanDigits) ? 3100000 : 2200000);
+                    realWorldNote = 'Четыре одинаковые цифры подряд (7777, 1111, 9999) на аукционах RTA ценятся наравне с двузначными номерами.';
+                } else if (/^[1-9]000$/.test(cleanDigits)) {
+                    isPrestigePattern = true;
+                    tierId = 'collector_4digit_round';
+                    tierBadge = '🏛️ ROUND THOUSAND';
+                    tierTitle = `Круглая тысяча RTA (${cleanDigits})`;
+                    digitBase = (cleanDigits === '1000' || cleanDigits === '7000')
+                        ? 1250000
+                        : (['5000', '9000', '8000'].includes(cleanDigits) ? 920000 : 680000);
+                    realWorldNote = 'Круглые тысячи (1000..9000) с тремя нулями — элитная серия RTA.';
+                } else if (['1971', '2020', '2071'].includes(cleanDigits)) {
+                    isPrestigePattern = true;
+                    tierId = 'collector_4digit_heritage';
+                    tierBadge = '🕌 UAE HERITAGE';
+                    if (cleanDigits === '1971') {
+                        digitBase = 950000;
+                        tierTitle = '1971 — Год основания ОАЭ (Spirit of the Union)';
+                        realWorldNote = 'Номер 1971 — предмет национальной гордости в ОАЭ в честь года образования Федерации.';
+                    } else if (cleanDigits === '2020') {
+                        digitBase = 520000;
+                        tierTitle = '2020 — Всемирная выставка EXPO 2020 Dubai + пара 20-20';
+                        realWorldNote = 'Знаковый памятный номер EXPO 2020 Dubai с двойным повтором 20-20.';
+                    } else {
+                        digitBase = 450000;
+                        tierTitle = '2071 — Столетие ОАЭ (UAE Centennial 2071)';
+                        realWorldNote = 'Государственная программа столетия ОАЭ — UAE Centennial 2071.';
+                    }
+                } else if (/^([1-9])00\1$/.test(cleanDigits)) {
+                    isPrestigePattern = true;
+                    tierId = 'collector_4digit_radar';
+                    tierBadge = '🎯 ZERO BOOKEND';
+                    tierTitle = `Четырёхзначный нулевой радар RTA (${cleanDigits})`;
+                    digitBase = (cleanDigits === '7007' || cleanDigits === '1001') ? 580000 : 380000;
+                    realWorldNote = 'Зеркальные рамки с двумя нулями в центре (1001, 7007, 9009) — классика аукционов Дубая.';
+                } else if (/^([1-9])\1\1\d$/.test(cleanDigits) || /^\d([1-9])\1\1$/.test(cleanDigits)) {
+                    isPrestigePattern = true;
+                    tierId = 'collector_4digit_triple';
+                    tierBadge = '✨ TRIPLE-IN-4';
+                    tierTitle = `Триплет внутри 4-значного номера RTA (${cleanDigits})`;
+                    digitBase = cleanDigits.endsWith('0') ? 320000 : 220000;
+                } else if (
+                    /^(\d)\1(\d)\2$/.test(cleanDigits) ||
+                    /^(\d\d)\1$/.test(cleanDigits) ||
+                    /^(\d)(\d)\2\1$/.test(cleanDigits) ||
+                    ['1234','2345','3456','4567','5678','6789','9876','8765','7654','6543','5432','4321'].includes(cleanDigits)
+                ) {
+                    isPrestigePattern = true;
+                    tierId = 'collector_4digit_pattern';
+                    tierBadge = '🎯 4-DIGIT PATTERN';
+                    tierTitle = `Симметричная 4-значная комбинация RTA (${cleanDigits})`;
+                    digitBase = cleanDigits.endsWith('00') ? 195000 : 125000;
+                } else {
+                    isPrestigePattern = false;
+                    tierId = 'distinguished_4digit';
+                    tierBadge = '🇦🇪 4-DIGIT RTA';
+                    tierTitle = 'Четырёхзначный номер RTA (Distinguished 4-Digit)';
+                    digitBase = 11000;
+                }
+            } else {
+                if (/^([1-9])\1{4}$/.test(cleanDigits)) {
+                    isPrestigePattern = true;
+                    tierId = 'collector_5digit_quint';
+                    tierBadge = '👑 RTA QUINT 5-DIGIT';
+                    tierTitle = `Пятизначный королевский квинт RTA (${cleanDigits})`;
+                    digitBase = (cleanDigits === '77777' || cleanDigits === '11111')
+                        ? 2900000
+                        : (['99999', '55555', '88888'].includes(cleanDigits) ? 2300000 : 1650000);
+                    realWorldNote = 'Пятизначные квинты (77777, 11111, 99999) продаются на аукционах Дубая за 800 тыс. – 1,8 млн AED!';
+                } else if (/^[1-9]0000$/.test(cleanDigits)) {
+                    isPrestigePattern = true;
+                    tierId = 'collector_5digit_round';
+                    tierBadge = '🏛️ ROUND 10,000';
+                    tierTitle = `Круглый десятитысячный номер RTA (${cleanDigits})`;
+                    digitBase = (cleanDigits === '10000' || cleanDigits === '70000') ? 850000 : 520000;
+                    realWorldNote = 'Четыре нуля подряд (10000..90000) создают эффект однозначного номера на табличке.';
+                } else if (
+                    /^([1-9])000\1$/.test(cleanDigits) ||
+                    /^([1-9])\1{3}\d$/.test(cleanDigits) ||
+                    /^\d([1-9])\1{3}$/.test(cleanDigits)
+                ) {
+                    isPrestigePattern = true;
+                    tierId = 'collector_5digit_radar';
+                    tierBadge = '🎯 5-DIGIT RADAR / QUAD';
+                    tierTitle = `Редкий 5-значный радар / квад RTA (${cleanDigits})`;
+                    digitBase = 280000;
+                } else if (
+                    /^(\d)\10\1\1$/.test(cleanDigits) ||
+                    /^(\d)(\d)\d\2\1$/.test(cleanDigits) ||
+                    ['12345','23456','34567','45678','56789','98765','87654','76543','65432','54321'].includes(cleanDigits)
+                ) {
+                    isPrestigePattern = true;
+                    tierId = 'collector_5digit_sequence';
+                    tierBadge = '✨ 5-DIGIT PATTERN';
+                    tierTitle = `Коллекционная 5-значная комбинация RTA (${cleanDigits})`;
+                    digitBase = 140000;
+                } else if (
+                    /^(\d)(\d)\1\2\1$/.test(cleanDigits) ||
+                    /^[1-9]{2}000$/.test(cleanDigits) ||
+                    /^(\d)\1\1(\d)\2$/.test(cleanDigits) ||
+                    /^(\d)\1(\d)\2\2$/.test(cleanDigits)
+                ) {
+                    isPrestigePattern = true;
+                    tierId = 'collector_5digit_semi';
+                    tierBadge = '🇦🇪 5-DIGIT SEMI-VIP';
+                    tierTitle = `Красивый 5-значный номер RTA (${cleanDigits})`;
+                    digitBase = 48000;
+                } else {
+                    isPrestigePattern = false;
+                    tierId = 'standard_5digit';
+                    tierBadge = '🇦🇪 STANDARD 5-DIGIT';
+                    tierTitle = 'Стандартный 5-значный регистрационный номер RTA';
+                    digitBase = 5500;
+                }
+            }
+
+            let price;
+            if (isPrestigePattern) {
+                const doubleBonus = isDoubleCode
+                    ? (digitBase >= 500000 ? codeFlatBonus : (codeTier === 'RTA_DOUBLE_PRIME' ? 45000 : 28000))
+                    : 0;
+                const rawPrice = (digitBase + doubleBonus) * codeMult * emirateMult + synergyBonus;
+                price = Math.round(rawPrice / 100) * 100;
+            } else {
+                const plainCodeBonus = isDoubleCode
+                    ? (codeTier === 'RTA_DOUBLE_PRIME' ? 4200 : 2800)
+                    : codeFlatBonus;
+                price = digitBase + plainCodeBonus + emirateFlatBonus;
+            }
+
+            const estimatedAed = Math.max(400, Math.round((price / 2.1) / 50) * 50);
+            const estimatedUsd = Math.max(110, Math.round(estimatedAed / 3.6725 / 10) * 10);
+
+            return {
+                code,
+                isDoubleCode,
+                cleanDigits,
+                digitCount,
+                region: regUp,
+                emirateName,
+                codeTier,
+                codePrestige,
+                tierId,
+                tierBadge,
+                tierTitle,
+                realWorldNote,
+                price,
+                estimatedAed,
+                estimatedUsd
+            };
+        }
+
+        function inspectUaePlate(arg0, l2, l3, num, reg) {
+            if (typeof arg0 === 'string' && (l2 === undefined || arg0.includes('|'))) {
+                const raw = arg0.includes('|') ? arg0.trim() : `${arg0.trim()} | DXB UAE`;
+                const uaeMatch = raw.match(/^(.*?)\s*\|\s*([A-Z0-9]{1,3})(?:\s+UAE)?$/i);
+                if (uaeMatch) {
+                    const mainPart = uaeMatch[1].trim();
+                    const regParsed = uaeMatch[2].trim().toUpperCase();
+                    const mAuth = mainPart.match(/^([A-ZА-ЯЁ]{1,2}|50|0?[1-9]|1\d|2[0-2])\s+(\d{1,5})$/i);
+                    const mLeg3 = mainPart.match(/^([A-ZА-ЯЁ]{3})\s+(\d{1,5})$/i);
+                    if (mAuth) {
+                        const rawCode = mAuth[1].toUpperCase();
+                        const dStr = mAuth[2];
+                        const digitsNorm = dStr.length <= 3 ? dStr.padStart(3, '0') : (dStr.replace(/^0+/, '') || dStr);
+                        if (/^\d+$/.test(rawCode)) {
+                            const catStr = String(parseInt(rawCode, 10) || rawCode);
+                            return evaluateUaePlateDetails(catStr, 'X', 'Z', digitsNorm, regParsed);
+                        }
+                        const p1 = rawCode[0];
+                        const isDbl = rawCode.length === 2;
+                        return evaluateUaePlateDetails(p1, isDbl ? rawCode[1] : 'X', isDbl ? rawCode[1] : 'Z', digitsNorm, regParsed);
+                    }
+                    if (mLeg3) {
+                        const s3 = mLeg3[1].toUpperCase();
+                        const dStr = mLeg3[2];
+                        const digitsNorm = dStr.length <= 3 ? dStr.padStart(3, '0') : (dStr.replace(/^0+/, '') || dStr);
+                        return evaluateUaePlateDetails(s3[0], s3[1], s3[2], digitsNorm, regParsed);
+                    }
+                }
+            }
+            if (arg0 && typeof arg0 === 'object' && !Array.isArray(arg0)) {
+                const arr = Array.isArray(arg0.letters) ? arg0.letters : [arg0.l1, arg0.l2, arg0.l3];
+                return evaluateUaePlateDetails(arr[0], arr[1], arr[2], arg0.digits ?? arg0.num, arg0.region ?? arg0.reg ?? 'DXB');
+            }
+            return evaluateUaePlateDetails(arg0, l2, l3, num, reg);
+        }
+        window.evaluateUaePlateDetails = evaluateUaePlateDetails;
+        window.inspectUaePlate = inspectUaePlate;
+
         function getCalculatedPrice(l1, l2, l3, num, reg, country = currentCountry) {
             const code = String(country || 'RUS').toUpperCase();
+            if (code === 'UAE') {
+                return evaluateUaePlateDetails(l1, l2, l3, num, reg).price;
+            }
             let letters = (l1 || '') + (l2 || '') + (l3 || '');
             const isTripleLetters = (l1 === l2 && l2 === l3);
             const isMirrorLetters = (l1 === l3 && l1 !== l2);
@@ -4481,13 +5194,11 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             if (code !== 'RUS' && PLATE_COUNTRIES[code]) {
                 const cfg = PLATE_COUNTRIES[code];
                 let price = cfg.basePrice || 600;
-                const mult = code === 'UAE' ? 2.2 : (code === 'JPN' ? 1.85 : (code === 'USA' ? 1.6 : 1.3));
+                const mult = code === 'JPN' ? 1.85 : (code === 'USA' ? 1.6 : 1.3);
                 const cElites = cfg.eliteLetters || [];
 
                 // 1. Престижные серии страны
                 if (cElites.includes(letters)) {
-                    if (code === 'UAE' && letters === 'SHK' && num === '001') return 25000000;
-                    if (code === 'UAE' && letters === 'DXB' && num === '777') return 18000000;
                     if (code === 'JPN' && letters === 'JDM' && num === '777') return 24000000;
                     if (code === 'JPN' && letters === 'GTR' && num === '001') return 22000000;
                     if (code === 'USA' && letters === 'VIP' && num === '001') return 16000000;
@@ -4500,7 +5211,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     else if (num === '001') price += Math.round(1200000 * mult);
                     else price += Math.round(400000 * mult);
 
-                    if (['SHK', 'DXB', 'UAE', 'VIP', 'USA', 'FBI', 'ZZZ', 'QQQ', 'AAA', 'JDM', 'GTR', 'TKY'].includes(letters)) {
+                    if (['VIP', 'USA', 'FBI', 'ZZZ', 'QQQ', 'AAA', 'JDM', 'GTR', 'TKY'].includes(letters)) {
                         price += Math.round(1300000 * mult);
                     } else {
                         price += Math.round(750000 * mult);
@@ -4511,62 +5222,27 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 }
 
                 // 2. Структура букв
-                if (code === 'UAE') {
-                    // В UAE отображается 1-буквенный код (l1) или 2-буквенный VIP-код (AA..ZZ при l1===l2===l3).
-                    // Скрытые l2 и l3 при 1-буквенном коде не должны менять цену одинаково выглядящих номеров.
-                    const isUaeHighDigit = /^00[1-9]$/.test(num) || /^0([1-9])\1$/.test(num) || (num[0] === num[1] && num[1] === num[2]);
-                    if (cElites.includes(letters)) {
-                        price += Math.round((isTripleLetters && num === '001' ? 3500000 : 500000) * mult);
-                    } else if (isTripleLetters) {
-                        price += Math.round(280000 * mult);
-                    } else if (['A', 'D', 'S', 'V', 'X', 'Z', 'M', 'K'].includes(l1)) {
-                        price += Math.round((isUaeHighDigit ? 120000 : 300) * mult);
-                    }
-                } else {
-                    if (isTripleLetters) price += Math.round(350000 * mult);
-                    else if (isMirrorLetters) price += Math.round(1800 * mult);
-                    else if (isPairLetters) price += Math.round(1200 * mult);
-                }
+                if (isTripleLetters) price += Math.round(350000 * mult);
+                else if (isMirrorLetters) price += Math.round(1800 * mult);
+                else if (isPairLetters) price += Math.round(1200 * mult);
 
                 // 3. Комбинации цифр
-                if (code === 'UAE') {
-                    if (num === '001') {
-                        price += Math.round((350000 + 2500000) * mult);
-                    } else if (/^00[2-9]$/.test(num)) {
-                        price += Math.round((num === '007' ? 1500000 : 1200000) * mult);
-                    } else if (num[0] === num[1] && num[1] === num[2]) {
-                        price += Math.round((num === '777' ? 750000 : 320000) * mult);
-                    } else if (/^0([1-9])\1$/.test(num)) {
-                        price += Math.round((num === '077' ? 650000 : 450000) * mult);
-                    } else if (/^0[1-9]0$/.test(num)) {
-                        price += Math.round(180000 * mult);
-                    } else if (/^0[1-9][1-9]$/.test(num)) {
-                        price += Math.round(50000 * mult);
-                    } else if (num.endsWith('00')) {
-                        price += Math.round(25000 * mult);
-                    } else if (['123','234','345','456','567','678','789','987','876','765','654','543','432','321'].includes(num)) {
-                        price += Math.round(20000 * mult);
-                    } else if (num[0] === num[2]) {
-                        price += Math.round(1600 * mult);
-                    }
-                } else {
-                    if (num[0] === num[1] && num[1] === num[2]) {
-                        price += Math.round((num === '777' ? 750000 : 320000) * mult);
-                    } else if (num === '001') {
-                        price += Math.round(350000 * mult);
-                    } else if (num === '007') {
-                        price += Math.round(120000 * mult);
-                    } else if (num.startsWith('00')) {
-                        price += Math.round(35000 * mult);
-                    } else if (num.endsWith('00')) {
-                        price += Math.round(25000 * mult);
-                    } else if (['123','234','345','456','567','678','789','987','876','765','654','543','432','321'].includes(num)) {
-                        price += Math.round(20000 * mult);
-                    } else if (['010','020','030','040','050','060','070','080','090'].includes(num)) {
-                        price += Math.round(2000 * mult);
-                    } else if (num[0] === num[2]) {
-                        price += Math.round(1600 * mult);
-                    }
+                if (num[0] === num[1] && num[1] === num[2]) {
+                    price += Math.round((num === '777' ? 750000 : 320000) * mult);
+                } else if (num === '001') {
+                    price += Math.round(350000 * mult);
+                } else if (num === '007') {
+                    price += Math.round(120000 * mult);
+                } else if (num.startsWith('00')) {
+                    price += Math.round(35000 * mult);
+                } else if (num.endsWith('00')) {
+                    price += Math.round(25000 * mult);
+                } else if (['123','234','345','456','567','678','789','987','876','765','654','543','432','321'].includes(num)) {
+                    price += Math.round(20000 * mult);
+                } else if (['010','020','030','040','050','060','070','080','090'].includes(num)) {
+                    price += Math.round(2000 * mult);
+                } else if (num[0] === num[2]) {
+                    price += Math.round(1600 * mult);
                 }
 
                 // 4. Престижные регионы / штаты / эмираты / префектуры
@@ -4574,7 +5250,6 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 if (
                     (code === 'KZ' && ['01', '02', '77'].includes(regStr)) ||
                     (code === 'USA' && ['CA', 'NY', 'FL', 'NV', 'TX'].includes(regStr)) ||
-                    (code === 'UAE' && ['DXB', 'AUH'].includes(regStr)) ||
                     (code === 'JPN' && ['TKY', 'YKH', 'OSK', 'NGY', 'SPR'].includes(regStr))
                 ) {
                     price += Math.round(500 * mult);
@@ -4703,7 +5378,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 currentL2 = '-';
                 currentL3 = '-';
                 currentNum = '---';
-                ['cell-l1', 'cell-l2', 'cell-l3', 'cell-n1', 'cell-n2', 'cell-n3'].forEach(id => setCellChar(id, '-'));
+                ['cell-l1', 'cell-l2', 'cell-l3', 'cell-n1', 'cell-n2', 'cell-n3', 'cell-n4', 'cell-n5'].forEach(id => setCellChar(id, '-'));
                 if (onlineProfile && onlineProfile.draft && typeof onlineProfile.draft === 'object') {
                     onlineProfile.draft.hasNumbers = false;
                     onlineProfile.draft.hasLetters = false;
@@ -4871,12 +5546,23 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 let price = calculatePrice();
                 let rarity = getRarity(price);
                 const specialMeta = getUltraSpecialPlateMeta(currentL1, currentL2, currentL3, currentNum, currentReg, currentCountry);
-                document.getElementById('current-price-display').innerHTML = `Оценка номера: <b style="color:var(--accent-green); margin-left:4px;">${price.toLocaleString('ru-RU')} ₽</b> <span style="font-size:11px; opacity:0.75; font-weight:600; margin-left:4px;">(для инвентаря)</span>`;
-                let rLabel = document.getElementById('gen-rarity');
-                rLabel.innerText = specialMeta ? `${specialMeta.title} • ${rarity.text}` : rarity.text;
-                rLabel.style.background = rarity.bg;
-                rLabel.style.color = rarity.color;
-                rLabel.classList.remove('hidden');
+                const cCode = String(currentCountry || 'RUS').toUpperCase();
+                if (cCode === 'UAE') {
+                    const uaeInfo = evaluateUaePlateDetails(currentL1, currentL2, currentL3, currentNum, currentReg);
+                    document.getElementById('current-price-display').innerHTML = `Оценка RTA: <b style="color:var(--accent-green); margin-left:4px;">${price.toLocaleString('ru-RU')} ₽</b> <span style="font-size:11px; color:#fbbf24; font-weight:700; margin-left:6px;">≈ ${uaeInfo.estimatedAed.toLocaleString('ru-RU')} AED ($${uaeInfo.estimatedUsd.toLocaleString('ru-RU')})</span><div style="font-size:11px; color:#94a3b8; margin-top:4px; line-height:1.35;"><b style="color:#e2e8f0;">${escapeHtml(uaeInfo.tierTitle)}</b> · ${escapeHtml(uaeInfo.codePrestige)}<br><span style="opacity:0.85;">${escapeHtml(uaeInfo.realWorldNote)}</span></div>`;
+                    let rLabel = document.getElementById('gen-rarity');
+                    rLabel.innerText = `${uaeInfo.tierBadge} • ${rarity.text}`;
+                    rLabel.style.background = rarity.bg;
+                    rLabel.style.color = rarity.color;
+                    rLabel.classList.remove('hidden');
+                } else {
+                    document.getElementById('current-price-display').innerHTML = `Оценка номера: <b style="color:var(--accent-green); margin-left:4px;">${price.toLocaleString('ru-RU')} ₽</b> <span style="font-size:11px; opacity:0.75; font-weight:600; margin-left:4px;">(для инвентаря)</span>`;
+                    let rLabel = document.getElementById('gen-rarity');
+                    rLabel.innerText = specialMeta ? `${specialMeta.title} • ${rarity.text}` : rarity.text;
+                    rLabel.style.background = rarity.bg;
+                    rLabel.style.color = rarity.color;
+                    rLabel.classList.remove('hidden');
+                }
                 updatePlateGlow(rarity.text);
             } else {
                 document.getElementById('current-price-display').innerText = `Оценка номера: --- ₽`;
@@ -4922,13 +5608,32 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     setCellChar('cell-l2', fL2);
                 }
 
-                const visibleTargets = targets.filter(id => {
-                    if (id === 'cell-l3') return false;
-                    if (id === 'cell-l2' && !uaeDoubleCode) return false;
-                    return true;
-                });
-                if (visibleTargets.length > 0) {
-                    targets = visibleTargets;
+                const hasNumTargets = targets.some(id => id.startsWith('cell-n'));
+                const hasLetTargets = targets.some(id => id.startsWith('cell-l'));
+                let nextTargets = [];
+                if (hasLetTargets) {
+                    nextTargets.push('cell-l1');
+                    if (uaeDoubleCode) nextTargets.push('cell-l2');
+                }
+                if (hasNumTargets) {
+                    const cleanDigits = getUaePlateDisplayParts(fL1, fL2, fL3, currentNum).digits;
+                    const dLen = Math.min(5, Math.max(1, cleanDigits.length));
+                    for (let i = 0; i < 5; i++) {
+                        const cId = 'cell-n' + (i + 1);
+                        if (i < dLen) {
+                            nextTargets.push(cId);
+                            finalValues[cId] = cleanDigits[i];
+                        } else {
+                            setCellChar(cId, '-');
+                            const hiddenEl = document.getElementById(cId);
+                            if (hiddenEl && hiddenEl.classList) {
+                                hiddenEl.classList.remove('spinning', 'stopped');
+                            }
+                        }
+                    }
+                }
+                if (nextTargets.length > 0) {
+                    targets = nextTargets;
                 }
             }
 
@@ -4952,6 +5657,8 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     else if (id === 'cell-n1') stopDelays[id] = 550 * speedScale;
                     else if (id === 'cell-n2') stopDelays[id] = 900 * speedScale;
                     else if (id === 'cell-n3') stopDelays[id] = 1600 * speedScale;
+                    else if (id === 'cell-n4') stopDelays[id] = 1950 * speedScale;
+                    else if (id === 'cell-n5') stopDelays[id] = 2300 * speedScale;
                     else stopDelays[id] = (400 + idx * 100) * speedScale;
                 });
             }
@@ -5079,8 +5786,10 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     lastTickTime = now;
                     playTick();
                     const activeLettersPool = (PLATE_COUNTRIES[currentCountry] && PLATE_COUNTRIES[currentCountry].letters) || lettersArr;
+                    const isUaeSpin = String(currentCountry || 'RUS').toUpperCase() === 'UAE';
                     activeCells.forEach(id => {
                         if (id.startsWith('cell-l')) setCellChar(id, randomItem(activeLettersPool));
+                        else if (isUaeSpin && id === 'cell-n1') setCellChar(id, (1 + Math.floor(Math.random() * 9)).toString());
                         else setCellChar(id, Math.floor(Math.random() * 10).toString());
                     });
                 }
@@ -5158,7 +5867,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 if (draft.hasNumbers || mode === 'both' || mode === 'numbers') {
                     if (draft.num) {
                         currentNum = draft.num;
-                        if (!mode && currentNum.length === 3) {
+                        if (!mode && currentCountry !== 'UAE' && currentNum.length === 3) {
                             setCellChar('cell-n1', currentNum[0]);
                             setCellChar('cell-n2', currentNum[1]);
                             setCellChar('cell-n3', currentNum[2]);
@@ -5168,9 +5877,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     hasSpunNumSinceSave = !!draft.changedNumbers;
                 } else if (!mode && draft.hasNumbers === false) {
                     currentNum = '---';
-                    setCellChar('cell-n1', '-');
-                    setCellChar('cell-n2', '-');
-                    setCellChar('cell-n3', '-');
+                    ['cell-n1', 'cell-n2', 'cell-n3', 'cell-n4', 'cell-n5'].forEach(id => setCellChar(id, '-'));
                     boardHasNumbers = false;
                     hasSpunNumSinceSave = false;
                 }
@@ -5286,9 +5993,34 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 if (n[0] === n[1] && n[1] === n[2]) continue;
                 if (n.endsWith('00')) continue;
                 if (LADDER_NUMBERS_LOCAL.includes(n)) continue;
+                if (UAE_SPECIAL_3DIGIT_NUMBERS.includes(n)) continue;
                 return n;
             }
             return '142';
+        }
+
+        function pickOrdinaryUaeNumberLocal() {
+            // В реальном Дубае базовые номера RTA — 5-значные (50%), 4-значные (35%) и обычные 3-значные (15%)
+            const lenRoll = Math.random();
+            if (lenRoll < 0.50) {
+                for (let attempt = 0; attempt < 50; attempt++) {
+                    const n = String(10000 + Math.floor(Math.random() * 90000));
+                    if (n.endsWith('00')) continue;
+                    const info = evaluateUaePlateDetails('A', 'A', 'A', n, 'DXB');
+                    if (info && info.price < 18000) return n;
+                }
+                return '48291';
+            }
+            if (lenRoll < 0.85) {
+                for (let attempt = 0; attempt < 50; attempt++) {
+                    const n = String(1000 + Math.floor(Math.random() * 9000));
+                    if (n.endsWith('00')) continue;
+                    const info = evaluateUaePlateDetails('A', 'A', 'A', n, 'DXB');
+                    if (info && info.price < 18000) return n;
+                }
+                return '4829';
+            }
+            return pickOrdinary3DigitNumberLocal();
         }
 
         function generateLuckyNumberLocal(forceTier, pity = 0, country = currentCountry) {
@@ -5299,9 +6031,20 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 return randomItem(cCode === 'JPN' ? ['777', '001', '007'] : ['001', '007', '777', '888', '999', '100']);
             }
             if (forceTier === 'legendary') {
+                if (cCode === 'UAE') {
+                    return randomItem(['1', '5', '7', '9', '2', '8', '11', '77', '88', '99', '777', '7777', '77777']);
+                }
                 return randomItem(['777', '777', '001', '007', '011', '111', '555', '888', '999']);
             }
             if (forceTier === 'epic') {
+                if (cCode === 'UAE') {
+                    return randomItem([
+                        '111','222','333','444','555','666','777','888','999',
+                        '11','22','55','77','88','99','10','20','50','70','63','71',
+                        '1971','2020','7007','1000','7000','7777','10000','77777',
+                        '2','3','4','6','8'
+                    ]);
+                }
                 return randomItem([
                     '111','222','333','444','555','666','888','999',
                     '100','200','300','400','500','600','700','800','900',
@@ -5309,6 +6052,15 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 ]);
             }
             if (forceTier === 'rare') {
+                if (cCode === 'UAE') {
+                    return randomItem([
+                        ...LADDER_NUMBERS_LOCAL,
+                        '100','200','500','700','900','911','707','101','909','812','720',
+                        '12','23','34','45','67','89',
+                        '1212','7070','1122','7788','1234','7770',
+                        '12345','77000','55000','70707'
+                    ]);
+                }
                 return randomItem(LADDER_NUMBERS_LOCAL);
             }
 
@@ -5316,15 +6068,16 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             const roll = Math.floor(Math.random() * 1000);
             const jackpotCutoff = Math.min(15, (isIntl ? 1 : 3) + Math.floor(luckBonus * 0.05));
             if (roll < jackpotCutoff) {
-                return randomItem(['777','001','007']);
+                return randomItem(cCode === 'UAE' ? ['1','5','7','9','2','8','77','777'] : ['777','001','007']);
             }
             const epicCutoff = Math.min(35, (isIntl ? 5 : 12) + Math.floor(luckBonus * 0.15));
             if (roll < epicCutoff) {
                 const epicPool = cCode === 'UAE'
                     ? [
-                        '111','222','333','444','555','666','888','999',
-                        '011','022','055','077','088','099','010','020','050','070',
-                        '002','003','005','007','008','009'
+                        '111','222','333','444','555','666','777','888','999',
+                        '11','22','55','77','88','99','10','20','50','70','63','71',
+                        '1971','2020','7007','1000','7000','7777','10000','77777',
+                        '2','3','5','7','8','9'
                     ]
                     : [
                         '111','222','333','444','555','666','888','999',
@@ -5336,18 +6089,26 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             const ladderCutoff = Math.min(70, (isIntl ? 16 : 30) + Math.floor(luckBonus * 0.3));
             if (roll < ladderCutoff) {
                 const rarePool = cCode === 'UAE'
-                    ? [...LADDER_NUMBERS_LOCAL, '100','200','300','500','700','900','023','045','067','089']
+                    ? [
+                        ...LADDER_NUMBERS_LOCAL,
+                        '100','200','300','500','700','900','911','707','101','909',
+                        '12','23','45','67','89',
+                        '1212','7070','1122','7788','1234',
+                        '12345','77000','70707'
+                    ]
                     : LADDER_NUMBERS_LOCAL;
                 return randomItem(rarePool);
             }
-            return pickOrdinary3DigitNumberLocal();
+            return cCode === 'UAE' ? pickOrdinaryUaeNumberLocal() : pickOrdinary3DigitNumberLocal();
         }
 
         function generateLuckyLettersLocal(forceTier, pity = 0, country = currentCountry) {
             const cCode = String(country || currentCountry || 'RUS').toUpperCase();
             const cfg = PLATE_COUNTRIES[cCode] || PLATE_COUNTRIES.RUS;
             const pool = cfg.letters || lettersArr;
-            const elites = cfg.eliteLetters || eliteLetters;
+            const elites = cCode === 'UAE'
+                ? ['AAA','DDD','BBB','CCC','OOO','III','PPP','XXX','ZZZ']
+                : (cfg.eliteLetters || eliteLetters);
             const isIntl = (cCode === 'USA' || cCode === 'UAE' || cCode === 'JPN');
 
             if (forceTier === 'ultra_special') {
@@ -5419,7 +6180,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             let n;
             if (pityCounterNum >= currentPityTargetNum) {
                 pityCounterNum = 0;
-                n = Math.random() < 0.25 ? '777' : (1 + Math.floor(Math.random() * 9)).toString().repeat(3);
+                n = String(currentCountry || 'RUS').toUpperCase() === 'UAE'
+                    ? randomItem(['7', '5', '9', '11', '77', '88', '99', '777', '7777', '77777'])
+                    : (Math.random() < 0.25 ? '777' : (1 + Math.floor(Math.random() * 9)).toString().repeat(3));
             } else {
                 n = generateLuckyNumberLocal(null, pityCounterNum, currentCountry);
             }
@@ -5602,7 +6365,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             let price = calculatePrice();
             let r = getRarity(price);
 
-            inventory.unshift({ text: pText, price: price, rarity: r, country: currentCountry });
+            const savedEntry = { text: pText, price: price, rarity: r, country: currentCountry, createdAt: Date.now() };
+            inventory.unshift(savedEntry);
+            recordRecentRareDrop(savedEntry);
             addExp(r.text);
 
             hasSpunLetSinceSave = false;
@@ -5742,7 +6507,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 RUS: ['ААА', 'МММ', 'ООО', 'ХХХ', 'АМР', 'ЕКХ', 'ВОР'],
                 KZ: ['VIP', 'AAA', 'MMM', 'ZZZ', 'XXX'],
                 USA: ['VIP', 'AAA', 'NYC', 'USA', 'LAX'],
-                UAE: ['SHK', 'DXB', 'VIP', 'AAA', 'UAE'],
+                UAE: ['AAA', 'DDD', 'BBB', 'OOO', 'III', 'PPP'],
                 JPN: ['JDM', 'TKY', 'GTR', 'NSM', 'TRD', 'STI']
             };
             const mythicTemplatesMap = {
@@ -5768,9 +6533,11 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     { l: 'MIA', num: '777', reg: 'FL' }
                 ],
                 UAE: [
-                    { l: 'SHK', num: '001', reg: 'DXB' },
-                    { l: 'DXB', num: '777', reg: 'DXB' },
-                    { l: 'VIP', num: '001', reg: 'AUH' }
+                    { l: 'PPP', num: '007', reg: 'DXB' },
+                    { l: 'DDD', num: '005', reg: 'DXB' },
+                    { l: 'AAA', num: '009', reg: 'DXB' },
+                    { l: 'DDD', num: '001', reg: 'DXB' },
+                    { l: 'OOO', num: '009', reg: 'DXB' }
                 ],
                 JPN: [
                     { l: 'JDM', num: '777', reg: 'TKY' },
@@ -5809,31 +6576,39 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 } else if (tier === 'Крутой' || tier === 'Легендарный') {
                     const series = randomItem(legendarySeriesMap[cCode] || legendarySeriesMap.RUS);
                     l1 = series[0]; l2 = series[1]; l3 = series[2];
-                    num = randomItem(['777', '001', '888', '999']);
+                    num = cCode === 'UAE'
+                        ? randomItem(['11', '77', '88', '99', '777', '7777', '77777'])
+                        : randomItem(['777', '001', '888', '999']);
                     reg = randomItem(capitalRegionsMap[cCode] || capitalRegionsMap.RUS);
                 } else if (tier === 'Эпический') {
                     [l1, l2, l3] = pickOrdinaryLetters();
-                    num = randomItem(['001', '777', '666', '111', '222', '333', '444', '555', '888', '999']);
+                    num = cCode === 'UAE'
+                        ? randomItem(['777', '111', '555', '888', '999', '50', '70', '63', '71', '1971', '1000', '7007', '10000'])
+                        : randomItem(['001', '777', '666', '111', '222', '333', '444', '555', '888', '999']);
                     reg = randomItem(capitalRegionsMap[cCode] || capitalRegionsMap.RUS);
                 } else if (tier === 'Супер редкий') {
                     [l1, l2, l3] = pickOrdinaryLetters();
                     num = cCode === 'UAE'
-                        ? randomItem(['012', '023', '034', '045', '056', '067', '078', '089', '019', '028', '037', '046'])
+                        ? randomItem(['12', '23', '34', '45', '56', '67', '78', '89', '1212', '7070', '7788', '1234', '12345'])
                         : randomItem(['007', '002', '003', '004', '005', '006', '008', '009']);
                     reg = randomItem(ordinaryRegionsMap[cCode] || ordinaryRegionsMap.RUS);
                 } else if (tier === 'Редкий') {
                     [l1, l2, l3] = pickOrdinaryLetters();
-                    num = randomItem(['100', '200', '300', '500', '700', '900', '123', '234', '345', '456']);
+                    num = cCode === 'UAE'
+                        ? randomItem(['100', '200', '300', '500', '700', '900', '911', '707', '101', '909', '123', '234', '77000', '55000'])
+                        : randomItem(['100', '200', '300', '500', '700', '900', '123', '234', '345', '456']);
                     reg = randomItem(ordinaryRegionsMap[cCode] || ordinaryRegionsMap.RUS);
                 } else if (tier === 'Необычный') {
                     [l1, l2, l3] = pickOrdinaryLetters();
                     num = cCode === 'UAE'
-                        ? randomItem(['101', '252', '707', '818', '909', '303', '414', '626'])
+                        ? randomItem(['252', '818', '4829', '7315', '3942', '48291', '73920', '51842'])
                         : randomItem(['101', '252', '707', '818', '909', '010', '020', '030', '040', '050', '070', '090']);
                     reg = randomItem(ordinaryRegionsMap[cCode] || ordinaryRegionsMap.RUS);
                 } else {
                     [l1, l2, l3] = pickOrdinaryLetters();
-                    num = randomItem(['142', '385', '619', '258', '369', '417', '582', '638']);
+                    num = cCode === 'UAE'
+                        ? randomItem(['48291', '73920', '51842', '4829', '7315', '142'])
+                        : randomItem(['142', '385', '619', '258', '369', '417', '582', '638']);
                     reg = randomItem(ordinaryRegionsMap[cCode] || ordinaryRegionsMap.RUS);
                 }
             };
@@ -6070,15 +6845,18 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 isCar: true,
                 price: 650000,
                 cars: [
-                    { name: "ВАЗ-2107 «Жигули»", weight: 18 },
-                    { name: "ВАЗ-2109 «Девятка»", weight: 18 },
-                    { name: "ГАЗ-24 «Волга»", weight: 16 },
-                    { name: "Lada Priora БПАН", weight: 15 },
-                    { name: "Hyundai Solaris", weight: 12 },
-                    { name: "Lada Vesta Sport", weight: 9 },
-                    { name: "Volkswagen Polo", weight: 6 },
-                    { name: "Toyota Mark II Tourer V", weight: 4 },
-                    { name: "Subaru Impreza WRX STI", weight: 2 }
+                    { name: "ВАЗ-2107 «Жигули»", weight: 22 },
+                    { name: "ВАЗ-2109 «Девятка»", weight: 20 },
+                    { name: "ГАЗ-24 «Волга»", weight: 17 },
+                    { name: "Lada Priora БПАН", weight: 14 },
+                    { name: "Hyundai Solaris", weight: 9 },
+                    { name: "Lada Vesta Sport", weight: 6 },
+                    { name: "Volkswagen Polo", weight: 4 },
+                    { name: "Toyota Mark II Tourer V", weight: 2.5 },
+                    { name: "Volkswagen Golf GTI", weight: 2 },
+                    { name: "Subaru Impreza WRX STI", weight: 1.5 },
+                    { name: "Lexus IS300", weight: 1.2 },
+                    { name: "Mitsubishi Eclipse GT", weight: 0.8 }
                 ]
             },
             'car_luxury': {
@@ -6087,16 +6865,29 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 isCar: true,
                 price: 7500000,
                 cars: [
-                    { name: "Toyota Mark II Tourer V", weight: 12 },
-                    { name: "Subaru Impreza WRX STI", weight: 12 },
-                    { name: "BMW M5 E60 V10", weight: 14 },
-                    { name: "Nissan Silvia S15 Spec-R", weight: 14 },
-                    { name: "Toyota Camry 3.5", weight: 15 },
-                    { name: "Toyota Land Cruiser 300", weight: 15 },
-                    { name: "Nissan GT-R R35 Nismo", weight: 9 },
-                    { name: "Mercedes-Benz E63s AMG", weight: 6 },
-                    { name: "Audi RS6 Avant", weight: 4 },
-                    { name: "BMW M5 F90 Competition", weight: 1.9 },
+                    { name: "Toyota Mark II Tourer V", weight: 6 },
+                    { name: "Volkswagen Golf GTI", weight: 7 },
+                    { name: "Subaru Impreza WRX STI", weight: 7 },
+                    { name: "Lexus IS300", weight: 7 },
+                    { name: "BMW M5 E60 V10", weight: 7 },
+                    { name: "Mitsubishi Eclipse GT", weight: 6 },
+                    { name: "Nissan Silvia S15 Spec-R", weight: 6 },
+                    { name: "Toyota Camry 3.5", weight: 6 },
+                    { name: "Mazda RX-8", weight: 5.5 },
+                    { name: "Hyundai Elantra N", weight: 5 },
+                    { name: "Ford Mustang GT Coupe", weight: 4.5 },
+                    { name: "Mitsubishi Lancer Evo VIII", weight: 4.5 },
+                    { name: "Mercedes-Benz CLK 500", weight: 4 },
+                    { name: "Toyota Supra MK4", weight: 4 },
+                    { name: "Toyota Land Cruiser 300", weight: 4 },
+                    { name: "Porsche Cayman S", weight: 3.5 },
+                    { name: "Nissan GT-R R35 Nismo", weight: 4 },
+                    { name: "Mercedes-Benz E63s AMG", weight: 2.2 },
+                    { name: "Ford Mustang GT", weight: 2.8 },
+                    { name: "Audi RS6 Avant", weight: 1.4 },
+                    { name: "Chevrolet Corvette C6", weight: 1.2 },
+                    { name: "Dodge Viper SRT10", weight: 0.7 },
+                    { name: "BMW M5 F90 Competition", weight: 0.6 },
                     { name: "Bugatti Chiron Super Sport", weight: 0.1 }
                 ]
             },
@@ -6106,17 +6897,31 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 isCar: true,
                 price: 45000000,
                 cars: [
-                    { name: "Mercedes-Benz E63s AMG", weight: 8 },
-                    { name: "Audi RS6 Avant", weight: 9 },
-                    { name: "BMW M5 F90 Competition", weight: 11 },
-                    { name: "BMW M8 Gran Coupe", weight: 14 },
-                    { name: "Mercedes-Benz G63 AMG «Гелик»", weight: 17 },
-                    { name: "Porsche 911 Turbo S", weight: 16 },
-                    { name: "Lamborghini Huracan Performante", weight: 11 },
-                    { name: "Rolls-Royce Cullinan", weight: 7 },
-                    { name: "Ferrari SF90 Stradale", weight: 5.5 },
-                    { name: "Bugatti Chiron Super Sport", weight: 1.2 },
-                    { name: "Koenigsegg Jesko Attack", weight: 0.3 }
+                    { name: "Mercedes-Benz E63s AMG", weight: 2.5 },
+                    { name: "Ford Mustang GT", weight: 2.5 },
+                    { name: "Audi RS6 Avant", weight: 2.5 },
+                    { name: "Chevrolet Corvette C6", weight: 2.5 },
+                    { name: "Dodge Viper SRT10", weight: 3 },
+                    { name: "BMW M5 F90 Competition", weight: 3.5 },
+                    { name: "BMW M3 G80 Competition", weight: 3.5 },
+                    { name: "Aston Martin DB9", weight: 4 },
+                    { name: "BMW X5M Competition", weight: 4 },
+                    { name: "BMW M8 Gran Coupe", weight: 4.5 },
+                    { name: "Lamborghini Gallardo", weight: 4.5 },
+                    { name: "Chevrolet Corvette C6.R", weight: 5 },
+                    { name: "Audi RS7 Sportback", weight: 5 },
+                    { name: "Porsche Panamera Turbo", weight: 5 },
+                    { name: "Maserati GranTurismo", weight: 5 },
+                    { name: "Mercedes-Benz G63 AMG «Гелик»", weight: 6 },
+                    { name: "BMW M3 E46 GTR", weight: 6.5 },
+                    { name: "Mercedes-Benz SLR McLaren", weight: 6 },
+                    { name: "Porsche 911 Turbo S", weight: 6 },
+                    { name: "Audi Le Mans Quattro R8", weight: 5.5 },
+                    { name: "Lamborghini Huracan Performante", weight: 5 },
+                    { name: "Rolls-Royce Cullinan", weight: 3.8 },
+                    { name: "Ferrari SF90 Stradale", weight: 2.7 },
+                    { name: "Bugatti Chiron Super Sport", weight: 1.1 },
+                    { name: "Koenigsegg Jesko Attack", weight: 0.4 }
                 ]
             }
         };
@@ -6237,6 +7042,61 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             return (config.contents && config.contents[0] && config.contents[0].r) || 'Обычный';
         }
 
+        let recentRareDrops = [];
+        let batchCaseResults = [];
+        let lastOpenedCaseCount = 1;
+
+        function recordRecentRareDrop(entry) {
+            if (!entry) return;
+            const price = Number(entry.price) || 0;
+            const rarityText = (entry.rarity && entry.rarity.text) ? entry.rarity.text : '';
+            if (!entry.isCar && price < 15000 && rarityText === 'Обычный') return;
+            recentRareDrops.unshift({
+                id: entry._openingId || ('drop_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6)),
+                isCar: !!entry.isCar,
+                title: entry.isCar ? entry.name : entry.text,
+                price: price,
+                rarityText: rarityText || 'Редкий',
+                rarityBg: (entry.rarity && entry.rarity.bg) ? entry.rarity.bg : '#3b82f6',
+                country: entry.country || currentCountry || 'RUS',
+                ts: Date.now()
+            });
+            if (recentRareDrops.length > 8) recentRareDrops.length = 8;
+            renderRecentRareDrops();
+        }
+
+        function renderRecentRareDrops() {
+            if (typeof document === 'undefined') return;
+            const box = document.getElementById('generator-recent-drops');
+            if (!box) return;
+            if (!Array.isArray(recentRareDrops) || recentRareDrops.length === 0) {
+                box.innerHTML = `<div class="recent-drop-empty">Крутите генератор или открывайте кейсы — редкие находки появятся здесь.</div>`;
+                return;
+            }
+            box.innerHTML = recentRareDrops.map(d => {
+                const tierClass = (d.price >= 1000000 || /БЛАТНОЙ|МИФИЧ|УЛЬТРА/i.test(d.rarityText))
+                    ? 'drop-mythic'
+                    : (d.price >= 250000 || /Легендар/i.test(d.rarityText))
+                        ? 'drop-legend'
+                        : (d.price >= 45000 || /Эпич|Супер/i.test(d.rarityText))
+                            ? 'drop-epic'
+                            : '';
+                const badgeHtml = d.isCar
+                    ? `<span style="font-weight:800; color:#F5F6F8;">🏎️ ${escapeHtml(d.title)}</span>`
+                    : `<span class="mini-plate ${getMiniPlateCountryClass(d.title)}" style="font-size:10.5px; padding:1px 6px;">${renderMiniPlateInnerHtml(d.title)}</span>`;
+                return `
+                    <div class="recent-drop-item ${tierClass}">
+                        <div style="display:flex; align-items:center; gap:8px; min-width:0;">
+                            ${badgeHtml}
+                        </div>
+                        <div style="text-align:right; flex-shrink:0;">
+                            <div style="font-size:10px; color:var(--text-muted); font-weight:700;">${escapeHtml(d.rarityText)}</div>
+                            <div style="font-size:11.5px; color:#fbbf24; font-weight:800;">${Number(d.price || 0).toLocaleString('ru-RU')} ₽</div>
+                        </div>
+                    </div>`;
+            }).join('');
+        }
+
         function openCasePreview(type) {
             if (isSpinning) return;
             activeCaseType = type;
@@ -6345,9 +7205,13 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 }
             }
 
-            const buyText = `Открыть за ${effectivePrice.toLocaleString('ru-RU')} ₽`;
+            const buyText = `Открыть ×1 (${effectivePrice.toLocaleString('ru-RU')} ₽)`;
             const btnBuy = document.getElementById('btn-buy-case');
             if (btnBuy) btnBuy.innerText = buyText;
+            const btnBuy5 = document.getElementById('btn-buy-case-5');
+            if (btnBuy5) btnBuy5.innerText = `×5 (${(effectivePrice * 5).toLocaleString('ru-RU')} ₽)`;
+            const btnBuy10 = document.getElementById('btn-buy-case-10');
+            if (btnBuy10) btnBuy10.innerText = `×10 (${(effectivePrice * 10).toLocaleString('ru-RU')} ₽)`;
             const previewBuyBtn = document.getElementById('preview-buy-btn');
             if (previewBuyBtn) previewBuyBtn.innerText = buyText;
 
@@ -6355,38 +7219,24 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         }
 
         function closeCasePreview() {
-            document.getElementById('case-preview-modal').classList.remove('show');
+            document.getElementById('case-preview-modal')?.classList.remove('show');
         }
+
+        function closeRouletteModal() {
+            if (caseRouletteTimeout) {
+                clearTimeout(caseRouletteTimeout);
+                caseRouletteTimeout = null;
+            }
+            isSpinning = false;
+            document.getElementById('roulette-modal')?.classList.remove('show');
+        }
+        window.closeRouletteModal = closeRouletteModal;
 
         let caseRouletteTimeout = null;
 
-        function buyCase(type = activeCaseType) {
-            if (isSpinning) return;
-            if (type && caseConfigs[type]) {
-                activeCaseType = type;
-            }
-            const config = caseConfigs[activeCaseType];
-            if (!config) return;
-
-            const caseCountry = config.fixedCountry || currentCaseCountry || currentCountry || 'RUS';
-            const effectivePrice = getCaseEffectivePrice(activeCaseType, caseCountry);
-
-            const curBal = (onlineProfile && Number.isFinite(Number(onlineProfile.balance))) ? Math.max(balance, Number(onlineProfile.balance)) : balance;
-            if (curBal < effectivePrice) return notifyUser("Недостаточно средств!");
-
-            isSpinning = true;
-            const caseLabel = config.name || config.title || activeCaseType;
-            deductPlayerBalance(effectivePrice, `Открытие кейса «${caseLabel}»`);
-            achievements.casesOpened = (achievements.casesOpened || 0) + 1;
-            checkAchievements();
-            logPlayerActivity('Открыл кейс', `Открыл кейс «${caseLabel}» за ${effectivePrice.toLocaleString('ru-RU')} ₽`);
-            saveProgress();
-            closeCasePreview();
-
+        function rollSingleCaseItem(config, caseType, caseCountry) {
             const isCar = !!config.isCar;
-            wonCarObj = null;
-            wonPlateObj = null;
-
+            const openingId = 'drop_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
             if (isCar) {
                 if (!Array.isArray(currentCaseCars) || currentCaseCars.length === 0) {
                     currentCaseCars = config.cars.map(item => {
@@ -6398,19 +7248,25 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                         };
                     });
                 }
-                let totalWeight = config.cars.reduce((sum, item) => sum + item.weight, 0);
-                let rand = Math.random() * totalWeight;
+                const totalWeight = config.cars.reduce((sum, item) => sum + item.weight, 0);
+                const rand = Math.random() * totalWeight;
                 let cumulative = 0;
                 let wonItem = config.cars[0];
-                for (let item of config.cars) {
+                for (const item of config.cars) {
                     cumulative += item.weight;
                     if (rand <= cumulative) {
                         wonItem = item;
                         break;
                     }
                 }
-                let template = carsData.find(c => c.name === wonItem.name) || carsData[0];
-                wonCarObj = {
+                const template = carsData.find(c => c.name === wonItem.name) || carsData[0];
+                const duplicateExists = Array.isArray(myCars) && myCars.some(c => c && c.name === template.name);
+                return {
+                    _openingId: openingId,
+                    _autoSaved: true,
+                    _sold: false,
+                    _isDuplicate: duplicateExists,
+                    isCar: true,
                     name: template.name,
                     category: template.category,
                     price: template.price,
@@ -6418,13 +7274,329 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     rarity: getCarRarity(template.price)
                 };
             } else {
-                if (activeCaseType === 'mega' && caseCountry === 'RUS' && Math.random() < 0.00001) {
-                    wonPlateObj = SUPER_PRIZE;
+                let rolledPlate;
+                if (caseType === 'mega' && caseCountry === 'RUS' && Math.random() < 0.00001) {
+                    rolledPlate = { ...SUPER_PRIZE };
                 } else {
                     const wonRarity = pickCaseRarity(config);
-                    wonPlateObj = forcePlate(wonRarity, caseCountry);
+                    rolledPlate = { ...forcePlate(wonRarity, caseCountry) };
                 }
+                const duplicateExists = Array.isArray(inventory) && inventory.some(p => p && p.text === rolledPlate.text);
+                rolledPlate._openingId = openingId;
+                rolledPlate._autoSaved = true;
+                rolledPlate._sold = false;
+                rolledPlate._isDuplicate = duplicateExists;
+                rolledPlate.country = rolledPlate.country || caseCountry;
+                rolledPlate.createdAt = Date.now();
+                return rolledPlate;
             }
+        }
+
+        function persistAutoSavedCaseReward(reward) {
+            if (!reward) return;
+            if (reward.isCar) {
+                const exists = reward._openingId && myCars.some(c => c && c._openingId === reward._openingId);
+                if (!exists) {
+                    myCars.unshift({
+                        _openingId: reward._openingId,
+                        name: reward.name,
+                        basePrice: reward.price,
+                        img: reward.img,
+                        category: reward.category,
+                        condition: 100,
+                        plate: null,
+                        upgrades: { engine: 0, handling: 0, economy: 0, nitro: 0 }
+                    });
+                }
+                addExp((reward.rarity && reward.rarity.text) || "Супер редкий");
+            } else {
+                const exists = reward._openingId && inventory.some(p => p && p._openingId === reward._openingId);
+                if (!exists) {
+                    inventory.unshift(reward);
+                }
+                addExp((reward.rarity && reward.rarity.text) || "Обычный");
+            }
+            recordRecentRareDrop(reward);
+        }
+
+        function syncInventoryAndGarageToCloud() {
+            if (!onlineProfile) return;
+            onlineProfile.inventory = [...inventory];
+            onlineProfile.myCars = JSON.parse(JSON.stringify(myCars));
+            if (db && typeof db.ref === 'function') {
+                const key = sanitizeKey(onlineProfile.nickname);
+                const now = Date.now();
+                db.ref('onlineV4/accounts/' + key).update({
+                    inventory: onlineProfile.inventory,
+                    myCars: onlineProfile.myCars,
+                    updatedAt: now
+                }).catch(() => {});
+                db.ref('users/' + key).update({
+                    inventory: onlineProfile.inventory,
+                    myCars: onlineProfile.myCars,
+                    updatedAt: now
+                }).catch(() => {});
+            }
+        }
+
+        function quickOpenCase(type, count = 1, evt = null) {
+            if (evt && typeof evt.stopPropagation === 'function') evt.stopPropagation();
+            if (isSpinning) return;
+            activeCaseType = type;
+            buyCase(type, count);
+        }
+        window.quickOpenCase = quickOpenCase;
+
+        function openCaseAgain(count = lastOpenedCaseCount || 1) {
+            if (!activeCaseType || !caseConfigs[activeCaseType]) return;
+            if (caseRouletteTimeout) {
+                clearTimeout(caseRouletteTimeout);
+                caseRouletteTimeout = null;
+            }
+            isSpinning = false;
+            buyCase(activeCaseType, count);
+        }
+        window.openCaseAgain = openCaseAgain;
+
+        function updateRouletteReopenButtons(singlePrice) {
+            const p1 = document.getElementById('roulette-again-price-1');
+            if (p1) p1.textContent = `${singlePrice.toLocaleString('ru-RU')} ₽`;
+            const p5 = document.getElementById('roulette-again-price-5');
+            if (p5) p5.textContent = `${(singlePrice * 5).toLocaleString('ru-RU')} ₽`;
+            const p10 = document.getElementById('roulette-again-price-10');
+            if (p10) p10.textContent = `${(singlePrice * 10).toLocaleString('ru-RU')} ₽`;
+            const b5 = document.getElementById('btn-batch-open-5');
+            if (b5) b5.textContent = `🔄 Открыть снова ×5 (${(singlePrice * 5).toLocaleString('ru-RU')} ₽)`;
+            const b10 = document.getElementById('btn-batch-open-10');
+            if (b10) b10.textContent = `🔄 Открыть снова ×10 (${(singlePrice * 10).toLocaleString('ru-RU')} ₽)`;
+        }
+
+        function renderBatchCaseResultsUI(caseLabel, count, totalSpent, singlePrice) {
+            const grid = document.getElementById('roulette-batch-grid');
+            const summary = document.getElementById('roulette-batch-summary');
+            const modalTitle = document.getElementById('roulette-modal-title');
+            if (modalTitle) {
+                modalTitle.innerText = `🎁 Открыто: ${caseLabel} (×${count})`;
+                modalTitle.style.color = '#fbbf24';
+            }
+
+            let totalValue = 0;
+            let bestItem = null;
+            let soldCount = 0;
+            let duplicateUnsoldCount = 0;
+
+            batchCaseResults.forEach(item => {
+                const val = Number(item.price) || 0;
+                totalValue += val;
+                if (!bestItem || val > (Number(bestItem.price) || 0)) bestItem = item;
+                if (item._sold) soldCount++;
+                else if (item._isDuplicate) duplicateUnsoldCount++;
+            });
+
+            if (grid) {
+                grid.innerHTML = batchCaseResults.map((item, idx) => {
+                    const r = item.rarity || { text: 'Обычный', bg: '#334155', color: '#fff' };
+                    const borderColor = r.bg && r.bg !== 'transparent'
+                        ? (String(r.bg).startsWith('linear') ? '#f59e0b' : r.bg)
+                        : 'rgba(255,255,255,0.14)';
+                    const dupTag = item._isDuplicate
+                        ? `<span style="position:absolute; top:6px; right:6px; font-size:9px; font-weight:800; background:rgba(245,158,11,0.2); color:#fbbf24; padding:1px 5px; border-radius:6px;">♊ Дубликат</span>`
+                        : '';
+                    const visualHtml = item.isCar
+                        ? `<img src="${getCarSpriteDataUrl(item.name)}" style="width:110px; height:48px; object-fit:contain; border-radius:6px;" onerror="this.onerror=null; this.src='./icons/car-placeholder.svg';">
+                           <div style="font-size:11.5px; font-weight:800; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:130px;">${escapeHtml(item.name)}</div>`
+                        : `<div class="mini-plate ${getMiniPlateCountryClass(item.text)}" style="font-size:11px; padding:3px 7px;">${renderMiniPlateInnerHtml(item.text)}</div>`;
+                    const sellPrice = item.isCar ? Math.floor((Number(item.price) || 0) * 0.9) : (Number(item.price) || 0);
+                    const actionHtml = item._sold
+                        ? `<span style="font-size:10.5px; color:#34d399; font-weight:800;">✓ Продано</span>`
+                        : `<button type="button" class="case-open-btn" style="width:100%; font-size:10.5px; padding:5px;" onclick="sellSingleBatchDrop(${idx})">💰 Продать (+${sellPrice.toLocaleString('ru-RU')} ₽)</button>`;
+
+                    return `
+                        <div class="batch-drop-card ${item._sold ? 'sold-out' : ''}" style="border-color:${borderColor};">
+                            ${dupTag}
+                            <span style="font-size:9.5px; font-weight:800; padding:2px 6px; border-radius:999px; background:${r.bg}; color:${r.color};">${escapeHtml(r.text)}</span>
+                            ${visualHtml}
+                            <div style="font-size:12px; font-weight:900; color:#fbbf24;">${Number(item.price || 0).toLocaleString('ru-RU')} ₽</div>
+                            ${actionHtml}
+                        </div>`;
+                }).join('');
+            }
+
+            if (summary) {
+                const diff = totalValue - totalSpent;
+                const diffColor = diff >= 0 ? '#34d399' : '#f87171';
+                const bestLabel = bestItem ? (bestItem.isCar ? bestItem.name : bestItem.text) : '—';
+                summary.innerHTML = `
+                    <div class="luxury-panel-eyebrow">СВОДКА ОТКРЫТИЯ</div>
+                    <div style="display:flex; justify-content:space-between; font-size:12px;"><span style="color:var(--text-muted);">Открыто кейсов:</span><b>×${count}</b></div>
+                    <div style="display:flex; justify-content:space-between; font-size:12px;"><span style="color:var(--text-muted);">Потрачено:</span><b>${totalSpent.toLocaleString('ru-RU')} ₽</b></div>
+                    <div style="display:flex; justify-content:space-between; font-size:12px;"><span style="color:var(--text-muted);">Сумма наград:</span><b style="color:#fbbf24;">${totalValue.toLocaleString('ru-RU')} ₽</b></div>
+                    <div style="display:flex; justify-content:space-between; font-size:12px; padding-top:6px; border-top:1px solid rgba(255,255,255,0.08);"><span style="color:var(--text-muted);">Баланс дропа:</span><b style="color:${diffColor};">${diff >= 0 ? '+' : ''}${diff.toLocaleString('ru-RU')} ₽</b></div>
+                    <div style="margin-top:6px; padding:8px; background:#121821; border-radius:10px; border:1px solid rgba(255,255,255,0.06);">
+                        <div style="font-size:10px; color:var(--text-muted); text-transform:uppercase;">Лучший дроп серии</div>
+                        <div style="font-size:13px; font-weight:900; color:#fff; margin-top:2px;">${escapeHtml(bestLabel)}</div>
+                        <div style="font-size:11.5px; color:#fbbf24; font-weight:800;">${bestItem ? Number(bestItem.price || 0).toLocaleString('ru-RU') + ' ₽' : ''}</div>
+                    </div>
+                    <div style="font-size:11px; color:#34d399; font-weight:700;">✓ Все предметы автоматически сохранены в ваш инвентарь</div>
+                `;
+            }
+
+            const btnSellDups = document.getElementById('btn-batch-sell-dups');
+            if (btnSellDups) {
+                btnSellDups.disabled = duplicateUnsoldCount === 0;
+                btnSellDups.style.opacity = duplicateUnsoldCount === 0 ? '0.45' : '1';
+                btnSellDups.textContent = duplicateUnsoldCount > 0
+                    ? `💰 Продать дубликаты (${duplicateUnsoldCount})`
+                    : '💰 Нет дубликатов';
+            }
+
+            updateRouletteReopenButtons(singlePrice);
+        }
+
+        function sellSingleBatchDrop(idx) {
+            const item = batchCaseResults[idx];
+            if (!item || item._sold) return;
+            item._sold = true;
+            const sellPrice = item.isCar ? Math.floor((Number(item.price) || 0) * 0.9) : (Number(item.price) || 0);
+            if (item.isCar) {
+                const carIdx = myCars.findIndex(c => c && c._openingId === item._openingId);
+                if (carIdx !== -1) myCars.splice(carIdx, 1);
+            } else {
+                const plateIdx = inventory.findIndex(p => p && p._openingId === item._openingId);
+                if (plateIdx !== -1) inventory.splice(plateIdx, 1);
+            }
+            creditPlayerBalance(sellPrice, `Продажа дропа из пакетного открытия`);
+            syncInventoryAndGarageToCloud();
+            saveProgress();
+            playCashSound();
+            renderInventory();
+            renderCars();
+            const config = caseConfigs[activeCaseType] || {};
+            const caseCountry = config.fixedCountry || currentCaseCountry || currentCountry || 'RUS';
+            const singlePrice = getCaseEffectivePrice(activeCaseType, caseCountry);
+            renderBatchCaseResultsUI(config.title || config.name || activeCaseType, batchCaseResults.length, singlePrice * batchCaseResults.length, singlePrice);
+        }
+        window.sellSingleBatchDrop = sellSingleBatchDrop;
+
+        function sellBatchCaseResults(onlyDuplicates = true) {
+            if (!Array.isArray(batchCaseResults) || batchCaseResults.length === 0) return;
+            let totalCredited = 0;
+            let soldItemsCount = 0;
+            batchCaseResults.forEach(item => {
+                if (!item || item._sold) return;
+                if (onlyDuplicates && !item._isDuplicate) return;
+                item._sold = true;
+                soldItemsCount++;
+                const sellPrice = item.isCar ? Math.floor((Number(item.price) || 0) * 0.9) : (Number(item.price) || 0);
+                totalCredited += sellPrice;
+                if (item.isCar) {
+                    const carIdx = myCars.findIndex(c => c && c._openingId === item._openingId);
+                    if (carIdx !== -1) myCars.splice(carIdx, 1);
+                } else {
+                    const plateIdx = inventory.findIndex(p => p && p._openingId === item._openingId);
+                    if (plateIdx !== -1) inventory.splice(plateIdx, 1);
+                }
+            });
+            if (soldItemsCount === 0) {
+                notifyUser(onlyDuplicates ? 'Дубликатов для продажи нет' : 'Все предметы уже проданы', 'info');
+                return;
+            }
+            creditPlayerBalance(totalCredited, `Продажа предметов из серии кейсов (${soldItemsCount} шт.)`);
+            syncInventoryAndGarageToCloud();
+            saveProgress();
+            playCashSound();
+            renderInventory();
+            renderCars();
+            notifyUser(`Продано предметов: ${soldItemsCount} шт. на +${totalCredited.toLocaleString('ru-RU')} ₽!`, 'success');
+            const config = caseConfigs[activeCaseType] || {};
+            const caseCountry = config.fixedCountry || currentCaseCountry || currentCountry || 'RUS';
+            const singlePrice = getCaseEffectivePrice(activeCaseType, caseCountry);
+            renderBatchCaseResultsUI(config.title || config.name || activeCaseType, batchCaseResults.length, singlePrice * batchCaseResults.length, singlePrice);
+        }
+        window.sellBatchCaseResults = sellBatchCaseResults;
+
+        function claimBatchCaseResults() {
+            closeRouletteModal();
+            renderInventory();
+            renderCars();
+        }
+        window.claimBatchCaseResults = claimBatchCaseResults;
+
+        function buyCase(type = activeCaseType, count = 1) {
+            if (isSpinning) return;
+            if (type && caseConfigs[type]) {
+                activeCaseType = type;
+            }
+            const config = caseConfigs[activeCaseType];
+            if (!config) return;
+
+            const openCount = Math.max(1, Math.min(10, Number(count) || 1));
+            lastOpenedCaseCount = openCount;
+
+            const caseCountry = config.fixedCountry || currentCaseCountry || currentCountry || 'RUS';
+            const effectivePrice = getCaseEffectivePrice(activeCaseType, caseCountry);
+            const totalCost = effectivePrice * openCount;
+
+            const curBal = (onlineProfile && Number.isFinite(Number(onlineProfile.balance))) ? Math.max(balance, Number(onlineProfile.balance)) : balance;
+            if (curBal < totalCost) return notifyUser("Недостаточно средств!");
+
+            const caseLabel = config.name || config.title || activeCaseType;
+            deductPlayerBalance(totalCost, openCount > 1 ? `Открытие ×${openCount} кейсов «${caseLabel}»` : `Открытие кейса «${caseLabel}»`);
+            achievements.casesOpened = (achievements.casesOpened || 0) + openCount;
+            checkAchievements();
+            logPlayerActivity('Открыл кейс', `Открыл кейс «${caseLabel}» ×${openCount} за ${totalCost.toLocaleString('ru-RU')} ₽`);
+            closeCasePreview();
+            updateRouletteReopenButtons(effectivePrice);
+
+            const isCar = !!config.isCar;
+            wonCarObj = null;
+            wonPlateObj = null;
+            batchCaseResults = [];
+
+            // Пакетное открытие (×5 или ×10): мгновенный расчёт и сводный экран
+            if (openCount > 1) {
+                for (let i = 0; i < openCount; i++) {
+                    const rolled = rollSingleCaseItem(config, activeCaseType, caseCountry);
+                    persistAutoSavedCaseReward(rolled);
+                    batchCaseResults.push(rolled);
+                }
+                const lastItem = batchCaseResults[batchCaseResults.length - 1];
+                if (isCar) wonCarObj = lastItem;
+                else wonPlateObj = lastItem;
+
+                syncInventoryAndGarageToCloud();
+                saveProgress();
+                renderInventory();
+                renderCars();
+                updateBadge();
+
+                document.getElementById('case-roulette-container')?.classList.add('hidden');
+                document.getElementById('roulette-result')?.classList.add('hidden');
+                document.getElementById('roulette-batch-result')?.classList.remove('hidden');
+                document.getElementById('roulette-modal')?.classList.add('show');
+                initAudio();
+                playLockSound(1.3);
+                renderBatchCaseResultsUI(caseLabel, openCount, totalCost, effectivePrice);
+                return;
+            }
+
+            // Одиночное открытие (×1) с атомарным автосохранением в инвентарь/гараж
+            isSpinning = true;
+            const singleRolled = rollSingleCaseItem(config, activeCaseType, caseCountry);
+            persistAutoSavedCaseReward(singleRolled);
+            if (isCar) {
+                wonCarObj = singleRolled;
+            } else {
+                wonPlateObj = singleRolled;
+            }
+            syncInventoryAndGarageToCloud();
+            saveProgress();
+            renderInventory();
+            renderCars();
+            updateBadge();
+
+            document.getElementById('case-roulette-container')?.classList.remove('hidden');
+            document.getElementById('roulette-batch-result')?.classList.add('hidden');
 
             const track = document.getElementById('case-roulette-track') || document.getElementById('roulette-track');
             if (track) {
@@ -6497,14 +7669,13 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 }
             }, 60);
 
-            setTimeout(() => {
+            caseRouletteTimeout = setTimeout(() => {
                 isSpinning = false;
-                if (caseRouletteTimeout) clearTimeout(caseRouletteTimeout);
                 playLockSound(1.4);
 
                 const winningCard = document.getElementById(`rcard-${winningIndex}`);
 
-                if (isCar) {
+                if (isCar && wonCarObj) {
                     let winColor = wonCarObj.rarity.bg.startsWith('linear') ? '#ef4444' : wonCarObj.rarity.bg;
                     if (winningCard) {
                         winningCard.style.transform = 'scale(1.08)';
@@ -6559,7 +7730,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     } else if (wonCarObj.rarity.text === "Эпический" || wonCarObj.rarity.text === "Супер редкий") {
                         playWinJingle(wonCarObj.rarity.text);
                     }
-                } else {
+                } else if (wonPlateObj) {
                     let winColor = wonPlateObj.rarity.bg !== "transparent" ? (wonPlateObj.rarity.bg.startsWith('linear') ? '#f59e0b' : wonPlateObj.rarity.bg) : "#10b981";
                     if (winningCard) {
                         winningCard.style.transform = 'scale(1.08)';
@@ -6612,116 +7783,239 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         }
 
         function rouletteSell() {
-            if (!wonPlateObj) return;
+            if (!wonPlateObj || wonPlateObj._sold) return;
             const reward = wonPlateObj;
+            reward._sold = true;
             wonPlateObj = null;
+            if (reward._openingId) {
+                const idx = inventory.findIndex(p => p && p._openingId === reward._openingId);
+                if (idx !== -1) inventory.splice(idx, 1);
+            }
             creditPlayerBalance(reward.price, 'Продажа госномера из рулетки');
+            syncInventoryAndGarageToCloud();
+            saveProgress();
+            renderInventory();
             playCashSound();
-            document.getElementById('roulette-modal').classList.remove('show');
+            document.getElementById('roulette-modal')?.classList.remove('show');
         }
 
         function rouletteSave() {
             if (!wonPlateObj) return;
             const reward = wonPlateObj;
             wonPlateObj = null;
-            inventory.unshift(reward);
-            if (onlineProfile) {
-                onlineProfile.inventory = [...inventory];
-                if (db && typeof db.ref === 'function') {
-                    const key = sanitizeKey(onlineProfile.nickname);
-                    const now = Date.now();
-                    db.ref('onlineV4/accounts/' + key).update({
-                        inventory: onlineProfile.inventory,
-                        updatedAt: now
-                    }).catch(() => {});
-                    db.ref('users/' + key).update({
-                        inventory: onlineProfile.inventory,
-                        updatedAt: now
-                    }).catch(() => {});
-                }
+            const alreadySaved = reward._openingId && inventory.some(p => p && p._openingId === reward._openingId);
+            if (!alreadySaved) {
+                inventory.unshift(reward);
+                addExp(reward.rarity.text);
             }
-            addExp(reward.rarity.text);
+            syncInventoryAndGarageToCloud();
             renderInventory();
             logPlayerActivity('Рулетка номеров', `Выиграл в рулетке госномер «${reward.text}» (${reward.rarity.text}, ${reward.price.toLocaleString('ru-RU')} ₽)`);
             saveProgress();
-            document.getElementById('roulette-modal').classList.remove('show');
+            document.getElementById('roulette-modal')?.classList.remove('show');
         }
 
         function rouletteSellCar() {
-            if (!wonCarObj) return;
+            if (!wonCarObj || wonCarObj._sold) return;
             const reward = wonCarObj;
+            reward._sold = true;
             wonCarObj = null;
+            if (reward._openingId) {
+                const idx = myCars.findIndex(c => c && c._openingId === reward._openingId);
+                if (idx !== -1) myCars.splice(idx, 1);
+            }
             let sellPrice = Math.floor(reward.price * 0.9);
             creditPlayerBalance(sellPrice, 'Продажа авто из рулетки');
+            syncInventoryAndGarageToCloud();
+            saveProgress();
+            renderCars();
+            updateBadge();
             playCashSound();
             logPlayerActivity('Продажа авто', `Продал выбитое авто «${reward.name}» за ${sellPrice.toLocaleString('ru-RU')} ₽`);
-            document.getElementById('roulette-modal').classList.remove('show');
+            document.getElementById('roulette-modal')?.classList.remove('show');
         }
 
         function rouletteSaveCar() {
             if (!wonCarObj) return;
             const reward = wonCarObj;
             wonCarObj = null;
-            myCars.unshift({
-                name: reward.name,
-                basePrice: reward.price,
-                img: reward.img,
-                category: reward.category,
-                condition: 100,
-                plate: null,
-                upgrades: { engine: 0, handling: 0, economy: 0, nitro: 0 }
-            });
-            if (onlineProfile) {
-                onlineProfile.myCars = JSON.parse(JSON.stringify(myCars));
-                if (db && typeof db.ref === 'function') {
-                    const key = sanitizeKey(onlineProfile.nickname);
-                    const now = Date.now();
-                    db.ref('onlineV4/accounts/' + key).update({
-                        myCars: onlineProfile.myCars,
-                        updatedAt: now
-                    }).catch(() => {});
-                    db.ref('users/' + key).update({
-                        myCars: onlineProfile.myCars,
-                        updatedAt: now
-                    }).catch(() => {});
-                    db.ref('leaderboard/' + key).update({
-                        carsCount: myCars.length,
-                        avatarData: avatarData || '',
-                        updatedAt: now
-                    }).catch(() => {});
-                }
+            const alreadySaved = reward._openingId && myCars.some(c => c && c._openingId === reward._openingId);
+            if (!alreadySaved) {
+                myCars.unshift({
+                    _openingId: reward._openingId,
+                    name: reward.name,
+                    basePrice: reward.price,
+                    img: reward.img,
+                    category: reward.category,
+                    condition: 100,
+                    plate: null,
+                    upgrades: { engine: 0, handling: 0, economy: 0, nitro: 0 }
+                });
+                addExp((reward.rarity && reward.rarity.text) || "Супер редкий");
             }
-            addExp(reward.rarity.text || "Супер редкий");
+            syncInventoryAndGarageToCloud();
             playCashSound();
             renderCars();
             updateBadge();
             logPlayerActivity('Рулетка авто', `Выиграл в рулетке авто «${reward.name}» (${reward.category})`);
             saveProgress();
             if (typeof syncCloudGarage === 'function') syncCloudGarage(true);
-            document.getElementById('roulette-modal').classList.remove('show');
+            document.getElementById('roulette-modal')?.classList.remove('show');
         }
 
-        // --- ИНВЕНТАРЬ ---
+        // --- КОЛЛЕКЦИЯ НОМЕРОВ (ИНВЕНТАРЬ, ФИЛЬТРЫ, ИЗБРАННОЕ, ИНСПЕКТОР) ---
+        let collectionFilterState = {
+            query: '',
+            country: 'all',
+            rarity: 'all',
+            category: 'all',
+            sort: 'price_desc'
+        };
+
         function isCommonInventoryPlate(item) {
             const price = Number(item && item.price) || 0;
             const r = (item && item.rarity && item.rarity.text) ? item.rarity : getRarity(price);
             return (!r || r.text === 'Обычный' || r.text === 'Базовый' || price <= 2500);
         }
 
+        function detectPlateCountryBucket(item) {
+            if (!item) return 'RUS';
+            const text = String(item.text || '');
+            if (typeof getUltraSpecialPlateMeta === 'function' && getUltraSpecialPlateMeta(text)) return 'SPEC';
+            if (item.country && ['RUS', 'KZ', 'USA', 'UAE', 'JPN'].includes(item.country)) return item.country;
+            if (/\bKZ\b/i.test(text)) return 'KZ';
+            if (/\bUSA\b/i.test(text)) return 'USA';
+            if (/\bUAE\b/i.test(text)) return 'UAE';
+            if (/\bJPN\b/i.test(text)) return 'JPN';
+            return 'RUS';
+        }
+
+        function detectPlateRarityBucket(item) {
+            const price = Number(item && item.price) || 0;
+            const r = (item && item.rarity && item.rarity.text) ? item.rarity : getRarity(price);
+            const rt = String((r && r.text) || '');
+            if (price >= 250000 || /БЛАТНОЙ|Мифич|МИФИЧ|Легендар|Ультра|УЛЬТРА|Крутой|Шейх|Император|Бриллиант|Королев/i.test(rt)) {
+                return 'legendary';
+            }
+            if (price >= 45000 || /Эпич|Супер|Премиум|Спецсерия|Тройной/i.test(rt)) {
+                return 'epic';
+            }
+            if (price > 2500 || /Редкий|Необычный/i.test(rt)) {
+                return 'rare';
+            }
+            return 'common';
+        }
+
+        function getPlateUsageMeta(plateText) {
+            const norm = String(plateText || '').trim();
+            if (!norm) return { status: 'collection', label: 'В коллекции', carIndex: -1, carName: '' };
+            if (Array.isArray(myCars)) {
+                for (let i = 0; i < myCars.length; i++) {
+                    const c = myCars[i];
+                    if (c && c.plate && String(c.plate.text || '').trim() === norm) {
+                        return { status: 'equipped', label: `🚗 ${c.name}`, carIndex: i, carName: c.name };
+                    }
+                }
+            }
+            if (typeof activeMarketListings !== 'undefined' && Array.isArray(activeMarketListings)) {
+                const listed = activeMarketListings.find(l => l && String(l.plateText || '').trim() === norm);
+                if (listed) {
+                    return { status: 'market', label: '🏪 На рынке', carIndex: -1, carName: '' };
+                }
+            }
+            return { status: 'collection', label: 'В коллекции', carIndex: -1, carName: '' };
+        }
+
+        function setCollectionFilterState(patch = {}) {
+            collectionFilterState = { ...collectionFilterState, ...patch };
+            renderInventory();
+        }
+        window.setCollectionFilterState = setCollectionFilterState;
+
+        function setCollectionQuickCategory(cat = 'all') {
+            collectionFilterState.category = cat || 'all';
+            if (['legendary', 'epic', 'rare', 'common'].includes(cat)) {
+                collectionFilterState.rarity = cat;
+                const sel = document.getElementById('inv-filter-rarity');
+                if (sel) sel.value = cat;
+            } else if (cat === 'all') {
+                collectionFilterState.rarity = 'all';
+                const sel = document.getElementById('inv-filter-rarity');
+                if (sel) sel.value = 'all';
+            }
+            ['all', 'legendary', 'epic', 'rare', 'common', 'fav', 'equipped', 'market', 'duplicates'].forEach(k => {
+                const btn = document.getElementById(`col-cat-${k}`);
+                if (btn) btn.classList.toggle('active', k === cat);
+            });
+            renderInventory();
+        }
+        window.setCollectionQuickCategory = setCollectionQuickCategory;
+
+        function togglePlateFavorite(index, evt = null) {
+            if (evt && typeof evt.stopPropagation === 'function') evt.stopPropagation();
+            const item = inventory[index];
+            if (!item) return;
+            item.favorite = !item.favorite;
+            saveProgress();
+            renderInventory();
+        }
+        window.togglePlateFavorite = togglePlateFavorite;
+
         function updateBulkSellButtons() {
             if (typeof document === 'undefined') return;
             const invArr = Array.isArray(inventory) ? inventory : [];
             let totalAll = 0;
+            let sellableAllCount = 0;
             let commonCount = 0;
             let totalCommon = 0;
+
+            let cLegend = 0, cEpic = 0, cRare = 0, cCommon = 0, cFav = 0, cEquipped = 0, cMarket = 0, cDups = 0;
+            const textFreq = {};
             for (const item of invArr) {
-                const p = Math.max(0, Number(item && item.price) || 0);
-                totalAll += p;
-                if (isCommonInventoryPlate(item)) {
-                    commonCount++;
-                    totalCommon += p;
+                if (!item) continue;
+                const t = String(item.text || '').trim();
+                textFreq[t] = (textFreq[t] || 0) + 1;
+            }
+
+            for (const item of invArr) {
+                if (!item) continue;
+                const p = Math.max(0, Number(item.price) || 0);
+                const bucket = detectPlateRarityBucket(item);
+                if (bucket === 'legendary') cLegend++;
+                else if (bucket === 'epic') cEpic++;
+                else if (bucket === 'rare') cRare++;
+                else cCommon++;
+
+                if (item.favorite) cFav++;
+                const usage = getPlateUsageMeta(item.text);
+                if (usage.status === 'equipped') cEquipped++;
+                if (usage.status === 'market') cMarket++;
+                if ((textFreq[String(item.text || '').trim()] || 0) > 1) cDups++;
+
+                if (!item.favorite) {
+                    totalAll += p;
+                    sellableAllCount++;
+                    if (isCommonInventoryPlate(item)) {
+                        commonCount++;
+                        totalCommon += p;
+                    }
                 }
             }
+
+            if (Array.isArray(myCars)) {
+                cEquipped = myCars.filter(c => c && c.plate && c.plate.text).length;
+            }
+
+            const setCnt = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = String(v); };
+            setCnt('col-count-all', invArr.length);
+            setCnt('col-count-legendary', cLegend);
+            setCnt('col-count-epic', cEpic);
+            setCnt('col-count-rare', cRare);
+            setCnt('col-count-common', cCommon);
+            setCnt('col-count-fav', cFav);
+            setCnt('col-count-equipped', cEquipped);
+            setCnt('col-count-market', cMarket);
+            setCnt('col-count-duplicates', cDups);
 
             const summaryEl = document.getElementById('col-plates-summary');
             if (summaryEl) {
@@ -6730,29 +8024,29 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
             const btnAll = document.getElementById('btn-sell-all-plates');
             if (btnAll) {
-                btnAll.textContent = invArr.length > 0
-                    ? `💸 Продать все номера (${invArr.length} шт. • +${totalAll.toLocaleString('ru-RU')} ₽)`
+                btnAll.textContent = sellableAllCount > 0
+                    ? `💸 Продать все (${sellableAllCount} шт. • +${totalAll.toLocaleString('ru-RU')} ₽)`
                     : '💸 Продать все номера';
-                btnAll.disabled = invArr.length === 0;
-                btnAll.style.opacity = invArr.length === 0 ? '0.5' : '1';
+                btnAll.disabled = sellableAllCount === 0;
+                btnAll.style.opacity = sellableAllCount === 0 ? '0.5' : '1';
             }
 
             const btnHeaderAll = document.getElementById('btn-header-sell-all-plates');
             if (btnHeaderAll) {
-                btnHeaderAll.textContent = invArr.length > 0
-                    ? `💸 Продать все номера (${invArr.length} шт. • +${totalAll.toLocaleString('ru-RU')} ₽)`
+                btnHeaderAll.textContent = sellableAllCount > 0
+                    ? `💸 Продать все номера (${sellableAllCount} шт. • +${totalAll.toLocaleString('ru-RU')} ₽)`
                     : '💸 Продать все номера';
-                btnHeaderAll.disabled = invArr.length === 0;
-                btnHeaderAll.style.opacity = invArr.length === 0 ? '0.5' : '1';
+                btnHeaderAll.disabled = sellableAllCount === 0;
+                btnHeaderAll.style.opacity = sellableAllCount === 0 ? '0.5' : '1';
             }
 
             const btnAsideAll = document.getElementById('btn-aside-sell-all-plates');
             if (btnAsideAll) {
-                btnAsideAll.textContent = invArr.length > 0
-                    ? `💸 Продать все номера (${invArr.length} шт.)`
+                btnAsideAll.textContent = sellableAllCount > 0
+                    ? `💸 Продать все номера (${sellableAllCount} шт.)`
                     : '💸 Продать все номера';
-                btnAsideAll.disabled = invArr.length === 0;
-                btnAsideAll.style.opacity = invArr.length === 0 ? '0.5' : '1';
+                btnAsideAll.disabled = sellableAllCount === 0;
+                btnAsideAll.style.opacity = sellableAllCount === 0 ? '0.5' : '1';
             }
 
             const btnCommon = document.getElementById('btn-sell-all-common');
@@ -6772,7 +8066,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 updateBadge();
                 return;
             }
-            if (inventory.length === 0) {
+            if (!Array.isArray(inventory) || inventory.length === 0) {
                 list.innerHTML = `
                     <div class="empty-state" style="grid-column: 1 / -1;">
                         <div class="empty-state-icon">🎒</div>
@@ -6784,21 +8078,118 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 return;
             }
 
+            const textFreq = {};
+            inventory.forEach(item => {
+                if (!item) return;
+                const k = String(item.text || '').trim();
+                textFreq[k] = (textFreq[k] || 0) + 1;
+            });
+
+            // Если выбран фильтр «В гараже» (equipped), собираем также номера, установленные на авто
+            let entries = inventory.map((item, index) => ({ item, index, fromGarageCarIdx: -1 }));
+            if (collectionFilterState.category === 'equipped' && Array.isArray(myCars)) {
+                myCars.forEach((car, carIdx) => {
+                    if (car && car.plate && car.plate.text) {
+                        const alreadyInInv = inventory.some(p => p && p.text === car.plate.text);
+                        if (!alreadyInInv) {
+                            entries.push({ item: car.plate, index: -1, fromGarageCarIdx: carIdx });
+                        }
+                    }
+                });
+            }
+
+            const q = String(collectionFilterState.query || '').trim().toLowerCase();
+            const countryFilter = collectionFilterState.country || 'all';
+            const rarityFilter = collectionFilterState.rarity || 'all';
+            const catFilter = collectionFilterState.category || 'all';
+
+            entries = entries.filter(({ item, fromGarageCarIdx }) => {
+                if (!item) return false;
+                if (q && !String(item.text || '').toLowerCase().includes(q)) return false;
+                if (countryFilter !== 'all' && detectPlateCountryBucket(item) !== countryFilter) return false;
+                const bucket = detectPlateRarityBucket(item);
+                if (rarityFilter !== 'all' && bucket !== rarityFilter) return false;
+                if (catFilter === 'fav' && !item.favorite) return false;
+                if (catFilter === 'duplicates' && (textFreq[String(item.text || '').trim()] || 0) <= 1) return false;
+                if (catFilter === 'equipped') {
+                    const usage = getPlateUsageMeta(item.text);
+                    if (fromGarageCarIdx === -1 && usage.status !== 'equipped') return false;
+                }
+                if (catFilter === 'market') {
+                    const usage = getPlateUsageMeta(item.text);
+                    if (usage.status !== 'market') return false;
+                }
+                return true;
+            });
+
+            const sortMode = collectionFilterState.sort || 'price_desc';
+            if (sortMode === 'price_desc' || sortMode === 'rarity_desc') {
+                entries.sort((a, b) => (Number(b.item.price) || 0) - (Number(a.item.price) || 0));
+            } else if (sortMode === 'price_asc') {
+                entries.sort((a, b) => (Number(a.item.price) || 0) - (Number(b.item.price) || 0));
+            } else if (sortMode === 'recent_desc') {
+                entries.sort((a, b) => (Number(b.item.createdAt) || 0) - (Number(a.item.createdAt) || 0));
+            }
+
+            if (entries.length === 0) {
+                list.innerHTML = `
+                    <div class="empty-state" style="grid-column: 1 / -1;">
+                        <div class="empty-state-icon">🔍</div>
+                        <p>По выбранным фильтрам номеров не найдено.</p>
+                    </div>`;
+                updateBadge();
+                return;
+            }
+
             let html = '';
-            inventory.forEach((item, index) => {
-                const r = getRarity(Number(item.price) || 0);
-                let rarityHTML = r.text !== "Обычный"
-                    ? `<span class="inv-card-rarity" style="background:${r.bg}; color:${r.color};">${escapeHtml(r.text)}</span>`
+            entries.forEach(({ item, index, fromGarageCarIdx }) => {
+                const price = Number(item.price) || 0;
+                const r = (item.rarity && item.rarity.text) ? item.rarity : getRarity(price);
+                const bucket = detectPlateRarityBucket(item);
+                const tierClass = bucket === 'legendary'
+                    ? (price >= 1000000 ? 'tier-mythic' : 'tier-legend')
+                    : bucket === 'epic'
+                        ? 'tier-epic'
+                        : bucket === 'rare'
+                            ? 'tier-rare'
+                            : 'tier-common';
+
+                const usage = fromGarageCarIdx !== -1
+                    ? { status: 'equipped', label: `🚗 ${myCars[fromGarageCarIdx]?.name || 'В гараже'}`, carIndex: fromGarageCarIdx }
+                    : getPlateUsageMeta(item.text);
+
+                const statusBadgeClass = usage.status === 'equipped'
+                    ? 'status-garage'
+                    : usage.status === 'market'
+                        ? 'status-market'
+                        : '';
+
+                const favBtnHtml = index >= 0
+                    ? `<button type="button" class="inv-fav-btn ${item.favorite ? 'is-fav' : ''}" onclick="togglePlateFavorite(${index}, event)" title="${item.favorite ? 'В избранном' : 'Добавить в избранное'}">${item.favorite ? '★' : '☆'}</button>`
                     : '';
 
+                const clickAttr = index >= 0 ? `onclick="openPlateDetailModal(${index})"` : '';
+                const actionBtnHtml = index >= 0
+                    ? `<div style="display:flex; gap:6px; margin-top:4px;" onclick="event.stopPropagation()">
+                            <button type="button" class="case-open-btn" style="flex:1; padding:7px 8px;" onclick="openPlateDetailModal(${index})">🔍 Действия</button>
+                            <button type="button" class="btn btn-close" style="flex:1; margin:0; padding:7px 8px; font-size:11.5px;" onclick="sellPlate(${index})">💰 ${price.toLocaleString('ru-RU')} ₽</button>
+                       </div>`
+                    : `<button type="button" class="case-open-btn" style="width:100%;" onclick="switchTab('garage')">🚗 Перейти в гараж</button>`;
+
                 html += `
-                    <div class="inv-card">
-                        <div class="inv-card-header">
-                            ${rarityHTML}
-                            <span class="inv-card-price">${Number(item.price || 0).toLocaleString('ru-RU')} ₽</span>
+                    <div class="inv-card inv-item luxury-plate-card ${tierClass}" ${clickAttr}>
+                        <div class="plate-card-top-bar">
+                            <span class="plate-card-rarity-pill" style="background:${r.bg}; color:${r.color};">${escapeHtml(r.text)}</span>
+                            ${favBtnHtml}
                         </div>
-                        <div class="mini-plate ${getMiniPlateCountryClass(item.text)}">${renderMiniPlateInnerHtml(item.text)}</div>
-                        <button class="btn btn-close" style="padding:8px 12px; width:100%;" onclick="sellPlate(${index})">Продать (+${Number(item.price||0).toLocaleString('ru-RU')} ₽)</button>
+                        <div style="display:flex; justify-content:center; margin:4px 0;">
+                            <div class="mini-plate ${getMiniPlateCountryClass(item.text)}">${renderMiniPlateInnerHtml(item.text)}</div>
+                        </div>
+                        <div class="plate-card-status-row">
+                            <span class="plate-status-badge ${statusBadgeClass}">${escapeHtml(usage.label)}</span>
+                            <span class="inv-card-price" style="font-weight:900; color:#fbbf24;">${price.toLocaleString('ru-RU')} ₽</span>
+                        </div>
+                        ${actionBtnHtml}
                     </div>`;
             });
             list.innerHTML = html;
@@ -6806,6 +8197,70 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             if (typeof renderCollectorBook === 'function') renderCollectorBook();
             if (typeof updateVipOrdersBadge === 'function') updateVipOrdersBadge();
         }
+
+        function openPlateDetailModal(index) {
+            const item = inventory[index];
+            if (!item) return;
+            const modal = document.getElementById('plate-detail-modal');
+            const body = document.getElementById('plate-detail-body');
+            const titleEl = document.getElementById('plate-detail-title');
+            if (!modal || !body) return;
+
+            const price = Number(item.price) || 0;
+            const r = (item.rarity && item.rarity.text) ? item.rarity : getRarity(price);
+            const countryBucket = detectPlateCountryBucket(item);
+            const countryNames = { RUS: '🇷🇺 Россия (ГОСТ)', KZ: '🇰🇿 Казахстан', USA: '🇺🇸 США', UAE: '🇦🇪 ОАЭ (Дубай)', JPN: '🇯🇵 Япония', SPEC: '☭ Спецсерия / Архив' };
+            const usage = getPlateUsageMeta(item.text);
+
+            if (titleEl) titleEl.textContent = item.text;
+
+            const activeCarIdx = (typeof activeGaragePodiumCarIdx === 'number' && myCars[activeGaragePodiumCarIdx]) ? activeGaragePodiumCarIdx : 0;
+            const activeCar = myCars[activeCarIdx] || null;
+
+            body.innerHTML = `
+                <div style="background:#090D13; border:1px solid rgba(255,255,255,0.08); border-radius:14px; padding:20px 14px; text-align:center; margin-bottom:14px;">
+                    <span style="display:inline-block; font-size:11px; font-weight:800; padding:3px 10px; border-radius:999px; background:${r.bg}; color:${r.color}; margin-bottom:12px;">${escapeHtml(r.text)}</span>
+                    <div>
+                        <div class="mini-plate ${getMiniPlateCountryClass(item.text)}" style="font-size:22px; padding:8px 18px; border-width:3px;">${renderMiniPlateInnerHtml(item.text)}</div>
+                    </div>
+                    <div style="font-size:22px; font-weight:900; color:#fbbf24; margin-top:12px;">${price.toLocaleString('ru-RU')} ₽</div>
+                    <div style="font-size:12px; color:var(--text-muted); margin-top:4px;">${countryNames[countryBucket] || 'Госномер'} • Статус: <b style="color:#fff;">${escapeHtml(usage.label)}</b></div>
+                </div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+                    ${activeCar ? `<button type="button" class="btn btn-red-cta" style="margin:0;" onclick="attachPlateFromDetailModal(${index}, ${activeCarIdx})">🚗 На ${escapeHtml(activeCar.name)}</button>` : ''}
+                    <button type="button" class="btn btn-blue" style="margin:0;" onclick="listPlateFromDetailModal(${index})">🏪 Выставить на рынок</button>
+                    <button type="button" class="btn btn-dark" style="margin:0;" onclick="togglePlateFavorite(${index}); openPlateDetailModal(${index});">${item.favorite ? '★ В избранном' : '☆ В избранное'}</button>
+                    <button type="button" class="btn btn-close" style="margin:0;" onclick="closePlateDetailModal(); sellPlate(${index});">💰 Продать (+${price.toLocaleString('ru-RU')} ₽)</button>
+                </div>
+            `;
+            modal.classList.add('show');
+        }
+        window.openPlateDetailModal = openPlateDetailModal;
+
+        function closePlateDetailModal() {
+            document.getElementById('plate-detail-modal')?.classList.remove('show');
+        }
+        window.closePlateDetailModal = closePlateDetailModal;
+
+        function attachPlateFromDetailModal(plateIdx, carIdx) {
+            closePlateDetailModal();
+            if (typeof attachPlate === 'function' && myCars[carIdx] && inventory[plateIdx]) {
+                selectedCarIndex = carIdx;
+                attachPlate(plateIdx);
+                notifyUser(`Номер установлен на ${myCars[carIdx].name}!`, 'success');
+            }
+        }
+        window.attachPlateFromDetailModal = attachPlateFromDetailModal;
+
+        function listPlateFromDetailModal(plateIdx) {
+            closePlateDetailModal();
+            if (typeof openSellPlateModal === 'function') {
+                openSellPlateModal();
+                const sel = document.getElementById('sell-plate-select');
+                if (sel) sel.value = String(plateIdx);
+            }
+        }
+        window.listPlateFromDetailModal = listPlateFromDetailModal;
 
         function sellPlate(index, silent = false) {
             const item = inventory[index];
@@ -6844,13 +8299,14 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             const previewToSell = [];
             let previewTotalCash = 0;
             for (const item of inventory) {
+                if (item && item.favorite) continue;
                 if (mode === 'all' || isCommonInventoryPlate(item)) {
                     previewToSell.push(item);
                     previewTotalCash += Math.max(0, Number(item && item.price) || 0);
                 }
             }
             if (previewToSell.length === 0) {
-                notifyUser(mode === 'common' ? 'Нет обычных номеров для продажи' : 'Нет номеров для продажи', 'info');
+                notifyUser(mode === 'common' ? 'Нет обычных номеров для продажи' : 'Нет свободных номеров для продажи (избранные защищены)', 'info');
                 return false;
             }
 
@@ -6865,7 +8321,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             const toKeep = [];
             let totalCash = 0;
             for (const item of inventory) {
-                if (mode === 'all' || isCommonInventoryPlate(item)) {
+                if (item && !item.favorite && (mode === 'all' || isCommonInventoryPlate(item))) {
                     toSell.push(item);
                     totalCash += Math.max(0, Number(item && item.price) || 0);
                 } else {
@@ -6898,6 +8354,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             return true;
         }
         window.sellAllPlates = sellAllPlates;
+
 
         // --- ГАРАЖ ---
         let currentShopFilter = 'all';
@@ -7309,8 +8766,8 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                                 </button>
                             </div>
                             <div style="display: flex; gap: 6px; margin-top: 8px;">
-                                <button class="btn btn-green" style="font-size: 11.5px; padding: 8px 8px; flex: 1; background: linear-gradient(135deg, #0284c7, #10b981); box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25); font-weight: 800;" onclick="startNfsRaceWithCar(${jsArg(car.name)}, ${index})" title="Круговая 3D гонка NFS Most Wanted 2005 (Повороты + Соперники ИИ)">
-                                    🏆 3D Кольцо NFS (MW)
+                                <button class="btn btn-green" style="font-size: 11.5px; padding: 8px 8px; flex: 1; background: linear-gradient(135deg, #0284c7, #10b981); box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25); font-weight: 800;" onclick="startNfsRaceWithCar(${jsArg(car.name)}, ${index})" title="Круговая 3D гонка (Повороты + Соперники ИИ)">
+                                    🏆 3D Кольцо
                                 </button>
                                 <button class="btn btn-green" style="font-size: 11.5px; padding: 8px 8px; flex: 1; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);" onclick="start3DRaceWithCar(${jsArg(car.name)}, ${index})" title="Скоростной заезд в потоке на 3D шоссе">
                                     🏎️ 3D Шоссе (Трафик)
@@ -7760,7 +9217,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             openStylingModal(carIndex, '3d');
         }
 
-        // --- 2. СТАЙЛИНГ АВТОМОБИЛЕЙ (ПОКРАСКА, ТОНИРОВКА, ДИСКИ, КЛИРЕНС, СГУ, НЕОН, NFS MW БОДИ-КИТЫ И JUNKMAN) ---
+        // --- 2. СТАЙЛИНГ АВТОМОБИЛЕЙ (ПОКРАСКА, ТОНИРОВКА, ДИСКИ, КЛИРЕНС, СГУ, НЕОН, БОДИ-КИТЫ И PRO-ТЮНИНГ) ---
         function openStylingModal(carIndex, initialMode) {
             if (garage3DShowroom) {
                 try { garage3DShowroom.stop(); } catch (_) {}
@@ -8386,11 +9843,164 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         }
         window.rotateGarageShowroom = rotateGarageShowroom;
 
+        function renderGarageCarSidebarList() {
+            if (typeof document === 'undefined') return;
+            const listEl = document.getElementById('garage-car-sidebar-list');
+            if (!listEl) return;
+            if (!Array.isArray(myCars) || myCars.length === 0) {
+                listEl.innerHTML = `<div style="font-size:12px; color:var(--text-muted); padding:12px; text-align:center;">В гараже пока нет машин</div>`;
+                return;
+            }
+            listEl.innerHTML = myCars.map((car, idx) => {
+                if (!car) return '';
+                const isActive = idx === activeGarageCarIndex;
+                const plateText = (car.plate && (car.plate.text || car.plate)) ||
+                    (car.attachedPlate && (car.attachedPlate.text || car.attachedPlate)) || '';
+                const subText = plateText ? `🏷️ ${plateText}` : (car.category || 'Без номера');
+                return `
+                    <button type="button" class="garage-side-car-item ${isActive ? 'active' : ''}" onclick="selectGarageCarForPodium(${idx})">
+                        <img src="${getCarSpriteDataUrl(car.name)}" class="garage-side-car-thumb" alt="${escapeHtml(car.name)}" onerror="this.onerror=null; this.src='./icons/car-placeholder.svg';">
+                        <div class="garage-side-car-meta">
+                            <div class="garage-side-car-name">${escapeHtml(car.name)}</div>
+                            <div class="garage-side-car-sub">${escapeHtml(subText)}</div>
+                        </div>
+                    </button>`;
+            }).join('');
+        }
+        window.renderGarageCarSidebarList = renderGarageCarSidebarList;
+
+        function renderGarageActiveCarInspector(index = activeGarageCarIndex) {
+            if (typeof document === 'undefined') return;
+            const bodyEl = document.getElementById('garage-inspector-body');
+            if (!bodyEl) return;
+            if (!Array.isArray(myCars) || myCars.length === 0 || !myCars[index]) {
+                bodyEl.innerHTML = `<div style="color:var(--text-muted); font-size:12.5px; padding:14px 0;">Автомобиль не выбран.</div>`;
+                return;
+            }
+            const car = myCars[index];
+            if (typeof NomeraRaceEconomy !== 'undefined' && typeof NomeraRaceEconomy.ensureCar === 'function') {
+                NomeraRaceEconomy.ensureCar(car);
+            }
+            const template = carsData.find(c => c.name === car.name) || {};
+            const basePrice = Number(car.basePrice || template.price || 100000);
+            const plateObj = car.plate || null;
+            const plateText = (plateObj && (plateObj.text || plateObj)) || '';
+            const platePrice = Number(plateObj && plateObj.price) || 0;
+            const totalValue = basePrice + platePrice;
+
+            const upg = car.upgrades || { engine: 0, handling: 0, economy: 0, nitro: 0 };
+            const baseSpeed = Math.min(410, Math.round(170 + Math.log10(Math.max(50000, basePrice)) * 32 + (upg.engine || 0) * 12));
+            const speedPct = Math.min(100, Math.round((baseSpeed / 410) * 100));
+            const accelPct = Math.min(100, Math.round(45 + Math.log10(Math.max(50000, basePrice)) * 7 + (upg.engine || 0) * 8 + (upg.nitro || 0) * 4));
+            const handlingPct = Math.min(100, Math.round(52 + (upg.handling || 0) * 9));
+            const nitroPct = Math.min(100, Math.round(40 + (upg.nitro || 0) * 12));
+
+            const syn = plateText ? getCarPlateSynergy(car.name, plateText) : null;
+            const synHtml = syn
+                ? `<div style="margin-top:6px; font-size:11px; color:#fbbf24; font-weight:800;">${syn.icon} Синергия «${escapeHtml(syn.title)}»: +${syn.bonusPct}% к наградам</div>`
+                : '';
+
+            const plateSlotHtml = plateText
+                ? `<div class="inspector-plate-slot">
+                        <div style="font-size:10px; font-weight:800; color:var(--text-muted); text-transform:uppercase; margin-bottom:6px;">УСТАНОВЛЕННЫЙ ГОСНОМЕР</div>
+                        <div class="mini-plate ${getMiniPlateCountryClass(plateText)}" style="font-size:15px; padding:5px 12px;">${renderMiniPlateInnerHtml(plateText)}</div>
+                        ${platePrice > 0 ? `<div style="font-size:11.5px; color:#fbbf24; font-weight:800; margin-top:6px;">Оценка номера: ${platePrice.toLocaleString('ru-RU')} ₽</div>` : ''}
+                        ${synHtml}
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:8px;">
+                            <button type="button" class="case-open-btn" onclick="openAttachModal(${index})">🔄 Заменить</button>
+                            <button type="button" class="case-open-btn" onclick="detachPlate(${index})">🔧 Снять</button>
+                        </div>
+                   </div>`
+                : `<div class="inspector-plate-slot">
+                        <div style="font-size:11px; color:var(--text-muted); margin-bottom:8px;">Госномер не установлен</div>
+                        <button type="button" class="btn btn-red-cta" style="margin:0; padding:8px 12px; font-size:12px;" onclick="openAttachModal(${index})">🏷️ Выбрать из коллекции</button>
+                   </div>`;
+
+            const engLvl = upg.engine || 0;
+            const hndLvl = upg.handling || 0;
+            const nitLvl = upg.nitro || 0;
+            const ecoLvl = upg.economy || 0;
+            const maxLvl = (typeof NomeraRaceEconomy !== 'undefined' && NomeraRaceEconomy.MAX_LEVEL) ? NomeraRaceEconomy.MAX_LEVEL : 5;
+            const engCost = (typeof NomeraRaceEconomy !== 'undefined') ? NomeraRaceEconomy.upgradeCost(basePrice, 'engine', engLvl) : null;
+            const hndCost = (typeof NomeraRaceEconomy !== 'undefined') ? NomeraRaceEconomy.upgradeCost(basePrice, 'handling', hndLvl) : null;
+            const nitCost = (typeof NomeraRaceEconomy !== 'undefined') ? NomeraRaceEconomy.upgradeCost(basePrice, 'nitro', nitLvl) : null;
+            const cond = Math.round(Number(car.condition ?? 100));
+            const repCost = (typeof NomeraRaceEconomy !== 'undefined' && cond < 100) ? NomeraRaceEconomy.repairCost(basePrice, cond) : 0;
+
+            bodyEl.innerHTML = `
+                <div class="inspector-car-header">
+                    <h4 class="inspector-car-title">${escapeHtml(car.name)}</h4>
+                    <div style="display:flex; justify-content:space-between; align-items:center; font-size:12px;">
+                        <span style="color:var(--text-muted);">${escapeHtml(car.category || template.category || 'Авто')} • Состояние: <b style="color:${cond >= 80 ? '#34d399' : '#fbbf24'};">${cond}%</b></span>
+                        <span class="inspector-car-price">${totalValue.toLocaleString('ru-RU')} ₽</span>
+                    </div>
+                </div>
+
+                ${plateSlotHtml}
+
+                <div class="inspector-telemetry-list">
+                    <div class="inspector-stat-row">
+                        <div class="inspector-stat-head"><span>⚡ Макс. скорость</span><b>${baseSpeed} км/ч</b></div>
+                        <div class="inspector-stat-bar-bg"><div class="inspector-stat-bar-fill" style="width:${speedPct}%;"></div></div>
+                    </div>
+                    <div class="inspector-stat-row">
+                        <div class="inspector-stat-head"><span>🚀 Динамика разгона</span><b>${accelPct}/100</b></div>
+                        <div class="inspector-stat-bar-bg"><div class="inspector-stat-bar-fill" style="width:${accelPct}%;"></div></div>
+                    </div>
+                    <div class="inspector-stat-row">
+                        <div class="inspector-stat-head"><span>🛞 Управляемость</span><b>${handlingPct}/100</b></div>
+                        <div class="inspector-stat-bar-bg"><div class="inspector-stat-bar-fill" style="width:${handlingPct}%;"></div></div>
+                    </div>
+                    <div class="inspector-stat-row">
+                        <div class="inspector-stat-head"><span>🔥 Запас нитро (Stage ${nitLvl})</span><b>${nitroPct}/100</b></div>
+                        <div class="inspector-stat-bar-bg"><div class="inspector-stat-bar-fill" style="width:${nitroPct}%;"></div></div>
+                    </div>
+                </div>
+
+                <div id="inspector-tuning-box" style="display:flex; flex-direction:column; gap:6px;">
+                    <div class="luxury-panel-eyebrow" style="margin-bottom:2px;">БЫСТРЫЙ ТЮНИНГ (STAGE ${engLvl + hndLvl + nitLvl + ecoLvl})</div>
+                    <button type="button" class="case-open-btn" style="display:flex; justify-content:space-between; padding:7px 10px;" onclick="upgradeGarageCar(${index}, 'engine')" ${engCost === null ? 'disabled' : ''}>
+                        <span>🛠️ Двигатель (${engLvl}/${maxLvl})</span>
+                        <b style="color:#fbbf24;">${engCost !== null ? engCost.toLocaleString('ru-RU') + ' ₽' : 'MAX'}</b>
+                    </button>
+                    <button type="button" class="case-open-btn" style="display:flex; justify-content:space-between; padding:7px 10px;" onclick="upgradeGarageCar(${index}, 'handling')" ${hndCost === null ? 'disabled' : ''}>
+                        <span>🛞 Подвеска (${hndLvl}/${maxLvl})</span>
+                        <b style="color:#fbbf24;">${hndCost !== null ? hndCost.toLocaleString('ru-RU') + ' ₽' : 'MAX'}</b>
+                    </button>
+                    <button type="button" class="case-open-btn" style="display:flex; justify-content:space-between; padding:7px 10px;" onclick="upgradeGarageCar(${index}, 'nitro')" ${nitCost === null ? 'disabled' : ''}>
+                        <span>🔥 Нитро (${nitLvl}/${maxLvl})</span>
+                        <b style="color:#fbbf24;">${nitCost !== null ? nitCost.toLocaleString('ru-RU') + ' ₽' : 'MAX'}</b>
+                    </button>
+                    ${repCost > 0 ? `<button type="button" class="btn btn-gold" style="margin:4px 0 0 0; padding:8px; font-size:11.5px;" onclick="repairGarageCar(${index})">🔧 Отремонтировать (${repCost.toLocaleString('ru-RU')} ₽)</button>` : ''}
+                </div>
+            `;
+        }
+        window.renderGarageActiveCarInspector = renderGarageActiveCarInspector;
+
+        function openActiveCarQuickAction(action) {
+            const idx = Math.max(0, Math.min(activeGarageCarIndex || 0, (myCars?.length || 1) - 1));
+            if (action === 'plate') {
+                openAttachModal(idx);
+                return;
+            }
+            if (action === 'tuning') {
+                const box = document.getElementById('inspector-tuning-box');
+                if (box && typeof box.scrollIntoView === 'function') {
+                    box.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }
+        }
+        window.openActiveCarQuickAction = openActiveCarQuickAction;
+
         function selectGarageCarForPodium(index, fromRender) {
             if (typeof sanitizeNfsMwCarsInGarage === 'function') {
                 sanitizeNfsMwCarsInGarage();
             }
-            if (!Array.isArray(myCars) || myCars.length === 0) return;
+            if (!Array.isArray(myCars) || myCars.length === 0) {
+                renderGarageCarSidebarList();
+                renderGarageActiveCarInspector(0);
+                return;
+            }
             index = Math.max(0, Math.min(index, myCars.length - 1));
             activeGarageCarIndex = index;
 
@@ -8424,10 +10034,12 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 }
             }
 
-            // Highlight card in #my-cars list
+            // Highlight card in #my-cars list and update left sidebar + right inspector
             document.querySelectorAll('.my-car-card').forEach((card, i) => {
                 card.classList.toggle('active-podium-card', i === index);
             });
+            renderGarageCarSidebarList();
+            renderGarageActiveCarInspector(index);
 
             if (garage3DShowroom) {
                 const effectiveStyling = Object.assign({}, car.styling || {}, {
@@ -10150,7 +11762,14 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             { text: '777 ZZZ | 01 KZ', country: 'KZ', marketValue: 680000, rarityText: 'Эпический', desc: 'Золотой триплет Астаны с тройными буквами' },
             { text: '001 VIP | 02 KZ', country: 'KZ', marketValue: 750000, rarityText: 'Эпический', desc: 'Первый номер спецсерии Южной столицы (Алматы)' },
             { text: 'В 500 ВВ | 78', country: 'RUS', marketValue: 260000, rarityText: 'Супер редкий', desc: 'Ровная сотня Санкт-Петербурга с тремя буквами В' },
-            { text: 'К 707 КК | 23', country: 'RUS', marketValue: 210000, rarityText: 'Супер редкий', desc: 'Южный зеркальный номер с одинаковыми буквами' }
+            { text: 'К 707 КК | 23', country: 'RUS', marketValue: 210000, rarityText: 'Супер редкий', desc: 'Южный зеркальный номер с одинаковыми буквами' },
+            { text: 'P 7 | DXB UAE', country: 'UAE', marketValue: 2400000, rarityText: 'Мифический', desc: 'Мировой рекорд Гиннесса RTA: P 7 продан в Дубае за 55 млн AED ($15M)' },
+            { text: 'D 5 | DXB UAE', country: 'UAE', marketValue: 2100000, rarityText: 'Мифический', desc: 'Легендарный лот RTA Open Auction: D 5 куплен в Дубае за 33 млн AED ($9M)' },
+            { text: 'AA 9 | DXB UAE', country: 'UAE', marketValue: 2250000, rarityText: 'Мифический', desc: 'Флагман благотворительного аукциона Most Noble Numbers (38 млн AED)' },
+            { text: 'G 63 | DXB UAE', country: 'UAE', marketValue: 1350000, rarityText: 'Легендарный', desc: 'Культовое комбо G 63 для владельцев Mercedes-AMG G63 Brabus в Дубае' },
+            { text: 'P 911 | DXB UAE', country: 'UAE', marketValue: 960000, rarityText: 'Эпический', desc: 'Именной дубайский индекс P 911 для Porsche 911 Turbo S / GT3 RS' },
+            { text: 'D 1971 | DXB UAE', country: 'UAE', marketValue: 1180000, rarityText: 'Легендарный', desc: 'Патриотический номер 1971 — Год образования Федерации ОАЭ (Spirit of the Union)' },
+            { text: 'D 77777 | DXB UAE', country: 'UAE', marketValue: 1680000, rarityText: 'Легендарный', desc: 'Пятизначный королевский квинт семёрок 77777 (RTA VIP Auction)' }
         ];
 
         const VIP_AUCTION_RIVALS = [
@@ -11099,9 +12718,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     setRaceMode('nfs_circuit');
                 }
                 if (nfsCard) nfsCard.classList.remove('hidden');
-                if (btnStart) btnStart.textContent = '🏁 Начать 3D Круговую гонку (NFS MW)';
-                if (menuTitle) menuTitle.textContent = '3D Круговая гонка (NFS Most Wanted)';
-                if (menuSub) menuSub.textContent = 'Полноценная физика: свободное управление на 360°, апексы, Speedbreaker [G] и соперники Чёрного списка.';
+                if (btnStart) btnStart.textContent = '🏁 Начать 3D Кольцевую гонку';
+                if (menuTitle) menuTitle.textContent = '3D Кольцевая гонка';
+                if (menuSub) menuSub.textContent = 'Полноценная физика: свободное управление на 360°, апексы, чекпоинты и борьба с соперниками.';
             } else if (mode === '3d') {
                 if (raceCurrentMode === 'nfs_circuit' && typeof setRaceMode === 'function') {
                     setRaceMode('highway');
@@ -12426,78 +14045,78 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 desc: "Шведский монстр на биотопливе E85 с коробкой LST. Король скорости за гранью возможного!"
             },
 
-            // 6. Эксклюзивные 3D-легенды NFS Most Wanted (2005) — Полный Чёрный Список (Blacklist #15–#1) + Бонусные авто
-            "BMW M3 E46 GTR (NFS Most Wanted)": {
+            // 6. Эксклюзивная 3D-коллекция спорткаров и гран-туризмо
+            "BMW M3 E46 GTR": {
                 speed: 395, accel: 7.4, handling: 9.8, boost: 4.5, rewardMult: 28.0, driftFactor: 1.5,
-                desc: "Легенда Рокпорта #1 Blacklist (NFS Most Wanted 2005): атмосферный 4.0L V8 P60B40, прямозубая КПП с фирменным свистом, расширение кузова и карбоновое антикрыло GTR!"
+                desc: "Гоночный болид серии ALMS: атмосферный 4.0L V8 P60B40, прямозубая КПП с фирменным свистом, широкие арки и карбоновое антикрыло GTR!"
             },
-            "Chevrolet Corvette C6.R (Cross NFS MW)": {
+            "Chevrolet Corvette C6.R": {
                 speed: 405, accel: 7.5, handling: 9.5, boost: 4.6, rewardMult: 26.0, driftFactor: 1.4,
-                desc: "Федеральный перехватчик Сержанта Кросса из NFS Most Wanted (2005): гоночный обвес C6.R, перехватчик полиции Рокпорта и 7.0L V8 LS7.R!"
+                desc: "Трековый гран-туризмо класса GT1: карбоновый аэродинамический обвес C6.R и 7.0-литровый атмосферный V8 LS7.R!"
             },
-            "Ford Mustang GT (Razor NFS MW)": {
+            "Ford Mustang GT": {
                 speed: 345, accel: 6.2, handling: 8.6, boost: 3.9, rewardMult: 18.0, driftFactor: 1.65,
-                desc: "Мустанг Кларенса «Рейзора» Каллахана (#15 Blacklist NFS Most Wanted): компрессорный 4.6L V8, огненный винил и агрессивный боди-кит!"
+                desc: "Американский маслкар с компрессорным 4.6L V8, взрывным крутящим моментом и широким аэродинамическим обвесом!"
             },
-            "Mercedes-Benz SLR McLaren (Bull #2 MW)": {
+            "Mercedes-Benz SLR McLaren": {
                 speed: 392, accel: 7.3, handling: 9.2, boost: 4.4, rewardMult: 25.0, driftFactor: 1.4,
-                desc: "Болид Тору «Булла» Сато (#2 Blacklist NFS Most Wanted): компрессорный 5.4L V8 AMG, активный аэротормоз и чудовищная тяга!"
+                desc: "Суперкар гран-туризмо: компрессорный 5.4L V8 AMG, карбоновый монокок, активный аэротормоз и чудовищная тяга!"
             },
-            "Aston Martin DB9 (Ronnie #3 MW)": {
+            "Aston Martin DB9": {
                 speed: 375, accel: 6.8, handling: 9.0, boost: 4.1, rewardMult: 23.0, driftFactor: 1.42,
-                desc: "Аристократичный гран-туризмо Ронни Макреа (#3 Blacklist NFS Most Wanted): атмосферный 6.0L V12 и британский гоночный обвес!"
+                desc: "Аристократичный британский гран-туризмо: атмосферный 6.0L V12, идеальная развесовка и спортивный обвес!"
             },
-            "Dodge Viper SRT10 (JV #4 MW)": {
+            "Dodge Viper SRT10": {
                 speed: 385, accel: 7.2, handling: 8.9, boost: 4.3, rewardMult: 22.0, driftFactor: 1.68,
-                desc: "Ядовитая гадюка Джо «JV» Веги (#4 Blacklist NFS Most Wanted): 8.3-литровый V10, бешеный крутящий момент и зелёно-чёрная ливрея!"
+                desc: "Бескомпромиссный американский суперкар: 8.3-литровый атмосферный V10 и колоссальный крутящий момент!"
             },
-            "Chevrolet Corvette C6 (Webster #5 MW)": {
+            "Chevrolet Corvette C6": {
                 speed: 380, accel: 7.0, handling: 9.1, boost: 4.2, rewardMult: 21.0, driftFactor: 1.5,
-                desc: "Корвет Уэса «Вебстера» Аллена (#5 Blacklist NFS Most Wanted): форсированный LS2 V8 с пакетом Junkman!"
+                desc: "Форсированное купе с двигателем 6.0L LS2 V8, облегчённым кузовом и острой трековой управляемостью!"
             },
-            "Lamborghini Gallardo (Ming #6 MW)": {
+            "Lamborghini Gallardo": {
                 speed: 378, accel: 7.1, handling: 9.4, boost: 4.2, rewardMult: 20.5, driftFactor: 1.35,
-                desc: "Полноприводный суперкар Гектора «Минга» Доминго (#6 Blacklist NFS Most Wanted): 5.0L V10 и идеальный зацеп на любой трассе!"
+                desc: "Итальянский полноприводный суперкар с атмосферным 5.0L V10 и безупречным зацепом на любой трассе!"
             },
-            "Mercedes-Benz CLK 500 (Kaze #7 MW)": {
+            "Mercedes-Benz CLK 500": {
                 speed: 350, accel: 6.3, handling: 8.7, boost: 3.8, rewardMult: 18.5, driftFactor: 1.48,
-                desc: "Безумное купе Киры «Казе» Накадзато (#7 Blacklist NFS Most Wanted): V8 M113 и агрессивный таранный характер!"
+                desc: "Мощное немецкое купе с атмосферным 5.0L V8 M113, широкой колеёй и уверенной курсовой устойчивостью!"
             },
-            "Ford Mustang GT (Jewels #8 MW)": {
+            "Ford Mustang GT Coupe": {
                 speed: 342, accel: 6.1, handling: 8.5, boost: 3.8, rewardMult: 17.5, driftFactor: 1.6,
-                desc: "Дрэг-мустанг Джейд «Джуэлс» Барретт (#8 Blacklist NFS Most Wanted): взрывной старт и классическая мощь V8!"
+                desc: "Классический дрэг-маслкар с форсированным V8, мгновенным откликом на педаль газа и мощным стартом!"
             },
-            "Mitsubishi Lancer Evo VIII (Earl #9 MW)": {
+            "Mitsubishi Lancer Evo VIII": {
                 speed: 338, accel: 6.5, handling: 9.3, boost: 3.9, rewardMult: 16.5, driftFactor: 1.4,
-                desc: "Раллийная ракета Пьера «Эрла» Дюпона (#9 Blacklist NFS Most Wanted): турбо 4G63T и молниеносный выход из шпилек!"
+                desc: "Японская раллийная легенда: турбомотор 2.0L 4G63T, активный полный привод и молниеносный выход из шпилек!"
             },
-            "Porsche Cayman S (Baron #10 MW)": {
+            "Porsche Cayman S": {
                 speed: 348, accel: 6.4, handling: 9.2, boost: 3.8, rewardMult: 16.0, driftFactor: 1.42,
-                desc: "Среднемоторный Porsche Карла «Барона» Смита (#10 Blacklist NFS Most Wanted): эталонная рулёжка в каньонах Рокпорта!"
+                desc: "Среднемоторное спорткупе с оппозитной шестёркой 3.4L и эталонной управляемостью на серпантинах!"
             },
-            "Mitsubishi Eclipse GT (Big Lou #11 MW)": {
+            "Mitsubishi Eclipse GT": {
                 speed: 325, accel: 5.8, handling: 8.4, boost: 3.6, rewardMult: 14.5, driftFactor: 1.3,
-                desc: "Тюнингованный Eclipse Лу «Биг Лу» Парка (#11 Blacklist NFS Most Wanted): широкие арки, неон и закись азота!"
+                desc: "Спортивное купе с двигателем 3.8L V6 MIVEC, широкими арками и системой закиси азота!"
             },
-            "Mazda RX-8 (Izzy #12 MW)": {
+            "Mazda RX-8": {
                 speed: 332, accel: 6.0, handling: 9.1, boost: 3.7, rewardMult: 14.0, driftFactor: 1.55,
-                desc: "Роторная фурия Изабель «Иззи» Диас (#12 Blacklist NFS Most Wanted): крутится до 9000 об/мин и проходит виражи как по рельсам!"
+                desc: "Роторное спорткупе RENESIS: крутится до 9000 об/мин, развесовка 50:50 и прохождение виражей как по рельсам!"
             },
-            "Toyota Supra MK4 (Vic #13 MW)": {
+            "Toyota Supra MK4": {
                 speed: 345, accel: 6.3, handling: 8.7, boost: 4.0, rewardMult: 15.0, driftFactor: 1.6,
-                desc: "Легендарная 2JZ-GTE Супра Виктора «Вика» Васкеса (#13 Blacklist NFS Most Wanted): гигантская турбина и свист блоу-оффа!"
+                desc: "Легендарное JDM-купе с рядной битурбо шестёркой 2JZ-GTE, большой турбиной и фирменным свистом блоу-оффа!"
             },
-            "Lexus IS300 (Taz #14 MW)": {
+            "Lexus IS300": {
                 speed: 320, accel: 5.6, handling: 8.5, boost: 3.5, rewardMult: 13.0, driftFactor: 1.58,
-                desc: "Стрит-седан Винса «Таза» Килича (#14 Blacklist NFS Most Wanted): рядная шестёрка 2JZ и дерзкий дрифт-настрой!"
+                desc: "Заднеприводный спорт-седан с рядной шестёркой 2JZ-GE и отличным балансом в управляемом заносе!"
             },
-            "Volkswagen Golf GTI (Sonny #15 MW)": {
+            "Volkswagen Golf GTI": {
                 speed: 315, accel: 5.7, handling: 8.8, boost: 3.5, rewardMult: 12.5, driftFactor: 1.25,
-                desc: "Хот-хэтч Хо «Сонни» Сёна (#15 Blacklist NFS Most Wanted): турбо 2.0 TFSI, лёгкий кузов и острая управляемость!"
+                desc: "Заряженный европейский хот-хэтч: турбомотор 2.0 TFSI, лёгкий кузов и острая рулёжка!"
             },
-            "Audi Le Mans Quattro R8 (Darius MW)": {
+            "Audi Le Mans Quattro R8": {
                 speed: 398, accel: 7.5, handling: 9.6, boost: 4.5, rewardMult: 27.0, driftFactor: 1.38,
-                desc: "Концепт-кар босса Дариуса (NFS Carbon / Most Wanted Collector's): 5.2L V10 Twin-Turbo и полный привод Quattro!"
+                desc: "Среднемоторный суперкар с двигателем 5.2L V10 Twin-Turbo и постоянным полным приводом Quattro!"
             },
             "BMW M3 G80 Competition": {
                 speed: 350, accel: 6.1, handling: 9.0, boost: 3.6, rewardMult: 12.0, driftFactor: 1.55,
@@ -14587,7 +16206,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                         bPillars: [], model: 'jesko', defaultColor: '#e2e8f0'
                     };
                     break;
-                case "BMW M3 E46 GTR (NFS Most Wanted)":
+                case "BMW M3 E46 GTR":
                     cfg = {
                         rWx: -24, fWx: 24, rearBumperX: -42, frontBumperX: 42,
                         hoodFrontY: -3.5, hoodBackX: 15, hoodBackY: -4.6,
@@ -14596,22 +16215,23 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                         bPillars: [0], model: 'm3gtr', defaultColor: '#cbd5e1'
                     };
                     break;
-                case "Chevrolet Corvette C6.R (Cross NFS MW)":
+                case "Chevrolet Corvette C6.R":
                     cfg = {
                         rWx: -24, fWx: 25, rearBumperX: -43, frontBumperX: 43,
                         hoodFrontY: -3.2, hoodBackX: 14, hoodBackY: -4.4,
                         roofFrontX: 3, roofRearX: -14, roofY: -11.5,
                         rearGlassEndX: -30, trunkY: -3.8, chinDrop: 0.9, noseDrop: 0,
-                        bPillars: [], model: 'corvette_cross', defaultColor: '#1e293b'
+                        bPillars: [], model: 'corvette_c6r', defaultColor: '#1e293b'
                     };
                     break;
-                case "Ford Mustang GT (Razor NFS MW)":
+                case "Ford Mustang GT":
+                case "Ford Mustang GT Coupe":
                     cfg = {
                         rWx: -24, fWx: 24, rearBumperX: -42, frontBumperX: 42,
                         hoodFrontY: -4.0, hoodBackX: 15, hoodBackY: -5.0,
                         roofFrontX: 4, roofRearX: -15, roofY: -12.8,
                         rearGlassEndX: -29, trunkY: -4.5, chinDrop: 0.7, noseDrop: 0,
-                        bPillars: [0], model: 'mustang_razor', defaultColor: '#0f172a'
+                        bPillars: [0], model: 'mustang_gt', defaultColor: '#0f172a'
                     };
                     break;
                 case "ДПС / Полиция":
@@ -15571,8 +17191,8 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             if (!car) return 'standard';
             const name = String(car.name || '').toLowerCase();
             const cat = String(car.category || '').toLowerCase();
-            if (name.includes('m3 e46 gtr') || name.includes('m3 gtr') || name.includes('nfs most wanted')) return 'm3gtr';
-            if (name.includes('slr mclaren') || name.includes('mustang gt (razor') || name.includes('corvette c6.r')) return 'supercharger';
+            if (name.includes('m3 e46 gtr') || name.includes('m3 gtr')) return 'm3gtr';
+            if (name.includes('slr mclaren') || name.includes('mustang gt') || name.includes('corvette c6.r')) return 'supercharger';
             if (name.includes('камаз') || name.includes('фура')) return 'kamaz';
             if (cat.includes('классик') || cat.includes('ретро') || name.includes('ваз') || name.includes('газ')) return 'classic';
             if (cat.includes('гиперкар') || cat.includes('суперкар') || name.includes('911') || name.includes('huracan') || name.includes('gallardo') || name.includes('db9') || name.includes('viper') || name.includes('le mans quattro') || name.includes('gt-r') || name.includes('ferrari') || name.includes('bugatti') || name.includes('jesko') || name.includes('silvia') || name.includes('wrx') || name.includes('rx-8') || name.includes('supra')) return 'sport';
@@ -15687,7 +17307,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         }
 
         // -------------------------------------------------------------
-        // РЕЖИМ ГОНКИ: «Шоссе (Трафик)» vs «Дрифт (Заносы)» vs «3D Круг (NFS MW)»
+        // РЕЖИМ ГОНКИ: «Шоссе (Трафик)» vs «Дрифт (Заносы)» vs «3D Кольцо»
         // -------------------------------------------------------------
         let raceCurrentMode = 'highway'; // 'highway' | 'drift' | 'nfs_circuit'
         let nfsSelectedTrack = 'rockport_ring';
@@ -15704,13 +17324,13 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             const lbl = typeof document !== 'undefined' ? document.getElementById('race-mode-label') : null;
             if (lbl) {
                 lbl.textContent = raceCurrentMode === 'nfs_circuit'
-                    ? '3D Круг (NFS MW)'
+                    ? '3D Кольцо (Круговая)'
                     : (raceCurrentMode === 'drift' ? 'Дрифт (Заносы)' : 'Шоссе (Трафик)');
             }
             const desc = typeof document !== 'undefined' ? document.getElementById('race-mode-desc') : null;
             if (desc) {
                 desc.textContent = raceCurrentMode === 'nfs_circuit'
-                    ? 'Замкнутая 3D-трасса в стиле NFS Most Wanted (2005): свободное управление, повороты, соперники Чёрного списка и Speedbreaker!'
+                    ? 'Замкнутая 3D-трасса: свободное управление на 360°, апексы, чекпоинты и борьба с соперниками ИИ!'
                     : (raceCurrentMode === 'drift'
                         ? 'Резкие повороты горного серпантина, глубокие заносы на ручнике, дым из-под колес и апексы!'
                         : 'Скоростные прямые, плотный трафик, обгоны, радары скорости и патрули ДПС.');
@@ -15733,7 +17353,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 const btnStart = document.getElementById('btn-start-race');
                 if (btnStart && !btnStart.disabled) {
                     if (raceCurrentMode === 'nfs_circuit' || activeRaceMode === 'nfs') {
-                        btnStart.textContent = '🏁 Начать 3D Круговую гонку (NFS MW)';
+                        btnStart.textContent = '🏁 Начать 3D Кольцевую гонку';
                     } else if (activeRaceMode === '3d') {
                         btnStart.textContent = '🚀 Начать 3D заезд (Вид сзади)';
                     } else {
@@ -15749,9 +17369,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 switchRaceMode('nfs');
             }
             const titles = {
-                rockport_ring: 'Рокпорт-Ринг (Город + Эстакада)',
-                canyon_pass: 'Каньон Карбон (Серпантин)',
-                bayview_sprint: 'Бэйвью-Спринт (Ночной порт)'
+                rockport_ring: 'Городское Кольцо (Город + Эстакада)',
+                canyon_pass: 'Горный Каньон (Серпантин)',
+                bayview_sprint: 'Ночная Магистраль (Ночной порт)'
             };
             if (typeof document !== 'undefined') {
                 const lbl = document.getElementById('nfs-track-label');
@@ -15789,189 +17409,232 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         const NFS_MW_LEGEND_CARS = {
             m3gtr: {
                 key: 'm3gtr',
-                name: 'BMW M3 E46 GTR (NFS Most Wanted)',
-                category: 'Blacklist #1 (Hero)',
-                basePrice: 38000000,
+                name: 'BMW M3 E46 GTR',
+                category: 'Легенда трека',
+                basePrice: 25000000,
                 styling: { color: '#cbd5e1', vinyl: 'none', spoiler: 'gtr', neon: '#38bdf8', bodykit: 'stock', wheels: 'stock', hood: 'stock', roofScoop: 'none' }
             },
-            corvette_cross: {
-                key: 'corvette_cross',
-                name: 'Chevrolet Corvette C6.R (Cross NFS MW)',
-                category: 'Перехватчик Сержанта Кросса',
-                basePrice: 34000000,
+            corvette_c6r: {
+                key: 'corvette_c6r',
+                name: 'Chevrolet Corvette C6.R',
+                category: 'Трек-кар GT1',
+                basePrice: 19500000,
                 styling: { color: '#1e293b', vinyl: 'none', spoiler: 'none', neon: '#ef4444', sgu: 'installed', bodykit: 'stock', hood: 'stock', roofScoop: 'none' }
             },
-            mustang_razor: {
-                key: 'mustang_razor',
-                name: 'Ford Mustang GT (Razor NFS MW)',
-                category: 'Blacklist #1 (Razor)',
-                basePrice: 19500000,
+            mustang_gt: {
+                key: 'mustang_gt',
+                name: 'Ford Mustang GT',
+                category: 'Маслкар V8',
+                basePrice: 8900000,
                 styling: { color: '#0f172a', vinyl: 'none', spoiler: 'none', neon: '#f59e0b', bodykit: 'stock', hood: 'stock', roofScoop: 'none' }
             },
             mclaren: {
                 key: 'mclaren',
-                name: 'Mercedes-Benz SLR McLaren (Bull #2 MW)',
-                category: 'Blacklist #2 (Bull)',
-                basePrice: 32000000,
+                name: 'Mercedes-Benz SLR McLaren',
+                category: 'Суперкар GT',
+                basePrice: 24000000,
                 styling: { color: '#0a0a0f', vinyl: 'none', spoiler: 'none', neon: '#ef4444', bodykit: 'stock', hood: 'stock', roofScoop: 'none' }
             },
             db9: {
                 key: 'db9',
-                name: 'Aston Martin DB9 (Ronnie #3 MW)',
-                category: 'Blacklist #3 (Ronnie)',
-                basePrice: 26500000,
+                name: 'Aston Martin DB9',
+                category: 'Гран-туризмо V12',
+                basePrice: 14500000,
                 styling: { color: '#eab308', vinyl: 'none', spoiler: 'none', neon: '#f59e0b', bodykit: 'stock', hood: 'stock', roofScoop: 'none' }
             },
-            viper_jv: {
-                key: 'viper_jv',
-                name: 'Dodge Viper SRT10 (JV #4 MW)',
-                category: 'Blacklist #4 (JV)',
-                basePrice: 25000000,
+            viper_srt10: {
+                key: 'viper_srt10',
+                name: 'Dodge Viper SRT10',
+                category: 'Суперкар V10',
+                basePrice: 13800000,
                 styling: { color: '#16a34a', vinyl: 'none', spoiler: 'none', neon: '#22c55e', bodykit: 'stock', hood: 'stock', roofScoop: 'none' }
             },
-            corvette_webster: {
-                key: 'corvette_webster',
-                name: 'Chevrolet Corvette C6 (Webster #5 MW)',
-                category: 'Blacklist #5 (Webster)',
-                basePrice: 23500000,
+            corvette_c6: {
+                key: 'corvette_c6',
+                name: 'Chevrolet Corvette C6',
+                category: 'Суперкар V8',
+                basePrice: 7600000,
                 styling: { color: '#b45309', vinyl: 'none', spoiler: 'none', neon: '#f97316', bodykit: 'stock', hood: 'stock', roofScoop: 'none' }
             },
-            gallardo_ming: {
-                key: 'gallardo_ming',
-                name: 'Lamborghini Gallardo (Ming #6 MW)',
-                category: 'Blacklist #6 (Ming)',
-                basePrice: 24000000,
+            gallardo: {
+                key: 'gallardo',
+                name: 'Lamborghini Gallardo',
+                category: 'Суперкар V10',
+                basePrice: 18500000,
                 styling: { color: '#334155', vinyl: 'none', spoiler: 'none', neon: '#38bdf8', bodykit: 'stock', hood: 'stock', roofScoop: 'none' }
             },
-            clk_kaze: {
-                key: 'clk_kaze',
-                name: 'Mercedes-Benz CLK 500 (Kaze #7 MW)',
-                category: 'Blacklist #7 (Kaze)',
-                basePrice: 18500000,
+            clk500: {
+                key: 'clk500',
+                name: 'Mercedes-Benz CLK 500',
+                category: 'Гран-туризмо',
+                basePrice: 4600000,
                 styling: { color: '#0d9488', vinyl: 'none', spoiler: 'none', neon: '#2dd4bf', bodykit: 'stock', hood: 'stock', roofScoop: 'none' }
             },
-            mustang_jewels: {
-                key: 'mustang_jewels',
-                name: 'Ford Mustang GT (Jewels #8 MW)',
-                category: 'Blacklist #8 (Jewels)',
-                basePrice: 17500000,
+            mustang_coupe: {
+                key: 'mustang_coupe',
+                name: 'Ford Mustang GT Coupe',
+                category: 'Маслкар',
+                basePrice: 3800000,
                 styling: { color: '#e11d48', vinyl: 'none', spoiler: 'none', neon: '#ec4899', bodykit: 'stock', hood: 'stock', roofScoop: 'none' }
             },
-            evo8_earl: {
-                key: 'evo8_earl',
-                name: 'Mitsubishi Lancer Evo VIII (Earl #9 MW)',
-                category: 'Blacklist #9 (Earl)',
-                basePrice: 16500000,
+            lancer_evo8: {
+                key: 'lancer_evo8',
+                name: 'Mitsubishi Lancer Evo VIII',
+                category: 'Ралли-легенда',
+                basePrice: 4200000,
                 styling: { color: '#e2e8f0', vinyl: 'none', spoiler: 'none', neon: '#ef4444', bodykit: 'stock', hood: 'stock', roofScoop: 'none' }
             },
-            cayman_baron: {
-                key: 'cayman_baron',
-                name: 'Porsche Cayman S (Baron #10 MW)',
-                category: 'Blacklist #10 (Baron)',
-                basePrice: 16000000,
+            cayman_s: {
+                key: 'cayman_s',
+                name: 'Porsche Cayman S',
+                category: 'Спорткар',
+                basePrice: 4350000,
                 styling: { color: '#0f172a', vinyl: 'none', spoiler: 'none', neon: '#f59e0b', bodykit: 'stock', hood: 'stock', roofScoop: 'none' }
             },
-            eclipse_lou: {
-                key: 'eclipse_lou',
-                name: 'Mitsubishi Eclipse GT (Big Lou #11 MW)',
-                category: 'Blacklist #11 (Big Lou)',
-                basePrice: 14000000,
+            eclipse_gt: {
+                key: 'eclipse_gt',
+                name: 'Mitsubishi Eclipse GT',
+                category: 'Спорткупе',
+                basePrice: 2450000,
                 styling: { color: '#111827', vinyl: 'none', spoiler: 'none', neon: '#eab308', bodykit: 'stock', hood: 'stock', roofScoop: 'none' }
             },
-            rx8_izzy: {
-                key: 'rx8_izzy',
-                name: 'Mazda RX-8 (Izzy #12 MW)',
-                category: 'Blacklist #12 (Izzy)',
-                basePrice: 13500000,
+            mazda_rx8: {
+                key: 'mazda_rx8',
+                name: 'Mazda RX-8',
+                category: 'Ротор-спорт',
+                basePrice: 2950000,
                 styling: { color: '#94a3b8', vinyl: 'none', spoiler: 'none', neon: '#38bdf8', bodykit: 'stock', hood: 'stock', roofScoop: 'none' }
             },
-            supra_vic: {
-                key: 'supra_vic',
-                name: 'Toyota Supra MK4 (Vic #13 MW)',
-                category: 'Blacklist #13 (Vic)',
-                basePrice: 15000000,
+            supra_mk4: {
+                key: 'supra_mk4',
+                name: 'Toyota Supra MK4',
+                category: 'Легенда JDM',
+                basePrice: 6800000,
                 styling: { color: '#dc2626', vinyl: 'none', spoiler: 'none', neon: '#ef4444', bodykit: 'stock', hood: 'stock', roofScoop: 'none' }
             },
-            is300_taz: {
-                key: 'is300_taz',
-                name: 'Lexus IS300 (Taz #14 MW)',
-                category: 'Blacklist #14 (Taz)',
-                basePrice: 12000000,
+            lexus_is300: {
+                key: 'lexus_is300',
+                name: 'Lexus IS300',
+                category: 'Спорт-седан',
+                basePrice: 2100000,
                 styling: { color: '#a16207', vinyl: 'none', spoiler: 'none', neon: '#eab308', bodykit: 'stock', hood: 'stock', roofScoop: 'none' }
             },
-            golf_sonny: {
-                key: 'golf_sonny',
-                name: 'Volkswagen Golf GTI (Sonny #15 MW)',
-                category: 'Blacklist #15 (Sonny)',
-                basePrice: 11000000,
+            golf_gti: {
+                key: 'golf_gti',
+                name: 'Volkswagen Golf GTI',
+                category: 'Хот-хэтч',
+                basePrice: 1650000,
                 styling: { color: '#f8fafc', vinyl: 'none', spoiler: 'none', neon: '#3b82f6', bodykit: 'stock', hood: 'stock', roofScoop: 'none' }
             },
-            audir8_darius: {
-                key: 'audir8_darius',
-                name: 'Audi Le Mans Quattro R8 (Darius MW)',
-                category: 'Босс Дариус (Le Mans Quattro)',
-                basePrice: 36000000,
+            audi_r8: {
+                key: 'audi_r8',
+                name: 'Audi Le Mans Quattro R8',
+                category: 'Суперкар V10',
+                basePrice: 26500000,
                 styling: { color: '#dc2626', vinyl: 'none', spoiler: 'none', neon: '#ef4444', bodykit: 'stock', hood: 'stock', roofScoop: 'none' }
             },
             m3_g80: {
                 key: 'm3_g80',
                 name: 'BMW M3 G80 Competition',
-                category: 'Эксклюзив 3D',
-                basePrice: 16800000,
+                category: 'Спорт-седан',
+                basePrice: 11800000,
                 styling: { color: '#10b981', vinyl: 'none', spoiler: 'none', neon: '#10b981', bodykit: 'stock', hood: 'stock', roofScoop: 'none' }
             },
             x5m: {
                 key: 'x5m',
                 name: 'BMW X5M Competition',
-                category: 'Эксклюзив 3D',
-                basePrice: 17500000,
+                category: 'Спорт-кроссовер',
+                basePrice: 13500000,
                 styling: { color: '#1e3a8a', vinyl: 'none', spoiler: 'none', neon: '#3b82f6', bodykit: 'stock', hood: 'stock', roofScoop: 'none' }
             },
             rs7: {
                 key: 'rs7',
                 name: 'Audi RS7 Sportback',
-                category: 'Эксклюзив 3D',
-                basePrice: 18200000,
+                category: 'Гран-туризмо',
+                basePrice: 15200000,
                 styling: { color: '#1f2937', vinyl: 'none', spoiler: 'none', neon: '#ef4444', bodykit: 'stock', hood: 'stock', roofScoop: 'none' }
             },
             maserati: {
                 key: 'maserati',
                 name: 'Maserati GranTurismo',
-                category: 'Эксклюзив 3D',
-                basePrice: 19000000,
+                category: 'Итальянское Гран-туризмо',
+                basePrice: 17500000,
                 styling: { color: '#1e3a8a', vinyl: 'none', spoiler: 'none', neon: '#38bdf8', bodykit: 'stock', hood: 'stock', roofScoop: 'none' }
             },
             panamera: {
                 key: 'panamera',
                 name: 'Porsche Panamera Turbo',
-                category: 'Эксклюзив 3D',
-                basePrice: 18800000,
+                category: 'Премиум Гран-туризмо',
+                basePrice: 16400000,
                 styling: { color: '#334155', vinyl: 'none', spoiler: 'none', neon: '#f59e0b', bodykit: 'stock', hood: 'stock', roofScoop: 'none' }
             },
             elantra_n: {
                 key: 'elantra_n',
                 name: 'Hyundai Elantra N',
-                category: 'Эксклюзив 3D',
-                basePrice: 7500000,
+                category: 'Спорт-седан',
+                basePrice: 3400000,
                 styling: { color: '#38bdf8', vinyl: 'none', spoiler: 'none', neon: '#ef4444', bodykit: 'stock', hood: 'stock', roofScoop: 'none' }
             }
         };
 
+        function resolveTrackCarMeta(carKey) {
+            if (!carKey) return NFS_MW_LEGEND_CARS.m3gtr;
+            if (NFS_MW_LEGEND_CARS[carKey]) return NFS_MW_LEGEND_CARS[carKey];
+            const k = String(carKey).toLowerCase();
+            if (k.includes('c6.r') || k.includes('corvette_c6r')) return NFS_MW_LEGEND_CARS.corvette_c6r;
+            if (k.includes('corvette')) return NFS_MW_LEGEND_CARS.corvette_c6;
+            if (k.includes('coupe')) return NFS_MW_LEGEND_CARS.mustang_coupe;
+            if (k.includes('mustang')) return NFS_MW_LEGEND_CARS.mustang_gt;
+            if (k.includes('mclaren') || k.includes('slr')) return NFS_MW_LEGEND_CARS.mclaren;
+            if (k.includes('db9') || k.includes('aston')) return NFS_MW_LEGEND_CARS.db9;
+            if (k.includes('viper')) return NFS_MW_LEGEND_CARS.viper_srt10;
+            if (k.includes('gallardo')) return NFS_MW_LEGEND_CARS.gallardo;
+            if (k.includes('clk')) return NFS_MW_LEGEND_CARS.clk500;
+            if (k.includes('evo') || k.includes('lancer')) return NFS_MW_LEGEND_CARS.lancer_evo8;
+            if (k.includes('cayman')) return NFS_MW_LEGEND_CARS.cayman_s;
+            if (k.includes('eclipse')) return NFS_MW_LEGEND_CARS.eclipse_gt;
+            if (k.includes('rx8') || k.includes('rx-8')) return NFS_MW_LEGEND_CARS.mazda_rx8;
+            if (k.includes('supra')) return NFS_MW_LEGEND_CARS.supra_mk4;
+            if (k.includes('is300') || k.includes('lexus')) return NFS_MW_LEGEND_CARS.lexus_is300;
+            if (k.includes('golf')) return NFS_MW_LEGEND_CARS.golf_gti;
+            if (k.includes('audir8') || k.includes('audi_r8') || k.includes('le mans')) return NFS_MW_LEGEND_CARS.audi_r8;
+            const byName = Object.values(NFS_MW_LEGEND_CARS).find(m => m.name.toLowerCase() === k);
+            return byName || NFS_MW_LEGEND_CARS.m3gtr;
+        }
+
         function sanitizeNfsMwCarsInGarage() {
             if (!Array.isArray(myCars)) return;
             const legendByName = new Map();
-            Object.values(NFS_MW_LEGEND_CARS).forEach(m => legendByName.set(m.name, m));
+            Object.values(NFS_MW_LEGEND_CARS).forEach(m => {
+                legendByName.set(m.name, m);
+            });
             let changed = false;
             myCars.forEach(c => {
-                if (!c || !legendByName.has(c.name) || !c.styling) return;
-                const meta = legendByName.get(c.name);
+                if (!c || !c.name) return;
+                const strippedName = String(c.name).replace(/\s*\([^)]*\)\s*$/, '').trim();
+                const meta = legendByName.get(c.name) || legendByName.get(strippedName);
+                if (!meta) return;
+                if (c.name !== meta.name) {
+                    if (selectedRaceCarName === c.name) selectedRaceCarName = meta.name;
+                    c.name = meta.name;
+                    changed = true;
+                }
+                if (c.category !== meta.category) {
+                    c.category = meta.category;
+                    changed = true;
+                }
+                if (!c.basePrice || c.basePrice !== meta.basePrice) {
+                    c.basePrice = meta.basePrice;
+                    changed = true;
+                }
+                if (!c.styling) return;
                 if (!c.styling._cleanGlbV2) {
                     c.styling.vinyl = meta.styling.vinyl || 'none';
                     c.styling.spoiler = meta.styling.spoiler || 'none';
                     c.styling.bodykit = meta.styling.bodykit || 'stock';
                     c.styling.hood = meta.styling.hood || 'stock';
                     c.styling.roofScoop = meta.styling.roofScoop || 'none';
-                    if (meta.key === 'corvette_webster' && c.styling.color === '#7c2d12') {
+                    if (meta.key === 'corvette_c6' && c.styling.color === '#7c2d12') {
                         c.styling.color = meta.styling.color;
                     }
                     c.styling._cleanGlbV2 = true;
@@ -15986,27 +17649,39 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
         function claimAndSelectNfsMwCar(carKey, action = 'race') {
             sanitizeNfsMwCarsInGarage();
-            const meta = NFS_MW_LEGEND_CARS[carKey] || NFS_MW_LEGEND_CARS.m3gtr;
+            const meta = resolveTrackCarMeta(carKey);
             if (!Array.isArray(myCars)) myCars = [];
             let carIdx = myCars.findIndex(c => c && c.name === meta.name);
             let newlyAdded = false;
             if (carIdx < 0) {
+                const price = Number(meta.basePrice) || 5000000;
+                const curBal = (onlineProfile && Number.isFinite(Number(onlineProfile.balance))) ? Math.max(balance, Number(onlineProfile.balance)) : balance;
+                if (curBal < price) {
+                    notifyUser(`Недостаточно средств для покупки ${meta.name}! Цена в автосалоне: ${price.toLocaleString('ru-RU')} ₽`, 'error');
+                    return -1;
+                }
+                if (!deductPlayerBalance(price, `Покупка автомобиля ${meta.name}`)) {
+                    return -1;
+                }
+                if (typeof playCashSound === 'function') playCashSound();
                 const newCar = {
                     name: meta.name,
                     category: meta.category,
-                    basePrice: meta.basePrice,
+                    basePrice: price,
+                    img: DEFAULT_CAR_IMG,
                     plate: null,
                     condition: 100,
-                    upgrades: { engine: 2, handling: 2, economy: 1, nitro: 2 },
+                    upgrades: { engine: 0, handling: 0, economy: 0, nitro: 0 },
                     styling: Object.assign({ _cleanGlbV2: true }, meta.styling)
                 };
                 if (typeof NomeraRaceEconomy !== 'undefined' && typeof NomeraRaceEconomy.ensureCar === 'function') {
                     NomeraRaceEconomy.ensureCar(newCar);
                 }
-                myCars.push(newCar);
-                carIdx = myCars.length - 1;
+                myCars.unshift(newCar);
+                carIdx = 0;
                 newlyAdded = true;
                 if (typeof saveProgress === 'function') saveProgress();
+                if (typeof syncCloudGarage === 'function') syncCloudGarage(true);
             }
 
             selectedRaceCarName = meta.name;
@@ -16026,16 +17701,16 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 const garageTab = document.querySelector('.nav-tab[onclick*="garage"]');
                 if (typeof switchTab === 'function') switchTab('garage', garageTab);
                 if (typeof selectGarage3DCar === 'function') selectGarage3DCar(carIdx);
-                notifyUser(newlyAdded ? `🏆 ${meta.name} добавлен в ваш гараж и выставлен на 3D-подиум!` : `🏎️ ${meta.name} выбран на 3D-подиуме гаража!`, 'success');
+                notifyUser(newlyAdded ? `🎉 ${meta.name} приобретен за ${meta.basePrice.toLocaleString('ru-RU')} ₽ и выставлен на 3D-подиум!` : `🏎️ ${meta.name} выбран на 3D-подиуме гаража!`, 'success');
                 return carIdx;
             }
 
             if (action === 'select') {
-                notifyUser(newlyAdded ? `🏆 ${meta.name} получен в гараж и выбран для гонки!` : `🏁 Выбран болид: ${meta.name}`, 'success');
+                notifyUser(newlyAdded ? `🎉 ${meta.name} приобретен за ${meta.basePrice.toLocaleString('ru-RU')} ₽ и выбран для гонки!` : `🏁 Выбран автомобиль: ${meta.name}`, 'success');
                 return carIdx;
             }
 
-            // По умолчанию: запускаем 3D круговую гонку NFS Most Wanted на выбранном болиде
+            // По умолчанию: запускаем 3D кольцевую гонку на выбранном автомобиле
             switchRaceMode('nfs');
             startRaceWithCar(meta.name, carIdx);
             return carIdx;
@@ -16500,7 +18175,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     btnStart.style.cursor = 'pointer';
                     btnStart.style.background = '';
                     if (activeRaceMode === 'nfs' || raceCurrentMode === 'nfs_circuit') {
-                        btnStart.innerText = '🏁 Начать 3D Круговую гонку (NFS MW)';
+                        btnStart.innerText = '🏁 Начать 3D Кольцевую гонку';
                     } else if (activeRaceMode === '3d') {
                         btnStart.innerText = '🚀 Начать 3D заезд (Вид сзади)';
                     } else {
@@ -16876,12 +18551,6 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 cycleRaceRadio();
                 e.preventDefault();
             }
-
-            // 8. SPEEDBREAKER (ЗАМЕДЛЕНИЕ ВРЕМЕНИ NFS MW): Клавиша G (П на русской раскладке)
-            if ((code === 'KeyG' || key === 'g' || key === 'п') && is3d) {
-                toggle3DSpeedbreaker();
-                e.preventDefault();
-            }
         });
 
         window.addEventListener('keyup', (e) => {
@@ -17049,8 +18718,8 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             const isNfsCircuit = (activeRaceMode === 'nfs' || raceCurrentMode === 'nfs_circuit') && typeof NomeraCircuitRace !== 'undefined' && Boolean(NomeraCircuitRace.NomeraCircuitRaceEngine);
             const submodeLbl = typeof document !== 'undefined' ? document.getElementById('hud-3d-submode-text') : null;
             if (submodeLbl) {
-                const trackShort = nfsSelectedTrack === 'canyon_pass' ? 'Каньон' : (nfsSelectedTrack === 'bayview_sprint' ? 'Бэйвью' : 'Рокпорт');
-                submodeLbl.textContent = isNfsCircuit ? `Трасса: ${trackShort}` : 'В Кольцо NFS';
+                const trackShort = nfsSelectedTrack === 'canyon_pass' ? 'Каньон' : (nfsSelectedTrack === 'bayview_sprint' ? 'Магистраль' : 'Городское');
+                submodeLbl.textContent = isNfsCircuit ? `Трасса: ${trackShort}` : 'В 3D Кольцо';
             }
 
             racePlayer = {
@@ -17090,7 +18759,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             try {
                 isRaceRunning = true;
                 window.isRaceRunning = true;
-                updatePlayerPresence(isNfsCircuit ? '🏁 В 3D круговой гонке (NFS)' : '🏎️ В 3D гонке', `${selectedRaceCarName}`);
+                updatePlayerPresence(isNfsCircuit ? '🏁 В 3D кольцевой гонке' : '🏎️ В 3D гонке', `${selectedRaceCarName}`);
                 document.body.classList.add('race-active');
                 document.getElementById('race-menu-container').classList.add('hidden');
                 document.getElementById('race-play-container').classList.add('hidden');
@@ -17394,11 +19063,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         }
 
         function toggle3DSpeedbreaker() {
-            if (car3DRacingEngine && typeof car3DRacingEngine.toggleSpeedbreaker === 'function') {
-                car3DRacingEngine.toggleSpeedbreaker();
-            } else {
-                show3DRacePopup('⏱️ SPEEDBREAKER ДОСТУПЕН В РЕЖИМЕ 3D КРУГ (NFS)', '#38bdf8');
-            }
+            return false;
         }
         window.toggle3DSpeedbreaker = toggle3DSpeedbreaker;
 
@@ -21315,7 +22980,50 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             document.getElementById('player-view-modal').classList.remove('show');
         }
 
+        function toggleNavMoreMenu(evt) {
+            if (evt && typeof evt.stopPropagation === 'function') evt.stopPropagation();
+            const menu = document.getElementById('nav-more-menu');
+            const btn = document.getElementById('nav-tab-more');
+            if (!menu) return;
+            const isHidden = menu.classList.toggle('hidden');
+            if (btn) btn.setAttribute('aria-expanded', isHidden ? 'false' : 'true');
+        }
+        window.toggleNavMoreMenu = toggleNavMoreMenu;
+
+        function closeNavMoreMenu() {
+            const menu = document.getElementById('nav-more-menu');
+            const btn = document.getElementById('nav-tab-more');
+            if (menu) menu.classList.add('hidden');
+            if (btn) btn.setAttribute('aria-expanded', 'false');
+        }
+        window.closeNavMoreMenu = closeNavMoreMenu;
+
+        if (typeof document !== 'undefined' && typeof document.addEventListener === 'function') {
+            document.addEventListener('click', (e) => {
+                const drop = document.getElementById('nav-more-dropdown');
+                if (drop && e.target && typeof drop.contains === 'function' && !drop.contains(e.target)) {
+                    closeNavMoreMenu();
+                }
+            });
+        }
+
+        function openMarketSection(section = 'plates') {
+            closeNavMoreMenu();
+            const mktTabBtn = document.getElementById('nav-tab-market');
+            switchTab('multiplayer', mktTabBtn);
+            if (typeof switchMarketMainSection === 'function') {
+                switchMarketMainSection(section);
+            }
+        }
+        window.openMarketSection = openMarketSection;
+
+        function openChatSection() {
+            openMarketSection('chat');
+        }
+        window.openChatSection = openChatSection;
+
         function switchTab(tabId, element, raceMode) {
+            closeNavMoreMenu();
             if (tabId !== 'generator' && isAutoSpinning) {
                 stopAutoSpin();
             }
@@ -21337,6 +23045,18 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             document.querySelectorAll('.nav-tab').forEach(el => { el.classList.remove('active'); el.setAttribute('aria-selected', 'false'); });
             const target = document.getElementById(tabId);
             if (target) target.classList.remove('hidden');
+            if (!element) {
+                const mapId = {
+                    generator: 'nav-tab-generator',
+                    inventory: 'nav-tab-inventory',
+                    collection: 'nav-tab-inventory',
+                    garage: 'nav-tab-garage',
+                    multiplayer: 'nav-tab-market',
+                    racegame: 'nav-tab-racegame',
+                    cases: 'nav-tab-cases'
+                }[tabId];
+                if (mapId) element = document.getElementById(mapId);
+            }
             if (element) { element.classList.add('active'); element.setAttribute('aria-selected', 'true'); }
             if (tabId === 'cases' && typeof selectCaseCountry === 'function') {
                 selectCaseCountry(currentCaseCountry || currentCountry || 'RUS', true);
