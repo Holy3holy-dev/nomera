@@ -273,3 +273,82 @@ test('VAZ-2109 Девятка GLB detailing isolates body paint from tires, rims
     assert.strictEqual(undertrayFound, false, 'No artificial ChassisUndertray should protrude under the car');
 });
 
+test('BMW M5 E60 (bmw.glb) KHR_mesh_quantization Int16Array attributes denormalize to Float32Array and keep wheels, grille, lights, and emblems visible at full scale', async () => {
+    const { THREE, Car3DManager } = setupTestContext();
+
+    // Build a quantized scene with normalized Int16Array positions (-32767..32767) and a parent quantization scale (like KHR_mesh_quantization)
+    const gltfScene = new THREE.Group();
+    const quantNode = new THREE.Group();
+    quantNode.scale.set(2.2, 0.7, 2.2);
+    gltfScene.add(quantNode);
+
+    function makeQuantizedMesh(name, matName, minX, maxX, minY, maxY, minZ, maxZ) {
+        const geom = new THREE.BufferGeometry();
+        const raw = new Int16Array([
+            Math.round(minX * 32767), Math.round(minY * 32767), Math.round(minZ * 32767),
+            Math.round(maxX * 32767), Math.round(minY * 32767), Math.round(minZ * 32767),
+            Math.round(maxX * 32767), Math.round(maxY * 32767), Math.round(maxZ * 32767),
+            Math.round(minX * 32767), Math.round(maxY * 32767), Math.round(maxZ * 32767)
+        ]);
+        geom.setAttribute('position', new THREE.BufferAttribute(raw, 3, true));
+        geom.setIndex([0, 1, 2, 0, 2, 3]);
+        const mesh = new THREE.Mesh(geom, new THREE.MeshStandardMaterial({ name: matName }));
+        mesh.name = name;
+        return mesh;
+    }
+
+    const bodyMesh = makeQuantizedMesh('Object_4', 'paint', -0.45, 0.45, -0.4, 0.5, -0.95, 0.95);
+    const grilleTrimMesh = makeQuantizedMesh('Object_5', 'PaletteMaterial001', -0.42, 0.42, -0.35, 0.35, -0.92, 0.92);
+    const glassMesh = makeQuantizedMesh('Object_7', 'glass', -0.40, 0.40, 0.1, 0.48, -0.5, 0.45);
+    const tailMesh = makeQuantizedMesh('Object_10', 'BMW_E30_M3_TAILLIGHT_REFLECTOR', -0.40, 0.40, 0.0, 0.15, -0.95, -0.88);
+    const emblemMesh = makeQuantizedMesh('Object_12', 'BMW_E30_M3_EMBLEMS', -0.05, 0.05, 0.15, 0.20, 0.85, 0.92);
+    const headLensMesh = makeQuantizedMesh('Object_13', 'BMW_E30_M3_LENS', -0.38, 0.38, 0.0, 0.12, 0.88, 0.95);
+    const rimMesh = makeQuantizedMesh('Object_15', 'BMW_E30_M3_RIM', -0.44, -0.35, -0.45, -0.10, 0.55, 0.82);
+    const tireMesh = makeQuantizedMesh('Object_17', 'BMW_E30_M3_TIRE', -0.45, -0.34, -0.48, -0.08, 0.52, 0.85);
+    const discMesh = makeQuantizedMesh('Object_19', 'Brake_Disc', -0.42, -0.38, -0.40, -0.15, 0.60, 0.78);
+    const caliperMesh = makeQuantizedMesh('Object_21', 'Brembo_Calipers', -0.42, -0.38, -0.35, -0.20, 0.62, 0.72);
+
+    quantNode.add(bodyMesh, grilleTrimMesh, glassMesh, tailMesh, emblemMesh, headLensMesh, rimMesh, tireMesh, discMesh, caliperMesh);
+
+    THREE.GLTFLoader = function () {};
+    THREE.GLTFLoader.prototype.load = function (_url, onLoad) {
+        onLoad({ scene: gltfScene });
+    };
+
+    const loadedModel = await new Promise(resolve => {
+        Car3DManager.loadCarModel(THREE, 'BMW M5 E60', { color: '#ffffff', tint: 'none', wheels: 'stock' }, resolve);
+    });
+
+    assert.ok(loadedModel, 'BMW M5 E60 model should load');
+    loadedModel.updateMatrixWorld(true);
+
+    const meshByName = {};
+    loadedModel.traverse(c => {
+        if (c.isMesh && c.name) meshByName[c.name] = c;
+    });
+
+    // Verify all quantized meshes were converted from normalized Int16Array to non-normalized Float32Array
+    for (const name of ['Object_4', 'Object_5', 'Object_10', 'Object_12', 'Object_13', 'Object_15', 'Object_17', 'Object_19', 'Object_21']) {
+        const m = meshByName[name];
+        assert.ok(m, `Mesh ${name} must exist in loaded model`);
+        assert.strictEqual(m.visible, true, `Mesh ${name} must remain visible`);
+        const pos = m.geometry.attributes.position;
+        assert.strictEqual(pos.normalized, false, `Mesh ${name} position attribute must be denormalized (normalized: false)`);
+        assert.ok(pos.array instanceof Float32Array, `Mesh ${name} position attribute array must be Float32Array`);
+
+        const ws = new THREE.Vector3();
+        m.getWorldScale(ws);
+        assert.ok(ws.length() > 0.5, `Mesh ${name} worldScale (${ws.length()}) must not shrink by 32767x`);
+    }
+
+    // Verify material classifications on BMW M5 E60
+    assert.strictEqual(meshByName['Object_5'].material.name, 'BlackTrim', 'PaletteMaterial001 (grille/trim/interior) must be BlackTrim');
+    assert.strictEqual(meshByName['Object_10'].material.name, 'TaillightRed', 'Taillight reflector must be TaillightRed');
+    assert.strictEqual(meshByName['Object_13'].material.name, 'HeadlightGlass', 'Headlight lens must be HeadlightGlass');
+    assert.strictEqual(meshByName['Object_15'].material.name, 'AlloyRim', 'Wheel rim must be AlloyRim');
+    assert.strictEqual(meshByName['Object_17'].material.name, 'TireRubber', 'Tire must be TireRubber');
+    assert.strictEqual(meshByName['Object_19'].material.name, 'BrakeDisc_Steel', 'Brake disc must be BrakeDisc_Steel');
+    assert.strictEqual(meshByName['Object_21'].material.name, 'BrakeCaliper_Red', 'Brembo caliper must be BrakeCaliper_Red');
+});
+
+

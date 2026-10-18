@@ -5532,7 +5532,7 @@
 
     const rawGLBCache = new Map();
     const inFlightGLBPromises = new Map();
-    const NOMERA_MODEL_CACHE_NAME = 'nomera-glb-cache-v3'; // upgraded from nomera-glb-cache-v2
+    const NOMERA_MODEL_CACHE_NAME = 'nomera-glb-cache-v4'; // upgraded from nomera-glb-cache-v3
 
     async function fetchCachedGLBBuffer(modelUrl) {
         if (!modelUrl) return null;
@@ -6787,7 +6787,7 @@
             if (baseCarId === 'solaris' && (mn === 'orangeglass' || mn === 'redglass' || mn.includes('front_lamps') || mn.includes('brakelights_red'))) return true;
             if (baseCarId === 'polo' && (mn.includes('lighta_material1') || mn === 'red_glass')) return true;
             if (baseCarId === 'mark2' && (mn === 'red1' || mn === 'red2' || mn === 'orange')) return true;
-            if (baseCarId === 'm5e60' && (mn.includes('wire_060110190') || mn.includes('wire_087225143') || mn.includes('wire_135110008') || mn.includes('taillight_reflector'))) return true;
+            if (baseCarId === 'm5e60' && (mn.includes('wire_060110190') || mn.includes('wire_087225143') || mn.includes('wire_135110008') || mn.includes('taillight_reflector') || mn === 'r_glass' || mn.includes('bmw_e30_m3_lens'))) return true;
             if (baseCarId === 'silvia' && mn.includes('lights1mtl')) return true;
             if (baseCarId === 'camry' && (ms.includes('weideng_red_plastic') || ms.includes('weideng_map_c'))) return true;
             if (baseCarId === 'lc300' && (mn.includes('tmi_glass_light') || mn.includes('tmi_light') || mn.includes('chromered_squarepattern'))) return true;
@@ -6965,7 +6965,7 @@
             if (baseCarId === 'solaris' && (mn === 'clearglass' || mn === 'windowglass' || mn === 'darkglass')) return true;
             if (baseCarId === 'polo' && (mn.includes('window_material1') || ms.includes('window_geo') || ms.includes('windowinside'))) return true;
             if (baseCarId === 'mark2' && (mn === 'glass' || mn.includes('window') || mn.includes('glass'))) return true;
-            if (baseCarId === 'm5e60' && (mn === 'glass' || mn === 'glass_toit' || mn === 'r_glass' || mn.includes('bmw_e30_m3_lens'))) return true;
+            if (baseCarId === 'm5e60' && (mn === 'glass' || mn === 'glass_toit')) return true;
             if (baseCarId === 'silvia' && mn.includes('windows1mtl')) return true;
             if (baseCarId === 'camry' && (ms.includes('d_glass') || ms.includes('weideng_glass_light'))) return true;
             if (baseCarId === 'lc300' && mn === 'tmi_glass_011') return true;
@@ -7169,8 +7169,8 @@
         modelRoot.traverse(child => {
             if (isIgnoredAccessoryOrRigNode(child, modelRoot)) return;
             const mName = String(child.name || '').toLowerCase();
-            // Automatically hide any stray manufacturer badge/logo planes on base models
-            if (mName.includes('logo_plane') || mName.includes('emblem') || mName.includes('badge') || mName.includes('bmw_logo') || mName.includes('hyundai_logo') || mName.includes('logo') || mName.includes('license_plate') || mName.includes('illinois') || mName.includes('symbol') || mName.includes('reg plate') || mName.includes('2025_103') || mName.includes('object_174') || mName.includes('plane_material.046') || mName.includes('placa') || mName.includes('backlogo')) {
+            // Automatically hide foreign license plates and flat caliper sticker planes, while preserving 3D car emblems/badges
+            if (mName.includes('logo_plane') || mName.includes('license_plate') || mName.includes('illinois') || mName.includes('reg plate') || mName.includes('2025_103') || (baseCarId === 'gaz24' && mName.includes('object_174')) || mName.includes('plane_material.046') || mName.includes('placa')) {
                 child.visible = false;
             }
 
@@ -7193,9 +7193,12 @@
                     child.userData._stylingRoles = matList.map(mat => {
                         if (!mat) return 'stock';
                         const matName = String(mat.name || '').toLowerCase();
-                        if (matName.startsWith('edge_color') || matName.includes('badge') || matName.includes('emblem') || matName.includes('logo') || matName.includes('illinois') || matName.includes('philippine_license') || matName === 'plate' || matName === 'placa' || matName === 'material.046' || matName.includes('2020-2026')) {
+                        if (matName.startsWith('edge_color') || matName.includes('illinois') || matName.includes('philippine_license') || matName === 'plate' || matName === 'placa' || matName === 'material.046' || matName.includes('2020-2026')) {
                             child.visible = false;
                             return 'badge';
+                        }
+                        if (matName.includes('badge') || matName.includes('emblem') || matName.includes('logo') || mName.includes('emblem') || mName.includes('badge')) {
+                            return mat.map ? 'stock' : 'chrome';
                         }
                         if (isTireMaterial(matName, mName)) return 'tire';
                         if (isRimMaterial(matName, mName)) return 'rim';
@@ -7206,6 +7209,7 @@
                         if (isInteriorMaterial(matName, mName)) return 'interior';
                         if (isGlassMaterial(mat, matName, mName)) return 'glass';
                         if (isBodyMaterial(matName, mName)) return 'body';
+                        if (baseCarId === 'm5e60' && (matName === 'palettematerial001' || matName === 'gris' || matName === 'black' || matName === 'black_dessous')) return 'trim';
                         if (baseCarId === 'corvette_cross' && (matName === 'espejo' || matName === 'chrome_headlight_left')) return 'chrome';
                         if (baseCarId === 'corvette_cross' && (matName === 'material.042' || matName === 'material.044' || matName === 'material.045' || matName === 'nwgros')) return 'trim';
                         if (baseCarId === 'mustang_razor' && matName === 'cromados') return 'chrome';
@@ -7291,7 +7295,7 @@
 
                     // 4. Lights (Headlights, Taillights, Indicators)
                     if (role === 'light') {
-                        if (mName.includes('taillight') || matName.includes('taillight') || mName.includes('brakelight') || matName.includes('brakelight') || matName === 'gl_glow_glass_g' || matName === 'rojo_faros_tras' || matName === 'faros_tras' || matName === 'glassred' || matName === 'stop' || matName.includes('red') || matName.includes('ruby') || mName === 'object_20' || matName === 'material_17' || matName === 'stopar' || (baseCarId === 'vaz2109' && matName.toLowerCase() === 'standardmater5')) {
+                        if (mName.includes('taillight') || matName.includes('taillight') || mName.includes('brakelight') || matName.includes('brakelight') || matName === 'gl_glow_glass_g' || matName === 'rojo_faros_tras' || matName === 'faros_tras' || matName === 'glassred' || matName === 'r_glass' || matName === 'stop' || matName.includes('red') || matName.includes('ruby') || mName === 'object_20' || matName === 'material_17' || matName === 'stopar' || (baseCarId === 'vaz2109' && matName.toLowerCase() === 'standardmater5')) {
                             return mats.taillightRed;
                         }
                         if (baseCarId === 'vaz2109' && matName.toLowerCase() === 'standardmater3') {
@@ -7691,8 +7695,62 @@
             return;
         }
 
+        function denormalizeBufferAttribute(attr) {
+            if (!attr || !attr.normalized || !attr.array || (attr.array instanceof Float32Array)) return attr;
+            const src = attr.array;
+            let divisor = 1;
+            if (src instanceof Int16Array) divisor = 32767.0;
+            else if (src instanceof Uint16Array) divisor = 65535.0;
+            else if (src instanceof Int8Array) divisor = 127.0;
+            else if (src instanceof Uint8Array) divisor = 255.0;
+            else return attr;
+
+            const itemSize = attr.itemSize || 3;
+            const count = attr.count !== undefined ? attr.count : Math.floor(src.length / itemSize);
+            if (attr.isInterleavedBufferAttribute && attr.data) {
+                const out = new Float32Array(count * itemSize);
+                for (let i = 0; i < count; i++) {
+                    for (let k = 0; k < itemSize; k++) {
+                        const raw = k === 0 ? attr.getX(i) : (k === 1 ? attr.getY(i) : (k === 2 ? attr.getZ(i) : attr.getW(i)));
+                        out[i * itemSize + k] = Math.max(-1.0, raw / divisor);
+                    }
+                }
+                return new THREE.BufferAttribute(out, itemSize, false);
+            }
+
+            const out = new Float32Array(src.length);
+            for (let i = 0; i < src.length; i++) {
+                out[i] = Math.max(-1.0, src[i] / divisor);
+            }
+            return new THREE.BufferAttribute(out, itemSize, false);
+        }
+
+        function denormalizeSceneGeometries(rootObj) {
+            if (!rootObj || typeof rootObj.traverse !== 'function') return rootObj;
+            rootObj.traverse(child => {
+                if (!child.isMesh || !child.geometry || !child.geometry.attributes) return;
+                const geom = child.geometry;
+                const attrs = geom.attributes;
+                let changedPos = false;
+                ['position', 'normal', 'uv', 'uv2'].forEach(attrName => {
+                    const attr = attrs[attrName];
+                    if (attr && attr.normalized && attr.array && !(attr.array instanceof Float32Array)) {
+                        const denorm = denormalizeBufferAttribute(attr);
+                        geom.setAttribute(attrName, denorm);
+                        if (attrName === 'position') changedPos = true;
+                    }
+                });
+                if (changedPos) {
+                    if (typeof geom.computeBoundingBox === 'function') geom.computeBoundingBox();
+                    if (typeof geom.computeBoundingSphere === 'function') geom.computeBoundingSphere();
+                }
+            });
+            return rootObj;
+        }
+
         function protectSceneBuffers(scene) {
             if (!scene || typeof scene.traverse !== 'function') return scene;
+            denormalizeSceneGeometries(scene);
             scene.traverse(child => {
                 child.userData.preserveBuffers = true;
                 if (child.geometry) child.geometry.userData.preserveBuffers = true;
@@ -7746,6 +7804,7 @@
                     }
                 }
                 const clonedScene = rootToUse.clone(true);
+                denormalizeSceneGeometries(clonedScene);
                 const toRemove = [];
                 clonedScene.traverse(c => {
                     const nm = String(c.name || '').toLowerCase();
