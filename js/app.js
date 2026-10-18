@@ -23396,11 +23396,88 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         }
         window.toggleMobileCollectionFilters = toggleMobileCollectionFilters;
 
+        function toggleMobileGenSettings() {
+            const bar = document.getElementById('gen-quick-toggles-bar');
+            const pity = document.getElementById('pity-status-bar');
+            const btn = document.getElementById('btn-gen-mobile-settings');
+            const chev = document.getElementById('gen-mobile-settings-chevron');
+            if (!bar || !bar.classList) return false;
+            const isOpen = bar.classList.toggle('mobile-expanded');
+            if (pity && pity.classList) pity.classList.toggle('mobile-expanded', isOpen);
+            if (btn) {
+                if (btn.classList) btn.classList.toggle('active', isOpen);
+                if (typeof btn.setAttribute === 'function') btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+            }
+            if (chev) {
+                chev.textContent = isOpen ? '▲' : '▼';
+                chev.innerText = isOpen ? '▲' : '▼';
+            }
+            return isOpen;
+        }
+        window.toggleMobileGenSettings = toggleMobileGenSettings;
+
+        function toggleMobileGenStats() {
+            const body = document.getElementById('gen-stats-drawer-body');
+            const btn = document.getElementById('btn-gen-mobile-stats');
+            const chev = document.getElementById('gen-mobile-stats-chevron');
+            if (!body || !body.classList) return false;
+            const isOpen = body.classList.toggle('mobile-expanded');
+            if (btn) {
+                if (btn.classList) btn.classList.toggle('active', isOpen);
+                if (typeof btn.setAttribute === 'function') btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+            }
+            if (chev) {
+                chev.textContent = isOpen ? '▲' : '▼';
+                chev.innerText = isOpen ? '▲' : '▼';
+            }
+            return isOpen;
+        }
+        window.toggleMobileGenStats = toggleMobileGenStats;
+
+        function toggleMobileGarageRoster() {
+            const sidebar = document.getElementById('garage-left-sidebar');
+            const btn = document.getElementById('btn-mobile-garage-cars');
+            if (!sidebar || !sidebar.classList) return false;
+            const isOpen = sidebar.classList.toggle('mobile-roster-open');
+            if (btn) {
+                if (btn.classList) btn.classList.toggle('active', isOpen);
+                const label = isOpen ? '🚘 Скрыть список авто ▲' : '🚘 Сменить авто ▼';
+                btn.textContent = label;
+                btn.innerText = label;
+            }
+            return isOpen;
+        }
+        window.toggleMobileGarageRoster = toggleMobileGarageRoster;
+
+        function toggleMobileMarketFilters() {
+            const toolbar = document.getElementById('market-filter-toolbar');
+            const btn = document.getElementById('btn-mobile-mkt-filters');
+            if (!toolbar || !toolbar.classList) return false;
+            const isCollapsed = toolbar.classList.toggle('mobile-collapsed');
+            if (btn) {
+                if (btn.classList) btn.classList.toggle('active', !isCollapsed);
+                const label = isCollapsed ? '🎛️ Показать фильтры' : '🎛️ Фильтры';
+                btn.textContent = label;
+                btn.innerText = label;
+            }
+            return isCollapsed;
+        }
+        window.toggleMobileMarketFilters = toggleMobileMarketFilters;
+
         if (typeof document !== 'undefined' && typeof document.addEventListener === 'function') {
             document.addEventListener('click', (e) => {
                 const drop = document.getElementById('nav-more-dropdown');
                 if (drop && e.target && typeof drop.contains === 'function' && !drop.contains(e.target)) {
                     closeNavMoreMenu();
+                }
+                const mobSheet = document.getElementById('mobile-more-sheet');
+                const mobBtn = document.getElementById('btn-mobile-more');
+                if (mobSheet && !mobSheet.classList.contains('hidden') && e.target && typeof mobSheet.contains === 'function') {
+                    const insideSheet = mobSheet.contains(e.target);
+                    const insideBtn = mobBtn && typeof mobBtn.contains === 'function' && mobBtn.contains(e.target);
+                    if (!insideSheet && !insideBtn) {
+                        closeMobileMoreSheet();
+                    }
                 }
             });
         }
@@ -23426,13 +23503,15 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
             if (typeof document !== 'undefined') {
                 if (typeof document.querySelectorAll === 'function') {
-                    document.querySelectorAll('#mobile-bottom-nav .mobile-nav-btn').forEach(btn => {
+                    document.querySelectorAll('#mobile-bottom-nav .mobile-nav-btn, #mobile-more-sheet [data-mobile-tab]').forEach(btn => {
                         const mTab = typeof btn.getAttribute === 'function' ? btn.getAttribute('data-mobile-tab') : (btn.dataset && btn.dataset.mobileTab);
                         const isActive = mTab === tabId ||
                             (mTab === 'cars' && tabId === 'garage') ||
                             (mTab === 'garage' && tabId === 'cars') ||
                             (mTab === 'market' && tabId === 'multiplayer') ||
-                            (mTab === 'race' && tabId === 'racegame');
+                            (mTab === 'multiplayer' && tabId === 'market') ||
+                            (mTab === 'race' && tabId === 'racegame') ||
+                            (mTab === 'racegame' && tabId === 'race');
                         btn.classList.toggle('active', isActive);
                     });
                 }
@@ -23454,7 +23533,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 });
                 const btnMobMore = document.getElementById('btn-mobile-more');
                 if (btnMobMore && btnMobMore.classList) {
-                    btnMobMore.classList.toggle('active', ['leaderboard', 'profile', 'Pass', 'online', 'admin'].includes(tabId));
+                    btnMobMore.classList.toggle('active', ['cases', 'race', 'racegame', 'leaderboard', 'profile', 'Pass', 'online', 'admin'].includes(tabId));
                 }
             }
 

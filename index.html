@@ -60,7 +60,7 @@
     <!-- Подключение Firebase SDK для базы данных, аккаунтов и мультиплеера -->
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
-    <link rel="stylesheet" href="./styles.css?v=6542629f4cd6">
+    <link rel="stylesheet" href="./styles.css?v=5c004317388b">
     <style>
         /* Collector's Book («Книга коллекционера») & Car-Plate Synergy UI */
         .collector-book-summary {
@@ -429,7 +429,7 @@
 
                         <div class="gen-sidebar-divider"></div>
 
-                        <div class="gen-sidebar-section">
+                        <div class="gen-sidebar-section gen-region-sidebar-section">
                             <div class="gen-sidebar-label">Серия и регион</div>
                             <button type="button" class="btn-region-trigger" onclick="changeRegion()">
                                 <span class="region-trigger-left">🌍 Код региона / штата</span>
@@ -447,9 +447,9 @@
                         <div class="podium-spotlight" aria-hidden="true"></div>
                         <div class="podium-rarity-rays" id="gen-podium-rays" aria-hidden="true"></div>
 
-                        <!-- Корона / бейдж категории редкости прямо над номером -->
+                        <!-- Корона / бейдж категории редкости прямо над номером (на мобильном — под номером) -->
                         <div class="gen-rarity-crown-wrap">
-                            <div id="gen-rarity" class="rarity-label gen-rarity-hero-badge hidden">Обычный</div>
+                            <div id="gen-rarity" class="rarity-label gen-rarity-hero-badge">Обычный</div>
                         </div>
 
                         <div id="region-editor" class="region-editor hidden" role="dialog" aria-modal="true" aria-label="Смена региона госномера">
@@ -520,8 +520,14 @@
 
                     <!-- Панель управления генерацией (в стиле первого референса) -->
                     <div class="gen-controls-dock">
+                        <!-- Кнопка раскрытия дополнительных настроек на смартфонах -->
+                        <button type="button" class="gen-mobile-drawer-btn" id="btn-gen-mobile-settings" onclick="toggleMobileGenSettings()" aria-expanded="false">
+                            <span>⚙️ Доп. настройки (Режим, Турбо, Авто, Регион)</span>
+                            <span class="drawer-chevron" id="gen-mobile-settings-chevron">▼</span>
+                        </button>
+
                         <!-- Компактная строка режимов: Анимация • Турбо • Автогенерация -->
-                        <div class="spin-control-bar gen-quick-toggles">
+                        <div class="spin-control-bar gen-quick-toggles" id="gen-quick-toggles-bar">
                             <div class="gen-mode-pill-wrap">
                                 <select class="control-select" id="anim-style-select" aria-label="Режим анимации">
                                     <option value="cascade">🌊 Каскад (Слоты)</option>
@@ -548,6 +554,11 @@
                                     <option value="Infinity" selected>∞ До редкого</option>
                                 </select>
                             </div>
+
+                            <button type="button" class="btn-region-trigger gen-mobile-region-btn" onclick="changeRegion()">
+                                <span class="region-trigger-left">🌍 Сменить регион / штат</span>
+                                <span class="region-trigger-action">✎</span>
+                            </button>
                         </div>
 
                         <!-- ГЛАВНАЯ КНОПКА «СГЕНЕРИРОВАТЬ НОМЕР» -->
@@ -558,8 +569,14 @@
                             </button>
                         </div>
 
-                        <!-- Вспомогательные действия: Цифры / Буквы / В коллекцию / Продать -->
+                        <!-- Основные действия с полученным номером: В коллекцию / Продать / Цифры / Буквы -->
                         <div class="gen-secondary-actions-grid">
+                            <button type="button" class="btn btn-save" id="btn-save" onclick="savePlate()" disabled>
+                                ＋ В коллекцию
+                            </button>
+                            <button type="button" class="btn btn-sell-direct" id="btn-sell-direct" onclick="sellCurrentPlate()" disabled>
+                                <span>💰 Продать</span>
+                            </button>
                             <button type="button" class="btn btn-numbers" id="btn-spin-num" onclick="spinNumbers()">
                                 <span>Только цифры</span>
                                 <small id="spin-cost-num">500 ₽</small>
@@ -567,12 +584,6 @@
                             <button type="button" class="btn btn-letters" id="btn-spin-let" onclick="spinLetters()">
                                 <span>Только буквы</span>
                                 <small id="spin-cost-let">500 ₽</small>
-                            </button>
-                            <button type="button" class="btn btn-save" id="btn-save" onclick="savePlate()" disabled>
-                                ＋ В коллекцию
-                            </button>
-                            <button type="button" class="btn btn-sell-direct" id="btn-sell-direct" onclick="sellCurrentPlate()" disabled>
-                                <span>💰 Продать</span>
                             </button>
                         </div>
 
@@ -590,8 +601,12 @@
                 </section>
 
                 <!-- ПРАВАЯ КОЛОНКА: ЧИСТАЯ СТАТИСТИКА ИГРОКА И ПОСЛЕДНИЕ РЕДКИЕ ВЫПАДЕНИЯ -->
-                <aside class="generator-aside gen-right-panel" aria-label="Игровая статистика">
-                    <div class="gen-glass-sidebar collection-summary">
+                <aside class="generator-aside gen-right-panel" id="gen-right-panel" aria-label="Игровая статистика">
+                    <button type="button" class="gen-mobile-drawer-btn" id="btn-gen-mobile-stats" onclick="toggleMobileGenStats()" aria-expanded="false">
+                        <span>📊 Статистика игрока и редкие находки</span>
+                        <span class="drawer-chevron" id="gen-mobile-stats-chevron">▼</span>
+                    </button>
+                    <div class="gen-glass-sidebar collection-summary" id="gen-stats-drawer-body">
                         <div class="gen-sidebar-title">Статистика</div>
                         <div class="gen-stats-list">
                             <div class="summary-stat" onclick="navigateToTab('inventory')" role="button" tabindex="0">
@@ -790,7 +805,7 @@
                 <!-- 3-КОЛОНОЧНЫЙ ГАРАЖНЫЙ КОМПЛЕКС: СПИСОК АВТО СЛЕВА | 3D-ПОДИУМ В ЦЕНТРЕ | ИНСПЕКТОР И НОМЕР СПРАВА -->
                 <div class="garage-luxury-layout">
                     <!-- Левая колонка: Список автомобилей игрока -->
-                    <aside class="garage-left-sidebar" aria-label="Мои автомобили">
+                    <aside class="garage-left-sidebar" id="garage-left-sidebar" aria-label="Мои автомобили">
                         <div class="luxury-panel-header">
                             <span class="luxury-panel-eyebrow">МОИ АВТОМОБИЛИ</span>
                         </div>
@@ -810,6 +825,9 @@
                                 <div id="garage-3d-car-plate-badge" style="cursor:pointer; display:inline-flex; align-items:center; margin-left:6px;" onclick="toggleGaragePlateView()" title="Нажмите, чтобы рассмотреть 3D-номер на бампере"></div>
                             </div>
                             <div class="garage-3d-header-actions">
+                                <button type="button" class="btn btn-dark mobile-garage-roster-btn" id="btn-mobile-garage-cars" onclick="toggleMobileGarageRoster()" title="Выбрать другой автомобиль из гаража">
+                                    🚘 Сменить авто ▼
+                                </button>
                                 <button type="button" class="btn btn-secondary" id="btn-garage-podium-toggle" onclick="toggleGaragePodiumCollapse()" title="Свернуть / развернуть 3D подиум" style="padding: 6px 10px; font-size: 11px;">
                                     <span id="garage-podium-toggle-icon">▲</span> <span id="garage-podium-toggle-label">Свернуть 3D</span>
                                 </button>
@@ -1880,13 +1898,14 @@
                         <button type="button" class="btn btn-red-cta" style="width:auto; padding:9px 14px; font-size:12px;" onclick="openSellPlateModal()">＋ Выставить номер</button>
                         <button type="button" class="btn btn-blue" style="width:auto; padding:9px 14px; font-size:12px;" onclick="openSellCarModalFromMarket()">＋ Выставить авто</button>
                         <button type="button" class="btn btn-dark" style="width:auto; padding:9px 12px; font-size:12px;" onclick="openVipAuction()">🔨 VIP-Аукцион</button>
+                        <button type="button" class="btn btn-dark btn-compact mobile-filter-toggle-btn" id="btn-mobile-mkt-filters" onclick="toggleMobileMarketFilters()">🎛️ Фильтры</button>
                     </div>
                 </div>
 
                 <!-- Подвкладка: Рынок номеров и автомобилей -->
                 <div id="multi-subtab-market">
                     <!-- Панель фильтрации рынка -->
-                    <div class="col-filter-toolbar market-filter-toolbar">
+                    <div class="col-filter-toolbar market-filter-toolbar" id="market-filter-toolbar">
                         <div class="col-search-wrap">
                             <input type="text" id="mkt-search-input" class="col-search-input" placeholder="🔍 Поиск лота по номеру, модели авто или продавцу..." oninput="setMarketFilterState({ query: this.value })">
                         </div>
@@ -1949,42 +1968,58 @@
 
     </div>
 
-    <!-- МОБИЛЬНАЯ НИЖНЯЯ НАВИГАЦИЯ И ШТОРКА «ЕЩЁ» -->
+    <!-- МОБИЛЬНАЯ НИЖНЯЯ НАВИГАЦИЯ (5 ОСНОВНЫХ ПУНКТОВ) И ШТОРКА «ЕЩЁ» -->
     <nav id="mobile-bottom-nav" class="mobile-bottom-nav" aria-label="Мобильная навигация">
         <button type="button" class="mobile-nav-btn active" id="mob-nav-generator" data-mobile-tab="generator" onclick="switchTab('generator')">
-            <span>🎲</span><small>Номера</small>
+            <span>🎲</span><small>Генератор</small>
         </button>
         <button type="button" class="mobile-nav-btn" id="mob-nav-inventory" data-mobile-tab="inventory" onclick="switchTab('inventory')">
-            <span>🗂️</span><small>Коллекция</small>
+            <span>🎒</span><small>Коллекция</small>
         </button>
-        <button type="button" class="mobile-nav-btn" id="mob-nav-cars" data-mobile-tab="cars" onclick="switchTab('cars')">
+        <button type="button" class="mobile-nav-btn" id="mob-nav-cars" data-mobile-tab="garage" onclick="switchTab('garage')">
             <span>🏎️</span><small>Гараж</small>
         </button>
-        <button type="button" class="mobile-nav-btn" id="mob-nav-market" data-mobile-tab="market" onclick="switchTab('market')">
-            <span>🏛️</span><small>Рынок</small>
+        <button type="button" class="mobile-nav-btn" id="mob-nav-market" data-mobile-tab="multiplayer" onclick="switchTab('multiplayer')">
+            <span>🏪</span><small>Рынок</small>
         </button>
-        <button type="button" class="mobile-nav-btn" id="mob-nav-race" data-mobile-tab="race" onclick="switchTab('race')">
-            <span>🏁</span><small>Гонки</small>
-        </button>
-        <button type="button" class="mobile-nav-btn" id="mob-nav-cases" data-mobile-tab="cases" onclick="switchTab('cases')">
-            <span>🎁</span><small>Кейсы</small>
-        </button>
-        <button type="button" class="mobile-nav-btn" id="btn-mobile-more" onclick="toggleMobileMoreSheet(event)">
+        <button type="button" class="mobile-nav-btn" id="btn-mobile-more" onclick="toggleMobileMoreSheet(event)" aria-expanded="false">
             <span>☰</span><small>Ещё</small>
         </button>
     </nav>
 
-    <div id="mobile-more-sheet" class="mobile-more-sheet hidden">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-            <span class="luxury-panel-eyebrow">ДОПОЛНИТЕЛЬНЫЕ РАЗДЕЛЫ</span>
+    <div id="mobile-more-sheet" class="mobile-more-sheet hidden" role="dialog" aria-label="Дополнительные разделы">
+        <div class="mobile-more-header">
+            <span class="luxury-panel-eyebrow">ИГРОВЫЕ РЕЖИМЫ И РАЗДЕЛЫ</span>
             <button type="button" class="region-btn-close" onclick="closeMobileMoreSheet()" aria-label="Закрыть">✕</button>
         </div>
+
+        <!-- Главные игровые режимы: Кейсы и Гонки -->
+        <div class="mobile-more-hero-modes">
+            <button type="button" class="mobile-more-hero-card hero-card-cases" id="mob-nav-cases" data-mobile-tab="cases" onclick="closeMobileMoreSheet(); switchTab('cases')">
+                <span class="more-hero-icon">🎁</span>
+                <div class="more-hero-text">
+                    <strong>Кейсы и рулетка</strong>
+                    <small>Открытие ×1 / ×5 / ×10 • Авто и спецсерии</small>
+                </div>
+            </button>
+            <button type="button" class="mobile-more-hero-card hero-card-races" id="mob-nav-race" data-mobile-tab="racegame" onclick="closeMobileMoreSheet(); switchTab('racegame')">
+                <span class="more-hero-icon">🏁</span>
+                <div class="more-hero-text">
+                    <strong>Уличные и 3D Гонки</strong>
+                    <small>Шоссе, Дрэг 402м и 3D Кольцо</small>
+                </div>
+            </button>
+        </div>
+
+        <!-- Дополнительные разделы, рейтинг, онлайн и настройки -->
         <div class="mobile-more-grid">
-            <button type="button" class="mobile-more-btn" onclick="closeMobileMoreSheet(); switchTab('leaderboard')">🏆 Рейтинг и рекорды</button>
-            <button type="button" class="mobile-more-btn" onclick="closeMobileMoreSheet(); switchTab('profile')">👤 Профиль и достижения</button>
-            <button type="button" class="mobile-more-btn" onclick="closeMobileMoreSheet(); switchTab('Pass')">👑 VIP Клуб</button>
-            <button type="button" class="mobile-more-btn" onclick="closeMobileMoreSheet(); switchTab('online')">🌐 Онлайн и синхронизация</button>
+            <button type="button" class="mobile-more-btn" onclick="closeMobileMoreSheet(); switchTab('leaderboard')">🏆 Рейтинг лидеров</button>
+            <button type="button" class="mobile-more-btn" onclick="closeMobileMoreSheet(); openChatSection()">💬 Онлайн-чат</button>
+            <button type="button" class="mobile-more-btn" onclick="closeMobileMoreSheet(); openCollectorBookFromNav()">📘 Книга коллекционера</button>
+            <button type="button" class="mobile-more-btn" onclick="closeMobileMoreSheet(); openVipAuction()">🔨 VIP-Аукцион</button>
             <button type="button" class="mobile-more-btn" onclick="closeMobileMoreSheet(); openDailyModal()">🎁 Бонус дня и квесты</button>
+            <button type="button" class="mobile-more-btn" onclick="closeMobileMoreSheet(); openProfileModal()">👤 Профиль и уровень</button>
+            <button type="button" class="mobile-more-btn" onclick="closeMobileMoreSheet(); switchTab('inventory'); switchCollectionTab('achieve')">🏅 Достижения</button>
             <button type="button" class="mobile-more-btn" onclick="closeMobileMoreSheet(); openSettings()">🔊 Настройки звука</button>
         </div>
     </div>
@@ -2813,6 +2848,6 @@
     <script src="./js/nfs-physics.js?v=8345fce74626"></script>
     <script src="./js/nfs-circuit-race.js?v=05bfeab9b9a0"></script>
     <script src="./js/car-3d.js?v=f4537ffff2a5"></script>
-    <script src="./js/app.js?v=b46e2c8ec28b"></script>
+    <script src="./js/app.js?v=5260a8010ca4"></script>
 </body>
 </html>

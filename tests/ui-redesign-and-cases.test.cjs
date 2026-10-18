@@ -226,4 +226,48 @@ test('Stage 2 Redesign: 1580px widescreen layout, automotive garage arena, hero 
   assert.ok(app.run(`document.getElementById('gen-rarity').innerText`).includes('👑'));
 });
 
+test('Standalone Mobile Redesign: 5-item bottom nav, grouped More sheet, Generator drawers, Garage car roster drawer, and fluid plate sizing', () => {
+  const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
+  const css = fs.readFileSync(path.join(__dirname, '..', 'styles.css'), 'utf8');
+  const app = createApp();
+
+  // 1. Mobile Bottom Nav has the 5 primary buttons (Генератор, Коллекция, Гараж, Рынок, Ещё)
+  assert.ok(html.includes('id="mob-nav-generator"'));
+  assert.ok(html.includes('id="mob-nav-inventory"'));
+  assert.ok(html.includes('id="mob-nav-cars"'));
+  assert.ok(html.includes('id="mob-nav-market"'));
+  assert.ok(html.includes('id="btn-mobile-more"'));
+  assert.ok(css.includes('grid-template-columns: repeat(5, minmax(0, 1fr))'));
+  assert.ok(css.includes('transform: none !important'));
+
+  // 2. Mobile Generator drawers: toggleMobileGenSettings & toggleMobileGenStats
+  assert.equal(app.run(`document.getElementById('gen-quick-toggles-bar').classList.contains('mobile-expanded')`), false);
+  assert.equal(app.run(`toggleMobileGenSettings()`), true);
+  assert.equal(app.run(`document.getElementById('gen-quick-toggles-bar').classList.contains('mobile-expanded')`), true);
+  assert.equal(app.run(`toggleMobileGenSettings()`), false);
+
+  assert.equal(app.run(`document.getElementById('gen-stats-drawer-body').classList.contains('mobile-expanded')`), false);
+  assert.equal(app.run(`toggleMobileGenStats()`), true);
+  assert.equal(app.run(`document.getElementById('gen-stats-drawer-body').classList.contains('mobile-expanded')`), true);
+
+  // 3. Mobile Garage car roster toggle (without destroying 3D scene) & Mobile Market filter toggle
+  assert.equal(app.run(`document.getElementById('garage-left-sidebar').classList.contains('mobile-roster-open')`), false);
+  assert.equal(app.run(`toggleMobileGarageRoster()`), true);
+  assert.equal(app.run(`document.getElementById('garage-left-sidebar').classList.contains('mobile-roster-open')`), true);
+
+  assert.equal(app.run(`document.getElementById('market-filter-toolbar').classList.contains('mobile-collapsed')`), false);
+  assert.equal(app.run(`toggleMobileMarketFilters()`), true);
+  assert.equal(app.run(`document.getElementById('market-filter-toolbar').classList.contains('mobile-collapsed')`), true);
+
+  // 4. Switching to 'cases' or 'racegame' highlights #btn-mobile-more as active
+  app.run(`switchTab('cases');`);
+  assert.equal(app.run(`document.getElementById('btn-mobile-more').classList.contains('active')`), true);
+  app.run(`switchTab('racegame');`);
+  assert.equal(app.run(`document.getElementById('btn-mobile-more').classList.contains('active')`), true);
+  app.run(`switchTab('generator');`);
+  assert.equal(app.run(`document.getElementById('btn-mobile-more').classList.contains('active')`), false);
+  assert.equal(app.run(`document.getElementById('mob-nav-generator').classList.contains('active')`), true);
+});
+
+
 
