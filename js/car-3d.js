@@ -13659,8 +13659,11 @@
             const isWetSlide = (weatherGrip < 0.88 && Math.abs(steerInput) > 0 && state.speed > 95 && Math.abs(state.vx) > lateralMax * 0.62);
             const isDriftingNow = (isHandbrake && (Math.abs(steerInput) > 0 || hasLateralSlide)) || (state.isDrifting && hasLateralSlide) || isWetSlide;
 
-            // Cornering stiffness factor scales with weatherGrip (1.0 in dry, lower in rain/snow)
-            const corneringStiffness = (0.55 + 0.45 * weatherGrip);
+            // Cornering stiffness factor scales with weatherGrip and Pacejka tire saturation curve
+            const pacejkaSaturation = Math.abs(slipAngle) > 0.01
+                ? Math.min(1.15, Math.max(0.65, Math.abs(pacejkaGrip) / Math.min(1.0, Math.abs(slipAngle) * 3.5)))
+                : 1.0;
+            const corneringStiffness = (0.55 + 0.45 * weatherGrip) * (0.85 + 0.15 * pacejkaSaturation);
 
             if (steerInput !== 0 && effectiveSteerAuthority > 0) {
                 state.vx += steerInput * lateralMax * 4.2 * effectiveSteerAuthority * corneringStiffness * dt;
