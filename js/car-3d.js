@@ -5474,7 +5474,7 @@
         mustang_razor: './assets/models/mustang_razor.glb',   // Razor Prologue — 2005 Ford Mustang GT Widebody (1.76 MB)
         mclaren: './assets/models/mclaren.glb',               // #2 Bull — Mercedes-Benz SLR McLaren / McLaren
         db9: './assets/models/aston_martin.glb',              // #3 Ronnie — Aston Martin DB9
-        viper_jv: './assets/models/sport_car.glb',            // #4 JV — Dodge Viper SRT10 / Supercar
+        viper_jv: './assets/models/nissan_370z.glb',          // #4 JV — Dodge Viper SRT10 / Wide Sport Coupe
         corvette_webster: './assets/models/corvette_cross.glb', // #5 Webster — Chevrolet Corvette C6
         gallardo_ming: './assets/models/lamborghini.glb',     // #6 Ming — Lamborghini Gallardo
         clk_kaze: './assets/models/mercedes_v8.glb',          // #7 Kaze — Mercedes-Benz CLK 500
@@ -5485,7 +5485,7 @@
         rx7: './assets/models/mazda_rx7.glb',                 // #12 Izzy / Mia — Mazda RX-8 / RX-7
         supra: './assets/models/toyota_supra.glb',            // #13 Vic — Toyota Supra MK4
         is300_taz: './assets/models/mark2.glb',               // #14 Taz — Lexus IS300 / JDM Tourer
-        golf_sonny: './assets/models/golf2.glb',              // #15 Sonny — Volkswagen Golf GTI
+        golf_sonny: './assets/models/golf7.glb',              // #15 Sonny — Volkswagen Golf GTI
         audir8: './assets/models/audi_r8.glb',                // Darius — Audi Le Mans Quattro / R8
 
         // Bonus Exclusive 3D Models from assets/models/
@@ -5532,7 +5532,7 @@
 
     const rawGLBCache = new Map();
     const inFlightGLBPromises = new Map();
-    const NOMERA_MODEL_CACHE_NAME = 'nomera-glb-cache-v2'; // upgraded from nomera-glb-cache-v1
+    const NOMERA_MODEL_CACHE_NAME = 'nomera-glb-cache-v3'; // upgraded from nomera-glb-cache-v2
 
     async function fetchCachedGLBBuffer(modelUrl) {
         if (!modelUrl) return null;
@@ -6635,6 +6635,19 @@
     }
 
     function applyStylingToGLTF(THREE, modelRoot, styling = {}, carId = '') {
+        const baseCarId = (
+            carId === 'corvette_webster' ? 'corvette_cross' :
+            carId === 'mustang_jewels' ? 'mustang_razor' :
+            carId === 'gallardo_ming' ? 'huracan' :
+            carId === 'clk_kaze' ? 'e63' :
+            carId === 'cayman_baron' ? 'porsche911' :
+            carId === 'is300_taz' ? 'mark2' :
+            carId === 'golf_sonny' ? 'polo' :
+            carId === 'viper_jv' ? 'silvia' :
+            carId === 'm3_g80' ? 'm5e60' :
+            carId === 'evo8_earl' ? 'jesko' :
+            carId
+        );
         const defColor = getDefaultCarColor('', carId);
         const bodyColorHex = parseColor(styling.color || defColor, defColor);
         const mats = createCarMaterials(THREE, styling, '', carId);
@@ -6654,34 +6667,45 @@
         function isTireMaterial(matName, meshName) {
             const mn = String(matName || '').toLowerCase();
             const ms = String(meshName || '').toLowerCase();
-            if (carId === 'subaru' && (ms === 'object_24' || mn === 'material_21')) return true;
-            if (carId === 'vaz2107' && (mn === 'tire' || (mn === 'black' && ms.includes('wheel')))) return true;
-            if (carId === 'vaz2109' && (mn === 'standardmater50' || mn === 'standardmater52')) return true;
-            if (carId === 'gaz24' && (mn === 'rubber' || ms.includes('rubber') || ms.includes('tire'))) return true;
-            if (carId === 'priora' && (mn === 'priora_wheel2' || ms.includes('wheel2'))) return true;
-            if (carId === 'vesta' && (ms.includes('tire') || ms.includes('rubber') || (mn === 'plastic' && ms.includes('wheel')) || (mn === 'chern' && ms.includes('koles')))) return true;
-            if (carId === 'solaris' && (mn === 'camrytire' || mn.includes('wheel_rubber') || ms.includes('tire'))) return true;
-            if (carId === 'polo' && (ms.includes('tire') || ms.includes('tyre') || (ms.includes('wheel') && mn.includes('base')))) return true;
-            if (carId === 'mark2' && (mn === 'rezina' || (mn === 'black' && (ms.includes('wheel') || ms.includes('tire'))))) return true;
-            if (carId === 'm5e60' && (mn === 'tire' || ms.includes('tire'))) return true;
-            if (carId === 'silvia' && (mn === 'tire1mtl' || ms.includes('tire'))) return true;
-            if (carId === 'camry' && (mn === 'tire' || ms.includes('tire') || mn.includes('b_tire') || ms.includes('hub_tire'))) return true;
-            if (carId === 'lc300' && (ms.includes('tire') || ms.includes('rubber'))) return true;
-            if (carId === 'gtr' && (ms.includes('tire') || ms.includes('rubber') || mn.includes('tire') || mn.includes('rubber'))) return true;
-            if (carId === 'e63' && (mn === 'tyre' || ms.includes('tyre') || ms.includes('tire') || ms.includes('wheel1_tyre') || ms.includes('wheel2_tyre'))) return true;
-            if (carId === 'rs6' && (ms.includes('tyre') || ms.includes('tire'))) return true;
-            if (carId === 'm5f90' && (ms.includes('tyre') || ms.includes('tire'))) return true;
-            if (carId === 'm8' && (ms.includes('tyre') || ms.includes('tire'))) return true;
-            if (carId === 'g63' && (mn.includes('performance tyre rubber') || ms.includes('sculpted carcass'))) return true;
-            if (carId === 'porsche911' && (mn === 'rubber' || (mn === 'full_black' && ms.includes('wheel')))) return true;
-            if (carId === 'huracan' && (mn === 'mt_tyres' || mn.includes('tyre') || (mn.includes('black_mat') && ms.includes('wheel')))) return true;
-            if (carId === 'cullinan' && (mn === 'tire' || ms.includes('tire'))) return true;
-            if (carId === 'sf90' && (mn === 'tires' || ms === 'wheel')) return true;
-            if (carId === 'chiron' && (mn === 'tyre' || ((ms.includes('wheel_fl') || ms.includes('wheel_fr') || ms.includes('wheel_rl') || ms.includes('wheel_rr')) && (mn.includes('tyre') || mn.includes('rubber'))))) return true;
-            if (carId === 'jesko' && (mn === 'tyre_rubber' || ms.includes('wheel_fl_tyre') || ms.includes('tyre'))) return true;
-            if (carId === 'm3gtr' && (mn === 'tire' || ms.includes('m_tire_high'))) return true;
-            if (carId === 'corvette_cross' && (ms.includes('front_tire_a') && mn === '1_car_paint.005')) return true;
-            if (carId === 'mustang_razor' && (ms.includes('oz_style01') && mn === 'llantas')) return true;
+            if (baseCarId === 'm3gtr') return mn === 'tire' || ms.includes('m_tire_high');
+            if (baseCarId === 'corvette_cross') return mn === 'material.027' || (ms.includes('front_tire_a') && mn === '1_car_paint.005');
+            if (baseCarId === 'mustang_razor') return mn === 'llantas';
+            if (baseCarId === 'audir8') return mn === 'meshpart22mtl' || mn === 'meshpart24mtl';
+            if (baseCarId === 'rx7') return mn === 'material.011';
+            if (baseCarId === 'mclaren') return mn === 'tires';
+            if (baseCarId === 'db9') return mn.includes('tire');
+            if (baseCarId === 'supra') return mn === 'tires';
+            if (baseCarId === 'eclipse_lou') return mn.includes('tire') || mn === 'wheel_1';
+            if (baseCarId === 'elantra_n') return mn.includes('tire');
+            if (baseCarId === 'maserati') return mn === 'tire';
+            if (baseCarId === 'panamera') return ms.includes('tire') || ms.includes('tyre') || (ms.includes('wheel') && mn.includes('base'));
+            if (baseCarId === 'x5m') return mn.includes('tire');
+            if (baseCarId === 'rs7') return mn.startsWith('tire');
+            if (baseCarId === 'subaru' && (ms === 'object_24' || mn === 'material_21')) return true;
+            if (baseCarId === 'vaz2107' && (mn === 'tire' || (mn === 'black' && ms.includes('wheel')))) return true;
+            if (baseCarId === 'vaz2109' && (mn === 'standardmater50' || mn === 'standardmater52')) return true;
+            if (baseCarId === 'gaz24' && (mn === 'rubber' || ms.includes('rubber') || ms.includes('tire'))) return true;
+            if (baseCarId === 'priora' && (mn === 'priora_wheel2' || ms.includes('wheel2'))) return true;
+            if (baseCarId === 'vesta' && (ms.includes('tire') || ms.includes('rubber') || (mn === 'plastic' && ms.includes('wheel')) || (mn === 'chern' && ms.includes('koles')))) return true;
+            if (baseCarId === 'solaris' && (mn === 'camrytire' || mn.includes('wheel_rubber') || ms.includes('tire'))) return true;
+            if (baseCarId === 'polo' && (ms.includes('tire') || ms.includes('tyre') || (ms.includes('wheel') && mn.includes('base')))) return true;
+            if (baseCarId === 'mark2' && (mn === 'rezina' || (mn === 'black' && (ms.includes('wheel') || ms.includes('tire'))))) return true;
+            if (baseCarId === 'm5e60' && (mn === 'tire' || ms.includes('tire'))) return true;
+            if (baseCarId === 'silvia' && (mn === 'tire1mtl' || ms.includes('tire'))) return true;
+            if (baseCarId === 'camry' && (mn === 'tire' || ms.includes('tire') || mn.includes('b_tire') || ms.includes('hub_tire'))) return true;
+            if (baseCarId === 'lc300' && (ms.includes('tire') || ms.includes('rubber'))) return true;
+            if (baseCarId === 'gtr' && (ms.includes('tire') || ms.includes('rubber') || mn.includes('tire') || mn.includes('rubber'))) return true;
+            if (baseCarId === 'e63' && (mn === 'tyre' || ms.includes('tyre') || ms.includes('tire') || ms.includes('wheel1_tyre') || ms.includes('wheel2_tyre'))) return true;
+            if (baseCarId === 'rs6' && (ms.includes('tyre') || ms.includes('tire'))) return true;
+            if (baseCarId === 'm5f90' && (ms.includes('tyre') || ms.includes('tire'))) return true;
+            if (baseCarId === 'm8' && (ms.includes('tyre') || ms.includes('tire'))) return true;
+            if (baseCarId === 'g63' && (mn.includes('performance tyre rubber') || ms.includes('sculpted carcass'))) return true;
+            if (baseCarId === 'porsche911' && (mn === 'rubber' || (mn === 'full_black' && ms.includes('wheel')))) return true;
+            if (baseCarId === 'huracan' && (mn === 'mt_tyres' || mn.includes('tyre') || (mn.includes('black_mat') && ms.includes('wheel')))) return true;
+            if (baseCarId === 'cullinan' && (mn === 'tire' || ms.includes('tire'))) return true;
+            if (baseCarId === 'sf90' && (mn === 'tires' || ms === 'wheel')) return true;
+            if (baseCarId === 'chiron' && (mn === 'tyre' || ((ms.includes('wheel_fl') || ms.includes('wheel_fr') || ms.includes('wheel_rl') || ms.includes('wheel_rr')) && (mn.includes('tyre') || mn.includes('rubber'))))) return true;
+            if (baseCarId === 'jesko' && (mn === 'tyre_rubber' || ms.includes('wheel_fl_tyre') || ms.includes('tyre'))) return true;
             return (
                 mn.includes('tire') ||
                 mn.includes('tyre') ||
@@ -6700,24 +6724,28 @@
             if (mn.includes('light') || mn.includes('lamp') || mn.includes('glass') || ms.includes('light') || ms.includes('lamp') || ms.includes('glass')) return false;
             if (ms.includes('pedal') || ms.includes('parking') || ms.includes('handbrake') || ms.includes('lever')) return false;
             if (mn.includes('wheel_disc') || ms.includes('wheel_disc') || ms.includes('wheel_disk') || ms.includes('wheel00')) return false;
-            if (carId === 'm3gtr' && ms.includes('sm_hub_')) return false;
-            if (carId === 'subaru' && (ms === 'object_4' || ms === 'object_16' || mn === 'material_1' || mn === 'material_13')) return true;
-            if (carId === 'vaz2109' && mn === 'standardmater48') return true;
-            if (carId === 'polo' && mn.includes('callipergloss')) return true;
-            if (carId === 'm5e60' && mn === 'etriers') return true;
-            if (carId === 'silvia' && (mn === 'caliper1mtl' || mn === 'rotor1mtl')) return true;
-            if (carId === 'camry' && (mn === 'breaks' || ms.includes('hub_brake_disc'))) return true;
-            if (carId === 'lc300' && mn.includes('tmi_change_brake')) return true;
-            if (carId === 'gtr' && mn.includes('brakerotor')) return true;
-            if (carId === 'e63' && (ms.includes('wheel1_red_0') || ms.includes('wheel2_red_0'))) return true;
-            if (carId === 'rs6' && (mn.includes('armat_details_brake1') || mn.includes('armat_disk1'))) return true;
-            if (carId === 'm8' && (mn.includes('calliperbadge') || mn.includes('callipergloss'))) return true;
-            if (carId === 'g63' && (mn.includes('amg red caliper enamel') || mn.includes('brushed brake steel'))) return true;
-            if (carId === 'huracan' && mn === 'mt_brakecaliper') return true;
-            if (carId === 'cullinan' && mn === 'brake_3') return true;
-            if (carId === 'sf90' && (ms === 'brake' || ms === 'brakes')) return true;
-            if (carId === 'chiron' && (mn === 'caliper' || mn === 'brake_disc')) return true;
-            if (carId === 'm3gtr' && (mn === 'mmat_details_disk1' || (mn === 'mmat_tire_brake_048' && ms.includes('sm_brake_')))) return true;
+            if (baseCarId === 'm3gtr' && ms.includes('sm_hub_')) return false;
+            if (baseCarId === 'corvette_cross') return mn === 'material.021';
+            if (baseCarId === 'rx7') return mn === 'material.015';
+            if (baseCarId === 'panamera') return mn.includes('callipergloss');
+            if (baseCarId === 'rs7') return mn.startsWith('brake') || mn.includes('brakedisc');
+            if (baseCarId === 'subaru' && (ms === 'object_4' || ms === 'object_16' || mn === 'material_1' || mn === 'material_13')) return true;
+            if (baseCarId === 'vaz2109' && mn === 'standardmater48') return true;
+            if (baseCarId === 'polo' && mn.includes('callipergloss')) return true;
+            if (baseCarId === 'm5e60' && mn === 'etriers') return true;
+            if (baseCarId === 'silvia' && (mn === 'caliper1mtl' || mn === 'rotor1mtl')) return true;
+            if (baseCarId === 'camry' && (mn === 'breaks' || ms.includes('hub_brake_disc'))) return true;
+            if (baseCarId === 'lc300' && mn.includes('tmi_change_brake')) return true;
+            if (baseCarId === 'gtr' && mn.includes('brakerotor')) return true;
+            if (baseCarId === 'e63' && (ms.includes('wheel1_red_0') || ms.includes('wheel2_red_0'))) return true;
+            if (baseCarId === 'rs6' && (mn.includes('armat_details_brake1') || mn.includes('armat_disk1'))) return true;
+            if (baseCarId === 'm8' && (mn.includes('calliperbadge') || mn.includes('callipergloss'))) return true;
+            if (baseCarId === 'g63' && (mn.includes('amg red caliper enamel') || mn.includes('brushed brake steel'))) return true;
+            if (baseCarId === 'huracan' && mn === 'mt_brakecaliper') return true;
+            if (baseCarId === 'cullinan' && mn === 'brake_3') return true;
+            if (baseCarId === 'sf90' && (ms === 'brake' || ms === 'brakes')) return true;
+            if (baseCarId === 'chiron' && (mn === 'caliper' || mn === 'brake_disc')) return true;
+            if (baseCarId === 'm3gtr' && (mn === 'mmat_details_disk1' || (mn === 'mmat_tire_brake_048' && ms.includes('sm_brake_')))) return true;
             return (
                 mn.includes('caliper') ||
                 mn.includes('rotor') ||
@@ -6733,39 +6761,48 @@
         function isLightMaterial(matName, meshName) {
             const mn = String(matName || '').toLowerCase();
             const ms = String(meshName || '').toLowerCase();
-            if (carId === 'subaru' && (
+            if (baseCarId === 'corvette_cross') {
+                return mn === 'headlightreflector_headlight_left' || mn === 'material.043' || mn === 'aluminum_brakelight_right' || mn === 'gl_glow_glass_g';
+            }
+            if (baseCarId === 'mustang_razor') {
+                return mn === 'faros_glass' || mn === 'rojo_faros_tras' || mn === 'faros_tras' || mn === 'base_faros';
+            }
+            if (baseCarId === 'rx7') return mn === 'material.018' || mn === 'material.002';
+            if (baseCarId === 'db9') return mn === 'lighta' || mn === 'glassred' || mn === 'glassamber';
+            if (baseCarId === 'maserati') return mn === 'lights' || mn === 'glassred' || mn === 'glassamber';
+            if (baseCarId === 'panamera') return mn.includes('lighta_material') || mn === 'red_glass';
+            if (baseCarId === 'rs7') return mn.startsWith('faralights') || mn === 'stop';
+            if (baseCarId === 'subaru' && (
                 ms === 'object_14' || ms === 'object_18' ||
                 ms === 'object_19' || ms === 'object_20' ||
                 mn === 'material_11' || mn === 'material_15' ||
                 mn === 'material_16' || mn === 'material_17' ||
                 mn === 'material_14' || mn === 'material_7'
             )) return true;
-            if (carId === 'vaz2107' && (mn.includes('orange light') || mn.includes('red light') || mn === 'white')) return true;
-            if (carId === 'vaz2109' && (mn === 'standardmater7' || mn === 'standardmater3' || mn === 'standardmater5')) return true;
-            if (carId === 'gaz24' && (mn === 'orange_plastic' || mn === 'headlight' || mn === 'reverse_lights' || mn === 'tail_lights' || mn === 'reflector')) return true;
-            if (carId === 'priora' && (mn === 'priora_optik_rear' || mn === 'priora_red')) return true;
-            if (carId === 'vesta' && (mn === 'fari' || mn === 'peredfar' || mn === 'svetplas' || mn === 'stopar')) return true;
-            if (carId === 'solaris' && (mn === 'orangeglass' || mn === 'redglass' || mn.includes('front_lamps') || mn.includes('brakelights_red'))) return true;
-            if (carId === 'polo' && (mn.includes('lighta_material1') || mn === 'red_glass')) return true;
-            if (carId === 'mark2' && (mn === 'red1' || mn === 'red2' || mn === 'orange')) return true;
-            if (carId === 'm5e60' && (mn.includes('wire_060110190') || mn.includes('wire_087225143') || mn.includes('wire_135110008') || mn.includes('taillight_reflector'))) return true;
-            if (carId === 'silvia' && mn.includes('lights1mtl')) return true;
-            if (carId === 'camry' && (ms.includes('weideng_red_plastic') || ms.includes('weideng_map_c'))) return true;
-            if (carId === 'lc300' && (mn.includes('tmi_glass_light') || mn.includes('tmi_light') || mn.includes('chromered_squarepattern'))) return true;
-            if (carId === 'e63' && (mn === 'bulb' || mn === 'rear_bulb' || mn === 'bulb_red' || ms.includes('bulb'))) return true;
-            if (carId === 'rs6' && mn.includes('mat_lights.001')) return true;
-            if (carId === 'm5f90' && (ms.includes('headlight') || mn.includes('material_706') || mn.includes('material_701') || mn.includes('material_707') || mn.includes('material_708'))) return true;
-            if (carId === 'm8' && (mn.includes('i8elite_2017lighta') || mn === 'emis' || mn === 'red_glass')) return true;
-            if (carId === 'g63' && (mn.includes('headlamp optical') || mn.includes('ruby led taillamp') || mn.includes('amber indicator') || mn.includes('light guides') || mn.includes('passive ruby reflector'))) return true;
-            if (carId === 'porsche911' && mn === 'lights') return true;
-            if (carId === 'huracan' && (mn.includes('mt_headlight') || mn.includes('mt_reflector') || mn.includes('mt_turnlights') || mn.includes('mt_light_emissive'))) return true;
-            if (carId === 'cullinan' && (mn.includes('front_lite') || mn.includes('front_head_light') || mn === 'light')) return true;
-            if (carId === 'sf90' && (mn === 'taillight_glass' || mn === 'projector_glass' || mn === 'turn_signal_led' || ms === 'lights_red' || ms === 'steering_red_lights')) return true;
-            if (carId === 'chiron' && (mn.includes('headlight') || mn.includes('taillight'))) return true;
-            if (carId === 'jesko' && (mn === 'light_white' || mn === 'light_red' || ms.includes('frontlight') || ms.includes('taillight'))) return true;
-            if (carId === 'm3gtr' && (mn === 'mmat_lights_014' || mn === 'red_glass')) return true;
-            if (carId === 'corvette_cross' && (ms.includes('headlight') || ms.includes('brakeligh') || mn === 'faros' || mn === 'material.050')) return true;
-            if (carId === 'mustang_razor' && (ms.includes('headlight') || ms.includes('brakelight') || mn === 'faros' || mn === 'luces_traseras' || mn === 'direccionales')) return true;
+            if (baseCarId === 'vaz2107' && (mn.includes('orange light') || mn.includes('red light') || mn === 'white')) return true;
+            if (baseCarId === 'vaz2109' && (mn === 'standardmater7' || mn === 'standardmater3' || mn === 'standardmater5')) return true;
+            if (baseCarId === 'gaz24' && (mn === 'orange_plastic' || mn === 'headlight' || mn === 'reverse_lights' || mn === 'tail_lights' || mn === 'reflector')) return true;
+            if (baseCarId === 'priora' && (mn === 'priora_optik_rear' || mn === 'priora_red')) return true;
+            if (baseCarId === 'vesta' && (mn === 'fari' || mn === 'peredfar' || mn === 'svetplas' || mn === 'stopar')) return true;
+            if (baseCarId === 'solaris' && (mn === 'orangeglass' || mn === 'redglass' || mn.includes('front_lamps') || mn.includes('brakelights_red'))) return true;
+            if (baseCarId === 'polo' && (mn.includes('lighta_material1') || mn === 'red_glass')) return true;
+            if (baseCarId === 'mark2' && (mn === 'red1' || mn === 'red2' || mn === 'orange')) return true;
+            if (baseCarId === 'm5e60' && (mn.includes('wire_060110190') || mn.includes('wire_087225143') || mn.includes('wire_135110008') || mn.includes('taillight_reflector'))) return true;
+            if (baseCarId === 'silvia' && mn.includes('lights1mtl')) return true;
+            if (baseCarId === 'camry' && (ms.includes('weideng_red_plastic') || ms.includes('weideng_map_c'))) return true;
+            if (baseCarId === 'lc300' && (mn.includes('tmi_glass_light') || mn.includes('tmi_light') || mn.includes('chromered_squarepattern'))) return true;
+            if (baseCarId === 'e63' && (mn === 'bulb' || mn === 'rear_bulb' || mn === 'bulb_red' || ms.includes('bulb'))) return true;
+            if (baseCarId === 'rs6' && mn.includes('mat_lights.001')) return true;
+            if (baseCarId === 'm5f90' && (ms.includes('headlight') || mn.includes('material_706') || mn.includes('material_701') || mn.includes('material_707') || mn.includes('material_708'))) return true;
+            if (baseCarId === 'm8' && (mn.includes('i8elite_2017lighta') || mn === 'emis' || mn === 'red_glass')) return true;
+            if (baseCarId === 'g63' && (mn.includes('headlamp optical') || mn.includes('ruby led taillamp') || mn.includes('amber indicator') || mn.includes('light guides') || mn.includes('passive ruby reflector'))) return true;
+            if (baseCarId === 'porsche911' && mn === 'lights') return true;
+            if (baseCarId === 'huracan' && (mn.includes('mt_headlight') || mn.includes('mt_reflector') || mn.includes('mt_turnlights') || mn.includes('mt_light_emissive'))) return true;
+            if (baseCarId === 'cullinan' && (mn.includes('front_lite') || mn.includes('front_head_light') || mn === 'light')) return true;
+            if (baseCarId === 'sf90' && (mn === 'taillight_glass' || mn === 'projector_glass' || mn === 'turn_signal_led' || ms === 'lights_red' || ms === 'steering_red_lights')) return true;
+            if (baseCarId === 'chiron' && (mn.includes('headlight') || mn.includes('taillight'))) return true;
+            if (baseCarId === 'jesko' && (mn === 'light_white' || mn === 'light_red' || ms.includes('frontlight') || ms.includes('taillight'))) return true;
+            if (baseCarId === 'm3gtr' && (mn === 'mmat_lights_014' || mn === 'red_glass')) return true;
             return (
                 mn.includes('taillight') ||
                 mn.includes('headlight') ||
@@ -6791,14 +6828,15 @@
         function isExhaustMaterial(matName, meshName) {
             const mn = String(matName || '').toLowerCase();
             const ms = String(meshName || '').toLowerCase();
-            if (carId === 'subaru' && (ms === 'object_25' || mn === 'material_22')) return true;
-            if (carId === 'vaz2109' && mn === 'standardmater4') return true;
-            if (carId === 'priora' && mn === 'priora_glush') return true;
-            if (carId === 'm5e60' && mn === 'chrome_ok' && (ms.includes('exhaust') || ms.includes('pot'))) return true;
-            if (carId === 'silvia' && mn.includes('lodaexhaust')) return true;
-            if (carId === 'lc300' && mn.includes('tmi_exhaust')) return true;
-            if (carId === 'huracan' && (ms.includes('exhaust') || ms.includes('pipes'))) return true;
-            if (carId === 'chiron' && mn === 'exhaust') return true;
+            if (baseCarId === 'corvette_cross' && mn === 'escapes') return true;
+            if (baseCarId === 'subaru' && (ms === 'object_25' || mn === 'material_22')) return true;
+            if (baseCarId === 'vaz2109' && mn === 'standardmater4') return true;
+            if (baseCarId === 'priora' && mn === 'priora_glush') return true;
+            if (baseCarId === 'm5e60' && mn === 'chrome_ok' && (ms.includes('exhaust') || ms.includes('pot'))) return true;
+            if (baseCarId === 'silvia' && mn.includes('lodaexhaust')) return true;
+            if (baseCarId === 'lc300' && mn.includes('tmi_exhaust')) return true;
+            if (baseCarId === 'huracan' && (ms.includes('exhaust') || ms.includes('pipes'))) return true;
+            if (baseCarId === 'chiron' && mn === 'exhaust') return true;
             return (
                 mn.includes('exhaust') ||
                 mn.includes('muffler') ||
@@ -6812,9 +6850,15 @@
         function isInteriorMaterial(matName, meshName) {
             const mn = String(matName || '').toLowerCase();
             const ms = String(meshName || '').toLowerCase();
-            if (carId === 'subaru' && (ms === 'object_3' || ms === 'object_6' || mn === 'material_0' || mn === 'material_3')) return true;
-            if (carId === 'vaz2107' && (mn === 'interior_01' || mn === 'interior_02' || ms.includes('interior_01') || ms.includes('interior_02'))) return true;
-            if (carId === 'vaz2109' && (
+            if (baseCarId === 'corvette_cross') return ms.includes('base_b') || mn === 'material.052' || mn === 'material.051';
+            if (baseCarId === 'mustang_razor') return mn === 'interiores';
+            if (baseCarId === 'rx7') return mn === 'material.001';
+            if (baseCarId === 'mclaren') return mn.startsWith('int_');
+            if (baseCarId === 'panamera') return mn.includes('interiora_material') || mn.includes('seatbelt');
+            if (baseCarId === 'rs7') return mn === 'salon';
+            if (baseCarId === 'subaru' && (ms === 'object_3' || ms === 'object_6' || mn === 'material_0' || mn === 'material_3')) return true;
+            if (baseCarId === 'vaz2107' && (mn === 'interior_01' || mn === 'interior_02' || ms.includes('interior_01') || ms.includes('interior_02'))) return true;
+            if (baseCarId === 'vaz2109' && (
                 mn === 'standardmater32' || mn === 'standardmater34' || mn === 'standardmater35' ||
                 mn === 'standardmater36' || mn === 'standardmater37' || mn === 'standardmater10' ||
                 mn === 'standardmater12' || mn === 'standardmater13' || mn === 'standardmater14' ||
@@ -6824,26 +6868,24 @@
                 mn === 'standardmater44' || mn === 'standardmater54' || mn === 'standardmater57' ||
                 mn === 'standardmater59' || mn === 'standardmater62'
             )) return true;
-            if (carId === 'gaz24' && (mn.includes('interior') || mn === 'derma')) return true;
-            if (carId === 'priora' && (mn.includes('priora_leather') || mn.includes('priora_salon') || mn.includes('priora_prib') || mn.includes('priora_bar') || mn.includes('priora_polik') || mn.includes('priora_pedals') || mn.includes('priora_obivka'))) return true;
-            if (carId === 'vesta' && mn === 'kover') return true;
-            if (carId === 'polo' && (mn.includes('interiora_material1') || mn.includes('seatbelt'))) return true;
-            if (carId === 'mark2' && mn === 'inrteer') return true;
-            if (carId === 'm5e60' && (mn.includes('interior') || mn === 'sieges')) return true;
-            if (carId === 'silvia' && mn.includes('lodainterior')) return true;
-            if (carId === 'camry' && (mn.includes('interior_map') || mn.includes('seats_map') || mn.includes('trunk_map'))) return true;
-            if (carId === 'lc300' && (mn.includes('tmi_cabin') || mn.includes('tmi_dashboard'))) return true;
-            if (carId === 'e63' && mn === 'interior_plastic') return true;
-            if (carId === 'rs6' && mn.includes('mat_details_int')) return true;
-            if (carId === 'm5f90' && (mn.includes('i8elite_2017interior') || mn.includes('interiortillingcolourzone'))) return true;
-            if (carId === 'm8' && (mn.includes('i8elite_2017interior') || mn.includes('interiortillingcolourzone'))) return true;
-            if (carId === 'g63' && (mn.includes('anthracite cabin') || mn.includes('deep oxblood nappa') || mn.includes('mbux display'))) return true;
-            if (carId === 'huracan' && (mn === 'mt_interior_black' || ms.includes('digital_gauge') || ms.includes('bump_plastic3'))) return true;
-            if (carId === 'cullinan' && (mn.includes('interior_side_box') || mn.includes('interior_ac') || mn.includes('inside_button') || mn.includes('car_stearning') || mn.includes('steering_box') || mn.includes('back_speaker'))) return true;
-            if (carId === 'sf90' && (mn.includes('leather') || mn.includes('interior') || mn === 'carpet' || ms.includes('steering'))) return true;
-            if (carId === 'm3gtr' && (mn.includes('mmat_details_int') || mn === 'driver')) return true;
-            if (carId === 'corvette_cross' && (ms.includes('base_b') || mn === 'material.052' || mn === 'material.051')) return true;
-            if (carId === 'mustang_razor' && mn === 'interiores') return true;
+            if (baseCarId === 'gaz24' && (mn.includes('interior') || mn === 'derma')) return true;
+            if (baseCarId === 'priora' && (mn.includes('priora_leather') || mn.includes('priora_salon') || mn.includes('priora_prib') || mn.includes('priora_bar') || mn.includes('priora_polik') || mn.includes('priora_pedals') || mn.includes('priora_obivka'))) return true;
+            if (baseCarId === 'vesta' && mn === 'kover') return true;
+            if (baseCarId === 'polo' && (mn.includes('interiora_material1') || mn.includes('seatbelt'))) return true;
+            if (baseCarId === 'mark2' && mn === 'inrteer') return true;
+            if (baseCarId === 'm5e60' && (mn.includes('interior') || mn === 'sieges')) return true;
+            if (baseCarId === 'silvia' && mn.includes('lodainterior')) return true;
+            if (baseCarId === 'camry' && (mn.includes('interior_map') || mn.includes('seats_map') || mn.includes('trunk_map'))) return true;
+            if (baseCarId === 'lc300' && (mn.includes('tmi_cabin') || mn.includes('tmi_dashboard'))) return true;
+            if (baseCarId === 'e63' && mn === 'interior_plastic') return true;
+            if (baseCarId === 'rs6' && mn.includes('mat_details_int')) return true;
+            if (baseCarId === 'm5f90' && (mn.includes('i8elite_2017interior') || mn.includes('interiortillingcolourzone'))) return true;
+            if (baseCarId === 'm8' && (mn.includes('i8elite_2017interior') || mn.includes('interiortillingcolourzone'))) return true;
+            if (baseCarId === 'g63' && (mn.includes('anthracite cabin') || mn.includes('deep oxblood nappa') || mn.includes('mbux display'))) return true;
+            if (baseCarId === 'huracan' && (mn === 'mt_interior_black' || ms.includes('digital_gauge') || ms.includes('bump_plastic3'))) return true;
+            if (baseCarId === 'cullinan' && (mn.includes('interior_side_box') || mn.includes('interior_ac') || mn.includes('inside_button') || mn.includes('car_stearning') || mn.includes('steering_box') || mn.includes('back_speaker'))) return true;
+            if (baseCarId === 'sf90' && (mn.includes('leather') || mn.includes('interior') || mn === 'carpet' || ms.includes('steering'))) return true;
+            if (baseCarId === 'm3gtr' && (mn.includes('mmat_details_int') || mn === 'driver')) return true;
             return (
                 mn.includes('interior') ||
                 mn.includes('salon') ||
@@ -6867,21 +6909,25 @@
         function isGrilleMaterial(matName, meshName) {
             const mn = String(matName || '').toLowerCase();
             const ms = String(meshName || '').toLowerCase();
-            if (carId === 'subaru' && (ms === 'object_10' || ms === 'object_22' || mn === 'material_7' || mn === 'material_19')) return true;
-            if (carId === 'vaz2107' && (ms.includes('grille') || ms.includes('radiator'))) return true;
-            if (carId === 'polo' && (mn.includes('grille1a') || mn.includes('grille2a'))) return true;
-            if (carId === 'camry' && ms.includes('qianzhongwang')) return true;
-            if (carId === 'lc300' && mn.includes('cabin_grid')) return true;
-            if (carId === 'rs6' && mn === 'mat_details_grid01') return true;
-            if (carId === 'm8' && mn.includes('i8elite_2017grille')) return true;
-            if (carId === 'cullinan' && mn === 'font_grill_cover') return true;
-            if (carId === 'chiron' && mn === 'grill') return true;
-            if (carId === 'jesko' && (mn === 'hypercar_intakeblack' || ms.includes('intake') || ms.includes('diffuser'))) return true;
-            if (carId === 'm3gtr' && (mn.includes('mmat_details_grid') || mn === 'mmat_details_1')) return true;
+            if (baseCarId === 'audir8') return false;
+            if (baseCarId === 'corvette_cross') return mn === 'grill_grill_01' || mn === 'grill_engine' || mn === 'rejas_tras' || mn === 'rejitas';
+            if (baseCarId === 'mustang_razor') return mn === 'parrillas_frontal' || mn === 'rejjas_lat';
+            if (baseCarId === 'panamera') return mn.includes('grille1a') || mn.includes('grille2a') || mn.includes('grille3a');
+            if (baseCarId === 'subaru' && (ms === 'object_10' || ms === 'object_22' || mn === 'material_7' || mn === 'material_19')) return true;
+            if (baseCarId === 'vaz2107' && (ms.includes('grille') || ms.includes('radiator'))) return true;
+            if (baseCarId === 'polo' && (mn.includes('grille1a') || mn.includes('grille2a'))) return true;
+            if (baseCarId === 'camry' && ms.includes('qianzhongwang')) return true;
+            if (baseCarId === 'lc300' && mn.includes('cabin_grid')) return true;
+            if (baseCarId === 'rs6' && mn === 'mat_details_grid01') return true;
+            if (baseCarId === 'm8' && mn.includes('i8elite_2017grille')) return true;
+            if (baseCarId === 'cullinan' && mn === 'font_grill_cover') return true;
+            if (baseCarId === 'chiron' && mn === 'grill') return true;
+            if (baseCarId === 'jesko' && (mn === 'hypercar_intakeblack' || ms.includes('intake') || ms.includes('diffuser'))) return true;
+            if (baseCarId === 'm3gtr' && (mn.includes('mmat_details_grid') || mn === 'mmat_details_1')) return true;
             return (
                 mn.includes('grille') ||
                 mn.includes('grill') ||
-                mn.includes('mesh') ||
+                (mn.includes('mesh') && !mn.startsWith('meshpart')) ||
                 mn.includes('intercooler') ||
                 mn.includes('radiator') ||
                 mn.includes('intake') ||
@@ -6894,34 +6940,48 @@
             const mn = String(matName || '').toLowerCase();
             const ms = String(meshName || '').toLowerCase();
 
-            if (carId === 'subaru' && (ms === 'object_12' || ms === 'object_23' || mn === 'material_9' || mn === 'material_20')) return true;
-            if (carId === 'vaz2107' && (mn === 'glass' || ms.includes('object_722_glass'))) return true;
-            if (carId === 'vaz2109' && (mn === 'fenster' || ms.includes('fenster'))) return true;
-            if (carId === 'gaz24' && (mn.includes('lens') || mn === 'glass')) return true;
-            if (carId === 'priora' && (mn.includes('vehglass') || mn.includes('glass') || mn.includes('window'))) return true;
-            if (carId === 'vesta' && (mn === 'steklo' || mn === 'stekloton' || mn.includes('windows') || mn.includes('glass'))) return true;
-            if (carId === 'solaris' && (mn === 'clearglass' || mn === 'windowglass' || mn === 'darkglass')) return true;
-            if (carId === 'polo' && (mn.includes('window_material1') || ms.includes('window_geo') || ms.includes('windowinside'))) return true;
-            if (carId === 'mark2' && (mn === 'glass' || mn.includes('window') || mn.includes('glass'))) return true;
-            if (carId === 'm5e60' && (mn === 'glass' || mn === 'glass_toit' || mn === 'r_glass' || mn.includes('bmw_e30_m3_lens'))) return true;
-            if (carId === 'silvia' && mn.includes('windows1mtl')) return true;
-            if (carId === 'camry' && (ms.includes('d_glass') || ms.includes('weideng_glass_light'))) return true;
-            if (carId === 'lc300' && mn === 'tmi_glass_011') return true;
-            if (carId === 'gtr' && mn === 'マテリアル.653') return true;
-            if (carId === 'e63' && (mn === 'glass' || ms.includes('body_glass'))) return true;
-            if (carId === 'rs6' && mn === 'mat_glass') return true;
-            if (carId === 'm5f90' && (ms.includes('glsslight') || mn === 'material_161' || mn === 'material_716' || mn === 'material_717' || mn === 'material_718')) return true;
-            if (carId === 'm8' && mn.includes('i8elite_2017window')) return true;
-            if (carId === 'g63' && (mn.includes('tinted automotive glass') || mn.includes('privacy rear glazing'))) return true;
-            if (carId === 'porsche911' && (mn === 'window' || mn === 'glass')) return true;
-            if (carId === 'huracan' && (mn === 'mt_windscreens' || mn === 'mt_glass_translucent')) return true;
-            if (carId === 'cullinan' && (mn === 'car_glass' || mn.includes('glass_rim'))) return true;
-            if (carId === 'sf90' && mn === 'glass_gray') return true;
-            if (carId === 'chiron' && (mn === 'glass_window' || mn === 'mirror_glass')) return true;
-            if (carId === 'jesko' && (mn === 'glass_darktint' || ms.includes('canopy'))) return true;
-            if (carId === 'm3gtr' && mn === 'mmat_glass_013') return true;
-            if (carId === 'corvette_cross' && mn.includes('gl_basic_glass')) return true;
-            if (carId === 'mustang_razor' && (mn === 'ventans' || mn === 'detalles_ventanas' || mn === 'detalle_parabrisas')) return true;
+            // Never classify carbon fiber splitters/wings/seats (e.g. KIT00_FRONT_WINDOW_A_fibra carbono_0 on corvette_cross) as glass!
+            if (mn.includes('carbon') || mn.includes('fibra')) return false;
+
+            if (baseCarId === 'corvette_cross') return mn.includes('gl_basic_glass');
+            if (baseCarId === 'mustang_razor') return mn === 'ventans' || mn === 'detalles_ventanas' || mn === 'detalle_parabrisas';
+            if (baseCarId === 'audir8') return mn === 'meshpart8mtl' || mn === 'meshpart16mtl' || mn === 'meshpart20mtl';
+            if (baseCarId === 'rx7') return mn === 'material.003' || mn === 'material.008' || mn === 'material.016';
+            if (baseCarId === 'mclaren') return mn === 'windows' || mn === 'windows_alpha' || mn === 'clear_glass';
+            if (baseCarId === 'db9') return mn === 'glassmtl';
+            if (baseCarId === 'supra') return mn === 'glass';
+            if (baseCarId === 'eclipse_lou') return mn === 'window';
+            if (baseCarId === 'elantra_n') return mn.includes('glass');
+            if (baseCarId === 'maserati') return mn === 'window' || mn === 'windowdark' || mn === 'glassclear';
+            if (baseCarId === 'panamera') return mn.includes('window_material');
+            if (baseCarId === 'x5m') return mn === 'windows';
+            if (baseCarId === 'rs7') return mn === 'glass' && ms === 'glass';
+            if (baseCarId === 'subaru' && (ms === 'object_12' || ms === 'object_23' || mn === 'material_9' || mn === 'material_20')) return true;
+            if (baseCarId === 'vaz2107' && (mn === 'glass' || ms.includes('object_722_glass'))) return true;
+            if (baseCarId === 'vaz2109' && (mn === 'fenster' || ms.includes('fenster'))) return true;
+            if (baseCarId === 'gaz24' && (mn.includes('lens') || mn === 'glass')) return true;
+            if (baseCarId === 'priora' && (mn.includes('vehglass') || mn.includes('glass') || mn.includes('window'))) return true;
+            if (baseCarId === 'vesta' && (mn === 'steklo' || mn === 'stekloton' || mn.includes('windows') || mn.includes('glass'))) return true;
+            if (baseCarId === 'solaris' && (mn === 'clearglass' || mn === 'windowglass' || mn === 'darkglass')) return true;
+            if (baseCarId === 'polo' && (mn.includes('window_material1') || ms.includes('window_geo') || ms.includes('windowinside'))) return true;
+            if (baseCarId === 'mark2' && (mn === 'glass' || mn.includes('window') || mn.includes('glass'))) return true;
+            if (baseCarId === 'm5e60' && (mn === 'glass' || mn === 'glass_toit' || mn === 'r_glass' || mn.includes('bmw_e30_m3_lens'))) return true;
+            if (baseCarId === 'silvia' && mn.includes('windows1mtl')) return true;
+            if (baseCarId === 'camry' && (ms.includes('d_glass') || ms.includes('weideng_glass_light'))) return true;
+            if (baseCarId === 'lc300' && mn === 'tmi_glass_011') return true;
+            if (baseCarId === 'gtr' && mn === 'マテリアル.653') return true;
+            if (baseCarId === 'e63' && (mn === 'glass' || ms.includes('body_glass'))) return true;
+            if (baseCarId === 'rs6' && mn === 'mat_glass') return true;
+            if (baseCarId === 'm5f90' && (ms.includes('glsslight') || mn === 'material_161' || mn === 'material_716' || mn === 'material_717' || mn === 'material_718')) return true;
+            if (baseCarId === 'm8' && mn.includes('i8elite_2017window')) return true;
+            if (baseCarId === 'g63' && (mn.includes('tinted automotive glass') || mn.includes('privacy rear glazing'))) return true;
+            if (baseCarId === 'porsche911' && (mn === 'window' || mn === 'glass')) return true;
+            if (baseCarId === 'huracan' && (mn === 'mt_windscreens' || mn === 'mt_glass_translucent')) return true;
+            if (baseCarId === 'cullinan' && (mn === 'car_glass' || mn.includes('glass_rim'))) return true;
+            if (baseCarId === 'sf90' && mn === 'glass_gray') return true;
+            if (baseCarId === 'chiron' && (mn === 'glass_window' || mn === 'mirror_glass')) return true;
+            if (baseCarId === 'jesko' && (mn === 'glass_darktint' || ms.includes('canopy'))) return true;
+            if (baseCarId === 'm3gtr' && mn === 'mmat_glass_013') return true;
 
             if (mat && (mat.transparent === true || (mat.opacity !== undefined && mat.opacity < 0.85))) {
                 if (mn === 'body' || mn.includes('paint') || mn.includes('light') || mn.includes('lamp') || mn.includes('blinker') || mn.includes('indicator') || mn.includes('brake') || mn.includes('wheel') || mn.includes('interior')) {
@@ -6952,33 +7012,44 @@
                 return false;
             }
 
-            if (carId === 'subaru' && (ms === 'object_15' || mn === 'material_12')) return true;
-            if (carId === 'vaz2107' && (mn === 'silver' || (mn === 'chrome' && ms.includes('wheel')))) return true;
-            if (carId === 'vaz2109' && (mn === 'standardmater46' || mn === 'standardmater47' || mn === 'standardmater49')) return true;
-            if (carId === 'gaz24' && (mn === 'wheel' || mn === 'steel')) return true;
-            if (carId === 'priora' && mn === 'priora_wheel5') return true;
-            if (carId === 'vesta' && (mn === 'disk' || ms.includes('wheel_disk'))) return true;
-            if (carId === 'solaris' && (mn === 'camryrim' || mn === 'hubcaps' || (mn === 'metal' && ms.includes('wheel')))) return true;
-            if (carId === 'polo' && mn.includes('3dwheel1a_material1')) return true;
-            if (carId === 'mark2' && (mn === 'chrome' || mn === 'chrome2') && (ms.includes('wheel') || ms.includes('rim') || ms === 'object_3' || ms === 'object_4' || ms === 'object_5')) return true;
-            if (carId === 'm5e60' && (mn === 'alum' || mn.includes('bmw_e30_m3_rim'))) return true;
-            if (carId === 'silvia' && mn === 'rim1mtl') return true;
-            if (carId === 'camry' && (mn.includes('metal_r') || ms.includes('hub_metal') || (mn === 'metal' && ms.includes('hub')))) return true;
-            if (carId === 'lc300' && (mn.includes('rimmi_changea_rim') || mn.includes('aluminiumbrushed_wheel'))) return true;
-            if (carId === 'e63' && (mn === 'metallic_rim' || ms.includes('metallic rim'))) return true;
-            if (carId === 'rs6' && mn.includes('audi_rs3sedanrewardrecycled_2023_wheel1a')) return true;
-            if (carId === 'm5f90' && ms.includes('wheel') && !ms.includes('tyre')) return true;
-            if (carId === 'm8' && mn.includes('bmw_i8rewardrecycled_2017_wheel1a')) return true;
-            if (carId === 'g63' && mn.includes('graphite forged alloy')) return true;
-            if (carId === 'porsche911' && (mn === 'silver' || (mn === 'material.001' && ms.includes('wheel')))) return true;
-            if (carId === 'huracan' && mn === 'mt_alloywheels') return true;
-            if (carId === 'cullinan' && mn === 'mettal_in_w') return true;
-            if (carId === 'sf90' && (ms.startsWith('rim_') || (mn === 'metal_gray' && ms.includes('rim')))) return true;
-            if (carId === 'chiron' && (mn === 'rim' || mn === 'rim_accent' || mn === 'wheel_nut')) return true;
-            if (carId === 'jesko' && (mn === 'wheel_disc' || ms.includes('wheel_fl_disc') || ms.includes('wheel_fl_ring') || ms.includes('wheel_fl_cap'))) return true;
-            if (carId === 'm3gtr' && (mn === 'mmat_tire_brake_048' && ms.includes('sm_hub_'))) return true;
-            if (carId === 'corvette_cross' && (ms.includes('oz_style01') || (ms.includes('front_tire_a') && mn === 'material.021'))) return true;
-            if (carId === 'mustang_razor' && (ms.includes('oz_style01') && mn !== 'llantas')) return true;
+            if (baseCarId === 'corvette_cross') return mn === 'material.018';
+            if (baseCarId === 'mustang_razor') return ms.includes('oz_style01') && mn !== 'llantas';
+            if (baseCarId === 'audir8') return mn === 'meshpart23mtl';
+            if (baseCarId === 'rx7') return mn === 'material.014';
+            if (baseCarId === 'mclaren') return mn === 'wheels';
+            if (baseCarId === 'db9') return mn === 'rim1mtl' || mn === 'rim2mtl';
+            if (baseCarId === 'supra') return mn === 'chrome' || mn === 'graychrome' || mn === 'metallic';
+            if (baseCarId === 'eclipse_lou') return mn === 'rim_2' || mn === 'rim_chrome';
+            if (baseCarId === 'elantra_n') return mn.includes('rim') || mn.includes('wheel');
+            if (baseCarId === 'maserati') return mn === 'rim' || mn === 'wheel' || mn === 'chrome';
+            if (baseCarId === 'panamera') return mn.includes('3dwheel1a_material');
+            if (baseCarId === 'x5m') return mn.includes('rim');
+            if (baseCarId === 'rs7') return mn.startsWith('disc') && !mn.includes('brakedisc');
+            if (baseCarId === 'subaru' && (ms === 'object_15' || mn === 'material_12')) return true;
+            if (baseCarId === 'vaz2107' && (mn === 'silver' || (mn === 'chrome' && ms.includes('wheel')))) return true;
+            if (baseCarId === 'vaz2109' && (mn === 'standardmater46' || mn === 'standardmater47' || mn === 'standardmater49')) return true;
+            if (baseCarId === 'gaz24' && (mn === 'wheel' || mn === 'steel')) return true;
+            if (baseCarId === 'priora' && mn === 'priora_wheel5') return true;
+            if (baseCarId === 'vesta' && (mn === 'disk' || ms.includes('wheel_disk'))) return true;
+            if (baseCarId === 'solaris' && (mn === 'camryrim' || mn === 'hubcaps' || (mn === 'metal' && ms.includes('wheel')))) return true;
+            if (baseCarId === 'polo' && mn.includes('3dwheel1a_material1')) return true;
+            if (baseCarId === 'mark2' && (mn === 'chrome' || mn === 'chrome2') && (ms.includes('wheel') || ms.includes('rim') || ms === 'object_3' || ms === 'object_4' || ms === 'object_5')) return true;
+            if (baseCarId === 'm5e60' && (mn === 'alum' || mn.includes('bmw_e30_m3_rim'))) return true;
+            if (baseCarId === 'silvia' && mn === 'rim1mtl') return true;
+            if (baseCarId === 'camry' && (mn.includes('metal_r') || ms.includes('hub_metal') || (mn === 'metal' && ms.includes('hub')))) return true;
+            if (baseCarId === 'lc300' && (mn.includes('rimmi_changea_rim') || mn.includes('aluminiumbrushed_wheel'))) return true;
+            if (baseCarId === 'e63' && (mn === 'metallic_rim' || ms.includes('metallic rim'))) return true;
+            if (baseCarId === 'rs6' && mn.includes('audi_rs3sedanrewardrecycled_2023_wheel1a')) return true;
+            if (baseCarId === 'm5f90' && ms.includes('wheel') && !ms.includes('tyre')) return true;
+            if (baseCarId === 'm8' && mn.includes('bmw_i8rewardrecycled_2017_wheel1a')) return true;
+            if (baseCarId === 'g63' && mn.includes('graphite forged alloy')) return true;
+            if (baseCarId === 'porsche911' && (mn === 'silver' || (mn === 'material.001' && ms.includes('wheel')))) return true;
+            if (baseCarId === 'huracan' && mn === 'mt_alloywheels') return true;
+            if (baseCarId === 'cullinan' && mn === 'mettal_in_w') return true;
+            if (baseCarId === 'sf90' && (ms.startsWith('rim_') || (mn === 'metal_gray' && ms.includes('rim')))) return true;
+            if (baseCarId === 'chiron' && (mn === 'rim' || mn === 'rim_accent' || mn === 'wheel_nut')) return true;
+            if (baseCarId === 'jesko' && (mn === 'wheel_disc' || ms.includes('wheel_fl_disc') || ms.includes('wheel_fl_ring') || ms.includes('wheel_fl_cap'))) return true;
+            if (baseCarId === 'm3gtr' && (mn === 'mmat_tire_brake_048' && ms.includes('sm_hub_'))) return true;
 
             return (
                 mn.includes('rim') ||
@@ -7012,7 +7083,7 @@
                 return false;
             }
 
-            if (carId === 'subaru') {
+            if (baseCarId === 'subaru') {
                 return (
                     ms === 'object_2' || ms === 'object_7' || ms === 'object_8' || ms === 'object_9' ||
                     ms === 'object_13' || ms === 'object_17' || ms === 'object_21' || ms === 'object_28' ||
@@ -7020,33 +7091,44 @@
                     mn === 'material_10' || mn === 'material_18' || mn === 'material_25'
                 );
             }
-            if (carId === 'vaz2107') return mn === 'body' || ms.includes('object_128_body') || ms.includes('_body_');
-            if (carId === 'vaz2109') return mn === '2109' || ms.endsWith('_2109_0');
-            if (carId === 'gaz24') return mn === 'paint_new' || mn === 'paint' || mn === 'body' || mn === 'black_paint';
-            if (carId === 'priora') return mn.includes('priora_skin') || mn.includes('priora_mirr') || mn === 'carpaint' || mn.includes('paint');
-            if (carId === 'vesta') return mn === 'kuzov' || ms.includes('kuzov_kuzov_0');
-            if (carId === 'solaris') return mn === 'carpaint' || mn.includes('carpaint') || mn === 'varnish';
-            if (carId === 'polo') return mn.includes('golfgti_2014paint');
-            if (carId === 'mark2') return mn === 'metall' || mn.includes('paint');
-            if (carId === 'm5e60') return mn === 'body' || ms.includes('body_body') || mn.includes('paint');
-            if (carId === 'silvia') return mn === 'meshpart1mtl' || mn.includes('lodarearbumpermmext1');
-            if (carId === 'camry') return mn === 'carpaint' || ms.includes('carpaint');
-            if (carId === 'lc300') return mn === 'phong1' || mn.includes('1350010001') || mn === 'palettematerial001' || (mn.includes('plasticdiffuse') && ms.includes('primitive0'));
-            if (carId === 'gtr') return mn === 'bodycolor';
-            if (carId === 'e63') return mn === 'body' || ms === 'body_body_0';
-            if (carId === 'rs6') return mn.includes('rs3_2018_base') || (mn === 'material' && ms === 'car');
-            if (carId === 'm5f90') return mn === 'material_692' || mn === 'material_697' || ms.includes('body_material #692') || ms.includes('body_material #697');
-            if (carId === 'm8') return mn.includes('i8elite_2017paint') || mn.includes('i8elite_2017coloured');
-            if (carId === 'g63') return mn.includes('monza grey satin') || mn.includes('manufaktur');
-            if (carId === 'porsche911') return mn === 'paint' || mn === 'coat' || ms.includes('boot') || ms.includes('bumper');
-            if (carId === 'huracan') return mn === 'mt_body' || ms.includes('mesh_boot') || ms.includes('mesh_bumper') || ms.includes('mesh_hood') || ms.includes('mesh_door');
-            if (carId === 'cullinan') return mn === 'car_body_in';
-            if (carId === 'sf90') return mn === 'body_color' || mn === '_0098_dodgerblue';
-            if (carId === 'chiron') return mn === 'paint_primary' || mn === 'paint_secondary';
-            if (carId === 'jesko') return mn === 'paint_satingraphite' || ms.includes('hypercar_body');
-            if (carId === 'm3gtr') return mn === 'mmat_carpaint_blue1' || mn === 'mmat_details_mat_025';
-            if (carId === 'corvette_cross') return mn === 'material.040' || mn === 'fibra_carbono';
-            if (carId === 'mustang_razor') return mn === 'carroceria';
+            if (baseCarId === 'vaz2107') return mn === 'body' || ms.includes('object_128_body') || ms.includes('_body_');
+            if (baseCarId === 'vaz2109') return mn === '2109' || ms.endsWith('_2109_0');
+            if (baseCarId === 'gaz24') return mn === 'paint_new' || mn === 'paint' || mn === 'body' || mn === 'black_paint';
+            if (baseCarId === 'priora') return mn.includes('priora_skin') || mn.includes('priora_mirr') || mn === 'carpaint' || mn.includes('paint');
+            if (baseCarId === 'vesta') return mn === 'kuzov' || ms.includes('kuzov_kuzov_0');
+            if (baseCarId === 'solaris') return mn === 'carpaint' || mn.includes('carpaint') || mn === 'varnish';
+            if (baseCarId === 'polo') return mn.includes('golfgti_2014paint');
+            if (baseCarId === 'mark2') return mn === 'metall' || mn.includes('paint');
+            if (baseCarId === 'm5e60') return mn === 'body' || ms.includes('body_body') || mn.includes('paint');
+            if (baseCarId === 'silvia') return mn === 'meshpart1mtl' || mn.includes('lodarearbumpermmext1');
+            if (baseCarId === 'camry') return mn === 'carpaint' || ms.includes('carpaint');
+            if (baseCarId === 'lc300') return mn === 'phong1' || mn.includes('1350010001') || mn === 'palettematerial001' || (mn.includes('plasticdiffuse') && ms.includes('primitive0'));
+            if (baseCarId === 'gtr') return mn === 'bodycolor';
+            if (baseCarId === 'e63') return mn === 'body' || ms === 'body_body_0';
+            if (baseCarId === 'rs6') return mn.includes('rs3_2018_base') || (mn === 'material' && ms === 'car');
+            if (baseCarId === 'm5f90') return mn === 'material_692' || mn === 'material_697' || ms.includes('body_material #692') || ms.includes('body_material #697');
+            if (baseCarId === 'm8') return mn.includes('i8elite_2017paint') || mn.includes('i8elite_2017coloured');
+            if (baseCarId === 'g63') return mn.includes('monza grey satin') || mn.includes('manufaktur');
+            if (baseCarId === 'porsche911') return mn === 'paint' || mn === 'coat' || ms.includes('boot') || ms.includes('bumper');
+            if (baseCarId === 'huracan') return mn === 'mt_body' || ms.includes('mesh_boot') || ms.includes('mesh_bumper') || ms.includes('mesh_hood') || ms.includes('mesh_door');
+            if (baseCarId === 'cullinan') return mn === 'car_body_in';
+            if (baseCarId === 'sf90') return mn === 'body_color' || mn === '_0098_dodgerblue';
+            if (baseCarId === 'chiron') return mn === 'paint_primary' || mn === 'paint_secondary';
+            if (baseCarId === 'jesko') return mn === 'paint_satingraphite' || ms.includes('hypercar_body');
+            if (baseCarId === 'm3gtr') return mn === 'mmat_carpaint_blue1' || mn === 'mmat_details_mat_025';
+            if (baseCarId === 'corvette_cross') return mn === 'material.040';
+            if (baseCarId === 'mustang_razor') return mn === 'carroceria';
+            if (baseCarId === 'audir8') return mn === 'meshpart2mtl';
+            if (baseCarId === 'rx7') return mn === 'material.007';
+            if (baseCarId === 'mclaren') return mn === 'carpaint';
+            if (baseCarId === 'db9') return mn === 'oempaint' || mn === 'coloured';
+            if (baseCarId === 'supra') return mn === 'supra_body_paint';
+            if (baseCarId === 'eclipse_lou') return mn === 'carpaint';
+            if (baseCarId === 'elantra_n') return mn.includes('ceramic_white');
+            if (baseCarId === 'maserati') return mn === 'paint';
+            if (baseCarId === 'panamera') return mn.includes('paint_material');
+            if (baseCarId === 'x5m') return mn.includes('paint1mtl') || mn.includes('colouredmtl');
+            if (baseCarId === 'rs7') return mn === 'material' && (ms === 'car' || ms === 'fronthood' || ms === 'sidemirrorrcase');
 
             return (
                 mn.includes('carpaint') ||
@@ -7093,7 +7175,7 @@
             }
 
             // In Subaru, hide factory STI wing if an aftermarket spoiler is active
-            if (carId === 'subaru' && styling.spoiler && styling.spoiler !== 'none') {
+            if (baseCarId === 'subaru' && styling.spoiler && styling.spoiler !== 'none') {
                 if (mName === 'object_8' || (child.parent && child.parent.name === 'object_8')) {
                     child.visible = false;
                 }
@@ -7111,7 +7193,7 @@
                     child.userData._stylingRoles = matList.map(mat => {
                         if (!mat) return 'stock';
                         const matName = String(mat.name || '').toLowerCase();
-                        if (matName.includes('badge') || matName.includes('emblem') || matName.includes('logo') || matName.includes('illinois') || matName.includes('philippine_license') || matName === 'plate' || matName === 'placa' || matName === 'material.046' || matName.includes('2020-2026')) {
+                        if (matName.startsWith('edge_color') || matName.includes('badge') || matName.includes('emblem') || matName.includes('logo') || matName.includes('illinois') || matName.includes('philippine_license') || matName === 'plate' || matName === 'placa' || matName === 'material.046' || matName.includes('2020-2026')) {
                             child.visible = false;
                             return 'badge';
                         }
@@ -7124,9 +7206,13 @@
                         if (isInteriorMaterial(matName, mName)) return 'interior';
                         if (isGlassMaterial(mat, matName, mName)) return 'glass';
                         if (isBodyMaterial(matName, mName)) return 'body';
+                        if (baseCarId === 'corvette_cross' && (matName === 'espejo' || matName === 'chrome_headlight_left')) return 'chrome';
+                        if (baseCarId === 'corvette_cross' && (matName === 'material.042' || matName === 'material.044' || matName === 'material.045' || matName === 'nwgros')) return 'trim';
+                        if (baseCarId === 'mustang_razor' && matName === 'cromados') return 'chrome';
+                        if (baseCarId === 'mustang_razor' && (matName === 'kit00_left_headlight_a__0' || matName === 'negro' || matName === 'goma_ventana')) return 'trim';
                         if (mName.includes('chrom') || matName.toLowerCase().includes('chrom')) return 'chrome';
                         if (mName.includes('carpet') || matName.includes('carpet') || mName.includes('floor')) return 'carpet';
-                        if (matName.includes('diffuser') || matName.includes('trim') || matName.includes('arch') || matName.includes('plastic') || matName.includes('underbody') || matName.includes('vent') || mName.includes('diffuser') || mName.includes('trim') || mName.includes('underbody') || (carId === 'vaz2109' && (
+                        if (matName.includes('diffuser') || matName.includes('trim') || matName.includes('arch') || matName.includes('plastic') || matName.includes('underbody') || matName.includes('vent') || mName.includes('diffuser') || mName.includes('trim') || mName.includes('underbody') || (baseCarId === 'vaz2109' && (
                             matName.toLowerCase() === 'standardmater24' ||
                             matName.toLowerCase() === 'standardmater27' ||
                             matName.toLowerCase() === 'standardmater1' ||
@@ -7205,10 +7291,10 @@
 
                     // 4. Lights (Headlights, Taillights, Indicators)
                     if (role === 'light') {
-                        if (mName.includes('taillight') || matName.includes('taillight') || matName.includes('red') || matName.includes('ruby') || mName === 'object_20' || matName === 'material_17' || matName === 'stopar' || (carId === 'vaz2109' && matName.toLowerCase() === 'standardmater5')) {
+                        if (mName.includes('taillight') || matName.includes('taillight') || mName.includes('brakelight') || matName.includes('brakelight') || matName === 'gl_glow_glass_g' || matName === 'rojo_faros_tras' || matName === 'faros_tras' || matName === 'glassred' || matName === 'stop' || matName.includes('red') || matName.includes('ruby') || mName === 'object_20' || matName === 'material_17' || matName === 'stopar' || (baseCarId === 'vaz2109' && matName.toLowerCase() === 'standardmater5')) {
                             return mats.taillightRed;
                         }
-                        if (carId === 'vaz2109' && matName.toLowerCase() === 'standardmater3') {
+                        if (baseCarId === 'vaz2109' && matName.toLowerCase() === 'standardmater3') {
                             return mats.chrome;
                         }
                         if (mName.includes('indicator') || matName.includes('amber') || matName.includes('orange') || mName === 'object_14' || mName === 'object_19') {
@@ -7248,10 +7334,10 @@
                         return mats.glass;
                     }
 
-                    // 9. Car Body Paint (Preserve authentic NFS Most Wanted livery textures unless custom vinyl/paint override is active)
+                    // 9. Car Body Paint (Preserve authentic NFS Most Wanted livery textures only on M3 GTR, Cross Corvette, and Razor Mustang unless custom vinyl/paint override is active)
                     if (role === 'body') {
                         const origBodyMat = child.userData._origBodyMats && child.userData._origBodyMats[idx];
-                        if ((carId === 'm3gtr' || carId === 'corvette_cross' || carId === 'mustang_razor' || carId === 'corvette_webster' || carId === 'mustang_jewels') && origBodyMat && origBodyMat.map && !styling.customPaintOverride && (!styling.vinyl || styling.vinyl === 'none')) {
+                        if ((carId === 'm3gtr' || carId === 'corvette_cross' || carId === 'mustang_razor') && origBodyMat && origBodyMat.map && !styling.customPaintOverride && (!styling.vinyl || styling.vinyl === 'none')) {
                             const liveryMat = origBodyMat.clone();
                             liveryMat.roughness = 0.15;
                             liveryMat.metalness = 0.52;
@@ -7283,6 +7369,14 @@
                     // 12. Black Trim, Diffusers, Moldings, Plastic, Underbody, Vents
                     if (role === 'trim') {
                         return mats.trim;
+                    }
+
+                    // Fix SketchUp export materials on Audi R8 that had accidental transparency
+                    if (baseCarId === 'audir8' && mat.transparent) {
+                        mat.transparent = false;
+                        mat.opacity = 1.0;
+                        mat.depthWrite = true;
+                        mat.needsUpdate = true;
                     }
 
                     return mat;
@@ -7406,63 +7500,44 @@
             modelRoot.add(spoilerGroup);
         }
 
-        // 3D NFS Most Wanted Bodykits (Street Aero, Widebody, ALMS M3 GTR Kit)
-        if (styling.bodykit && styling.bodykit !== 'stock' && styling.bodykit !== 'none') {
+        // 3D NFS Most Wanted Bodykits (Recessed Under-Bumper Carbon Splitter, Rocker Sill Blades & Rear Diffuser)
+        // Skip duplicate BoxGeometry aero on models that already have native widebody/GT aero sculpted into the GLB mesh
+        const hasNativeWidebodyMesh = (
+            baseCarId === 'm3gtr' ||
+            baseCarId === 'corvette_cross' ||
+            baseCarId === 'mustang_razor'
+        );
+        if (styling.bodykit && styling.bodykit !== 'stock' && styling.bodykit !== 'none' && !hasNativeWidebodyMesh) {
             const bkGroup = new THREE.Group();
             bkGroup.name = 'GLB_BodykitGroup';
             const bkType = styling.bodykit;
             const halfW = size.x * 0.5;
-            const halfL = size.z * 0.5;
-            const groundY = Math.max(0.08, box.min.y + 0.10);
+            const groundY = Math.max(0.05, box.min.y + 0.06);
 
-            // 1. Front Carbon Lip Splitter
-            const lipW = size.x * (bkType === 'nfsmw_gtr' ? 1.06 : (bkType === 'widebody' ? 1.04 : 0.98));
-            const lipGeo = new THREE.BoxGeometry(lipW, 0.045, 0.22);
+            // 1. Sleek Recessed Front Carbon Lip Splitter
+            const lipW = size.x * (bkType === 'nfsmw_gtr' ? 0.86 : (bkType === 'widebody' ? 0.84 : 0.80));
+            const lipGeo = new THREE.BoxGeometry(lipW, 0.024, 0.14);
             const frontLip = new THREE.Mesh(lipGeo, mats.carbon);
             frontLip.name = 'Bodykit_FrontSplitter';
-            frontLip.position.set(0, groundY, box.max.z - 0.06);
+            frontLip.position.set(0, groundY, box.max.z - 0.14);
             bkGroup.add(frontLip);
 
-            // 2. Side Skirts (Left & Right)
+            // 2. Low-Profile Side Sill Blades (Tucked cleanly under rocker panels between wheels)
             [-1, 1].forEach(side => {
-                const skirtGeo = new THREE.BoxGeometry(bkType === 'street' ? 0.06 : 0.11, 0.075, size.z * 0.56);
+                const skirtGeo = new THREE.BoxGeometry(0.035, 0.028, size.z * 0.42);
                 const skirt = new THREE.Mesh(skirtGeo, bkType === 'street' ? mats.trim : mats.carbon);
                 skirt.name = side < 0 ? 'Bodykit_Skirt_L' : 'Bodykit_Skirt_R';
-                skirt.position.set(side * (halfW + (bkType === 'street' ? 0.01 : 0.035)), groundY + 0.02, center.z);
+                skirt.position.set(side * (halfW - 0.045), groundY + 0.01, center.z);
                 bkGroup.add(skirt);
             });
 
-            // 3. Widebody Overfenders & Rear Diffuser (Widebody & NFS MW GTR)
+            // 3. Rear Under-Bumper Carbon Diffuser
             if (bkType === 'widebody' || bkType === 'nfsmw_gtr') {
-                const archZPositions = [center.z + halfL * 0.58, center.z - halfL * 0.58];
-                [-1, 1].forEach(side => {
-                    archZPositions.forEach((az, aIdx) => {
-                        const flareGeo = new THREE.BoxGeometry(0.095, size.y * 0.26, size.z * 0.19);
-                        const flare = new THREE.Mesh(flareGeo, styledPaint);
-                        flare.name = `Bodykit_FenderFlare_${side < 0 ? 'L' : 'R'}_${aIdx}`;
-                        flare.position.set(side * (halfW + 0.032), box.min.y + size.y * 0.34, az);
-                        bkGroup.add(flare);
-                    });
-                });
-
-                // Rear Multi-Fin Carbon Diffuser
-                const diffGeo = new THREE.BoxGeometry(size.x * 0.82, 0.09, 0.20);
+                const diffGeo = new THREE.BoxGeometry(size.x * 0.68, 0.045, 0.14);
                 const diffuser = new THREE.Mesh(diffGeo, mats.carbon);
                 diffuser.name = 'Bodykit_RearDiffuser';
-                diffuser.position.set(0, groundY + 0.03, box.min.z + 0.08);
+                diffuser.position.set(0, groundY + 0.02, box.min.z + 0.14);
                 bkGroup.add(diffuser);
-            }
-
-            // 4. ALMS M3 GTR Canards & Side Exhaust Tips
-            if (bkType === 'nfsmw_gtr') {
-                [-1, 1].forEach(side => {
-                    const canardGeo = new THREE.BoxGeometry(0.14, 0.022, 0.24);
-                    canardGeo.rotateZ(side * -0.25);
-                    const canard = new THREE.Mesh(canardGeo, mats.carbon);
-                    canard.name = side < 0 ? 'Bodykit_Canard_L' : 'Bodykit_Canard_R';
-                    canard.position.set(side * (halfW + 0.02), groundY + 0.16, box.max.z - 0.22);
-                    bkGroup.add(canard);
-                });
             }
 
             modelRoot.add(bkGroup);
@@ -7629,6 +7704,30 @@
             return scene;
         }
 
+        function computeTightBoundingBox(rootObj) {
+            const tightBox = new THREE.Box3();
+            const v = new THREE.Vector3();
+            rootObj.updateMatrixWorld(true);
+            rootObj.traverse(c => {
+                if (!c.isMesh || !c.geometry || !c.visible) return;
+                const pos = c.geometry.attributes && c.geometry.attributes.position;
+                if (pos && pos.count > 0 && typeof pos.getX === 'function') {
+                    const step = Math.max(1, Math.floor(pos.count / 600));
+                    for (let i = 0; i < pos.count; i += step) {
+                        v.set(pos.getX(i), pos.getY(i), pos.getZ(i)).applyMatrix4(c.matrixWorld);
+                        tightBox.expandByPoint(v);
+                    }
+                    const last = pos.count - 1;
+                    v.set(pos.getX(last), pos.getY(last), pos.getZ(last)).applyMatrix4(c.matrixWorld);
+                    tightBox.expandByPoint(v);
+                }
+            });
+            if (tightBox.isEmpty()) {
+                tightBox.setFromObject(rootObj);
+            }
+            return tightBox;
+        }
+
         function setupModel(gltfScene) {
             try {
                 const modelGroup = new THREE.Group();
@@ -7664,7 +7763,7 @@
                 });
                 clonedScene.updateMatrixWorld(true);
 
-                let box = new THREE.Box3().setFromObject(clonedScene);
+                let box = computeTightBoundingBox(clonedScene);
                 let size = box.getSize(new THREE.Vector3());
                 let center = box.getCenter(new THREE.Vector3());
 
@@ -7672,7 +7771,7 @@
                 if (size.y > size.z * 1.2 && size.y > size.x * 1.2) {
                     clonedScene.rotation.x = -Math.PI / 2;
                     clonedScene.updateMatrixWorld(true);
-                    box = new THREE.Box3().setFromObject(clonedScene);
+                    box = computeTightBoundingBox(clonedScene);
                     size = box.getSize(new THREE.Vector3());
                     center = box.getCenter(new THREE.Vector3());
                 }
@@ -7681,36 +7780,36 @@
                 if (size.x > size.z * 1.15) {
                     clonedScene.rotation.y = Math.PI / 2;
                     clonedScene.updateMatrixWorld(true);
-                    box = new THREE.Box3().setFromObject(clonedScene);
+                    box = computeTightBoundingBox(clonedScene);
                     size = box.getSize(new THREE.Vector3());
                     center = box.getCenter(new THREE.Vector3());
                 }
 
                 // 3. Align car forward facing along +Z
-                // VAZ-2107 is natively modeled facing forward (+Z); VAZ-2109, SF90, RS6, Silvia, and Vesta require 180° rotation
-                if (carId === 'vaz2109' || carId === 'sf90' || carId === 'rs6' || carId === 'silvia' || carId === 'vesta') {
+                // VAZ-2107 is natively modeled facing forward (+Z); VAZ-2109, SF90, RS6, Silvia, Vesta, Viper JV (370Z), and M3 G80 require 180° rotation
+                if (carId === 'vaz2109' || carId === 'sf90' || carId === 'rs6' || carId === 'silvia' || carId === 'viper_jv' || carId === 'm3_g80' || carId === 'vesta') {
                     clonedScene.rotation.y += Math.PI;
                     clonedScene.updateMatrixWorld(true);
-                    box = new THREE.Box3().setFromObject(clonedScene);
+                    box = computeTightBoundingBox(clonedScene);
                     size = box.getSize(new THREE.Vector3());
                     center = box.getCenter(new THREE.Vector3());
                 }
 
                 // Standardize car dimensions with realistic relative scale
                 let targetLength = 4.45;
-                if (carId === 'vaz2107' || carId === 'vaz2109' || carId === 'polo') {
+                if (carId === 'vaz2107' || carId === 'vaz2109' || carId === 'polo' || carId === 'golf_sonny') {
                     targetLength = 4.05;
                 } else if (carId === 'cullinan') {
                     targetLength = 5.25;
-                } else if (carId === 'g63' || carId === 'lc300') {
+                } else if (carId === 'g63' || carId === 'lc300' || carId === 'x5m' || carId === 'panamera') {
                     targetLength = 4.90;
-                } else if (carId === 'camry' || carId === 'e63' || carId === 'rs6' || carId === 'm8' || carId === 'gaz24') {
+                } else if (carId === 'camry' || carId === 'e63' || carId === 'clk_kaze' || carId === 'rs6' || carId === 'rs7' || carId === 'm8' || carId === 'gaz24' || carId === 'db9' || carId === 'maserati') {
                     targetLength = 4.75;
-                } else if (carId === 'jesko' || carId === 'chiron' || carId === 'sf90' || carId === 'huracan' || carId === 'porsche911') {
+                } else if (carId === 'jesko' || carId === 'chiron' || carId === 'sf90' || carId === 'huracan' || carId === 'gallardo_ming' || carId === 'porsche911' || carId === 'cayman_baron' || carId === 'mclaren' || carId === 'audir8' || carId === 'corvette_cross' || carId === 'corvette_webster' || carId === 'mustang_razor' || carId === 'mustang_jewels') {
                     targetLength = 4.50;
-                } else if (carId === 'priora' || carId === 'solaris' || carId === 'vesta') {
+                } else if (carId === 'priora' || carId === 'solaris' || carId === 'vesta' || carId === 'eclipse_lou') {
                     targetLength = 4.35;
-                } else if (carId === 'mark2' || carId === 'subaru' || carId === 'm5e60' || carId === 'm5f90' || carId === 'gtr' || carId === 'silvia') {
+                } else if (carId === 'mark2' || carId === 'is300_taz' || carId === 'subaru' || carId === 'evo8_earl' || carId === 'm5e60' || carId === 'm3_g80' || carId === 'm5f90' || carId === 'gtr' || carId === 'silvia' || carId === 'viper_jv' || carId === 'rx7' || carId === 'supra' || carId === 'elantra_n') {
                     targetLength = 4.55;
                 }
                 const currentLength = size.z || 1;
@@ -7718,7 +7817,7 @@
                 clonedScene.scale.setScalar(scaleFactor);
                 clonedScene.updateMatrixWorld(true);
 
-                const scaledBox = new THREE.Box3().setFromObject(clonedScene);
+                const scaledBox = computeTightBoundingBox(clonedScene);
                 const scaledCenter = scaledBox.getCenter(new THREE.Vector3());
 
                 clonedScene.position.x = -scaledCenter.x;
@@ -7727,7 +7826,7 @@
 
                 modelGroup.add(clonedScene);
                 modelGroup.updateMatrixWorld(true);
-                modelGroup.userData.baseBoundingBox = new THREE.Box3().setFromObject(clonedScene);
+                modelGroup.userData.baseBoundingBox = computeTightBoundingBox(clonedScene);
                 applyStylingToGLTF(THREE, modelGroup, styling, carId);
 
                 return modelGroup;

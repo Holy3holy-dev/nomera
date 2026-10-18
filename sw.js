@@ -1,7 +1,7 @@
 // Release-coherent app shell. No Firebase, external assets or non-GET requests are cached.
-const CACHE_NAME = 'nomera-cache-ac7d81070275';
+const CACHE_NAME = 'nomera-cache-06a1ee651405';
 const ASSETS = ['./', './index.html', './manifest.json', './styles.css?v=cefb2ff72d09',
-    './js/security.js?v=ed845ef69db6', './js/storage.js?v=327dc7592b84', './js/race-records.js?v=eaeaf8e59fc2', './js/race-economy.js?v=2802923358a3', './js/audio.js?v=816cc43763e2', './js/race-effects.js?v=6883d3af7d80', './js/nfs-physics.js?v=f4af89e86f17', './js/nfs-circuit-race.js?v=a495d845d3b5', './js/car-3d.js?v=634b8c8076c7', './js/app.js?v=6c29997fe7a8',
+    './js/security.js?v=ed845ef69db6', './js/storage.js?v=327dc7592b84', './js/race-records.js?v=eaeaf8e59fc2', './js/race-economy.js?v=2802923358a3', './js/audio.js?v=816cc43763e2', './js/race-effects.js?v=6883d3af7d80', './js/nfs-physics.js?v=f4af89e86f17', './js/nfs-circuit-race.js?v=a495d845d3b5', './js/car-3d.js?v=1e0468a3ba05', './js/app.js?v=ecf17a16a9da',
     './icons/car-placeholder.svg', './icons/icon-192.png', './icons/icon-512.png'];
 const allowed = new Set(ASSETS.map(path => new URL(path, self.registration.scope).href));
 

@@ -8387,6 +8387,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         window.rotateGarageShowroom = rotateGarageShowroom;
 
         function selectGarageCarForPodium(index, fromRender) {
+            if (typeof sanitizeNfsMwCarsInGarage === 'function') {
+                sanitizeNfsMwCarsInGarage();
+            }
             if (!Array.isArray(myCars) || myCars.length === 0) return;
             index = Math.max(0, Math.min(index, myCars.length - 1));
             activeGarageCarIndex = index;
@@ -8438,6 +8441,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             }
         }
         window.selectGarageCarForPodium = selectGarageCarForPodium;
+        window.selectGarage3DCar = selectGarageCarForPodium;
 
         function setGarageViewMode(mode) {
             let preset = mode || 'isometric';
@@ -15788,172 +15792,200 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 name: 'BMW M3 E46 GTR (NFS Most Wanted)',
                 category: 'Blacklist #1 (Hero)',
                 basePrice: 38000000,
-                styling: { color: '#cbd5e1', vinyl: 'none', spoiler: 'gtr', neon: '#38bdf8', bodykit: 'nfsmw_gtr', wheels: 'bbs_gtr', hood: 'gtr_vents' }
+                styling: { color: '#cbd5e1', vinyl: 'none', spoiler: 'gtr', neon: '#38bdf8', bodykit: 'stock', wheels: 'stock', hood: 'stock', roofScoop: 'none' }
             },
             corvette_cross: {
                 key: 'corvette_cross',
                 name: 'Chevrolet Corvette C6.R (Cross NFS MW)',
                 category: 'Перехватчик Сержанта Кросса',
                 basePrice: 34000000,
-                styling: { color: '#1e293b', vinyl: 'none', spoiler: 'none', neon: '#ef4444', sgu: 'installed', bodykit: 'widebody' }
+                styling: { color: '#1e293b', vinyl: 'none', spoiler: 'none', neon: '#ef4444', sgu: 'installed', bodykit: 'stock', hood: 'stock', roofScoop: 'none' }
             },
             mustang_razor: {
                 key: 'mustang_razor',
                 name: 'Ford Mustang GT (Razor NFS MW)',
                 category: 'Blacklist #1 (Razor)',
                 basePrice: 19500000,
-                styling: { color: '#0f172a', vinyl: 'none', spoiler: 'gt', neon: '#f59e0b', bodykit: 'widebody', hood: 'blower' }
+                styling: { color: '#0f172a', vinyl: 'none', spoiler: 'none', neon: '#f59e0b', bodykit: 'stock', hood: 'stock', roofScoop: 'none' }
             },
             mclaren: {
                 key: 'mclaren',
                 name: 'Mercedes-Benz SLR McLaren (Bull #2 MW)',
                 category: 'Blacklist #2 (Bull)',
                 basePrice: 32000000,
-                styling: { color: '#0a0a0f', vinyl: 'none', spoiler: 'none', neon: '#ef4444' }
+                styling: { color: '#0a0a0f', vinyl: 'none', spoiler: 'none', neon: '#ef4444', bodykit: 'stock', hood: 'stock', roofScoop: 'none' }
             },
             db9: {
                 key: 'db9',
                 name: 'Aston Martin DB9 (Ronnie #3 MW)',
                 category: 'Blacklist #3 (Ronnie)',
                 basePrice: 26500000,
-                styling: { color: '#eab308', vinyl: 'mw_blacklist', spoiler: 'gt', neon: '#f59e0b', bodykit: 'street' }
+                styling: { color: '#eab308', vinyl: 'none', spoiler: 'none', neon: '#f59e0b', bodykit: 'stock', hood: 'stock', roofScoop: 'none' }
             },
             viper_jv: {
                 key: 'viper_jv',
                 name: 'Dodge Viper SRT10 (JV #4 MW)',
                 category: 'Blacklist #4 (JV)',
                 basePrice: 25000000,
-                styling: { color: '#16a34a', vinyl: 'mw_blacklist', spoiler: 'gt', neon: '#22c55e', bodykit: 'widebody' }
+                styling: { color: '#16a34a', vinyl: 'none', spoiler: 'none', neon: '#22c55e', bodykit: 'stock', hood: 'stock', roofScoop: 'none' }
             },
             corvette_webster: {
                 key: 'corvette_webster',
                 name: 'Chevrolet Corvette C6 (Webster #5 MW)',
                 category: 'Blacklist #5 (Webster)',
                 basePrice: 23500000,
-                styling: { color: '#7c2d12', vinyl: 'mw_razor', spoiler: 'gt', neon: '#f97316', bodykit: 'widebody' }
+                styling: { color: '#b45309', vinyl: 'none', spoiler: 'none', neon: '#f97316', bodykit: 'stock', hood: 'stock', roofScoop: 'none' }
             },
             gallardo_ming: {
                 key: 'gallardo_ming',
                 name: 'Lamborghini Gallardo (Ming #6 MW)',
                 category: 'Blacklist #6 (Ming)',
                 basePrice: 24000000,
-                styling: { color: '#334155', vinyl: 'stripes', spoiler: 'none', neon: '#38bdf8' }
+                styling: { color: '#334155', vinyl: 'none', spoiler: 'none', neon: '#38bdf8', bodykit: 'stock', hood: 'stock', roofScoop: 'none' }
             },
             clk_kaze: {
                 key: 'clk_kaze',
                 name: 'Mercedes-Benz CLK 500 (Kaze #7 MW)',
                 category: 'Blacklist #7 (Kaze)',
                 basePrice: 18500000,
-                styling: { color: '#0d9488', vinyl: 'mw_blacklist', spoiler: 'ducktail', neon: '#2dd4bf', bodykit: 'street' }
+                styling: { color: '#0d9488', vinyl: 'none', spoiler: 'none', neon: '#2dd4bf', bodykit: 'stock', hood: 'stock', roofScoop: 'none' }
             },
             mustang_jewels: {
                 key: 'mustang_jewels',
                 name: 'Ford Mustang GT (Jewels #8 MW)',
                 category: 'Blacklist #8 (Jewels)',
                 basePrice: 17500000,
-                styling: { color: '#f8fafc', vinyl: 'stripes', spoiler: 'ducktail', neon: '#ec4899', hood: 'blower' }
+                styling: { color: '#e11d48', vinyl: 'none', spoiler: 'none', neon: '#ec4899', bodykit: 'stock', hood: 'stock', roofScoop: 'none' }
             },
             evo8_earl: {
                 key: 'evo8_earl',
                 name: 'Mitsubishi Lancer Evo VIII (Earl #9 MW)',
                 category: 'Blacklist #9 (Earl)',
                 basePrice: 16500000,
-                styling: { color: '#e2e8f0', vinyl: 'mw_blacklist', spoiler: 'gt', neon: '#ef4444', roofScoop: 'vortex', wheels: 'oz_racing' }
+                styling: { color: '#e2e8f0', vinyl: 'none', spoiler: 'none', neon: '#ef4444', bodykit: 'stock', hood: 'stock', roofScoop: 'none' }
             },
             cayman_baron: {
                 key: 'cayman_baron',
                 name: 'Porsche Cayman S (Baron #10 MW)',
                 category: 'Blacklist #10 (Baron)',
                 basePrice: 16000000,
-                styling: { color: '#0f172a', vinyl: 'mw_razor', spoiler: 'gt', neon: '#f59e0b', bodykit: 'widebody' }
+                styling: { color: '#0f172a', vinyl: 'none', spoiler: 'none', neon: '#f59e0b', bodykit: 'stock', hood: 'stock', roofScoop: 'none' }
             },
             eclipse_lou: {
                 key: 'eclipse_lou',
                 name: 'Mitsubishi Eclipse GT (Big Lou #11 MW)',
                 category: 'Blacklist #11 (Big Lou)',
                 basePrice: 14000000,
-                styling: { color: '#111827', vinyl: 'mw_blacklist', spoiler: 'gt', neon: '#eab308', bodykit: 'street', roofScoop: 'dual' }
+                styling: { color: '#111827', vinyl: 'none', spoiler: 'none', neon: '#eab308', bodykit: 'stock', hood: 'stock', roofScoop: 'none' }
             },
             rx8_izzy: {
                 key: 'rx8_izzy',
                 name: 'Mazda RX-8 (Izzy #12 MW)',
                 category: 'Blacklist #12 (Izzy)',
                 basePrice: 13500000,
-                styling: { color: '#94a3b8', vinyl: 'mw_m3gtr', spoiler: 'gt', neon: '#38bdf8', bodykit: 'street' }
+                styling: { color: '#94a3b8', vinyl: 'none', spoiler: 'none', neon: '#38bdf8', bodykit: 'stock', hood: 'stock', roofScoop: 'none' }
             },
             supra_vic: {
                 key: 'supra_vic',
                 name: 'Toyota Supra MK4 (Vic #13 MW)',
                 category: 'Blacklist #13 (Vic)',
                 basePrice: 15000000,
-                styling: { color: '#dc2626', vinyl: 'mw_blacklist', spoiler: 'gt', neon: '#ef4444', bodykit: 'widebody', hood: 'carbon' }
+                styling: { color: '#dc2626', vinyl: 'none', spoiler: 'none', neon: '#ef4444', bodykit: 'stock', hood: 'stock', roofScoop: 'none' }
             },
             is300_taz: {
                 key: 'is300_taz',
                 name: 'Lexus IS300 (Taz #14 MW)',
                 category: 'Blacklist #14 (Taz)',
                 basePrice: 12000000,
-                styling: { color: '#a16207', vinyl: 'mw_blacklist', spoiler: 'ducktail', neon: '#eab308', bodykit: 'street' }
+                styling: { color: '#a16207', vinyl: 'none', spoiler: 'none', neon: '#eab308', bodykit: 'stock', hood: 'stock', roofScoop: 'none' }
             },
             golf_sonny: {
                 key: 'golf_sonny',
                 name: 'Volkswagen Golf GTI (Sonny #15 MW)',
                 category: 'Blacklist #15 (Sonny)',
                 basePrice: 11000000,
-                styling: { color: '#f8fafc', vinyl: 'mw_m3gtr', spoiler: 'ducktail', neon: '#3b82f6', bodykit: 'street', wheels: 'oz_racing' }
+                styling: { color: '#f8fafc', vinyl: 'none', spoiler: 'none', neon: '#3b82f6', bodykit: 'stock', hood: 'stock', roofScoop: 'none' }
             },
             audir8_darius: {
                 key: 'audir8_darius',
                 name: 'Audi Le Mans Quattro R8 (Darius MW)',
                 category: 'Босс Дариус (Le Mans Quattro)',
                 basePrice: 36000000,
-                styling: { color: '#dc2626', vinyl: 'mw_blacklist', spoiler: 'gtr', neon: '#ef4444' }
+                styling: { color: '#dc2626', vinyl: 'none', spoiler: 'none', neon: '#ef4444', bodykit: 'stock', hood: 'stock', roofScoop: 'none' }
             },
             m3_g80: {
                 key: 'm3_g80',
                 name: 'BMW M3 G80 Competition',
                 category: 'Эксклюзив 3D',
                 basePrice: 16800000,
-                styling: { color: '#10b981', vinyl: 'none', spoiler: 'ducktail', neon: '#10b981' }
+                styling: { color: '#10b981', vinyl: 'none', spoiler: 'none', neon: '#10b981', bodykit: 'stock', hood: 'stock', roofScoop: 'none' }
             },
             x5m: {
                 key: 'x5m',
                 name: 'BMW X5M Competition',
                 category: 'Эксклюзив 3D',
                 basePrice: 17500000,
-                styling: { color: '#1e3a8a', vinyl: 'none', spoiler: 'none', neon: '#3b82f6' }
+                styling: { color: '#1e3a8a', vinyl: 'none', spoiler: 'none', neon: '#3b82f6', bodykit: 'stock', hood: 'stock', roofScoop: 'none' }
             },
             rs7: {
                 key: 'rs7',
                 name: 'Audi RS7 Sportback',
                 category: 'Эксклюзив 3D',
                 basePrice: 18200000,
-                styling: { color: '#1f2937', vinyl: 'none', spoiler: 'ducktail', neon: '#ef4444' }
+                styling: { color: '#1f2937', vinyl: 'none', spoiler: 'none', neon: '#ef4444', bodykit: 'stock', hood: 'stock', roofScoop: 'none' }
             },
             maserati: {
                 key: 'maserati',
                 name: 'Maserati GranTurismo',
                 category: 'Эксклюзив 3D',
                 basePrice: 19000000,
-                styling: { color: '#1e3a8a', vinyl: 'none', spoiler: 'none', neon: '#38bdf8' }
+                styling: { color: '#1e3a8a', vinyl: 'none', spoiler: 'none', neon: '#38bdf8', bodykit: 'stock', hood: 'stock', roofScoop: 'none' }
             },
             panamera: {
                 key: 'panamera',
                 name: 'Porsche Panamera Turbo',
                 category: 'Эксклюзив 3D',
                 basePrice: 18800000,
-                styling: { color: '#334155', vinyl: 'none', spoiler: 'ducktail', neon: '#f59e0b' }
+                styling: { color: '#334155', vinyl: 'none', spoiler: 'none', neon: '#f59e0b', bodykit: 'stock', hood: 'stock', roofScoop: 'none' }
             },
             elantra_n: {
                 key: 'elantra_n',
                 name: 'Hyundai Elantra N',
                 category: 'Эксклюзив 3D',
                 basePrice: 7500000,
-                styling: { color: '#38bdf8', vinyl: 'none', spoiler: 'gt', neon: '#ef4444' }
+                styling: { color: '#38bdf8', vinyl: 'none', spoiler: 'none', neon: '#ef4444', bodykit: 'stock', hood: 'stock', roofScoop: 'none' }
             }
         };
 
+        function sanitizeNfsMwCarsInGarage() {
+            if (!Array.isArray(myCars)) return;
+            const legendByName = new Map();
+            Object.values(NFS_MW_LEGEND_CARS).forEach(m => legendByName.set(m.name, m));
+            let changed = false;
+            myCars.forEach(c => {
+                if (!c || !legendByName.has(c.name) || !c.styling) return;
+                const meta = legendByName.get(c.name);
+                if (!c.styling._cleanGlbV2) {
+                    c.styling.vinyl = meta.styling.vinyl || 'none';
+                    c.styling.spoiler = meta.styling.spoiler || 'none';
+                    c.styling.bodykit = meta.styling.bodykit || 'stock';
+                    c.styling.hood = meta.styling.hood || 'stock';
+                    c.styling.roofScoop = meta.styling.roofScoop || 'none';
+                    if (meta.key === 'corvette_webster' && c.styling.color === '#7c2d12') {
+                        c.styling.color = meta.styling.color;
+                    }
+                    c.styling._cleanGlbV2 = true;
+                    changed = true;
+                }
+            });
+            if (changed && typeof saveProgress === 'function') {
+                try { saveProgress(); } catch (_) {}
+            }
+        }
+        try { setTimeout(sanitizeNfsMwCarsInGarage, 0); } catch (_) {}
+
         function claimAndSelectNfsMwCar(carKey, action = 'race') {
+            sanitizeNfsMwCarsInGarage();
             const meta = NFS_MW_LEGEND_CARS[carKey] || NFS_MW_LEGEND_CARS.m3gtr;
             if (!Array.isArray(myCars)) myCars = [];
             let carIdx = myCars.findIndex(c => c && c.name === meta.name);
@@ -15966,7 +15998,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     plate: null,
                     condition: 100,
                     upgrades: { engine: 2, handling: 2, economy: 1, nitro: 2 },
-                    styling: Object.assign({}, meta.styling)
+                    styling: Object.assign({ _cleanGlbV2: true }, meta.styling)
                 };
                 if (typeof NomeraRaceEconomy !== 'undefined' && typeof NomeraRaceEconomy.ensureCar === 'function') {
                     NomeraRaceEconomy.ensureCar(newCar);
