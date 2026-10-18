@@ -346,18 +346,19 @@ function priceOfPlate(l1,l2,l3,num,reg,country='RUS') {
 
   // 2. Структура букв
   if (cCode === 'UAE') {
+    const isUaeHighDigit = /^00[1-9]$/.test(digits) || /^0([1-9])\1$/.test(digits) || (digits[0] === digits[1] && digits[1] === digits[2]);
     if (cElites.includes(letters)) {
       price += 500000;
       if (isSameLetters && digits === '001') price += 3500000;
     } else if (isSameLetters) {
       price += 280000;
     } else if (['A', 'D', 'S', 'V', 'X', 'Z', 'M', 'K'].includes(c1)) {
-      price += 120000;
+      price += isUaeHighDigit ? 120000 : 300;
     }
   } else {
     if (isTripleLetters) price += 350000;
-    else if (isMirrorLetters) price += 1800;
-    else if (isPairLetters) price += 1200;
+    else if (isMirrorLetters) price += (cCode === 'RUS' ? 1800 : 1200);
+    else if (isPairLetters) price += (cCode === 'RUS' ? 1200 : 800);
   }
 
   // 3. Комбинации цифр
@@ -379,7 +380,7 @@ function priceOfPlate(l1,l2,l3,num,reg,country='RUS') {
     } else if (['123','234','345','456','567','678','789','987','876','765','654','543','432','321'].includes(digits)) {
       price += 20000;
     } else if (digits[0] === digits[2]) {
-      price += 1600;
+      price += 400;
     }
   } else {
     if (digits[0] === digits[1] && digits[1] === digits[2]) {
@@ -397,7 +398,7 @@ function priceOfPlate(l1,l2,l3,num,reg,country='RUS') {
     } else if (['010','020','030','040','050','060','070','080','090'].includes(digits)) {
       price += 2000;
     } else if (digits[0] === digits[2]) {
-      price += 1600;
+      price += (cCode === 'RUS' ? 1600 : 1000);
     }
   }
 
@@ -428,7 +429,7 @@ function priceOfPlate(l1,l2,l3,num,reg,country='RUS') {
     }
   } else if (cCode === 'USA') {
     if (['CA','NY','FL','TX','NV'].includes(regUp)) {
-      price += 800;
+      price += 600;
       if (digits === '777' || digits === '001' || digits === '007') price += 550000;
       if (isTripleLetters || cElites.includes(letters)) price += 80000;
     } else {
@@ -436,7 +437,7 @@ function priceOfPlate(l1,l2,l3,num,reg,country='RUS') {
     }
   } else if (cCode === 'UAE') {
     if (['DXB','AUH','1','2'].includes(regUp)) {
-      price += 1500;
+      price += 900;
       if (/^00[1-9]$/.test(digits) || digits === '777') price += 750000;
       if (isTripleLetters || cElites.includes(letters)) price += 150000;
     } else {
@@ -458,6 +459,8 @@ function rarityOfPrice(p){
   return 'Обычный';
 }
 
+const LADDER_NUMBERS = ['123','234','345','456','567','678','789','987','876','765','654','543','432','321'];
+
 function secureRoll(mode, pity = 0, country = 'RUS'){
   if(!['both','numbers','letters'].includes(mode))throw Error('Неверный тип спина');
   const cCode = (country && COUNTRIES[String(country).toUpperCase()]) ? String(country).toUpperCase() : 'RUS';
@@ -467,12 +470,24 @@ function secureRoll(mode, pity = 0, country = 'RUS'){
   const choose=arr=>arr[crypto.randomInt(arr.length)];
   const pityNum = Math.min(120, Math.max(0, Math.floor(Number(pity) || 0)));
   const luckBonus = Math.min(200, Math.floor(pityNum * 3));
+  const isIntl = (cCode === 'USA' || cCode === 'UAE');
 
   let forceTier = null;
   if (mode === 'both') {
     if (pityNum >= 120) forceTier = 'legendary';
     else if (pityNum >= 65) forceTier = 'epic';
     else if (pityNum >= 25) forceTier = 'rare';
+  }
+
+  function pickOrdinary3DigitNumber() {
+    for (let attempt = 0; attempt < 40; attempt++) {
+      const n = String(101 + crypto.randomInt(898));
+      if (n[0] === n[1] && n[1] === n[2]) continue;
+      if (n.endsWith('00')) continue;
+      if (LADDER_NUMBERS.includes(n)) continue;
+      return n;
+    }
+    return '142';
   }
 
   function generateLuckyNumber() {
@@ -487,28 +502,37 @@ function secureRoll(mode, pity = 0, country = 'RUS'){
       ]);
     }
     if (forceTier === 'rare') {
-      return choose(['123','234','345','456','567','678','789','987','876','765','654','543','432','321']);
+      return choose(LADDER_NUMBERS);
     }
 
     const roll = crypto.randomInt(1000);
-    const jackpotCutoff = Math.min(15, 3 + Math.floor(luckBonus * 0.05));
+    const jackpotCutoff = Math.min(15, (isIntl ? 1 : 3) + Math.floor(luckBonus * 0.05));
     if (roll < jackpotCutoff) {
       return choose(['777','001','007']);
     }
-    const epicCutoff = Math.min(35, 12 + Math.floor(luckBonus * 0.15));
+    const epicCutoff = Math.min(35, (isIntl ? 5 : 12) + Math.floor(luckBonus * 0.15));
     if (roll < epicCutoff) {
-      const epicPool = [
-        '111','222','333','444','555','666','888','999',
-        '100','200','300','400','500','600','700','800','900',
-        '002','003','004','005','006','007','008','009'
-      ];
+      const epicPool = cCode === 'UAE'
+        ? [
+            '111','222','333','444','555','666','888','999',
+            '011','022','055','077','088','099','010','020','050','070',
+            '002','003','005','007','008','009'
+          ]
+        : [
+            '111','222','333','444','555','666','888','999',
+            '100','200','300','400','500','600','700','800','900',
+            '002','003','004','005','006','007','008','009'
+          ];
       return choose(epicPool);
     }
-    const ladderCutoff = Math.min(70, 30 + Math.floor(luckBonus * 0.3));
+    const ladderCutoff = Math.min(70, (isIntl ? 16 : 30) + Math.floor(luckBonus * 0.3));
     if (roll < ladderCutoff) {
-      return choose(['123','234','345','456','567','678','789','987','876','765','654','543','432','321']);
+      const rarePool = cCode === 'UAE'
+        ? [...LADDER_NUMBERS, '100','200','300','500','700','900','023','045','067','089']
+        : LADDER_NUMBERS;
+      return choose(rarePool);
     }
-    return String(crypto.randomInt(1000)).padStart(3, '0');
+    return pickOrdinary3DigitNumber();
   }
 
   function generateLuckyLetters() {
@@ -529,28 +553,36 @@ function secureRoll(mode, pity = 0, country = 'RUS'){
     }
     if (forceTier === 'rare') {
       const l1 = choose(letterPool);
-      const l2 = choose(letterPool);
+      let l2 = choose(letterPool);
+      if (l2 === l1) l2 = letterPool[(letterPool.indexOf(l1) + 1) % letterPool.length];
       return [l1, l2, l1];
     }
 
     const roll = crypto.randomInt(1000);
-    const eliteCutoff = Math.min(15, 4 + Math.floor(luckBonus * 0.05));
+    const eliteCutoff = Math.min(15, (isIntl ? 2 : 4) + Math.floor(luckBonus * 0.05));
     if (roll < eliteCutoff) {
       const elite = choose(elitePool);
       return [elite[0], elite[1], elite[2]];
     }
-    const tripleCutoff = Math.min(35, 12 + Math.floor(luckBonus * 0.15));
+    const tripleCutoff = Math.min(35, (isIntl ? 6 : 12) + Math.floor(luckBonus * 0.15));
     if (roll < tripleCutoff) {
       const l = choose(letterPool);
       return [l, l, l];
     }
-    const mirrorCutoff = Math.min(70, 30 + Math.floor(luckBonus * 0.3));
+    const mirrorCutoff = Math.min(70, (isIntl ? 20 : 30) + Math.floor(luckBonus * 0.3));
     if (roll < mirrorCutoff) {
       const l1 = choose(letterPool);
-      const l2 = choose(letterPool);
+      let l2 = choose(letterPool);
+      if (l2 === l1) l2 = letterPool[(letterPool.indexOf(l1) + 1) % letterPool.length];
       return [l1, l2, l1];
     }
-    return [choose(letterPool), choose(letterPool), choose(letterPool)];
+    for (let attempt = 0; attempt < 20; attempt++) {
+      const a = choose(letterPool), b = choose(letterPool), d = choose(letterPool);
+      if (a === b && b === d) continue;
+      if (elitePool.includes(a + b + d)) continue;
+      return [a, b, d];
+    }
+    return [letterPool[0], letterPool[1], letterPool[2]];
   }
 
   return {

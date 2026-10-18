@@ -9478,12 +9478,14 @@
             // 1: Close Sports Chase (lower & closer)
             // 2: Hood / Bumper POV
             // 3: Overhead / Top-Down View
+            // 4: First-Person Cockpit Interior View (with steering wheel, digital dash & wipers)
             this.cameraMode = 0;
             this.cameraModes = [
                 { name: 'chase', offset: new this.THREE.Vector3(0, 2.05, -5.8), lookOffset: new this.THREE.Vector3(0, 1.05, 14.0), fov: 58 },
                 { name: 'chase_close', offset: new this.THREE.Vector3(0, 1.55, -4.4), lookOffset: new this.THREE.Vector3(0, 0.85, 13.0), fov: 62 },
                 { name: 'hood', offset: new this.THREE.Vector3(0, 1.15, 0.6), lookOffset: new this.THREE.Vector3(0, 1.00, 25.0), fov: 68 },
-                { name: 'top', offset: new this.THREE.Vector3(0, 30.0, -5.5), lookOffset: new this.THREE.Vector3(0, 0.0, 18.0), fov: 68 } // zoomed out from 11.5m so full car + traffic are visible
+                { name: 'top', offset: new this.THREE.Vector3(0, 30.0, -5.5), lookOffset: new this.THREE.Vector3(0, 0.0, 18.0), fov: 68 }, // zoomed out from 11.5m so full car + traffic are visible
+                { name: 'cockpit', offset: new this.THREE.Vector3(-0.36, 1.06, 0.08), lookOffset: new this.THREE.Vector3(-0.36, 0.98, 22.0), fov: 68 }
             ];
             this.camPos = new this.THREE.Vector3(0, 2.05, -5.8);
             this.camLook = new this.THREE.Vector3(0, 1.05, 14.0);
@@ -9506,11 +9508,23 @@
             this.playerTaillights = [];
             this.playerBrakeLight = null;
             this.playerNitroFlames = [];
+            this.playerFireTrails = [];
             this.playerNeonLight = null;
             this.playerSguLight = null;
             this.helicopterLight = null;
             this.playerWheels = [];
             this.playerSteerWheels = [];
+            this.cockpitGroup = null;
+            this.cockpitSteeringWheel = null;
+            this.cockpitShiftLights = null;
+            this.cockpitWiperL = null;
+            this.cockpitWiperR = null;
+            this.wiperPhase = 0;
+            this.wiperAngle = 0;
+            this.currentBiome = 'highway';
+            this.forcedBiome = null;
+            this.isHypersonic = false;
+            this.hypersonicPopupTimer = 0;
 
             this.carName = '';
             this.styling = {};
@@ -9540,6 +9554,8 @@
                 isDrifting: false,
                 isNitroActive: false,
                 isDrafting: false,
+                isHypersonic: false,
+                currentBiome: 'highway',
                 slipstreamFactor: 0,
                 nitroLevel: 100, // 0 - 100%
                 nitroTimer: 0,
@@ -10362,6 +10378,56 @@
             this.treeTrunkMat = new THREE.MeshStandardMaterial({ color: 0x452311, roughness: 0.9 });
             this.treeFoliageMat = new THREE.MeshStandardMaterial({ color: 0x064e3b, roughness: 0.85 });
 
+            // Tunnel & Cable-Stayed Bridge Biome Geometries & Materials
+            this.tunnelWallGeo = new THREE.BoxGeometry(0.95, 8.6, L);
+            this.tunnelRoofGeo = new THREE.BoxGeometry(roadW + 4.4, 0.85, L);
+            this.tunnelLightStripGeo = new THREE.BoxGeometry(0.42, 0.14, 5.2);
+            this.tunnelReflectorGeo = new THREE.BoxGeometry(0.08, 0.24, L);
+            this.tunnelFanGeo = new THREE.CylinderGeometry(0.48, 0.48, 1.8, 12);
+            this.tunnelFanGeo.rotateX(Math.PI / 2);
+
+            this.tunnelConcreteMat = new THREE.MeshStandardMaterial({
+                color: 0x334155,
+                roughness: 0.82,
+                metalness: 0.18
+            });
+            this.tunnelSodiumMat = new THREE.MeshStandardMaterial({
+                color: 0xffb703,
+                emissive: 0xfb8500,
+                emissiveIntensity: 2.8,
+                roughness: 0.15
+            });
+            this.tunnelReflectorMat = new THREE.MeshStandardMaterial({
+                color: 0xf97316,
+                emissive: 0xea580c,
+                emissiveIntensity: 1.9,
+                roughness: 0.2
+            });
+
+            this.bridgeTowerLegGeo = new THREE.BoxGeometry(1.35, 22.0, 1.65);
+            this.bridgeCrossBeamGeo = new THREE.BoxGeometry(roadW + 5.6, 1.25, 1.45);
+            this.bridgeCableGeo = new THREE.CylinderGeometry(0.055, 0.055, 18.5, 8);
+            this.bridgeWaterGeo = new THREE.PlaneGeometry(42, L);
+            this.bridgeWaterGeo.rotateX(-Math.PI / 2);
+
+            this.bridgeTowerMat = new THREE.MeshStandardMaterial({
+                color: 0xb91c1c,
+                roughness: 0.38,
+                metalness: 0.65
+            });
+            this.bridgeCableMat = new THREE.MeshStandardMaterial({
+                color: 0xe2e8f0,
+                emissive: 0x38bdf8,
+                emissiveIntensity: 0.35,
+                roughness: 0.22,
+                metalness: 0.88
+            });
+            this.bridgeWaterMat = new THREE.MeshStandardMaterial({
+                color: 0x082f49,
+                roughness: 0.14,
+                metalness: 0.82
+            });
+
             if (this.currentActiveWeather) {
                 this.applyWeatherMaterials(this.getWeatherPreset(this.currentActiveWeather));
             }
@@ -10377,6 +10443,42 @@
                     this.highestChunkZ = chunkZ;
                 }
             }
+        }
+
+        getBiomeForZ(zPos) {
+            if (this.forcedBiome) return this.forcedBiome;
+            if (this.mode === 'drift') return 'highway';
+            // Cycle highway -> tunnel -> bridge every 600 meters (starting with highway for 0..600m)
+            const sector = Math.floor(Math.max(0, zPos) / 600) % 3;
+            if (sector === 1) return 'tunnel';
+            if (sector === 2) return 'bridge';
+            return 'highway';
+        }
+
+        applyChunkBiome(chunk, biome) {
+            if (!chunk || !chunk.userData) return;
+            chunk.userData.biome = biome;
+            if (chunk.userData.sceneryGroup) {
+                chunk.userData.sceneryGroup.visible = (biome === 'highway');
+            }
+            if (chunk.userData.tunnelGroup) {
+                chunk.userData.tunnelGroup.visible = (biome === 'tunnel');
+            }
+            if (chunk.userData.bridgeGroup) {
+                chunk.userData.bridgeGroup.visible = (biome === 'bridge');
+            }
+        }
+
+        setBiome(biome) {
+            const valid = ['highway', 'tunnel', 'bridge'];
+            const next = valid.includes(biome) ? biome : 'highway';
+            this.forcedBiome = next;
+            this.currentBiome = next;
+            this.state.currentBiome = next;
+            if (this.roadChunks && this.roadChunks.length > 0) {
+                this.roadChunks.forEach(ch => this.applyChunkBiome(ch, next));
+            }
+            return next;
         }
 
         createRoadChunk(zPos, hasGantry = false) {
@@ -10778,6 +10880,74 @@
 
             chunk.add(sceneryGroup);
             chunk.userData.sceneryGroup = sceneryGroup;
+
+            // 11. Lefortovo Tunnel Biome Group (concrete walls, vaulted roof, sodium orange ceiling lights & jet fans)
+            const tunnelGroup = new THREE.Group();
+            tunnelGroup.name = 'LefortovoTunnelGroup';
+            [-1, 1].forEach(side => {
+                const wallX = side * (roadW * 0.5 + 1.65);
+                const wall = new THREE.Mesh(this.tunnelWallGeo, this.tunnelConcreteMat);
+                wall.name = side < 0 ? 'TunnelWallL' : 'TunnelWallR';
+                wall.position.set(wallX, 4.2, 0);
+                tunnelGroup.add(wall);
+
+                const refStrip = new THREE.Mesh(this.tunnelReflectorGeo, this.tunnelReflectorMat);
+                refStrip.name = 'TunnelReflectorStrip';
+                refStrip.position.set(wallX - side * 0.50, 1.25, 0);
+                tunnelGroup.add(refStrip);
+            });
+            const roof = new THREE.Mesh(this.tunnelRoofGeo, this.tunnelConcreteMat);
+            roof.name = 'TunnelVaultRoof';
+            roof.position.set(0, 8.6, 0);
+            tunnelGroup.add(roof);
+
+            for (let lz = -L * 0.38; lz <= L * 0.38; lz += L * 0.38) {
+                [-4.2, 4.2].forEach(lx => {
+                    const sodiumLamp = new THREE.Mesh(this.tunnelLightStripGeo, this.tunnelSodiumMat);
+                    sodiumLamp.name = 'TunnelSodiumLight';
+                    sodiumLamp.position.set(lx, 8.12, lz);
+                    tunnelGroup.add(sodiumLamp);
+                });
+            }
+            [-2.2, 2.2].forEach(fx => {
+                const fan = new THREE.Mesh(this.tunnelFanGeo, this.guardrailMat);
+                fan.name = 'TunnelJetFan';
+                fan.position.set(fx, 7.85, 0);
+                tunnelGroup.add(fan);
+            });
+            chunk.add(tunnelGroup);
+            chunk.userData.tunnelGroup = tunnelGroup;
+
+            // 12. Cable-Stayed Bridge Biome Group (tall crimson pylon towers, diagonal stay cables & river water below)
+            const bridgeGroup = new THREE.Group();
+            bridgeGroup.name = 'CableBridgeGroup';
+            [-1, 1].forEach(side => {
+                const water = new THREE.Mesh(this.bridgeWaterGeo, this.bridgeWaterMat);
+                water.name = 'BridgeRiverWater';
+                water.position.set(side * (roadW * 0.5 + 21.5), -2.5, 0);
+                bridgeGroup.add(water);
+
+                const towerLeg = new THREE.Mesh(this.bridgeTowerLegGeo, this.bridgeTowerMat);
+                towerLeg.name = 'CableBridgeTower';
+                towerLeg.position.set(side * (roadW * 0.5 + 2.2), 10.5, 0);
+                bridgeGroup.add(towerLeg);
+
+                // Diagonal stay cables fanning from tower top to bridge deck
+                [-1, 1].forEach(dirZ => {
+                    const cable = new THREE.Mesh(this.bridgeCableGeo, this.bridgeCableMat);
+                    cable.name = 'BridgeStayCable';
+                    cable.position.set(side * (roadW * 0.5 + 1.8), 9.2, dirZ * (L * 0.24));
+                    cable.rotation.x = dirZ * 0.68;
+                    bridgeGroup.add(cable);
+                });
+            });
+            const crossCrown = new THREE.Mesh(this.bridgeCrossBeamGeo, this.bridgeTowerMat);
+            crossCrown.position.set(0, 18.8, 0);
+            bridgeGroup.add(crossCrown);
+            chunk.add(bridgeGroup);
+            chunk.userData.bridgeGroup = bridgeGroup;
+
+            this.applyChunkBiome(chunk, this.getBiomeForZ(zPos));
 
             return chunk;
         }
@@ -12185,7 +12355,7 @@
                 this.playerBackfireLight.position.set(0, exhaustY + 0.08, exhaustZ - 0.16);
                 this.playerCar.add(this.playerBackfireLight);
 
-                // 5. Glowing Brake Discs Collection
+                // 5. Glowing Brake Discs Collection (with guaranteed 4-wheel rotor glow meshes)
                 this.playerBrakeDiscs = [];
                 this.playerCar.traverse(child => {
                     if (child.isMesh && child.material && (
@@ -12195,18 +12365,104 @@
                         this.playerBrakeDiscs.push(child);
                     }
                 });
+                if (this.playerBrakeDiscs.length < 4) {
+                    const discGeo = new THREE.CylinderGeometry(0.24, 0.24, 0.03, 16);
+                    discGeo.rotateZ(Math.PI / 2);
+                    const wheelCoords = [
+                        [-halfW * 0.88, 0.34, halfL * 0.62],
+                        [halfW * 0.88, 0.34, halfL * 0.62],
+                        [-halfW * 0.88, 0.34, -halfL * 0.62],
+                        [halfW * 0.88, 0.34, -halfL * 0.62]
+                    ];
+                    wheelCoords.forEach((pos, idx) => {
+                        const discMat = new THREE.MeshStandardMaterial({
+                            color: 0x334155,
+                            roughness: 0.35,
+                            metalness: 0.85,
+                            emissive: new THREE.Color(0xff3300),
+                            emissiveIntensity: 0
+                        });
+                        const discMesh = new THREE.Mesh(discGeo, discMat);
+                        discMesh.name = 'BrakeDiscGlowMesh_' + idx;
+                        discMesh.position.set(pos[0], pos[1], pos[2]);
+                        this.playerCar.add(discMesh);
+                        this.playerBrakeDiscs.push(discMesh);
+                    });
+                }
 
-                // 6. Active Aero Spoiler / Air-Brake Flaps
+                // 6. Active Aero Spoiler / Air-Brake Flaps (with deployable active wing fallback)
                 this.playerActiveAero = [];
                 this.playerCar.traverse(child => {
                     const n = String(child.name || '').toLowerCase();
                     if (child.isMesh && (n.includes('spoiler') || n.includes('wing') || n.includes('aero_wing'))) {
                         this.playerActiveAero.push({
                             mesh: child,
-                            baseRotX: child.rotation.x
+                            baseRotX: child.rotation.x,
+                            basePosY: child.position.y
                         });
                     }
                 });
+                if (this.playerActiveAero.length === 0) {
+                    const aeroWingGeo = new THREE.BoxGeometry(halfW * 1.65, 0.035, 0.26);
+                    const aeroWingMat = new THREE.MeshStandardMaterial({
+                        color: 0x111827,
+                        roughness: 0.28,
+                        metalness: 0.75
+                    });
+                    const aeroWingMesh = new THREE.Mesh(aeroWingGeo, aeroWingMat);
+                    aeroWingMesh.name = 'ActiveAeroSpoiler';
+                    aeroWingMesh.position.set(0, 0.92, -halfL * 0.88);
+                    this.playerCar.add(aeroWingMesh);
+                    this.playerActiveAero.push({
+                        mesh: aeroWingMesh,
+                        baseRotX: 0,
+                        basePosY: 0.92
+                    });
+                }
+
+                // 7. Hypersonic 300+ km/h Twin Fire Trails («Огненный след»)
+                this.playerFireTrails = [];
+                [-1, 1].forEach((side, idx) => {
+                    const trailGroup = new THREE.Group();
+                    trailGroup.name = 'HypersonicFireTrail_' + idx;
+                    const outerGeo = new THREE.PlaneGeometry(0.28, 4.8);
+                    outerGeo.rotateX(-Math.PI / 2);
+                    const outerMat = new THREE.MeshBasicMaterial({
+                        color: 0xff5500,
+                        transparent: true,
+                        opacity: 0.85,
+                        blending: THREE.AdditiveBlending,
+                        depthWrite: false,
+                        side: THREE.DoubleSide
+                    });
+                    const outerMesh = new THREE.Mesh(outerGeo, outerMat);
+                    outerMesh.name = 'FireTrailOuter';
+                    trailGroup.add(outerMesh);
+
+                    const coreGeo = new THREE.PlaneGeometry(0.14, 4.2);
+                    coreGeo.rotateX(-Math.PI / 2);
+                    const coreMat = new THREE.MeshBasicMaterial({
+                        color: 0xfef08a,
+                        transparent: true,
+                        opacity: 0.92,
+                        blending: THREE.AdditiveBlending,
+                        depthWrite: false,
+                        side: THREE.DoubleSide
+                    });
+                    const coreMesh = new THREE.Mesh(coreGeo, coreMat);
+                    coreMesh.position.y = 0.005;
+                    coreMesh.name = 'FireTrailCore';
+                    trailGroup.add(coreMesh);
+
+                    trailGroup.position.set(side * halfW * 0.74, 0.04, exhaustZ - 2.45);
+                    trailGroup.visible = false;
+                    trailGroup.userData = { outerMat, coreMat, side };
+                    this.playerCar.add(trailGroup);
+                    this.playerFireTrails.push(trailGroup);
+                });
+
+                // 8. 1st-Person 3D Cockpit Interior Rig
+                this.buildCockpitRig();
 
                 // 4. Underglow Neon (if player has neon tuning)
                 const neonVal = this.styling.neon;
@@ -12277,6 +12533,141 @@
             }
         }
 
+        buildCockpitRig() {
+            const THREE = this.THREE;
+            if (!THREE || !this.playerCar) return;
+            if (this.cockpitGroup && this.cockpitGroup.parent) {
+                this.cockpitGroup.parent.remove(this.cockpitGroup);
+            }
+
+            const cockpit = new THREE.Group();
+            cockpit.name = 'CockpitInteriorRig';
+
+            const alcantaraMat = new THREE.MeshStandardMaterial({ color: 0x111827, roughness: 0.85, metalness: 0.1 });
+            const carbonMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.35, metalness: 0.65 });
+            const dashGlowMat = new THREE.MeshStandardMaterial({
+                color: 0x0f172a,
+                emissive: new THREE.Color(0x38bdf8),
+                emissiveIntensity: 1.4
+            });
+
+            // 1. Dashboard Cowl & Instrument Binnacle
+            const dashCowl = new THREE.Mesh(new THREE.BoxGeometry(1.52, 0.22, 0.55), alcantaraMat);
+            dashCowl.name = 'CockpitDashCowl';
+            dashCowl.position.set(0, 0.80, 0.68);
+            cockpit.add(dashCowl);
+
+            const binnacle = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.15, 0.28), carbonMat);
+            binnacle.position.set(-0.36, 0.92, 0.58);
+            cockpit.add(binnacle);
+
+            const digitalDash = new THREE.Mesh(new THREE.PlaneGeometry(0.34, 0.11), dashGlowMat);
+            digitalDash.name = 'CockpitDigitalDash';
+            digitalDash.position.set(-0.36, 0.92, 0.435);
+            digitalDash.rotation.y = Math.PI;
+            cockpit.add(digitalDash);
+            this.cockpitDigitalDash = digitalDash;
+
+            // 2. RPM Shift Light Strip (6 LEDs on top of instrument binnacle)
+            this.cockpitShiftLights = [];
+            const ledGeo = new THREE.BoxGeometry(0.036, 0.018, 0.02);
+            for (let i = 0; i < 6; i++) {
+                const baseCol = i < 2 ? 0x22c55e : (i < 4 ? 0xf59e0b : 0xef4444);
+                const ledMat = new THREE.MeshStandardMaterial({
+                    color: 0x1e293b,
+                    emissive: new THREE.Color(baseCol),
+                    emissiveIntensity: 0.15
+                });
+                const led = new THREE.Mesh(ledGeo, ledMat);
+                led.name = 'CockpitShiftLight_' + i;
+                led.position.set(-0.485 + i * 0.05, 1.00, 0.45);
+                led.userData = { baseColor: baseCol, index: i };
+                cockpit.add(led);
+                this.cockpitShiftLights.push(led);
+            }
+
+            // 3. Left & Right A-Pillars + Roof Header + Rearview Mirror
+            const pillarGeo = new THREE.BoxGeometry(0.075, 0.58, 0.09);
+            const pillarL = new THREE.Mesh(pillarGeo, alcantaraMat);
+            pillarL.name = 'CockpitAPillarL';
+            pillarL.position.set(-0.74, 1.12, 0.56);
+            pillarL.rotation.x = -0.52;
+            pillarL.rotation.z = -0.14;
+            cockpit.add(pillarL);
+
+            const pillarR = new THREE.Mesh(pillarGeo, alcantaraMat);
+            pillarR.name = 'CockpitAPillarR';
+            pillarR.position.set(0.74, 1.12, 0.56);
+            pillarR.rotation.x = -0.52;
+            pillarR.rotation.z = 0.14;
+            cockpit.add(pillarR);
+
+            const mirrorFrame = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.065, 0.04), carbonMat);
+            mirrorFrame.name = 'CockpitRearMirror';
+            mirrorFrame.position.set(0.0, 1.27, 0.46);
+            cockpit.add(mirrorFrame);
+
+            // 4. Sport Steering Wheel with 12-o'clock Red Center Stripe
+            const wheelGroup = new THREE.Group();
+            wheelGroup.name = 'CockpitSteeringWheel';
+            wheelGroup.position.set(-0.36, 0.89, 0.36);
+
+            const rimGeo = new THREE.TorusGeometry ? new THREE.TorusGeometry(0.165, 0.022, 10, 24) : new THREE.CylinderGeometry(0.165, 0.165, 0.03, 18);
+            const rimMesh = new THREE.Mesh(rimGeo, alcantaraMat);
+            wheelGroup.add(rimMesh);
+
+            const hubMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.055, 0.04, 12), carbonMat);
+            hubMesh.rotation.x = Math.PI / 2;
+            wheelGroup.add(hubMesh);
+
+            const spokeGeo = new THREE.BoxGeometry(0.30, 0.028, 0.022);
+            const spokeH = new THREE.Mesh(spokeGeo, carbonMat);
+            wheelGroup.add(spokeH);
+
+            const stripeMat = new THREE.MeshStandardMaterial({
+                color: 0xef4444,
+                emissive: new THREE.Color(0xef4444),
+                emissiveIntensity: 0.8
+            });
+            const centerStripe = new THREE.Mesh(new THREE.BoxGeometry(0.026, 0.048, 0.048), stripeMat);
+            centerStripe.name = 'SteeringCenterStripe';
+            centerStripe.position.set(0, 0.165, 0);
+            wheelGroup.add(centerStripe);
+
+            cockpit.add(wheelGroup);
+            this.cockpitSteeringWheel = wheelGroup;
+
+            // 5. Animated Windshield Wipers (Left & Right)
+            const wiperMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.4, metalness: 0.8 });
+            const wiperBladeGeo = new THREE.BoxGeometry(0.016, 0.42, 0.016);
+
+            const wiperPivotL = new THREE.Group();
+            wiperPivotL.name = 'CockpitWiperL';
+            wiperPivotL.position.set(-0.46, 0.90, 0.82);
+            const bladeL = new THREE.Mesh(wiperBladeGeo, wiperMat);
+            bladeL.position.set(0, 0.21, 0);
+            wiperPivotL.add(bladeL);
+            wiperPivotL.rotation.z = -1.15;
+            cockpit.add(wiperPivotL);
+            this.cockpitWiperL = wiperPivotL;
+
+            const wiperPivotR = new THREE.Group();
+            wiperPivotR.name = 'CockpitWiperR';
+            wiperPivotR.position.set(0.08, 0.90, 0.82);
+            const bladeR = new THREE.Mesh(wiperBladeGeo, wiperMat);
+            bladeR.position.set(0, 0.21, 0);
+            wiperPivotR.add(bladeR);
+            wiperPivotR.rotation.z = -1.15;
+            cockpit.add(wiperPivotR);
+            this.cockpitWiperR = wiperPivotR;
+
+            const isCockpitNow = (this.cameraMode === 4 || this.cameraMode === 'cockpit');
+            cockpit.visible = isCockpitNow;
+            this.playerCar.add(cockpit);
+            this.cockpitGroup = cockpit;
+            return cockpit;
+        }
+
         stop() {
             this.isRunning = false;
             if (this.animFrameId) {
@@ -12305,6 +12696,9 @@
             } else if (typeof mode === 'number') {
                 this.cameraMode = ((mode % this.cameraModes.length) + this.cameraModes.length) % this.cameraModes.length;
             }
+            if (this.cockpitGroup) {
+                this.cockpitGroup.visible = (this.cameraMode === 4 || this.cameraMode === 'cockpit');
+            }
             this.updateChaseCamera(0.016);
             return this.cameraMode;
         }
@@ -12314,10 +12708,19 @@
                 ? this.cameraMode
                 : Math.max(0, this.cameraModes.findIndex(m => m.name === this.cameraMode));
             this.cameraMode = (curIdx + 1) % this.cameraModes.length;
+            if (this.cockpitGroup) {
+                this.cockpitGroup.visible = (this.cameraMode === 4 || this.cameraMode === 'cockpit');
+            }
             this.updateChaseCamera(0.016);
             if (this.options.onSound) this.options.onSound('camera');
-            const modeNames = ['Вид сзади (Динамический)', 'Вид сзади (Спортивный)', 'Капот / Бампер', 'Вид сверху'];
-            if (this.options.onPopup) this.options.onPopup('📷 ' + modeNames[this.cameraMode], '#38bdf8');
+            const modeNames = [
+                'Вид сзади (Динамический)',
+                'Вид сзади (Спортивный)',
+                'Капот / Бампер',
+                'Вид сверху',
+                '🕹️ Салон (От 1-го лица)'
+            ];
+            if (this.options.onPopup) this.options.onPopup('📷 ' + (modeNames[this.cameraMode] || 'Камера'), '#38bdf8');
             return this.cameraMode;
         }
 
@@ -12603,17 +13006,86 @@
                 state.peakSpeed = state.speed;
             }
 
-            // 3. FORWARD DISPLACEMENT (DISTANCE) & RACE INCOME
+            // 3. FORWARD DISPLACEMENT (DISTANCE), BIOME SECTORS & RACE INCOME
             const forwardSpeedMps = state.speed / 3.6;
             const dz = forwardSpeedMps * dt;
             state.z += dz;
             state.distanceKm = state.z / 1000;
 
-            // Continuous speed earnings on the highway
+            // Dynamic Highway Biome Transitions (Highway -> Lefortovo Tunnel -> Cable-Stayed Bridge)
+            const detectedBiome = (this.mode === 'drift') ? 'highway' : this.getBiomeForZ(state.z);
+            if (detectedBiome !== this.currentBiome) {
+                this.currentBiome = detectedBiome;
+                state.currentBiome = detectedBiome;
+                if (detectedBiome === 'tunnel') {
+                    state.backfireTimer = 0.22;
+                    state.backfireColor = 'blue';
+                    if (this.playerHeadlights) {
+                        this.playerHeadlights.forEach(hl => { hl.intensity = 6.2; });
+                    }
+                    if (this.options && this.options.onPopup) {
+                        this.options.onPopup('🚇 ЛЕФОРТОВСКИЙ ТУННЕЛЬ! АКУСТИЧЕСКИЙ ВЫХЛОП!', '#f59e0b');
+                    }
+                    if (this.options && this.options.onSound) this.options.onSound('backfire');
+                } else if (detectedBiome === 'bridge') {
+                    if (this.playerHeadlights) {
+                        const wp = this.getWeatherPreset(this.currentActiveWeather || 'night');
+                        this.playerHeadlights.forEach(hl => { hl.intensity = wp ? wp.headlightIntensity : 4.2; });
+                    }
+                    if (this.options && this.options.onPopup) {
+                        this.options.onPopup('🌉 ВАНТОВЫЙ МОСТ! +15% К СКОРОСТНОМУ ДОХОДУ!', '#38bdf8');
+                    }
+                } else {
+                    if (this.playerHeadlights) {
+                        const wp = this.getWeatherPreset(this.currentActiveWeather || 'night');
+                        this.playerHeadlights.forEach(hl => { hl.intensity = wp ? wp.headlightIntensity : 4.2; });
+                    }
+                }
+            }
+            state.currentBiome = this.currentBiome;
+
+            // Continuous speed earnings on the highway (+15% bonus on Cable-Stayed Bridge)
+            const biomeCashMult = (this.currentBiome === 'bridge') ? 1.15 : 1.0;
             if (state.speed > 25) {
-                const cashRatePerSec = (state.speed * 4.0) * (state.rewardMult || 1.0);
+                const cashRatePerSec = (state.speed * 4.0) * (state.rewardMult || 1.0) * biomeCashMult;
                 state.earnedCash += cashRatePerSec * dt;
             }
+
+            // 3b. HYPERSONIC 300+ KM/H AFTERBURNER & TWIN FIRE TRAILS («Огненный след»)
+            const isHypersonicNow = state.speed >= 300;
+            state.isHypersonic = isHypersonicNow;
+            this.isHypersonic = isHypersonicNow;
+            if ((this.hypersonicPopupCooldown || 0) > 0) {
+                this.hypersonicPopupCooldown = Math.max(0, this.hypersonicPopupCooldown - dt);
+            }
+            if (isHypersonicNow) {
+                state.hypersonicTime = (state.hypersonicTime || 0) + dt;
+                const hyperBonus = 450 * (state.rewardMult || 1.0) * dt;
+                state.earnedCash += hyperBonus;
+                if ((this.hypersonicPopupCooldown || 0) <= 0) {
+                    this.hypersonicPopupCooldown = 8.0;
+                    const hyperMsg = '🔥 ОГНЕННЫЙ СЛЕД 300+ КМ/Ч! x1.5 ФОРСАЖ!';
+                    if (typeof this.onPopup === 'function') this.onPopup(hyperMsg, '#f97316');
+                    else if (this.options && typeof this.options.onPopup === 'function') this.options.onPopup(hyperMsg, '#f97316');
+                }
+                if (this.playerFireTrails && this.playerFireTrails.length > 0) {
+                    const stretch = 1.0 + Math.min(0.65, (state.speed - 300) / 140) + Math.random() * 0.18;
+                    const flicker = 0.80 + Math.random() * 0.20;
+                    this.playerFireTrails.forEach(trail => {
+                        trail.visible = true;
+                        trail.scale.set(0.92 + Math.random() * 0.16, 1.0, stretch);
+                        const tu = trail.userData || {};
+                        if (tu.outerMat) tu.outerMat.opacity = 0.82 * flicker;
+                        if (tu.coreMat) tu.coreMat.opacity = 0.94 * flicker;
+                    });
+                }
+                if (Math.random() < 0.35) {
+                    this.spawnSparks(state.x + (Math.random() - 0.5) * 1.1, 0.12, state.z - 2.3, 3);
+                }
+            } else if (this.playerFireTrails && this.playerFireTrails.length > 0) {
+                this.playerFireTrails.forEach(trail => { trail.visible = false; });
+            }
+
             this.earnedCash = state.earnedCash;
 
             // Milestone distance bonus for every full 1 km driven
@@ -12963,34 +13435,45 @@
                 });
             }
 
-            // Active aerodynamics: air-brake rear wing tilt on hard braking
+            // Active aerodynamics: deployable rear wing lift at high speed (>180 km/h) + air-brake tilt on hard braking
             if (this.playerActiveAero && this.playerActiveAero.length > 0) {
                 const isAirBraking = keys.brake && state.speed > 100;
-                const targetWingTilt = isAirBraking ? 0.32 : 0;
+                const isHighSpeedAero = state.speed > 180;
+                const targetWingTilt = isAirBraking ? 0.34 : (isHighSpeedAero ? 0.09 : 0);
+                const targetWingLift = (isAirBraking || isHighSpeedAero) ? 0.055 : 0;
                 this.playerActiveAero.forEach(aero => {
-                    const cur = aero.mesh.rotation.x;
-                    aero.mesh.rotation.x = cur + (aero.baseRotX + targetWingTilt - cur) * Math.min(1.0, 9.0 * dt);
+                    const curRot = aero.mesh.rotation.x;
+                    aero.mesh.rotation.x = curRot + (aero.baseRotX + targetWingTilt - curRot) * Math.min(1.0, 9.0 * dt);
+                    if (typeof aero.basePosY === 'number' && aero.mesh.position) {
+                        const curY = aero.mesh.position.y;
+                        aero.mesh.position.y = curY + (aero.basePosY + targetWingLift - curY) * Math.min(1.0, 8.0 * dt);
+                    }
                 });
             }
 
-            // Exhaust backfire animation update (short, punchy pops on shifts)
+            // Exhaust backfire animation update (short, punchy pops on shifts; boosted reverb in Lefortovo Tunnel)
+            if (this.currentBiome === 'tunnel' && gasActive && state.speed > 160 && state.backfireTimer <= 0 && Math.random() < 0.04) {
+                state.backfireTimer = 0.14;
+                state.backfireColor = 'blue';
+            }
             if (state.backfireTimer > 0) {
                 state.backfireTimer -= dt;
+                const tunnelBoost = (this.currentBiome === 'tunnel') ? 1.45 : 1.0;
                 const progress = Math.max(0, Math.min(1.0, state.backfireTimer / 0.18));
-                const bfScaleW = (0.80 + Math.random() * 0.30) * Math.min(1.0, progress * 1.4);
-                const bfScaleL = (0.85 + Math.random() * 0.40) * (0.45 + progress * 0.55);
+                const bfScaleW = (0.80 + Math.random() * 0.30) * Math.min(1.0, progress * 1.4) * tunnelBoost;
+                const bfScaleL = (0.85 + Math.random() * 0.40) * (0.45 + progress * 0.55) * tunnelBoost;
                 const isBlue = state.backfireColor === 'blue';
                 this.playerBackfireFlames.forEach(bf => {
                     bf.visible = true;
                     bf.scale.set(bfScaleW, bfScaleW, bfScaleL);
                     if (bf.material) {
                         bf.material.color.setHex(isBlue ? 0x38bdf8 : (Math.random() < 0.5 ? 0xff5500 : 0xff9900));
-                        bf.material.opacity = 0.80 * progress;
+                        bf.material.opacity = Math.min(1.0, 0.80 * progress * tunnelBoost);
                     }
                 });
                 if (this.playerBackfireLight) {
                     this.playerBackfireLight.color.setHex(isBlue ? 0x38bdf8 : 0xff7700);
-                    this.playerBackfireLight.intensity = 2.4 * progress;
+                    this.playerBackfireLight.intensity = 2.4 * progress * tunnelBoost;
                 }
                 if (Math.random() < 0.3) {
                     this.spawnSparks(state.x + (Math.random() - 0.5) * 0.5, 0.22, state.z - 2.1, 2);
@@ -13002,7 +13485,7 @@
                 }
             }
 
-            // 6. UPDATE PLAYER CAR 3D MESH
+            // 6. UPDATE PLAYER CAR 3D MESH & 1ST-PERSON COCKPIT RIG
             if (this.playerCar) {
                 this.playerCar.position.set(state.x, (state.downforceY || 0) + engineTremorY + (state.suspensionY || 0), state.z);
                 this.playerCar.rotation.set(state.pitchSquat, state.yawAngle, state.bodyRoll + engineTremorRoll);
@@ -13018,13 +13501,51 @@
                 }
 
                 // 3. INERTIA & STEERING MOMENTUM (Front wheel visual steering vs chassis yaw delay)
+                const targetSteerAngle = steerInput * 0.32;
+                state.steerAngle = (state.steerAngle || 0) + (targetSteerAngle - (state.steerAngle || 0)) * Math.min(1.0, 22.0 * dt);
                 if (this.playerSteerWheels && this.playerSteerWheels.length > 0) {
-                    const targetSteerAngle = steerInput * 0.32;
-                    state.steerAngle = (state.steerAngle || 0) + (targetSteerAngle - (state.steerAngle || 0)) * Math.min(1.0, 22.0 * dt);
                     this.playerSteerWheels.forEach(w => {
                         const baseY = w.userData.baseRotY || 0;
                         w.rotation.y = baseY + state.steerAngle;
                     });
+                }
+
+                // 4. 1st-Person Cockpit Interior Rig Animations (Steering wheel, RPM Shift Lights, Wipers)
+                if (this.cockpitSteeringWheel) {
+                    this.cockpitSteeringWheel.rotation.z = -(state.steerAngle || 0) * 2.35;
+                }
+                if (this.cockpitShiftLights && this.cockpitShiftLights.length > 0) {
+                    const rpmSpan = Math.max(1, (state.maxRpm || 8500) - (state.idleRpm || 1000));
+                    const rpmFrac = Math.max(0, Math.min(1, ((state.rpm || 1000) - (state.idleRpm || 1000)) / rpmSpan));
+                    const isRedlineFlash = rpmFrac >= 0.90 && (Math.floor((state.time || 0) * 20) % 2 === 0);
+                    this.cockpitShiftLights.forEach((led, idx) => {
+                        const threshold = (idx + 1) / (this.cockpitShiftLights.length + 0.5);
+                        if (led.material) {
+                            if (isRedlineFlash) {
+                                led.material.emissive.setHex(0xef4444);
+                                led.material.emissiveIntensity = 3.2;
+                            } else if (rpmFrac >= threshold) {
+                                led.material.emissive.setHex(led.userData.baseColor || 0x22c55e);
+                                led.material.emissiveIntensity = 2.2;
+                            } else {
+                                led.material.emissiveIntensity = 0.12;
+                            }
+                        }
+                    });
+                }
+                if (this.cockpitWiperL && this.cockpitWiperR) {
+                    const isWetWeather = (this.currentActiveWeather === 'rain' || this.currentActiveWeather === 'snow') && this.currentBiome !== 'tunnel';
+                    if (isWetWeather) {
+                        const wiperSpeed = this.currentActiveWeather === 'rain' ? 6.5 : 4.2;
+                        this.wiperPhase = (this.wiperPhase || 0) + dt * wiperSpeed;
+                        const sweep = (Math.sin(this.wiperPhase) + 1) * 0.5; // 0..1
+                        const wiperAngle = -1.15 + sweep * 1.05;
+                        this.cockpitWiperL.rotation.z = wiperAngle;
+                        this.cockpitWiperR.rotation.z = wiperAngle;
+                    } else {
+                        this.cockpitWiperL.rotation.z += (-1.15 - this.cockpitWiperL.rotation.z) * Math.min(1.0, 8.0 * dt);
+                        this.cockpitWiperR.rotation.z += (-1.15 - this.cockpitWiperR.rotation.z) * Math.min(1.0, 8.0 * dt);
+                    }
                 }
 
                 // SGU Flasher strobe oscillation
@@ -13800,6 +14321,10 @@
                     this.highestChunkZ = chunk.position.z;
                     if (chunk.userData) chunk.userData.radarTriggered = false;
                 }
+                const targetChunkBiome = (this.mode === 'drift') ? 'highway' : this.getBiomeForZ(chunk.position.z);
+                if (!chunk.userData || chunk.userData.biome !== targetChunkBiome) {
+                    this.applyChunkBiome(chunk, targetChunkBiome);
+                }
                 chunk.position.x = 0;
                 chunk.rotation.y = 0;
             });
@@ -13807,23 +14332,32 @@
 
         updateChaseCamera(dt) {
             const state = this.state;
+            const isCockpit = this.cameraMode === 4 || this.cameraMode === 'cockpit';
             const isHood = this.cameraMode === 2 || this.cameraMode === 'hood';
             const isTopDown = this.cameraMode === 3 || this.cameraMode === 'top';
-            const modeIdx = isTopDown ? 3 : (isHood ? 2 : (this.cameraMode === 'chase_close' ? 1 : (typeof this.cameraMode === 'number' ? this.cameraMode : 0)));
+            const modeIdx = isCockpit ? 4 : (isTopDown ? 3 : (isHood ? 2 : (this.cameraMode === 'chase_close' ? 1 : (typeof this.cameraMode === 'number' ? this.cameraMode : 0))));
             const mode = this.cameraModes[modeIdx] || this.cameraModes[0];
             const isPortrait = this.camera && this.camera.aspect < 1.0;
+
+            if (this.cockpitGroup) {
+                this.cockpitGroup.visible = isCockpit;
+            }
 
             // 1. Target camera offset based on camera mode and viewport aspect
             // In portrait aspect, elevate camera slightly so the vehicle sits higher in frame,
             // preventing lower HUD gauges (speedometer & nitro) from covering the bumper and plate.
-            const accelLag = (!isHood && !isTopDown) ? ((this.keys && this.keys.gas) ? 0.30 : ((this.keys && this.keys.brake) ? -0.25 : 0)) : 0;
-            const targetCamX = isTopDown ? (state.x * 0.65) : (isHood ? state.x : state.x * 0.75);
-            const targetCamY = mode.offset.y + (isPortrait && !isHood && !isTopDown ? 0.85 : 0);
-            const targetCamZ = state.z + mode.offset.z - (isPortrait && !isHood && !isTopDown ? 1.05 : 0) - accelLag * Math.min(1.0, state.speed / 100);
+            const accelLag = (!isHood && !isTopDown && !isCockpit) ? ((this.keys && this.keys.gas) ? 0.30 : ((this.keys && this.keys.brake) ? -0.25 : 0)) : 0;
+            const targetCamX = isCockpit
+                ? (state.x + mode.offset.x)
+                : (isTopDown ? (state.x * 0.65) : (isHood ? state.x : state.x * 0.75));
+            const targetCamY = isCockpit
+                ? (mode.offset.y + (state.downforceY || 0) + (state.suspensionY || 0))
+                : (mode.offset.y + (isPortrait && !isHood && !isTopDown ? 0.85 : 0));
+            const targetCamZ = state.z + mode.offset.z - (isPortrait && !isHood && !isTopDown && !isCockpit ? 1.05 : 0) - accelLag * Math.min(1.0, state.speed / 100);
 
             // 2. Smooth spring follow for camera position (glides smoothly across lanes without snapping)
-            const posLerp = isHood ? 16.0 : (isTopDown ? 12.0 : 6.0);
-            if (Math.abs(targetCamY - this.camPos.y) > 8.0) {
+            const posLerp = isCockpit ? 28.0 : (isHood ? 16.0 : (isTopDown ? 12.0 : 6.0));
+            if (isCockpit || Math.abs(targetCamY - this.camPos.y) > 8.0) {
                 this.camPos.x = targetCamX;
                 this.camPos.y = targetCamY;
             } else {
@@ -13838,13 +14372,14 @@
                 state.shakeAmount = Math.max(0, state.shakeAmount - 2.5 * dt);
                 state.cameraShake = state.shakeAmount;
                 this.cameraShake = state.shakeAmount;
-                shakeX = (Math.random() - 0.5) * state.shakeAmount * 0.35;
-                shakeY = (Math.random() - 0.5) * state.shakeAmount * 0.35;
+                const shakeScale = isCockpit ? 0.14 : 0.35;
+                shakeX = (Math.random() - 0.5) * state.shakeAmount * shakeScale;
+                shakeY = (Math.random() - 0.5) * state.shakeAmount * shakeScale;
             }
 
             // High-speed subtle road vibration (>200 km/h)
             if (state.speed > 200) {
-                const vib = ((state.speed - 200) / 140) * 0.012;
+                const vib = ((state.speed - 200) / 140) * (isCockpit ? 0.006 : 0.012);
                 shakeX += (Math.random() - 0.5) * vib;
                 shakeY += (Math.random() - 0.5) * vib;
             }
@@ -13854,12 +14389,16 @@
             // 4. Stable look-at point:
             // Aligned forward along the camera trajectory so the road ahead does NOT violently whip
             // diagonally across the screen when steering. In drift, adds gentle slide anticipation.
-            const driftLookBias = (state.isDrifting && !isHood && !isTopDown) ? state.yawAngle * 0.16 : 0;
-            const targetLookX = isTopDown ? (state.x * 0.65) : (isHood ? state.x : (this.camPos.x * 0.82 + state.x * 0.18 + driftLookBias));
-            const targetLookY = mode.lookOffset.y - (isPortrait && !isHood && !isTopDown ? 0.45 : 0);
+            const driftLookBias = (state.isDrifting && !isHood && !isTopDown && !isCockpit) ? state.yawAngle * 0.16 : 0;
+            const targetLookX = isCockpit
+                ? (state.x + mode.lookOffset.x + Math.sin(state.yawAngle || 0) * 6.0)
+                : (isTopDown ? (state.x * 0.65) : (isHood ? state.x : (this.camPos.x * 0.82 + state.x * 0.18 + driftLookBias)));
+            const targetLookY = isCockpit
+                ? (mode.lookOffset.y - (state.pitchSquat || 0) * 4.5)
+                : (mode.lookOffset.y - (isPortrait && !isHood && !isTopDown ? 0.45 : 0));
             const targetLookZ = state.z + mode.lookOffset.z;
 
-            const lookLerp = (isHood || isTopDown) ? 16.0 : 6.5;
+            const lookLerp = isCockpit ? 24.0 : ((isHood || isTopDown) ? 16.0 : 6.5);
             this.camLook.x += (targetLookX - this.camLook.x) * Math.min(1.0, lookLerp * dt);
             this.camLook.y = targetLookY;
             this.camLook.z = targetLookZ;
@@ -13867,16 +14406,16 @@
             this.camera.lookAt(this.camLook);
 
             // 5. Cinematic camera banking roll:
-            // Smoothly damped and clamped to realistic tilt (max ~3 deg / 0.052 rad in chase, ~0.8 deg in hood/topdown).
+            // Smoothly damped and clamped to realistic tilt (max ~3 deg / 0.052 rad in chase, ~0.8 deg in hood/topdown/cockpit).
             // Completely eliminates abrupt jerks, violent swaying, and horizon rocking.
-            const maxCamRoll = (isHood || isTopDown) ? 0.015 : 0.052;
+            const maxCamRoll = (isHood || isTopDown || isCockpit) ? 0.018 : 0.052;
             const targetRoll = Math.max(-maxCamRoll, Math.min(maxCamRoll, -state.vx * 0.0032));
             this.camRoll = (this.camRoll || 0) + (targetRoll - (this.camRoll || 0)) * Math.min(1.0, 5.0 * dt);
             this.camera.rotateZ(this.camRoll);
 
             // 6. Dynamic FOV warp with speed & nitro + high-speed hypersonic expansion (250+ km/h)
             const speedRatio = Math.min(1.0, state.speed / state.maxSpeed);
-            let targetFov = mode.fov + (speedRatio * 14) + (state.isNitroActive ? 7 : 0);
+            let targetFov = mode.fov + (speedRatio * (isCockpit ? 8 : 14)) + (state.isNitroActive ? (isCockpit ? 4 : 7) : 0);
             if (this.vfx && typeof this.vfx.enhanceCameraFOV === 'function') {
                 targetFov = this.vfx.enhanceCameraFOV(targetFov, state);
             }
@@ -13982,6 +14521,8 @@
                 fuelCurrent: state.fuelCurrent,
                 nitroLevel: Math.round(state.nitroLevel),
                 isNitroActive: state.isNitroActive,
+                isHypersonic: !!state.isHypersonic,
+                currentBiome: this.currentBiome || 'highway',
                 driftScore: Math.round(state.driftScore),
                 driftCombo: state.driftCombo,
                 isDrifting: state.isDrifting,

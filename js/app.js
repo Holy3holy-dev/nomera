@@ -3331,7 +3331,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                         else if (pityCounterBoth >= 65) forceTier = 'epic';
                         else if (pityCounterBoth >= 25) forceTier = 'rare';
                     }
-                    newNum = generateLuckyNumberLocal(forceTier, pityCounterBoth);
+                    newNum = generateLuckyNumberLocal(forceTier, pityCounterBoth, countryCode);
                     hasNumbers = true;
                     changedNumbers = true;
                 }
@@ -4219,12 +4219,13 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 if (code === 'UAE') {
                     // В UAE отображается 1-буквенный код (l1) или 2-буквенный VIP-код (AA..ZZ при l1===l2===l3).
                     // Скрытые l2 и l3 при 1-буквенном коде не должны менять цену одинаково выглядящих номеров.
+                    const isUaeHighDigit = /^00[1-9]$/.test(num) || /^0([1-9])\1$/.test(num) || (num[0] === num[1] && num[1] === num[2]);
                     if (cElites.includes(letters)) {
                         price += Math.round((isTripleLetters && num === '001' ? 3500000 : 500000) * mult);
                     } else if (isTripleLetters) {
                         price += Math.round(280000 * mult);
                     } else if (['A', 'D', 'S', 'V', 'X', 'Z', 'M', 'K'].includes(l1)) {
-                        price += Math.round(120000 * mult);
+                        price += Math.round((isUaeHighDigit ? 120000 : 300) * mult);
                     }
                 } else {
                     if (isTripleLetters) price += Math.round(350000 * mult);
@@ -4972,7 +4973,23 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             fillEl.style.width = `${percent}%`;
         }
 
-        function generateLuckyNumberLocal(forceTier, pity = 0) {
+        const LADDER_NUMBERS_LOCAL = ['123','234','345','456','567','678','789','987','876','765','654','543','432','321'];
+
+        function pickOrdinary3DigitNumberLocal() {
+            for (let attempt = 0; attempt < 40; attempt++) {
+                const n = String(101 + Math.floor(Math.random() * 898));
+                if (n[0] === n[1] && n[1] === n[2]) continue;
+                if (n.endsWith('00')) continue;
+                if (LADDER_NUMBERS_LOCAL.includes(n)) continue;
+                return n;
+            }
+            return '142';
+        }
+
+        function generateLuckyNumberLocal(forceTier, pity = 0, country = currentCountry) {
+            const cCode = String(country || currentCountry || 'RUS').toUpperCase();
+            const isIntl = (cCode === 'USA' || cCode === 'UAE');
+
             if (forceTier === 'legendary') {
                 return randomItem(['777', '777', '001', '007', '011', '111', '555', '888', '999']);
             }
@@ -4984,37 +5001,49 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 ]);
             }
             if (forceTier === 'rare') {
-                return randomItem(['123','234','345','456','567','678','789','987','876','765','654','543','432','321']);
+                return randomItem(LADDER_NUMBERS_LOCAL);
             }
 
             const luckBonus = getLuckBonus(pity);
             const roll = Math.floor(Math.random() * 1000);
-            const jackpotCutoff = Math.min(15, 3 + Math.floor(luckBonus * 0.05));
+            const jackpotCutoff = Math.min(15, (isIntl ? 1 : 3) + Math.floor(luckBonus * 0.05));
             if (roll < jackpotCutoff) {
                 return randomItem(['777','001','007']);
             }
-            const epicCutoff = Math.min(35, 12 + Math.floor(luckBonus * 0.15));
+            const epicCutoff = Math.min(35, (isIntl ? 5 : 12) + Math.floor(luckBonus * 0.15));
             if (roll < epicCutoff) {
-                return randomItem([
-                    '111','222','333','444','555','666','888','999',
-                    '100','200','300','400','500','600','700','800','900',
-                    '002','003','004','005','006','007','008','009'
-                ]);
+                const epicPool = cCode === 'UAE'
+                    ? [
+                        '111','222','333','444','555','666','888','999',
+                        '011','022','055','077','088','099','010','020','050','070',
+                        '002','003','005','007','008','009'
+                    ]
+                    : [
+                        '111','222','333','444','555','666','888','999',
+                        '100','200','300','400','500','600','700','800','900',
+                        '002','003','004','005','006','007','008','009'
+                    ];
+                return randomItem(epicPool);
             }
-            const ladderCutoff = Math.min(70, 30 + Math.floor(luckBonus * 0.3));
+            const ladderCutoff = Math.min(70, (isIntl ? 16 : 30) + Math.floor(luckBonus * 0.3));
             if (roll < ladderCutoff) {
-                return randomItem(['123','234','345','456','567','678','789','987','876','765','654','543','432','321']);
+                const rarePool = cCode === 'UAE'
+                    ? [...LADDER_NUMBERS_LOCAL, '100','200','300','500','700','900','023','045','067','089']
+                    : LADDER_NUMBERS_LOCAL;
+                return randomItem(rarePool);
             }
-            return Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+            return pickOrdinary3DigitNumberLocal();
         }
 
         function generateLuckyLettersLocal(forceTier, pity = 0, country = currentCountry) {
-            const cfg = PLATE_COUNTRIES[country] || PLATE_COUNTRIES.RUS;
+            const cCode = String(country || currentCountry || 'RUS').toUpperCase();
+            const cfg = PLATE_COUNTRIES[cCode] || PLATE_COUNTRIES.RUS;
             const pool = cfg.letters || lettersArr;
             const elites = cfg.eliteLetters || eliteLetters;
+            const isIntl = (cCode === 'USA' || cCode === 'UAE');
 
             if (forceTier === 'legendary') {
-                const topElites = country === 'RUS'
+                const topElites = cCode === 'RUS'
                     ? ['ААА', 'АМР', 'ВОР', 'ЕКХ', 'ООО', 'ССС', 'МММ', 'СКР']
                     : elites;
                 const elite = randomItem(topElites);
@@ -5030,29 +5059,37 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             }
             if (forceTier === 'rare') {
                 const l1 = randomItem(pool);
-                const l2 = randomItem(pool);
+                let l2 = randomItem(pool);
+                if (l2 === l1) l2 = pool[(pool.indexOf(l1) + 1) % pool.length];
                 return [l1, l2, l1];
             }
 
             const luckBonus = getLuckBonus(pity);
             const roll = Math.floor(Math.random() * 1000);
-            const eliteCutoff = Math.min(15, 4 + Math.floor(luckBonus * 0.05));
+            const eliteCutoff = Math.min(15, (isIntl ? 2 : 4) + Math.floor(luckBonus * 0.05));
             if (roll < eliteCutoff) {
                 const elite = randomItem(elites);
                 return [elite[0], elite[1], elite[2]];
             }
-            const tripleCutoff = Math.min(35, 12 + Math.floor(luckBonus * 0.15));
+            const tripleCutoff = Math.min(35, (isIntl ? 6 : 12) + Math.floor(luckBonus * 0.15));
             if (roll < tripleCutoff) {
                 const l = randomItem(pool);
                 return [l, l, l];
             }
-            const mirrorCutoff = Math.min(70, 30 + Math.floor(luckBonus * 0.3));
+            const mirrorCutoff = Math.min(70, (isIntl ? 20 : 30) + Math.floor(luckBonus * 0.3));
             if (roll < mirrorCutoff) {
                 const l1 = randomItem(pool);
-                const l2 = randomItem(pool);
+                let l2 = randomItem(pool);
+                if (l2 === l1) l2 = pool[(pool.indexOf(l1) + 1) % pool.length];
                 return [l1, l2, l1];
             }
-            return [randomItem(pool), randomItem(pool), randomItem(pool)];
+            for (let attempt = 0; attempt < 20; attempt++) {
+                const a = randomItem(pool), b = randomItem(pool), c = randomItem(pool);
+                if (a === b && b === c) continue;
+                if (elites.includes(a + b + c)) continue;
+                return [a, b, c];
+            }
+            return [pool[0], pool[1] || pool[0], pool[2] || pool[0]];
         }
 
         // --- ВАРИАНТЫ ПРОКРУТОК ---
@@ -5068,9 +5105,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             let n;
             if (pityCounterNum >= currentPityTargetNum) {
                 pityCounterNum = 0;
-                n = Math.random() < 0.25 ? '777' : Math.floor(Math.random() * 10).toString().repeat(3);
+                n = Math.random() < 0.25 ? '777' : (1 + Math.floor(Math.random() * 9)).toString().repeat(3);
             } else {
-                n = generateLuckyNumberLocal(null, pityCounterNum);
+                n = generateLuckyNumberLocal(null, pityCounterNum, currentCountry);
             }
 
             currentNum = n;
@@ -5126,7 +5163,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             else if (pityCounterBoth >= 65) forceTier = 'epic';
             else if (pityCounterBoth >= 25) forceTier = 'rare';
 
-            let n = generateLuckyNumberLocal(forceTier, pityCounterBoth);
+            let n = generateLuckyNumberLocal(forceTier, pityCounterBoth, currentCountry);
             let letArr = generateLuckyLettersLocal(forceTier, pityCounterBoth, currentCountry);
             let l1 = letArr[0], l2 = letArr[1], l3 = letArr[2];
 
@@ -5437,22 +5474,19 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     reg = randomItem(capitalRegionsMap[cCode] || capitalRegionsMap.RUS);
                 } else if (tier === 'Супер редкий') {
                     [l1, l2, l3] = pickOrdinaryLetters();
-                    num = randomItem(['007', '111', '222', '333', '444', '555', '888', '999', '002', '003', '005', '008', '009']);
+                    num = cCode === 'UAE'
+                        ? randomItem(['012', '023', '034', '045', '056', '067', '078', '089', '019', '028', '037', '046'])
+                        : randomItem(['007', '002', '003', '004', '005', '006', '008', '009']);
                     reg = randomItem(ordinaryRegionsMap[cCode] || ordinaryRegionsMap.RUS);
                 } else if (tier === 'Редкий') {
-                    if (Math.random() < 0.25) {
-                        const triplePool = cCode === 'RUS' ? ['В', 'К', 'М', 'Н', 'Р', 'Т'] : ['B', 'K', 'M', 'N', 'R', 'T'];
-                        const ch = randomItem(triplePool);
-                        l1 = ch; l2 = ch; l3 = ch;
-                        num = randomItem(['142', '385', '619']);
-                    } else {
-                        [l1, l2, l3] = pickOrdinaryLetters();
-                        num = randomItem(['100', '200', '300', '500', '700', '900', '123', '234', '345', '456']);
-                    }
+                    [l1, l2, l3] = pickOrdinaryLetters();
+                    num = randomItem(['100', '200', '300', '500', '700', '900', '123', '234', '345', '456']);
                     reg = randomItem(ordinaryRegionsMap[cCode] || ordinaryRegionsMap.RUS);
                 } else if (tier === 'Необычный') {
                     [l1, l2, l3] = pickOrdinaryLetters();
-                    num = randomItem(['101', '252', '707', '818', '909', '010', '020', '030', '040', '050', '070', '090']);
+                    num = cCode === 'UAE'
+                        ? randomItem(['101', '252', '707', '818', '909', '303', '414', '626'])
+                        : randomItem(['101', '252', '707', '818', '909', '010', '020', '030', '040', '050', '070', '090']);
                     reg = randomItem(ordinaryRegionsMap[cCode] || ordinaryRegionsMap.RUS);
                 } else {
                     [l1, l2, l3] = pickOrdinaryLetters();
@@ -5471,10 +5505,12 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     ? price
                     : Math.max(450, Math.round((price - (cfg.basePrice || 450)) / bonusMult + 450));
                 const rBonus = getRarity(bonusEquivalentPrice);
+                const rActual = getRarity(price);
 
                 if (
                     r.text === targetRarity ||
                     rBonus.text === targetRarity ||
+                    rActual.text === targetRarity ||
                     ((targetRarity === 'Мифический' || targetRarity === 'МИФИЧЕСКИЙ') && price >= 5000000)
                 ) {
                     matched = true;
@@ -5567,20 +5603,22 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 type: "plate",
                 fixedCountry: "KZ",
                 contents: [
-                    { r: 'Необычный', weight: 35, count: 6 },
-                    { r: 'Редкий', weight: 30, count: 6 },
-                    { r: 'Супер редкий', weight: 20, count: 5 },
-                    { r: 'Эпический', weight: 10, count: 4 },
-                    { r: 'Легендарный', weight: 4, count: 3 },
-                    { r: 'Мифический', weight: 1, count: 2 }
+                    { r: 'Обычный', weight: 40, count: 6 },
+                    { r: 'Необычный', weight: 32, count: 6 },
+                    { r: 'Редкий', weight: 18, count: 5 },
+                    { r: 'Супер редкий', weight: 7, count: 4 },
+                    { r: 'Эпический', weight: 2.2, count: 3 },
+                    { r: 'Легендарный', weight: 0.6, count: 2 },
+                    { r: 'Мифический', weight: 0.2, count: 2 }
                 ],
                 probs: [
-                    { r: 'Необычный', p: 0.35 },
-                    { r: 'Редкий', p: 0.30 },
-                    { r: 'Супер редкий', p: 0.20 },
-                    { r: 'Эпический', p: 0.10 },
-                    { r: 'Легендарный', p: 0.04 },
-                    { r: 'Мифический', p: 0.01 }
+                    { r: 'Обычный', p: 0.40 },
+                    { r: 'Необычный', p: 0.32 },
+                    { r: 'Редкий', p: 0.18 },
+                    { r: 'Супер редкий', p: 0.07 },
+                    { r: 'Эпический', p: 0.022 },
+                    { r: 'Легендарный', p: 0.006 },
+                    { r: 'Мифический', p: 0.002 }
                 ]
             },
             'usa_box': {
@@ -5591,20 +5629,22 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 type: "plate",
                 fixedCountry: "USA",
                 contents: [
-                    { r: 'Необычный', weight: 30, count: 6 },
-                    { r: 'Редкий', weight: 32, count: 6 },
-                    { r: 'Супер редкий', weight: 20, count: 5 },
-                    { r: 'Эпический', weight: 12, count: 4 },
-                    { r: 'Легендарный', weight: 5, count: 3 },
-                    { r: 'Мифический', weight: 1, count: 2 }
+                    { r: 'Обычный', weight: 35, count: 6 },
+                    { r: 'Необычный', weight: 35, count: 6 },
+                    { r: 'Редкий', weight: 18, count: 5 },
+                    { r: 'Супер редкий', weight: 8, count: 4 },
+                    { r: 'Эпический', weight: 2.8, count: 3 },
+                    { r: 'Легендарный', weight: 0.9, count: 2 },
+                    { r: 'Мифический', weight: 0.3, count: 2 }
                 ],
                 probs: [
-                    { r: 'Необычный', p: 0.30 },
-                    { r: 'Редкий', p: 0.32 },
-                    { r: 'Супер редкий', p: 0.20 },
-                    { r: 'Эпический', p: 0.12 },
-                    { r: 'Легендарный', p: 0.05 },
-                    { r: 'Мифический', p: 0.01 }
+                    { r: 'Обычный', p: 0.35 },
+                    { r: 'Необычный', p: 0.35 },
+                    { r: 'Редкий', p: 0.18 },
+                    { r: 'Супер редкий', p: 0.08 },
+                    { r: 'Эпический', p: 0.028 },
+                    { r: 'Легендарный', p: 0.009 },
+                    { r: 'Мифический', p: 0.003 }
                 ]
             },
             'uae_box': {
@@ -5615,18 +5655,20 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 type: "plate",
                 fixedCountry: "UAE",
                 contents: [
-                    { r: 'Редкий', weight: 35, count: 7 },
-                    { r: 'Супер редкий', weight: 30, count: 6 },
-                    { r: 'Эпический', weight: 20, count: 5 },
-                    { r: 'Легендарный', weight: 11, count: 4 },
-                    { r: 'Мифический', weight: 4, count: 2 }
+                    { r: 'Необычный', weight: 42, count: 7 },
+                    { r: 'Редкий', weight: 34, count: 6 },
+                    { r: 'Супер редкий', weight: 15, count: 5 },
+                    { r: 'Эпический', weight: 6, count: 4 },
+                    { r: 'Легендарный', weight: 2.2, count: 3 },
+                    { r: 'Мифический', weight: 0.8, count: 2 }
                 ],
                 probs: [
-                    { r: 'Редкий', p: 0.35 },
-                    { r: 'Супер редкий', p: 0.30 },
-                    { r: 'Эпический', p: 0.20 },
-                    { r: 'Легендарный', p: 0.11 },
-                    { r: 'Мифический', p: 0.04 }
+                    { r: 'Необычный', p: 0.42 },
+                    { r: 'Редкий', p: 0.34 },
+                    { r: 'Супер редкий', p: 0.15 },
+                    { r: 'Эпический', p: 0.06 },
+                    { r: 'Легендарный', p: 0.022 },
+                    { r: 'Мифический', p: 0.008 }
                 ]
             },
             'car_standard': {

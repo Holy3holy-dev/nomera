@@ -1084,7 +1084,98 @@ describe('Collector Book & Car-Plate Synergy (RUS / KZ / USA / UAE)', () => {
     })()`);
     assert.ok(gelikWithBossPlatePerf.plateBonus > 0, `Equipped Boss plate must grant >0% plateBonus (got ${gelikWithBossPlatePerf.plateBonus}%)`);
   });
+
+  test('USA and UAE random spins and international boxes have balanced rarity distributions and do not inflate ordinary 3-digit plates to Rare+', () => {
+    const { createApp } = require('./helpers/create-app.cjs');
+    const app = createApp();
+
+    // 1. Ordinary 3-digit UAE plates starting with A/D/S/V/X/Z/M/K must NOT be Rare or Super Rare
+    for (const ch of ['A', 'D', 'S', 'V', 'X', 'Z', 'M', 'K']) {
+      const serverPrice = c.priceOfPlate(ch, 'B', 'E', '124', 'DXB', 'UAE');
+      const clientPrice = app.run(`getCalculatedPrice('${ch}', 'B', 'E', '124', 'DXB', 'UAE')`);
+      assert.ok(serverPrice < 18000, `Expected UAE ordinary plate ${ch} 124 | DXB UAE server price < 18000, got ${serverPrice}`);
+      assert.ok(clientPrice < 18000, `Expected UAE ordinary plate ${ch} 124 | DXB UAE client price < 18000, got ${clientPrice}`);
+      assert.ok(['Обычный', 'Необычный'].includes(c.rarityOfPrice(serverPrice)), `Expected Обычный/Необычный on server, got ${c.rarityOfPrice(serverPrice)}`);
+      const clientRarity = app.run(`getRarity(${clientPrice}).text`);
+      assert.ok(['Обычный', 'Необычный'].includes(clientRarity), `Expected Обычный/Необычный on client, got ${clientRarity}`);
+    }
+
+    // Ordinary 3-digit USA plate must also be < 18000 (Обычный / Необычный)
+    const usaOrdServer = c.priceOfPlate('A', 'B', 'C', '124', 'CA', 'USA');
+    const usaOrdClient = app.run("getCalculatedPrice('A', 'B', 'C', '124', 'CA', 'USA')");
+    assert.ok(usaOrdServer < 18000);
+    assert.ok(usaOrdClient < 18000);
+    assert.ok(['Обычный', 'Необычный'].includes(c.rarityOfPrice(usaOrdServer)));
+
+    // 2. Sampling 400 0-pity spins in USA and UAE (both server secureRoll and client generateLucky*Local)
+    // must yield < 10% Rare+ (cannot easily farm Rare+ plates on every other roll)
+    const highRarities = new Set(['Редкий', 'Супер редкий', 'Эпический', 'Легендарный', 'Крутой', 'БЛАТНОЙ', 'Мифический', 'МИФИЧЕСКИЙ']);
+    for (const country of ['USA', 'UAE']) {
+      const reg = country === 'UAE' ? 'DXB' : 'CA';
+      let serverRarePlus = 0;
+      for (let i = 0; i < 400; i++) {
+        const roll = c.secureRoll('both', 0, country);
+        const p = c.priceOfPlate(roll.letters[0], roll.letters[1], roll.letters[2], roll.num, reg, country);
+        if (highRarities.has(c.rarityOfPrice(p))) serverRarePlus++;
+      }
+      assert.ok(
+        serverRarePlus <= 40,
+        `Expected <= 10% Rare+ on 400 0-pity server spins in ${country}, got ${serverRarePlus}/400`
+      );
+
+      const clientRarePlus = app.run(`(() => {
+        let count = 0;
+        const hi = new Set(['Редкий', 'Супер редкий', 'Эпический', 'Легендарный', 'Крутой', 'БЛАТНОЙ', 'Мифический', 'МИФИЧЕСКИЙ']);
+        for (let i = 0; i < 400; i++) {
+          const num = generateLuckyNumberLocal(null, 0, '${country}');
+          const [l1, l2, l3] = generateLuckyLettersLocal(null, 0, '${country}');
+          const p = getCalculatedPrice(l1, l2, l3, num, '${reg}', '${country}');
+          if (hi.has(getRarity(p).text)) count++;
+        }
+        return count;
+      })()`);
+      assert.ok(
+        clientRarePlus <= 40,
+        `Expected <= 10% Rare+ on 400 0-pity client spins in ${country}, got ${clientRarePlus}/400`
+      );
+    }
+
+    // 3. Verify rebalanced kz_box, usa_box, and uae_box drop tables in caseConfigs
+    const kzBox = app.run("caseConfigs.kz_box");
+    const usaBox = app.run("caseConfigs.usa_box");
+    const uaeBox = app.run("caseConfigs.uae_box");
+
+    const toProbMap = (box) => Object.fromEntries(box.probs.map(x => [x.r, x.p]));
+    assert.deepEqual(toProbMap(kzBox), {
+      'Обычный': 0.40,
+      'Необычный': 0.32,
+      'Редкий': 0.18,
+      'Супер редкий': 0.07,
+      'Эпический': 0.022,
+      'Легендарный': 0.006,
+      'Мифический': 0.002
+    });
+    assert.deepEqual(toProbMap(usaBox), {
+      'Обычный': 0.35,
+      'Необычный': 0.35,
+      'Редкий': 0.18,
+      'Супер редкий': 0.08,
+      'Эпический': 0.028,
+      'Легендарный': 0.009,
+      'Мифический': 0.003
+    });
+    assert.deepEqual(toProbMap(uaeBox), {
+      'Необычный': 0.42,
+      'Редкий': 0.34,
+      'Супер редкий': 0.15,
+      'Эпический': 0.06,
+      'Легендарный': 0.022,
+      'Мифический': 0.008
+    });
+
+    // And forcePlate('Необычный', 'UAE') must produce an Uncommon-priced plate (< 18,000 ₽), not a 2-digit round 400k plate
+    const uaeUncommon = app.run("forcePlate('Необычный', 'UAE')");
+    assert.equal(uaeUncommon.rarity.text, 'Необычный');
+    assert.ok(uaeUncommon.price < 18000, `Expected UAE Необычный forced plate < 18000 ₽, got ${uaeUncommon.price}`);
+  });
 });
-
-
-

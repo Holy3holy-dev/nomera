@@ -513,3 +513,96 @@ test('6. 3D Highway Collectibles (Fuel/Nitro/Cash/Repair), Horn [H] VIP Lane Cle
     }
 });
 
+test('7. 3D Biomes (Lefortovo Tunnel & Cable-Stayed Bridge), 1st-Person Cockpit Camera (Steering/ShiftLights/Wipers), and 300+ km/h Hypersonic Fire Trails + Brake Glow + Active Aero', () => {
+    const { Car3DManager } = setupTestContext();
+    const mockContainer = { clientWidth: 800, clientHeight: 500, style: {}, appendChild: () => {}, removeChild: () => {} };
+    const popups = [];
+    const engine = new Car3DManager.Car3DRacingEngine(mockContainer, {
+        onPopup: (msg, color) => popups.push({ msg, color })
+    });
+
+    try {
+        engine.start({
+            carName: 'BMW M5 F90',
+            performance: { speed: 340, accel: 4.0, handling: 6.5 }
+        });
+
+        // 1. Verify Lefortovo Tunnel & Cable-Stayed Bridge biome structures and sector transitions
+        assert.equal(engine.getBiomeForZ(100), 'highway', '0..600m sector must be highway biome');
+        assert.equal(engine.getBiomeForZ(750), 'tunnel', '600..1200m sector must be Lefortovo tunnel biome');
+        assert.equal(engine.getBiomeForZ(1350), 'bridge', '1200..1800m sector must be cable-stayed bridge biome');
+
+        const firstChunk = engine.roadChunks[0];
+        const chunkNames = collectNodeNames(firstChunk);
+        assert.ok(chunkNames.has('LefortovoTunnelGroup'), 'Road chunk must contain LefortovoTunnelGroup');
+        assert.ok(chunkNames.has('TunnelVaultRoof') && chunkNames.has('TunnelSodiumLight') && chunkNames.has('TunnelJetFan'), 'Lefortovo tunnel must include vaulted roof, sodium lights, and jet fans');
+        assert.ok(chunkNames.has('CableBridgeGroup') && chunkNames.has('CableBridgeTower') && chunkNames.has('BridgeStayCable'), 'Cable-stayed bridge must include pylon towers and stay cables');
+
+        // Transition into Lefortovo Tunnel (z = 650m)
+        engine.state.z = 650;
+        engine.state.speed = 180;
+        engine.update(0.02);
+        assert.equal(engine.currentBiome, 'tunnel', 'Driving into 600..1200m sector must switch currentBiome to tunnel');
+        assert.ok(popups.some(p => p.msg.includes('ЛЕФОРТОВСКИЙ ТУННЕЛЬ')), 'Entering tunnel must trigger Lefortovo Tunnel popup');
+
+        // Transition onto Cable-Stayed Bridge (z = 1250m)
+        engine.state.z = 1250;
+        engine.state.speed = 180;
+        engine.update(0.02);
+        assert.equal(engine.currentBiome, 'bridge', 'Driving into 1200..1800m sector must switch currentBiome to bridge');
+        assert.ok(popups.some(p => p.msg.includes('ВАНТОВЫЙ МОСТ')), 'Entering bridge must trigger Cable-Stayed Bridge popup');
+
+        // 2. Verify 1st-Person Cockpit Camera (mode 4 / 'cockpit'), Steering Wheel, RPM Shift Lights, and Animated Wipers
+        assert.equal(engine.cameraModes.length, 5, 'Must support 5 camera modes including cockpit');
+        assert.equal(engine.cameraModes[4].name, 'cockpit', '5th camera mode must be cockpit');
+        assert.ok(engine.cockpitGroup, 'CockpitInteriorRig must be built on playerCar');
+        assert.equal(engine.cockpitGroup.visible, false, 'Cockpit rig must be hidden in 3rd-person chase camera');
+
+        engine.setCameraMode('cockpit');
+        assert.equal(engine.cameraMode, 4, 'setCameraMode("cockpit") must select index 4');
+        assert.equal(engine.cockpitGroup.visible, true, 'Cockpit rig must be visible in cockpit camera mode');
+
+        // Steering wheel rotation & wiper animation in rain
+        engine.setBiome('highway');
+        engine.state.z = 100;
+        engine.setWeather('rain', true);
+        engine.state.speed = 140;
+        engine.state.rpm = 8200;
+        engine.keys.left = true;
+        const initialWiperAngle = engine.cockpitWiperL.rotation.z;
+        engine.update(0.05);
+        engine.keys.left = false;
+
+        assert.ok(Math.abs(engine.cockpitSteeringWheel.rotation.z) > 0.05, 'Cockpit steering wheel must rotate when steering');
+        assert.notEqual(engine.cockpitWiperL.rotation.z, initialWiperAngle, 'Cockpit windshield wipers must animate in rain weather');
+        assert.ok(engine.cockpitShiftLights.some(led => led.material.emissiveIntensity > 1.5), 'Cockpit RPM shift lights must illuminate at high RPM');
+
+        // 3. Verify 300+ km/h Hypersonic Fire Trails («Огненный след»), Brake Disc Glow, and Active Aero Wing
+        assert.ok(engine.playerFireTrails && engine.playerFireTrails.length === 2, 'Must attach twin HypersonicFireTrail meshes');
+        assert.ok(engine.playerBrakeDiscs && engine.playerBrakeDiscs.length >= 4, 'Must have 4 glowing brake disc rotors');
+        assert.ok(engine.playerActiveAero && engine.playerActiveAero.length >= 1, 'Must have deployable active aero wing');
+
+        engine.state.speed = 315; // 300+ km/h hypersonic threshold
+        engine.keys.gas = true;
+        engine.update(0.05);
+        engine.keys.gas = false;
+
+        assert.equal(engine.isHypersonic, true, 'Speed >= 300 km/h must activate isHypersonic state');
+        assert.equal(engine.playerFireTrails[0].visible, true, 'Twin fire trails must become visible at >= 300 km/h');
+        assert.ok(popups.some(p => p.msg.includes('ОГНЕННЫЙ СЛЕД 300+ КМ/Ч')), 'Reaching 300+ km/h must trigger ОГНЕННЫЙ СЛЕД popup');
+
+        // Heavy braking at high speed heats brake rotors and tilts active-aero airbrake
+        engine.state.speed = 220;
+        engine.keys.brake = true;
+        engine.update(0.25);
+        engine.keys.brake = false;
+
+        assert.ok(engine.state.brakeHeat > 0.1, 'Hard braking at high speed must heat up brake rotors');
+        assert.ok(engine.playerBrakeDiscs[0].material.emissiveIntensity > 0.2, 'Brake disc rotors must glow red-hot under heavy braking');
+        assert.ok(engine.playerActiveAero[0].mesh.rotation.x > engine.playerActiveAero[0].baseRotX + 0.05, 'Active aero spoiler must tilt up as an air-brake under high-speed braking');
+    } finally {
+        engine.destroy();
+    }
+});
+
+
