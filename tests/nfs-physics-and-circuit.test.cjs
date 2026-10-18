@@ -345,10 +345,14 @@ test('12. ИИ-соперники проходят замкнутую трасс
     assert.equal(engine.isRunning, false, 'После destroy() движок должен быть остановлен');
 });
 
-test('13. Интеграция режима 3D Круг (NFS MW) в index.html и js/app.js без поломки существующих режимов', () => {
+test('13. Интеграция режима 3D Круг (NFS MW) во все точки входа UI (index.html и js/app.js)', () => {
     const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
     const appJs = fs.readFileSync(path.join(__dirname, '..', 'js', 'app.js'), 'utf8');
 
+    assert.ok(html.includes('id="nav-tab-nfs-race"'), 'В верхней панели навигации должна быть вкладка #nav-tab-nfs-race (3D NFS Кольцо)');
+    assert.ok(html.includes('id="nfs-quickstart-hero"'), 'В меню гонок должен быть баннер быстрого старта новых трасс NFS MW (#nfs-quickstart-hero)');
+    assert.ok(html.includes('id="btn-garage-podium-nfs-race"'), 'На 3D-подиуме гаража должна быть кнопка быстрого старта в 3D Кольцо NFS');
+    assert.ok(html.includes('id="btn-switch-nfs-3d"'), 'В 3D HUD должна быть кнопка переключения в Кольцо NFS / смены трассы');
     assert.ok(html.includes('id="btn-race-mode-nfs"'), 'В index.html должна быть вкладка режима 3D Круг (NFS)');
     assert.ok(html.includes('id="btn-mode-nfs-circuit"'), 'В index.html должна быть кнопка выбора режима 3D Круг (NFS MW)');
     assert.ok(html.includes('id="nfs-circuit-settings-card"'), 'В index.html должна быть карточка выбора трассы и сложности ИИ');
@@ -358,5 +362,8 @@ test('13. Интеграция режима 3D Круг (NFS MW) в index.html �
     assert.ok(appJs.includes('NomeraCircuitRace.NomeraCircuitRaceEngine'), 'В js/app.js должен создаваться экземпляр NomeraCircuitRaceEngine для режима NFS');
     assert.ok(appJs.includes('function setNfsCircuitTrack('), 'В js/app.js должна быть функция выбора трассы setNfsCircuitTrack');
     assert.ok(appJs.includes('function setNfsCircuitDifficulty('), 'В js/app.js должна быть функция выбора сложности setNfsCircuitDifficulty');
+    assert.ok(appJs.includes('function quickStartNfsCircuit('), 'В js/app.js должна быть функция быстрого запуска трассы quickStartNfsCircuit');
+    assert.ok(appJs.includes('function startNfsRaceWithCar('), 'В js/app.js должна быть функция запуска NFS гонки с карточки машины в гараже');
+    assert.ok(appJs.includes('function startNfsRaceWithActiveGarageCar('), 'В js/app.js должна быть функция запуска NFS гонки с 3D-подиума гаража');
     assert.ok(appJs.includes('function toggle3DSpeedbreaker('), 'В js/app.js должна быть функция активации Speedbreaker');
 });

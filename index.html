@@ -274,7 +274,10 @@
                 <svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24"><use href="#icon-race"/></svg> <span class="nav-label-long">Гонка 2D</span><span class="nav-label-short">2D</span>
             </button>
             <button type="button" role="tab" class="nav-tab nav-tab-3d" id="nav-tab-3d-race" onclick="switchTab('racegame', this, '3d')" data-tab="racegame-3d" aria-controls="racegame" aria-selected="false">
-                <span class="nav-tab-3d-icon">🏎️</span> <span class="nav-label-long">3D Гонка</span><span class="nav-label-short">3D</span> <span class="nav-tab-badge" style="background: linear-gradient(135deg, #ef4444, #f59e0b); color: #fff; font-size: 8px !important; font-weight: 800; padding: 1px 4px; border-radius: 999px;">HOT</span>
+                <span class="nav-tab-3d-icon">🏎️</span> <span class="nav-label-long">3D Шоссе</span><span class="nav-label-short">3D</span> <span class="nav-tab-badge" style="background: linear-gradient(135deg, #ef4444, #f59e0b); color: #fff; font-size: 8px !important; font-weight: 800; padding: 1px 4px; border-radius: 999px;">HOT</span>
+            </button>
+            <button type="button" role="tab" class="nav-tab nav-tab-3d" id="nav-tab-nfs-race" onclick="switchTab('racegame', this, 'nfs')" data-tab="racegame-nfs" aria-controls="racegame" aria-selected="false" style="border-color: rgba(56, 189, 248, 0.5);">
+                <span class="nav-tab-3d-icon">🏆</span> <span class="nav-label-long">3D NFS Кольцо</span><span class="nav-label-short">NFS</span> <span class="nav-tab-badge" style="background: linear-gradient(135deg, #0284c7, #10b981); color: #fff; font-size: 8px !important; font-weight: 800; padding: 1px 5px; border-radius: 999px;">MW</span>
             </button>
             <button type="button" role="tab" class="nav-tab" onclick="switchTab('cases', this)" data-tab="cases" aria-controls="cases" aria-selected="false">
                 <svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24"><use href="#icon-case"/></svg> Кейсы
@@ -534,7 +537,8 @@
                                 <span id="garage-podium-toggle-icon">▲</span> <span id="garage-podium-toggle-label">Свернуть 3D</span>
                             </button>
                             <button type="button" class="btn btn-blue" id="btn-garage-podium-styling" onclick="openStylingForActiveGarageCar()" title="Тюнинг и стайлинг этого авто">🎨 Тюнинг</button>
-                            <button type="button" class="btn btn-gold" id="btn-garage-podium-race" onclick="start3DRaceWithActiveGarageCar()" title="Быстрый старт в 3D гонке">⚡ В 3D гонку</button>
+                            <button type="button" class="btn btn-green" id="btn-garage-podium-nfs-race" onclick="startNfsRaceWithActiveGarageCar()" title="Круговая 3D гонка NFS Most Wanted с соперниками" style="background: linear-gradient(135deg, #0284c7, #10b981); color: #fff; font-weight: 800;">🏆 В 3D Кольцо NFS</button>
+                            <button type="button" class="btn btn-gold" id="btn-garage-podium-race" onclick="start3DRaceWithActiveGarageCar()" title="Быстрый старт на 3D шоссе">⚡ В 3D Шоссе</button>
                         </div>
                     </div>
 
@@ -639,10 +643,10 @@
                 <div class="market-type-nav" style="margin-bottom: 14px;">
                     <button class="market-type-btn" id="btn-race-mode-circuit" onclick="switchRaceMode('circuit')">Шоссе (2D)</button>
                     <button class="market-type-btn" id="btn-race-mode-drag" onclick="switchRaceMode('drag')">🏁 Дрэг 402 м & Боссы</button>
-                    <button class="market-type-btn active" id="btn-race-mode-3d" onclick="switchRaceMode('3d')" style="position: relative; border-color: rgba(255, 46, 76, 0.45); font-weight: 800;">
+                    <button class="market-type-btn" id="btn-race-mode-3d" onclick="switchRaceMode('3d')" style="position: relative; border-color: rgba(255, 46, 76, 0.45); font-weight: 800;">
                         🏎️ 3D Шоссе (Вид сзади) <span style="background: linear-gradient(135deg, #ef4444, #f59e0b); color: #fff; font-size: 8px; padding: 2px 6px; border-radius: 999px; margin-left: 4px; vertical-align: middle;">HOT</span>
                     </button>
-                    <button class="market-type-btn" id="btn-race-mode-nfs" onclick="switchRaceMode('nfs')" style="position: relative; border-color: rgba(56, 189, 248, 0.55); font-weight: 800;">
+                    <button class="market-type-btn active" id="btn-race-mode-nfs" onclick="switchRaceMode('nfs')" style="position: relative; border-color: rgba(56, 189, 248, 0.55); font-weight: 800;">
                         🏆 3D Кольцо NFS (MW Физика) <span style="background: linear-gradient(135deg, #0284c7, #10b981); color: #fff; font-size: 8px; padding: 2px 6px; border-radius: 999px; margin-left: 4px; vertical-align: middle;">MW 2005</span>
                     </button>
                 </div>
@@ -759,12 +763,37 @@
 
                 <!-- Меню выбора авто и рекордов (Кольцевая трасса) -->
                 <div id="race-menu-container">
+                    <!-- Баннер быстрого запуска новых 3D гонок NFS Most Wanted 2005 -->
+                    <div id="nfs-quickstart-hero" style="background: linear-gradient(135deg, rgba(2, 132, 199, 0.22), rgba(16, 185, 129, 0.16), rgba(15, 23, 42, 0.92)); border: 1.5px solid rgba(56, 189, 248, 0.55); border-radius: 14px; padding: 12px 14px; margin-bottom: 14px; box-shadow: 0 6px 20px rgba(2, 132, 199, 0.2);">
+                        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 8px;">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span style="font-size: 20px;">🏆</span>
+                                <div>
+                                    <div style="font-size: 14px; font-weight: 900; color: #fff; letter-spacing: 0.3px;">НОВЫЕ 3D ГОНКИ: NFS MOST WANTED 2005</div>
+                                    <div style="font-size: 11px; color: #bae6fd;">Свободные повороты на 360° &bull; Реальная физика заноса &bull; Соперники Чёрного списка &bull; Speedbreaker [G]</div>
+                                </div>
+                            </div>
+                            <span style="background: linear-gradient(135deg, #0284c7, #10b981); color: #fff; font-size: 10px; font-weight: 900; padding: 3px 9px; border-radius: 999px;">3 НОВЫЕ ТРАССЫ</span>
+                        </div>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 8px;">
+                            <button type="button" class="btn btn-blue" style="padding: 9px 10px; font-size: 12px; font-weight: 800; background: linear-gradient(135deg, #0284c7, #0369a1); border: 1px solid rgba(125, 211, 252, 0.45);" onclick="quickStartNfsCircuit('rockport_ring')">
+                                🏙️ Старт: Рокпорт-Кольцо (2 круга)
+                            </button>
+                            <button type="button" class="btn btn-blue" style="padding: 9px 10px; font-size: 12px; font-weight: 800; background: linear-gradient(135deg, #d97706, #b45309); border: 1px solid rgba(253, 224, 71, 0.45);" onclick="quickStartNfsCircuit('canyon_pass')">
+                                ⛰️ Старт: Каньон Карбон (Серпантин)
+                            </button>
+                            <button type="button" class="btn btn-blue" style="padding: 9px 10px; font-size: 12px; font-weight: 800; background: linear-gradient(135deg, #7c3aed, #4f46e5); border: 1px solid rgba(196, 181, 253, 0.45);" onclick="quickStartNfsCircuit('bayview_sprint')">
+                                🌉 Старт: Бэйвью-Магистраль (Ночь)
+                            </button>
+                        </div>
+                    </div>
+
                     <div class="section-header" style="text-align: center; display: block; margin-bottom: 14px;">
                         <div class="section-title" style="font-size: 18px; color: #fff; justify-content: center;">
-                            Скоростное шоссе
+                            3D Круговая гонка (NFS Most Wanted)
                         </div>
                         <p style="font-size: 12px; color: var(--text-dim); margin: 4px 0 0 0;">
-                            Заезд в потоке транспорта. Награды за дистанцию и скорость.
+                            Полноценная физика: свободное управление на 360°, апексы, Speedbreaker [G] и соперники Чёрного списка.
                         </p>
                     </div>
 
@@ -843,33 +872,33 @@
                     <div class="race-weather-card" style="margin-bottom: 8px;">
                         <div class="race-weather-header">
                             <span class="race-weather-title">🏁 Режим заезда:</span>
-                            <span id="race-mode-label" class="race-weather-label">Шоссе (Трафик)</span>
+                            <span id="race-mode-label" class="race-weather-label">3D Круг (NFS MW)</span>
                         </div>
                         <div class="race-weather-buttons">
-                            <button type="button" class="race-weather-btn active" id="btn-mode-highway" onclick="setRaceMode('highway')">🛣️ Шоссе (Трафик)</button>
+                            <button type="button" class="race-weather-btn" id="btn-mode-highway" onclick="setRaceMode('highway')">🛣️ Шоссе (Трафик)</button>
                             <button type="button" class="race-weather-btn" id="btn-mode-drift" onclick="setRaceMode('drift')">🌪️ Дрифт (Серпантин)</button>
-                            <button type="button" class="race-weather-btn" id="btn-mode-nfs-circuit" onclick="setRaceMode('nfs_circuit')">🏆 Кольцо NFS (3D Соперники)</button>
+                            <button type="button" class="race-weather-btn active" id="btn-mode-nfs-circuit" onclick="setRaceMode('nfs_circuit')">🏆 Кольцо NFS (3D Соперники)</button>
                         </div>
                         <p id="race-mode-desc" style="font-size: 11px; color: var(--text-dim); margin: 6px 0 0 0; line-height: 1.4;">
-                            Скоростные прямые, плотный трафик, обгоны, радары скорости и патрули ДПС.
+                            Замкнутая 3D-трасса в стиле NFS Most Wanted (2005): свободное управление, повороты, соперники Чёрного списка и Speedbreaker!
                         </p>
                     </div>
 
                     <!-- Настройки Кольцевой гонки NFS (Трасса и Сложность соперников ИИ) -->
-                    <div class="race-weather-card hidden" id="nfs-circuit-settings-card" style="margin-bottom: 8px; border-color: rgba(56, 189, 248, 0.4);">
+                    <div class="race-weather-card" id="nfs-circuit-settings-card" style="margin-bottom: 8px; border-color: rgba(56, 189, 248, 0.4);">
                         <div class="race-weather-header">
                             <span class="race-weather-title">🗺️ Трасса и Соперники NFS:</span>
-                            <span id="nfs-track-label" class="race-weather-label" style="color: #38bdf8;">Кольцо Рокпорт-Индастриал · 2 круга</span>
+                            <span id="nfs-track-label" class="race-weather-label" style="color: #38bdf8;">Рокпорт-Ринг (Город + Эстакада)</span>
                         </div>
                         <div class="race-weather-buttons" style="margin-bottom: 6px;">
-                            <button type="button" class="race-weather-btn active" data-nfs-track="rockport_ring" onclick="setNfsCircuitTrack('rockport_ring')">🏙️ Рокпорт-Кольцо</button>
-                            <button type="button" class="race-weather-btn" data-nfs-track="canyon_pass" onclick="setNfsCircuitTrack('canyon_pass')">⛰️ Каньон Карбон</button>
-                            <button type="button" class="race-weather-btn" data-nfs-track="bayview_sprint" onclick="setNfsCircuitTrack('bayview_sprint')">🌉 Бэйвью-Магистраль</button>
+                            <button type="button" class="race-weather-btn nfs-track-btn active" data-nfs-track="rockport_ring" data-track="rockport_ring" onclick="setNfsCircuitTrack('rockport_ring')">🏙️ Рокпорт-Кольцо</button>
+                            <button type="button" class="race-weather-btn nfs-track-btn" data-nfs-track="canyon_pass" data-track="canyon_pass" onclick="setNfsCircuitTrack('canyon_pass')">⛰️ Каньон Карбон</button>
+                            <button type="button" class="race-weather-btn nfs-track-btn" data-nfs-track="bayview_sprint" data-track="bayview_sprint" onclick="setNfsCircuitTrack('bayview_sprint')">🌉 Бэйвью-Магистраль</button>
                         </div>
                         <div class="race-weather-buttons">
-                            <button type="button" class="race-weather-btn" data-nfs-diff="easy" onclick="setNfsCircuitDifficulty('easy')">🟢 ИИ: Лёгкий</button>
-                            <button type="button" class="race-weather-btn active" data-nfs-diff="medium" onclick="setNfsCircuitDifficulty('medium')">🟡 ИИ: Средний (MW)</button>
-                            <button type="button" class="race-weather-btn" data-nfs-diff="hard" onclick="setNfsCircuitDifficulty('hard')">🔴 ИИ: Blacklist Боссы</button>
+                            <button type="button" class="race-weather-btn nfs-diff-btn" data-nfs-diff="easy" data-diff="easy" onclick="setNfsCircuitDifficulty('easy')">🟢 ИИ: Лёгкий</button>
+                            <button type="button" class="race-weather-btn nfs-diff-btn active" data-nfs-diff="medium" data-diff="medium" onclick="setNfsCircuitDifficulty('medium')">🟡 ИИ: Средний (MW)</button>
+                            <button type="button" class="race-weather-btn nfs-diff-btn" data-nfs-diff="hard" data-diff="hard" onclick="setNfsCircuitDifficulty('hard')">🔴 ИИ: Blacklist Боссы</button>
                         </div>
                     </div>
 
@@ -987,6 +1016,7 @@
                     <div class="race-header-hud">
                         <button class="btn btn-close race-hud-close-btn" onclick="exit3DRaceGame()" title="Выход в меню">✕ <span class="race-hud-btn-lbl">Выход</span></button>
                         <div class="race-header-actions" id="race-3d-header-actions" style="display: flex; gap: 6px; align-items: center; flex-wrap: nowrap;">
+                            <button type="button" class="btn race-hud-action-btn" id="btn-switch-nfs-3d" onclick="switch3DRaceSubMode()" title="Переключить режим 3D: Кольцо NFS MW / 3D Шоссе" style="border-color: rgba(56, 189, 248, 0.6); background: rgba(2, 132, 199, 0.28); color: #fff; font-weight: 800;">🏆 <span id="hud-3d-submode-text" class="race-hud-btn-lbl">Кольцо NFS</span></button>
                             <button type="button" class="btn race-hud-action-btn" id="btn-camera-view-3d" onclick="toggle3DCameraView()" title="Переключить камеру [C]">📷 <span class="race-hud-btn-lbl">Камера [C]</span></button>
                             <button type="button" class="btn race-hud-action-btn" id="btn-weather-cycle-3d" onclick="cycle3DWeather()" title="Сменить погоду [T]">🌦️ <span id="hud-3d-weather-text" class="race-hud-btn-lbl">Погода [T]</span></button>
                             <button type="button" class="btn race-hud-action-btn" id="btn-race-radio-3d" onclick="cycleRaceRadio()" title="Переключить авторадио [R]">📻 <span id="hud-3d-radio-text" class="race-hud-btn-lbl">Радио [R]</span></button>
@@ -2040,6 +2070,6 @@
     <script src="./js/nfs-physics.js?v=ff50e03112fb"></script>
     <script src="./js/nfs-circuit-race.js?v=51cf3726f926"></script>
     <script src="./js/car-3d.js?v=533c88225f45"></script>
-    <script src="./js/app.js?v=5f998e36d7ba"></script>
+    <script src="./js/app.js?v=254d627e1de8"></script>
 </body>
 </html>

@@ -7301,9 +7301,14 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                                     🏷️ На рынок
                                 </button>
                             </div>
-                            <button class="btn btn-green" style="font-size: 12px; padding: 8px 12px; margin-top: 8px; width: 100%; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);" onclick="start3DRaceWithCar(${jsArg(car.name)}, ${index})">
-                                🏎️ Выехать на 3D трассу (Гонка)
-                            </button>
+                            <div style="display: flex; gap: 6px; margin-top: 8px;">
+                                <button class="btn btn-green" style="font-size: 11.5px; padding: 8px 8px; flex: 1; background: linear-gradient(135deg, #0284c7, #10b981); box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25); font-weight: 800;" onclick="startNfsRaceWithCar(${jsArg(car.name)}, ${index})" title="Круговая 3D гонка NFS Most Wanted 2005 (Повороты + Соперники ИИ)">
+                                    🏆 3D Кольцо NFS (MW)
+                                </button>
+                                <button class="btn btn-green" style="font-size: 11.5px; padding: 8px 8px; flex: 1; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);" onclick="start3DRaceWithCar(${jsArg(car.name)}, ${index})" title="Скоростной заезд в потоке на 3D шоссе">
+                                    🏎️ 3D Шоссе (Трафик)
+                                </button>
+                            </div>
                         </div>
                     </div>
                 `;
@@ -8615,6 +8620,18 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             start3DRaceGame();
         }
         window.start3DRaceWithActiveGarageCar = start3DRaceWithActiveGarageCar;
+
+        function startNfsRaceWithActiveGarageCar() {
+            if (!Array.isArray(myCars) || !myCars[activeGarageCarIndex]) return;
+            selectedRaceCarName = myCars[activeGarageCarIndex].name;
+            selectedRaceCarIndex = activeGarageCarIndex;
+            if (typeof Car3DManager !== 'undefined' && Car3DManager.preloadCarModel && window.THREE) {
+                try { Car3DManager.preloadCarModel(window.THREE, selectedRaceCarName); } catch (_) {}
+            }
+            switchTab('racegame', null, 'nfs');
+            start3DRaceGame();
+        }
+        window.startNfsRaceWithActiveGarageCar = startNfsRaceWithActiveGarageCar;
 
         function renderStylingPlateChips() {
             const container = document.getElementById('styling-plate-chips');
@@ -10921,17 +10938,38 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
             const navTabRace = document.getElementById('nav-tab-racegame');
             const navTab3D = document.getElementById('nav-tab-3d-race');
+            const navTabNfs = document.getElementById('nav-tab-nfs-race');
             if (navTabRace && navTab3D) {
-                if (mode === '3d' || mode === 'nfs') {
+                if (mode === 'nfs') {
+                    if (navTabNfs) {
+                        navTabNfs.classList.add('active');
+                        navTabNfs.setAttribute('aria-selected', 'true');
+                        navTab3D.classList.remove('active');
+                        navTab3D.setAttribute('aria-selected', 'false');
+                    } else {
+                        navTab3D.classList.add('active');
+                        navTab3D.setAttribute('aria-selected', 'true');
+                    }
+                    navTabRace.classList.remove('active');
+                    navTabRace.setAttribute('aria-selected', 'false');
+                } else if (mode === '3d') {
                     navTab3D.classList.add('active');
                     navTab3D.setAttribute('aria-selected', 'true');
                     navTabRace.classList.remove('active');
                     navTabRace.setAttribute('aria-selected', 'false');
+                    if (navTabNfs) {
+                        navTabNfs.classList.remove('active');
+                        navTabNfs.setAttribute('aria-selected', 'false');
+                    }
                 } else if (mode === 'circuit' || mode === 'drag') {
                     navTabRace.classList.add('active');
                     navTabRace.setAttribute('aria-selected', 'true');
                     navTab3D.classList.remove('active');
                     navTab3D.setAttribute('aria-selected', 'false');
+                    if (navTabNfs) {
+                        navTabNfs.classList.remove('active');
+                        navTabNfs.setAttribute('aria-selected', 'false');
+                    }
                 }
             }
             if (mode === 'drag') {
@@ -15376,11 +15414,24 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 if (topBtnNfs) topBtnNfs.classList.toggle('active', activeRaceMode === 'nfs');
                 if (topBtn3D) topBtn3D.classList.toggle('active', activeRaceMode === '3d');
                 if (topBtnCircuit) topBtnCircuit.classList.toggle('active', activeRaceMode === 'circuit');
+                const btnStart = document.getElementById('btn-start-race');
+                if (btnStart && !btnStart.disabled) {
+                    if (raceCurrentMode === 'nfs_circuit' || activeRaceMode === 'nfs') {
+                        btnStart.textContent = '🏁 Начать 3D Круговую гонку (NFS MW)';
+                    } else if (activeRaceMode === '3d') {
+                        btnStart.textContent = '🚀 Начать 3D заезд (Вид сзади)';
+                    } else {
+                        btnStart.textContent = '🚦 НАЧАТЬ ЗАЕЗД (СТАРТ)';
+                    }
+                }
             }
         }
 
         function setNfsCircuitTrack(trackId) {
             nfsSelectedTrack = trackId || 'rockport_ring';
+            if (activeRaceMode !== 'nfs' && typeof switchRaceMode === 'function') {
+                switchRaceMode('nfs');
+            }
             const titles = {
                 rockport_ring: 'Рокпорт-Ринг (Город + Эстакада)',
                 canyon_pass: 'Каньон Карбон (Серпантин)',
@@ -15389,8 +15440,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             if (typeof document !== 'undefined') {
                 const lbl = document.getElementById('nfs-track-label');
                 if (lbl) lbl.textContent = titles[nfsSelectedTrack] || titles.rockport_ring;
-                document.querySelectorAll('.nfs-track-btn[data-track]').forEach(btn => {
-                    btn.classList.toggle('active', btn.getAttribute('data-track') === nfsSelectedTrack);
+                document.querySelectorAll('[data-nfs-track], .nfs-track-btn[data-track]').forEach(btn => {
+                    const tId = btn.getAttribute('data-nfs-track') || btn.getAttribute('data-track');
+                    btn.classList.toggle('active', tId === nfsSelectedTrack);
                 });
             }
         }
@@ -15398,13 +15450,44 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
         function setNfsCircuitDifficulty(diffId) {
             nfsSelectedDifficulty = diffId || 'medium';
+            if (activeRaceMode !== 'nfs' && typeof switchRaceMode === 'function') {
+                switchRaceMode('nfs');
+            }
             if (typeof document !== 'undefined') {
-                document.querySelectorAll('.nfs-diff-btn[data-diff]').forEach(btn => {
-                    btn.classList.toggle('active', btn.getAttribute('data-diff') === nfsSelectedDifficulty);
+                document.querySelectorAll('[data-nfs-diff], .nfs-diff-btn[data-diff]').forEach(btn => {
+                    const dId = btn.getAttribute('data-nfs-diff') || btn.getAttribute('data-diff');
+                    btn.classList.toggle('active', dId === nfsSelectedDifficulty);
                 });
             }
         }
         window.setNfsCircuitDifficulty = setNfsCircuitDifficulty;
+
+        function quickStartNfsCircuit(trackId, diffId) {
+            if (trackId) setNfsCircuitTrack(trackId);
+            if (diffId) setNfsCircuitDifficulty(diffId);
+            switchRaceMode('nfs');
+            startRaceGame();
+        }
+        window.quickStartNfsCircuit = quickStartNfsCircuit;
+
+        function switch3DRaceSubMode() {
+            const tracks = ['rockport_ring', 'canyon_pass', 'bayview_sprint'];
+            if (activeRaceMode !== 'nfs' && raceCurrentMode !== 'nfs_circuit') {
+                switchRaceMode('nfs');
+                setNfsCircuitTrack(nfsSelectedTrack || 'rockport_ring');
+            } else {
+                const idx = tracks.indexOf(nfsSelectedTrack);
+                if (idx >= 0 && idx < tracks.length - 1) {
+                    setNfsCircuitTrack(tracks[idx + 1]);
+                } else {
+                    switchRaceMode('3d');
+                }
+            }
+            if (isRaceRunning) {
+                start3DRaceGame();
+            }
+        }
+        window.switch3DRaceSubMode = switch3DRaceSubMode;
 
         // -------------------------------------------------------------
         // СИСТЕМА ПОГОДЫ И АТМОСФЕРЫ ЗАЕЗДА (День, Закат, Ночь, Дождь, Динамика)
@@ -15844,7 +15927,13 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     btnStart.style.opacity = '1';
                     btnStart.style.cursor = 'pointer';
                     btnStart.style.background = '';
-                    btnStart.innerText = '🚦 НАЧАТЬ ЗАЕЗД (СТАРТ)';
+                    if (activeRaceMode === 'nfs' || raceCurrentMode === 'nfs_circuit') {
+                        btnStart.innerText = '🏁 Начать 3D Круговую гонку (NFS MW)';
+                    } else if (activeRaceMode === '3d') {
+                        btnStart.innerText = '🚀 Начать 3D заезд (Вид сзади)';
+                    } else {
+                        btnStart.innerText = '🚦 НАЧАТЬ ЗАЕЗД (СТАРТ)';
+                    }
                     btnStart.title = 'Нажмите, чтобы начать гонку';
                 } else {
                     btnStart.disabled = true;
@@ -16314,9 +16403,11 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             }
             selectedRaceCarName = name;
             selectedRaceCarIndex = index;
-            const raceTab = is3DOrNfsRaceActive()
-                ? (document.getElementById('nav-tab-3d-race') || document.getElementById('nav-tab-racegame'))
-                : (document.getElementById('nav-tab-racegame') || document.getElementById('nav-tab-3d-race'));
+            const raceTab = (activeRaceMode === 'nfs' || raceCurrentMode === 'nfs_circuit')
+                ? (document.getElementById('nav-tab-nfs-race') || document.getElementById('nav-tab-3d-race') || document.getElementById('nav-tab-racegame'))
+                : (is3DOrNfsRaceActive()
+                    ? (document.getElementById('nav-tab-3d-race') || document.getElementById('nav-tab-racegame'))
+                    : (document.getElementById('nav-tab-racegame') || document.getElementById('nav-tab-3d-race')));
             if (raceTab) switchTab('racegame', raceTab, activeRaceMode);
 
             const isOwned = myCars.some(c => c.name === name);
@@ -16335,6 +16426,16 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             switchRaceMode('3d');
             startRaceWithCar(name, index);
         }
+        window.start3DRaceWithCar = start3DRaceWithCar;
+
+        function startNfsRaceWithCar(name, index = -1) {
+            if (typeof Car3DManager !== 'undefined' && Car3DManager.preloadCarModel && window.THREE) {
+                try { Car3DManager.preloadCarModel(window.THREE, name); } catch (_) {}
+            }
+            switchRaceMode('nfs');
+            startRaceWithCar(name, index);
+        }
+        window.startNfsRaceWithCar = startNfsRaceWithCar;
 
         // ==========================================
         // 3D ГОНКА: УПРАВЛЕНИЕ И ИНТЕГРАЦИЯ THREE.JS
@@ -16374,6 +16475,11 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             const baseStats = carRaceStats[selectedRaceCarName] || carRaceStats["ВАЗ-2107 «Жигули»"];
             const stats = NomeraRaceEconomy.performance(baseStats, activeRaceCar);
             const isNfsCircuit = (activeRaceMode === 'nfs' || raceCurrentMode === 'nfs_circuit') && typeof NomeraCircuitRace !== 'undefined' && Boolean(NomeraCircuitRace.NomeraCircuitRaceEngine);
+            const submodeLbl = typeof document !== 'undefined' ? document.getElementById('hud-3d-submode-text') : null;
+            if (submodeLbl) {
+                const trackShort = nfsSelectedTrack === 'canyon_pass' ? 'Каньон' : (nfsSelectedTrack === 'bayview_sprint' ? 'Бэйвью' : 'Рокпорт');
+                submodeLbl.textContent = isNfsCircuit ? `Трасса: ${trackShort}` : 'В Кольцо NFS';
+            }
 
             racePlayer = {
                 x: 0,
@@ -20669,6 +20775,8 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 initRaceGameTab();
                 if (raceMode) {
                     switchRaceMode(raceMode);
+                } else if (element && element.id === 'nav-tab-nfs-race') {
+                    switchRaceMode('nfs');
                 } else if (element && element.id === 'nav-tab-3d-race') {
                     switchRaceMode('3d');
                 }
