@@ -60,7 +60,7 @@
     <!-- Подключение Firebase SDK для базы данных, аккаунтов и мультиплеера -->
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
-    <link rel="stylesheet" href="./styles.css?v=7e97d4a12387">
+    <link rel="stylesheet" href="./styles.css?v=4a17ba620ebd">
     <style>
         /* Collector's Book («Книга коллекционера») & Car-Plate Synergy UI */
         .collector-book-summary {
@@ -347,6 +347,10 @@
                 <button type="button" class="country-select-btn" id="btn-country-UAE" data-country="UAE" onclick="selectPlateCountry('UAE')">
                     <span class="country-btn-flag">🇦🇪</span>
                     <span class="country-btn-info"><strong>Дубай</strong><small>x8.0 • спин 9 000 ₽</small></span>
+                </button>
+                <button type="button" class="country-select-btn" id="btn-country-JPN" data-country="JPN" onclick="selectPlateCountry('JPN')">
+                    <span class="country-btn-flag">🇯🇵</span>
+                    <span class="country-btn-info"><strong>Япония</strong><small>x5.0 • спин 5 000 ₽</small></span>
                 </button>
             </div>
 
@@ -1176,6 +1180,11 @@
                         <span>Дубай</span>
                         <small>x8.0</small>
                     </button>
+                    <button type="button" class="case-country-btn" id="btn-case-country-JPN" data-country="JPN" onclick="selectCaseCountry('JPN')">
+                        <span class="country-flag-badge">🇯🇵</span>
+                        <span>Япония</span>
+                        <small>x5.0</small>
+                    </button>
                 </div>
                 <div id="case-country-subtitle" class="case-country-subtitle">Выбрана база номеров: 🇷🇺 Россия (ГОСТ) — стандартная стоимость кейсов</div>
                 <div class="cases-grid">
@@ -1212,6 +1221,13 @@
                         <div class="case-card-title" style="color: #60a5fa;">Америка State Box</div>
                         <div class="case-card-sub">Штаты CA, NY, FL, TX, NV</div>
                         <div class="case-card-price" id="case-price-usa">110 000 ₽</div>
+                    </div>
+
+                    <div class="case-card case-super" style="border-top-color: #10b981;" onclick="openCasePreview('jpn_box')">
+                        <div class="case-icon-box">🇯🇵</div>
+                        <div class="case-card-title" style="color: #34d399;">Токио JDM Box</div>
+                        <div class="case-card-sub">Номера TKY, OSK, YKH · JDM серии</div>
+                        <div class="case-card-price" id="case-price-jpn">160 000 ₽</div>
                     </div>
 
                     <div class="case-card case-mega" style="border-top-color: #d97706;" onclick="openCasePreview('uae_box')">
@@ -1967,7 +1983,7 @@
     <script src="./js/security.js?v=ed845ef69db6"></script>
     <script src="./js/storage.js?v=327dc7592b84"></script>
     <script src="./js/race-records.js?v=eaeaf8e59fc2"></script>
-    <script src="./js/race-economy.js?v=1acf834a5662"></script>
+    <script src="./js/race-economy.js?v=2802923358a3"></script>
     <script src="./js/audio.js?v=bca765d74412"></script>
     <script src="./js/vendor/three.min.js"></script>
     <script>
@@ -1984,7 +2000,7 @@
         }
     </script>
     <script src="./js/race-effects.js?v=6883d3af7d80"></script>
-    <script src="./js/car-3d.js?v=cda240c368be"></script>
-    <script src="./js/app.js?v=b373f08c3c49"></script>
+    <script src="./js/car-3d.js?v=784ba3f169bc"></script>
+    <script src="./js/app.js?v=6b29af1da5b4"></script>
 </body>
 </html>

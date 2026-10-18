@@ -1178,4 +1178,101 @@ describe('Collector Book & Car-Plate Synergy (RUS / KZ / USA / UAE)', () => {
     assert.equal(uaeUncommon.rarity.text, 'Необычный');
     assert.ok(uaeUncommon.price < 18000, `Expected UAE Необычный forced plate < 18000 ₽, got ${uaeUncommon.price}`);
   });
+
+  test('Japan (JPN) plates and Ultra-Rare Special plates (USSR, Diplomatic CD, MVD, Military, Federal, JDM Glow) work across server, 2D UI, and 3D bumpers with ultra-low drop chance', () => {
+    const { Car3DManager, drawnTexts } = setup3DPlateTestEnv();
+    const { createApp } = require('./helpers/create-app.cjs');
+    const app = createApp();
+    app.run('playAsGuest()');
+
+    // 1. Server & Client Japan (JPN) config, formatting, parsing, and pricing
+    assert.ok(c.COUNTRIES.JPN, 'Server COUNTRIES.JPN must exist');
+    assert.equal(c.COUNTRIES.JPN.spinCostBoth, 5000);
+    assert.equal(c.COUNTRIES.JPN.spinCostPart, 2800);
+    assert.equal(c.COUNTRIES.JPN.defaultReg, 'TKY');
+
+    assert.equal(c.formatPlateText('J', 'D', 'M', '777', 'TKY', 'JPN'), 'JDM 777 | TKY JPN');
+    assert.equal(c.safePlate({ text: 'JDM 777 | TKY JPN', price: 25000000 }, 'jpn_1').text, 'JDM 777 | TKY JPN');
+
+    const jpnParsed = c.parsePlate('JDM 777 | TKY JPN');
+    assert.ok(jpnParsed);
+    assert.equal(jpnParsed.country, 'JPN');
+    assert.equal(jpnParsed.l1, 'J');
+    assert.equal(jpnParsed.l2, 'D');
+    assert.equal(jpnParsed.l3, 'M');
+    assert.equal(jpnParsed.digits, '777');
+    assert.equal(jpnParsed.region, 'TKY');
+
+    const jpnEliteServer = c.priceOfPlate(jpnParsed);
+    const jpnEliteClient = app.run("getCalculatedPrice('J', 'D', 'M', '777', 'TKY', 'JPN')");
+    assert.ok(jpnEliteServer > 20000000, `Expected JDM 777 | TKY JPN server price > 20M, got ${jpnEliteServer}`);
+    assert.ok(jpnEliteClient > 20000000, `Expected JDM 777 | TKY JPN client price > 20M, got ${jpnEliteClient}`);
+
+    const jpnOrdServer = c.priceOfPlate('A', 'B', 'C', '124', 'NGY', 'JPN');
+    const jpnOrdClient = app.run("getCalculatedPrice('A', 'B', 'C', '124', 'NGY', 'JPN')");
+    assert.ok(jpnOrdServer < 18000, `Expected JPN ordinary plate < 18000 on server, got ${jpnOrdServer}`);
+    assert.ok(jpnOrdClient < 18000, `Expected JPN ordinary plate < 18000 on client, got ${jpnOrdClient}`);
+
+    // 2. Client selectPlateCountry('JPN') & jpn_box case
+    app.run("selectPlateCountry('JPN')");
+    assert.equal(app.run('currentCountry'), 'JPN');
+    assert.equal(app.run('currentReg'), 'TKY');
+    assert.match(app.run("document.getElementById('spin-cost-both').innerText"), /5\s*000\s*₽/);
+    assert.match(app.run("document.getElementById('spin-cost-num').innerText"), /2\s*800\s*₽/);
+    assert.equal(app.run("document.getElementById('plate-box').classList.contains('country-jpn')"), true);
+    assert.equal(app.run("getCaseEffectivePrice('jpn_box', 'RUS')"), 160000);
+
+    const jpnMiniHtml = app.run("renderMiniPlateInnerHtml('JDM 777 | TKY JPN')");
+    assert.match(jpnMiniHtml, /品川 330/);
+    assert.match(jpnMiniHtml, /JDM/);
+
+    // 3. Ultra-Rare Special RUS plates: USSR (МОС/СВТ), Diplomatic Red (КМН/СМК), MVD Blue (УМВ/РМВ), Military Black (ВМО/КМО), Federal Tricolor (КРМ/РФС)
+    const specialCases = [
+      { l1: 'М', l2: 'О', l3: 'С', num: '001', reg: '77', country: 'RUS', type: 'ussr', css: 'special-ussr' },
+      { l1: 'К', l2: 'М', l3: 'Н', num: '001', reg: '77', country: 'RUS', type: 'diplomat', css: 'special-diplomat' },
+      { l1: 'У', l2: 'М', l3: 'В', num: '001', reg: '77', country: 'RUS', type: 'mvd', css: 'special-mvd' },
+      { l1: 'В', l2: 'М', l3: 'О', num: '001', reg: '77', country: 'RUS', type: 'military', css: 'special-military' },
+      { l1: 'К', l2: 'Р', l3: 'М', num: '001', reg: '77', country: 'RUS', type: 'federal', css: 'special-federal' }
+    ];
+
+    for (const sp of specialCases) {
+      const metaServer = c.getUltraSpecialPlateMeta(sp.l1, sp.l2, sp.l3, sp.num, sp.reg, sp.country);
+      assert.ok(metaServer, `Expected server getUltraSpecialPlateMeta for ${sp.l1}${sp.l2}${sp.l3}`);
+      assert.equal(metaServer.type, sp.type);
+
+      const srvPrice = c.priceOfPlate(sp.l1, sp.l2, sp.l3, sp.num, sp.reg, sp.country);
+      const cliPrice = app.run(`getCalculatedPrice('${sp.l1}', '${sp.l2}', '${sp.l3}', '${sp.num}', '${sp.reg}', '${sp.country}')`);
+      assert.ok(srvPrice >= 18000000, `Expected ultra-special ${sp.type} server price >= 18M, got ${srvPrice}`);
+      assert.ok(cliPrice >= 18000000, `Expected ultra-special ${sp.type} client price >= 18M, got ${cliPrice}`);
+      assert.equal(c.rarityOfPrice(srvPrice), 'БЛАТНОЙ');
+
+      const plateText = c.formatPlateText(sp.l1, sp.l2, sp.l3, sp.num, sp.reg, sp.country);
+      const miniClasses = app.run(`getMiniPlateCountryClass('${plateText}')`);
+      assert.ok(miniClasses.includes('special-plate') && miniClasses.includes(sp.css), `Expected mini-plate classes for ${plateText} to include ${sp.css}, got ${miniClasses}`);
+    }
+
+    // 4. 3D License Plate rendering for JPN and Ultra-Rare Special plates (USSR, Diplomat, MVD, Military)
+    drawnTexts.length = 0;
+    const jpn3D = Car3DManager.createLicensePlate('JDM 777 | TKY JPN');
+    assert.ok(jpn3D && jpn3D.isGroup);
+    assert.ok(drawnTexts.some(d => d.text.includes('品川 330')), '3D JPN plate must draw Tokyo Shinagawa kanji header');
+
+    drawnTexts.length = 0;
+    Car3DManager.createLicensePlate('М 001 ОС | 77 RUS');
+    assert.ok(drawnTexts.some(d => d.text.includes('СССР')), '3D USSR special plate must draw ★ СССР badge');
+
+    drawnTexts.length = 0;
+    Car3DManager.createLicensePlate('К 001 МН | 77 RUS');
+    assert.ok(drawnTexts.some(d => d.text.includes('CD')), '3D Diplomatic red plate must draw CD • МИД badge');
+
+    // 5. Ordinary fallback never leaks ULTRA_SPECIAL_RUS_SERIES on normal spins
+    let specialCountIn500 = 0;
+    for (let i = 0; i < 500; i++) {
+      const r = c.secureRoll('both', 0, 'RUS');
+      const series = r.letters.join('');
+      if (c.ULTRA_SPECIAL_RUS_SERIES.includes(series)) specialCountIn500++;
+    }
+    assert.ok(specialCountIn500 <= 5, `Ultra-special series must have a super low drop rate (~0.2%), got ${specialCountIn500}/500`);
+  });
 });
+

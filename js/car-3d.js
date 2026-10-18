@@ -591,7 +591,7 @@
         return group;
     }
 
-    // Multi-country License Plate parser & formatter (RUS, KZ, USA, UAE)
+    // Multi-country License Plate parser & formatter (RUS, KZ, USA, UAE, JPN)
     function formatPlateComponents(rawText) {
         if (!rawText || rawText === 'none' || rawText === 'null') {
             return { main: 'А 777 АА', l1: 'А', l2l3: 'АА', letters: 'ААА', digits: '777', region: '77', country: 'RUS', isNone: true };
@@ -601,10 +601,12 @@
             if (c === 'KZ') return '01';
             if (c === 'USA') return 'CA';
             if (c === 'UAE') return 'DXB';
+            if (c === 'JPN') return 'TKY';
             return '77';
         };
         const defaultLettersForCountry = (c) => {
             if (c === 'KZ' || c === 'USA') return 'VIP';
+            if (c === 'JPN') return 'JDM';
             if (c === 'UAE') return 'D';
             return 'ААА';
         };
@@ -678,6 +680,10 @@
                 letters = letters.padEnd(3, fallbackLetters[0] || 'V');
                 return { main: `${letters} • ${digits}`, letters, digits, region: reg, country: 'USA', isNone: false };
             }
+            if (c === 'JPN') {
+                letters = letters.padEnd(3, fallbackLetters[0] || 'J');
+                return { main: `${letters} ${digits}`, letters, digits, region: reg, country: 'JPN', isNone: false };
+            }
             // RUS default: L NNN LL
             letters = letters.padEnd(3, 'А');
             const l1 = letters[0] || 'А';
@@ -689,16 +695,16 @@
             const parts = str.split('|');
             const rawMain = parts[0].trim();
             const regStr = parts.slice(1).join(' ').trim();
-            const countryMatch = regStr.match(/\b(RUS|KZ|USA|UAE)\b/i);
+            const countryMatch = regStr.match(/\b(RUS|KZ|USA|UAE|JPN)\b/i);
             const country = countryMatch ? countryMatch[1].toUpperCase() : 'RUS';
-            const regClean = regStr.replace(/\b(RUS|KZ|USA|UAE)\b/ig, '').trim();
+            const regClean = regStr.replace(/\b(RUS|KZ|USA|UAE|JPN)\b/ig, '').trim();
             const regMatch = regClean.match(/[A-ZА-Я0-9]{1,5}/i);
             const region = regMatch ? regMatch[0].toUpperCase() : defaultRegionForCountry(country);
             return buildNormalized(rawMain, region, country);
         }
 
         let country = 'RUS';
-        const trailingCountry = str.match(/\s+\b(RUS|KZ|USA|UAE)\b$/i);
+        const trailingCountry = str.match(/\s+\b(RUS|KZ|USA|UAE|JPN)\b$/i);
         if (trailingCountry) {
             country = trailingCountry[1].toUpperCase();
             str = str.slice(0, trailingCountry.index).trim();
@@ -715,18 +721,18 @@
         }
 
         // Match L NNN LL + region
-        const m = str.match(/^([А-ЯA-Z]{1,2})\s*(\d{1,4})\s*([А-ЯA-Z]{1,2})\s+([A-ZА-Я0-9]{2,3})$/i) ||
+        const m = str.match(/^([А-ЯA-Z]{1,2})\s*(\d{1,4})\s*([А-ЯA-Z]{1,2})\s+([A-ZА-Я0-9]{2,4})$/i) ||
                   str.match(/^([А-ЯA-Z]{1,2})\s*(\d{1,4})\s*([А-ЯA-Z]{1,2})\s*(\d{2,3})$/i);
         if (m) {
             return buildNormalized(`${m[1]} ${m[2]} ${m[3]}`, m[4], country);
         }
-        // Match NNN LLL + region (KZ authentic) or LLL NNN + region (USA/UAE authentic)
+        // Match NNN LLL + region (KZ authentic) or LLL NNN + region (USA/UAE/JPN authentic)
         const mAuth = str.match(/^(\d{3}\s+[A-ZА-Я]{3}|[A-ZА-Я]{1,3}\s*[•·★-]?\s*\d{1,5})\s+([A-ZА-Я0-9]{2,3})$/i);
         if (mAuth) {
             return buildNormalized(mAuth[1], mAuth[2], country);
         }
         const spaceIdx = str.lastIndexOf(' ');
-        if (spaceIdx > 0 && /^(\d{2,3}|CA|NY|FL|TX|NV|DXB|AUH|SHJ|AJM|RAK|FUJ|UAQ)$/i.test(str.slice(spaceIdx + 1))) {
+        if (spaceIdx > 0 && /^(\d{2,3}|CA|NY|FL|TX|NV|DXB|AUH|SHJ|AJM|RAK|FUJ|UAQ|TKY|YKH|OSK|NGY|SPR|СССР|CD)$/i.test(str.slice(spaceIdx + 1))) {
             return buildNormalized(str.slice(0, spaceIdx), str.slice(spaceIdx + 1), country);
         }
         // Match standard Russian plate prefix
@@ -741,7 +747,7 @@
         return buildNormalized(str, defaultRegionForCountry(country), country);
     }
 
-    // Multi-country 3D License Plate (RUS, KZ, USA, UAE) with high-res crisp canvas texture & flags
+    // Multi-country 3D License Plate (RUS, KZ, USA, UAE, JPN) with high-res crisp canvas texture & flags
     function createLicensePlate(arg0, arg1 = 'А 777 АА | 77 RUS', arg2 = true, arg3 = 'none', arg4 = 'classic') {
         let THREE, text, isFront, frameStyle, plateStyle;
         if (arg0 && typeof arg0 === 'object' && typeof arg0.Group === 'function') {
@@ -784,10 +790,10 @@
             return group;
         }
 
-        // Authentic physical plate dimensions: North American 12"x6" (2:1) vs European/GOST 520x112mm
-        const isUSA = country === 'USA';
-        const plateW = isUSA ? 0.36 : 0.52;
-        const plateH = isUSA ? 0.18 : 0.115;
+        // Authentic physical plate dimensions: North American / Japanese JDM 2:1 (0.36x0.18) vs European/GOST 520x112mm
+        const is2x1Plate = (country === 'USA' || country === 'JPN');
+        const plateW = is2x1Plate ? 0.36 : 0.52;
+        const plateH = is2x1Plate ? 0.18 : 0.115;
 
         // Frame material color matching frameStyle: gold #d4af37, carbon #1e293b, chrome #e2e8f0, neon #00f2fe, or classic #111827
         const fStyle = String(frameStyle || 'none').toLowerCase();
@@ -802,14 +808,86 @@
             try {
                 const canvas = document.createElement('canvas');
                 canvas.width = 512;
-                canvas.height = isUSA ? 256 : 128;
+                canvas.height = is2x1Plate ? 256 : 128;
                 const ctx = canvas.getContext('2d');
                 if (ctx) {
                     const regCode = comp.region;
                     const letters = comp.letters || 'VIP';
                     const digits = comp.digits || '777';
+                    let customEmissiveIntensity = 0.28;
 
-                    if (country === 'USA') {
+                    if (country === 'JPN') {
+                        // Authentic 512x256 Japanese JDM Plate (330x165mm, 2:1 aspect ratio)
+                        const JPN_META = {
+                            TKY: { kanji: '品川', classCode: '330', hira: 'あ' },
+                            YKH: { kanji: '横浜', classCode: '300', hira: 'さ' },
+                            OSK: { kanji: '大阪', classCode: '331', hira: 'す' },
+                            NGY: { kanji: '名古屋', classCode: '350', hira: 'せ' },
+                            SPR: { kanji: '札幌', classCode: '301', hira: 'そ' },
+                            FKO: { kanji: '福岡', classCode: '330', hira: 'た' },
+                            KBE: { kanji: '神戸', classCode: '302', hira: 'ち' },
+                            KYO: { kanji: '京都', classCode: '310', hira: 'つ' },
+                            CHB: { kanji: '千葉', classCode: '320', hira: 'て' },
+                            STM: { kanji: '大宮', classCode: '300', hira: 'と' }
+                        };
+                        const jpnMeta = JPN_META[regCode] || { kanji: '東京', classCode: '330', hira: 'あ' };
+                        const isJdmGlow = ['JDM', 'GTR'].includes(letters) && ['777', '001', '007'].includes(digits);
+                        group.userData.specialPlateType = isJdmGlow ? 'jdm_glow' : null;
+                        if (isJdmGlow) customEmissiveIntensity = 0.68;
+
+                        if (isJdmGlow) {
+                            ctx.fillStyle = '#041814';
+                        } else if (typeof ctx.createLinearGradient === 'function') {
+                            const grad = ctx.createLinearGradient(0, 0, 0, 256);
+                            grad.addColorStop(0, '#ffffff');
+                            grad.addColorStop(1, '#f1f5f9');
+                            ctx.fillStyle = grad;
+                        } else {
+                            ctx.fillStyle = '#ffffff';
+                        }
+                        ctx.fillRect(0, 0, 512, 256);
+
+                        const jpnTextColor = isJdmGlow ? '#34d399' : '#064e3b';
+                        ctx.strokeStyle = jpnTextColor;
+                        ctx.lineWidth = 7;
+                        ctx.strokeRect(6, 6, 500, 244);
+
+                        // Top-left Japanese red rising-sun seal & top-right bolt
+                        ctx.fillStyle = '#dc2626';
+                        if (typeof ctx.arc === 'function') {
+                            ctx.beginPath();
+                            ctx.arc(54, 48, 16, 0, Math.PI * 2);
+                            ctx.fill();
+                        } else {
+                            ctx.fillRect(38, 32, 32, 32);
+                        }
+                        ctx.fillStyle = '#94a3b8';
+                        ctx.fillRect(444, 40, 16, 16);
+
+                        // Top row: Prefecture Kanji + Classification code (e.g. 品川 330 • JDM)
+                        ctx.fillStyle = jpnTextColor;
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.font = '900 44px "Inter", "Arial Black", sans-serif';
+                        ctx.fillText(`${jpnMeta.kanji} ${jpnMeta.classCode}`, 236, 52);
+
+                        ctx.font = '800 22px "Inter", sans-serif';
+                        ctx.fillText(letters, 404, 52);
+
+                        // Bottom row: Left Hiragana character + Large hyphenated Japanese digits
+                        ctx.font = '900 54px "Inter", sans-serif';
+                        ctx.fillText(jpnMeta.hira, 62, 166);
+
+                        const formattedJpnDigits = digits.startsWith('00')
+                            ? `・・ ${digits[2]}`
+                            : (digits.startsWith('0') ? `・${digits[1]} ${digits[2]}` : `${digits[0]}-${digits.slice(1)}`);
+                        ctx.font = '900 104px "Inter", "Arial Black", sans-serif';
+                        ctx.fillText(formattedJpnDigits, 296, 168);
+
+                        // Bottom JPN prefecture subtitle
+                        ctx.font = '800 17px "Inter", sans-serif';
+                        ctx.fillText(`JAPAN • ${regCode}`, 256, 232);
+                    } else if (country === 'USA') {
                         // Authentic 512x256 (2:1 aspect ratio) North American State Plates (CA, NY, FL, TX, NV)
                         ctx.textAlign = 'center';
                         ctx.textBaseline = 'middle';
@@ -1147,73 +1225,192 @@
                         ctx.font = '900 62px "Inter", "Arial Black", sans-serif';
                         ctx.fillText(regCode, 452, 66);
                     } else {
-                        // Russian (RUS) Authentic GOST R 50577-93 Plate (512x128)
-                        if (typeof ctx.createLinearGradient === 'function') {
-                            const grad = ctx.createLinearGradient(0, 0, 0, 128);
-                            grad.addColorStop(0, '#f8fafc');
-                            grad.addColorStop(1, '#e2e8f0');
-                            ctx.fillStyle = grad;
-                        } else {
-                            ctx.fillStyle = '#f8fafc';
-                        }
-                        ctx.fillRect(0, 0, 512, 128);
-
-                        ctx.strokeStyle = '#090d16';
-                        ctx.lineWidth = 8;
-                        ctx.strokeRect(6, 6, 500, 116);
-
-                        // 2 realistic bolt heads (x = 22, y = 64 and x = 368, y = 64)
-                        [22, 368].forEach(bx => {
-                            ctx.fillStyle = '#94a3b8';
-                            if (typeof ctx.arc === 'function') {
-                                ctx.beginPath();
-                                ctx.arc(bx, 64, 4.5, 0, Math.PI * 2);
-                                ctx.fill();
-                            } else {
-                                ctx.fillRect(bx - 4, 60, 8, 8);
-                            }
-                        });
-
-                        // Vertical Black Divider at x = 382
-                        ctx.strokeStyle = '#090d16';
-                        ctx.beginPath();
-                        ctx.moveTo(382, 8);
-                        ctx.lineTo(382, 120);
-                        ctx.lineWidth = 5;
-                        ctx.stroke();
-
-                        // Authentic GOST R 50577-93 Mixed-Size Baseline Typography
+                        // Russian (RUS) Authentic GOST R 50577-93 + Ultra-Rare Special Plates (512x128)
                         const l1 = comp.l1 || (letters[0] || 'А');
                         const l2l3 = comp.l2l3 || (letters.slice(1, 3) || 'АА');
-                        ctx.fillStyle = '#090d16';
-                        ctx.textAlign = 'center';
-                        ctx.textBaseline = 'middle';
-                        ctx.font = 'bold 52px "Inter", "Arial Black", sans-serif';
-                        ctx.fillText(l1, 58, 74);
-                        ctx.font = '900 76px "Inter", "Arial Black", sans-serif';
-                        ctx.fillText(digits, 186, 68);
-                        ctx.font = 'bold 52px "Inter", "Arial Black", sans-serif';
-                        ctx.fillText(l2l3, 316, 74);
+                        const isUssr = ['МОС', 'СВТ'].includes(letters) || regCode === 'СССР';
+                        const isDiplomat = ['КМН', 'СМК'].includes(letters) || regCode === 'CD';
+                        const isMvd = ['УМВ', 'РМВ'].includes(letters);
+                        const isMilitary = ['ВМО', 'КМО'].includes(letters);
+                        const isFederal = ['КРМ', 'РФС'].includes(letters);
 
-                        // Right Region Block: large region digits (777) at x = 446, y = 44, bold RUS at x = 422, y = 98
-                        const regFontSize = regCode.length > 2 ? 42 : 48;
-                        ctx.font = `900 ${regFontSize}px "Inter", "Arial Black", sans-serif`;
-                        ctx.fillText(regCode, 446, 44);
+                        group.userData.specialPlateType = isUssr ? 'ussr'
+                            : (isDiplomat ? 'diplomat'
+                                : (isMvd ? 'mvd'
+                                    : (isMilitary ? 'military'
+                                        : (isFederal ? 'federal' : null))));
 
-                        ctx.font = '800 22px "Inter", sans-serif';
-                        ctx.fillText('RUS', 422, 98);
+                        if (isUssr) {
+                            // 🏛️ СССР (Ретро ГОСТ 1977): Matte black background (#0b0f17), white border & stencil characters
+                            ctx.fillStyle = '#0b0f17';
+                            ctx.fillRect(0, 0, 512, 128);
+                            ctx.strokeStyle = '#f8fafc';
+                            ctx.lineWidth = 6;
+                            ctx.strokeRect(6, 6, 500, 116);
 
-                        // Crisp 3-stripe Russian flag (white / #2563eb / #dc2626 with thin #090d16 border) at x = 456, y = 86
-                        const fx = 456, fy = 86, fw = 38, fh = 22;
-                        ctx.fillStyle = '#ffffff';
-                        ctx.fillRect(fx, fy, fw, 7.2);
-                        ctx.fillStyle = '#2563eb';
-                        ctx.fillRect(fx, fy + 7.2, fw, 7.2);
-                        ctx.fillStyle = '#dc2626';
-                        ctx.fillRect(fx, fy + 14.4, fw, 7.6);
-                        ctx.strokeStyle = '#090d16';
-                        ctx.lineWidth = 1.5;
-                        ctx.strokeRect(fx, fy, fw, fh);
+                            ctx.beginPath();
+                            ctx.moveTo(382, 8);
+                            ctx.lineTo(382, 120);
+                            ctx.lineWidth = 4;
+                            ctx.stroke();
+
+                            ctx.fillStyle = '#f8fafc';
+                            ctx.textAlign = 'center';
+                            ctx.textBaseline = 'middle';
+                            ctx.font = '900 72px "Inter", "Arial Black", sans-serif';
+                            ctx.fillText(`0${digits[1] || '0'}-${digits.slice(1) || '01'}`, 148, 66);
+                            ctx.font = '900 54px "Inter", "Arial Black", sans-serif';
+                            ctx.fillText(letters, 312, 68);
+
+                            ctx.fillStyle = '#ef4444';
+                            ctx.font = '900 28px "Inter", sans-serif';
+                            ctx.fillText('★', 446, 38);
+                            ctx.fillStyle = '#f8fafc';
+                            ctx.font = '900 30px "Inter", "Arial Black", sans-serif';
+                            ctx.fillText('СССР', 446, 78);
+                            ctx.font = '800 14px "Inter", sans-serif';
+                            ctx.fillText('ГОСТ 77', 446, 104);
+                        } else if (isDiplomat) {
+                            // 📕 Дипломатический Красный (CD / МИД): Crimson red background (#b91c1c) with white text
+                            ctx.fillStyle = '#b91c1c';
+                            ctx.fillRect(0, 0, 512, 128);
+                            ctx.strokeStyle = '#ffffff';
+                            ctx.lineWidth = 6;
+                            ctx.strokeRect(6, 6, 500, 116);
+
+                            ctx.beginPath();
+                            ctx.moveTo(382, 8);
+                            ctx.lineTo(382, 120);
+                            ctx.lineWidth = 4;
+                            ctx.stroke();
+
+                            ctx.fillStyle = '#ffffff';
+                            ctx.textAlign = 'center';
+                            ctx.textBaseline = 'middle';
+                            ctx.font = '900 68px "Inter", "Arial Black", sans-serif';
+                            ctx.fillText(digits, 116, 66);
+                            ctx.font = '900 54px "Inter", "Arial Black", sans-serif';
+                            ctx.fillText('CD', 248, 68);
+                            ctx.font = '900 64px "Inter", "Arial Black", sans-serif';
+                            ctx.fillText(digits[2] || '1', 338, 66);
+
+                            const dispReg = (regCode === 'CD' ? '77' : regCode);
+                            ctx.font = '900 44px "Inter", "Arial Black", sans-serif';
+                            ctx.fillText(dispReg, 446, 46);
+                            ctx.font = '800 22px "Inter", sans-serif';
+                            ctx.fillText('RUS', 446, 96);
+                        } else if (isMvd || isMilitary) {
+                            // 🚔 Синий МВД (#1d4ed8) или 🪖 Военный Чёрный МО (#090d16)
+                            ctx.fillStyle = isMvd ? '#1d4ed8' : '#090d16';
+                            ctx.fillRect(0, 0, 512, 128);
+                            ctx.strokeStyle = '#ffffff';
+                            ctx.lineWidth = 6;
+                            ctx.strokeRect(6, 6, 500, 116);
+
+                            ctx.beginPath();
+                            ctx.moveTo(382, 8);
+                            ctx.lineTo(382, 120);
+                            ctx.lineWidth = 4;
+                            ctx.stroke();
+
+                            ctx.fillStyle = '#ffffff';
+                            ctx.textAlign = 'center';
+                            ctx.textBaseline = 'middle';
+                            ctx.font = 'bold 52px "Inter", "Arial Black", sans-serif';
+                            ctx.fillText(l1, 58, 74);
+                            ctx.font = '900 76px "Inter", "Arial Black", sans-serif';
+                            ctx.fillText(digits, 186, 68);
+                            ctx.font = 'bold 52px "Inter", "Arial Black", sans-serif';
+                            ctx.fillText(l2l3, 316, 74);
+
+                            ctx.font = '900 44px "Inter", "Arial Black", sans-serif';
+                            ctx.fillText(regCode, 446, 44);
+                            ctx.font = '800 20px "Inter", sans-serif';
+                            ctx.fillText(isMvd ? 'МВД RUS' : '★ МО РФ', 446, 96);
+                        } else {
+                            // Standard Russian GOST R 50577-93 or 🇷🇺 Federal Wide-Tricolor Plate
+                            if (typeof ctx.createLinearGradient === 'function') {
+                                const grad = ctx.createLinearGradient(0, 0, 0, 128);
+                                grad.addColorStop(0, '#f8fafc');
+                                grad.addColorStop(1, '#e2e8f0');
+                                ctx.fillStyle = grad;
+                            } else {
+                                ctx.fillStyle = '#f8fafc';
+                            }
+                            ctx.fillRect(0, 0, 512, 128);
+
+                            ctx.strokeStyle = '#090d16';
+                            ctx.lineWidth = 8;
+                            ctx.strokeRect(6, 6, 500, 116);
+
+                            // 2 realistic bolt heads (x = 22, y = 64 and x = 368, y = 64)
+                            [22, 368].forEach(bx => {
+                                ctx.fillStyle = '#94a3b8';
+                                if (typeof ctx.arc === 'function') {
+                                    ctx.beginPath();
+                                    ctx.arc(bx, 64, 4.5, 0, Math.PI * 2);
+                                    ctx.fill();
+                                } else {
+                                    ctx.fillRect(bx - 4, 60, 8, 8);
+                                }
+                            });
+
+                            // Vertical Black Divider at x = 382
+                            ctx.strokeStyle = '#090d16';
+                            ctx.beginPath();
+                            ctx.moveTo(382, 8);
+                            ctx.lineTo(382, 120);
+                            ctx.lineWidth = 5;
+                            ctx.stroke();
+
+                            // Authentic GOST R 50577-93 Mixed-Size Baseline Typography
+                            ctx.fillStyle = '#090d16';
+                            ctx.textAlign = 'center';
+                            ctx.textBaseline = 'middle';
+                            ctx.font = 'bold 52px "Inter", "Arial Black", sans-serif';
+                            ctx.fillText(l1, 58, 74);
+                            ctx.font = '900 76px "Inter", "Arial Black", sans-serif';
+                            ctx.fillText(digits, 186, 68);
+                            ctx.font = 'bold 52px "Inter", "Arial Black", sans-serif';
+                            ctx.fillText(l2l3, 316, 74);
+
+                            if (isFederal) {
+                                // 🇷🇺 Федеральный Спецномер (Широкий Триколор ФСО / Кремль в правом окне)
+                                const fx = 388, fy = 14, fw = 110, fh = 68;
+                                ctx.fillStyle = '#ffffff';
+                                ctx.fillRect(fx, fy, fw, 22);
+                                ctx.fillStyle = '#2563eb';
+                                ctx.fillRect(fx, fy + 22, fw, 23);
+                                ctx.fillStyle = '#dc2626';
+                                ctx.fillRect(fx, fy + 45, fw, 23);
+                                ctx.strokeStyle = '#090d16';
+                                ctx.lineWidth = 2;
+                                ctx.strokeRect(fx, fy, fw, fh);
+                                ctx.fillStyle = '#090d16';
+                                ctx.font = '900 22px "Inter", "Arial Black", sans-serif';
+                                ctx.fillText('ФСО RUS', 444, 102);
+                            } else {
+                                // Right Region Block: large region digits (777) at x = 446, y = 44, bold RUS at x = 422, y = 98
+                                const regFontSize = regCode.length > 2 ? 42 : 48;
+                                ctx.font = `900 ${regFontSize}px "Inter", "Arial Black", sans-serif`;
+                                ctx.fillText(regCode, 446, 44);
+
+                                ctx.font = '800 22px "Inter", sans-serif';
+                                ctx.fillText('RUS', 422, 98);
+
+                                // Crisp 3-stripe Russian flag (white / #2563eb / #dc2626 with thin #090d16 border) at x = 456, y = 86
+                                const fx = 456, fy = 86, fw = 38, fh = 22;
+                                ctx.fillStyle = '#ffffff';
+                                ctx.fillRect(fx, fy, fw, 7.2);
+                                ctx.fillStyle = '#2563eb';
+                                ctx.fillRect(fx, fy + 7.2, fw, 7.2);
+                                ctx.fillStyle = '#dc2626';
+                                ctx.fillRect(fx, fy + 14.4, fw, 7.6);
+                                ctx.strokeStyle = '#090d16';
+                                ctx.lineWidth = 1.5;
+                                ctx.strokeRect(fx, fy, fw, fh);
+                            }
+                        }
                     }
 
                     const tex = new THREE.CanvasTexture(canvas);
@@ -1227,7 +1424,7 @@
                         map: tex,
                         emissive: new THREE.Color(0xffffff),
                         emissiveMap: tex,
-                        emissiveIntensity: 0.28,
+                        emissiveIntensity: customEmissiveIntensity,
                         roughness: 0.22,
                         metalness: 0.12,
                         polygonOffset: true,

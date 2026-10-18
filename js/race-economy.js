@@ -147,11 +147,12 @@
         // 4. rus_kortezh (+25%)
         if (
             RUS_KORTEZH_CARS.includes(carName) &&
-            (/\bRUS$/i.test(rawPlate) || !/\b(UAE|USA|KZ)$/i.test(rawPlate)) &&
+            (/\bRUS$/i.test(rawPlate) || !/\b(UAE|USA|KZ|JPN)$/i.test(rawPlate)) &&
             (
-                /(АМР|ЕКХ|ООО|ААА|СКР|ВОР|ККК|ХХХ|МММ|ССС|ФСБ|КРА)/i.test(mainPart) ||
-                /^(АМР|ЕКХ|ООО|ААА|СКР|ВОР|ККК|ХХХ|МММ|ССС|ФСБ|КРА)$/i.test(lettersOnly) ||
-                /\b(777|001)\b/.test(mainPart)
+                /(АМР|ЕКХ|ООО|ААА|СКР|ВОР|ККК|ХХХ|МММ|ССС|ФСБ|КРА|МОС|СВТ|КМН|СМК|УМВ|РМВ|ВМО|КМО|КРМ|РФС)/i.test(mainPart) ||
+                /^(АМР|ЕКХ|ООО|ААА|СКР|ВОР|ККК|ХХХ|МММ|ССС|ФСБ|КРА|МОС|СВТ|КМН|СМК|УМВ|РМВ|ВМО|КМО|КРМ|РФС)$/i.test(lettersOnly) ||
+                /\b(777|001)\b/.test(mainPart) ||
+                /\b(СССР|CD|МВД|МО|ФСО)\b/i.test(regionPart)
             )
         ) {
             return makeResult('rus_kortezh', 'Федеральный Спецборт', '🚨', 0.25);
@@ -163,7 +164,7 @@
         // 6. jdm_legend (+20%)
         if (
             JDM_LEGEND_CARS.includes(carName) &&
-            (/\b(777|888|001|007|111|222|333|444|555|666|999|101|202|303|707|100)\b/.test(mainPart) || /\b(25|125|27|65|41)\s+RUS$/i.test(rawPlate))
+            (/\bJPN$/i.test(rawPlate) || /\b(777|888|001|007|111|222|333|444|555|666|999|101|202|303|707|100)\b/.test(mainPart) || /\b(25|125|27|65|41)\s+RUS$/i.test(rawPlate))
         ) {
             return makeResult('jdm_legend', 'Легенда Токио JDM', '⛩️', 0.20);
         }
@@ -174,8 +175,8 @@
                 /(\d)\1\1/.test(mainPart) ||
                 /\b(00[1-9]|005|007|666|777|999|095)\b/.test(mainPart) ||
                 /\b(\d)0\1\b/.test(mainPart) ||
-                /(ВОР|ХХХ|АУЕ|ОМР|КРА)/i.test(mainPart) ||
-                /^(ВОР|ХХХ|АУЕ|ОМР|КРА)$/i.test(lettersOnly) ||
+                /(ВОР|ХХХ|АУЕ|ОМР|КРА|МОС|СВТ|УМВ|РМВ|ВМО|КМО)/i.test(mainPart) ||
+                /^(ВОР|ХХХ|АУЕ|ОМР|КРА|МОС|СВТ|УМВ|РМВ|ВМО|КМО)$/i.test(lettersOnly) ||
                 /^([А-ЯЁA-Z])\s*\d{3}\s*\1\1/i.test(mainPart) ||
                 /^([А-ЯЁA-Z])\1\1$/i.test(lettersOnly)
             )
@@ -200,6 +201,7 @@
 
         const plateText = String(car?.plate?.text || '').trim().toUpperCase();
         if (/\bUAE$/.test(plateText)) plateMult += 0.08;
+        else if (/\bJPN$/.test(plateText)) plateMult += 0.06;
         else if (/\bUSA$/.test(plateText)) plateMult += 0.05;
         else if (/\bKZ$/.test(plateText)) plateMult += 0.03;
 

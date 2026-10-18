@@ -266,6 +266,85 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         let isAutoSpinning = false;
         const lettersArr = ['А', 'В', 'Е', 'К', 'М', 'Н', 'О', 'Р', 'С', 'Т', 'У', 'Х'];
         const eliteLetters = ['ААА', 'АМР', 'ВВВ', 'ВОР', 'ТТТ', 'ХХХ', 'ККК', 'ЕКХ', 'АЕО', 'ООО', 'ССС', 'МММ', 'СКР', 'УУУ'];
+        const ULTRA_SPECIAL_RUS_SERIES = ['МОС', 'СВТ', 'КМН', 'СМК', 'УМВ', 'РМВ', 'ВМО', 'КМО', 'КРМ', 'РФС'];
+        const ULTRA_SPECIAL_PLATE_MAP = {
+            'МОС': { id: 'ussr', cssClass: 'special-ussr', title: '🏛️ СССР • РЕТРО ГОСТ 1977', badge: '★ СССР', sub: 'ГОСТ 77' },
+            'СВТ': { id: 'ussr', cssClass: 'special-ussr', title: '🏛️ СССР • СОВМИН ГОСТ', badge: '★ СССР', sub: 'СОВМИН' },
+            'КМН': { id: 'diplomat', cssClass: 'special-diplomat', title: '📕 ДИПКОРПУС CD • МИД', badge: 'CD • МИД', sub: 'ДИПЛОМАТ' },
+            'СМК': { id: 'diplomat', cssClass: 'special-diplomat', title: '📕 КОНСУЛЬСКИЙ CD • ДИПЛОМАТ', badge: 'CD • D', sub: 'КОНСУЛ' },
+            'УМВ': { id: 'mvd', cssClass: 'special-mvd', title: '🚔 СПЕЦСВЯЗЬ МВД • СИНИЙ ГОСТ', badge: 'МВД РФ', sub: 'СПЕЦСВЯЗЬ' },
+            'РМВ': { id: 'mvd', cssClass: 'special-mvd', title: '🚔 ГУОБДД МВД • СПЕЦБАТАЛЬОН', badge: 'ДПС МВД', sub: 'ПОЛИЦИЯ' },
+            'ВМО': { id: 'military', cssClass: 'special-military', title: '🪖 ГЕНШТАБ МО • ВОЕННЫЙ ГОСТ', badge: '★ МО РФ', sub: 'ГЕНШТАБ' },
+            'КМО': { id: 'military', cssClass: 'special-military', title: '🪖 КОМЕНДАТУРА МО • ЧЁРНЫЙ ГОСТ', badge: '★ ВАИ', sub: 'ВОЕННЫЙ' },
+            'КРМ': { id: 'federal', cssClass: 'special-federal', title: '🇷🇺 ФЕДЕРАЛЬНЫЙ СПЕЦНОМЕР • КРЕМЛЬ', badge: '🇷🇺 ФСО', sub: 'КРЕМЛЬ' },
+            'РФС': { id: 'federal', cssClass: 'special-federal', title: '🇷🇺 ПРОТОКОЛ ФСО • ФЛАГ РФ', badge: '🇷🇺 РФ', sub: 'ПРОТОКОЛ' }
+        };
+        const JPN_PREFECTURE_META = {
+            TKY: { kanji: '品川', en: 'SHINAGAWA • TOKYO', classCode: '330', hira: 'あ' },
+            YKH: { kanji: '横浜', en: 'YOKOHAMA • KANAGAWA', classCode: '300', hira: 'さ' },
+            OSK: { kanji: '大阪', en: 'OSAKA • KANSAI', classCode: '331', hira: 'す' },
+            NGY: { kanji: '名古屋', en: 'NAGOYA • AICHI', classCode: '350', hira: 'せ' },
+            SPR: { kanji: '札幌', en: 'SAPPORO • HOKKAIDO', classCode: '301', hira: 'そ' },
+            FKO: { kanji: '福岡', en: 'FUKUOKA • KYUSHU', classCode: '330', hira: 'た' },
+            KBE: { kanji: '神戸', en: 'KOBE • HYOGO', classCode: '302', hira: 'ち' },
+            KYO: { kanji: '京都', en: 'KYOTO • KANSAI', classCode: '310', hira: 'つ' },
+            CHB: { kanji: '千葉', en: 'CHIBA • KANTO', classCode: '320', hira: 'て' },
+            STM: { kanji: '大宮', en: 'SAITAMA • OMIYA', classCode: '300', hira: 'と' }
+        };
+        function getUltraSpecialPlateMeta(l1OrPlate, l2, l3, num, reg, country = currentCountry) {
+            if (l1OrPlate && typeof l1OrPlate === 'object') {
+                const rawText = String(l1OrPlate.text || '');
+                if (rawText) return getUltraSpecialPlateMeta(rawText);
+            }
+            if (typeof l1OrPlate === 'string' && l2 === undefined && (l1OrPlate.includes('|') || l1OrPlate.trim().length > 4)) {
+                const raw = l1OrPlate.trim();
+                const jpnM = raw.match(/^([A-Z]{2,3})\s+(\d{3})\s*\|\s*([A-Z0-9]{2,3})\s+JPN$/i);
+                if (jpnM) {
+                    const series = jpnM[1].toUpperCase();
+                    const digits = jpnM[2];
+                    const r = jpnM[3].toUpperCase();
+                    return getUltraSpecialPlateMeta(series[0], series[1], series[2], digits, r, 'JPN');
+                }
+                const rusM = raw.match(/^([A-ZА-ЯЁ])\s*(\d{3})\s*([A-ZА-ЯЁ]{2})\s*\|\s*([A-ZА-ЯЁ0-9]{2,4})(?:\s+RUS)?$/i);
+                if (rusM) {
+                    return getUltraSpecialPlateMeta(rusM[1], rusM[3][0], rusM[3][1], rusM[2], rusM[4], 'RUS');
+                }
+                return null;
+            }
+            const c = String(country || currentCountry || 'RUS').toUpperCase();
+            const series = `${String(l1OrPlate || '').toUpperCase()}${String(l2 || '').toUpperCase()}${String(l3 || '').toUpperCase()}`;
+            const digits = String(num || '000').padStart(3, '0').slice(-3);
+            const rUp = String(reg || '').toUpperCase();
+            if (c === 'RUS') {
+                if (ULTRA_SPECIAL_PLATE_MAP[series]) {
+                    return { ...ULTRA_SPECIAL_PLATE_MAP[series], series, country: 'RUS' };
+                }
+                if (rUp === 'СССР' || rUp === 'USSR') {
+                    return { ...ULTRA_SPECIAL_PLATE_MAP['МОС'], series, country: 'RUS' };
+                }
+                if (rUp === 'CD' || /^CD\d*$/i.test(rUp)) {
+                    return { ...ULTRA_SPECIAL_PLATE_MAP['КМН'], series, country: 'RUS' };
+                }
+            }
+            if (c === 'JPN' && ['JDM', 'GTR'].includes(series) && ['777', '001', '007'].includes(digits)) {
+                return {
+                    id: 'jdm_glow',
+                    cssClass: 'special-jdm-glow',
+                    title: '🇯🇵 JDM 字光式 • НЕОНОВЫЙ СПЕЦНОМЕР ТОКИО',
+                    badge: '字光式 JDM',
+                    sub: 'NIGHT GLOW',
+                    series,
+                    country: 'JPN'
+                };
+            }
+            return null;
+        }
+        if (typeof window !== 'undefined') {
+            window.ULTRA_SPECIAL_RUS_SERIES = ULTRA_SPECIAL_RUS_SERIES;
+            window.ULTRA_SPECIAL_PLATE_MAP = ULTRA_SPECIAL_PLATE_MAP;
+            window.JPN_PREFECTURE_META = JPN_PREFECTURE_META;
+            window.getUltraSpecialPlateMeta = getUltraSpecialPlateMeta;
+        }
         const PLATE_COUNTRIES = {
             RUS: {
                 code: 'RUS',
@@ -362,6 +441,30 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 letters: ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'],
                 eliteSeries: ['DXB', 'UAE', 'SHK', 'VIP', 'AAA', 'ZZZ', 'FFF', 'GGG', 'RRR', 'SSS', 'XXX', 'CEO', 'OIL', 'GLD'],
                 eliteLetters: ['DXB', 'UAE', 'SHK', 'VIP', 'AAA', 'ZZZ', 'FFF', 'GGG', 'RRR', 'SSS', 'XXX', 'CEO', 'OIL', 'GLD']
+            },
+            JPN: {
+                code: 'JPN',
+                name: 'Япония (JDM)',
+                flagEmoji: '🇯🇵',
+                flag: '🇯🇵',
+                defaultReg: 'TKY',
+                defaultRegion: 'TKY',
+                spinCostBoth: 5000,
+                spinCostPart: 2800,
+                spinBoth: 5000,
+                spinNumbers: 2800,
+                spinLetters: 2800,
+                basePrice: 2200,
+                priceMult: 5.0,
+                regPattern: /^(?:TKY|YKH|OSK|NGY|SPR|FKO|KBE|KYO|CHB|STM|[A-Z]{2,3}|\d{2,3})$/i,
+                regionRegex: /^(?:TKY|YKH|OSK|NGY|SPR|FKO|KBE|KYO|CHB|STM|[A-Z]{2,3}|\d{2,3})$/i,
+                regHint: 'Префектура Японии (TKY Токио, YKH Йокогама, OSK Осака, NGY Нагоя, SPR Саппоро)',
+                regionHint: 'Укажите код префектуры Японии (например TKY, YKH, OSK, NGY, SPR)',
+                regMaxLen: 3,
+                popularRegions: ['TKY', 'YKH', 'OSK', 'NGY', 'SPR', 'FKO', 'KBE', 'KYO', 'CHB', 'STM'],
+                letters: ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'],
+                eliteSeries: ['JDM', 'TKY', 'GTR', 'NSM', 'TRD', 'STI', 'EVO', 'WGN', 'DRF', 'BOS', 'VIP', 'AAA', 'ZZZ', 'XXX'],
+                eliteLetters: ['JDM', 'TKY', 'GTR', 'NSM', 'TRD', 'STI', 'EVO', 'WGN', 'DRF', 'BOS', 'VIP', 'AAA', 'ZZZ', 'XXX']
             }
         };
         const COUNTRY_CONFIGS = PLATE_COUNTRIES;
@@ -409,6 +512,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             }
             if (c === 'USA') {
                 return `${letters} ${digits} | ${r} USA`;
+            }
+            if (c === 'JPN') {
+                return `${letters} ${digits} | ${r} JPN`;
             }
             if (c === 'UAE') {
                 const uae = getUaePlateDisplayParts(l1, l2, l3, num);
@@ -525,6 +631,15 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 en: 'DUBAI',
                 ar: 'دبي'
             };
+            const jpnMeta = JPN_PREFECTURE_META[rUpper] || {
+                kanji: '東京',
+                en: 'TOKYO • ' + rUpper,
+                classCode: '330',
+                hira: 'あ'
+            };
+            const specialMeta = (boardHasLetters && currentL1 !== '-')
+                ? getUltraSpecialPlateMeta(currentL1, currentL2, currentL3, currentNum, rUpper, c)
+                : null;
 
             const attrs = {
                 'data-country': c,
@@ -533,7 +648,12 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 'data-state-slogan': usMeta.slogan,
                 'data-state-theme': usMeta.theme,
                 'data-emirate-en': uaeMeta.en,
-                'data-emirate-ar': uaeMeta.ar
+                'data-emirate-ar': uaeMeta.ar,
+                'data-jpn-kanji': `${jpnMeta.kanji} ${jpnMeta.classCode}`,
+                'data-jpn-en': jpnMeta.en,
+                'data-jpn-hira': jpnMeta.hira,
+                'data-special-label': specialMeta ? specialMeta.title : '',
+                'data-special-badge': specialMeta ? specialMeta.badge : ''
             };
 
             if (typeof plateBox.setAttribute === 'function') {
@@ -547,6 +667,25 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 plateBox.dataset.stateTheme = usMeta.theme;
                 plateBox.dataset.emirateEn = uaeMeta.en;
                 plateBox.dataset.emirateAr = uaeMeta.ar;
+                plateBox.dataset.jpnKanji = `${jpnMeta.kanji} ${jpnMeta.classCode}`;
+                plateBox.dataset.jpnEn = jpnMeta.en;
+                plateBox.dataset.jpnHira = jpnMeta.hira;
+                plateBox.dataset.specialLabel = specialMeta ? specialMeta.title : '';
+                plateBox.dataset.specialBadge = specialMeta ? specialMeta.badge : '';
+            }
+            if (plateBox.classList) {
+                plateBox.classList.remove(
+                    'special-plate',
+                    'special-ussr',
+                    'special-diplomat',
+                    'special-mvd',
+                    'special-military',
+                    'special-federal',
+                    'special-jdm-glow'
+                );
+                if (specialMeta && specialMeta.cssClass) {
+                    plateBox.classList.add('special-plate', specialMeta.cssClass);
+                }
             }
 
             const regionBox = (typeof plateBox.querySelector === 'function' && plateBox.querySelector('.plate-region'))
@@ -579,6 +718,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         function inferCountryFromRegion(reg, fallbackCountry = 'RUS') {
             const r = String(reg || '').trim().toUpperCase();
             const fb = String(fallbackCountry || 'RUS').trim().toUpperCase();
+            if (JPN_PREFECTURE_META[r]) return 'JPN';
             if (US_STATE_PLATE_META[r] || /^[A-Z]{2}$/.test(r)) return 'USA';
             if (UAE_EMIRATE_PLATE_META[r] || /^[A-Z]{3}$/.test(r)) return 'UAE';
             if (PLATE_COUNTRIES[fb] && fb !== 'RUS') {
@@ -602,7 +742,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 const flagEl = document.getElementById('plate-country-flag');
                 if (flagEl) {
                     if (flagEl.classList) {
-                        flagEl.classList.remove('flag-rus', 'flag-kz', 'flag-usa', 'flag-uae');
+                        flagEl.classList.remove('flag-rus', 'flag-kz', 'flag-usa', 'flag-uae', 'flag-jpn');
                         flagEl.classList.add('flag-' + code.toLowerCase());
                     } else {
                         flagEl.className = 'flag flag-' + code.toLowerCase();
@@ -613,11 +753,11 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
                 const plateBox = document.getElementById('plate-box');
                 if (plateBox && plateBox.classList) {
-                    plateBox.classList.remove('country-rus', 'country-kz', 'country-usa', 'country-uae');
+                    plateBox.classList.remove('country-rus', 'country-kz', 'country-usa', 'country-uae', 'country-jpn');
                     plateBox.classList.add('country-' + code.toLowerCase());
                 }
 
-                ['RUS', 'KZ', 'USA', 'UAE'].forEach(k => {
+                ['RUS', 'KZ', 'USA', 'UAE', 'JPN'].forEach(k => {
                     const idBtn = document.getElementById('btn-country-' + k);
                     if (idBtn && idBtn.classList) {
                         idBtn.classList.toggle('active', k === code);
@@ -674,10 +814,13 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
         function getMiniPlateCountryClass(plateText) {
             const raw = String(plateText || '').trim().toUpperCase();
-            if (/\bUAE$/.test(raw)) return 'mini-plate mp-structured country-uae';
-            if (/\bUSA$/.test(raw)) return 'mini-plate mp-structured country-usa';
-            if (/\bKZ$/.test(raw)) return 'mini-plate mp-structured country-kz';
-            return 'mini-plate mp-structured country-rus';
+            const specialMeta = getUltraSpecialPlateMeta(raw);
+            const specialCls = specialMeta ? ` special-plate ${specialMeta.cssClass}` : '';
+            if (/\bJPN$/.test(raw)) return 'mini-plate mp-structured country-jpn' + specialCls;
+            if (/\bUAE$/.test(raw)) return 'mini-plate mp-structured country-uae' + specialCls;
+            if (/\bUSA$/.test(raw)) return 'mini-plate mp-structured country-usa' + specialCls;
+            if (/\bKZ$/.test(raw)) return 'mini-plate mp-structured country-kz' + specialCls;
+            return 'mini-plate mp-structured country-rus' + specialCls;
         }
 
         function renderMiniPlateInnerHtml(plateText) {
@@ -730,6 +873,25 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 return `<span class="mp-usa-top" data-state="${escapeHtml(reg)}" aria-hidden="true">${escapeHtml(usMeta.title)}</span><span class="mp-main mp-usa-main"><span class="mp-let">${escapeHtml(letters)}</span><span class="mp-usa-sep" aria-hidden="true">${sep}</span><span class="mp-num">${escapeHtml(digits)}</span></span><span class="mp-usa-bot" aria-hidden="true">${escapeHtml(usMeta.slogan)}</span><span class="mp-pipe-sr"> | ${escapeHtml(reg)} USA</span>`;
             }
 
+            const jpnMatch = raw.match(/^(.*?)\s*\|\s*([A-Z0-9]{1,3})\s+JPN$/i);
+            if (jpnMatch) {
+                const mainPart = jpnMatch[1].trim();
+                const reg = jpnMatch[2].trim().toUpperCase();
+                let letters = 'JDM', digits = '777';
+                const mStd = mainPart.match(/^([A-ZА-ЯЁ]{1,4})\s+(\d{1,4})$/i);
+                if (mStd) {
+                    letters = mStd[1].toUpperCase();
+                    digits = mStd[2];
+                } else {
+                    const lMatch = mainPart.replace(/[^A-ZА-ЯЁ]/gi, '');
+                    const dMatch = mainPart.match(/\d+/);
+                    if (lMatch) letters = lMatch.toUpperCase();
+                    if (dMatch) digits = dMatch[0];
+                }
+                const jpnMeta = JPN_PREFECTURE_META[reg] || { kanji: '東京', classCode: '330', hira: 'あ' };
+                return `<span class="mp-jpn-top" aria-hidden="true"><i class="mp-jpn-sun"></i><b>${escapeHtml(jpnMeta.kanji)} ${escapeHtml(jpnMeta.classCode)}</b></span><span class="mp-main mp-jpn-main"><span class="mp-jpn-hira" aria-hidden="true">${escapeHtml(jpnMeta.hira)}</span><span class="mp-let">${escapeHtml(letters)}</span> <span class="mp-num">${escapeHtml(digits)}</span></span><span class="mp-pipe-sr"> | </span><span class="mp-reg-box mp-jpn-reg">${escapeHtml(reg)}</span><span class="mp-pipe-sr"> JPN</span>`;
+            }
+
             const uaeMatch = raw.match(/^(.*?)\s*\|\s*([A-Z0-9]{1,3})\s+UAE$/i);
             if (uaeMatch) {
                 const mainPart = uaeMatch[1].trim();
@@ -764,10 +926,10 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 return `<span class="mp-uae-left" data-emirate="${escapeHtml(reg)}" aria-hidden="true"><span class="mp-uae-em"><b>${escapeHtml(uaeMeta.en)}</b><small>${escapeHtml(uaeMeta.ar)}</small></span></span><span class="mp-uae-code">${escapeHtml(code)}</span><span class="mp-pipe-sr"> </span><span class="mp-main mp-uae-main"><span class="mp-num">${escapeHtml(cleanDigits)}</span></span><span class="mp-pipe-sr"> | ${escapeHtml(reg)} UAE</span>`;
             }
 
-            const rusMatch = raw.match(/^(.*?)\s*\|\s*(\d{2,3})(?:\s+RUS)?$/i);
+            const rusMatch = raw.match(/^(.*?)\s*\|\s*(\d{2,3}|СССР|CD)(?:\s+RUS)?$/i);
             if (rusMatch) {
                 const mainPart = rusMatch[1].trim();
-                const reg = rusMatch[2].trim();
+                const reg = rusMatch[2].trim().toUpperCase();
                 let l1 = 'А', digits = '777', l2l3 = 'АА';
                 const mRus = mainPart.match(/^([A-ZА-ЯЁ])\s*(\d{3})\s*([A-ZА-ЯЁ]{2})$/i);
                 if (mRus) {
@@ -782,7 +944,11 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                         l2l3 = tokens.slice(2).join('');
                     }
                 }
-                return `<span class="mp-main mp-rus-main"><span class="mp-let">${escapeHtml(l1)}</span> <span class="mp-num">${escapeHtml(digits)}</span> <span class="mp-let">${escapeHtml(l2l3)}</span></span><span class="mp-pipe-sr"> | </span><span class="mp-reg-box mp-rus-reg"><span class="mp-reg-num">${escapeHtml(reg)}</span><span class="mp-rus-sub" aria-hidden="true">RUS<i class="mp-rus-flag"></i></span></span><span class="mp-pipe-sr"> RUS</span>`;
+                const specialMeta = getUltraSpecialPlateMeta(l1, l2l3[0], l2l3[1], digits, reg, 'RUS');
+                const subBadge = specialMeta
+                    ? `<span class="mp-rus-sub mp-special-sub" aria-hidden="true">${escapeHtml(specialMeta.badge)}</span>`
+                    : `<span class="mp-rus-sub" aria-hidden="true">RUS<i class="mp-rus-flag"></i></span>`;
+                return `<span class="mp-main mp-rus-main"><span class="mp-let">${escapeHtml(l1)}</span> <span class="mp-num">${escapeHtml(digits)}</span> <span class="mp-let">${escapeHtml(l2l3)}</span></span><span class="mp-pipe-sr"> | </span><span class="mp-reg-box mp-rus-reg"><span class="mp-reg-num">${escapeHtml(reg)}</span>${subBadge}</span><span class="mp-pipe-sr"> RUS</span>`;
             }
 
             return escapeHtml(raw);
@@ -4187,17 +4353,20 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             const isTripleLetters = (l1 === l2 && l2 === l3);
             const isMirrorLetters = (l1 === l3 && l1 !== l2);
             const isPairLetters = (l1 === l2 || l2 === l3) && !isTripleLetters;
+            const specialMeta = getUltraSpecialPlateMeta(l1, l2, l3, num, reg, code);
 
             if (code !== 'RUS' && PLATE_COUNTRIES[code]) {
                 const cfg = PLATE_COUNTRIES[code];
                 let price = cfg.basePrice || 600;
-                const mult = code === 'UAE' ? 2.2 : (code === 'USA' ? 1.6 : 1.3);
+                const mult = code === 'UAE' ? 2.2 : (code === 'JPN' ? 1.85 : (code === 'USA' ? 1.6 : 1.3));
                 const cElites = cfg.eliteLetters || [];
 
                 // 1. Престижные серии страны
                 if (cElites.includes(letters)) {
                     if (code === 'UAE' && letters === 'SHK' && num === '001') return 25000000;
                     if (code === 'UAE' && letters === 'DXB' && num === '777') return 18000000;
+                    if (code === 'JPN' && letters === 'JDM' && num === '777') return 24000000;
+                    if (code === 'JPN' && letters === 'GTR' && num === '001') return 22000000;
                     if (code === 'USA' && letters === 'VIP' && num === '001') return 16000000;
                     if (code === 'USA' && letters === 'USA' && num === '777') return 14000000;
                     if (code === 'KZ' && letters === 'VIP' && num === '777') return 14000000;
@@ -4208,10 +4377,13 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     else if (num === '001') price += Math.round(1200000 * mult);
                     else price += Math.round(400000 * mult);
 
-                    if (['SHK', 'DXB', 'UAE', 'VIP', 'USA', 'FBI', 'ZZZ', 'QQQ', 'AAA'].includes(letters)) {
+                    if (['SHK', 'DXB', 'UAE', 'VIP', 'USA', 'FBI', 'ZZZ', 'QQQ', 'AAA', 'JDM', 'GTR', 'TKY'].includes(letters)) {
                         price += Math.round(1300000 * mult);
                     } else {
                         price += Math.round(750000 * mult);
+                    }
+                    if (specialMeta && specialMeta.id === 'jdm_glow') {
+                        price += 6500000;
                     }
                 }
 
@@ -4274,12 +4446,13 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     }
                 }
 
-                // 4. Престижные регионы / штаты / эмираты
+                // 4. Престижные регионы / штаты / эмираты / префектуры
                 const regStr = String(reg || '').toUpperCase();
                 if (
                     (code === 'KZ' && ['01', '02', '77'].includes(regStr)) ||
                     (code === 'USA' && ['CA', 'NY', 'FL', 'NV', 'TX'].includes(regStr)) ||
-                    (code === 'UAE' && ['DXB', 'AUH'].includes(regStr))
+                    (code === 'UAE' && ['DXB', 'AUH'].includes(regStr)) ||
+                    (code === 'JPN' && ['TKY', 'YKH', 'OSK', 'NGY', 'SPR'].includes(regStr))
                 ) {
                     price += Math.round(500 * mult);
                     if (num === '777' || num === '001') price += Math.round(500000 * mult);
@@ -4290,6 +4463,14 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             }
 
             let price = 450;
+
+            // 0. Ультра-редкие спецномера (СССР ГОСТ, Дипломатический CD, МВД Синий, Военный МО, Федеральный ФСО)
+            if (specialMeta) {
+                price += 18000000;
+                if (num === '001' || num === '777') price += 15000000;
+                else if (num === '007' || (num[0] === num[1] && num[1] === num[2])) price += 9000000;
+                else if (num.endsWith('00')) price += 4500000;
+            }
 
             // 1. Престижные серии
             if (eliteLetters.includes(letters)) {
@@ -4334,7 +4515,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             }
 
             // 4. Престижные регионы (символическая надбавка + синергия с элитой)
-            if (['777','77','99','799','797'].includes(reg)) {
+            if (['777','77','99','799','797','СССР','CD'].includes(String(reg || '').toUpperCase())) {
                 price += 250;
                 if (num === '777') price += 500000;
                 if (isTripleLetters) price += 50000;
@@ -4415,7 +4596,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             const flagEl = document.getElementById('plate-country-flag');
             if (flagEl) {
                 if (flagEl.classList) {
-                    flagEl.classList.remove('flag-rus', 'flag-kz', 'flag-usa', 'flag-uae');
+                    flagEl.classList.remove('flag-rus', 'flag-kz', 'flag-usa', 'flag-uae', 'flag-jpn');
                     flagEl.classList.add('flag-' + code.toLowerCase());
                 } else {
                     flagEl.className = 'flag flag-' + code.toLowerCase();
@@ -4426,7 +4607,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
             const plateBox = document.getElementById('plate-box');
             if (plateBox) {
-                plateBox.classList.remove('country-rus', 'country-kz', 'country-usa', 'country-uae');
+                plateBox.classList.remove('country-rus', 'country-kz', 'country-usa', 'country-uae', 'country-jpn');
                 plateBox.classList.add('country-' + code.toLowerCase());
             }
             updatePlateBoxMeta(currentCountry, currentReg);
@@ -4566,9 +4747,10 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             if (boardHasLetters && boardHasNumbers) {
                 let price = calculatePrice();
                 let rarity = getRarity(price);
+                const specialMeta = getUltraSpecialPlateMeta(currentL1, currentL2, currentL3, currentNum, currentReg, currentCountry);
                 document.getElementById('current-price-display').innerHTML = `Оценка номера: <b style="color:var(--accent-green); margin-left:4px;">${price.toLocaleString('ru-RU')} ₽</b> <span style="font-size:11px; opacity:0.75; font-weight:600; margin-left:4px;">(для инвентаря)</span>`;
                 let rLabel = document.getElementById('gen-rarity');
-                rLabel.innerText = rarity.text;
+                rLabel.innerText = specialMeta ? `${specialMeta.title} • ${rarity.text}` : rarity.text;
                 rLabel.style.background = rarity.bg;
                 rLabel.style.color = rarity.color;
                 rLabel.classList.remove('hidden');
@@ -4988,8 +5170,11 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
         function generateLuckyNumberLocal(forceTier, pity = 0, country = currentCountry) {
             const cCode = String(country || currentCountry || 'RUS').toUpperCase();
-            const isIntl = (cCode === 'USA' || cCode === 'UAE');
+            const isIntl = (cCode === 'USA' || cCode === 'UAE' || cCode === 'JPN');
 
+            if (forceTier === 'ultra_special') {
+                return randomItem(cCode === 'JPN' ? ['777', '001', '007'] : ['001', '007', '777', '888', '999', '100']);
+            }
             if (forceTier === 'legendary') {
                 return randomItem(['777', '777', '001', '007', '011', '111', '555', '888', '999']);
             }
@@ -5040,8 +5225,13 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             const cfg = PLATE_COUNTRIES[cCode] || PLATE_COUNTRIES.RUS;
             const pool = cfg.letters || lettersArr;
             const elites = cfg.eliteLetters || eliteLetters;
-            const isIntl = (cCode === 'USA' || cCode === 'UAE');
+            const isIntl = (cCode === 'USA' || cCode === 'UAE' || cCode === 'JPN');
 
+            if (forceTier === 'ultra_special') {
+                const specialPool = cCode === 'JPN' ? ['JDM', 'GTR'] : ULTRA_SPECIAL_RUS_SERIES;
+                const s = randomItem(specialPool);
+                return [s[0], s[1], s[2]];
+            }
             if (forceTier === 'legendary') {
                 const topElites = cCode === 'RUS'
                     ? ['ААА', 'АМР', 'ВОР', 'ЕКХ', 'ООО', 'ССС', 'МММ', 'СКР']
@@ -5083,10 +5273,11 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 if (l2 === l1) l2 = pool[(pool.indexOf(l1) + 1) % pool.length];
                 return [l1, l2, l1];
             }
-            for (let attempt = 0; attempt < 20; attempt++) {
+            for (let attempt = 0; attempt < 30; attempt++) {
                 const a = randomItem(pool), b = randomItem(pool), c = randomItem(pool);
                 if (a === b && b === c) continue;
                 if (elites.includes(a + b + c)) continue;
+                if (cCode === 'RUS' && ULTRA_SPECIAL_RUS_SERIES.includes(a + b + c)) continue;
                 return [a, b, c];
             }
             return [pool[0], pool[1] || pool[0], pool[2] || pool[0]];
@@ -5162,6 +5353,10 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             if (pityCounterBoth >= 120) forceTier = 'legendary';
             else if (pityCounterBoth >= 65) forceTier = 'epic';
             else if (pityCounterBoth >= 25) forceTier = 'rare';
+            else if ((currentCountry === 'RUS' || currentCountry === 'JPN') && Math.floor(Math.random() * 1000) < 2) {
+                // 0.2% шанс выбить Ультра-редкий спецномер (СССР ГОСТ, Дипломатический CD, МВД, Военный МО, ФСО или JDM 字光式)
+                forceTier = 'ultra_special';
+            }
 
             let n = generateLuckyNumberLocal(forceTier, pityCounterBoth, currentCountry);
             let letArr = generateLuckyLettersLocal(forceTier, pityCounterBoth, currentCountry);
@@ -5403,26 +5598,34 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 RUS: ['50', '23', '16', '78', '777', '77', '99'],
                 KZ: ['05', '07', '09', '13', '01', '02'],
                 USA: ['TX', 'IL', 'WA', 'GA', 'CA', 'NY', 'FL'],
-                UAE: ['SHJ', 'AJM', 'RAK', 'DXB', 'AUH']
+                UAE: ['SHJ', 'AJM', 'RAK', 'DXB', 'AUH'],
+                JPN: ['FKO', 'KBE', 'KYO', 'CHB', 'TKY', 'YKH', 'OSK']
             };
             const capitalRegionsMap = {
                 RUS: ['77', '777', '97'],
                 KZ: ['01', '02'],
                 USA: ['CA', 'NY', 'FL'],
-                UAE: ['DXB', 'AUH']
+                UAE: ['DXB', 'AUH'],
+                JPN: ['TKY', 'YKH', 'OSK']
             };
             const legendarySeriesMap = {
                 RUS: ['ААА', 'МММ', 'ООО', 'ХХХ', 'АМР', 'ЕКХ', 'ВОР'],
                 KZ: ['VIP', 'AAA', 'MMM', 'ZZZ', 'XXX'],
                 USA: ['VIP', 'AAA', 'NYC', 'USA', 'LAX'],
-                UAE: ['SHK', 'DXB', 'VIP', 'AAA', 'UAE']
+                UAE: ['SHK', 'DXB', 'VIP', 'AAA', 'UAE'],
+                JPN: ['JDM', 'TKY', 'GTR', 'NSM', 'TRD', 'STI']
             };
             const mythicTemplatesMap = {
                 RUS: [
                     { l: 'ААА', num: '777', reg: '777' },
                     { l: 'ЕКХ', num: '777', reg: '77' },
                     { l: 'АМР', num: '001', reg: '97' },
-                    { l: 'ВОР', num: '777', reg: '777' }
+                    { l: 'ВОР', num: '777', reg: '777' },
+                    { l: 'МОС', num: '001', reg: '77' },
+                    { l: 'КМН', num: '001', reg: '77' },
+                    { l: 'УМВ', num: '001', reg: '77' },
+                    { l: 'ВМО', num: '001', reg: '77' },
+                    { l: 'КРМ', num: '001', reg: '77' }
                 ],
                 KZ: [
                     { l: 'ZZZ', num: '777', reg: '01' },
@@ -5438,13 +5641,18 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     { l: 'SHK', num: '001', reg: 'DXB' },
                     { l: 'DXB', num: '777', reg: 'DXB' },
                     { l: 'VIP', num: '001', reg: 'AUH' }
+                ],
+                JPN: [
+                    { l: 'JDM', num: '777', reg: 'TKY' },
+                    { l: 'GTR', num: '001', reg: 'YKH' },
+                    { l: 'TKY', num: '777', reg: 'TKY' }
                 ]
             };
 
             const pickOrdinaryLetters = () => {
                 let a = randomItem(pool), b = randomItem(pool), c = randomItem(pool);
                 let guard = 0;
-                while ((a === b || b === c || a === c || elites.includes(a + b + c)) && guard < 40) {
+                while ((a === b || b === c || a === c || elites.includes(a + b + c) || (cCode === 'RUS' && ULTRA_SPECIAL_RUS_SERIES.includes(a + b + c))) && guard < 40) {
                     a = randomItem(pool); b = randomItem(pool); c = randomItem(pool);
                     guard++;
                 }
@@ -5458,7 +5666,12 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             let matched = false;
 
             const applyDeterministicPattern = (tier) => {
-                if (tier === 'Мифический' || tier === 'МИФИЧЕСКИЙ' || tier === 'БЛАТНОЙ') {
+                if (tier === 'Ультра-спец' || tier === 'УЛЬТРА-СПЕЦ') {
+                    const s = cCode === 'JPN' ? randomItem(['JDM', 'GTR']) : randomItem(ULTRA_SPECIAL_RUS_SERIES);
+                    l1 = s[0]; l2 = s[1]; l3 = s[2];
+                    num = randomItem(['001', '777', '007']);
+                    reg = cCode === 'JPN' ? 'TKY' : '77';
+                } else if (tier === 'Мифический' || tier === 'МИФИЧЕСКИЙ' || tier === 'БЛАТНОЙ') {
                     const tpl = randomItem(mythicTemplatesMap[cCode] || mythicTemplatesMap.RUS);
                     l1 = tpl.l[0]; l2 = tpl.l[1]; l3 = tpl.l[2];
                     num = (tier === 'БЛАТНОЙ' && cCode === 'RUS' && tpl.l === 'ЕКХ') ? '011' : tpl.num;
@@ -5500,7 +5713,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 price = calculatePlatePriceForCountry(cCode, l1, l2, l3, num, reg);
                 const baseEquivalentPrice = Math.round(price / (cfg.priceMult || 1));
                 const r = getRarity(baseEquivalentPrice);
-                const bonusMult = cCode === 'UAE' ? 2.2 : (cCode === 'USA' ? 1.6 : (cCode === 'KZ' ? 1.3 : 1));
+                const bonusMult = cCode === 'UAE' ? 2.2 : (cCode === 'JPN' ? 1.85 : (cCode === 'USA' ? 1.6 : (cCode === 'KZ' ? 1.3 : 1)));
                 const bonusEquivalentPrice = cCode === 'RUS'
                     ? price
                     : Math.max(450, Math.round((price - (cfg.basePrice || 450)) / bonusMult + 450));
@@ -5511,7 +5724,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     r.text === targetRarity ||
                     rBonus.text === targetRarity ||
                     rActual.text === targetRarity ||
-                    ((targetRarity === 'Мифический' || targetRarity === 'МИФИЧЕСКИЙ') && price >= 5000000)
+                    ((targetRarity === 'Мифический' || targetRarity === 'МИФИЧЕСКИЙ' || targetRarity === 'Ультра-спец') && price >= 5000000)
                 ) {
                     matched = true;
                     break;
@@ -5671,6 +5884,32 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     { r: 'Мифический', p: 0.008 }
                 ]
             },
+            'jpn_box': {
+                title: "🇯🇵 Токио JDM Box",
+                name: "Токио JDM Box",
+                price: 160000,
+                icon: "🇯🇵",
+                type: "plate",
+                fixedCountry: "JPN",
+                contents: [
+                    { r: 'Обычный', weight: 34, count: 6 },
+                    { r: 'Необычный', weight: 35, count: 6 },
+                    { r: 'Редкий', weight: 18, count: 5 },
+                    { r: 'Супер редкий', weight: 8.5, count: 4 },
+                    { r: 'Эпический', weight: 3.1, count: 3 },
+                    { r: 'Легендарный', weight: 1.0, count: 2 },
+                    { r: 'Мифический', weight: 0.4, count: 2 }
+                ],
+                probs: [
+                    { r: 'Обычный', p: 0.34 },
+                    { r: 'Необычный', p: 0.35 },
+                    { r: 'Редкий', p: 0.18 },
+                    { r: 'Супер редкий', p: 0.085 },
+                    { r: 'Эпический', p: 0.031 },
+                    { r: 'Легендарный', p: 0.010 },
+                    { r: 'Мифический', p: 0.004 }
+                ]
+            },
             'car_standard': {
                 title: "🏎️ Авто-Кейс",
                 name: "Авто-Кейс",
@@ -5755,7 +5994,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             const caseCountry = cfg.fixedCountry || (COUNTRY_CONFIGS[String(countryCode || '').toUpperCase()] ? String(countryCode).toUpperCase() : (currentCaseCountry || currentCountry || 'RUS'));
             const countryMeta = COUNTRY_CONFIGS[caseCountry] || COUNTRY_CONFIGS.RUS;
             const effectivePrice = getCaseEffectivePrice(type, caseCountry);
-            const countryShortLabel = caseCountry === 'UAE' ? 'ОАЭ' : countryMeta.name;
+            const countryShortLabel = caseCountry === 'UAE' ? 'ОАЭ' : (caseCountry === 'JPN' ? 'Япония' : countryMeta.name);
             const displayTitle = cfg.isCar
                 ? cfg.title
                 : (cfg.fixedCountry ? cfg.title : `${cfg.title} · ${countryMeta.flagEmoji} ${countryShortLabel}`);
@@ -5776,7 +6015,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             if (!cfg) return;
             currentCaseCountry = code;
 
-            ['RUS', 'KZ', 'USA', 'UAE'].forEach(c => {
+            ['RUS', 'KZ', 'USA', 'UAE', 'JPN'].forEach(c => {
                 const btn = document.getElementById(`btn-case-country-${c}`);
                 if (btn && btn.classList) {
                     btn.classList.toggle('active', c === code);

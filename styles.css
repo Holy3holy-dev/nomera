@@ -575,11 +575,11 @@
             line-height: 0.92;
         }
 
-        .plate-container:not(.country-kz):not(.country-usa):not(.country-uae) #cell-l1,
+        .plate-container:not(.country-kz):not(.country-usa):not(.country-uae):not(.country-jpn) #cell-l1,
         .plate-container.country-rus #cell-l1 {
             margin-right: 4px;
         }
-        .plate-container:not(.country-kz):not(.country-usa):not(.country-uae) #cell-n3,
+        .plate-container:not(.country-kz):not(.country-usa):not(.country-uae):not(.country-jpn) #cell-n3,
         .plate-container.country-rus #cell-n3 {
             margin-right: 4px;
         }
@@ -692,10 +692,15 @@
             border-color: #64748b;
         }
 
+        .flag.flag-jpn {
+            background: radial-gradient(circle at 50% 50%, #dc2626 0%, #dc2626 36%, #ffffff 38%, #ffffff 100%);
+            border-color: #94a3b8;
+        }
+
         /* ПАНЕЛЬ ВЫБОРА СТРАНЫ ГОСНОМЕРА */
         .plate-country-selector {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(auto-fit, minmax(112px, 1fr));
             gap: 8px;
             margin-bottom: 14px;
         }
@@ -6426,3 +6431,524 @@ body.race-active .race-3d-viewport-wrapper {
         padding: 2px 6px 7px;
     }
 }
+
+/* =========================================================================
+   🇯🇵 ЯПОНИЯ (JDM Plate 330×165mm: сверху кандзи префектуры + класс 330 + печать,
+   снизу хирагана + серия + цифры ••-•• в тёмно-зелёном цвете #064e3b)
+   ========================================================================= */
+.plate-container.country-jpn {
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 156px;
+    min-width: 344px;
+    max-width: 376px;
+    padding: 40px 22px 26px 22px;
+    border-radius: 12px;
+    border: 3.5px solid #064e3b;
+    outline: 2px solid #cbd5e1;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 75%, #ecfdf5 100%);
+    color: #064e3b;
+}
+.plate-container.country-jpn .plate-bolt.bolt-left {
+    top: 10px;
+    left: 16px;
+    transform: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 38% 35%, #f87171 0%, #dc2626 55%, #991b1b 100%);
+    border: 1.5px solid #cbd5e1;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.plate-container.country-jpn .plate-bolt.bolt-left::after {
+    content: "封";
+    color: #ffffff;
+    font-size: 9px;
+    font-weight: 900;
+    line-height: 1;
+}
+.plate-container.country-jpn .plate-bolt.bolt-right {
+    top: 12px;
+    right: 78px;
+    transform: none;
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    background: radial-gradient(circle, #e2e8f0 0%, #64748b 100%);
+    border: 1px solid #334155;
+}
+.plate-container.country-jpn::before {
+    content: attr(data-jpn-kanji) " 330";
+    position: absolute;
+    top: 7px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic", "Meiryo", "Arial Black", sans-serif;
+    font-weight: 900;
+    font-size: 21px;
+    line-height: 1.05;
+    letter-spacing: 2px;
+    color: #064e3b;
+    pointer-events: none;
+    white-space: nowrap;
+    z-index: 6;
+}
+.plate-container.country-jpn::after {
+    content: attr(data-jpn-hira) " • " attr(data-jpn-en) " JDM";
+    position: absolute;
+    inset: auto;
+    bottom: 6px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: none;
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: 1.8px;
+    color: #047857;
+    text-transform: uppercase;
+    white-space: nowrap;
+    pointer-events: none;
+    z-index: 6;
+}
+.plate-container.country-jpn .plate-region {
+    position: absolute;
+    top: 7px;
+    right: 10px;
+    border-left: none;
+    align-self: auto;
+    margin-left: 0;
+    padding: 2px 6px;
+    background: #064e3b;
+    color: #ecfdf5;
+    border: 1px solid rgba(16, 185, 129, 0.55);
+    border-radius: 4px;
+    font-size: 9px;
+    font-weight: 900;
+    text-shadow: none;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 3px;
+    z-index: 7;
+}
+.plate-container.country-jpn .plate-region #region {
+    font-size: 9.5px;
+    line-height: 1.1;
+    font-weight: 900;
+    color: #ecfdf5;
+}
+.plate-container.country-jpn .plate-region-text {
+    display: none;
+}
+.plate-container.country-jpn .plate-region .region-edit-hint {
+    position: static;
+    font-size: 8px;
+    color: #6ee7b7;
+}
+.plate-container.country-jpn .plate-cells-main {
+    align-items: center;
+    border-right: none;
+    padding: 6px 8px;
+    gap: 4px;
+}
+.plate-container.country-jpn #cell-l1 { order: 1; margin-right: 0; }
+.plate-container.country-jpn #cell-l2 { order: 2; }
+.plate-container.country-jpn #cell-l3 {
+    order: 3;
+    position: relative;
+    margin-right: 18px;
+    overflow: visible;
+}
+.plate-container.country-jpn #cell-l3.spinning {
+    overflow: hidden;
+}
+.plate-container.country-jpn #cell-l3::after {
+    content: "-";
+    position: absolute;
+    right: -13px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 26px;
+    font-weight: 900;
+    color: #064e3b;
+    opacity: 0.75;
+    pointer-events: none;
+}
+.plate-container.country-jpn #cell-n1 { order: 4; }
+.plate-container.country-jpn #cell-n2 { order: 5; }
+.plate-container.country-jpn #cell-n3 { order: 6; margin-right: 0; }
+.plate-container.country-jpn .plate-cell.letter-cell {
+    font-size: 32px;
+    min-width: 26px;
+    height: 50px;
+    line-height: 1;
+    color: #047857;
+}
+.plate-container.country-jpn .plate-cell.num-cell {
+    font-size: 48px;
+    min-width: 32px;
+    height: 54px;
+    line-height: 1;
+    color: #064e3b;
+}
+
+/* 🇯🇵 JDM 字光式 Night-Glow Special Plate */
+.plate-container.country-jpn.special-jdm-glow {
+    background: radial-gradient(circle at 50% 50%, #062c24 0%, #031310 100%) !important;
+    border-color: #10b981 !important;
+    outline-color: #059669 !important;
+    box-shadow: 0 0 0 2px #10b981, 0 0 42px rgba(16, 185, 129, 0.85), inset 0 0 24px rgba(16, 185, 129, 0.32) !important;
+    color: #34d399 !important;
+}
+.plate-container.country-jpn.special-jdm-glow::before,
+.plate-container.country-jpn.special-jdm-glow::after,
+.plate-container.country-jpn.special-jdm-glow .plate-cell.letter-cell,
+.plate-container.country-jpn.special-jdm-glow .plate-cell.num-cell,
+.plate-container.country-jpn.special-jdm-glow #cell-l3::after {
+    color: #34d399 !important;
+    text-shadow: 0 0 12px rgba(52, 211, 153, 0.9), 0 0 4px #a7f3d0 !important;
+}
+
+/* 🇯🇵 Mini-Plate: Japan (JDM) */
+.mini-plate.country-jpn,
+.mini-plate.plate-country-jpn,
+.r-plate.country-jpn,
+.r-plate.plate-country-jpn {
+    background: linear-gradient(180deg, #ffffff 0%, #ecfdf5 100%);
+    border: 2px solid #064e3b;
+    color: #064e3b;
+    gap: 5px;
+    box-shadow: inset 0 1px 1px #fff, 0 2px 8px rgba(6, 78, 59, 0.25);
+}
+.mini-plate.country-jpn.mp-structured,
+.mini-plate.plate-country-jpn.mp-structured,
+.r-plate.country-jpn.mp-structured,
+.r-plate.plate-country-jpn.mp-structured {
+    padding: 2px 8px;
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-width: 98px;
+    border-radius: 5px;
+    line-height: 1;
+    gap: 1px;
+    border: 2px solid #064e3b;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 75%, #ecfdf5 100%);
+    color: #064e3b;
+}
+.mp-jpn-top {
+    font-size: 0.54em;
+    font-weight: 900;
+    letter-spacing: 0.5px;
+    line-height: 1;
+    color: #064e3b;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+}
+.mp-jpn-seal {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #dc2626;
+    display: inline-block;
+    flex-shrink: 0;
+}
+.mp-jpn-main {
+    font-size: 1em;
+    font-weight: 900;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    line-height: 1.05;
+    color: #064e3b;
+}
+.mp-jpn-hira {
+    font-size: 0.72em;
+    font-weight: 900;
+    color: #047857;
+}
+.mp-jpn-let {
+    font-size: 0.78em;
+    font-weight: 900;
+    color: #047857;
+}
+.mp-jpn-num {
+    font-size: 1.06em;
+    font-weight: 900;
+    letter-spacing: 0.5px;
+    color: #064e3b;
+}
+.mini-plate.country-jpn.special-jdm-glow,
+.r-plate.country-jpn.special-jdm-glow {
+    background: linear-gradient(180deg, #062c24 0%, #031310 100%) !important;
+    border-color: #10b981 !important;
+    color: #34d399 !important;
+    box-shadow: 0 0 12px rgba(16, 185, 129, 0.65) !important;
+}
+.mini-plate.country-jpn.special-jdm-glow .mp-jpn-top,
+.mini-plate.country-jpn.special-jdm-glow .mp-jpn-main,
+.mini-plate.country-jpn.special-jdm-glow .mp-jpn-hira,
+.mini-plate.country-jpn.special-jdm-glow .mp-jpn-let,
+.mini-plate.country-jpn.special-jdm-glow .mp-jpn-num {
+    color: #34d399 !important;
+    text-shadow: 0 0 8px rgba(52, 211, 153, 0.85);
+}
+
+/* =========================================================================
+   🏛️📕🚔🪖🇷🇺 УЛЬТРА-РЕДКИЕ СПЕЦНОМЕРА (СССР ГОСТ 1977 / ДИПЛОМАТ CD / МВД / МО / ФСО)
+   ========================================================================= */
+.plate-container.special-plate:not(.country-jpn)::before {
+    content: attr(data-special-badge);
+    position: absolute;
+    top: -11px;
+    left: 16px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 9px;
+    font-weight: 900;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    z-index: 12;
+    pointer-events: none;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.6);
+}
+
+/* 1. 🏛️ СССР (Ретро ГОСТ 1977 — Чёрный советский номер: МОС / СВТ) */
+.plate-container.special-ussr {
+    background: linear-gradient(180deg, #141923 0%, #090d14 60%, #05070b 100%) !important;
+    color: #f8fafc !important;
+    border: 3.5px solid #f8fafc !important;
+    outline: 3px solid #090d14 !important;
+    box-shadow: 0 0 0 2px #ef4444, 0 0 42px rgba(239, 68, 68, 0.7), inset 0 1px 2px rgba(255, 255, 255, 0.25) !important;
+}
+.plate-container.special-ussr::before {
+    background: linear-gradient(135deg, #dc2626, #991b1b);
+    color: #fde047;
+    border: 1px solid #fde047;
+}
+.plate-container.special-ussr .plate-cell,
+.plate-container.special-ussr .plate-cell .char-span,
+.plate-container.special-ussr .plate-region,
+.plate-container.special-ussr .plate-region #region,
+.plate-container.special-ussr .plate-region-text {
+    color: #f8fafc !important;
+    text-shadow: 0 2px 3px rgba(0, 0, 0, 0.85) !important;
+}
+.plate-container.special-ussr .plate-region {
+    border-left-color: #f8fafc !important;
+}
+.plate-container.special-ussr .flag.flag-rus {
+    background: linear-gradient(180deg, #dc2626 0%, #b91c1c 100%) !important;
+    border-color: #fde047 !important;
+}
+
+/* 2. 📕 Дипломатический Красный (CD / МИД: КМН / СМК) */
+.plate-container.special-diplomat {
+    background: linear-gradient(180deg, #dc2626 0%, #b91c1c 62%, #991b1b 100%) !important;
+    color: #ffffff !important;
+    border: 3.5px solid #ffffff !important;
+    outline: 3px solid #7f1d1d !important;
+    box-shadow: 0 0 0 2px #fca5a5, 0 0 48px rgba(220, 38, 38, 0.85), inset 0 1px 2px rgba(255, 255, 255, 0.4) !important;
+}
+.plate-container.special-diplomat::before {
+    background: linear-gradient(135deg, #7f1d1d, #dc2626);
+    color: #ffffff;
+    border: 1px solid #fde047;
+}
+.plate-container.special-diplomat .plate-cell,
+.plate-container.special-diplomat .plate-cell .char-span,
+.plate-container.special-diplomat .plate-region,
+.plate-container.special-diplomat .plate-region #region,
+.plate-container.special-diplomat .plate-region-text {
+    color: #ffffff !important;
+    text-shadow: 0 2px 3px rgba(0, 0, 0, 0.55) !important;
+}
+.plate-container.special-diplomat .plate-region {
+    border-left-color: #ffffff !important;
+}
+
+/* 3. 🚔 Спецсвязь / Полиция МВД (Синий госномер: УМВ / РМВ) */
+.plate-container.special-mvd {
+    background: linear-gradient(180deg, #2563eb 0%, #1d4ed8 62%, #1e40af 100%) !important;
+    color: #ffffff !important;
+    border: 3.5px solid #ffffff !important;
+    outline: 3px solid #1e3a8a !important;
+    box-shadow: 0 0 0 2px #60a5fa, 0 0 48px rgba(37, 99, 235, 0.85), inset 0 1px 2px rgba(255, 255, 255, 0.4) !important;
+}
+.plate-container.special-mvd::before {
+    background: linear-gradient(135deg, #1e3a8a, #2563eb);
+    color: #ffffff;
+    border: 1px solid #93c5fd;
+}
+.plate-container.special-mvd .plate-cell,
+.plate-container.special-mvd .plate-cell .char-span,
+.plate-container.special-mvd .plate-region,
+.plate-container.special-mvd .plate-region #region,
+.plate-container.special-mvd .plate-region-text {
+    color: #ffffff !important;
+    text-shadow: 0 2px 3px rgba(0, 0, 0, 0.55) !important;
+}
+.plate-container.special-mvd .plate-region {
+    border-left-color: #ffffff !important;
+}
+
+/* 4. 🪖 Военный Генштаб МО (Чёрный матовый номер: ВМО / КМО) */
+.plate-container.special-military {
+    background: linear-gradient(180deg, #111827 0%, #090d16 65%, #030712 100%) !important;
+    color: #f8fafc !important;
+    border: 3.5px solid #f8fafc !important;
+    outline: 3px solid #090d16 !important;
+    box-shadow: 0 0 0 2px #f59e0b, 0 0 42px rgba(245, 158, 11, 0.65), inset 0 1px 2px rgba(255, 255, 255, 0.25) !important;
+}
+.plate-container.special-military::before {
+    background: linear-gradient(135deg, #1f2937, #090d16);
+    color: #fbbf24;
+    border: 1px solid #ef4444;
+}
+.plate-container.special-military .plate-cell,
+.plate-container.special-military .plate-cell .char-span,
+.plate-container.special-military .plate-region,
+.plate-container.special-military .plate-region #region,
+.plate-container.special-military .plate-region-text {
+    color: #f8fafc !important;
+    text-shadow: 0 2px 3px rgba(0, 0, 0, 0.85) !important;
+}
+.plate-container.special-military .plate-region {
+    border-left-color: #f8fafc !important;
+}
+
+/* 5. 🇷🇺 Федеральный Спецномер (Широкий Триколор ФСО / Кремль: КРМ / РФС) */
+.plate-container.special-federal {
+    border: 3.5px solid #0b0f19 !important;
+    outline: 3px solid #fbbf24 !important;
+    box-shadow: 0 0 0 2px #fbbf24, 0 0 50px rgba(245, 158, 11, 0.85), inset 0 1px 2px #fff !important;
+}
+.plate-container.special-federal::before {
+    background: linear-gradient(135deg, #1e3a8a, #dc2626);
+    color: #fef08a;
+    border: 1px solid #fbbf24;
+}
+.plate-container.special-federal .plate-region {
+    background: linear-gradient(180deg, #ffffff 0%, #ffffff 33.3%, #1d4ed8 33.3%, #1d4ed8 66.6%, #dc2626 66.6%, #dc2626 100%) !important;
+    padding: 4px 12px !important;
+    min-width: 72px;
+}
+.plate-container.special-federal .plate-region #region {
+    font-size: 20px !important;
+    color: #0b0f19 !important;
+    background: rgba(255, 255, 255, 0.88);
+    padding: 1px 5px;
+    border-radius: 4px;
+    text-shadow: none !important;
+}
+.plate-container.special-federal .plate-region-text {
+    color: #ffffff !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.85) !important;
+}
+
+/* Mini-plate variants for Ultra-Special plates */
+.mini-plate.special-ussr,
+.r-plate.special-ussr,
+.mini-plate.special-military,
+.r-plate.special-military {
+    background: linear-gradient(180deg, #141923 0%, #05070b 100%) !important;
+    border-color: #f8fafc !important;
+    color: #f8fafc !important;
+    box-shadow: 0 0 10px rgba(239, 68, 68, 0.45) !important;
+}
+.mini-plate.special-ussr .mp-rus-main,
+.mini-plate.special-ussr .mp-reg-num,
+.mini-plate.special-ussr .mp-rus-sub,
+.mini-plate.special-military .mp-rus-main,
+.mini-plate.special-military .mp-reg-num,
+.mini-plate.special-military .mp-rus-sub {
+    color: #f8fafc !important;
+}
+.mini-plate.special-ussr .mp-rus-reg,
+.mini-plate.special-military .mp-rus-reg {
+    border-left-color: #f8fafc !important;
+    background: rgba(255, 255, 255, 0.06) !important;
+}
+
+.mini-plate.special-diplomat,
+.r-plate.special-diplomat {
+    background: linear-gradient(180deg, #dc2626 0%, #991b1b 100%) !important;
+    border-color: #ffffff !important;
+    color: #ffffff !important;
+    box-shadow: 0 0 12px rgba(220, 38, 38, 0.65) !important;
+}
+.mini-plate.special-diplomat .mp-rus-main,
+.mini-plate.special-diplomat .mp-reg-num,
+.mini-plate.special-diplomat .mp-rus-sub {
+    color: #ffffff !important;
+}
+.mini-plate.special-diplomat .mp-rus-reg {
+    border-left-color: #ffffff !important;
+    background: rgba(0, 0, 0, 0.12) !important;
+}
+
+.mini-plate.special-mvd,
+.r-plate.special-mvd {
+    background: linear-gradient(180deg, #2563eb 0%, #1e40af 100%) !important;
+    border-color: #ffffff !important;
+    color: #ffffff !important;
+    box-shadow: 0 0 12px rgba(37, 99, 235, 0.65) !important;
+}
+.mini-plate.special-mvd .mp-rus-main,
+.mini-plate.special-mvd .mp-reg-num,
+.mini-plate.special-mvd .mp-rus-sub {
+    color: #ffffff !important;
+}
+.mini-plate.special-mvd .mp-rus-reg {
+    border-left-color: #ffffff !important;
+    background: rgba(0, 0, 0, 0.12) !important;
+}
+
+.mini-plate.special-federal .mp-rus-reg,
+.r-plate.special-federal .mp-rus-reg {
+    background: linear-gradient(180deg, #ffffff 0%, #ffffff 33.3%, #1d4ed8 33.3%, #1d4ed8 66.6%, #dc2626 66.6%, #dc2626 100%) !important;
+    padding: 2px 7px !important;
+}
+.mini-plate.special-federal .mp-reg-num {
+    background: rgba(255, 255, 255, 0.88);
+    padding: 0 3px;
+    border-radius: 2px;
+    color: #0b0f19 !important;
+}
+.mini-plate.special-federal .mp-rus-sub {
+    color: #ffffff !important;
+    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.85);
+}
+
+.mp-special-badge {
+    font-weight: 900;
+    letter-spacing: 0.4px;
+}
+
+@media (max-width: 480px) {
+    .plate-container.country-jpn {
+        padding: 32px 14px 22px 14px;
+        min-height: 134px;
+        min-width: 276px;
+    }
+    .plate-container.country-jpn::before {
+        font-size: 18px;
+    }
+    .plate-container.country-jpn .plate-cell.letter-cell {
+        font-size: 26px;
+        min-width: 22px;
+        height: 44px;
+    }
+    .plate-container.country-jpn .plate-cell.num-cell {
+        font-size: 38px;
+        min-width: 27px;
+        height: 46px;
+    }
+}
+
