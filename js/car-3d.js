@@ -817,20 +817,35 @@
                     let customEmissiveIntensity = 0.28;
 
                     if (country === 'JPN') {
-                        // Authentic 512x256 Japanese JDM Plate (330x165mm, 2:1 aspect ratio)
+                        // Authentic 512x256 Japanese MLIT Plate (自動車登録番号標 330x165mm, 2:1 aspect ratio)
                         const JPN_META = {
-                            TKY: { kanji: '品川', classCode: '330', hira: 'あ' },
-                            YKH: { kanji: '横浜', classCode: '300', hira: 'さ' },
-                            OSK: { kanji: '大阪', classCode: '331', hira: 'す' },
-                            NGY: { kanji: '名古屋', classCode: '350', hira: 'せ' },
-                            SPR: { kanji: '札幌', classCode: '301', hira: 'そ' },
-                            FKO: { kanji: '福岡', classCode: '330', hira: 'た' },
-                            KBE: { kanji: '神戸', classCode: '302', hira: 'ち' },
-                            KYO: { kanji: '京都', classCode: '310', hira: 'つ' },
-                            CHB: { kanji: '千葉', classCode: '320', hira: 'て' },
-                            STM: { kanji: '大宮', classCode: '300', hira: 'と' }
+                            TKY: { kanji: '品川', seal: '東', classCode: '330', hira: 'さ' },
+                            YKH: { kanji: '横浜', seal: '神', classCode: '300', hira: 'す' },
+                            OSK: { kanji: 'なにわ', seal: '大', classCode: '330', hira: 'せ' },
+                            NGY: { kanji: '名古屋', seal: '愛', classCode: '350', hira: 'そ' },
+                            SPR: { kanji: '札幌', seal: '札', classCode: '301', hira: 'た' },
+                            FKO: { kanji: '福岡', seal: '福', classCode: '330', hira: 'ち' },
+                            KBE: { kanji: '神戸', seal: '兵', classCode: '302', hira: 'つ' },
+                            KYO: { kanji: '京都', seal: '京', classCode: '310', hira: 'て' },
+                            CHB: { kanji: '千葉', seal: '千', classCode: '320', hira: 'と' },
+                            STM: { kanji: '大宮', seal: '埼', classCode: '300', hira: 'な' }
                         };
-                        const jpnMeta = JPN_META[regCode] || { kanji: '東京', classCode: '330', hira: 'あ' };
+                        const JPN_HIRA_POOL = [
+                            'あ','か','さ','す','せ','そ','た','ち','つ','て',
+                            'と','な','に','ぬ','ね','の','は','ひ','ふ','ほ',
+                            'ま','み','む','め','も','や','ゆ','よ','ら','り',
+                            'る','れ','ろ','わ'
+                        ];
+                        const jpnMeta = JPN_META[regCode] || { kanji: '品川', seal: '東', classCode: '330', hira: 'さ' };
+                        let jpnHira = jpnMeta.hira;
+                        if (letters === 'JDM') jpnHira = 'わ';
+                        else if (letters === 'GTR') jpnHira = 'さ';
+                        else if (letters === 'TKY') jpnHira = 'あ';
+                        else if (letters === 'DRF') jpnHira = 'ろ';
+                        else if (letters && letters.length >= 3) {
+                            const hIdx = (letters.charCodeAt(0) * 31 + letters.charCodeAt(1) * 17 + letters.charCodeAt(2) * 7) % JPN_HIRA_POOL.length;
+                            jpnHira = JPN_HIRA_POOL[Math.abs(hIdx)] || jpnMeta.hira;
+                        }
                         const isJdmGlow = ['JDM', 'GTR'].includes(letters) && ['777', '001', '007'].includes(digits);
                         group.userData.specialPlateType = isJdmGlow ? 'jdm_glow' : null;
                         if (isJdmGlow) customEmissiveIntensity = 0.68;
@@ -852,41 +867,45 @@
                         ctx.lineWidth = 7;
                         ctx.strokeRect(6, 6, 500, 244);
 
-                        // Top-left Japanese red rising-sun seal & top-right bolt
-                        ctx.fillStyle = '#dc2626';
+                        // Top-left silver aluminum 封印 (Fūin) seal cap & top-right mounting bolt
+                        ctx.fillStyle = '#cbd5e1';
                         if (typeof ctx.arc === 'function') {
                             ctx.beginPath();
-                            ctx.arc(54, 48, 16, 0, Math.PI * 2);
+                            ctx.arc(58, 48, 18, 0, Math.PI * 2);
+                            ctx.fill();
+                            ctx.strokeStyle = '#64748b';
+                            ctx.lineWidth = 2.5;
+                            ctx.stroke();
+                            ctx.beginPath();
+                            ctx.arc(454, 48, 9, 0, Math.PI * 2);
+                            ctx.fillStyle = '#94a3b8';
                             ctx.fill();
                         } else {
-                            ctx.fillRect(38, 32, 32, 32);
+                            ctx.fillRect(40, 30, 36, 36);
+                            ctx.fillStyle = '#94a3b8';
+                            ctx.fillRect(446, 40, 16, 16);
                         }
-                        ctx.fillStyle = '#94a3b8';
-                        ctx.fillRect(444, 40, 16, 16);
-
-                        // Top row: Prefecture Kanji + Classification code (e.g. 品川 330 • JDM)
-                        ctx.fillStyle = jpnTextColor;
+                        ctx.fillStyle = '#1e293b';
                         ctx.textAlign = 'center';
                         ctx.textBaseline = 'middle';
-                        ctx.font = '900 44px "Inter", "Arial Black", sans-serif';
-                        ctx.fillText(`${jpnMeta.kanji} ${jpnMeta.classCode}`, 236, 52);
+                        ctx.font = '900 18px "Hiragino Kaku Gothic ProN", "Yu Gothic", "Inter", sans-serif';
+                        ctx.fillText(jpnMeta.seal || '東', 58, 49);
 
-                        ctx.font = '800 22px "Inter", sans-serif';
-                        ctx.fillText(letters, 404, 52);
+                        // Top row: Transport Bureau Kanji + 3-digit vehicle class code (e.g. 品川 330)
+                        ctx.fillStyle = jpnTextColor;
+                        ctx.font = '900 46px "Hiragino Kaku Gothic ProN", "Yu Gothic", "Inter", "Arial Black", sans-serif';
+                        ctx.fillText(`${jpnMeta.kanji} ${jpnMeta.classCode}`, 256, 52);
 
-                        // Bottom row: Left Hiragana character + Large hyphenated Japanese digits
-                        ctx.font = '900 54px "Inter", sans-serif';
-                        ctx.fillText(jpnMeta.hira, 62, 166);
+                        // Bottom row: Left Hiragana character + 4-position Japanese digits with middle dots (・) & hyphen
+                        ctx.font = '900 58px "Hiragino Kaku Gothic ProN", "Yu Gothic", "Inter", sans-serif';
+                        ctx.fillText(jpnHira, 66, 166);
 
-                        const formattedJpnDigits = digits.startsWith('00')
-                            ? `・・ ${digits[2]}`
-                            : (digits.startsWith('0') ? `・${digits[1]} ${digits[2]}` : `${digits[0]}-${digits.slice(1)}`);
-                        ctx.font = '900 104px "Inter", "Arial Black", sans-serif';
-                        ctx.fillText(formattedJpnDigits, 296, 168);
-
-                        // Bottom JPN prefecture subtitle
-                        ctx.font = '800 17px "Inter", sans-serif';
-                        ctx.fillText(`JAPAN • ${regCode}`, 256, 232);
+                        const d3 = String(digits || '777').padStart(3, '0').slice(-3);
+                        const formattedJpnDigits = (d3.startsWith('00') && d3 !== '000')
+                            ? `・・ ・${d3[2]}`
+                            : ((d3.startsWith('0') && d3 !== '000') ? `・・ ${d3[1]}${d3[2]}` : `・${d3[0]}-${d3.slice(1)}`);
+                        ctx.font = '900 100px "Inter", "Arial Black", sans-serif';
+                        ctx.fillText(formattedJpnDigits, 294, 168);
                     } else if (country === 'USA') {
                         // Authentic 512x256 (2:1 aspect ratio) North American State Plates (CA, NY, FL, TX, NV)
                         ctx.textAlign = 'center';

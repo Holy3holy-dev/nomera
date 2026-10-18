@@ -1224,7 +1224,19 @@ describe('Collector Book & Car-Plate Synergy (RUS / KZ / USA / UAE)', () => {
 
     const jpnMiniHtml = app.run("renderMiniPlateInnerHtml('JDM 777 | TKY JPN')");
     assert.match(jpnMiniHtml, /品川 330/);
+    assert.match(jpnMiniHtml, /東/);
+    assert.match(jpnMiniHtml, /・7-77/);
     assert.match(jpnMiniHtml, /JDM/);
+
+    const jpnMini1Digit = app.run("renderMiniPlateInnerHtml('GTR 001 | YKH JPN')");
+    assert.match(jpnMini1Digit, /横浜 300/);
+    assert.match(jpnMini1Digit, /神/);
+    assert.match(jpnMini1Digit, /・・ ・1/);
+
+    const jpnMini2Digit = app.run("renderMiniPlateInnerHtml('TKY 077 | OSK JPN')");
+    assert.match(jpnMini2Digit, /なにわ 330/);
+    assert.match(jpnMini2Digit, /大/);
+    assert.match(jpnMini2Digit, /・・ 77/);
 
     // 3. Ultra-Rare Special RUS plates: USSR (МОС/СВТ), Diplomatic Red (КМН/СМК), MVD Blue (УМВ/РМВ), Military Black (ВМО/КМО), Federal Tricolor (КРМ/РФС)
     const specialCases = [
@@ -1256,6 +1268,13 @@ describe('Collector Book & Car-Plate Synergy (RUS / KZ / USA / UAE)', () => {
     const jpn3D = Car3DManager.createLicensePlate('JDM 777 | TKY JPN');
     assert.ok(jpn3D && jpn3D.isGroup);
     assert.ok(drawnTexts.some(d => d.text.includes('品川 330')), '3D JPN plate must draw Tokyo Shinagawa kanji header');
+    assert.ok(drawnTexts.some(d => d.text.includes('東')), '3D JPN plate must draw Tokyo Fūin seal kanji 東');
+    assert.ok(drawnTexts.some(d => d.text.includes('・7-77')), '3D JPN plate must draw authentic 4-position MLIT digits ・7-77');
+
+    drawnTexts.length = 0;
+    Car3DManager.createLicensePlate('GTR 001 | YKH JPN');
+    assert.ok(drawnTexts.some(d => d.text.includes('横浜 300')), '3D YKH JPN plate must draw Yokohama 300 header');
+    assert.ok(drawnTexts.some(d => d.text.includes('・・ ・1')), '3D 1-digit JPN plate must draw 3 middle dots without hyphen (・・ ・1)');
 
     drawnTexts.length = 0;
     Car3DManager.createLicensePlate('М 001 ОС | 77 RUS');

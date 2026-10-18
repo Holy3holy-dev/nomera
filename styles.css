@@ -4224,11 +4224,11 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 }
 
 /* H3H V4 — nonblocking feedback, plate hero and admin UI */
-.h3h-toast-stack {position:fixed;top:max(16px,env(safe-area-inset-top));right:clamp(12px,3vw,30px);z-index:120000;display:grid;gap:10px;width:min(360px,calc(100vw - 24px));pointer-events:none;}
-.h3h-toast {padding:14px 17px 14px 20px;color:#fff0f2;background:#1e0d11;border:1px solid #772431;border-left:4px solid #ff2e4c;border-radius:14px;box-shadow:0 14px 35px rgba(0,0,0,.85);line-height:1.45;font-size:13px;font-weight:650;overflow-wrap:anywhere;animation:h3h-toast-in .28s ease both;}
-.h3h-toast.toast-error {border-left-color:#ff4d4d;border-color:#822626;background:#2d0f12;}
-.h3h-toast.toast-hide {opacity:0;transform:translateX(18px);transition:opacity .25s,transform .25s;}
-@keyframes h3h-toast-in {from{opacity:0;transform:translateY(-14px) scale(.97);}to{opacity:1;transform:translateY(0) scale(1);}}
+.h3h-toast-stack {position:fixed;top:max(10px,env(safe-area-inset-top));left:50%;right:auto;transform:translateX(-50%);z-index:120000;display:flex;flex-direction:column;align-items:center;gap:6px;width:auto;max-width:min(360px,calc(100vw - 24px));pointer-events:none;}
+.h3h-toast {padding:7px 14px;color:#fff0f2;background:rgba(24,10,14,.88);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(255,46,76,.45);border-left:3.5px solid #ff2e4c;border-radius:999px;box-shadow:0 8px 22px rgba(0,0,0,.65);line-height:1.3;font-size:11.5px;font-weight:700;text-align:center;max-width:100%;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;animation:h3h-toast-in .22s ease both;pointer-events:none;}
+.h3h-toast.toast-error {border-left-color:#ff4d4d;border-color:#991b1b;background:rgba(45,12,16,.92);border-radius:14px;}
+.h3h-toast.toast-hide {opacity:0;transform:translateY(-10px) scale(.96);transition:opacity .2s,transform .2s;}
+@keyframes h3h-toast-in {from{opacity:0;transform:translateY(-12px) scale(.96);}to{opacity:1;transform:translateY(0) scale(1);}}
 .h3h-dialog {max-width:410px;width:min(100%,410px);text-align:left;}
 #h3h-confirm,
 #h3h-admin-input {z-index:100050 !important;}
@@ -4270,7 +4270,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .admin-activity-row {padding:12px 14px;border-bottom:1px solid #3d171e;overflow-wrap:anywhere;font-size:12px;line-height:1.5;}
 .admin-activity-row time {display:block;color:#ad9498;font-size:10px;margin-bottom:3px;}
 .admin-activity-row > div {margin-top:4px;color:#ffd6dc;}
-@media(max-width:440px){.h3h-toast-stack{top:auto;bottom:max(85px,env(safe-area-inset-bottom));right:12px;}.plate-stage > #gen-rarity{top:5px;font-size:9px;}}
+@media(max-width:440px){.h3h-toast-stack{top:max(8px,env(safe-area-inset-top));bottom:auto;left:50%;right:auto;transform:translateX(-50%);max-width:calc(100vw - 20px);}.h3h-toast{padding:6px 12px;font-size:11px;border-radius:12px;}.plate-stage > #gen-rarity{top:5px;font-size:9px;}}
 @media(prefers-reduced-motion:reduce){.h3h-toast,.h3h-plate-drop,.h3h-rarity-pop,.h3h-reward-spark{animation:none!important;}}
 
 /* V4.1 multiplayer connectivity: visible on mobile and desktop */
@@ -6433,98 +6433,89 @@ body.race-active .race-3d-viewport-wrapper {
 }
 
 /* =========================================================================
-   🇯🇵 ЯПОНИЯ (JDM Plate 330×165mm: сверху кандзи префектуры + класс 330 + печать,
-   снизу хирагана + серия + цифры ••-•• в тёмно-зелёном цвете #064e3b)
+   🇯🇵 ЯПОНИЯ (Аутентичный номер MLIT 自動車登録番号標 330×165мм:
+   сверху: серебряная пломба 封印 + кандзи бюро и 3-значный код класса «品川 330»,
+   снизу: символ хираганы слева + 4-позиционный номер с точками «・» и дефисом «・7-77» / «・・ ・1»)
    ========================================================================= */
 .plate-container.country-jpn {
     flex-direction: column;
-    justify-content: center;
+    justify-content: flex-end;
     align-items: center;
-    min-height: 156px;
+    min-height: 162px;
     min-width: 344px;
     max-width: 376px;
-    padding: 40px 22px 26px 22px;
-    border-radius: 12px;
+    padding: 50px 20px 18px 20px;
+    border-radius: 10px;
     border: 3.5px solid #064e3b;
     outline: 2px solid #cbd5e1;
-    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 75%, #ecfdf5 100%);
+    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 78%, #f1f5f9 100%);
     color: #064e3b;
 }
+/* Серебряная алюминиевая пломба 封印 (Fūin) на левом верхнем болте */
 .plate-container.country-jpn .plate-bolt.bolt-left {
-    top: 10px;
+    top: 11px;
     left: 16px;
     transform: none;
-    width: 18px;
-    height: 18px;
+    width: 22px;
+    height: 22px;
     border-radius: 50%;
-    background: radial-gradient(circle at 38% 35%, #f87171 0%, #dc2626 55%, #991b1b 100%);
-    border: 1.5px solid #cbd5e1;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+    background: radial-gradient(circle at 35% 32%, #ffffff 0%, #e2e8f0 45%, #94a3b8 85%, #64748b 100%);
+    border: 1.5px solid #64748b;
+    box-shadow: inset 0 1px 1px #ffffff, 0 1px 3px rgba(15, 23, 42, 0.38);
     display: flex;
     align-items: center;
     justify-content: center;
+    z-index: 7;
 }
 .plate-container.country-jpn .plate-bolt.bolt-left::after {
-    content: "封";
-    color: #ffffff;
-    font-size: 9px;
+    content: attr(data-jpn-seal);
+    color: #1e293b;
+    font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic", "Meiryo", sans-serif;
+    font-size: 10px;
     font-weight: 900;
     line-height: 1;
 }
 .plate-container.country-jpn .plate-bolt.bolt-right {
-    top: 12px;
-    right: 78px;
+    top: 15px;
+    right: 68px;
     transform: none;
-    width: 11px;
-    height: 11px;
+    width: 12px;
+    height: 12px;
     border-radius: 50%;
-    background: radial-gradient(circle, #e2e8f0 0%, #64748b 100%);
-    border: 1px solid #334155;
+    background: radial-gradient(circle, #f1f5f9 0%, #64748b 100%);
+    border: 1px solid #475569;
 }
+/* Верхний ряд: кандзи префектуры + 3-значный код класса ТС (напр. «品川 330») */
 .plate-container.country-jpn::before {
-    content: attr(data-jpn-kanji) " 330";
+    content: attr(data-jpn-kanji);
     position: absolute;
-    top: 7px;
+    top: 9px;
     left: 50%;
     transform: translateX(-50%);
     font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic", "Meiryo", "Arial Black", sans-serif;
     font-weight: 900;
-    font-size: 21px;
+    font-size: 25px;
     line-height: 1.05;
-    letter-spacing: 2px;
+    letter-spacing: 3px;
     color: #064e3b;
     pointer-events: none;
     white-space: nowrap;
     z-index: 6;
 }
-.plate-container.country-jpn::after {
-    content: attr(data-jpn-hira) " • " attr(data-jpn-en) " JDM";
-    position: absolute;
-    inset: auto;
-    bottom: 6px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: none;
-    font-size: 10px;
-    font-weight: 900;
-    letter-spacing: 1.8px;
-    color: #047857;
-    text-transform: uppercase;
-    white-space: nowrap;
-    pointer-events: none;
-    z-index: 6;
+.plate-container.country-jpn:not(.special-plate)::after {
+    display: none;
 }
 .plate-container.country-jpn .plate-region {
     position: absolute;
-    top: 7px;
+    top: 10px;
     right: 10px;
     border-left: none;
     align-self: auto;
     margin-left: 0;
     padding: 2px 6px;
-    background: #064e3b;
-    color: #ecfdf5;
-    border: 1px solid rgba(16, 185, 129, 0.55);
+    background: rgba(6, 78, 59, 0.09);
+    color: #064e3b;
+    border: 1px solid rgba(6, 78, 59, 0.32);
     border-radius: 4px;
     font-size: 9px;
     font-weight: 900;
@@ -6539,7 +6530,7 @@ body.race-active .race-3d-viewport-wrapper {
     font-size: 9.5px;
     line-height: 1.1;
     font-weight: 900;
-    color: #ecfdf5;
+    color: #064e3b;
 }
 .plate-container.country-jpn .plate-region-text {
     display: none;
@@ -6547,53 +6538,115 @@ body.race-active .race-3d-viewport-wrapper {
 .plate-container.country-jpn .plate-region .region-edit-hint {
     position: static;
     font-size: 8px;
-    color: #6ee7b7;
-}
-.plate-container.country-jpn .plate-cells-main {
-    align-items: center;
-    border-right: none;
-    padding: 6px 8px;
-    gap: 4px;
-}
-.plate-container.country-jpn #cell-l1 { order: 1; margin-right: 0; }
-.plate-container.country-jpn #cell-l2 { order: 2; }
-.plate-container.country-jpn #cell-l3 {
-    order: 3;
-    position: relative;
-    margin-right: 18px;
-    overflow: visible;
-}
-.plate-container.country-jpn #cell-l3.spinning {
-    overflow: hidden;
-}
-.plate-container.country-jpn #cell-l3::after {
-    content: "-";
-    position: absolute;
-    right: -13px;
-    top: 50%;
-    transform: translateY(-50%);
-    font-size: 26px;
-    font-weight: 900;
-    color: #064e3b;
-    opacity: 0.75;
-    pointer-events: none;
-}
-.plate-container.country-jpn #cell-n1 { order: 4; }
-.plate-container.country-jpn #cell-n2 { order: 5; }
-.plate-container.country-jpn #cell-n3 { order: 6; margin-right: 0; }
-.plate-container.country-jpn .plate-cell.letter-cell {
-    font-size: 32px;
-    min-width: 26px;
-    height: 50px;
-    line-height: 1;
     color: #047857;
 }
-.plate-container.country-jpn .plate-cell.num-cell {
-    font-size: 48px;
-    min-width: 32px;
-    height: 54px;
+/* Нижний ряд: слева символ хираганы (あ/さ/わ), справа 4-позиционный номер с точками «・» и дефисом */
+.plate-container.country-jpn .plate-cells-main {
+    width: 100%;
+    justify-content: center;
+    align-items: center;
+    border-right: none;
+    padding: 4px 6px 2px 6px;
+    gap: 4px;
+}
+.plate-container.country-jpn .plate-cells-main::before {
+    content: attr(data-jpn-hira);
+    font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic", "Meiryo", sans-serif;
+    font-size: 36px;
+    font-weight: 900;
     line-height: 1;
     color: #064e3b;
+    margin-right: 16px;
+    flex-shrink: 0;
+}
+/* Латинская серия (JDM/GTR/TKY) компактно размещена в левой верхней части рядом с пломбой 封印 */
+.plate-container.country-jpn .plate-cell.letter-cell {
+    position: absolute;
+    top: 12px;
+    height: 20px;
+    min-width: 11px;
+    width: 11px;
+    padding: 0;
+    margin: 0 !important;
+    font-size: 12px;
+    font-weight: 900;
+    line-height: 20px;
+    color: #047857;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    z-index: 7;
+}
+.plate-container.country-jpn #cell-l1 { left: 43px; }
+.plate-container.country-jpn #cell-l2 { left: 54px; }
+.plate-container.country-jpn #cell-l3 { left: 65px; }
+.plate-container.country-jpn #cell-l3::after {
+    display: none;
+}
+.plate-container.country-jpn #cell-n1 {
+    order: 1;
+    position: relative;
+    margin-left: 22px;
+    margin-right: 22px;
+    overflow: visible;
+}
+.plate-container.country-jpn #cell-n1.spinning {
+    overflow: hidden;
+}
+/* 1-я позиция из 4 на японском номере (для 3-значных игровых чисел 001..999 это всегда ведущая точка «・») */
+.plate-container.country-jpn #cell-n1::before {
+    content: "・";
+    position: absolute;
+    left: -24px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 38px;
+    font-weight: 900;
+    color: #064e3b;
+    pointer-events: none;
+}
+/* Дефис между 2-й и 3-й позицией (скрывается для 1- и 2-значных номеров с ведущими точками) */
+.plate-container.country-jpn #cell-n1:not(.jpn-no-hyphen)::after {
+    content: "-";
+    position: absolute;
+    right: -19px;
+    top: 50%;
+    transform: translateY(-52%);
+    font-size: 36px;
+    font-weight: 900;
+    color: #064e3b;
+    pointer-events: none;
+}
+.plate-container.country-jpn #cell-n2 { order: 2; position: relative; }
+.plate-container.country-jpn #cell-n3 { order: 3; margin-right: 0; position: relative; }
+.plate-container.country-jpn .plate-cell.num-cell {
+    font-size: 54px;
+    min-width: 34px;
+    height: 60px;
+    line-height: 1;
+    color: #064e3b;
+}
+/* Замена ведущих нулей на японские средние точки «・» (накагуро) */
+.plate-container.country-jpn .plate-cell.num-cell.jpn-dot-zero .char-span {
+    opacity: 0;
+}
+.plate-container.country-jpn .plate-cell.num-cell.jpn-dot-zero::before {
+    content: "・";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 38px;
+    font-weight: 900;
+    color: #064e3b;
+    pointer-events: none;
+}
+.plate-container.country-jpn #cell-n1.jpn-dot-zero::before {
+    content: "・  ・";
+    left: -12px;
+    transform: translateY(-50%);
+    letter-spacing: -4px;
+    white-space: nowrap;
 }
 
 /* 🇯🇵 JDM 字光式 Night-Glow Special Plate */
@@ -6605,23 +6658,25 @@ body.race-active .race-3d-viewport-wrapper {
     color: #34d399 !important;
 }
 .plate-container.country-jpn.special-jdm-glow::before,
-.plate-container.country-jpn.special-jdm-glow::after,
+.plate-container.country-jpn.special-jdm-glow .plate-cells-main::before,
 .plate-container.country-jpn.special-jdm-glow .plate-cell.letter-cell,
 .plate-container.country-jpn.special-jdm-glow .plate-cell.num-cell,
-.plate-container.country-jpn.special-jdm-glow #cell-l3::after {
+.plate-container.country-jpn.special-jdm-glow #cell-n1::before,
+.plate-container.country-jpn.special-jdm-glow #cell-n1::after,
+.plate-container.country-jpn.special-jdm-glow .plate-cell.num-cell.jpn-dot-zero::before {
     color: #34d399 !important;
     text-shadow: 0 0 12px rgba(52, 211, 153, 0.9), 0 0 4px #a7f3d0 !important;
 }
 
-/* 🇯🇵 Mini-Plate: Japan (JDM) */
+/* 🇯🇵 Mini-Plate: Japan (JDM MLIT 2:1) */
 .mini-plate.country-jpn,
 .mini-plate.plate-country-jpn,
 .r-plate.country-jpn,
 .r-plate.plate-country-jpn {
-    background: linear-gradient(180deg, #ffffff 0%, #ecfdf5 100%);
+    background: linear-gradient(180deg, #ffffff 0%, #f1f5f9 100%);
     border: 2px solid #064e3b;
     color: #064e3b;
-    gap: 5px;
+    gap: 4px;
     box-shadow: inset 0 1px 1px #fff, 0 2px 8px rgba(6, 78, 59, 0.25);
 }
 .mini-plate.country-jpn.mp-structured,
@@ -6633,45 +6688,57 @@ body.race-active .race-3d-viewport-wrapper {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    min-width: 98px;
+    min-width: 102px;
     border-radius: 5px;
     line-height: 1;
-    gap: 1px;
+    gap: 2px;
     border: 2px solid #064e3b;
-    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 75%, #ecfdf5 100%);
+    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 78%, #f1f5f9 100%);
     color: #064e3b;
 }
 .mp-jpn-top {
-    font-size: 0.54em;
+    font-size: 0.56em;
     font-weight: 900;
     letter-spacing: 0.5px;
     line-height: 1;
     color: #064e3b;
     display: inline-flex;
     align-items: center;
-    gap: 3px;
+    gap: 4px;
+}
+.mp-jpn-top .mp-let {
+    font-size: 0.78em;
+    opacity: 0.72;
+    font-weight: 800;
 }
 .mp-jpn-seal {
-    width: 6px;
-    height: 6px;
+    width: 10px;
+    height: 10px;
     border-radius: 50%;
-    background: #dc2626;
-    display: inline-block;
-    flex-shrink: 0;
-}
-.mp-jpn-main {
-    font-size: 1em;
+    background: radial-gradient(circle at 35% 35%, #f8fafc 0%, #cbd5e1 65%, #94a3b8 100%);
+    border: 1px solid #64748b;
+    color: #1e293b;
+    font-style: normal;
+    font-size: 6px;
     font-weight: 900;
     display: inline-flex;
     align-items: center;
-    gap: 3px;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.mp-jpn-main {
+    font-size: 1.02em;
+    font-weight: 900;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
     line-height: 1.05;
     color: #064e3b;
 }
 .mp-jpn-hira {
-    font-size: 0.72em;
+    font-size: 0.76em;
     font-weight: 900;
-    color: #047857;
+    color: #064e3b;
 }
 .mp-jpn-let {
     font-size: 0.78em;
@@ -6679,7 +6746,7 @@ body.race-active .race-3d-viewport-wrapper {
     color: #047857;
 }
 .mp-jpn-num {
-    font-size: 1.06em;
+    font-size: 1.08em;
     font-weight: 900;
     letter-spacing: 0.5px;
     color: #064e3b;

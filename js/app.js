@@ -58,8 +58,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             toast.setAttribute('role', 'status');
             toast.textContent = String(message);
             host.appendChild(toast);
-            while (host.children && host.children.length > 3) host.firstElementChild.remove();
-            setTimeout(() => { toast.classList.add('toast-hide'); setTimeout(() => toast.remove(), 350); }, 3400);
+            while (host.children && host.children.length > 1) host.firstElementChild.remove();
+            const ttl = isErr ? 2600 : 1850;
+            setTimeout(() => { toast.classList.add('toast-hide'); setTimeout(() => toast.remove(), 220); }, ttl);
         }
         function confirmAction(message) {
             const dialog = document.getElementById('h3h-confirm');
@@ -279,18 +280,66 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             'КРМ': { id: 'federal', cssClass: 'special-federal', title: '🇷🇺 ФЕДЕРАЛЬНЫЙ СПЕЦНОМЕР • КРЕМЛЬ', badge: '🇷🇺 ФСО', sub: 'КРЕМЛЬ' },
             'РФС': { id: 'federal', cssClass: 'special-federal', title: '🇷🇺 ПРОТОКОЛ ФСО • ФЛАГ РФ', badge: '🇷🇺 РФ', sub: 'ПРОТОКОЛ' }
         };
+        const JPN_HIRAGANA_POOL = [
+            'あ','か','さ','す','せ','そ','た','ち','つ','て',
+            'と','な','に','ぬ','ね','の','は','ひ','ふ','ほ',
+            'ま','み','む','め','も','や','ゆ','よ','ら','り',
+            'る','れ','ろ','わ'
+        ];
         const JPN_PREFECTURE_META = {
-            TKY: { kanji: '品川', en: 'SHINAGAWA • TOKYO', classCode: '330', hira: 'あ' },
-            YKH: { kanji: '横浜', en: 'YOKOHAMA • KANAGAWA', classCode: '300', hira: 'さ' },
-            OSK: { kanji: '大阪', en: 'OSAKA • KANSAI', classCode: '331', hira: 'す' },
-            NGY: { kanji: '名古屋', en: 'NAGOYA • AICHI', classCode: '350', hira: 'せ' },
-            SPR: { kanji: '札幌', en: 'SAPPORO • HOKKAIDO', classCode: '301', hira: 'そ' },
-            FKO: { kanji: '福岡', en: 'FUKUOKA • KYUSHU', classCode: '330', hira: 'た' },
-            KBE: { kanji: '神戸', en: 'KOBE • HYOGO', classCode: '302', hira: 'ち' },
-            KYO: { kanji: '京都', en: 'KYOTO • KANSAI', classCode: '310', hira: 'つ' },
-            CHB: { kanji: '千葉', en: 'CHIBA • KANTO', classCode: '320', hira: 'て' },
-            STM: { kanji: '大宮', en: 'SAITAMA • OMIYA', classCode: '300', hira: 'と' }
+            TKY: { kanji: '品川', seal: '東', en: 'SHINAGAWA • TOKYO', classCode: '330', hira: 'さ' },
+            YKH: { kanji: '横浜', seal: '神', en: 'YOKOHAMA • KANAGAWA', classCode: '300', hira: 'す' },
+            OSK: { kanji: 'なにわ', seal: '大', en: 'NANIWA • OSAKA', classCode: '330', hira: 'せ' },
+            NGY: { kanji: '名古屋', seal: '愛', en: 'NAGOYA • AICHI', classCode: '350', hira: 'そ' },
+            SPR: { kanji: '札幌', seal: '札', en: 'SAPPORO • HOKKAIDO', classCode: '301', hira: 'た' },
+            FKO: { kanji: '福岡', seal: '福', en: 'FUKUOKA • KYUSHU', classCode: '330', hira: 'ち' },
+            KBE: { kanji: '神戸', seal: '兵', en: 'KOBE • HYOGO', classCode: '302', hira: 'つ' },
+            KYO: { kanji: '京都', seal: '京', en: 'KYOTO • KANSAI', classCode: '310', hira: 'て' },
+            CHB: { kanji: '千葉', seal: '千', en: 'CHIBA • KANTO', classCode: '320', hira: 'と' },
+            STM: { kanji: '大宮', seal: '埼', en: 'SAITAMA • OMIYA', classCode: '300', hira: 'な' }
         };
+        function getJpnPlateDisplayParts(l1, l2, l3, num, reg = 'TKY') {
+            const rUpper = String(reg || 'TKY').trim().toUpperCase();
+            const meta = JPN_PREFECTURE_META[rUpper] || {
+                kanji: '品川',
+                seal: '東',
+                en: 'TOKYO • ' + rUpper,
+                classCode: '330',
+                hira: 'さ'
+            };
+            const s = `${String(l1 || '-')}${String(l2 || '-')}${String(l3 || '-')}`.toUpperCase();
+            let hira = meta.hira;
+            if (!s.includes('-') && s.length === 3) {
+                if (s === 'JDM') hira = 'わ';
+                else if (s === 'GTR') hira = 'さ';
+                else if (s === 'TKY') hira = 'あ';
+                else if (s === 'DRF') hira = 'ろ';
+                else {
+                    const hash = (s.charCodeAt(0) * 31 + s.charCodeAt(1) * 17 + s.charCodeAt(2) * 7) % JPN_HIRAGANA_POOL.length;
+                    hira = JPN_HIRAGANA_POOL[Math.abs(hash)] || meta.hira;
+                }
+            }
+            const rawDigits = String(num || '---').padStart(3, '0').slice(-3);
+            let formattedDigits = '・-- -';
+            if (!rawDigits.includes('-')) {
+                if (rawDigits.startsWith('00') && rawDigits !== '000') {
+                    formattedDigits = `・・ ・${rawDigits[2]}`;
+                } else if (rawDigits.startsWith('0') && rawDigits !== '000') {
+                    formattedDigits = `・・ ${rawDigits[1]}${rawDigits[2]}`;
+                } else {
+                    formattedDigits = `・${rawDigits[0]}-${rawDigits[1]}${rawDigits[2]}`;
+                }
+            }
+            return {
+                kanji: meta.kanji,
+                seal: meta.seal || '東',
+                classCode: meta.classCode,
+                header: `${meta.kanji} ${meta.classCode}`,
+                hira,
+                series: s.includes('-') ? '' : s,
+                formattedDigits
+            };
+        }
         function getUltraSpecialPlateMeta(l1OrPlate, l2, l3, num, reg, country = currentCountry) {
             if (l1OrPlate && typeof l1OrPlate === 'object') {
                 const rawText = String(l1OrPlate.text || '');
@@ -556,13 +605,55 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             const cN2 = document.getElementById('cell-n2');
             const cN3 = document.getElementById('cell-n3');
             const allCells = [cL1, cL2, cL3, cN1, cN2, cN3];
+            const cUpper = String(currentCountry || 'RUS').toUpperCase();
 
-            if (String(currentCountry || 'RUS').toUpperCase() !== 'UAE') {
+            if (cUpper !== 'UAE') {
                 allCells.forEach(cell => {
                     if (cell && cell.classList) {
                         cell.classList.remove('uae-cell-hidden', 'uae-single-digit');
                     }
                 });
+            }
+            if (cUpper !== 'JPN') {
+                allCells.forEach(cell => {
+                    if (cell && cell.classList) {
+                        cell.classList.remove('jpn-dot-zero', 'jpn-no-hyphen');
+                    }
+                });
+            }
+
+            if (cUpper === 'JPN') {
+                const numStr = String(currentNum || '---');
+                if (isSpinning || !boardHasNumbers || numStr.includes('-')) {
+                    [cN1, cN2, cN3].forEach(cell => {
+                        if (cell && cell.classList) {
+                            cell.classList.remove('jpn-dot-zero', 'jpn-no-hyphen');
+                        }
+                    });
+                    return;
+                }
+                if (numStr.startsWith('00') && numStr !== '000') {
+                    if (cN1 && cN1.classList) cN1.classList.add('jpn-dot-zero', 'jpn-no-hyphen');
+                    if (cN2 && cN2.classList) {
+                        cN2.classList.add('jpn-dot-zero');
+                        cN2.classList.remove('jpn-no-hyphen');
+                    }
+                    if (cN3 && cN3.classList) cN3.classList.remove('jpn-dot-zero', 'jpn-no-hyphen');
+                } else if (numStr.startsWith('0') && numStr !== '000') {
+                    if (cN1 && cN1.classList) cN1.classList.add('jpn-dot-zero', 'jpn-no-hyphen');
+                    if (cN2 && cN2.classList) cN2.classList.remove('jpn-dot-zero', 'jpn-no-hyphen');
+                    if (cN3 && cN3.classList) cN3.classList.remove('jpn-dot-zero', 'jpn-no-hyphen');
+                } else {
+                    [cN1, cN2, cN3].forEach(cell => {
+                        if (cell && cell.classList) {
+                            cell.classList.remove('jpn-dot-zero', 'jpn-no-hyphen');
+                        }
+                    });
+                }
+                return;
+            }
+
+            if (cUpper !== 'UAE') {
                 return;
             }
 
@@ -632,11 +723,13 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 ar: 'دبي'
             };
             const jpnMeta = JPN_PREFECTURE_META[rUpper] || {
-                kanji: '東京',
+                kanji: '品川',
+                seal: '東',
                 en: 'TOKYO • ' + rUpper,
                 classCode: '330',
-                hira: 'あ'
+                hira: 'さ'
             };
+            const jpnParts = getJpnPlateDisplayParts(currentL1, currentL2, currentL3, currentNum, rUpper);
             const specialMeta = (boardHasLetters && currentL1 !== '-')
                 ? getUltraSpecialPlateMeta(currentL1, currentL2, currentL3, currentNum, rUpper, c)
                 : null;
@@ -649,9 +742,11 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 'data-state-theme': usMeta.theme,
                 'data-emirate-en': uaeMeta.en,
                 'data-emirate-ar': uaeMeta.ar,
-                'data-jpn-kanji': `${jpnMeta.kanji} ${jpnMeta.classCode}`,
+                'data-jpn-kanji': jpnParts.header,
+                'data-jpn-seal': jpnParts.seal,
                 'data-jpn-en': jpnMeta.en,
-                'data-jpn-hira': jpnMeta.hira,
+                'data-jpn-hira': jpnParts.hira,
+                'data-jpn-series': jpnParts.series || 'JDM',
                 'data-special-label': specialMeta ? specialMeta.title : '',
                 'data-special-badge': specialMeta ? specialMeta.badge : ''
             };
@@ -667,11 +762,31 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 plateBox.dataset.stateTheme = usMeta.theme;
                 plateBox.dataset.emirateEn = uaeMeta.en;
                 plateBox.dataset.emirateAr = uaeMeta.ar;
-                plateBox.dataset.jpnKanji = `${jpnMeta.kanji} ${jpnMeta.classCode}`;
+                plateBox.dataset.jpnKanji = jpnParts.header;
+                plateBox.dataset.jpnSeal = jpnParts.seal;
                 plateBox.dataset.jpnEn = jpnMeta.en;
-                plateBox.dataset.jpnHira = jpnMeta.hira;
+                plateBox.dataset.jpnHira = jpnParts.hira;
+                plateBox.dataset.jpnSeries = jpnParts.series || 'JDM';
                 plateBox.dataset.specialLabel = specialMeta ? specialMeta.title : '';
                 plateBox.dataset.specialBadge = specialMeta ? specialMeta.badge : '';
+            }
+            const cellsBox = document.getElementById('plate-cells-box');
+            if (cellsBox) {
+                if (typeof cellsBox.setAttribute === 'function') {
+                    cellsBox.setAttribute('data-jpn-hira', jpnParts.hira);
+                }
+                if (cellsBox.dataset && typeof cellsBox.dataset === 'object') {
+                    cellsBox.dataset.jpnHira = jpnParts.hira;
+                }
+            }
+            const boltLeft = typeof plateBox.querySelector === 'function' ? plateBox.querySelector('.plate-bolt.bolt-left') : null;
+            if (boltLeft) {
+                if (typeof boltLeft.setAttribute === 'function') {
+                    boltLeft.setAttribute('data-jpn-seal', jpnParts.seal);
+                }
+                if (boltLeft.dataset && typeof boltLeft.dataset === 'object') {
+                    boltLeft.dataset.jpnSeal = jpnParts.seal;
+                }
             }
             if (plateBox.classList) {
                 plateBox.classList.remove(
@@ -888,8 +1003,8 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     if (lMatch) letters = lMatch.toUpperCase();
                     if (dMatch) digits = dMatch[0];
                 }
-                const jpnMeta = JPN_PREFECTURE_META[reg] || { kanji: '東京', classCode: '330', hira: 'あ' };
-                return `<span class="mp-jpn-top" aria-hidden="true"><i class="mp-jpn-sun"></i><b>${escapeHtml(jpnMeta.kanji)} ${escapeHtml(jpnMeta.classCode)}</b></span><span class="mp-main mp-jpn-main"><span class="mp-jpn-hira" aria-hidden="true">${escapeHtml(jpnMeta.hira)}</span><span class="mp-let">${escapeHtml(letters)}</span> <span class="mp-num">${escapeHtml(digits)}</span></span><span class="mp-pipe-sr"> | </span><span class="mp-reg-box mp-jpn-reg">${escapeHtml(reg)}</span><span class="mp-pipe-sr"> JPN</span>`;
+                const jpnParts = getJpnPlateDisplayParts(letters[0], letters[1], letters[2], digits, reg);
+                return `<span class="mp-jpn-top" aria-hidden="true"><i class="mp-jpn-seal">${escapeHtml(jpnParts.seal)}</i><b>${escapeHtml(jpnParts.header)}</b> <small class="mp-let">${escapeHtml(letters)}</small></span><span class="mp-main mp-jpn-main"><span class="mp-jpn-hira" aria-hidden="true">${escapeHtml(jpnParts.hira)}</span> <span class="mp-num" data-raw-digits="${escapeHtml(digits)}">${escapeHtml(jpnParts.formattedDigits)}</span></span><span class="mp-pipe-sr"> ${escapeHtml(digits)} | </span><span class="mp-reg-box mp-jpn-reg">${escapeHtml(reg)}</span><span class="mp-pipe-sr"> JPN</span>`;
             }
 
             const uaeMatch = raw.match(/^(.*?)\s*\|\s*([A-Z0-9]{1,3})\s+UAE$/i);
@@ -5516,14 +5631,16 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     mustSpinBothForNextSave = true;
                     const idx = inventory.findIndex(p => p && (p.id === data.plate?.id || p.text === data.plate?.text));
                     if (idx >= 0) {
-                        sellPlate(idx);
+                        sellPlate(idx, isAuto);
                     } else if (inventory.length > 0) {
-                        sellPlate(0);
+                        sellPlate(0, isAuto);
                     } else if (data.plate) {
                         creditPlayerBalance(data.plate.price, `Продажа госномера «${data.plate.text}»`);
                         playCashSound();
                         saveProgress();
-                        notifyUser(`Номер «${data.plate.text}» продан за ${Number(data.plate.price).toLocaleString('ru-RU')} ₽!`, 'success');
+                        if (!isAuto) {
+                            notifyUser(`Номер «${data.plate.text}» продан за ${Number(data.plate.price).toLocaleString('ru-RU')} ₽!`, 'success');
+                        }
                     }
                     checkCanSaveButton();
                 } catch(e) {
@@ -5550,7 +5667,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             checkCanSaveButton();
             logPlayerActivity('Продал номер', `Продал госномер «${pText}» (${escapeHtml(r.text)}, +${price.toLocaleString('ru-RU')} ₽)`);
             saveProgress();
-            notifyUser(`Номер «${pText}» продан за ${price.toLocaleString('ru-RU')} ₽!`);
+            if (!isAuto) {
+                notifyUser(`Номер «${pText}» продан за ${price.toLocaleString('ru-RU')} ₽!`);
+            }
         }
 
         // --- КЕЙСЫ (CS:GO HORIZONTAL ROULETTE) ---
@@ -6564,7 +6683,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             if (typeof updateVipOrdersBadge === 'function') updateVipOrdersBadge();
         }
 
-        function sellPlate(index) {
+        function sellPlate(index, silent = false) {
             const item = inventory[index];
             if (!item || !Number.isFinite(item.price) || item.price < 0) return;
             const price = item.price;
@@ -6586,7 +6705,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             }
             playCashSound();
             renderInventory();
-            notifyUser(`Номер «${item.text}» продан за ${price.toLocaleString('ru-RU')} ₽!`);
+            if (!silent) {
+                notifyUser(`Номер «${item.text}» продан за ${price.toLocaleString('ru-RU')} ₽!`);
+            }
         }
 
         function sellAllPlates(filter = 'common') {
