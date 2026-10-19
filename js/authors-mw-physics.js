@@ -2,7 +2,8 @@
  * MW algorithm adapter, translated/adapted from ProStreetMWPhysics (9c6e261),
  * which credits Brawltendo's Most-Wanted-Vehicles-Decomp (de70279).
  * Source lineage, units, deviations and license: docs/MW_PHYSICS_PORT.md.
- * This file is not a claim of Xbox retail equivalence or a full suspension port.
+ * Tire/contact integration and remaining limits: docs/MW_TIRES_COLLISIONS.md.
+ * This partial adapter does not claim Xbox retail equivalence.
  */
 (function (root, factory) {
     const api = factory();
@@ -67,6 +68,109 @@
     }
     function steeringRange(speedMps) { return table(RANGE, Math.abs(speedMps), 0, 160); }
     function steeringRate(speedMps) { return table(RATE, Math.abs(speedMps), 0, 160); }
+    // SuspensionRacer::Tire, SI interface. Brake/drive specifications supplied
+    // here are already Nm; the catalogue bridge performs no lb-ft conversion.
+    class Tire {
+        constructor({radius=.34,front=true,gripScale=1,staticGrip=front?1.8:2,dynamicGrip=1.7,brakeLock=front?1:3.5}={}) {
+            Object.assign(this,{radius:Math.max(.1,radius),front,gripScale,staticGrip,dynamicGrip,brakeLock});
+            this.omega=0;this.load=0;this.roadSpeed=0;this.angularAcc=0;this.lastTorque=0;
+            this.traction=1;this.slip=0;this.slipAngle=0;this.locked=false;this.lastSign=0;
+            this.fx=0;this.fy=0;
+        }
+        checkLock(groundForce,brakeTorque,ebrakeTorque) {
+            const available=(brakeTorque*this.brakeLock+ebrakeTorque)*1.2;
+            if(available>groundForce*this.radius+Math.abs(this.omega)*100){this.locked=available>1;this.omega=0;}
+            else this.locked=false;
+        }
+        checkSign(){
+            if(this.lastSign*this.omega<0)this.omega=0;
+            this.lastSign=Math.abs(this.omega)>1e-7?Math.sign(this.omega):0;
+        }
+        visualOmega(){return this.locked?0:this.load>0&&this.traction>=1?this.roadSpeed/this.radius:this.omega;}
+        step(dt,{lateral=0,forward=0,speed=Math.hypot(lateral,forward),load=0,driveTorque=0,
+            brake=0,handbrake=0,brakeCapacity=0,ebrakeCapacity=0,tractionBoost=1,lateralBoost=1,gripBoost=1,
+            driftFriction=1,maxSlip=.5,dragReduction=.15,lateralGrip=1,driveGrip=1,rollingResistance=1,circleX=1,circleY=1}={}){
+            if(!(dt>0))return this;
+            const r=this.radius,I=10,bt=brake*brakeCapacity,ebt=handbrake*ebrakeCapacity;
+            this.fx=0;this.fy=0;
+            let torque=this.locked?0:driveTorque;
+            if(load<=0){
+                this.load=0;this.slip=0;this.slipAngle=0;this.traction=0;
+                this.checkLock(0,bt,ebt);
+                if(this.locked){this.angularAcc=0;this.omega=0;}
+                else {torque+=(this.omega>0?-1:1)*(bt+ebt);this.angularAcc=torque/I;this.omega+=this.angularAcc*dt;}
+                this.checkSign();return this;
+            }
+            if(this.load<=0&&!this.locked)this.omega=forward/r;
+            const roadAcc=(forward-this.roadSpeed)/dt;
+            this.roadSpeed=forward;this.load=Math.max(0,load);
+            if(!this.locked){
+                if(Math.abs(forward)<1)torque=torque*(1-handbrake)-(brake+handbrake)*load*forward/r;
+                else torque+=(this.omega>0?-1:1)*(bt+ebt);
+            }
+            this.slipAngle=Math.atan2(lateral,Math.abs(forward));
+            this.slip=this.omega*r-forward;
+            const skid=Math.hypot(this.slip,lateral);
+            const pilot=this.front||this.locked||this.omega<0?1:mix(.85,1,clamp((speed-30*.44703)/(20*.44703),0,1));
+            let friction=0,dynamic=1;
+            if(skid>1e-7&&(lateral!==0||forward!==0)){
+                dynamic=this.dynamicGrip*tractionBoost*pilot;
+                friction=load*dynamic/skid;
+                this.checkLock(Math.abs(forward)*load*dynamic/Math.hypot(forward,lateral),bt,ebt);
+            }
+            if(this.traction<1||this.locked){
+                this.fx=friction*this.slip;this.fy=-friction*lateral;
+                if(speed<.44703&&dynamic>.1){this.fx/=dynamic;this.fy/=dynamic;}
+                // UMath::Limit only caps force when force and limit share sign.
+                const limit=torque/r;
+                if(this.fx*limit>0)this.fx=Math.sign(this.fx)*Math.min(Math.abs(this.fx),Math.abs(limit));
+            } else {
+                this.locked=false;this.fx=torque/r;
+                this.fy=-tireForce(load,this.slipAngle,this.gripScale,gripBoost);
+            }
+            this.fy*=lateralBoost;
+            if(this.traction>=1&&!this.locked)this.fx+=(this.angularAcc*r-roadAcc)*I/r;
+            const ellipse=torque*forward>0&&!this.locked;
+            if(ellipse)this.fx*=1.5;
+            this.fy*=circleX;this.fx*=circleY;
+            const force=Math.hypot(this.fx,this.fy),maximum=load*this.staticGrip*tractionBoost*driftFriction*pilot;
+            this.traction=1;
+            if(force>maximum&&force>.001){const ratio=maximum/force;this.traction=ratio;this.fx*=ratio;this.fy*=ratio;maxSlip*=ratio*ratio;}
+            else if(ellipse)this.fx/=1.5;
+            if(Math.abs(this.slip)>maxSlip)this.traction*=maxSlip/Math.abs(this.slip);
+            this.fy*=lateralGrip;this.fx*=driveGrip;
+            if(forward>1)this.fx-=Math.sin(this.slipAngle)*this.fy*dragReduction/this.gripScale;
+            else this.fy*=Math.min(Math.abs(lateral),1);
+            if(this.locked)this.angularAcc=0;
+            else {
+                if(this.traction<1){
+                    const residual=(torque-this.fx*r+this.lastTorque)*.5;this.lastTorque=residual;
+                    this.angularAcc=(residual-this.omega*2*rollingResistance)/I-this.traction*this.slip/(r*dt);
+                }
+                this.angularAcc=mix(this.angularAcc,roadAcc/r,this.traction);
+            }
+            this.omega+=this.angularAcc*dt;this.checkSign();
+            return this;
+        }
+    }
+    function tireFrame(speedMps,reverse=false){
+        const speedMph=Math.abs(speedMps)/.44703;
+        return{gripBoost:table([.833,.958,1.008,1.0167,1.033,1.033,1.033,1.0167,1,1],speedMph,0,85)*1.2,
+            tractionBoost:reverse?2:table([.90899998,1.045,1.09,1.09,1.09,1.09,1.09,1.045,1,1],speedMph,0,85)*1.1,
+            maxSlip:reverse?71:.5+clamp((Math.abs(speedMps)-10)/61,0,1)};
+    }
+    function differential({omega=[0,0],contact=[true,true],bias=.5,factor=.8,locked=false}={}){
+        if(!contact[0]||!contact[1]||locked||factor<=0)return[bias,1-bias];
+        const a=omega[0]*(1-bias),b=omega[1]*bias,sum=Math.abs(a+b);
+        if(sum<1e-7)return[bias,1-bias];
+        return[clamp((1-factor)*bias+factor*Math.abs(b)/sum,0,1),clamp((1-factor)*(1-bias)+factor*Math.abs(a)/sum,0,1)];
+    }
+    // Matching DoWallSteer nose branch. Contact eligibility/units are supplied
+    // by our host, not by the unavailable original collision-event ABI.
+    function wallSteer({wall=0,input=0,gas=0,grounded=4,dt=1/60}={}){
+        const delta=.125*input*gas;
+        return grounded>2&&gas>0&&wall*delta>=0?Math.abs(wall)*delta*dt*60:0;
+    }
     const REMAP = [-1,-.736,-.542,-.4,-.292,-.214,-.16,-.123,-.078,-.036,0,.036,.078,.123,.16,.214,.292,.4,.542,.736,1];
     class SteeringController {
         constructor(){this.time=0;this.inputs=[];this.speeds=[];this.lastInput=0;this.angle=0;this.lastMaximum=0;}
@@ -102,6 +206,9 @@
     class Suspension {
         constructor(profile){
             this.profile=profile;this.y=0;this.vy=0;this.pitch=0;this.pitchRate=0;this.roll=0;this.rollRate=0;
+            // Source BMW ROLL_CENTER=9 inches. Preserve relative catalogue body
+            // height while avoiding the old, much taller arcade CG with MW grip.
+            this.cgHeight=.2286*profile.cgHeight/.5;
             const kScale=profile.springStiffness/70050.72,dScale=profile.dampingRate/8756.34;
             this.wheels=['fl','fr','rl','rr'].map((key,index)=>{
                 const front=index<2,bias=front?profile.frontWeightBias:1-profile.frontWeightBias;
@@ -116,7 +223,7 @@
             const pitchInertia=mass*(p.wheelbase*p.wheelbase*1.5+p.cgHeight*p.cgHeight)/12;
             const rollInertia=mass*(p.trackWidth*p.trackWidth+p.cgHeight*p.cgHeight)/12;
             for(let step=0;step<steps;step++){
-                const previous=this.wheels.map(w=>w.compression);let force=0,pitchMoment=-mass*longAccel*p.cgHeight,rollMoment=mass*latAccel*p.cgHeight,bottomOut=0;
+                const previous=this.wheels.map(w=>w.compression);let force=0,pitchMoment=-mass*longAccel*this.cgHeight,rollMoment=mass*latAccel*this.cgHeight,bottomOut=0;
                 const upness=Math.max(0,Math.cos(this.pitch)*Math.cos(this.roll));
                 for(let i=0;i<4;i++){
                     const w=this.wheels[i],ground=Number(groundHeights[w.key])||0;
@@ -148,6 +255,6 @@
         try { return window.localStorage.getItem('authors_mw_physics_v1') !== 'classic'; }
         catch (_) { return true; }
     }
-    return Object.freeze({ torque, shiftPoints, clutch, tireForce, steeringRange, steeringRate, SteeringController, springForce, staticCompression, Suspension,
+    return Object.freeze({ torque, shiftPoints, clutch, tireForce, Tire, tireFrame, differential, wallSteer, steeringRange, steeringRate, SteeringController, springForce, staticCompression, Suspension,
         createSpec, selected, REFERENCE, LOAD });
 }));

@@ -1088,9 +1088,11 @@
             if (pTrackAfter.wallPenetration > 0) {
                 // Clamp position inside track wall and apply impulse
                 const clampedLat = Math.sign(pTrackAfter.lateralOffset) * pTrackAfter.halfWidth;
-                pState.x = pTrackAfter.centerX + pTrackAfter.nx * clampedLat;
-                pState.z = pTrackAfter.centerZ + pTrackAfter.nz * clampedLat;
-                const impact = this.playerPhysics.resolveWallCollision(
+                if(!this.playerPhysics.mwTires){
+                    pState.x = pTrackAfter.centerX + pTrackAfter.nx * clampedLat;
+                    pState.z = pTrackAfter.centerZ + pTrackAfter.nz * clampedLat;
+                }
+                const impact = this.playerPhysics.mwTires ? this.playerPhysics.resolveWallCollision({normalX:pTrackAfter.wallNormalX,normalZ:pTrackAfter.wallNormalZ,penetration:pTrackAfter.wallPenetration,restitution:.28,duration:safeDt}).closingSpeedMps : this.playerPhysics.resolveWallCollision(
                     pTrackAfter.wallNormalX,
                     pTrackAfter.wallNormalZ,
                     pTrackAfter.wallPenetration,
@@ -1419,9 +1421,12 @@
             const projAfter = this.track.projectPointToTrack(rState.x, rState.z, proj.segIndex);
             if (projAfter.wallPenetration > 0) {
                 const clampedLat = Math.sign(projAfter.lateralOffset) * projAfter.halfWidth;
-                rState.x = projAfter.centerX + projAfter.nx * clampedLat;
-                rState.z = projAfter.centerZ + projAfter.nz * clampedLat;
-                rPhys.resolveWallCollision(projAfter.wallNormalX, projAfter.wallNormalZ, projAfter.wallPenetration, 0.25);
+                if(!rPhys.mwTires){
+                    rState.x = projAfter.centerX + projAfter.nx * clampedLat;
+                    rState.z = projAfter.centerZ + projAfter.nz * clampedLat;
+                }
+                if(rPhys.mwTires)rPhys.resolveWallCollision({normalX:projAfter.wallNormalX,normalZ:projAfter.wallNormalZ,penetration:projAfter.wallPenetration,restitution:.25,duration:dt});
+                else rPhys.resolveWallCollision(projAfter.wallNormalX, projAfter.wallNormalZ, projAfter.wallPenetration, 0.25);
             }
 
             this._updateRacerProgress(rProg, rState, projAfter, dt);
@@ -1439,6 +1444,18 @@
                 for (let j = i + 1; j < racers.length; j++) {
                     const a = racers[i];
                     const b = racers[j];
+                    if(a.mwTires){
+                        const contact=a.getVehicleContact(b);
+                        if(contact){
+                            const result=a._resolveMWContact(b,{...contact,restitution:.28});
+                            if(i===0&&result.closingSpeedMps>5){
+                                this.state.damageTaken=clamp(this.state.damageTaken+result.closingSpeedMps*.35,0,100);
+                                if(this.options.onSound)this.options.onSound('crash');
+                                this._spawnCollisionSparks((a.x+b.x)*.5,(a.z+b.z)*.5,8);
+                            }
+                        }
+                        continue;
+                    }
                     const dx = b.state.x - a.state.x;
                     const dz = b.state.z - a.state.z;
                     const dist = Math.hypot(dx, dz);

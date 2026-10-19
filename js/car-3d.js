@@ -14424,7 +14424,13 @@
 
         resetKeys() {
             this.authorsSteerInput = 0;
-            if(this.mwRoadSteering){this.mwRoadSteering=new this.config.physicsKernel.SteeringController();this.state.steerAngle=0;}
+            if(this.mwRoadSteering){
+                this.mwRoadSteering=new this.config.physicsKernel.SteeringController();this.state.steerAngle=0;
+                if(this.mwLongitudinal){
+                    this.mwLongitudinal.mwSteering=this.mwRoadSteering;
+                    Object.assign(this.mwLongitudinal.state,{steerInput:0,steerAngleDeg:0,steerAngleRad:0,steerLeftRad:0,steerRightRad:0});
+                }
+            }
             Object.keys(this.keys).forEach(k => { this.keys[k] = false; });
         }
 
@@ -14661,17 +14667,26 @@
             if (this.mwLongitudinal) {
                 const physical = this.mwLongitudinal;
                 // Import collision speed losses and host-owned consumables.
-                physical.state.vForward = Math.max(0, state.speed / 3.6);
+                // Project road-coordinate velocity into the same four-wheel
+                // chassis used by the circuit. Neutral steering gently aligns
+                // the chassis with the highway; traffic/road curvature stay here.
+                const roadInput=(keys.left?1:0)-(keys.right?1:0);
+                physical.state.heading=Math.max(-.28,Math.min(.28,physical.state.heading));
+                if(!roadInput&&!isHandbrake)physical.state.heading*=Math.exp(-8*dt);
+                const roadH=physical.state.heading,roadForward=Math.max(0,state.speed/3.6);
+                physical.state.vForward=roadForward*Math.cos(roadH)+state.vx*Math.sin(roadH);
+                physical.state.vLateral=state.vx*Math.cos(roadH)-roadForward*Math.sin(roadH);
+                physical.state.vx=state.vx;physical.state.vz=roadForward;
                 physical.state.fuelCurrent = state.fuelCurrent;
                 physical.state.nitroLevel = state.nitroLevel;
                 physical.state.slipstreamFactor = bestSlipstream;
                 physical.setWeather(this.currentActiveWeather || 'night');
                 const oldSpeed = state.speed;
-                physical.update(dt, { gas: gasActive, brake: keys.brake, handbrake: isHandbrake, nitro: state.isNitroActive,externalLateralAccel:state.authorsLateralAccel||0 });
+                physical.update(dt, { gas: gasActive, brake: keys.brake, steer:roadInput,handbrake: isHandbrake, nitro: state.isNitroActive });
                 // Highway has no reverse lane traversal; circuit retains reverse.
                 physical.state.vForward = Math.max(0, physical.state.vForward);
                 physical.state.gear = Math.max(1, physical.state.gear);
-                state.speed = physical.state.vForward * 3.6;
+                state.speed = Math.max(0,physical.state.vz) * 3.6;
                 state.rpm = physical.state.rpm;
                 state.idleRpm = physical.profile.idleRpm;
                 state.maxRpm = physical.profile.redlineRpm;
@@ -14969,7 +14984,8 @@
             if (keys.left) steerInput += 1;  // In Three.js with camera facing +Z: +X moves to screen LEFT
             if (keys.right) steerInput -= 1; // -X moves to screen RIGHT
             if (this.mwRoadSteering) {
-                const turn=this.mwRoadSteering.step(dt,{input:steerInput,speedMps:forwardSpeedMps,gas:gasActive,brake:keys.brake,handbrake:isHandbrake});
+                this.mwRoadSteering=this.mwLongitudinal.mwSteering;
+                const turn={angleDeg:this.mwRoadSteering.angle,maxSteerDeg:this.mwRoadSteering.lastMaximum};
                 steerInput=turn.angleDeg/Math.max(1,turn.maxSteerDeg);
                 this.authorsSteerInput=steerInput;
             } else if (authorsDriving) {
@@ -15010,23 +15026,8 @@
             const corneringStiffness = (0.55 + 0.45 * weatherGrip) * (0.85 + 0.15 * pacejkaSaturation);
 
             if (this.mwLongitudinal) {
-                const physical = this.mwLongitudinal, kernel = this.config.physicsKernel;
-                const loads = physical.state.wheelLoads;
-                const activity = Math.min(1, forwardSpeedMps / 1.5);
-                // Road-constrained adapter: forces move between lanes; yaw and
-                // road bends remain the existing highway game's responsibility.
-                const steps = Math.max(1, Math.ceil(dt * 60)), subDt = dt / steps;
                 const previousVx=state.vx;
-                for (let step = 0; step < steps; step++) {
-                    const travel = Math.atan2(state.vx, Math.max(2.5, forwardSpeedMps));
-                    const frontSlip = (steerAngleRad - travel) * activity;
-                    const rearSlip = -travel * activity;
-                    const grip = physical.profile.tireGripScale * weatherGrip;
-                    const frontForce = kernel.tireForce(loads.fl, frontSlip, grip) + kernel.tireForce(loads.fr, frontSlip, grip);
-                    const rearForce = (kernel.tireForce(loads.rl, rearSlip, grip) + kernel.tireForce(loads.rr, rearSlip, grip)) * (isHandbrake ? .48 : 1);
-                    state.vx += (frontForce + rearForce) / physical.profile.massKg * subDt;
-                    state.vx = Math.max(-lateralMax, Math.min(lateralMax, state.vx));
-                }
+                state.vx=Math.max(-lateralMax,Math.min(lateralMax,this.mwLongitudinal.state.vx));
                 state.authorsLateralAccel=(state.vx-previousVx)/Math.max(.0001,dt);
             } else if (authorsDriving && !isDriftingNow && !isHandbrake) {
                 state.vx = authorsDriving.lateral(state.vx, steerInput, state.speed, lateralMax, effectiveSteerAuthority, weatherGrip, dt);
@@ -15168,7 +15169,18 @@
 
             // 6. GUARDRAIL & COLLISION PHYSICS (Tangential Sliding & Velocity Deflection)
             const roadLimit = 8.2;
-            if (state.x < -roadLimit || state.x > roadLimit) {
+            if (this.mwLongitudinal&&(state.x < -roadLimit || state.x > roadLimit)) {
+                const physical=this.mwLongitudinal,wallSide=state.x>0?1:-1;
+                physical.state.x=state.x;physical.state.vx=state.vx;physical.state.vz=state.speed/3.6;
+                const contact=physical.resolveWallCollision({normalX:-wallSide,normalZ:0,penetration:Math.abs(state.x)-roadLimit,restitution:.18,friction:.1,duration:dt});
+                state.x=physical.x;state.vx=physical.state.vx;state.speed=Math.max(0,physical.state.vz*3.6);
+                state.damageTaken=Math.min(100,(state.damageTaken||0)+contact.damageAdded);
+                if(contact.closingSpeedMps>1){
+                    state.shakeAmount=Math.min(.55,(state.shakeAmount||0)+contact.impactSeverity*.2);
+                    this.spawnSparks(state.x,.45,state.z-.6,Math.min(10,Math.ceil(contact.closingSpeedMps)));
+                    if(this.options.onSound)this.options.onSound(contact.closingSpeedMps>8?'crash':'scrape');
+                }
+            } else if (state.x < -roadLimit || state.x > roadLimit) {
                 const wallSide = state.x > 0 ? 1 : -1;
                 state.x = wallSide * roadLimit;
 

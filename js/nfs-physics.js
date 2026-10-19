@@ -772,6 +772,7 @@
             this.state = this._createInitialState(this.options);
             this.mwSteering = this.mwKernel ? new this.mwKernel.SteeringController() : null;
             this.suspension = this.mwKernel ? new this.mwKernel.Suspension(this.profile) : null;
+            this._resetMWTires();
             this.prevState = Object.assign({}, this.state);
             this.renderState = Object.assign({}, this.state);
         }
@@ -912,12 +913,27 @@
             };
         }
 
+        _resetMWTires() {
+            this.mwTires=null;
+            if(!this.mwKernel?.Tire)return;
+            const p=this.profile,s=this.state;
+            this.mwTires={};s.tires={};
+            for(const key of ['fl','fr','rl','rr']){
+                const tire=new this.mwKernel.Tire({radius:p.wheelRadius,front:key[0]==='f',gripScale:p.tireGripScale,
+                    staticGrip:(key[0]==='f'?1.8:2)*p.tireGripScale,dynamicGrip:1.7*p.tireGripScale});
+                // Spawn-at-speed bridge initializes wheel and road history together.
+                tire.omega=s.vForward/p.wheelRadius;tire.roadSpeed=s.vForward;tire.load=s.wheelLoads[key];
+                this.mwTires[key]=tire;s.tires[key]=tire;
+            }
+        }
+
         reset(init = {}) {
             this.accumulator = 0;
             this.stepCount = 0;
             this._speedbreakerLatch = false;
             this.state = this._createInitialState(init);
             if(this.mwKernel){this.mwSteering=new this.mwKernel.SteeringController();this.suspension=new this.mwKernel.Suspension(this.profile);}
+            this._resetMWTires();
             this.prevState = Object.assign({}, this.state);
             this.renderState = Object.assign({}, this.state);
             return this.state;
@@ -990,18 +1006,19 @@
             if (clampedDt <= 0) return this.renderState;
 
             this.accumulator += clampedDt;
+            const fixedDt=this.mwTires?1/120:FIXED_DT,maxSubsteps=this.mwTires?16:MAX_SUBSTEPS;
             let substeps = 0;
-            while (this.accumulator >= FIXED_DT && substeps < MAX_SUBSTEPS) {
+            while (this.accumulator+1e-10 >= fixedDt && substeps < maxSubsteps) {
                 this._copyPose(this.state, this.prevState);
-                this.step(FIXED_DT, controls);
-                this.accumulator -= FIXED_DT;
+                this.step(fixedDt, controls);
+                this.accumulator -= fixedDt;
                 substeps++;
             }
-            if (substeps === MAX_SUBSTEPS && this.accumulator >= FIXED_DT) {
+            if (substeps === maxSubsteps && this.accumulator >= fixedDt) {
                 this.accumulator = 0;
             }
 
-            const alpha = clamp(this.accumulator / FIXED_DT, 0, 1);
+            const alpha = clamp(this.accumulator / fixedDt, 0, 1);
             this._interpolateState(this.prevState, this.state, alpha, this.renderState);
             this._syncStateAliases(this.state, this.renderState);
             return this.renderState;
@@ -1053,6 +1070,11 @@
 
             // 4. Reverse / Forward gear transition logic (Brake-to-Reverse in Auto mode)
             let throttle = this.mwKernel && rawBrake > .1 ? 0 : rawGas;
+            if(this.mwTires){
+                const wall=s.wallEscapeTime>0?(s.wallEscape||0):0;
+                s.yawRate+=this.mwKernel.wallSteer({wall,input:rawSteer,gas:throttle,grounded:this.suspension.wheels.filter(w=>w.contact).length,dt});
+                s.wallEscapeTime=Math.max(0,(s.wallEscapeTime||0)-dt);
+            }
             let brake = rawBrake;
             if (this.options.transmissionMode === 'auto') {
                 if (s.gear === -1) {
@@ -1381,7 +1403,7 @@
             // Raw lateral forces from Pacejka curve
             let fyFront = pacejkaFront * maxGripFrontN;
             let fyRear = pacejkaRear * maxGripRearN;
-            if (this.mwKernel) {
+            if (this.mwKernel && !this.mwTires) {
                 // Evaluate both loaded tires, rather than treating the entire
                 // axle as one tire: the source's load curve is nonlinear.
                 const tire = this.mwKernel.tireForce;
@@ -1394,6 +1416,7 @@
             // - On FWD: heavy front drive torque consumes front friction circle -> understeer in corners.
             // - On RWD: heavy rear drive torque consumes rear friction circle -> power oversteer!
             // - On AWD: balanced split keeps both axles inside the friction ellipse longer.
+            if(!this.mwTires){
             const frontMaxTotal = Math.max(100, maxGripFrontN * driveGripMu);
             const frontDriveUsage = clamp(Math.abs(fxDriveFront) / frontMaxTotal, 0, 0.95);
             if (p.drivetrain === 'FWD' && throttle > 0.3 && Math.abs(s.steerAngleRad) > 0.03) {
@@ -1423,6 +1446,40 @@
                 fyRear *= scaleR;
             }
             s.wheelSlipRatio = clamp(Math.max(frontDriveUsage * 0.3, rearSlip), 0, 1.5);
+            }
+            let mwRightForce=0,mwForwardForce=0,mwYawMoment=0;
+            if(this.mwTires){
+                fxFront=0;fxRear=0;fyFront=0;fyRear=0;s.wheelSlipRatio=0;
+                const frame=this.mwKernel.tireFrame(s.speedMps,s.gear<0);
+                const splits={};
+                for(const axle of ['f','r']){
+                    const l=this.mwTires[axle+'l'],r=this.mwTires[axle+'r'];
+                    splits[axle]=this.mwKernel.differential({omega:[l.omega,r.omega],contact:[l.load>0,r.load>0]});
+                }
+                for(const key of ['fl','fr','rl','rr']){
+                    const front=key[0]==='f',x=(key[1]==='l'?-1:1)*p.trackWidth*.5,z=front?Lf:-Lr;
+                    const angle=front?(key[1]==='l'?s.steerLeftRad:s.steerRightRad):0,c=Math.cos(angle),sn=Math.sin(angle);
+                    const lat=s.vLateral+z*s.yawRate,fwd=s.vForward-x*s.yawRate;
+                    const tire=this.mwTires[key];
+                    // Host wake rule: upstream locked-at-rest state otherwise
+                    // never re-enters its moving brake-lock check after release.
+                    if(!brake&&(front||!ebrake))tire.locked=false;
+                    tire.step(dt,{lateral:c*lat-sn*fwd,forward:sn*lat+c*fwd,speed:s.speedMps,load:s.wheelLoads[key],
+                        driveTorque:s.wheelLoads[key]>0?totalWheelDriveTorque*(front?frontShare:rearShare)*splits[key[0]][key[1]==='l'?0:1]:0,
+                        brake,handbrake:front?0:ebrake,brakeCapacity:maxBrakeDecelForce*(front?.64:.36)*.5*p.wheelRadius,
+                        ebrakeCapacity:850*1.3558*10*p.massKg/1500,
+                        tractionBoost:frame.tractionBoost*(front?frontGameBreakerBoost:1),gripBoost:frame.gripBoost,lateralBoost:1,
+                        maxSlip:frame.maxSlip,lateralGrip:latGripMu,driveGrip:driveGripMu,
+                        rollingResistance:surfPreset.rollingResistance});
+                    // Source bounds each lateral contact impulse against reversal.
+                    const cap=Math.abs((c*lat-sn*fwd)/dt*.25*p.massKg);
+                    const fy=clamp(tire.fy,-cap,cap),fx=tire.fx;
+                    const right=c*fy+sn*fx,forward=c*fx-sn*fy;
+                    mwRightForce+=right;mwForwardForce+=forward;mwYawMoment+=z*right-x*forward;
+                    if(front){fxFront+=fx;fyFront+=fy;}else{fxRear+=fx;fyRear+=fy;}
+                    s.wheelSlipRatio=Math.max(s.wheelSlipRatio,Math.min(1.5,Math.abs(tire.slip)/Math.max(2,Math.abs(fwd))));
+                }
+            }
             if(this.suspension){
                 if(frontAxleLoadN<=0){fxFront=0;fyFront=0;}
                 if(rearAxleLoadN<=0){fxRear=0;fyRear=0;}
@@ -1444,8 +1501,8 @@
             const cornerScrubForce = -Math.sin(s.steerAngleRad) * fyFront * 0.28;
 
             // 13. Rigid-Body Planar Force & Yaw Torque Integration (Physics::IntegrateMotion)
-            const totalFxBody = fxFront * Math.cos(s.steerAngleRad) + fxRear + aeroDragForce + rollingForce + cornerScrubForce;
-            const totalFyBody = fyFront * Math.cos(s.steerAngleRad) + fyRear;
+            const totalFxBody = this.mwTires ? mwForwardForce+aeroDragForce+rollingForce : fxFront * Math.cos(s.steerAngleRad) + fxRear + aeroDragForce + rollingForce + cornerScrubForce;
+            const totalFyBody = this.mwTires ? mwRightForce : fyFront * Math.cos(s.steerAngleRad) + fyRear;
 
             const prevVForward = s.vForward;
             const prevVLateral = s.vLateral;
@@ -1453,7 +1510,7 @@
             // Body-frame equations of motion:
             // dv_fwd/dt = F_x / m + v_lat * yawRate * (1 - arcadeForwardPreserve)
             // dv_lat/dt = F_y / m - v_fwd * yawRate
-            const axBody = (totalFxBody / p.massKg) + (s.vLateral * s.yawRate * 0.35);
+            const axBody = (totalFxBody / p.massKg) + (s.vLateral * s.yawRate * (this.mwTires?1:.35));
             const ayBody = (totalFyBody / p.massKg) - (s.vForward * s.yawRate);
 
             s.vForward += axBody * dt;
@@ -1473,15 +1530,15 @@
             }
 
             // Yaw Moment (tau_yaw = Lf * Fy_front - Lr * Fy_rear + EBrake180 + DriftStabilizer)
-            let yawTorque = (Lf * fyFront * Math.cos(s.steerAngleRad) - Lr * fyRear) * (p.yawSpeedMult || 1.15);
+            let yawTorque = this.mwTires ? mwYawMoment*.3*(p.yawSpeedMult||1.15)/1.15 : (Lf * fyFront * Math.cos(s.steerAngleRad) - Lr * fyRear) * (p.yawSpeedMult || 1.15);
 
             // EBrake180 initiation torque when pulling handbrake & steering at moderate speeds
-            if (hasContact && ebrake > 0.3 && Math.abs(rawSteer) > 0.15 && s.speedKmh > 25 && s.speedKmh < 160 && Math.abs(s.chassisSlipAngle) < 0.65) {
+            if (!this.mwTires && hasContact && ebrake > 0.3 && Math.abs(rawSteer) > 0.15 && s.speedKmh > 25 && s.speedKmh < 160 && Math.abs(s.chassisSlipAngle) < 0.65) {
                 yawTorque += rawSteer * fwdDirSign * p.massKg * 5.2 * ebrake;
             }
 
             // RWD power-oversteer yaw moment under throttle in corners
-            if (hasContact && p.drivetrain === 'RWD' && throttle > 0.55 && Math.abs(rawSteer) > 0.2 && s.speedKmh > 30 && s.speedKmh < 190) {
+            if (!this.mwTires && hasContact && p.drivetrain === 'RWD' && throttle > 0.55 && Math.abs(rawSteer) > 0.2 && s.speedKmh > 30 && s.speedKmh < 190) {
                 const powerYaw = Math.sign(s.steerAngleRad) * (p.baseTorqueNm * 1.8) * (p.driftFactor / 1.5);
                 if (Math.abs(s.chassisSlipAngle) < 0.72) {
                     yawTorque += powerYaw * throttle;
@@ -1489,15 +1546,15 @@
             }
 
             // AWD front-pull vectoring stabilization when counter-steering under throttle
-            if (p.drivetrain === 'AWD' && throttle > 0.3 && s.isDrifting) {
+            if (!this.mwTires && p.drivetrain === 'AWD' && throttle > 0.3 && s.isDrifting) {
                 yawTorque -= s.chassisSlipAngle * p.massKg * 6.5 * throttle;
             }
 
             // NFS MW DriftStabilizerTable: damp yaw rate when yaw opposes slip angle or exceeds safe drift envelope
-            const baseYawDamping = -s.yawRate * s.yawInertia * (this.mwKernel ? .85 : (s.isDrifting ? 2.6 : 4.2));
+            const baseYawDamping = -s.yawRate * s.yawInertia * (this.mwKernel ? .15 : (s.isDrifting ? 2.6 : 4.2));
             let stabilizerTorque = 0;
             if ((s.yawRate * s.chassisSlipAngle) < 0 || Math.abs(s.chassisSlipAngle) > 0.55) {
-                stabilizerTorque = -s.yawRate * s.yawInertia * (this.mwKernel ? 1.6 : 4.8) * (0.4 + s.driftValue * 0.6);
+                stabilizerTorque = -s.yawRate * s.yawInertia * (this.mwKernel ? .35 : 4.8) * (0.4 + s.driftValue * 0.6);
             }
             if (this.options.stabilityAssist && Math.abs(rawSteer) < 0.05 && ebrake < 0.1) {
                 // Straight-line alignment damping
@@ -1559,7 +1616,8 @@
             }
             for(const key of ['fl','fr','rl','rr']){
                 const wheelForward=s.vForward+(key[1]==='l'?1:-1)*s.yawRate*p.trackWidth*.5;
-                if(!(key[0]==='r'&&ebrake>.5))s.wheelAngles[key]=(s.wheelAngles[key]+wheelForward/p.wheelRadius*dt)%(2*Math.PI);
+                const omega=this.mwTires?this.mwTires[key].visualOmega():(key[0]==='r'&&ebrake>.5?0:wheelForward/p.wheelRadius);
+                s.wheelAngles[key]=(s.wheelAngles[key]+omega*dt)%(2*Math.PI);
             }
 
             // 15. Drift Scoring & Fuel / Distance Integration
@@ -1624,7 +1682,86 @@
          * Rigid-body wall / barrier collision response (inspired by RBVehicle::ModifyCollision & SuspensionRacer::DoWallSteer).
          * Supports both object `{ normalX, normalZ, penetration, restitution }` and positional `(normalX, normalZ, penetration, restitution)`.
          */
+        // Oriented rectangles are a NOMERA collision shape, not MW geometry.
+        getVehicleContact(other) {
+            const a=this.state,b=other.state||other,pa=this.profile,pb=other.profile||pa;
+            const axes=s=>[{x:Math.cos(s.heading),z:-Math.sin(s.heading)},{x:Math.sin(s.heading),z:Math.cos(s.heading)}];
+            const aa=axes(a),ab=axes(b),ha=[pa.trackWidth*1.15*.5,pa.wheelbase*1.65*.5],hb=[pb.trackWidth*1.15*.5,pb.wheelbase*1.65*.5];
+            let penetration=Infinity,normal;
+            for(const n of [...aa,...ab]){
+                const radius=(axes,half)=>axes.reduce((r,v,i)=>r+Math.abs(v.x*n.x+v.z*n.z)*half[i],0);
+                const separation=(a.x-b.x)*n.x+(a.z-b.z)*n.z;
+                const overlap=radius(aa,ha)+radius(ab,hb)-Math.abs(separation);
+                if(overlap<=0)return null;
+                if(overlap<penetration){penetration=overlap;const sign=separation<0?-1:1;normal={normalX:n.x*sign,normalZ:n.z*sign};}
+            }
+            return {...normal,penetration};
+        }
+
+        _resolveMWContact(other,contact) {
+            const a=this.state,b=other?.state||other,pa=this.profile,pb=other?.profile||pa;
+            const len=Math.hypot(contact.normalX,contact.normalZ);
+            if(!(len>1e-7))return {closingSpeedMps:0,impactSeverity:0,damageAdded:0};
+            const nx=contact.normalX/len,nz=contact.normalZ/len;
+            const invA=1/pa.massKg,invB=b?1/(other?.profile?.massKg||b.massKg||1350):0;
+            const ia=1/a.yawInertia,ib=b?1/(b.yawInertia||pa.massKg*2):0;
+            const support=(s,p,dx,dz)=>{
+                const rx=Math.cos(s.heading),rz=-Math.sin(s.heading),fx=Math.sin(s.heading),fz=Math.cos(s.heading);
+                const side=dx*rx+dz*rz,nose=dx*fx+dz*fz;
+                const w=Math.abs(side)<1e-7?0:Math.sign(side)*p.trackWidth*1.15*.5;
+                const l=Math.abs(nose)<1e-7?0:Math.sign(nose)*p.wheelbase*1.65*.5;
+                return{x:s.x+rx*w+fx*l,z:s.z+rz*w+fz*l};
+            };
+            const sa=support(a,pa,-nx,-nz),sb=b?support(b,pb,nx,nz):sa;
+            const px=contact.pointX??(sa.x+sb.x)*.5,pz=contact.pointZ??(sa.z+sb.z)*.5;
+            const ra={x:px-a.x,z:pz-a.z},rb=b?{x:px-b.x,z:pz-b.z}:{x:0,z:0};
+            const cross=(r,x,z)=>r.z*x-r.x*z;
+            const velocity=(s,r)=>s?{x:(s.vx||0)+(s.yawRate||0)*r.z,z:(s.vz||0)-(s.yawRate||0)*r.x}:{x:0,z:0};
+            const relative=()=>{const va=velocity(a,ra),vb=velocity(b,rb);return{x:va.x-vb.x,z:va.z-vb.z};};
+            const effective=(x,z)=>invA+invB+cross(ra,x,z)**2*ia+cross(rb,x,z)**2*ib;
+            const apply=(x,z,j)=>{
+                a.vx+=x*j*invA;a.vz+=z*j*invA;a.yawRate+=cross(ra,x,z)*j*ia;
+                if(b){b.vx-=x*j*invB;b.vz-=z*j*invB;b.yawRate=(b.yawRate||0)-cross(rb,x,z)*j*ib;}
+            };
+            const v=relative(),vn=v.x*nx+v.z*nz,closingSpeedMps=Math.max(0,-vn);
+            const pen=Math.max(0,contact.penetration||0),sum=invA+invB;
+            a.x+=nx*pen*invA/sum;a.z+=nz*pen*invA/sum;
+            if(b){b.x-=nx*pen*invB/sum;b.z-=nz*pen*invB/sum;}
+            if(vn<0){
+                const restitution=closingSpeedMps<1?0:clamp(contact.restitution??.2,0,.6);
+                const j=-(1+restitution)*vn/effective(nx,nz);apply(nx,nz,j);
+                const tx=-nz,tz=nx,rv=relative(),mu=clamp(contact.friction??.12,0,.8);
+                const jt=clamp(-(rv.x*tx+rv.z*tz)/effective(tx,tz),-mu*j,mu*j);apply(tx,tz,jt);
+            }
+            const impactSeverity=clamp((closingSpeedMps-1)/24,0,1),damageAdded=impactSeverity*(b?6:8.5);
+            const sync=(s,owner)=>{
+                const sn=Math.sin(s.heading),cs=Math.cos(s.heading);
+                s.vForward=s.vx*sn+s.vz*cs;s.vLateral=s.vx*cs-s.vz*sn;
+                s.speedMps=Math.hypot(s.vx,s.vz);s.speedKmh=s.speedMps*3.6;
+                s.damageTaken=clamp((s.damageTaken||0)+damageAdded,0,100);
+                if(impactSeverity>0)s.collisionTimer=Math.max(s.collisionTimer||0,.35*impactSeverity);
+                owner?._syncStateAliases?.(s,s);
+            };
+            sync(a,this);if(b)sync(b,other);
+            if(!b){
+                a.isOnWall=true;
+                const fwdDot=-(Math.sin(a.heading)*nx+Math.cos(a.heading)*nz);
+                const armForward=ra.x*Math.sin(a.heading)+ra.z*Math.cos(a.heading);
+                const normalRight=nx*Math.cos(a.heading)-nz*Math.sin(a.heading);
+                if(closingSpeedMps<7.5&&a.speedMps<2.5&&fwdDot>=0&&armForward>.75*pa.wheelbase*1.65*.5){
+                    a.wallEscape=(normalRight>0?1:-1)-normalRight;
+                    a.wallEscapeTime=Math.min(.05,contact.duration??1/60);
+                }
+            }
+            return {closingSpeedMps,impactSeverity,damageAdded};
+        }
+
         resolveWallCollision(contactOrNx = {}, argNz = 0, argPen = 0, argRestitution = 0.20) {
+            if(this.mwTires){
+                const positional=typeof contactOrNx==='number';
+                const result=this._resolveMWContact(null,positional?{normalX:contactOrNx,normalZ:argNz,penetration:argPen,restitution:argRestitution}:contactOrNx);
+                return positional?result.closingSpeedMps:result;
+            }
             const s = this.state;
             const isPositional = typeof contactOrNx === 'number';
             const contact = isPositional
@@ -1726,6 +1863,20 @@
          */
         resolveVehicleCollision(otherVehicle, optionsOrNx = {}, argNz = 0, argOverlap = 0, argRestitution = 0.32) {
             if (!otherVehicle) return null;
+            if(this.mwTires){
+                const positional=typeof optionsOrNx==='number',options=positional?{}:optionsOrNx||{};
+                let contact;
+                if(positional)contact={normalX:-optionsOrNx,normalZ:-argNz,penetration:argOverlap,restitution:argRestitution};
+                else if(Number.isFinite(options.normalX))contact=options;
+                else if(options.minSeparation){
+                    const b=otherVehicle.state||otherVehicle,dx=this.state.x-b.x,dz=this.state.z-b.z,d=Math.hypot(dx,dz);
+                    if(d>=options.minSeparation)return false;
+                    contact={...options,normalX:d>1e-7?dx/d:1,normalZ:d>1e-7?dz/d:0,penetration:options.minSeparation-d};
+                }else contact=this.getVehicleContact(otherVehicle);
+                if(!contact)return false;
+                const result=this._resolveMWContact(otherVehicle,contact);
+                return positional?result.closingSpeedMps:true;
+            }
             const sA = this.state;
             const sB = otherVehicle.state || otherVehicle;
             const isPositional = typeof optionsOrNx === 'number';
