@@ -8587,7 +8587,26 @@
                 : (aspect < 1.55 ? Math.min(1.85, 1.55 / Math.pow(aspect, 0.78)) : 1.0);
             this.cameraDist = this.cameraDistance;
             this.activeViewPreset = this.currentPreset;
-            const effectiveDist = this.cameraDistance * aspectFitMult;
+            let effectiveDist = this.cameraDistance * aspectFitMult;
+            // Optional framing: project all eight model bounds onto the camera axes.
+            // Cache bounds on model/viewport changes; the render loop does no traversal.
+            if (this.options.fitModelBounds && this.modelFrameCorners && !isCloseUpPlate) {
+                const halfVertical = this.camera.fov * Math.PI / 360;
+                const halfHorizontal = Math.atan(Math.tan(halfVertical) * rawAspect);
+                const sy = Math.sin(this.cameraAngleY), cy = Math.cos(this.cameraAngleY);
+                const sx = Math.sin(this.cameraAngleX), cx = Math.cos(this.cameraAngleX);
+                let fitDistance = 0;
+                for (const p of this.modelFrameCorners) {
+                    const y = p.y - this.targetY;
+                    const right = p.x * cy - p.z * sy;
+                    const up = -p.x * sy * sx + y * cx - p.z * cy * sx;
+                    const depth = p.x * sy * cx + y * sx + p.z * cy * cx;
+                    fitDistance = Math.max(fitDistance, Math.abs(right) / Math.tan(halfHorizontal) + depth,
+                        Math.abs(up) / Math.tan(halfVertical) + depth);
+                }
+                fitDistance *= 1.16;
+                effectiveDist = fitDistance * (this.cameraDistance / 4.3);
+            }
             const cx = Math.sin(this.cameraAngleY) * Math.cos(this.cameraAngleX) * effectiveDist;
             const cy = Math.sin(this.cameraAngleX) * effectiveDist + this.targetY;
             const cz = Math.cos(this.cameraAngleY) * Math.cos(this.cameraAngleX) * effectiveDist;
@@ -8615,6 +8634,14 @@
             const activeModel = this.glbCar || this.proceduralCar || this.carGroup;
             if (activeModel && this.THREE) {
                 fitModelToShowroom(this.THREE, activeModel, 4.8);
+                if (this.options.fitModelBounds) {
+                    activeModel.updateMatrixWorld(true);
+                    const bounds = new this.THREE.Box3().setFromObject(activeModel);
+                    this.modelFrameCorners = [];
+                    for (const x of [bounds.min.x, bounds.max.x])
+                        for (const y of [bounds.min.y, bounds.max.y])
+                            for (const z of [bounds.min.z, bounds.max.z]) this.modelFrameCorners.push({x,y,z});
+                }
             }
             this.updateCameraPosition();
             this.needsRender = true;

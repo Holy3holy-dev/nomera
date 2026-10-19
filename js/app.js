@@ -170,7 +170,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         // --- FIREBASE REALTIME DATABASE CONFIGURATION ---
         // Served at runtime by Netlify Functions from public-only Firebase Web App config.
         // Never fall back to the legacy bazanomerann project: it risks splitting player data.
-        const firebaseConfig = window.NOMERA_FIREBASE_WEB_CONFIG || null;
+        const firebaseConfig = window.NOMERA_AUTHORS_PREVIEW ? null : (window.NOMERA_FIREBASE_WEB_CONFIG || null);
         const firebaseSetupError = window.NOMERA_FIREBASE_CONFIG_ERROR || '';
         const firebaseConfigValid = Boolean(firebaseConfig
             && firebaseConfig.projectId === 'h3h-nomera-server'
@@ -190,14 +190,14 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         }
         function onStorageError() { storageFailed = true; showSaveStatus(saveStatus); }
         const localStore = NomeraStorage.createStorage({
-            getItem: key => window.localStorage.getItem(key),
-            setItem: (key, value) => window.localStorage.setItem(key, value),
-            removeItem: key => window.localStorage.removeItem(key)
+            getItem: key => window.localStorage.getItem((window.NOMERA_STORAGE_PREFIX || '') + key),
+            setItem: (key, value) => window.localStorage.setItem((window.NOMERA_STORAGE_PREFIX || '') + key, value),
+            removeItem: key => window.localStorage.removeItem((window.NOMERA_STORAGE_PREFIX || '') + key)
         }, onStorageError);
         const sessionStore = NomeraStorage.createStorage({
-            getItem: key => window.sessionStorage.getItem(key),
-            setItem: (key, value) => window.sessionStorage.setItem(key, value),
-            removeItem: key => window.sessionStorage.removeItem(key)
+            getItem: key => window.sessionStorage.getItem((window.NOMERA_STORAGE_PREFIX || '') + key),
+            setItem: (key, value) => window.sessionStorage.setItem((window.NOMERA_STORAGE_PREFIX || '') + key, value),
+            removeItem: key => window.sessionStorage.removeItem((window.NOMERA_STORAGE_PREFIX || '') + key)
         });
         const raceRecordStore = NomeraRaceRecords.createRecords(localStore);
         let progressRevision = 0;
@@ -2469,6 +2469,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         // --- VERIFIED SERVER ADMIN: no passwords or authorization in client code ---
         const ADMIN_ENDPOINT = '/.netlify/functions/admin';
         async function adminRequest(action, params = {}, method = 'POST') {
+            if (window.NOMERA_AUTHORS_PREVIEW) throw new Error('Локальный предпросмотр: сервер отключён.');
             if (action !== 'login' && action !== 'session' && action !== 'logout') {
                 if (!isAdmin) throw Error('Требуется авторизация администратора');
             }
@@ -3333,6 +3334,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         let onlineProfile=null;
         let netlifyAvailable = !(typeof window !== 'undefined' && window.location && typeof window.location.hostname === 'string' && (window.location.hostname.endsWith('github.io') || window.location.hostname.endsWith('github.dev') || window.location.hostname.endsWith('pages.dev')));
         async function onlineRequest(action,params={},method='POST') {
+            if (window.NOMERA_AUTHORS_PREVIEW) throw new Error('Локальный предпросмотр: онлайн-функции отключены.');
             if (action === 'claim' && (!params || params.region === undefined)) {
                 params = { ...params, region: currentReg, country: currentCountry };
             } else if (action === 'claim' && params && params.country === undefined) {
@@ -8474,7 +8476,8 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
             const summaryEl = document.getElementById('col-plates-summary');
             if (summaryEl) {
-                summaryEl.textContent = `Всего в коллекции: ${invArr.length} шт. • На сумму: ${totalAll.toLocaleString('ru-RU')} ₽`;
+                const collectionTotal = invArr.reduce((sum, item) => sum + Math.max(0, Number(item && item.price) || 0), 0);
+                summaryEl.textContent = `Всего в коллекции: ${invArr.length} шт. • На сумму: ${collectionTotal.toLocaleString('ru-RU')} ₽`;
             }
 
             const btnAll = document.getElementById('btn-sell-all-plates');
@@ -8859,6 +8862,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         }
 
         function renderShopCars() {
+            if (window.NOMERA_AUTHORS_PREVIEW && activeGarageSubView !== 'shop') return;
             let list = document.getElementById('garage-list');
             if (!list) return;
             list.innerHTML = '';
@@ -9268,7 +9272,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             });
             myCarsDiv.innerHTML = html;
 
-            if (typeof Car3DManager !== 'undefined' && typeof Car3DManager.renderSideThumbnail === 'function') {
+            if ((!window.NOMERA_AUTHORS_PREVIEW || activeGarageSubView === 'fleet') && typeof Car3DManager !== 'undefined' && typeof Car3DManager.renderSideThumbnail === 'function') {
                 myCars.forEach((c, idx) => {
                     const effStyling = Object.assign({}, c.styling || {}, {
                         plate: c.plate ? (c.plate.text || c.plate) : 'none'
@@ -10270,6 +10274,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
             if (!garage3DShowroom) {
                 garage3DShowroom = new Car3DManager.Car3DShowroom('garage-preview-3d-wrap', {
+                    fitModelBounds: Boolean(window.NOMERA_AUTHORS_PREVIEW),
                     autoRotate: false,
                     autoRotateSpeed: 0.007,
                     showPodium: true,
@@ -10360,6 +10365,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         function switchGarageSubView(view = 'showroom') {
             const validView = (view === 'shop' || view === 'fleet') ? view : 'showroom';
             activeGarageSubView = validView;
+            if (window.NOMERA_AUTHORS_PREVIEW && validView === 'shop') renderShopCars();
             if (typeof document === 'undefined') return validView;
 
             const btnShowroom = document.getElementById('btn-garage-sub-showroom');

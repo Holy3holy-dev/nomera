@@ -12,3 +12,8 @@ dist/
 .stfolder/
 scratch/
 *.zip
+work/
+# Reproducible local review entries (node scripts/authors-build.cjs).
+authors.html
+authors-legacy.css
+antigravity.html

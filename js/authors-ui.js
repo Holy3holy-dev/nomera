@@ -1,0 +1,174 @@
+/* Presentation adapter. Original game objects, handlers and renderers remain in use. */
+(() => {
+    'use strict';
+    const $ = s => document.querySelector(s);
+    const make = (tag, cls, html = '') => { const el = document.createElement(tag); el.className = cls; el.innerHTML = html; return el; };
+    const icon = name => `<svg viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-${name}"/></svg>`;
+    const intro = (n, tag, title, desc) => make('div', 'ae-intro', `<div><div class="ae-eyebrow">H3H / ${tag} <span>VOL. 01</span></div><h1>${title}<span class="ae-title-dot">.</span></h1><p>${desc}</p></div><span class="ae-section-number">${n}</span>`);
+    const edition = make('div', 'ae-edition-bar', '<span>AUTHOR’S EDITION <i> / </i> PRIVATE COLLECTION</span><span class="ae-preview-label">Локальная демоверсия <span class="ae-status-dot"></span></span>');
+    $('.brand-bar').after(edition);
+    $('.brand-lockup').href = './authors.html';
+    $('.brand-lockup').insertAdjacentHTML('beforeend','<small class="ae-brand-edition">COLLECTOR’S CLUB</small>');
+    $('.brand-word').textContent = 'NOMERA';
+
+    const gen = $('#generator');
+    gen.prepend(intro('01', 'ГЕНЕРАТОР', 'Найди свой характер', 'Шесть символов. Миллионы сочетаний. Один — твой.'));
+    const layout = $('.gen-garage-arena');
+    const toolbar = make('div','ae-country-toolbar','<span class="ae-label">РЕГИСТРАЦИЯ</span>');
+    toolbar.append($('#plate-country-selector'));
+    toolbar.querySelector('#btn-country-UAE strong').textContent = 'ОАЭ';
+    toolbar.querySelectorAll('.country-select-btn').forEach(btn=>btn.querySelector('strong').dataset.short=btn.dataset.country);
+    const regionButton = $('.gen-region-sidebar-section .btn-region-trigger');
+    regionButton.innerHTML = 'Регион / серия <span>↗</span>';
+    toolbar.append(regionButton);
+    layout.before(toolbar);
+    const stage = $('#gen-plate-stage');
+    const controls = $('.gen-controls-dock');
+    layout.prepend(stage);
+    stage.insertAdjacentHTML('afterbegin','<div class="ae-stage-meta"><span>НОМЕРНОЙ ФОНД / 001</span><span>H3H CERTIFIED</span></div>');
+    stage.insertAdjacentHTML('beforeend','<div class="ae-stage-caption"><span>THE NUMBER IS THE SIGNATURE</span><span>КОЛЛЕКЦИЯ ХАРАКТЕРОВ</span></div>');
+    controls.prepend($('.podium-price-readout'));
+    controls.querySelector('.podium-price-caption').textContent = 'ОЦЕНОЧНАЯ СТОИМОСТЬ';
+    layout.append(controls);
+    $('.gen-main-cta-wrap').after($('.gen-secondary-actions-grid'));
+    const settings = make('details','ae-settings','<summary>Настройки генерации <span>＋</span></summary>');
+    settings.append($('#gen-quick-toggles-bar'));
+    controls.append(settings);
+    $('#btn-gen-mobile-settings').remove();
+    $('.gen-left-panel').hidden = true;
+    $('.gen-center-stage').hidden = true;
+    $('.garage-arena-backdrop').hidden = true;
+    const stats = $('.gen-right-panel');
+    gen.append(stats);
+    $('#btn-gen-mobile-stats').remove();
+    $('.gen-rarity-odds-strip').hidden = true; // Legacy hardcoded odds don't describe all countries/pity.
+    $('.gen-sell-free-btn').hidden = true; // Bulk action remains in the inventory.
+    $('.spin-cta-main').textContent = 'Сгенерировать';
+    $('#btn-spin-both').insertAdjacentHTML('beforeend','<span class="ae-cta-arrow" aria-hidden="true">↗</span>');
+    $('.gen-plate-desc-drawer summary').textContent = 'Паспорт номера и описание серии';
+    $('#generator-online-wallet').hidden = true;
+
+    const inv = $('#inventory');
+    inv.prepend(intro('02','КОЛЛЕКЦИЯ','Ценность в деталях','Номера, за которыми стоит история. Твоя личная коллекция.'));
+    $('#inv-search-input').placeholder = 'Найти номер или регион…';
+    $('#inv-search-input').setAttribute('aria-label','Поиск по номеру или региону');
+    $('#inventory .section-title').hidden = true;
+    $('#col-plates-summary').classList.add('ae-collection-total');
+    // Native details: keyboard-accessible and identical on mobile and desktop.
+    const filterDetails = make('details','ae-collection-filters','<summary>Фильтры и сортировка <span>＋</span></summary>');
+    filterDetails.append($('.col-filters-group'));
+    $('#col-actions-bar').append(filterDetails);
+    $('#btn-mobile-col-filters').hidden = true;
+    const bulk = make('details','ae-bulk','<summary>Продажа коллекции <span>＋</span></summary>');
+    const bulkButtons = $('#btn-sell-all-plates').parentElement;
+    bulkButtons.before(bulk);bulk.append(bulkButtons);
+
+    const garage = $('#garage');
+    garage.prepend(intro('03','ГАРАЖ','Искусство движения','Личная экспозиция. Настоящие модели. Твой почерк.'));
+    $('#garage > .section-box > .section-header .section-title').hidden = true;
+    $('#btn-garage-sub-showroom').textContent = 'Мой гараж';
+    $('#btn-garage-sub-shop').textContent = 'Автосалон';
+    $('#btn-garage-sub-fleet').textContent = 'Кортеж и прокат';
+    $('.garage-3d-badge').textContent = 'PRIVATE SHOWROOM';
+    $('#garage-3d-hint').textContent = 'Вращение — перетаскивание · Масштаб — колесо или два пальца';
+    // One inspector navigation, rather than a duplicate row of the same five actions.
+    $('.garage-podium-bottom-dock').hidden = true;
+    const legends = make('details','ae-legends','<summary>Тест-драйв коллекции <span>↗</span></summary>');
+    $('#garage-nfsmw-legends-bar').before(legends);
+    legends.append($('#garage-nfsmw-legends-bar'));
+    $('#btn-garage-podium-styling').hidden = true;
+    $('#btn-garage-podium-nfs-race').hidden = true;
+    $('#btn-garage-podium-toggle').hidden = true;
+    $('#btn-garage-podium-race').textContent = 'На трассу ↗';
+    $('.garage-buy-more-btn').textContent = 'Открыть автосалон ↗';
+    $('#btn-mobile-garage-cars').hidden = true; // Roster is always accessible as a rail.
+
+    for (const [id,name] of [['mob-nav-generator','plate'],['mob-nav-inventory','collection'],['mob-nav-cars','garage'],['mob-nav-market','online']]) {
+        $('#'+id+' > span').innerHTML = icon(name);
+    }
+    $('#hud-daily-btn').innerHTML = icon('case');
+    const footer = make('footer','ae-footer','<span>H3H NOMERA <b>AUTHOR’S EDITION</b></span><span>Тестовый профиль · сохранение только в этом браузере</span><a href="./antigravity.html" target="_blank" rel="noopener">Сравнить с Antigravity ↗</a>');
+    $('.main-container').append(footer);
+
+    // Retain the real plate renderer's national layouts, scale the whole object uniformly.
+    const plate = $('#plate-box'), wrap = $('.plate-hero-scale-wrap');
+    function fitPlate() {
+        const width = plate.offsetWidth;
+        if (width) wrap.style.setProperty('--ae-plate-scale', Math.min(1.5, (wrap.clientWidth - 34) / width));
+    }
+    new ResizeObserver(fitPlate).observe(wrap);
+    new MutationObserver(fitPlate).observe(plate,{attributes:true,attributeFilter:['class','data-country']});
+
+    // Clean presentation of inherited emoji labels without touching handlers or data.
+    const emoji = /[\p{Extended_Pictographic}\uFE0F\u200D]/gu;
+    function polish(root) {
+        const walker = document.createTreeWalker(root,NodeFilter.SHOW_TEXT);
+        const texts=[]; while(walker.nextNode()) texts.push(walker.currentNode);
+        for (const node of texts) {
+            if(node.parentElement?.closest('.plate-container,.mini-plate,.inv-fav-btn,script,style')) continue;
+            const clean = node.nodeValue.replace(emoji,'');
+            if(clean !== node.nodeValue) node.nodeValue = clean;
+        }
+        root.querySelectorAll('.inv-card').forEach(card => {
+            card.tabIndex = 0; card.setAttribute('role','button');
+            card.onkeydown = e => {if(e.target === card && (e.key === 'Enter' || e.key === ' ')){e.preventDefault();card.click();}};
+            const fav = card.querySelector('.inv-fav-btn');
+            if(fav) {fav.setAttribute('aria-label',fav.title);fav.setAttribute('aria-pressed',String(fav.classList.contains('active')));}
+            if(!card.querySelector('.ae-card-country')) {
+                const mini = card.querySelector('.mini-plate');
+                const countries = {kz:'КАЗАХСТАН',usa:'США',uae:'ОАЭ',jpn:'ЯПОНИЯ'};
+                let label = 'РОССИЯ';
+                for(const [code,name] of Object.entries(countries)) if(mini.className.includes(code)) label=name;
+                const status = card.querySelector('.status-garage') ? 'НА АВТО' : card.querySelector('.status-market') ? 'НА РЫНКЕ' : 'В КОЛЛЕКЦИИ';
+                card.querySelector('.inv-card-plate-stage').after(make('div','ae-card-country',label+' <span>'+status+'</span>'));
+            }
+        });
+        root.querySelectorAll('.mini-plate').forEach(plate => {
+            if(plate.querySelector('.ae-mini-main')) return;
+            const match = plate.textContent.trim().match(/^([А-ЯA-Z])\s*(\d{3})\s*([А-ЯA-Z]{2})\s*(?:\|\s*)?(\d{2,3})(?:\s*RUS)?$/);
+            if(!match || /special-/.test(plate.className)) return;
+            plate.setAttribute('aria-label',plate.textContent.trim());
+            plate.classList.add('ae-rus-plate');
+            plate.innerHTML = `<span class="ae-mini-main">${match[1]}<b>${match[2]}</b>${match[3]}</span><span class="ae-mini-region"><b>${match[4]}</b><small>RUS <i></i></small></span>`;
+        });
+        if (root === garage) {
+            const empty = !Array.isArray(myCars) || myCars.length === 0;
+            $('#garage-3d-podium-card').hidden = empty;
+            $('#garage-active-inspector').hidden = empty;
+            if (empty && !garage.querySelector('.ae-empty-garage')) {
+                $('#garage-showroom-layout').before(make('div','ae-empty-garage','<h2>Первый автомобиль — начало истории.</h2><p>Выбери автомобиль в автосалоне, чтобы открыть личный шоурум.</p><button class="btn" type="button" onclick="switchGarageSubView(\'shop\')">Открыть автосалон ↗</button>'));
+            }
+            const emptyState = garage.querySelector('.ae-empty-garage');
+            if (emptyState) emptyState.hidden = !empty;
+            if (!empty && !window.garageShowroom && typeof Car3DManager !== 'undefined' && !Car3DManager.isWebGLAvailable()) {
+                const view = $('#garage-preview-3d-wrap');
+                if (!view.querySelector('.ae-webgl-fallback')) {
+                    const fallback = make('div','ae-webgl-fallback','<img alt="Автомобиль из игрового каталога"><p>3D недоступно в этом браузере. Выбор автомобиля и управление доступны ниже.</p>');
+                    view.replaceChildren(fallback);
+                }
+                const car = myCars[activeGarageCarIndex] || myCars[0];
+                const img = view.querySelector('img');
+                const src = getCarSpriteDataUrl(car.name);
+                if(img.getAttribute('src')!==src) img.setAttribute('src',src);
+            }
+        }
+        // Neutral showroom materials, retaining the original geometry and lighting.
+        if (root === garage && window.garageShowroom) {
+            const scene = window.garageShowroom;
+            if (scene.podiumDiscMat) scene.podiumDiscMat.color.setHex(0x222e25);
+            if (scene.podiumRingMat) {scene.podiumRingMat.color.setHex(0xa49165);scene.podiumRingMat.opacity=.45;}
+        }
+    }
+    let queued = false;
+    const observer = new MutationObserver(() => {
+        if(queued) return; queued=true;
+        requestAnimationFrame(() => {observer.disconnect(); [gen,inv,garage].forEach(polish);watch();queued=false;});
+    });
+    function watch(){for(const el of [gen,inv,garage]) observer.observe(el,{childList:true,subtree:true,characterData:true});}
+    [gen,inv,garage].forEach(polish);watch();
+    window.addEventListener('load', () => {
+        closeWelcomeModal(); fitPlate();
+        const tab = new URLSearchParams(location.search).get('screen');
+        if(['generator','inventory','garage'].includes(tab)) switchTab(tab);
+    });
+})();
