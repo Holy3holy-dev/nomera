@@ -5,14 +5,14 @@
     const make = (tag, cls, html = '') => { const el = document.createElement(tag); el.className = cls; el.innerHTML = html; return el; };
     const icon = name => `<svg viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-${name}"/></svg>`;
     const intro = (n, tag, title, desc) => make('div', 'ae-intro', `<div><div class="ae-eyebrow">H3H / ${tag} <span>VOL. 01</span></div><h1>${title}<span class="ae-title-dot">.</span></h1><p>${desc}</p></div><span class="ae-section-number">${n}</span>`);
-    const edition = make('div', 'ae-edition-bar', '<span>AUTHOR’S EDITION <i> / </i> PRIVATE COLLECTION</span><span class="ae-preview-label">Локальная демоверсия <span class="ae-status-dot"></span></span>');
+    const edition = make('div', 'ae-edition-bar', '<span>AUTHOR’S EDITION <i> / </i> MIDNIGHT 02</span><span class="ae-preview-label">Тестовый профиль <span class="ae-status-dot"></span></span>');
     $('.brand-bar').after(edition);
     $('.brand-lockup').href = './authors.html';
-    $('.brand-lockup').insertAdjacentHTML('beforeend','<small class="ae-brand-edition">COLLECTOR’S CLUB</small>');
+    $('.brand-lockup').insertAdjacentHTML('beforeend','<small class="ae-brand-edition">COLLECT / DRIVE / TRADE</small>');
     $('.brand-word').textContent = 'NOMERA';
 
     const gen = $('#generator');
-    gen.prepend(intro('01', 'ГЕНЕРАТОР', 'Найди свой характер', 'Шесть символов. Миллионы сочетаний. Один — твой.'));
+    gen.prepend(intro('01', 'НОМЕРНОЙ ФОНД', 'Генератор номеров', 'Следующий спин может стать главным в коллекции.'));
     const layout = $('.gen-garage-arena');
     const toolbar = make('div','ae-country-toolbar','<span class="ae-label">РЕГИСТРАЦИЯ</span>');
     toolbar.append($('#plate-country-selector'));
@@ -25,8 +25,8 @@
     const stage = $('#gen-plate-stage');
     const controls = $('.gen-controls-dock');
     layout.prepend(stage);
-    stage.insertAdjacentHTML('afterbegin','<div class="ae-stage-meta"><span>НОМЕРНОЙ ФОНД / 001</span><span>H3H CERTIFIED</span></div>');
-    stage.insertAdjacentHTML('beforeend','<div class="ae-stage-caption"><span>THE NUMBER IS THE SIGNATURE</span><span>КОЛЛЕКЦИЯ ХАРАКТЕРОВ</span></div>');
+    stage.insertAdjacentHTML('afterbegin','<div class="ae-stage-meta"><span><i></i> ВИТРИНА НОМЕРА</span><span>H3H / НОМЕРНОЙ ФОНД</span></div><div class="ae-studio-lights" aria-hidden="true"><i></i><i></i><i></i></div><div class="ae-stage-watermark" aria-hidden="true">NOMERA</div>');
+    stage.insertAdjacentHTML('beforeend','<div class="ae-stage-caption"><span>КОЛЛЕКЦИЯ НАЧИНАЕТСЯ С ХАРАКТЕРА</span><span>AUTHOR’S EDITION / 02</span></div>');
     controls.prepend($('.podium-price-readout'));
     controls.querySelector('.podium-price-caption').textContent = 'ОЦЕНОЧНАЯ СТОИМОСТЬ';
     layout.append(controls);
@@ -49,7 +49,9 @@
     $('#generator-online-wallet').hidden = true;
 
     const inv = $('#inventory');
-    inv.prepend(intro('02','КОЛЛЕКЦИЯ','Ценность в деталях','Номера, за которыми стоит история. Твоя личная коллекция.'));
+    inv.prepend(intro('02','ЛИЧНЫЙ ИНВЕНТАРЬ','Твоя коллекция','Редкие серии. Знаковые сочетания. Номера с характером.'));
+    const collectionMetrics = make('div','ae-collection-metrics','<div><span>СОБРАНО НОМЕРОВ</span><strong id="ae-total-count">—</strong></div><div><span>СТОИМОСТЬ КОЛЛЕКЦИИ</span><strong id="ae-total-value">—</strong></div><div><span>ИЗБРАННОЕ</span><strong id="ae-favorite-count">—</strong></div>');
+    inv.querySelector('.ae-intro').after(collectionMetrics);
     $('#inv-search-input').placeholder = 'Найти номер или регион…';
     $('#inv-search-input').setAttribute('aria-label','Поиск по номеру или региону');
     $('#inventory .section-title').hidden = true;
@@ -64,12 +66,12 @@
     bulkButtons.before(bulk);bulk.append(bulkButtons);
 
     const garage = $('#garage');
-    garage.prepend(intro('03','ГАРАЖ','Искусство движения','Личная экспозиция. Настоящие модели. Твой почерк.'));
+    garage.prepend(intro('03','АВТОМОБИЛИ','Мой гараж','Выбери автомобиль. Настрой под себя. Выезжай на трассу.'));
     $('#garage > .section-box > .section-header .section-title').hidden = true;
     $('#btn-garage-sub-showroom').textContent = 'Мой гараж';
     $('#btn-garage-sub-shop').textContent = 'Автосалон';
     $('#btn-garage-sub-fleet').textContent = 'Кортеж и прокат';
-    $('.garage-3d-badge').textContent = 'PRIVATE SHOWROOM';
+    $('.garage-3d-badge').textContent = 'H3H / ШОУРУМ';
     $('#garage-3d-hint').textContent = 'Вращение — перетаскивание · Масштаб — колесо или два пальца';
     // One inspector navigation, rather than a duplicate row of the same five actions.
     $('.garage-podium-bottom-dock').hidden = true;
@@ -102,6 +104,11 @@
     // Clean presentation of inherited emoji labels without touching handlers or data.
     const emoji = /[\p{Extended_Pictographic}\uFE0F\u200D]/gu;
     function polish(root) {
+        if(root === inv) {
+            const items = Array.isArray(inventory) ? inventory : [];
+            const metrics = {'ae-total-count':items.length.toLocaleString('ru-RU'),'ae-total-value':items.reduce((s,p)=>s+(Number(p?.price)||0),0).toLocaleString('ru-RU')+' ₽','ae-favorite-count':items.filter(p=>p?.favorite).length.toLocaleString('ru-RU')};
+            for(const [id,value] of Object.entries(metrics)) {const el=document.getElementById(id);if(el.textContent!==value)el.textContent=value;}
+        }
         const walker = document.createTreeWalker(root,NodeFilter.SHOW_TEXT);
         const texts=[]; while(walker.nextNode()) texts.push(walker.currentNode);
         for (const node of texts) {
@@ -155,8 +162,8 @@
         // Neutral showroom materials, retaining the original geometry and lighting.
         if (root === garage && window.garageShowroom) {
             const scene = window.garageShowroom;
-            if (scene.podiumDiscMat) scene.podiumDiscMat.color.setHex(0x222e25);
-            if (scene.podiumRingMat) {scene.podiumRingMat.color.setHex(0xa49165);scene.podiumRingMat.opacity=.45;}
+            if (scene.podiumDiscMat) {scene.podiumDiscMat.color.setHex(0x101722);scene.podiumDiscMat.roughness=.38;scene.podiumDiscMat.metalness=.65;}
+            if (scene.podiumRingMat) {scene.podiumRingMat.color.setHex(0x83a5c5);scene.podiumRingMat.opacity=.28;}
         }
     }
     let queued = false;
