@@ -1,0 +1,1209 @@
+{
+  "drift": [
+    {
+      "name": "entry_one_frame_lag",
+      "input": {
+        "state": 0,
+        "value": 0,
+        "dt": 0.01666666754,
+        "speed": 20,
+        "slipDegrees": 15,
+        "yawRate": -0.8000000119,
+        "gas": 1,
+        "steer": -0.5,
+        "averageSteer": -0.5,
+        "ebrake": 0,
+        "groundWheels": 4,
+        "flags": 0
+      },
+      "expected": {
+        "state": 1,
+        "value": 0,
+        "dampingTorque": 0,
+        "rearFriction": 1
+      }
+    },
+    {
+      "name": "entry_value_rise",
+      "input": {
+        "state": 1,
+        "value": 0,
+        "dt": 0.01666666754,
+        "speed": 20,
+        "slipDegrees": 15,
+        "yawRate": -0.8000000119,
+        "gas": 1,
+        "steer": -0.5,
+        "averageSteer": -0.5,
+        "ebrake": 0,
+        "groundWheels": 4,
+        "flags": 0
+      },
+      "expected": {
+        "state": 1,
+        "value": 0.1333333403,
+        "dampingTorque": 85.33334351,
+        "rearFriction": 1.004438043
+      }
+    },
+    {
+      "name": "in_damping",
+      "input": {
+        "state": 2,
+        "value": 0.5,
+        "dt": 0.01666666754,
+        "speed": 20,
+        "slipDegrees": 30,
+        "yawRate": -1,
+        "gas": 1,
+        "steer": 0,
+        "averageSteer": 0,
+        "ebrake": 0,
+        "groundWheels": 4,
+        "flags": 0
+      },
+      "expected": {
+        "state": 2,
+        "value": 0.6333333254,
+        "dampingTorque": 2280,
+        "rearFriction": 0.6460420489
+      }
+    },
+    {
+      "name": "no_damping_same_sign",
+      "input": {
+        "state": 2,
+        "value": 0.5,
+        "dt": 0.01666666754,
+        "speed": 20,
+        "slipDegrees": 30,
+        "yawRate": 1,
+        "gas": 1,
+        "steer": 0,
+        "averageSteer": 0,
+        "ebrake": 0,
+        "groundWheels": 4,
+        "flags": 0
+      },
+      "expected": {
+        "state": 1,
+        "value": 0.6333333254,
+        "dampingTorque": 0,
+        "rearFriction": 0.6460420489
+      }
+    },
+    {
+      "name": "countersteer_rear_cut",
+      "input": {
+        "state": 2,
+        "value": 0.5,
+        "dt": 0.01666666754,
+        "speed": 20,
+        "slipDegrees": 30,
+        "yawRate": -1,
+        "gas": 1,
+        "steer": 0.5,
+        "averageSteer": 0.5,
+        "ebrake": 0,
+        "groundWheels": 4,
+        "flags": 0
+      },
+      "expected": {
+        "state": 2,
+        "value": 0.6333333254,
+        "dampingTorque": 2280,
+        "rearFriction": 0.3400000036
+      }
+    },
+    {
+      "name": "airborne_no_damping",
+      "input": {
+        "state": 2,
+        "value": 0.5,
+        "dt": 0.01666666754,
+        "speed": 20,
+        "slipDegrees": 30,
+        "yawRate": -1,
+        "gas": 1,
+        "steer": 0.5,
+        "averageSteer": 0.5,
+        "ebrake": 0,
+        "groundWheels": 1,
+        "flags": 0
+      },
+      "expected": {
+        "state": 2,
+        "value": 0.6333333254,
+        "dampingTorque": 0,
+        "rearFriction": 0.3400000036
+      }
+    },
+    {
+      "name": "negative_mirror",
+      "input": {
+        "state": 2,
+        "value": 0.5,
+        "dt": 0.01666666754,
+        "speed": 20,
+        "slipDegrees": -30,
+        "yawRate": 1,
+        "gas": 1,
+        "steer": -0.5,
+        "averageSteer": -0.5,
+        "ebrake": 0,
+        "groundWheels": 4,
+        "flags": 0
+      },
+      "expected": {
+        "state": 2,
+        "value": 0.6333333254,
+        "dampingTorque": -2280,
+        "rearFriction": 0.3400000036
+      }
+    },
+    {
+      "name": "exit_decay",
+      "input": {
+        "state": 3,
+        "value": 0.5,
+        "dt": 0.01666666754,
+        "speed": 20,
+        "slipDegrees": 0,
+        "yawRate": 0,
+        "gas": 0,
+        "steer": 0,
+        "averageSteer": 0,
+        "ebrake": 0,
+        "groundWheels": 4,
+        "flags": 0
+      },
+      "expected": {
+        "state": 3,
+        "value": 0.4666666687,
+        "dampingTorque": 0,
+        "rearFriction": 1.100000024
+      }
+    },
+    {
+      "name": "exit_to_out",
+      "input": {
+        "state": 3,
+        "value": 0.009999999776,
+        "dt": 0.01666666754,
+        "speed": 20,
+        "slipDegrees": 0,
+        "yawRate": 0,
+        "gas": 0,
+        "steer": 0,
+        "averageSteer": 0,
+        "ebrake": 0,
+        "groundWheels": 4,
+        "flags": 0
+      },
+      "expected": {
+        "state": 0,
+        "value": 0,
+        "dampingTorque": 0,
+        "rearFriction": 1
+      }
+    },
+    {
+      "name": "staging_reset",
+      "input": {
+        "state": 2,
+        "value": 0.5,
+        "dt": 0.01666666754,
+        "speed": 20,
+        "slipDegrees": 30,
+        "yawRate": -1,
+        "gas": 1,
+        "steer": 0.5,
+        "averageSteer": 0.5,
+        "ebrake": 0,
+        "groundWheels": 4,
+        "flags": 1
+      },
+      "expected": {
+        "state": 0,
+        "value": 0,
+        "dampingTorque": 0,
+        "rearFriction": 1
+      }
+    },
+    {
+      "name": "handbrake_entry_threshold",
+      "input": {
+        "state": 0,
+        "value": 0,
+        "dt": 0.01666666754,
+        "speed": 20,
+        "slipDegrees": 0,
+        "yawRate": 0,
+        "gas": 1,
+        "steer": 0.5,
+        "averageSteer": 0.5,
+        "ebrake": 0.6000000238,
+        "groundWheels": 4,
+        "flags": 0
+      },
+      "expected": {
+        "state": 1,
+        "value": 0,
+        "dampingTorque": 0,
+        "rearFriction": 1
+      }
+    },
+    {
+      "name": "below_min_speed",
+      "input": {
+        "state": 0,
+        "value": 0,
+        "dt": 0.01666666754,
+        "speed": 10,
+        "slipDegrees": 40,
+        "yawRate": -1,
+        "gas": 1,
+        "steer": 0.5,
+        "averageSteer": 0.5,
+        "ebrake": 1,
+        "groundWheels": 4,
+        "flags": 0
+      },
+      "expected": {
+        "state": 0,
+        "value": 0,
+        "dampingTorque": 0,
+        "rearFriction": 1
+      }
+    },
+    {
+      "name": "ninety_damping_table_end",
+      "input": {
+        "state": 2,
+        "value": 0.5,
+        "dt": 0.01666666754,
+        "speed": 20,
+        "slipDegrees": 90,
+        "yawRate": -1,
+        "gas": 1,
+        "steer": 0.5,
+        "averageSteer": 0.5,
+        "ebrake": 0,
+        "groundWheels": 4,
+        "flags": 0
+      },
+      "expected": {
+        "state": 2,
+        "value": 0.6333333254,
+        "dampingTorque": 0,
+        "rearFriction": 0.3400000036
+      }
+    }
+  ],
+  "traction": [
+    {
+      "name": "no_slip",
+      "input": {
+        "slip": 0,
+        "lateral": 0,
+        "bodyForward": 20,
+        "bodyLateral": 0,
+        "steer": 0.5,
+        "frontSplit": 0,
+        "burnoutState": 0,
+        "burnoutTraction": 1,
+        "groundLeft": true,
+        "groundRight": true
+      },
+      "expected": {
+        "tires": [
+          {
+            "driveTorque": 0,
+            "tractionBoost": 1,
+            "driftFriction": 1,
+            "brake": 0,
+            "ebrake": 0
+          },
+          {
+            "driveTorque": 0,
+            "tractionBoost": 1,
+            "driftFriction": 1,
+            "brake": 0,
+            "ebrake": 0
+          },
+          {
+            "driveTorque": 500,
+            "tractionBoost": 1,
+            "driftFriction": 1,
+            "brake": 0,
+            "ebrake": 0
+          },
+          {
+            "driveTorque": 500,
+            "tractionBoost": 1,
+            "driftFriction": 1,
+            "brake": 0,
+            "ebrake": 0
+          }
+        ]
+      }
+    },
+    {
+      "name": "left_partial",
+      "input": {
+        "slip": 20,
+        "lateral": -3,
+        "bodyForward": 10,
+        "bodyLateral": 0,
+        "steer": -0.5,
+        "frontSplit": 0,
+        "burnoutState": 0,
+        "burnoutTraction": 1,
+        "groundLeft": true,
+        "groundRight": true
+      },
+      "expected": {
+        "tires": [
+          {
+            "driveTorque": 0,
+            "tractionBoost": 1,
+            "driftFriction": 1,
+            "brake": 0,
+            "ebrake": 0
+          },
+          {
+            "driveTorque": 0,
+            "tractionBoost": 1,
+            "driftFriction": 1,
+            "brake": 0,
+            "ebrake": 0
+          },
+          {
+            "driveTorque": 383.9533386,
+            "tractionBoost": 1,
+            "driftFriction": 1,
+            "brake": 0,
+            "ebrake": 0
+          },
+          {
+            "driveTorque": 441.9766541,
+            "tractionBoost": 1.232093334,
+            "driftFriction": 1,
+            "brake": 0,
+            "ebrake": 0
+          }
+        ]
+      }
+    },
+    {
+      "name": "right_partial",
+      "input": {
+        "slip": 20,
+        "lateral": 3,
+        "bodyForward": 10,
+        "bodyLateral": 0,
+        "steer": 0.5,
+        "frontSplit": 0,
+        "burnoutState": 0,
+        "burnoutTraction": 1,
+        "groundLeft": true,
+        "groundRight": true
+      },
+      "expected": {
+        "tires": [
+          {
+            "driveTorque": 0,
+            "tractionBoost": 1,
+            "driftFriction": 1,
+            "brake": 0,
+            "ebrake": 0
+          },
+          {
+            "driveTorque": 0,
+            "tractionBoost": 1,
+            "driftFriction": 1,
+            "brake": 0,
+            "ebrake": 0
+          },
+          {
+            "driveTorque": 441.9766541,
+            "tractionBoost": 1.232093334,
+            "driftFriction": 1,
+            "brake": 0,
+            "ebrake": 0
+          },
+          {
+            "driveTorque": 383.9533386,
+            "tractionBoost": 1,
+            "driftFriction": 1,
+            "brake": 0,
+            "ebrake": 0
+          }
+        ]
+      }
+    },
+    {
+      "name": "left_full",
+      "input": {
+        "slip": 40,
+        "lateral": -20,
+        "bodyForward": 10,
+        "bodyLateral": 0,
+        "steer": -1,
+        "frontSplit": 0,
+        "burnoutState": 0,
+        "burnoutTraction": 1,
+        "groundLeft": true,
+        "groundRight": true
+      },
+      "expected": {
+        "tires": [
+          {
+            "driveTorque": 0,
+            "tractionBoost": 1,
+            "driftFriction": 1,
+            "brake": 0,
+            "ebrake": 0
+          },
+          {
+            "driveTorque": 0,
+            "tractionBoost": 1,
+            "driftFriction": 1,
+            "brake": 0,
+            "ebrake": 0
+          },
+          {
+            "driveTorque": 0,
+            "tractionBoost": 1,
+            "driftFriction": 1,
+            "brake": 0,
+            "ebrake": 0
+          },
+          {
+            "driveTorque": 250,
+            "tractionBoost": 2,
+            "driftFriction": 1,
+            "brake": 0,
+            "ebrake": 0
+          }
+        ]
+      }
+    },
+    {
+      "name": "right_full",
+      "input": {
+        "slip": 40,
+        "lateral": 20,
+        "bodyForward": 10,
+        "bodyLateral": 0,
+        "steer": 1,
+        "frontSplit": 0,
+        "burnoutState": 0,
+        "burnoutTraction": 1,
+        "groundLeft": true,
+        "groundRight": true
+      },
+      "expected": {
+        "tires": [
+          {
+            "driveTorque": 0,
+            "tractionBoost": 1,
+            "driftFriction": 1,
+            "brake": 0,
+            "ebrake": 0
+          },
+          {
+            "driveTorque": 0,
+            "tractionBoost": 1,
+            "driftFriction": 1,
+            "brake": 0,
+            "ebrake": 0
+          },
+          {
+            "driveTorque": 250,
+            "tractionBoost": 2,
+            "driftFriction": 1,
+            "brake": 0,
+            "ebrake": 0
+          },
+          {
+            "driveTorque": 0,
+            "tractionBoost": 1,
+            "driftFriction": 1,
+            "brake": 0,
+            "ebrake": 0
+          }
+        ]
+      }
+    },
+    {
+      "name": "opposite_steer_no_cut",
+      "input": {
+        "slip": 40,
+        "lateral": 20,
+        "bodyForward": 10,
+        "bodyLateral": 0,
+        "steer": -1,
+        "frontSplit": 0,
+        "burnoutState": 0,
+        "burnoutTraction": 1,
+        "groundLeft": true,
+        "groundRight": true
+      },
+      "expected": {
+        "tires": [
+          {
+            "driveTorque": 0,
+            "tractionBoost": 1,
+            "driftFriction": 1,
+            "brake": 0,
+            "ebrake": 0
+          },
+          {
+            "driveTorque": 0,
+            "tractionBoost": 1,
+            "driftFriction": 1,
+            "brake": 0,
+            "ebrake": 0
+          },
+          {
+            "driveTorque": 500,
+            "tractionBoost": 1,
+            "driftFriction": 1,
+            "brake": 0,
+            "ebrake": 0
+          },
+          {
+            "driveTorque": 500,
+            "tractionBoost": 1,
+            "driftFriction": 1,
+            "brake": 0,
+            "ebrake": 0
+          }
+        ]
+      }
+    },
+    {
+      "name": "awd_weighted",
+      "input": {
+        "slip": 40,
+        "lateral": 20,
+        "bodyForward": 10,
+        "bodyLateral": 0,
+        "steer": 1,
+        "frontSplit": 0.5,
+        "burnoutState": 0,
+        "burnoutTraction": 1,
+        "groundLeft": true,
+        "groundRight": true
+      },
+      "expected": {
+        "tires": [
+          {
+            "driveTorque": 190.7894745,
+            "tractionBoost": 1.473684192,
+            "driftFriction": 1,
+            "brake": 0,
+            "ebrake": 0
+          },
+          {
+            "driveTorque": 131.578949,
+            "tractionBoost": 1,
+            "driftFriction": 1,
+            "brake": 0,
+            "ebrake": 0
+          },
+          {
+            "driveTorque": 190.7894745,
+            "tractionBoost": 1.473684192,
+            "driftFriction": 1,
+            "brake": 0,
+            "ebrake": 0
+          },
+          {
+            "driveTorque": 131.578949,
+            "tractionBoost": 1,
+            "driftFriction": 1,
+            "brake": 0,
+            "ebrake": 0
+          }
+        ]
+      }
+    },
+    {
+      "name": "burnout_bit1",
+      "input": {
+        "slip": 40,
+        "lateral": 20,
+        "bodyForward": 10,
+        "bodyLateral": 0,
+        "steer": 1,
+        "frontSplit": 0,
+        "burnoutState": 5,
+        "burnoutTraction": 0.6000000238,
+        "groundLeft": true,
+        "groundRight": true
+      },
+      "expected": {
+        "tires": [
+          {
+            "driveTorque": 0,
+            "tractionBoost": 1,
+            "driftFriction": 1,
+            "brake": 0,
+            "ebrake": 0
+          },
+          {
+            "driveTorque": 0,
+            "tractionBoost": 1,
+            "driftFriction": 1,
+            "brake": 0,
+            "ebrake": 0
+          },
+          {
+            "driveTorque": 300,
+            "tractionBoost": 1,
+            "driftFriction": 1,
+            "brake": 0,
+            "ebrake": 0
+          },
+          {
+            "driveTorque": 700,
+            "tractionBoost": 0.6000000238,
+            "driftFriction": 1,
+            "brake": 0,
+            "ebrake": 0
+          }
+        ]
+      }
+    },
+    {
+      "name": "burnout_bit2",
+      "input": {
+        "slip": 40,
+        "lateral": 20,
+        "bodyForward": 10,
+        "bodyLateral": 0,
+        "steer": 1,
+        "frontSplit": 0,
+        "burnoutState": 6,
+        "burnoutTraction": 0.6000000238,
+        "groundLeft": true,
+        "groundRight": true
+      },
+      "expected": {
+        "tires": [
+          {
+            "driveTorque": 0,
+            "tractionBoost": 1,
+            "driftFriction": 1,
+            "brake": 0,
+            "ebrake": 0
+          },
+          {
+            "driveTorque": 0,
+            "tractionBoost": 1,
+            "driftFriction": 1,
+            "brake": 0,
+            "ebrake": 0
+          },
+          {
+            "driveTorque": 700,
+            "tractionBoost": 0.6000000238,
+            "driftFriction": 1,
+            "brake": 0,
+            "ebrake": 0
+          },
+          {
+            "driveTorque": 300,
+            "tractionBoost": 1,
+            "driftFriction": 1,
+            "brake": 0,
+            "ebrake": 0
+          }
+        ]
+      }
+    },
+    {
+      "name": "burnout_no_bits",
+      "input": {
+        "slip": 40,
+        "lateral": 20,
+        "bodyForward": 10,
+        "bodyLateral": 0,
+        "steer": 1,
+        "frontSplit": 0,
+        "burnoutState": 4,
+        "burnoutTraction": 0.6000000238,
+        "groundLeft": true,
+        "groundRight": true
+      },
+      "expected": {
+        "tires": [
+          {
+            "driveTorque": 0,
+            "tractionBoost": 1,
+            "driftFriction": 1,
+            "brake": 0,
+            "ebrake": 0
+          },
+          {
+            "driveTorque": 0,
+            "tractionBoost": 1,
+            "driftFriction": 1,
+            "brake": 0,
+            "ebrake": 0
+          },
+          {
+            "driveTorque": 250,
+            "tractionBoost": 2,
+            "driftFriction": 1,
+            "brake": 0,
+            "ebrake": 0
+          },
+          {
+            "driveTorque": 0,
+            "tractionBoost": 1,
+            "driftFriction": 1,
+            "brake": 0,
+            "ebrake": 0
+          }
+        ]
+      }
+    },
+    {
+      "name": "airborne_right_no_drive",
+      "input": {
+        "slip": 40,
+        "lateral": 20,
+        "bodyForward": 10,
+        "bodyLateral": 0,
+        "steer": 1,
+        "frontSplit": 0,
+        "burnoutState": 0,
+        "burnoutTraction": 1,
+        "groundLeft": true,
+        "groundRight": false
+      },
+      "expected": {
+        "tires": [
+          {
+            "driveTorque": 0,
+            "tractionBoost": 1,
+            "driftFriction": 1,
+            "brake": 0,
+            "ebrake": 0
+          },
+          {
+            "driveTorque": 0,
+            "tractionBoost": 1,
+            "driftFriction": 1,
+            "brake": 0,
+            "ebrake": 0
+          },
+          {
+            "driveTorque": 250,
+            "tractionBoost": 2,
+            "driftFriction": 1,
+            "brake": 0,
+            "ebrake": 0
+          },
+          {
+            "driveTorque": 0,
+            "tractionBoost": 1,
+            "driftFriction": 1,
+            "brake": 0,
+            "ebrake": 0
+          }
+        ]
+      }
+    }
+  ],
+  "burnout": [
+    {
+      "name": "init_left",
+      "input": {
+        "state": 0,
+        "time": 0,
+        "allow": 0,
+        "traction": 1,
+        "dt": 0.01666666754,
+        "speedMph": 0,
+        "slip": 5,
+        "wheel": 2,
+        "slipDegrees": 0
+      },
+      "expected": {
+        "state": 4,
+        "time": 2,
+        "traction": 0.571428597,
+        "allow": 0
+      }
+    },
+    {
+      "name": "init_right",
+      "input": {
+        "state": 0,
+        "time": 0,
+        "allow": 0,
+        "traction": 1,
+        "dt": 0.01666666754,
+        "speedMph": 0,
+        "slip": 5,
+        "wheel": 3,
+        "slipDegrees": 0
+      },
+      "expected": {
+        "state": 5,
+        "time": 2,
+        "traction": 0.571428597,
+        "allow": 0
+      }
+    },
+    {
+      "name": "init_speed_boundary",
+      "input": {
+        "state": 0,
+        "time": 0,
+        "allow": 0,
+        "traction": 1,
+        "dt": 0.01666666754,
+        "speedMph": 20,
+        "slip": 5,
+        "wheel": 2,
+        "slipDegrees": 0
+      },
+      "expected": {
+        "state": 0,
+        "time": 0,
+        "traction": 1,
+        "allow": 0
+      }
+    },
+    {
+      "name": "init_slip_boundary",
+      "input": {
+        "state": 0,
+        "time": 0,
+        "allow": 0,
+        "traction": 1,
+        "dt": 0.01666666754,
+        "speedMph": 0,
+        "slip": 0.5,
+        "wheel": 2,
+        "slipDegrees": 0
+      },
+      "expected": {
+        "state": 0,
+        "time": 0,
+        "traction": 1,
+        "allow": 0
+      }
+    },
+    {
+      "name": "timer_exact_zero",
+      "input": {
+        "state": 5,
+        "time": 0.1000000015,
+        "allow": 0,
+        "traction": 0.6000000238,
+        "dt": 0.1000000015,
+        "speedMph": 10,
+        "slip": 5,
+        "wheel": 2,
+        "slipDegrees": 0
+      },
+      "expected": {
+        "state": 5,
+        "time": 0,
+        "traction": 0.6000000238,
+        "allow": 0
+      }
+    },
+    {
+      "name": "timer_negative_decrement",
+      "input": {
+        "state": 5,
+        "time": 0.09000000358,
+        "allow": 0,
+        "traction": 0.6000000238,
+        "dt": 0.1000000015,
+        "speedMph": 10,
+        "slip": 5,
+        "wheel": 2,
+        "slipDegrees": 0
+      },
+      "expected": {
+        "state": 4,
+        "time": 2,
+        "traction": 0.6000000238,
+        "allow": 0
+      }
+    },
+    {
+      "name": "cancel_allow_exact_one",
+      "input": {
+        "state": 5,
+        "time": 1,
+        "allow": 0.8999999762,
+        "traction": 0.6000000238,
+        "dt": 0.1000000015,
+        "speedMph": 10,
+        "slip": 0,
+        "wheel": 2,
+        "slipDegrees": 0
+      },
+      "expected": {
+        "state": 5,
+        "time": 1,
+        "traction": 0.6000000238,
+        "allow": 1
+      }
+    },
+    {
+      "name": "cancel_allow_over_one",
+      "input": {
+        "state": 5,
+        "time": 1,
+        "allow": 0.9100000262,
+        "traction": 0.6000000238,
+        "dt": 0.1000000015,
+        "speedMph": 10,
+        "slip": 0,
+        "wheel": 2,
+        "slipDegrees": 0
+      },
+      "expected": {
+        "state": 0,
+        "time": 0,
+        "traction": 1,
+        "allow": 0
+      }
+    },
+    {
+      "name": "cancel_large_yaw",
+      "input": {
+        "state": 5,
+        "time": 1,
+        "allow": 0,
+        "traction": 0.6000000238,
+        "dt": 0.1000000015,
+        "speedMph": 6,
+        "slip": 5,
+        "wheel": 2,
+        "slipDegrees": 30
+      },
+      "expected": {
+        "state": 0,
+        "time": 0,
+        "traction": 1,
+        "allow": 0
+      }
+    },
+    {
+      "name": "no_yaw_cancel_low_speed",
+      "input": {
+        "state": 5,
+        "time": 1,
+        "allow": 0,
+        "traction": 0.6000000238,
+        "dt": 0.1000000015,
+        "speedMph": 5,
+        "slip": 5,
+        "wheel": 2,
+        "slipDegrees": 30
+      },
+      "expected": {
+        "state": 5,
+        "time": 0.8999999762,
+        "traction": 0.6000000238,
+        "allow": 0
+      }
+    }
+  ],
+  "yawBoost": [
+    {
+      "name": "normal",
+      "input": {
+        "slipRadians": 0.200000003,
+        "ebrake": 0,
+        "speed": 15,
+        "yawControl": 1,
+        "grade": 0
+      },
+      "expected": 1.100000024
+    },
+    {
+      "name": "capped",
+      "input": {
+        "slipRadians": 1,
+        "ebrake": 0,
+        "speed": 100,
+        "yawControl": 2,
+        "grade": 0
+      },
+      "expected": 1.350000024
+    },
+    {
+      "name": "ebrake_suppressed",
+      "input": {
+        "slipRadians": 0.200000003,
+        "ebrake": 1,
+        "speed": 30,
+        "yawControl": 1,
+        "grade": 0
+      },
+      "expected": 1
+    },
+    {
+      "name": "grade_not_capped",
+      "input": {
+        "slipRadians": 1,
+        "ebrake": 0,
+        "speed": 100,
+        "yawControl": 2,
+        "grade": -0.8000000119
+      },
+      "expected": 2.149999857
+    },
+    {
+      "name": "negative_speed_unclamped",
+      "input": {
+        "slipRadians": 0.200000003,
+        "ebrake": 0,
+        "speed": -10,
+        "yawControl": 1,
+        "grade": 0
+      },
+      "expected": 0.9333333373
+    }
+  ],
+  "tuneOrder": [
+    {
+      "inputPreviousDriftValue": 0,
+      "expected": {
+        "state": 2,
+        "value": 0.1333333403,
+        "dampingTorque": 480.0000305,
+        "rearFriction": 0.7385840416,
+        "tires": [
+          {
+            "driveTorque": 0,
+            "tractionBoost": 1,
+            "driftFriction": 1,
+            "brake": 0,
+            "ebrake": 0
+          },
+          {
+            "driveTorque": 0,
+            "tractionBoost": 1,
+            "driftFriction": 1,
+            "brake": 0,
+            "ebrake": 0
+          },
+          {
+            "driveTorque": 0,
+            "tractionBoost": 1.350000024,
+            "driftFriction": 0.7385840416,
+            "brake": 0,
+            "ebrake": 0
+          },
+          {
+            "driveTorque": 0,
+            "tractionBoost": 1.350000024,
+            "driftFriction": 0.7385840416,
+            "brake": 0,
+            "ebrake": 0
+          }
+        ]
+      }
+    },
+    {
+      "inputPreviousDriftValue": 0.5,
+      "expected": {
+        "state": 2,
+        "value": 0.6333333254,
+        "dampingTorque": 2280,
+        "rearFriction": 0.3400000036,
+        "tires": [
+          {
+            "driveTorque": 0,
+            "tractionBoost": 1,
+            "driftFriction": 1,
+            "brake": 0,
+            "ebrake": 0
+          },
+          {
+            "driveTorque": 0,
+            "tractionBoost": 1,
+            "driftFriction": 1,
+            "brake": 0,
+            "ebrake": 0
+          },
+          {
+            "driveTorque": 0,
+            "tractionBoost": 1.174999952,
+            "driftFriction": 0.3400000036,
+            "brake": 0,
+            "ebrake": 0
+          },
+          {
+            "driveTorque": 0,
+            "tractionBoost": 1.174999952,
+            "driftFriction": 0.3400000036,
+            "brake": 0,
+            "ebrake": 0
+          }
+        ]
+      }
+    },
+    {
+      "inputPreviousDriftValue": 1,
+      "expected": {
+        "state": 2,
+        "value": 1,
+        "dampingTorque": 3600,
+        "rearFriction": 0.3400000036,
+        "tires": [
+          {
+            "driveTorque": 0,
+            "tractionBoost": 1,
+            "driftFriction": 1,
+            "brake": 0,
+            "ebrake": 0
+          },
+          {
+            "driveTorque": 0,
+            "tractionBoost": 1,
+            "driftFriction": 1,
+            "brake": 0,
+            "ebrake": 0
+          },
+          {
+            "driveTorque": 0,
+            "tractionBoost": 1,
+            "driftFriction": 0.3400000036,
+            "brake": 0,
+            "ebrake": 0
+          },
+          {
+            "driveTorque": 0,
+            "tractionBoost": 1,
+            "driftFriction": 0.3400000036,
+            "brake": 0,
+            "ebrake": 0
+          }
+        ]
+      }
+    }
+  ],
+  "provenance": {
+    "source": "work\\mw-research\\prostreet-port\\decomp\\behaviors\\SuspensionRacer.cpp",
+    "sourceSha256": "ed051005245538ec0ed7a9bcf83c128b71aa208ac95b57b2e52442a868a18a52",
+    "headerSha256": "7172851c00a988f0cf610b4aba255a37f15910cf49b9d0f062bd5402207e5712",
+    "method": "Unedited actual C++ bodies, Drift/Burnout/Differential struct definitions and graph/table interpolation; environment/ABI stubs and elementary math helpers",
+    "compiler": "g++ -std=c++20 -O0 -ffp-contract=off",
+    "precision": "float32, original turn-angle inputs",
+    "scope": "isolated upstream port; not original executable equivalence"
+  }
+}

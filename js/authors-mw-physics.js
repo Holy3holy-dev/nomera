@@ -3,6 +3,7 @@
  * which credits Brawltendo's Most-Wanted-Vehicles-Decomp (de70279).
  * Source lineage, units, deviations and license: docs/MW_PHYSICS_PORT.md.
  * Tire/contact integration and remaining limits: docs/MW_TIRES_COLLISIONS.md.
+ * Traction control, burnout and drift: docs/MW_TRACTION_DRIFT.md.
  * This partial adapter does not claim Xbox retail equivalence.
  */
 (function (root, factory) {
@@ -75,7 +76,7 @@
             Object.assign(this,{radius:Math.max(.1,radius),front,gripScale,staticGrip,dynamicGrip,brakeLock});
             this.omega=0;this.load=0;this.roadSpeed=0;this.angularAcc=0;this.lastTorque=0;
             this.traction=1;this.slip=0;this.slipAngle=0;this.locked=false;this.lastSign=0;
-            this.fx=0;this.fy=0;
+            this.fx=0;this.fy=0;this.lateralSpeed=0;
         }
         checkLock(groundForce,brakeTorque,ebrakeTorque) {
             const available=(brakeTorque*this.brakeLock+ebrakeTorque)*1.2;
@@ -103,7 +104,7 @@
             }
             if(this.load<=0&&!this.locked)this.omega=forward/r;
             const roadAcc=(forward-this.roadSpeed)/dt;
-            this.roadSpeed=forward;this.load=Math.max(0,load);
+            this.roadSpeed=forward;this.load=Math.max(0,load);this.lateralSpeed=lateral;
             if(!this.locked){
                 if(Math.abs(forward)<1)torque=torque*(1-handbrake)-(brake+handbrake)*load*forward/r;
                 else torque+=(this.omega>0?-1:1)*(bt+ebt);
@@ -165,6 +166,107 @@
         if(sum<1e-7)return[bias,1-bias];
         return[clamp((1-factor)*bias+factor*Math.abs(b)/sum,0,1),clamp((1-factor)*(1-bias)+factor*Math.abs(a)/sum,0,1)];
     }
+    function graph(points,x){
+        if(x<=points[0][0])return points[0][1];
+        for(let i=1;i<points.length;i++)if(x<=points[i][0])return mix(points[i-1][1],points[i][1],(x-points[i-1][0])/(points[i][0]-points[i-1][0]));
+        return points[points.length-1][1];
+    }
+    const DRIFT_STATES=Object.freeze(['D_OUT','D_ENTER','D_IN','D_EXIT']);
+    const DRIFT_STABILIZER=[[0,0],[.2617994,.1],[.52359879,.45],[.78539819,.85],[1.0471976,.95],[1.5533431,1.15],[1.5707964,0]];
+    const DRIFT_REAR=[1.1,.95,.87,.77,.67,.6,.51,.43,.37,.34];
+    class Burnout {
+        constructor(){this.reset();}
+        reset(){this.state=0;this.time=0;this.traction=1;this.allow=0;}
+        step(dt,{speedMph=0,slip=0,wheel=0,beta=0}={}){
+            if(!(dt>0))return this;
+            if(this.state){
+                if(speedMph>5&&Math.abs(beta)>.5)this.reset();
+                else if(slip<.5){this.allow+=dt;if(this.allow>1)this.reset();}
+                else {this.allow=0;this.time-=dt;if(this.time<0){this.state--;this.time=2;}}
+            }else if(speedMph<20&&slip>.5){
+                const friction=graph([[0,1],[5,.8],[9,.9],[12.6,.833],[17.1,.72],[25,.65]],slip);
+                this.traction=friction/1.4;this.state=Math.trunc(6*(1.5-friction)+(wheel&1));this.time=2;this.allow=0;
+            }
+            return this;
+        }
+    }
+    // DoDriveForces consumes previous-frame tire telemetry and burnout state.
+    // It limits the slipping side's torque; it does not filter steering input.
+    function driveControl({torque=0,frontShare=0,wheels=[],burnout={state:0,traction:1},steer=0,forward=0,lateral=0,factor=[.8,.8]}={}){
+        const output={torques:[0,0,0,0],boost:[1,1,1,1],control:[1,1,1,1],splits:[.5,.5,.5,.5],active:false};
+        for(let axle=0;axle<2;axle++){
+            const share=axle===0?frontShare:1-frontShare,axleTorque=torque*share;
+            if(Math.abs(axleTorque)<1e-7)continue;
+            const pair=wheels.slice(axle*2,axle*2+2);
+            if(pair.length<2)continue;
+            let bias=.5,locked=false;
+            if(burnout.state&1){output.boost[axle*2+1]=burnout.traction;bias=burnout.traction*.5;locked=true;}
+            else if(burnout.state&2){output.boost[axle*2]=burnout.traction;bias=1-burnout.traction*.5;locked=true;}
+            else {
+                const fwdSlip=share*(pair[0].slip+pair[1].slip)*.5;
+                const latSlip=share*((pair[0].lateralSpeed||0)+(pair[1].lateralSpeed||0))*.5;
+                const deltaLat=latSlip-lateral;
+                if(deltaLat*steer>0&&axleTorque*fwdSlip>0){
+                    const deltaFwd=fwdSlip-forward;
+                    let limit=clamp((deltaFwd-1)/19,0,1);
+                    if(limit>0){
+                        const angle=Math.abs(steer*Math.atan2(deltaLat,Math.abs(deltaFwd))*180/Math.PI);
+                        limit*=clamp((angle-1)/15,0,1);
+                        if(limit>0){
+                            const slipping=deltaLat>0?1:0,other=1-slipping;
+                            output.control[axle*2+slipping]=1-limit;
+                            output.control[axle*2+other]=1-limit*.5;
+                            output.boost[axle*2+other]=1+limit;output.active=true;
+                        }
+                    }
+                }
+            }
+            const split=differential({omega:pair.map(t=>t.omega),contact:pair.map(t=>t.load>0),bias,locked,factor:factor[axle]});
+            for(let i=0;i<2;i++){
+                const index=axle*2+i;output.splits[index]=split[i];
+                if(pair[i].load>0)output.torques[index]=axleTorque*split[i]*output.control[index];
+                else output.boost[index]=1;
+            }
+        }
+        return output;
+    }
+    function yawFrictionBoost({beta=0,handbrake=0,speed=0,limit=0,grade=0}={}){
+        const base=1+Math.abs(grade);
+        return handbrake>.5&&Math.abs(beta)<20*Math.PI/180?base:base+Math.min(.35,Math.abs(beta)*limit*speed/30);
+    }
+    class DriftController {
+        constructor({yawControl=[.1,.4,.6,1]}={}){this.yawCurve=yawControl;this.reset();}
+        reset(){this.state=0;this.value=0;this.yawControl=1;this.result=null;}
+        step(dt,{beta=0,yawRate=0,speed=0,maxSpeed=80,steer=0,averageSteer=0,gas=0,handbrake=0,grounded=4,grade=0,staging=false,drag=false,stabilityOff=false}={}){
+            if(!(dt>0))return this.result||{state:0,stateName:'D_OUT',value:0,rearFriction:1,rearTractionBoost:1,dampingRate:0,counterSteer:0};
+            // TuneWheelParams uses the old drift blend before DoDrifting.
+            this.yawControl=handbrake>=.5?Math.max(.5,this.yawControl-20*dt):Math.min(1,this.yawControl+dt);
+            let limit=maxSpeed>0?table(this.yawCurve,Math.abs(speed)/maxSpeed,0,1):0;
+            if(drag)limit=.1;else if(stabilityOff)limit+=2.5;
+            const absBeta=Math.abs(beta);
+            const yawBoost=yawFrictionBoost({beta,handbrake,speed,limit,grade});
+            const rearTractionBoost=1+this.yawControl*(1-this.value)*(yawBoost-1);
+            let rearFriction=1,dampingRate=0,counterSteer=0;
+            if(this.state&&(staging||drag)){this.state=0;this.value=0;}
+            else {
+                this.value+=([1,2].includes(this.state)?8:-2)*dt;
+                if(this.value<=0){this.state=0;this.value=0;}else if(this.value>=1){this.state=2;this.value=1;}
+                const threshold=12*Math.PI/180,minSpeed=30*.44703;
+                if(this.state>1){
+                    if(yawRate*beta<0&&absBeta<=Math.PI/2&&speed>minSpeed&&averageSteer*beta<=0&&absBeta>threshold)this.state=2;
+                    else if(gas*steer*beta>threshold&&speed>minSpeed)this.state=2;
+                    else if(gas*absBeta>threshold)this.state=1;
+                    else this.state=3;
+                }else if(speed>minSpeed&&(handbrake>.5||absBeta>threshold))this.state=1;
+                if(this.value>0){
+                    if(beta*yawRate<0&&grounded>=2)dampingRate=this.value*graph(DRIFT_STABILIZER,absBeta)*4;
+                    if(steer*beta>0)counterSteer=Math.abs(steer);
+                    rearFriction=table(DRIFT_REAR,(absBeta*.5+counterSteer*4+Math.abs(yawRate)*.5)*this.value,0,1);
+                }
+            }
+            return this.result={state:this.state,stateName:DRIFT_STATES[this.state],value:this.value,rearFriction,rearTractionBoost,dampingRate,counterSteer};
+        }
+    }
     // Matching DoWallSteer nose branch. Contact eligibility/units are supplied
     // by our host, not by the unavailable original collision-event ABI.
     function wallSteer({wall=0,input=0,gas=0,grounded=4,dt=1/60}={}){
@@ -174,6 +276,7 @@
     const REMAP = [-1,-.736,-.542,-.4,-.292,-.214,-.16,-.123,-.078,-.036,0,.036,.078,.123,.16,.214,.292,.4,.542,.736,1];
     class SteeringController {
         constructor(){this.time=0;this.inputs=[];this.speeds=[];this.lastInput=0;this.angle=0;this.lastMaximum=0;}
+        get averageInput(){return this.inputs.length?this.inputs.reduce((sum,s)=>sum+s.value,0)/this.inputs.length:0;}
         step(dt,{input=0,speedMps=0,gas=0,brake=0,handbrake=0,rearSlipDeg=0,collisionTimer=0}={}){
             if(!Number.isFinite(dt)||dt<=0)return{angleDeg:this.angle,maxSteerDeg:this.lastMaximum,rateDegPerSec:0};
             this.time+=dt;
@@ -255,6 +358,6 @@
         try { return window.localStorage.getItem('authors_mw_physics_v1') !== 'classic'; }
         catch (_) { return true; }
     }
-    return Object.freeze({ torque, shiftPoints, clutch, tireForce, Tire, tireFrame, differential, wallSteer, steeringRange, steeringRate, SteeringController, springForce, staticCompression, Suspension,
+    return Object.freeze({ torque, shiftPoints, clutch, tireForce, Tire, tireFrame, differential, driveControl, Burnout, DriftController, yawFrictionBoost, wallSteer, steeringRange, steeringRate, SteeringController, springForce, staticCompression, Suspension,
         createSpec, selected, REFERENCE, LOAD });
 }));

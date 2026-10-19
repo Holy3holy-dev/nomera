@@ -20823,6 +20823,10 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 };
 
                 steerZone.addEventListener('pointerdown', (e) => {
+                    // The arrow buttons own their pointers. Letting the parent
+                    // zone capture them too steals capture and can reverse or
+                    // retain steering during multi-touch countersteering.
+                    if(e.target&&typeof e.target.closest==='function'&&e.target.closest('button, .touch-btn'))return;
                     if (e && e.cancelable) e.preventDefault();
                     steerPointerId = e.pointerId;
                     if (typeof steerZone.setPointerCapture === 'function') {

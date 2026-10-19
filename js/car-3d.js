@@ -14671,7 +14671,10 @@
                 // chassis used by the circuit. Neutral steering gently aligns
                 // the chassis with the highway; traffic/road curvature stay here.
                 const roadInput=(keys.left?1:0)-(keys.right?1:0);
-                physical.state.heading=Math.max(-.28,Math.min(.28,physical.state.heading));
+                // Road-coordinate bridge: allow a deeper body angle during a
+                // physical drift; normal lane steering keeps its existing limit.
+                const headingLimit=(isHandbrake||physical.state.driftValue>.18) ? .65 : .28;
+                physical.state.heading=Math.max(-headingLimit,Math.min(headingLimit,physical.state.heading));
                 if(!roadInput&&!isHandbrake)physical.state.heading*=Math.exp(-8*dt);
                 const roadH=physical.state.heading,roadForward=Math.max(0,state.speed/3.6);
                 physical.state.vForward=roadForward*Math.cos(roadH)+state.vx*Math.sin(roadH);
@@ -15015,9 +15018,14 @@
 
             const isSteeringNeutral = (steerInput === 0);
             const hasLateralSlide = Math.abs(state.vx) > (1.2 * weatherGrip) && state.speed > 30;
-            const isCounterSteering = state.vx * steerInput < 0; // steering opposite to slide
+            const isCounterSteering = this.mwLongitudinal ? this.mwLongitudinal.state.isCounterSteering : state.vx * steerInput < 0;
             const isWetSlide = (weatherGrip < 0.88 && Math.abs(steerInput) > 0 && state.speed > 95 && Math.abs(state.vx) > lateralMax * 0.62);
-            const isDriftingNow = (isHandbrake && (Math.abs(steerInput) > 0 || hasLateralSlide)) || (state.isDrifting && hasLateralSlide) || isWetSlide;
+            const isDriftingNow = this.mwLongitudinal ? this.mwLongitudinal.state.isDrifting : (isHandbrake && (Math.abs(steerInput) > 0 || hasLateralSlide)) || (state.isDrifting && hasLateralSlide) || isWetSlide;
+            if(this.mwLongitudinal){
+                state.driftAngle=this.mwLongitudinal.state.chassisSlipAngle;
+                state.tractionControl=this.mwLongitudinal.state.tractionControl;
+                state.driftControl=this.mwLongitudinal.state.driftControl;
+            }
 
             // Cornering stiffness factor scales with weatherGrip and Pacejka tire saturation curve
             const pacejkaSaturation = Math.abs(slipAngle) > 0.01
@@ -15114,7 +15122,7 @@
                 const weatherSlipMult = 1.0 + (1.0 - weatherGrip) * 0.85;
                 const baseDriftAngle = slipRatio * 0.52 * weatherSlipMult; // car angles into the slide (+X yaw > 0 points to screen left)
                 // Counter-steer adjustment: nose aligns slightly with counter-steer
-                const targetYaw = baseDriftAngle + (isCounterSteering ? steerInput * 0.12 : 0);
+                const targetYaw = this.mwLongitudinal ? this.mwLongitudinal.heading : baseDriftAngle + (isCounterSteering ? steerInput * 0.12 : 0);
                 state.yawAngle += (targetYaw - state.yawAngle) * Math.min(1, 10 * dt);
 
                 let driftMultiplier = state.driftCombo;
@@ -15140,7 +15148,7 @@
                     if (Math.abs(state.yawAngle) < 0.0008) state.yawAngle = 0;
                 } else {
                     const weatherSlipMult = 1.0 + (1.0 - weatherGrip) * 0.75;
-                    const normalTurnYaw = steerInput * Math.min(0.24 * weatherSlipMult, (Math.abs(state.vx) / lateralMax) * 0.18 * weatherSlipMult);
+                    const normalTurnYaw = this.mwLongitudinal ? this.mwLongitudinal.heading : steerInput * Math.min(0.24 * weatherSlipMult, (Math.abs(state.vx) / lateralMax) * 0.18 * weatherSlipMult);
                     state.yawAngle += (normalTurnYaw - state.yawAngle) * Math.min(1, 8 * dt);
                 }
                 if (state.driftDuration > 0 || state.driftCurrentScore > 0) {
@@ -15378,7 +15386,7 @@
 
                 // Rotate dedicated procedural wheel spinners around local hub axis
                 if (this.authorsWheelRig) {
-                    window.NomeraWheelRig.update(this.authorsWheelRig,{dt,speedMps:forwardSpeedMps,steer:steerAngleRad,handbrake:isHandbrake,compression:this.mwLongitudinal?.state.suspensionOffsets});
+                    window.NomeraWheelRig.update(this.authorsWheelRig,{dt,speedMps:forwardSpeedMps,steer:steerAngleRad,angles:this.mwLongitudinal?.state.wheelAngles,handbrake:isHandbrake,compression:this.mwLongitudinal?.state.suspensionOffsets});
                 } else if (this.playerWheels && this.playerWheels.length > 0) {
                     const wheelRotSpeed = (forwardSpeedMps / 0.33) * dt;
                     this.playerWheels.forEach(spinner => {
@@ -16455,6 +16463,7 @@
             const modeIdx = isCockpit ? 4 : (isTopDown ? 3 : (isHood ? 2 : (this.cameraMode === 'chase_close' ? 1 : (typeof this.cameraMode === 'number' ? this.cameraMode : 0))));
             const mode = this.cameraModes[modeIdx] || this.cameraModes[0];
             const isPortrait = this.camera && this.camera.aspect < 1.0;
+            const mwPortraitChase=!!this.mwLongitudinal&&isPortrait&&!isHood&&!isTopDown&&!isCockpit;
 
             if (this.cockpitGroup && this.cockpitGroup.visible !== isCockpit) {
                 this.syncCockpitCarVisibility(isCockpit);
@@ -16471,7 +16480,7 @@
             const sinYaw = Math.sin(yaw);
             const targetCamX = isCockpit
                 ? (state.x + mode.offset.x * cosYaw + mode.offset.z * sinYaw)
-                : (isTopDown ? (state.x * 0.65) : (isHood ? state.x : state.x * 0.75));
+                : (isTopDown ? (state.x * 0.65) : (isHood||mwPortraitChase ? state.x : state.x * 0.75));
             const targetCamY = isCockpit
                 ? (mode.offset.y + (state.downforceY || 0) + (state.suspensionY || 0))
                 : (mode.offset.y + (isPortrait && !isHood && !isTopDown ? 0.85 : 0));
@@ -16480,7 +16489,7 @@
                 : (state.z + mode.offset.z - (isPortrait && !isHood && !isTopDown && !isCockpit ? 1.05 : 0) - accelLag * Math.min(1.0, state.speed / 100));
 
             // 2. Smooth spring follow for camera position (glides smoothly across lanes without snapping)
-            const posLerp = isCockpit ? 28.0 : (isHood ? 16.0 : (isTopDown ? 12.0 : 6.0));
+            const posLerp = isCockpit ? 28.0 : (isHood ? 16.0 : (isTopDown||mwPortraitChase ? 12.0 : 6.0));
             if (isCockpit || Math.abs(targetCamY - this.camPos.y) > 8.0) {
                 this.camPos.x = targetCamX;
                 this.camPos.y = targetCamY;
@@ -16516,7 +16525,7 @@
             const driftLookBias = (state.isDrifting && !isHood && !isTopDown && !isCockpit) ? state.yawAngle * 0.16 : 0;
             const targetLookX = isCockpit
                 ? (state.x + mode.lookOffset.x * cosYaw + mode.lookOffset.z * sinYaw)
-                : (isTopDown ? (state.x * 0.65) : (isHood ? state.x : (this.camPos.x * 0.82 + state.x * 0.18 + driftLookBias)));
+                : (isTopDown ? (state.x * 0.65) : (isHood||mwPortraitChase ? state.x : (this.camPos.x * 0.82 + state.x * 0.18 + driftLookBias)));
             const targetLookY = isCockpit
                 ? (mode.lookOffset.y - (state.pitchSquat || 0) * mode.lookOffset.z)
                 : (mode.lookOffset.y - (isPortrait && !isHood && !isTopDown ? 0.45 : 0));

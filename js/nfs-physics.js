@@ -918,6 +918,7 @@
             if(!this.mwKernel?.Tire)return;
             const p=this.profile,s=this.state;
             this.mwTires={};s.tires={};
+            this.mwDrift=new this.mwKernel.DriftController();this.mwBurnout=new this.mwKernel.Burnout();
             for(const key of ['fl','fr','rl','rr']){
                 const tire=new this.mwKernel.Tire({radius:p.wheelRadius,front:key[0]==='f',gripScale:p.tireGripScale,
                     staticGrip:(key[0]==='f'?1.8:2)*p.tireGripScale,dynamicGrip:1.7*p.tireGripScale});
@@ -1284,6 +1285,11 @@
             const gearDirection = s.gear < 0 ? -1 : (s.gear > 0 ? 1 : 0);
             const totalWheelDriveTorque = s.engineTorqueNm * totalGearRatio * 0.92 * s.clutchRatio * gearDirection;
             s.wheelDriveTorqueNm = totalWheelDriveTorque;
+            // The source drive controller uses the LAST tire update and burnout
+            // state, before current suspension/steering/drift tuning.
+            const mwDrive=this.mwTires?this.mwKernel.driveControl({torque:totalWheelDriveTorque,frontShare:p.torqueSplit,
+                wheels:Object.values(this.mwTires),burnout:this.mwBurnout,steer:rawSteer,forward:s.vForward,lateral:s.vLateral}):null;
+            if(mwDrive)s.tractionControl=mwDrive;
 
             // 8. Dynamic 4-Wheel Weight Transfer & Suspension (SuspensionRacer::DoWheelForces)
             // Aerodynamic downforce increases tire vertical load at high speed
@@ -1352,11 +1358,25 @@
             const vLatRear = s.vLateral - Lr * s.yawRate;
             s.slipAngleFront = ((s.steerAngleRad * fwdDirSign) - Math.atan2(vLatFront, effFwdSpeed)) * rollingActivity;
             s.slipAngleRear = -Math.atan2(vLatRear, effFwdSpeed) * rollingActivity;
-            s.chassisSlipAngle = Math.atan2(s.vLateral, effFwdSpeed) * rollingActivity;
+            s.chassisSlipAngle = this.mwTires ? (s.vForward<1?0:Math.atan2(s.vLateral,s.vForward)) : Math.atan2(s.vLateral, effFwdSpeed) * rollingActivity;
 
             // NFS MW Drift State Machine (SuspensionRacer::DoDrifting)
             const chassisSlipDeg = Math.abs(s.chassisSlipAngle) * RAD2DEG;
             s.driftAngleDeg = chassisSlipDeg;
+            let mwDrift=null;
+            if(this.mwTires){
+                // TuneWheelParams updates burnout from previous tire slip, then
+                // advances the source drift machine before evaluating tires.
+                let slip=0,wheel=0;
+                Object.values(this.mwTires).forEach((t,i)=>{if(t.slip>slip){slip=t.slip;wheel=i;}});
+                if(s.gear===1&&throttle>=1)this.mwBurnout.step(dt,{speedMph:s.vForward/.44703,slip,wheel,beta:s.chassisSlipAngle});
+                else this.mwBurnout.reset();
+                mwDrift=this.mwDrift.step(dt,{beta:s.chassisSlipAngle,yawRate:s.yawRate,speed:s.speedMps,maxSpeed:p.topSpeedKmh/3.6,
+                    steer:rawSteer,averageSteer:this.mwSteering.averageInput,gas:throttle,handbrake:ebrake,
+                    grounded:Object.values(this.mwTires).filter(t=>t.load>0).length,grade:Math.sin(s.pitch),stabilityOff:!this.options.stabilityAssist});
+                s.driftState=mwDrift.stateName;s.driftValue=mwDrift.value;s.driftControl=mwDrift;
+                s.burnout={state:this.mwBurnout.state,time:this.mwBurnout.time,traction:this.mwBurnout.traction};
+            } else {
             const isAboveDriftSpeed = s.speedKmh > 38;
             if (isAboveDriftSpeed && (ebrake > 0.4 || chassisSlipDeg > 9.0)) {
                 s.driftState = (s.driftValue > 0.35) ? 'D_IN' : 'D_ENTER';
@@ -1364,6 +1384,7 @@
             } else {
                 s.driftState = (s.driftValue > 0.05) ? 'D_EXIT' : 'D_OUT';
                 s.driftValue = clamp(s.driftValue - 2.4 * dt, 0, 1);
+            }
             }
             s.isDrifting = s.driftValue > 0.18 && s.speedKmh > 32 && chassisSlipDeg > 5.5;
             s.isCounterSteering = s.isDrifting && ((rawSteer * s.vLateral) > 0.05);
@@ -1451,12 +1472,8 @@
             if(this.mwTires){
                 fxFront=0;fxRear=0;fyFront=0;fyRear=0;s.wheelSlipRatio=0;
                 const frame=this.mwKernel.tireFrame(s.speedMps,s.gear<0);
-                const splits={};
-                for(const axle of ['f','r']){
-                    const l=this.mwTires[axle+'l'],r=this.mwTires[axle+'r'];
-                    splits[axle]=this.mwKernel.differential({omega:[l.omega,r.omega],contact:[l.load>0,r.load>0]});
-                }
                 for(const key of ['fl','fr','rl','rr']){
+                    const tireIndex=['fl','fr','rl','rr'].indexOf(key);
                     const front=key[0]==='f',x=(key[1]==='l'?-1:1)*p.trackWidth*.5,z=front?Lf:-Lr;
                     const angle=front?(key[1]==='l'?s.steerLeftRad:s.steerRightRad):0,c=Math.cos(angle),sn=Math.sin(angle);
                     const lat=s.vLateral+z*s.yawRate,fwd=s.vForward-x*s.yawRate;
@@ -1465,10 +1482,11 @@
                     // never re-enters its moving brake-lock check after release.
                     if(!brake&&(front||!ebrake))tire.locked=false;
                     tire.step(dt,{lateral:c*lat-sn*fwd,forward:sn*lat+c*fwd,speed:s.speedMps,load:s.wheelLoads[key],
-                        driveTorque:s.wheelLoads[key]>0?totalWheelDriveTorque*(front?frontShare:rearShare)*splits[key[0]][key[1]==='l'?0:1]:0,
+                        driveTorque:mwDrive.torques[tireIndex],
                         brake,handbrake:front?0:ebrake,brakeCapacity:maxBrakeDecelForce*(front?.64:.36)*.5*p.wheelRadius,
                         ebrakeCapacity:850*1.3558*10*p.massKg/1500,
-                        tractionBoost:frame.tractionBoost*(front?frontGameBreakerBoost:1),gripBoost:frame.gripBoost,lateralBoost:1,
+                        tractionBoost:frame.tractionBoost*mwDrive.boost[tireIndex]*(front?frontGameBreakerBoost:mwDrift.rearTractionBoost),
+                        driftFriction:front?1:mwDrift.rearFriction,gripBoost:frame.gripBoost,lateralBoost:1,
                         maxSlip:frame.maxSlip,lateralGrip:latGripMu,driveGrip:driveGripMu,
                         rollingResistance:surfPreset.rollingResistance});
                     // Source bounds each lateral contact impulse against reversal.
@@ -1553,7 +1571,8 @@
             // NFS MW DriftStabilizerTable: damp yaw rate when yaw opposes slip angle or exceeds safe drift envelope
             const baseYawDamping = -s.yawRate * s.yawInertia * (this.mwKernel ? .15 : (s.isDrifting ? 2.6 : 4.2));
             let stabilizerTorque = 0;
-            if ((s.yawRate * s.chassisSlipAngle) < 0 || Math.abs(s.chassisSlipAngle) > 0.55) {
+            if(this.mwTires)stabilizerTorque=-s.yawRate*s.yawInertia*mwDrift.dampingRate;
+            else if ((s.yawRate * s.chassisSlipAngle) < 0 || Math.abs(s.chassisSlipAngle) > 0.55) {
                 stabilizerTorque = -s.yawRate * s.yawInertia * (this.mwKernel ? .35 : 4.8) * (0.4 + s.driftValue * 0.6);
             }
             if (this.options.stabilityAssist && Math.abs(rawSteer) < 0.05 && ebrake < 0.1) {
