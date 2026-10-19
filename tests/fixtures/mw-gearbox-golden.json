@@ -1,0 +1,2250 @@
+{
+  "shiftPoints": [
+    {
+      "name": "mw_m3gtr",
+      "spec": {
+        "gears": [
+          3.789999962,
+          0,
+          3.400000095,
+          2.085000038,
+          1.5,
+          1.25,
+          1.090000033,
+          0.9100000262
+        ],
+        "torque": [
+          149,
+          179,
+          222,
+          266,
+          283,
+          275,
+          255,
+          235,
+          228
+        ],
+        "shiftSpeed": 0.25,
+        "idle": 800,
+        "redline": 8500,
+        "maxRpm": 9500,
+        "spool": 0.3000000119,
+        "highBoost": 0,
+        "lowBoost": 0,
+        "vacuum": 0
+      },
+      "count": 10,
+      "expected": {
+        "ok": true,
+        "up": [
+          0,
+          0,
+          8400,
+          8400,
+          8400,
+          8400,
+          8400,
+          8500,
+          0,
+          0
+        ],
+        "down": [
+          0,
+          0,
+          0,
+          5151.17627,
+          6043.165039,
+          7000,
+          7324.800293,
+          7012.844238,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "name": "falling_torque_early_shift",
+      "spec": {
+        "gears": [
+          3.789999962,
+          0,
+          3.400000095,
+          2.085000038,
+          1.5,
+          1.25,
+          1.090000033,
+          0.9100000262
+        ],
+        "torque": [
+          300,
+          350,
+          390,
+          410,
+          390,
+          340,
+          260,
+          120,
+          60
+        ],
+        "shiftSpeed": 0.25,
+        "idle": 800,
+        "redline": 8500,
+        "maxRpm": 9500,
+        "spool": 0.3000000119,
+        "highBoost": 0,
+        "lowBoost": 0,
+        "vacuum": 0
+      },
+      "count": 10,
+      "expected": {
+        "ok": true,
+        "up": [
+          0,
+          0,
+          7450,
+          7050,
+          6650,
+          6550,
+          6650,
+          8500,
+          0,
+          0
+        ],
+        "down": [
+          0,
+          0,
+          0,
+          4568.603027,
+          5071.942383,
+          5541.666504,
+          5711.600098,
+          5551.834961,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "name": "zero_ratio",
+      "spec": {
+        "gears": [
+          3.789999962,
+          0,
+          3.400000095,
+          0,
+          1.5,
+          1.25,
+          1.090000033,
+          0.9100000262
+        ],
+        "torque": [
+          149,
+          179,
+          222,
+          266,
+          283,
+          275,
+          255,
+          235,
+          228
+        ],
+        "shiftSpeed": 0.25,
+        "idle": 800,
+        "redline": 8500,
+        "maxRpm": 9500,
+        "spool": 0.3000000119,
+        "highBoost": 0,
+        "lowBoost": 0,
+        "vacuum": 0
+      },
+      "count": 10,
+      "expected": {
+        "ok": true,
+        "up": [
+          0,
+          0,
+          8400,
+          8400,
+          8400,
+          8400,
+          8400,
+          8500,
+          0,
+          0
+        ],
+        "down": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          7000,
+          7324.800293,
+          7012.844238,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "name": "idle_equals_redline",
+      "spec": {
+        "gears": [
+          3.789999962,
+          0,
+          3.400000095,
+          2.085000038,
+          1.5,
+          1.25,
+          1.090000033,
+          0.9100000262
+        ],
+        "torque": [
+          149,
+          179,
+          222,
+          266,
+          283,
+          275,
+          255,
+          235,
+          228
+        ],
+        "shiftSpeed": 0.25,
+        "idle": 8500,
+        "redline": 8500,
+        "maxRpm": 9500,
+        "spool": 0.3000000119,
+        "highBoost": 0,
+        "lowBoost": 0,
+        "vacuum": 0
+      },
+      "count": 10,
+      "expected": {
+        "ok": true,
+        "up": [
+          0,
+          0,
+          8400,
+          8400,
+          8400,
+          8400,
+          8400,
+          8500,
+          0,
+          0
+        ],
+        "down": [
+          0,
+          0,
+          0,
+          5151.17627,
+          6043.165039,
+          7000,
+          7324.800293,
+          7012.844238,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "name": "induction_swapped_arguments_source_behavior",
+      "spec": {
+        "gears": [
+          3.789999962,
+          0,
+          3.400000095,
+          2.085000038,
+          1.5,
+          1.25,
+          1.090000033,
+          0.9100000262
+        ],
+        "torque": [
+          149,
+          179,
+          222,
+          266,
+          283,
+          275,
+          255,
+          235,
+          228
+        ],
+        "shiftSpeed": 0.25,
+        "idle": 800,
+        "redline": 8500,
+        "maxRpm": 9500,
+        "spool": 0.3000000119,
+        "highBoost": 1.200000048,
+        "lowBoost": 0.6999999881,
+        "vacuum": -0.200000003
+      },
+      "count": 10,
+      "expected": {
+        "ok": true,
+        "up": [
+          0,
+          0,
+          8400,
+          8400,
+          8400,
+          8400,
+          8400,
+          8500,
+          0,
+          0
+        ],
+        "down": [
+          0,
+          0,
+          0,
+          5151.17627,
+          6043.165039,
+          7000,
+          7324.800293,
+          7012.844238,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "name": "single_torque_point",
+      "spec": {
+        "gears": [
+          3.789999962,
+          0,
+          3.400000095,
+          2.085000038,
+          1.5,
+          1.25,
+          1.090000033,
+          0.9100000262
+        ],
+        "torque": [
+          400
+        ],
+        "shiftSpeed": 0.25,
+        "idle": 800,
+        "redline": 8500,
+        "maxRpm": 9500,
+        "spool": 0.3000000119,
+        "highBoost": 0,
+        "lowBoost": 0,
+        "vacuum": 0
+      },
+      "count": 10,
+      "expected": {
+        "ok": true,
+        "up": [
+          0,
+          0,
+          8400,
+          8400,
+          8400,
+          8400,
+          8400,
+          8500,
+          0,
+          0
+        ],
+        "down": [
+          0,
+          0,
+          0,
+          5151.17627,
+          6043.165039,
+          7000,
+          7324.800293,
+          7012.844238,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "name": "insufficient_output_length",
+      "spec": {
+        "gears": [
+          3.789999962,
+          0,
+          3.400000095,
+          2.085000038,
+          1.5,
+          1.25,
+          1.090000033,
+          0.9100000262
+        ],
+        "torque": [
+          149,
+          179,
+          222,
+          266,
+          283,
+          275,
+          255,
+          235,
+          228
+        ],
+        "shiftSpeed": 0.25,
+        "idle": 800,
+        "redline": 8500,
+        "maxRpm": 9500,
+        "spool": 0.3000000119,
+        "highBoost": 0,
+        "lowBoost": 0,
+        "vacuum": 0
+      },
+      "count": 7,
+      "expected": {
+        "ok": false,
+        "up": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "down": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      }
+    }
+  ],
+  "potential": [
+    {
+      "name": "reverse",
+      "input": {
+        "gear": 0,
+        "rpm": 10000,
+        "gas": 1,
+        "rpmFromGround": -1
+      },
+      "expected": 0
+    },
+    {
+      "name": "neutral",
+      "input": {
+        "gear": 1,
+        "rpm": 10000,
+        "gas": 1,
+        "rpmFromGround": -1
+      },
+      "expected": 0
+    },
+    {
+      "name": "first_idle",
+      "input": {
+        "gear": 2,
+        "rpm": 800,
+        "gas": 1,
+        "rpmFromGround": -1
+      },
+      "expected": 0
+    },
+    {
+      "name": "first_below_up",
+      "input": {
+        "gear": 2,
+        "rpm": 8399,
+        "gas": 1,
+        "rpmFromGround": -1
+      },
+      "expected": 0
+    },
+    {
+      "name": "first_up_inclusive",
+      "input": {
+        "gear": 2,
+        "rpm": 8400,
+        "gas": 1,
+        "rpmFromGround": -1
+      },
+      "expected": 2
+    },
+    {
+      "name": "top_no_up",
+      "input": {
+        "gear": 7,
+        "rpm": 9000,
+        "gas": 1,
+        "rpmFromGround": -1
+      },
+      "expected": 0
+    },
+    {
+      "name": "second_coast_3500_hold",
+      "input": {
+        "gear": 3,
+        "rpm": 3500,
+        "gas": 0,
+        "rpmFromGround": -1
+      },
+      "expected": 1
+    },
+    {
+      "name": "second_half_gas_3500_down",
+      "input": {
+        "gear": 3,
+        "rpm": 3500,
+        "gas": 0.5,
+        "rpmFromGround": -1
+      },
+      "expected": 1
+    },
+    {
+      "name": "second_full_gas_3500_down",
+      "input": {
+        "gear": 3,
+        "rpm": 3500,
+        "gas": 1,
+        "rpmFromGround": -1
+      },
+      "expected": 1
+    },
+    {
+      "name": "second_full_gas_5000_down",
+      "input": {
+        "gear": 3,
+        "rpm": 5000,
+        "gas": 1,
+        "rpmFromGround": -1
+      },
+      "expected": 0
+    },
+    {
+      "name": "second_full_gas_cap_5000_hold",
+      "input": {
+        "gear": 3,
+        "rpm": 5000,
+        "gas": 0,
+        "rpmFromGround": -1
+      },
+      "expected": 0
+    },
+    {
+      "name": "middle_no_shift",
+      "input": {
+        "gear": 4,
+        "rpm": 6000,
+        "gas": 1,
+        "rpmFromGround": -1
+      },
+      "expected": 0
+    },
+    {
+      "name": "ground_rpm_ignored_low",
+      "input": {
+        "gear": 3,
+        "rpm": 6000,
+        "gas": 1,
+        "rpmFromGround": 0
+      },
+      "expected": 0
+    },
+    {
+      "name": "ground_rpm_ignored_high",
+      "input": {
+        "gear": 3,
+        "rpm": 6000,
+        "gas": 1,
+        "rpmFromGround": 20000
+      },
+      "expected": 0
+    },
+    {
+      "name": "third_coast_4200_hold",
+      "input": {
+        "gear": 4,
+        "rpm": 4200,
+        "gas": 0,
+        "rpmFromGround": -1
+      },
+      "expected": 1
+    },
+    {
+      "name": "third_full_4200_down",
+      "input": {
+        "gear": 4,
+        "rpm": 4200,
+        "gas": 1,
+        "rpmFromGround": -1
+      },
+      "expected": 1
+    }
+  ],
+  "operations": [
+    {
+      "name": "upshift",
+      "input": {
+        "mode": 0,
+        "gear": 2,
+        "target": 0,
+        "potential": 2,
+        "transmissionRpm": 8500,
+        "gas": 1,
+        "timer": 0,
+        "sportTimer": 0,
+        "staging": false,
+        "automatic": true,
+        "override": 0,
+        "inputPresent": true,
+        "airborneWheel": -1,
+        "slip": 0,
+        "dt": 0.01666666754,
+        "clutchState": 0
+      },
+      "expected": {
+        "result": -1,
+        "gear": 3,
+        "timer": 0.5045833588,
+        "sportTimer": 0,
+        "potential": 0,
+        "clutchState": 2,
+        "shiftingUp": true
+      }
+    },
+    {
+      "name": "downshift_one",
+      "input": {
+        "mode": 0,
+        "gear": 3,
+        "target": 0,
+        "potential": 1,
+        "transmissionRpm": 4500,
+        "gas": 1,
+        "timer": 0,
+        "sportTimer": 0,
+        "staging": false,
+        "automatic": true,
+        "override": 0,
+        "inputPresent": true,
+        "airborneWheel": -1,
+        "slip": 0,
+        "dt": 0.01666666754,
+        "clutchState": 0
+      },
+      "expected": {
+        "result": -1,
+        "gear": 2,
+        "timer": 0.1958333403,
+        "sportTimer": 0,
+        "potential": 0,
+        "clutchState": 2,
+        "shiftingUp": false
+      }
+    },
+    {
+      "name": "downshift_skips_to_first",
+      "input": {
+        "mode": 0,
+        "gear": 7,
+        "target": 0,
+        "potential": 1,
+        "transmissionRpm": 900,
+        "gas": 1,
+        "timer": 0,
+        "sportTimer": 0,
+        "staging": false,
+        "automatic": true,
+        "override": 0,
+        "inputPresent": true,
+        "airborneWheel": -1,
+        "slip": 0,
+        "dt": 0.01666666754,
+        "clutchState": 0
+      },
+      "expected": {
+        "result": -1,
+        "gear": 2,
+        "timer": 0.1958333403,
+        "sportTimer": 0,
+        "potential": 0,
+        "clutchState": 2,
+        "shiftingUp": false
+      }
+    },
+    {
+      "name": "downshift_skips_to_third",
+      "input": {
+        "mode": 0,
+        "gear": 7,
+        "target": 0,
+        "potential": 1,
+        "transmissionRpm": 3000,
+        "gas": 1,
+        "timer": 0,
+        "sportTimer": 0,
+        "staging": false,
+        "automatic": true,
+        "override": 0,
+        "inputPresent": true,
+        "airborneWheel": -1,
+        "slip": 0,
+        "dt": 0.01666666754,
+        "clutchState": 0
+      },
+      "expected": {
+        "result": -1,
+        "gear": 3,
+        "timer": 0.1136458367,
+        "sportTimer": 0,
+        "potential": 0,
+        "clutchState": 2,
+        "shiftingUp": false
+      }
+    },
+    {
+      "name": "neutral_direct_first",
+      "input": {
+        "mode": 0,
+        "gear": 1,
+        "target": 0,
+        "potential": 2,
+        "transmissionRpm": 8500,
+        "gas": 1,
+        "timer": 0,
+        "sportTimer": 0,
+        "staging": false,
+        "automatic": true,
+        "override": 0,
+        "inputPresent": true,
+        "airborneWheel": -1,
+        "slip": 0,
+        "dt": 0.01666666754,
+        "clutchState": 0
+      },
+      "expected": {
+        "result": -1,
+        "gear": 2,
+        "timer": 0,
+        "sportTimer": 0,
+        "potential": 2,
+        "clutchState": 0,
+        "shiftingUp": false
+      }
+    },
+    {
+      "name": "reverse_no_auto",
+      "input": {
+        "mode": 0,
+        "gear": 0,
+        "target": 0,
+        "potential": 2,
+        "transmissionRpm": 8500,
+        "gas": 1,
+        "timer": 0,
+        "sportTimer": 0,
+        "staging": false,
+        "automatic": true,
+        "override": 0,
+        "inputPresent": true,
+        "airborneWheel": -1,
+        "slip": 0,
+        "dt": 0.01666666754,
+        "clutchState": 0
+      },
+      "expected": {
+        "result": -1,
+        "gear": 0,
+        "timer": 0,
+        "sportTimer": 0,
+        "potential": 2,
+        "clutchState": 0,
+        "shiftingUp": false
+      }
+    },
+    {
+      "name": "potential_good_no_auto",
+      "input": {
+        "mode": 0,
+        "gear": 2,
+        "target": 0,
+        "potential": 3,
+        "transmissionRpm": 8500,
+        "gas": 1,
+        "timer": 0,
+        "sportTimer": 0,
+        "staging": false,
+        "automatic": true,
+        "override": 0,
+        "inputPresent": true,
+        "airborneWheel": -1,
+        "slip": 0,
+        "dt": 0.01666666754,
+        "clutchState": 0
+      },
+      "expected": {
+        "result": -1,
+        "gear": 2,
+        "timer": 0,
+        "sportTimer": 0,
+        "potential": 3,
+        "clutchState": 0,
+        "shiftingUp": false
+      }
+    },
+    {
+      "name": "potential_perfect_up",
+      "input": {
+        "mode": 0,
+        "gear": 2,
+        "target": 0,
+        "potential": 4,
+        "transmissionRpm": 8500,
+        "gas": 1,
+        "timer": 0,
+        "sportTimer": 0,
+        "staging": false,
+        "automatic": true,
+        "override": 0,
+        "inputPresent": true,
+        "airborneWheel": -1,
+        "slip": 0,
+        "dt": 0.01666666754,
+        "clutchState": 0
+      },
+      "expected": {
+        "result": -1,
+        "gear": 3,
+        "timer": 0.5045833588,
+        "sportTimer": 0,
+        "potential": 0,
+        "clutchState": 2,
+        "shiftingUp": true
+      }
+    },
+    {
+      "name": "potential_miss_up",
+      "input": {
+        "mode": 0,
+        "gear": 2,
+        "target": 0,
+        "potential": 5,
+        "transmissionRpm": 8500,
+        "gas": 1,
+        "timer": 0,
+        "sportTimer": 0,
+        "staging": false,
+        "automatic": true,
+        "override": 0,
+        "inputPresent": true,
+        "airborneWheel": -1,
+        "slip": 0,
+        "dt": 0.01666666754,
+        "clutchState": 0
+      },
+      "expected": {
+        "result": -1,
+        "gear": 3,
+        "timer": 0.5045833588,
+        "sportTimer": 0,
+        "potential": 0,
+        "clutchState": 2,
+        "shiftingUp": true
+      }
+    },
+    {
+      "name": "topgear_up_rejected",
+      "input": {
+        "mode": 0,
+        "gear": 7,
+        "target": 0,
+        "potential": 2,
+        "transmissionRpm": 8500,
+        "gas": 1,
+        "timer": 0,
+        "sportTimer": 0,
+        "staging": false,
+        "automatic": true,
+        "override": 0,
+        "inputPresent": true,
+        "airborneWheel": -1,
+        "slip": 0,
+        "dt": 0.01666666754,
+        "clutchState": 0
+      },
+      "expected": {
+        "result": -1,
+        "gear": 7,
+        "timer": 0,
+        "sportTimer": 0,
+        "potential": 2,
+        "clutchState": 0,
+        "shiftingUp": false
+      }
+    },
+    {
+      "name": "one_wheel_airborne_blocks_up",
+      "input": {
+        "mode": 0,
+        "gear": 2,
+        "target": 0,
+        "potential": 2,
+        "transmissionRpm": 8500,
+        "gas": 1,
+        "timer": 0,
+        "sportTimer": 0,
+        "staging": false,
+        "automatic": true,
+        "override": 0,
+        "inputPresent": true,
+        "airborneWheel": 3,
+        "slip": 0,
+        "dt": 0.009999999776,
+        "clutchState": 0
+      },
+      "expected": {
+        "result": -1,
+        "gear": 2,
+        "timer": 0,
+        "sportTimer": 0,
+        "potential": 2,
+        "clutchState": 0,
+        "shiftingUp": false
+      }
+    },
+    {
+      "name": "slip_equal_four_blocks_up",
+      "input": {
+        "mode": 0,
+        "gear": 2,
+        "target": 0,
+        "potential": 2,
+        "transmissionRpm": 8500,
+        "gas": 1,
+        "timer": 0,
+        "sportTimer": 0,
+        "staging": false,
+        "automatic": true,
+        "override": 0,
+        "inputPresent": true,
+        "airborneWheel": -1,
+        "slip": 4,
+        "dt": 0.009999999776,
+        "clutchState": 0
+      },
+      "expected": {
+        "result": -1,
+        "gear": 2,
+        "timer": 0,
+        "sportTimer": 0,
+        "potential": 2,
+        "clutchState": 0,
+        "shiftingUp": false
+      }
+    },
+    {
+      "name": "slip_below_four_permits_up",
+      "input": {
+        "mode": 0,
+        "gear": 2,
+        "target": 0,
+        "potential": 2,
+        "transmissionRpm": 8500,
+        "gas": 1,
+        "timer": 0,
+        "sportTimer": 0,
+        "staging": false,
+        "automatic": true,
+        "override": 0,
+        "inputPresent": true,
+        "airborneWheel": -1,
+        "slip": 3.999000072,
+        "dt": 0.009999999776,
+        "clutchState": 0
+      },
+      "expected": {
+        "result": -1,
+        "gear": 3,
+        "timer": 0.5112500191,
+        "sportTimer": 0,
+        "potential": 0,
+        "clutchState": 2,
+        "shiftingUp": true
+      }
+    },
+    {
+      "name": "negative_slip_source_not_abs",
+      "input": {
+        "mode": 0,
+        "gear": 2,
+        "target": 0,
+        "potential": 2,
+        "transmissionRpm": 8500,
+        "gas": 1,
+        "timer": 0,
+        "sportTimer": 0,
+        "staging": false,
+        "automatic": true,
+        "override": 0,
+        "inputPresent": true,
+        "airborneWheel": -1,
+        "slip": -9,
+        "dt": 0.009999999776,
+        "clutchState": 0
+      },
+      "expected": {
+        "result": -1,
+        "gear": 3,
+        "timer": 0.5112500191,
+        "sportTimer": 0,
+        "potential": 0,
+        "clutchState": 2,
+        "shiftingUp": true
+      }
+    },
+    {
+      "name": "existing_timer_blocks_then_zero",
+      "input": {
+        "mode": 0,
+        "gear": 2,
+        "target": 0,
+        "potential": 2,
+        "transmissionRpm": 8500,
+        "gas": 1,
+        "timer": 0.004999999888,
+        "sportTimer": 0,
+        "staging": false,
+        "automatic": true,
+        "override": 0,
+        "inputPresent": true,
+        "airborneWheel": -1,
+        "slip": 0,
+        "dt": 0.009999999776,
+        "clutchState": 0
+      },
+      "expected": {
+        "result": -1,
+        "gear": 2,
+        "timer": 0,
+        "sportTimer": 0,
+        "potential": 2,
+        "clutchState": 0,
+        "shiftingUp": false
+      }
+    },
+    {
+      "name": "staging_blocks_auto",
+      "input": {
+        "mode": 0,
+        "gear": 2,
+        "target": 0,
+        "potential": 2,
+        "transmissionRpm": 8500,
+        "gas": 1,
+        "timer": 0,
+        "sportTimer": 0,
+        "staging": true,
+        "automatic": true,
+        "override": 0,
+        "inputPresent": true,
+        "airborneWheel": -1,
+        "slip": 0,
+        "dt": 0.009999999776,
+        "clutchState": 0
+      },
+      "expected": {
+        "result": -1,
+        "gear": 2,
+        "timer": 0,
+        "sportTimer": 0,
+        "potential": 2,
+        "clutchState": 0,
+        "shiftingUp": false
+      }
+    },
+    {
+      "name": "manual_blocks_auto",
+      "input": {
+        "mode": 0,
+        "gear": 2,
+        "target": 0,
+        "potential": 2,
+        "transmissionRpm": 8500,
+        "gas": 1,
+        "timer": 0,
+        "sportTimer": 0,
+        "staging": false,
+        "automatic": false,
+        "override": 0,
+        "inputPresent": true,
+        "airborneWheel": -1,
+        "slip": 0,
+        "dt": 0.009999999776,
+        "clutchState": 0
+      },
+      "expected": {
+        "result": -1,
+        "gear": 2,
+        "timer": 0,
+        "sportTimer": 0,
+        "potential": 2,
+        "clutchState": 0,
+        "shiftingUp": false
+      }
+    },
+    {
+      "name": "override_auto",
+      "input": {
+        "mode": 0,
+        "gear": 2,
+        "target": 0,
+        "potential": 2,
+        "transmissionRpm": 8500,
+        "gas": 1,
+        "timer": 0,
+        "sportTimer": 0,
+        "staging": false,
+        "automatic": false,
+        "override": 1,
+        "inputPresent": true,
+        "airborneWheel": -1,
+        "slip": 0,
+        "dt": 0.009999999776,
+        "clutchState": 0
+      },
+      "expected": {
+        "result": -1,
+        "gear": 3,
+        "timer": 0.5112500191,
+        "sportTimer": 0,
+        "potential": 0,
+        "clutchState": 2,
+        "shiftingUp": true
+      }
+    },
+    {
+      "name": "override_manual",
+      "input": {
+        "mode": 0,
+        "gear": 2,
+        "target": 0,
+        "potential": 2,
+        "transmissionRpm": 8500,
+        "gas": 1,
+        "timer": 0,
+        "sportTimer": 0,
+        "staging": false,
+        "automatic": true,
+        "override": 2,
+        "inputPresent": true,
+        "airborneWheel": -1,
+        "slip": 0,
+        "dt": 0.009999999776,
+        "clutchState": 0
+      },
+      "expected": {
+        "result": -1,
+        "gear": 2,
+        "timer": 0,
+        "sportTimer": 0,
+        "potential": 2,
+        "clutchState": 0,
+        "shiftingUp": false
+      }
+    },
+    {
+      "name": "sport_timer_none_frozen",
+      "input": {
+        "mode": 0,
+        "gear": 2,
+        "target": 0,
+        "potential": 0,
+        "transmissionRpm": 5000,
+        "gas": 0,
+        "timer": 0,
+        "sportTimer": 1,
+        "staging": false,
+        "automatic": true,
+        "override": 0,
+        "inputPresent": true,
+        "airborneWheel": -1,
+        "slip": 0,
+        "dt": 0.1000000015,
+        "clutchState": 0
+      },
+      "expected": {
+        "result": -1,
+        "gear": 2,
+        "timer": 0,
+        "sportTimer": 1,
+        "potential": 0,
+        "clutchState": 0,
+        "shiftingUp": false
+      }
+    },
+    {
+      "name": "sport_timer_gas_decrements",
+      "input": {
+        "mode": 0,
+        "gear": 2,
+        "target": 0,
+        "potential": 2,
+        "transmissionRpm": 8500,
+        "gas": 1,
+        "timer": 0,
+        "sportTimer": 1,
+        "staging": false,
+        "automatic": true,
+        "override": 0,
+        "inputPresent": true,
+        "airborneWheel": -1,
+        "slip": 0,
+        "dt": 0.1000000015,
+        "clutchState": 0
+      },
+      "expected": {
+        "result": -1,
+        "gear": 2,
+        "timer": 0,
+        "sportTimer": 0.8999999762,
+        "potential": 2,
+        "clutchState": 0,
+        "shiftingUp": false
+      }
+    },
+    {
+      "name": "sport_timer_coast_decrements_twice",
+      "input": {
+        "mode": 0,
+        "gear": 2,
+        "target": 0,
+        "potential": 2,
+        "transmissionRpm": 8500,
+        "gas": 0,
+        "timer": 0,
+        "sportTimer": 1,
+        "staging": false,
+        "automatic": true,
+        "override": 0,
+        "inputPresent": true,
+        "airborneWheel": -1,
+        "slip": 0,
+        "dt": 0.1000000015,
+        "clutchState": 0
+      },
+      "expected": {
+        "result": -1,
+        "gear": 2,
+        "timer": 0,
+        "sportTimer": 0.8000000119,
+        "potential": 2,
+        "clutchState": 0,
+        "shiftingUp": false
+      }
+    },
+    {
+      "name": "sport_timer_no_input_zero",
+      "input": {
+        "mode": 0,
+        "gear": 2,
+        "target": 0,
+        "potential": 2,
+        "transmissionRpm": 8500,
+        "gas": 1,
+        "timer": 0,
+        "sportTimer": 1,
+        "staging": false,
+        "automatic": false,
+        "override": 0,
+        "inputPresent": false,
+        "airborneWheel": -1,
+        "slip": 0,
+        "dt": 0.1000000015,
+        "clutchState": 0
+      },
+      "expected": {
+        "result": -1,
+        "gear": 2,
+        "timer": 0,
+        "sportTimer": 0,
+        "potential": 2,
+        "clutchState": 0,
+        "shiftingUp": false
+      }
+    },
+    {
+      "name": "gear_same_no_change",
+      "input": {
+        "mode": 1,
+        "gear": 3,
+        "target": 3,
+        "potential": 2,
+        "transmissionRpm": 8500,
+        "gas": 1,
+        "timer": 0,
+        "sportTimer": 0,
+        "staging": false,
+        "automatic": true,
+        "override": 0,
+        "inputPresent": true,
+        "airborneWheel": -1,
+        "slip": 0,
+        "dt": 0.009999999776,
+        "clutchState": 0
+      },
+      "expected": {
+        "result": 0,
+        "gear": 3,
+        "timer": 0,
+        "sportTimer": 0,
+        "potential": 2,
+        "clutchState": 0,
+        "shiftingUp": false
+      }
+    },
+    {
+      "name": "manual_down_delay_destination_quarter",
+      "input": {
+        "mode": 1,
+        "gear": 7,
+        "target": 3,
+        "potential": 1,
+        "transmissionRpm": 4000,
+        "gas": 1,
+        "timer": 0,
+        "sportTimer": 0,
+        "staging": false,
+        "automatic": true,
+        "override": 0,
+        "inputPresent": true,
+        "airborneWheel": -1,
+        "slip": 0,
+        "dt": 0.009999999776,
+        "clutchState": 0
+      },
+      "expected": {
+        "result": 1,
+        "gear": 3,
+        "timer": 0.1303125024,
+        "sportTimer": 0,
+        "potential": 0,
+        "clutchState": 2,
+        "shiftingUp": false
+      }
+    },
+    {
+      "name": "gear_neutral",
+      "input": {
+        "mode": 1,
+        "gear": 3,
+        "target": 1,
+        "potential": 0,
+        "transmissionRpm": 4000,
+        "gas": 1,
+        "timer": 0,
+        "sportTimer": 0,
+        "staging": false,
+        "automatic": true,
+        "override": 0,
+        "inputPresent": true,
+        "airborneWheel": -1,
+        "slip": 0,
+        "dt": 0.009999999776,
+        "clutchState": 0
+      },
+      "expected": {
+        "result": 1,
+        "gear": 1,
+        "timer": 0,
+        "sportTimer": 0,
+        "potential": 0,
+        "clutchState": 2,
+        "shiftingUp": false
+      }
+    },
+    {
+      "name": "gear_reverse",
+      "input": {
+        "mode": 1,
+        "gear": 2,
+        "target": 0,
+        "potential": 0,
+        "transmissionRpm": 4000,
+        "gas": 1,
+        "timer": 0,
+        "sportTimer": 0,
+        "staging": false,
+        "automatic": true,
+        "override": 0,
+        "inputPresent": true,
+        "airborneWheel": -1,
+        "slip": 0,
+        "dt": 0.009999999776,
+        "clutchState": 0
+      },
+      "expected": {
+        "result": 1,
+        "gear": 0,
+        "timer": 0.2368749976,
+        "sportTimer": 0,
+        "potential": 0,
+        "clutchState": 2,
+        "shiftingUp": false
+      }
+    },
+    {
+      "name": "gear_invalid_high",
+      "input": {
+        "mode": 1,
+        "gear": 2,
+        "target": 9,
+        "potential": 0,
+        "transmissionRpm": 4000,
+        "gas": 1,
+        "timer": 0,
+        "sportTimer": 0,
+        "staging": false,
+        "automatic": true,
+        "override": 0,
+        "inputPresent": true,
+        "airborneWheel": -1,
+        "slip": 0,
+        "dt": 0.009999999776,
+        "clutchState": 0
+      },
+      "expected": {
+        "result": 0,
+        "gear": 2,
+        "timer": 0,
+        "sportTimer": 0,
+        "potential": 0,
+        "clutchState": 0,
+        "shiftingUp": false
+      }
+    },
+    {
+      "name": "gear_invalid_low",
+      "input": {
+        "mode": 1,
+        "gear": 2,
+        "target": -1,
+        "potential": 0,
+        "transmissionRpm": 4000,
+        "gas": 1,
+        "timer": 0,
+        "sportTimer": 0,
+        "staging": false,
+        "automatic": true,
+        "override": 0,
+        "inputPresent": true,
+        "airborneWheel": -1,
+        "slip": 0,
+        "dt": 0.009999999776,
+        "clutchState": 0
+      },
+      "expected": {
+        "result": 0,
+        "gear": 2,
+        "timer": 0,
+        "sportTimer": 0,
+        "potential": 0,
+        "clutchState": 0,
+        "shiftingUp": false
+      }
+    },
+    {
+      "name": "sport_success",
+      "input": {
+        "mode": 2,
+        "gear": 3,
+        "target": 4,
+        "potential": 0,
+        "transmissionRpm": 5000,
+        "gas": 1,
+        "timer": 0,
+        "sportTimer": 0,
+        "staging": false,
+        "automatic": true,
+        "override": 0,
+        "inputPresent": true,
+        "airborneWheel": -1,
+        "slip": 0,
+        "dt": 0.009999999776,
+        "clutchState": 0
+      },
+      "expected": {
+        "result": 1,
+        "gear": 4,
+        "timer": 0.375,
+        "sportTimer": 1.25,
+        "potential": 0,
+        "clutchState": 2,
+        "shiftingUp": true
+      }
+    },
+    {
+      "name": "sport_up_rejected_when_down_potential",
+      "input": {
+        "mode": 2,
+        "gear": 3,
+        "target": 4,
+        "potential": 1,
+        "transmissionRpm": 2000,
+        "gas": 1,
+        "timer": 0,
+        "sportTimer": 0,
+        "staging": false,
+        "automatic": true,
+        "override": 0,
+        "inputPresent": true,
+        "airborneWheel": -1,
+        "slip": 0,
+        "dt": 0.009999999776,
+        "clutchState": 0
+      },
+      "expected": {
+        "result": 0,
+        "gear": 3,
+        "timer": 0,
+        "sportTimer": 0,
+        "potential": 1,
+        "clutchState": 0,
+        "shiftingUp": false
+      }
+    },
+    {
+      "name": "sport_down_rejected_when_up_potential",
+      "input": {
+        "mode": 2,
+        "gear": 3,
+        "target": 2,
+        "potential": 2,
+        "transmissionRpm": 8500,
+        "gas": 1,
+        "timer": 0,
+        "sportTimer": 0,
+        "staging": false,
+        "automatic": true,
+        "override": 0,
+        "inputPresent": true,
+        "airborneWheel": -1,
+        "slip": 0,
+        "dt": 0.009999999776,
+        "clutchState": 0
+      },
+      "expected": {
+        "result": 0,
+        "gear": 3,
+        "timer": 0,
+        "sportTimer": 0,
+        "potential": 2,
+        "clutchState": 0,
+        "shiftingUp": false
+      }
+    },
+    {
+      "name": "sport_rejected_changing",
+      "input": {
+        "mode": 2,
+        "gear": 3,
+        "target": 4,
+        "potential": 0,
+        "transmissionRpm": 5000,
+        "gas": 1,
+        "timer": 0.1000000015,
+        "sportTimer": 0,
+        "staging": false,
+        "automatic": true,
+        "override": 0,
+        "inputPresent": true,
+        "airborneWheel": -1,
+        "slip": 0,
+        "dt": 0.009999999776,
+        "clutchState": 0
+      },
+      "expected": {
+        "result": 0,
+        "gear": 3,
+        "timer": 0.1000000015,
+        "sportTimer": 0,
+        "potential": 0,
+        "clutchState": 0,
+        "shiftingUp": false
+      }
+    },
+    {
+      "name": "sport_rejected_neutral",
+      "input": {
+        "mode": 2,
+        "gear": 3,
+        "target": 1,
+        "potential": 0,
+        "transmissionRpm": 5000,
+        "gas": 1,
+        "timer": 0,
+        "sportTimer": 0,
+        "staging": false,
+        "automatic": true,
+        "override": 0,
+        "inputPresent": true,
+        "airborneWheel": -1,
+        "slip": 0,
+        "dt": 0.009999999776,
+        "clutchState": 0
+      },
+      "expected": {
+        "result": 0,
+        "gear": 3,
+        "timer": 0,
+        "sportTimer": 0,
+        "potential": 0,
+        "clutchState": 0,
+        "shiftingUp": false
+      }
+    },
+    {
+      "name": "disengage_engaging_is_noop",
+      "input": {
+        "mode": 1,
+        "gear": 3,
+        "target": 4,
+        "potential": 0,
+        "transmissionRpm": 5000,
+        "gas": 1,
+        "timer": 0,
+        "sportTimer": 0,
+        "staging": false,
+        "automatic": true,
+        "override": 0,
+        "inputPresent": true,
+        "airborneWheel": -1,
+        "slip": 0,
+        "dt": 0.009999999776,
+        "clutchState": 1
+      },
+      "expected": {
+        "result": 1,
+        "gear": 4,
+        "timer": 0.375,
+        "sportTimer": 0,
+        "potential": 0,
+        "clutchState": 1,
+        "shiftingUp": true
+      }
+    },
+    {
+      "name": "port_staging_neutral_becomes_first",
+      "input": {
+        "mode": 1,
+        "gear": 3,
+        "target": 1,
+        "potential": 0,
+        "transmissionRpm": 5000,
+        "gas": 1,
+        "timer": 0,
+        "sportTimer": 0,
+        "staging": true,
+        "automatic": true,
+        "override": 0,
+        "inputPresent": true,
+        "airborneWheel": -1,
+        "slip": 0,
+        "dt": 0.009999999776,
+        "clutchState": 0
+      },
+      "expected": {
+        "result": 1,
+        "gear": 2,
+        "timer": 0.212500006,
+        "sportTimer": 0,
+        "potential": 0,
+        "clutchState": 2,
+        "shiftingUp": false
+      }
+    }
+  ],
+  "clutch": [
+    {
+      "name": "engaged",
+      "input": {
+        "state": 0,
+        "time": 0,
+        "engageTime": 0,
+        "action": 0,
+        "actionTime": 0,
+        "dt": 0.009999999776
+      },
+      "expected": {
+        "state": 0,
+        "time": 0,
+        "engageTime": 0,
+        "ratio": 1
+      }
+    },
+    {
+      "name": "disengage",
+      "input": {
+        "state": 0,
+        "time": 0,
+        "engageTime": 0,
+        "action": 1,
+        "actionTime": 0,
+        "dt": 0.009999999776
+      },
+      "expected": {
+        "state": 2,
+        "time": 0,
+        "engageTime": 0,
+        "ratio": 0.25
+      }
+    },
+    {
+      "name": "engaging_disengage_is_noop",
+      "input": {
+        "state": 1,
+        "time": 0.200000003,
+        "engageTime": 0.25,
+        "action": 1,
+        "actionTime": 0,
+        "dt": 0.009999999776
+      },
+      "expected": {
+        "state": 1,
+        "time": 0.1899999976,
+        "engageTime": 0.25,
+        "ratio": 0.4300000072
+      }
+    },
+    {
+      "name": "engage_long_start",
+      "input": {
+        "state": 2,
+        "time": 0,
+        "engageTime": 0,
+        "action": 2,
+        "actionTime": 0.25,
+        "dt": 0
+      },
+      "expected": {
+        "state": 1,
+        "time": 0.25,
+        "engageTime": 0.25,
+        "ratio": 0.25
+      }
+    },
+    {
+      "name": "engage_long_mid",
+      "input": {
+        "state": 2,
+        "time": 0,
+        "engageTime": 0,
+        "action": 2,
+        "actionTime": 0.25,
+        "dt": 0.125
+      },
+      "expected": {
+        "state": 1,
+        "time": 0.125,
+        "engageTime": 0.25,
+        "ratio": 0.625
+      }
+    },
+    {
+      "name": "engage_long_end",
+      "input": {
+        "state": 2,
+        "time": 0,
+        "engageTime": 0,
+        "action": 2,
+        "actionTime": 0.25,
+        "dt": 0.25
+      },
+      "expected": {
+        "state": 0,
+        "time": 0,
+        "engageTime": 0.25,
+        "ratio": 1
+      }
+    },
+    {
+      "name": "engage_long_past_end_negative_time",
+      "input": {
+        "state": 2,
+        "time": 0,
+        "engageTime": 0,
+        "action": 2,
+        "actionTime": 0.25,
+        "dt": 0.3000000119
+      },
+      "expected": {
+        "state": 0,
+        "time": -0.05000001192,
+        "engageTime": 0.25,
+        "ratio": 1
+      }
+    },
+    {
+      "name": "engage_first_short",
+      "input": {
+        "state": 2,
+        "time": 0,
+        "engageTime": 0,
+        "action": 2,
+        "actionTime": 0.05000000075,
+        "dt": 0.02500000037
+      },
+      "expected": {
+        "state": 1,
+        "time": 0.02500000037,
+        "engageTime": 0.05000000075,
+        "ratio": 0.625
+      }
+    },
+    {
+      "name": "engage_zero_instant",
+      "input": {
+        "state": 2,
+        "time": 0,
+        "engageTime": 0,
+        "action": 2,
+        "actionTime": 0,
+        "dt": 0.009999999776
+      },
+      "expected": {
+        "state": 0,
+        "time": 0,
+        "engageTime": 0,
+        "ratio": 1
+      }
+    },
+    {
+      "name": "engage_engaged_noop",
+      "input": {
+        "state": 0,
+        "time": 0,
+        "engageTime": 0,
+        "action": 2,
+        "actionTime": 0.25,
+        "dt": 0.009999999776
+      },
+      "expected": {
+        "state": 0,
+        "time": 0,
+        "engageTime": 0,
+        "ratio": 1
+      }
+    },
+    {
+      "name": "engage_engaging_noop",
+      "input": {
+        "state": 1,
+        "time": 0.200000003,
+        "engageTime": 0.25,
+        "action": 2,
+        "actionTime": 0.05000000075,
+        "dt": 0.009999999776
+      },
+      "expected": {
+        "state": 1,
+        "time": 0.1899999976,
+        "engageTime": 0.25,
+        "ratio": 0.4300000072
+      }
+    },
+    {
+      "name": "reset_preserves_engageTime",
+      "input": {
+        "state": 1,
+        "time": 0.200000003,
+        "engageTime": 0.25,
+        "action": 3,
+        "actionTime": 0,
+        "dt": 0.009999999776
+      },
+      "expected": {
+        "state": 0,
+        "time": 0,
+        "engageTime": 0.25,
+        "ratio": 1
+      }
+    }
+  ],
+  "smoothRpm": [
+    {
+      "name": "rise_is_blended",
+      "input": {
+        "shifting": false,
+        "gear": 3,
+        "dt": 0.01666666754,
+        "oldRpm": 3000,
+        "newRpm": 5000,
+        "inertia": 0.5
+      },
+      "expected": 4100
+    },
+    {
+      "name": "normal_fall_limited",
+      "input": {
+        "shifting": false,
+        "gear": 3,
+        "dt": 0.01666666754,
+        "oldRpm": 8000,
+        "newRpm": 3000,
+        "inertia": 0.5
+      },
+      "expected": 7954.166504
+    },
+    {
+      "name": "shift_fall_faster",
+      "input": {
+        "shifting": true,
+        "gear": 3,
+        "dt": 0.01666666754,
+        "oldRpm": 8000,
+        "newRpm": 3000,
+        "inertia": 0.5
+      },
+      "expected": 7725
+    },
+    {
+      "name": "first_shift_uses_slow_fall",
+      "input": {
+        "shifting": true,
+        "gear": 2,
+        "dt": 0.01666666754,
+        "oldRpm": 8000,
+        "newRpm": 3000,
+        "inertia": 0.5
+      },
+      "expected": 7954.166504
+    },
+    {
+      "name": "neutral_fast_without_shift",
+      "input": {
+        "shifting": false,
+        "gear": 1,
+        "dt": 0.01666666754,
+        "oldRpm": 8000,
+        "newRpm": 3000,
+        "inertia": 0.5
+      },
+      "expected": 7725
+    },
+    {
+      "name": "reverse_slow",
+      "input": {
+        "shifting": true,
+        "gear": 0,
+        "dt": 0.01666666754,
+        "oldRpm": 8000,
+        "newRpm": 3000,
+        "inertia": 0.5
+      },
+      "expected": 7954.166504
+    },
+    {
+      "name": "small_fall_not_limited",
+      "input": {
+        "shifting": false,
+        "gear": 3,
+        "dt": 0.01666666754,
+        "oldRpm": 5000,
+        "newRpm": 4990,
+        "inertia": 0.5
+      },
+      "expected": 4994.5
+    },
+    {
+      "name": "high_inertia",
+      "input": {
+        "shifting": false,
+        "gear": 3,
+        "dt": 0.01666666754,
+        "oldRpm": 8000,
+        "newRpm": 3000,
+        "inertia": 1
+      },
+      "expected": 7977.083496
+    },
+    {
+      "name": "dt_zero_still_blends",
+      "input": {
+        "shifting": false,
+        "gear": 3,
+        "dt": 0,
+        "oldRpm": 8000,
+        "newRpm": 3000,
+        "inertia": 0.5
+      },
+      "expected": 5250
+    },
+    {
+      "name": "full_fall_when_dt_long",
+      "input": {
+        "shifting": true,
+        "gear": 3,
+        "dt": 1,
+        "oldRpm": 8000,
+        "newRpm": 3000,
+        "inertia": 0.5
+      },
+      "expected": 5250
+    },
+    {
+      "name": "rise_at_120hz",
+      "input": {
+        "shifting": true,
+        "gear": 3,
+        "dt": 0.008333333768,
+        "oldRpm": 3000,
+        "newRpm": 5000,
+        "inertia": 0.5
+      },
+      "expected": 4100
+    },
+    {
+      "name": "fall_at_30hz",
+      "input": {
+        "shifting": true,
+        "gear": 3,
+        "dt": 0.03333333507,
+        "oldRpm": 8000,
+        "newRpm": 3000,
+        "inertia": 0.5
+      },
+      "expected": 7450
+    }
+  ],
+  "engineInertia": [
+    {
+      "input": {
+        "flywheelMass": 0,
+        "loaded": false
+      },
+      "expected": 0.08749999851
+    },
+    {
+      "input": {
+        "flywheelMass": 0,
+        "loaded": true
+      },
+      "expected": 0.25
+    },
+    {
+      "input": {
+        "flywheelMass": 10,
+        "loaded": false
+      },
+      "expected": 0.174999997
+    },
+    {
+      "input": {
+        "flywheelMass": 10,
+        "loaded": true
+      },
+      "expected": 0.5
+    },
+    {
+      "input": {
+        "flywheelMass": 30,
+        "loaded": false
+      },
+      "expected": 0.349999994
+    },
+    {
+      "input": {
+        "flywheelMass": 30,
+        "loaded": true
+      },
+      "expected": 1
+    }
+  ],
+  "guess": [
+    {
+      "name": "stationary",
+      "input": {
+        "speedMps": 0,
+        "gear": 2,
+        "frontRadius": 0.3400000036,
+        "rearRadius": 0.3400000036,
+        "finalGear": 3.85
+      },
+      "expected": {
+        "rpm": 800,
+        "gear": 2
+      }
+    },
+    {
+      "name": "reverse",
+      "input": {
+        "speedMps": -20,
+        "gear": 0,
+        "frontRadius": 0.3400000036,
+        "rearRadius": 0.3400000036,
+        "finalGear": 3.85
+      },
+      "expected": {
+        "rpm": 8224.960938,
+        "gear": 0
+      }
+    },
+    {
+      "name": "neutral_idle",
+      "input": {
+        "speedMps": 20,
+        "gear": 1,
+        "frontRadius": 0.3400000036,
+        "rearRadius": 0.3400000036,
+        "finalGear": 3.85
+      },
+      "expected": {
+        "rpm": 800,
+        "gear": 2
+      }
+    },
+    {
+      "name": "first_10mps",
+      "input": {
+        "speedMps": 10,
+        "gear": 2,
+        "frontRadius": 0.3400000036,
+        "rearRadius": 0.3400000036,
+        "finalGear": 3.85
+      },
+      "expected": {
+        "rpm": 4130.45752,
+        "gear": 2
+      }
+    },
+    {
+      "name": "first_20mps",
+      "input": {
+        "speedMps": 20,
+        "gear": 2,
+        "frontRadius": 0.3400000036,
+        "rearRadius": 0.3400000036,
+        "finalGear": 3.85
+      },
+      "expected": {
+        "rpm": 7460.915039,
+        "gear": 2
+      }
+    },
+    {
+      "name": "second_20mps",
+      "input": {
+        "speedMps": 20,
+        "gear": 3,
+        "frontRadius": 0.3400000036,
+        "rearRadius": 0.3400000036,
+        "finalGear": 3.85
+      },
+      "expected": {
+        "rpm": 4884.708008,
+        "gear": 2
+      }
+    },
+    {
+      "name": "third_40mps",
+      "input": {
+        "speedMps": 40,
+        "gear": 4,
+        "frontRadius": 0.3400000036,
+        "rearRadius": 0.3400000036,
+        "finalGear": 3.85
+      },
+      "expected": {
+        "rpm": 6677.277344,
+        "gear": 4
+      }
+    },
+    {
+      "name": "top_80mps",
+      "input": {
+        "speedMps": 80,
+        "gear": 7,
+        "frontRadius": 0.3400000036,
+        "rearRadius": 0.3400000036,
+        "finalGear": 3.85
+      },
+      "expected": {
+        "rpm": 7931.09668,
+        "gear": 7
+      }
+    },
+    {
+      "name": "top_200mps_redline_clamp",
+      "input": {
+        "speedMps": 200,
+        "gear": 7,
+        "frontRadius": 0.3400000036,
+        "rearRadius": 0.3400000036,
+        "finalGear": 3.85
+      },
+      "expected": {
+        "rpm": 8500,
+        "gear": 7
+      }
+    },
+    {
+      "name": "zero_radius_idle",
+      "input": {
+        "speedMps": 50,
+        "gear": 3,
+        "frontRadius": 0,
+        "rearRadius": 0,
+        "finalGear": 3.85
+      },
+      "expected": {
+        "rpm": 800,
+        "gear": 2
+      }
+    },
+    {
+      "name": "different_axle_radii_average",
+      "input": {
+        "speedMps": 40,
+        "gear": 4,
+        "frontRadius": 0.3000000119,
+        "rearRadius": 0.400000006,
+        "finalGear": 3.85
+      },
+      "expected": {
+        "rpm": 6509.354492,
+        "gear": 4
+      }
+    },
+    {
+      "name": "small_wheel_earlier_gear",
+      "input": {
+        "speedMps": 40,
+        "gear": 4,
+        "frontRadius": 0.25,
+        "rearRadius": 0.25,
+        "finalGear": 3.85
+      },
+      "expected": {
+        "rpm": 8500,
+        "gear": 5
+      }
+    }
+  ],
+  "provenance": {
+    "portCommit": "9c6e26194b531f68f66fcc94a770ee7f89f2682e",
+    "files": {
+      "work\\mw-research\\prostreet-port\\decomp\\behaviors\\EngineRacer.cpp": "6e1a72556102be905ad25b84ea23a135a1fe677213a6e3da5e8a8c1ddddce087",
+      "work\\mw-research\\prostreet-port\\decomp\\behaviors\\EngineRacer.h": "a87166e46a979c4cd4187db3a3592cb55125039dd6789e49227a875d70acc97b",
+      "work\\mw-research\\prostreet-port\\decomp\\Physics.h": "52b9cf76b39a6ec3ffd23cab8b11e07faa5d5a560321553b4ffb8fd45ce76a91",
+      "work\\mw-research\\prostreet-port\\CarDataDump\\orig_mw_full\\bmwm3gtr.conf": "c96869e581971c1dd4206e48bce323e572b9a03dbb14cc0b9717237ea8c13f41"
+    },
+    "compiler": "g++ (MinGW-W64 x86_64-ucrt-posix-seh, built by Brecht Sanders, r2) 16.2.0",
+    "flags": [
+      "-std=c++20",
+      "-O0",
+      "-fno-fast-math"
+    ],
+    "scope": "Actual source bodies extracted unchanged. ABI scaffold supplies tuning/state; no NOMERA JS, original binary, full engine or drivetrain integration. DoGearChange includes ProStreet staging-neutral hack (explicit divergence). Clutch class from port; FindShiftPotential/AutoShift/shift delay cross-checked Brawltendo MATCHING implementation."
+  }
+}

@@ -5,6 +5,7 @@
  * Tire/contact integration and remaining limits: docs/MW_TIRES_COLLISIONS.md.
  * Traction control, burnout and drift: docs/MW_TRACTION_DRIFT.md.
  * Nitrous, aerodynamics and handbrake integration: docs/MW_NOS_AERO.md.
+ * Gear selection, clutch scheduling and RPM smoothing: docs/MW_GEARBOX.md.
  * This partial adapter does not claim Xbox retail equivalence.
  */
 (function (root, factory) {
@@ -39,8 +40,9 @@
     }
     // Physics::Info::ShiftPoints, naturally aspirated path. Induction and the
     // suspect swapped spool/rpm call in the decomp are intentionally not claimed.
-    function shiftPoints(engine, gears) {
-        const up = Array(gears.length).fill(0), down = Array(gears.length).fill(0);
+    function shiftPoints(engine, gears, count=gears.length) {
+        const up = Array(count).fill(0), down = Array(count).fill(0);
+        if(count<gears.length)return{ok:false,up,down};
         for (let j = 2; j < gears.length - 1; j++) {
             const ratio = Math.abs(gears[j]) > .00001 ? gears[j + 1] / gears[j] : 0;
             let rpm = (engine.redline + engine.idle) * .5;
@@ -49,7 +51,7 @@
             down[j + 1] = ratio * up[j];
         }
         up[gears.length - 1] = engine.redline;
-        return { up, down };
+        return { ok:true,up,down };
     }
     // EngineRacer::Clutch::Update. State remains DISENGAGED until caller engages.
     function clutch(state, time, engageTime, dt) {
@@ -59,6 +61,87 @@
             ? 1 - .75 * clamp(time / Math.max(.00001, engageTime), 0, 1) : 1;
         return { state, time, ratio };
     }
+    function smoothRPM({shifting=false,gear=2,dt=0,oldRpm=0,newRpm=0,inertia=.5}={}){
+        const fast=shifting&&gear>2||gear===1,maxDecel=-(fast?15:2.5)*1000/inertia;
+        let rpm=newRpm;
+        if(dt>0&&(rpm-oldRpm)/dt<maxDecel)rpm=Math.max(rpm,oldRpm+maxDecel*dt);
+        return rpm*.55+oldRpm*.45;
+    }
+    class Clutch {
+        constructor(){this.engageTime=0;this.reset();}
+        reset(){this.state='ENGAGED';this.time=0;this.shiftingUp=false;}
+        disengage(){if(this.state==='ENGAGED')this.state='DISENGAGED';}
+        engage(time){if(this.state==='DISENGAGED'){this.state=time>0?'ENGAGING':'ENGAGED';this.time=this.engageTime=time;}}
+        update(dt){
+            if(this.time>0){this.time-=dt;if(this.time<=0&&this.state==='ENGAGING')this.state='ENGAGED';}
+            return this.state==='DISENGAGED'?.25:this.state==='ENGAGING'?1-clamp(this.engageTime>1e-6?this.time/this.engageTime:0,0,1)*.75:1;
+        }
+    }
+    // Gear indices follow MW: R=0, N=1, first=2. The host converts at its edge.
+    class Gearbox {
+        constructor({engine,gears,shifts,shiftSpeed=.25}={}){
+            this.engine=engine;this.gears=gears;this.shifts=shifts;this.shiftSpeed=shiftSpeed;
+            this.gear=2;this.timer=0;this.sportTimer=0;this.potential=0;
+            this.clutch=new Clutch();this.shiftingUp=false;
+        }
+        guessRPM(speed,gear){
+            const e=this.engine;
+            if(!(this.radius>0))return e.idle;
+            return clamp(e.idle+Math.abs(speed)/this.radius*this.finalDrive*(this.gears[gear]||0)*60/(2*Math.PI)*(e.redline-e.idle)/e.redline,e.idle,e.redline);
+        }
+        guessGear(speed){
+            if(speed<0)return 0;
+            let gear=2;
+            while(gear<this.gears.length-1&&this.guessRPM(speed,gear)>this.shifts.up[gear])gear++;
+            return gear;
+        }
+        findPotential(gear,rpm,gas=0){
+            if(gear<=1)return 0;
+            let down=this.shifts.down[gear];const up=this.shifts.up[gear],lower=this.gears[gear-1];
+            if(gear!==2&&lower>0)down=Math.min(mix(mix(this.engine.idle,down,.65),down,gas),this.shifts.up[gear-1]*this.gears[gear]/lower-200);
+            return rpm>=up&&gear<this.gears.length-1?2:rpm<=down&&gear>2?1:0;
+        }
+        changeGear(gear,{staging=false}={}){
+            if(staging&&gear===1)gear=2; // ProStreet staging bridge from source.
+            if(gear<0||gear>=this.gears.length||gear===this.gear)return false;
+            this.timer=this.shiftSpeed*this.gears[gear]*(gear<this.gear?.25:1);
+            this.shiftingUp=gear>this.gear;this.gear=gear;
+            this.clutch.shiftingUp=this.shiftingUp;this.clutch.disengage();
+            this.potential=0;return true;
+        }
+        sportShift(gear){
+            if(gear===this.gear||gear<=1||this.timer>0||gear>this.gear&&this.potential===1||gear<this.gear&&this.potential===2)return false;
+            if(!this.changeGear(gear))return false;
+            this.sportTimer=1.25;return true;
+        }
+        stepShifting(dt,{automatic=true,override=0,staging=false,gas=0,transmissionRpm=0,contacts=[true,true,true,true],slips=[0,0,0,0],input=true}={}){
+            automatic=input&&automatic;if(override)automatic=override===1;
+            if(automatic&&this.gear!==0&&this.timer<=0&&!staging&&this.sportTimer<=0){
+                if(this.gear===1)this.gear=2;
+                else if(this.potential===1){
+                    let next=this.gear-1;
+                    const ratio=g=>this.gears[g]>0&&this.gears[this.gear]>1e-7?this.gears[g]/this.gears[this.gear]:0;
+                    let rpm=transmissionRpm*ratio(next);
+                    while(next>2&&this.findPotential(next,rpm,gas)===1)rpm=transmissionRpm*ratio(--next);
+                    this.changeGear(next,{staging});
+                }else if([2,4,5].includes(this.potential)&&contacts.length===4&&contacts.every((v,i)=>v&&slips[i]<4))this.changeGear(this.gear+1,{staging});
+            }
+            if(this.timer>0)this.timer=Math.max(0,this.timer-dt);
+            if(this.sportTimer>0&&this.potential)this.sportTimer=input?Math.max(0,this.sportTimer-dt*(2-gas)):0;
+        }
+        updateClutch(dt,{gas=0,rpm=0,transmissionRpm=0}={}){
+            const c=this.clutch,ratio=c.update(dt);
+            if(this.gear===0||this.gear===2){
+                const idle=this.engine.idle+(this.gear===0?2400:800);
+                if(rpm>idle||transmissionRpm>idle||gas>=.1)c.engage(.05);
+                else c.disengage();
+            }else if(this.gear===1)c.disengage();
+            else c.engage(.25);
+            return ratio;
+        }
+        updatePotential(rpm,gas=0,staging=false){this.potential=this.clutch.state==='ENGAGED'&&!staging?this.findPotential(this.gear,rpm,gas):0;return this.potential;}
+    }
+    function engineInertia(flywheelMass,loaded=true){return(flywheelMass*.025+.25)*(loaded?1:.35);}
     // Public API accepts radians; MW's original angle unit is turns (1=360deg).
     // Signed force is a NOMERA wrapper around original absolute slip magnitude.
     function tireForce(loadN, slipRad, gripScale = 1, gripBoost = 1) {
@@ -403,7 +486,7 @@
     function createSpec(profile) {
         const engine = { idle: profile.idleRpm, redline: profile.redlineRpm, maxRpm: profile.maxRpm,
             torque: REFERENCE.torque.map(value => value / 283 * profile.baseTorqueNm) };
-        return { engine, shifts: shiftPoints(engine, profile.gearRatios), shiftTime: .25,
+        return { engine, gears:profile.gearRatios.map(Math.abs),shifts: shiftPoints(engine, profile.gearRatios), shiftTime: .25,shiftSpeed:.25,
             nos:{capacitySeconds:100/profile.nitroDrainRate,boost:profile.nitroTorqueMult-1,rechargeMin:100/profile.nitroRechargeRate,rechargeMax:60/profile.nitroRechargeRate},
             // Calibrate the catalogue BMW M3 to the source BMW coefficients;
             // preserve relative car/wing/upgrade differences in NOMERA.
@@ -414,6 +497,6 @@
         try { return window.localStorage.getItem('authors_mw_physics_v1') !== 'classic'; }
         catch (_) { return true; }
     }
-    return Object.freeze({ torque, shiftPoints, clutch, Nitrous, aerodynamics, tireForce, Tire, tireFrame, differential, driveControl, Burnout, DriftController, yawFrictionBoost, wallSteer, steeringRange, steeringRate, SteeringController, springForce, staticCompression, Suspension,
+    return Object.freeze({ torque, shiftPoints, clutch, Clutch, smoothRPM, engineInertia, Gearbox, Nitrous, aerodynamics, tireForce, Tire, tireFrame, differential, driveControl, Burnout, DriftController, yawFrictionBoost, wallSteer, steeringRange, steeringRate, SteeringController, springForce, staticCompression, Suspension,
         createSpec, selected, REFERENCE, LOAD });
 }));

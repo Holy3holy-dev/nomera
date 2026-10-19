@@ -928,6 +928,18 @@
                 tire.omega=s.vForward/p.wheelRadius;tire.roadSpeed=s.vForward;tire.load=s.wheelLoads[key];
                 this.mwTires[key]=tire;s.tires[key]=tire;
             }
+            this.mwGearbox=new this.mwKernel.Gearbox(this.mwSpec);
+            const gearbox=this.mwGearbox;gearbox.radius=p.wheelRadius;gearbox.finalDrive=p.finalDrive;
+            gearbox.gear=gearbox.guessGear(s.vForward);
+            s.gear=gearbox.gear-1;s.rpm=s.engineRpm=s.transmissionRpm=gearbox.guessRPM(s.vForward,gearbox.gear);
+            this._mwShiftUpHeld=false;this._mwShiftDownHeld=false;
+            this._syncMWGearbox();
+        }
+
+        _syncMWGearbox(){
+            const g=this.mwGearbox,s=this.state;
+            s.gear=g.gear-1;s.shiftTimer=g.timer;s.sportShiftTimer=g.sportTimer;s.shiftPotential=g.potential;
+            s.clutchState=g.clutch.state;
         }
 
         reset(init = {}) {
@@ -966,6 +978,7 @@
 
         shiftUp() {
             const s = this.state;
+            if(this.mwGearbox){const changed=this.mwGearbox.sportShift(Math.max(2,this.mwGearbox.gear+1));this._syncMWGearbox();return changed;}
             const maxForwardGear = this.profile.gearRatios.length - 2; // index 0 is R, 1 is N
             if (s.gear < maxForwardGear && s.shiftTimer <= 0) {
                 s.gear += 1;
@@ -981,6 +994,12 @@
 
         shiftDown() {
             const s = this.state;
+            if(this.mwGearbox){
+                const g=this.mwGearbox;
+                if(g.timer>0||s.gear<=-1||s.gear===1&&s.vForward>3.5)return false;
+                const next=s.gear===1&&s.vForward<=1.5?0:g.gear-1;
+                const changed=next<=1?g.changeGear(next):g.sportShift(next);this._syncMWGearbox();return changed;
+            }
             if (s.gear > -1 && s.shiftTimer <= 0) {
                 if (s.gear === 1 && s.vForward > 3.5) {
                     return false; // Prevent shifting into Reverse at forward speed
@@ -1059,8 +1078,10 @@
             rawSteer = clamp(rawSteer, -1, 1);
 
             // Manual shift triggers
-            if (controls.shiftUp) this.shiftUp();
-            if (controls.shiftDown) this.shiftDown();
+            if(this.mwGearbox&&s.gear!==this.mwGearbox.gear-1)this.mwGearbox.changeGear(s.gear+1);
+            if (controls.shiftUp&&(!this.mwGearbox||!this._mwShiftUpHeld)) this.shiftUp();
+            if (controls.shiftDown&&(!this.mwGearbox||!this._mwShiftDownHeld)) this.shiftDown();
+            this._mwShiftUpHeld=!!controls.shiftUp;this._mwShiftDownHeld=!!controls.shiftDown;
 
             // 2. Time scale (Speedbreaker disabled)
             this._speedbreakerLatch = false;
@@ -1200,13 +1221,13 @@
             }
 
             // 7. Engine Torque Curve, Forced Induction, Clutch & Gearbox (EngineRacer)
-            if (this.mwKernel) {
-                // Gear change initiates engagement; original clutch ramp supplies
-                // the torque interruption. Shift scheduling remains host policy.
-                const clutch = this.mwKernel.clutch(s.shiftTimer > 0 ? 'ENGAGING' : 'ENGAGED', s.shiftTimer, this.mwSpec.shiftTime, dt);
-                s.shiftTimer = clutch.time;
-                s.clutchState = clutch.state;
-                s.clutchRatio = clutch.ratio;
+            if (this.mwGearbox) {
+                const g=this.mwGearbox;
+                if(s.gear!==g.gear-1)g.changeGear(s.gear+1);
+                g.stepShifting(dt,{automatic:this.options.transmissionMode==='auto',gas:throttle,staging:!!controls.staging,
+                    transmissionRpm:s.transmissionRpm,contacts:Object.values(this.mwTires).map(t=>t.load>0),slips:Object.values(this.mwTires).map(t=>t.slip)});
+                s.clutchRatio=g.updateClutch(dt,{gas:throttle,rpm:s.engineRpm,transmissionRpm:s.transmissionRpm});
+                this._syncMWGearbox();
             } else if (s.shiftTimer > 0) {
                 s.shiftTimer = Math.max(0, s.shiftTimer - dt);
                 if (s.shiftTimer <= 0) {
@@ -1222,11 +1243,17 @@
             }
 
             const gearIdx = clamp(s.gear + 1, 0, p.gearRatios.length - 1);
-            const activeGearRatio = p.gearRatios[gearIdx] || p.gearRatios[2];
+            const activeGearRatio = p.gearRatios[gearIdx] ?? p.gearRatios[2];
             const totalGearRatio = Math.abs(activeGearRatio) * p.finalDrive;
 
             // Wheel angular speed -> Engine RPM loop
-            const wheelAngularVel = absFwdMps / p.wheelRadius;
+            let wheelAngularVel = absFwdMps / p.wheelRadius;
+            if(this.mwGearbox){
+                const t=this.mwTires,axles=[];
+                if(p.torqueSplit>0)axles.push((t.fl.omega+t.fr.omega)*.5);
+                if(p.torqueSplit<1)axles.push((t.rl.omega+t.rr.omega)*.5);
+                wheelAngularVel=s.gear<0?-Math.min(0,...axles):Math.max(0,...axles);
+            }
             const wheelDrivenRpm = (wheelAngularVel * totalGearRatio * 60) / (2 * Math.PI);
             const launchFreeRevRpm = throttle * (p.peakTorqueRpm * 0.92);
             const targetRpm = clamp(
@@ -1234,10 +1261,17 @@
                 p.idleRpm,
                 p.maxRpm
             );
-            s.rpm = lerp(s.rpm, targetRpm, clamp(dt * 18.0, 0, 1));
+            if(this.mwGearbox){
+                // Source differential -> transmission RPM relation. Full engine
+                // angular-acceleration/clutch torque solver remains a host bridge.
+                s.transmissionRpm=clamp(p.idleRpm+wheelDrivenRpm*(p.redlineRpm-p.idleRpm)/p.redlineRpm,p.idleRpm,p.redlineRpm);
+                s.engineRpm=clamp(Math.max(s.transmissionRpm,absFwdMps<6?launchFreeRevRpm:0),p.idleRpm,p.maxRpm);
+                s.rpm=this.mwKernel.smoothRPM({shifting:s.shiftTimer>0||s.clutchState==='DISENGAGED',gear:s.gear+1,dt,oldRpm:s.rpm,newRpm:s.engineRpm,inertia:this.mwKernel.engineInertia(10,s.gear!==0)});
+                this.mwGearbox.updatePotential(s.transmissionRpm,throttle,!!controls.staging);this._syncMWGearbox();
+            }else s.rpm = lerp(s.rpm, targetRpm, clamp(dt * 18.0, 0, 1));
 
             // Automatic transmission shift logic (Physics::Info::ShiftPoints & AutoShift)
-            if (this.options.transmissionMode === 'auto' && s.gear >= 1 && s.shiftTimer <= 0) {
+            if (!this.mwGearbox && this.options.transmissionMode === 'auto' && s.gear >= 1 && s.shiftTimer <= 0) {
                 const maxForwardGear = p.gearRatios.length - 2;
                 const shiftUpRpm = this.mwSpec ? this.mwSpec.shifts.up[gearIdx] : p.redlineRpm * 0.94;
                 const shiftDownRpm = this.mwSpec ? this.mwSpec.shifts.down[gearIdx] * .92 : p.idleRpm + (p.redlineRpm - p.idleRpm) * (throttle > 0.3 ? 0.42 : 0.28);
@@ -1299,7 +1333,8 @@
             s.engineTorqueNm = grossEngineTorque + engineBrakingTorque;
 
             const gearDirection = s.gear < 0 ? -1 : (s.gear > 0 ? 1 : 0);
-            const totalWheelDriveTorque = s.engineTorqueNm * totalGearRatio * 0.92 * s.clutchRatio * gearDirection;
+            const coupling=this.mwGearbox&&s.clutchState==='DISENGAGED'?0:s.clutchRatio;
+            const totalWheelDriveTorque = s.engineTorqueNm * totalGearRatio * 0.92 * coupling * gearDirection;
             s.wheelDriveTorqueNm = totalWheelDriveTorque;
             // The source drive controller uses the LAST tire update and burnout
             // state, before current suspension/steering/drift tuning.

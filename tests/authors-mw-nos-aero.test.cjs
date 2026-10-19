@@ -22,16 +22,17 @@ test('MW nitrous fixed-step tank, immediate torque off, cooldown, recharge and e
 });
 test('MW short handbrake pulses stay controlled across catalogue and dry/rain',()=>{
  for(const name of Object.keys(profiles))for(const weather of ['dry','rain'])for(const speed of [60,100,160]){
-  const p=new P({carName:name,speedKmh:speed,physicsKernel:mw});p.setWeather(weather);
-  let beta=0,yaw=0,peakSpeed=speed;
+  const p=new P({carName:name,speedKmh:speed,physicsKernel:mw}),straight=new P({carName:name,speedKmh:speed,physicsKernel:mw});p.setWeather(weather);straight.setWeather(weather);
+  let beta=0,yaw=0,peakSpeed=speed,straightPeak=speed;
   for(let i=0;i<360;i++){
    const oldYaw=p.yawRate;p.update(1/60,{gas:i<90,steer:i<90?1:0,handbrake:i<90&&i%12<6});
+   straight.update(1/60,{gas:i<90});straightPeak=Math.max(straightPeak,straight.speedKmh);
    if(p.state.handbrakeAssistTorque)assert(p.state.handbrakeAssistTorque*oldYaw<=1e-6,'assist only removes rotation');
    beta=Math.max(beta,Math.abs(p.state.chassisSlipAngle)*180/Math.PI);yaw=Math.max(yaw,Math.abs(p.yawRate));peakSpeed=Math.max(peakSpeed,p.speedKmh);
    assert(Number.isFinite(p.speedKmh)&&Math.abs(p.state.y)<.3,`${name} body stable`);
   }
   assert(beta<55&&yaw<2,`${name} ${weather} ${speed}: beta ${beta}, yaw ${yaw}`);
-  assert(peakSpeed<speed+5,`${name}: no spurious launch ${peakSpeed}`);
+  assert(peakSpeed<=straightPeak+1e-6,`${name}: pulsed turn cannot accelerate beyond straight-line control ${peakSpeed} > ${straightPeak}`);
   assert(Math.abs(p.yawRate)<.1,`${name}: release settles`);
  }
 });
