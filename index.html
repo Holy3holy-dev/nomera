@@ -60,7 +60,7 @@
     <!-- Подключение Firebase SDK для базы данных, аккаунтов и мультиплеера -->
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
-    <link rel="stylesheet" href="./styles.css?v=f86e03997172">
+    <link rel="stylesheet" href="./styles.css?v=396ac0e45735">
     <style>
         /* Collector's Book («Книга коллекционера») & Car-Plate Synergy UI */
         .collector-book-summary {
@@ -523,7 +523,7 @@
                             <div class="podium-price-readout">
                                 <span class="podium-price-caption">Оценочная стоимость</span>
                                 <div class="current-price-badge" id="current-price-display">
-                                    Сделай первый спин — узнай стоимость
+                                    <span class="price-hero-value">— ₽</span>
                                 </div>
                             </div>
                         </div>
@@ -2172,7 +2172,7 @@
                 <!-- Подвкладка: Рынок номеров и автомобилей -->
                 <div id="multi-subtab-market">
                     <!-- Панель фильтрации рынка -->
-                    <div class="col-filter-toolbar market-filter-toolbar" id="market-filter-toolbar">
+                    <div class="col-filter-toolbar market-filter-toolbar mobile-collapsed" id="market-filter-toolbar">
                         <div class="col-search-wrap">
                             <input type="text" id="mkt-search-input" class="col-search-input" placeholder="🔍 Поиск лота по номеру, модели авто или продавцу..." oninput="setMarketFilterState({ query: this.value })">
                         </div>
@@ -2685,7 +2685,8 @@
                     <div id="roulette-car-name" style="font-size: 18px; font-weight: 800; color: #fff; margin-top: 10px; letter-spacing: -0.3px;">Модель автомобиля</div>
                 </div>
 
-                <div style="font-size: 22px; font-weight:900; margin-bottom: 14px; color:#fbbf24;" id="roulette-price">10 000 ₽</div>
+                <div class="podium-price-caption" style="font-size:11px; text-transform:uppercase; letter-spacing:1.2px; color:#94A3B8; margin-bottom:2px;">Оценочная стоимость</div>
+                <div class="roulette-price-value" id="roulette-price">10 000 ₽</div>
 
                 <!-- Кнопки для номера -->
                 <div class="roulette-action-row" id="roulette-actions-plate">
@@ -3122,6 +3123,6 @@
     <script src="./js/nfs-physics.js?v=8345fce74626"></script>
     <script src="./js/nfs-circuit-race.js?v=6b87132535ec"></script>
     <script src="./js/car-3d.js?v=19732e422d56"></script>
-    <script src="./js/app.js?v=0ba803f01c00"></script>
+    <script src="./js/app.js?v=eceb61a22806"></script>
 </body>
 </html>

@@ -24257,8 +24257,12 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             const sidebar = (qSidebar && qSidebar.classList)
                 ? qSidebar
                 : document.getElementById('col-filter-sidebar');
+            const toolbar = document.getElementById('col-actions-bar');
             if (!sidebar || !sidebar.classList) return false;
             const isCollapsed = sidebar.classList.toggle('mobile-collapsed');
+            if (toolbar && toolbar.classList) {
+                toolbar.classList.toggle('mobile-collapsed', isCollapsed);
+            }
             const btn = document.getElementById('btn-mobile-col-filters');
             if (btn) {
                 if (btn.classList) btn.classList.toggle('active', !isCollapsed);

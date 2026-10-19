@@ -9569,7 +9569,8 @@ body {
     overflow: hidden;
 }
 
-.garage-scene-svg {
+.garage-scene-svg,
+.garage-bg-cars-svg {
     width: 100%;
     height: 100%;
     object-fit: cover;
@@ -12176,25 +12177,28 @@ body {
     box-shadow: 0 4px 16px rgba(231, 36, 62, 0.42) !important;
 }
 
-/* 5 Inspector Tabs (.garage-inspector-tabs, .garage-insp-tab.active) */
+/* 5 Inspector Tabs (.garage-inspector-tabs, .garage-inspector-tab.active) */
 .garage-inspector-tabs {
     display: grid !important;
     grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
-    gap: 4px !important;
-    background: rgba(8, 11, 16, 0.85) !important;
-    border: 1px solid rgba(255, 255, 255, 0.07) !important;
+    gap: 3px !important;
+    background: rgba(10, 14, 22, 0.9) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
     border-radius: 12px !important;
-    padding: 4px !important;
+    padding: 3px !important;
     margin-bottom: 12px !important;
 }
 
+.garage-inspector-tab,
 .garage-insp-tab {
-    background: transparent !important;
-    border: 1px solid transparent !important;
+    background: rgba(18, 25, 38, 0.75) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.18) !important;
     color: #94A3B8 !important;
-    font-size: 11px !important;
+    font-size: 10.5px !important;
     font-weight: 800 !important;
-    padding: 7px 4px !important;
+    letter-spacing: -0.2px !important;
+    padding: 7px 1px !important;
     border-radius: 8px !important;
     cursor: pointer !important;
     text-align: center !important;
@@ -12202,18 +12206,25 @@ body {
     overflow: hidden !important;
     text-overflow: ellipsis !important;
     transition: all 0.16s ease !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
 }
 
+.garage-inspector-tab:hover,
 .garage-insp-tab:hover {
     color: #F8FAFC !important;
-    background: rgba(255, 255, 255, 0.05) !important;
+    background: rgba(28, 38, 56, 0.9) !important;
+    border-color: rgba(255, 255, 255, 0.22) !important;
 }
 
+.garage-inspector-tab.active,
 .garage-insp-tab.active {
-    background: linear-gradient(180deg, #E7243E 0%, #9E1124 100%) !important;
+    background: linear-gradient(180deg, #FF334F 0%, #D41430 100%) !important;
     color: #FFFFFF !important;
-    border-color: rgba(255, 255, 255, 0.2) !important;
-    box-shadow: 0 4px 14px rgba(231, 36, 62, 0.4) !important;
+    border: 1px solid rgba(255, 120, 140, 0.5) !important;
+    border-top: 1.5px solid rgba(255, 255, 255, 0.8) !important;
+    box-shadow: 0 4px 14px rgba(231, 36, 62, 0.5) !important;
 }
 
 /* Unobstructed 3D Showroom Stage (.garage-center-podium, #garage-preview-3d-wrap) */
@@ -12402,6 +12413,108 @@ body {
     border-color: #E7243E !important;
     box-shadow: 0 0 16px rgba(231, 36, 62, 0.35), inset 0 2px 4px rgba(0, 0, 0, 0.3) !important;
     outline: none !important;
+}
+
+/* 2.5. Generator Arena Showroom Refinement — Eliminate Boxy Admin Feel */
+.gen-garage-arena {
+    background:
+        radial-gradient(ellipse 80% 50% at 50% 15%, rgba(231, 36, 62, 0.22) 0%, rgba(245, 158, 11, 0.08) 42%, transparent 70%),
+        radial-gradient(ellipse 75% 45% at 50% 70%, rgba(231, 36, 62, 0.25) 0%, transparent 68%),
+        radial-gradient(circle at 50% 50%, rgba(22, 32, 48, 0.6) 0%, #06080E 92%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.10) !important;
+    border-top: 1.5px solid rgba(255, 255, 255, 0.22) !important;
+    box-shadow: 0 32px 85px rgba(0, 0, 0, 0.88), inset 0 1px 0 rgba(255, 255, 255, 0.12) !important;
+}
+
+/* Sidebars as sleek, semi-translucent telemetry glass panels */
+.gen-left-panel .gen-glass-sidebar,
+.gen-right-panel .gen-glass-sidebar,
+.gen-stats-card,
+.gen-recent-drops-card {
+    background: rgba(12, 17, 26, 0.52) !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.15) !important;
+    border-radius: 18px !important;
+    box-shadow: 0 14px 36px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+}
+
+.gen-stats-list .summary-stat {
+    background: rgba(18, 25, 38, 0.55) !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+    border-radius: 12px !important;
+    transition: all 0.16s ease !important;
+}
+
+.gen-stats-list .summary-stat:hover {
+    background: rgba(28, 38, 56, 0.8) !important;
+    border-color: rgba(255, 255, 255, 0.18) !important;
+    transform: translateX(3px) !important;
+}
+
+.plate-country-selector .country-select-btn {
+    background: rgba(16, 22, 34, 0.65) !important;
+    border: 1px solid rgba(255, 255, 255, 0.07) !important;
+    border-radius: 12px !important;
+    transition: all 0.16s ease !important;
+}
+
+.plate-country-selector .country-select-btn:hover {
+    background: rgba(28, 38, 54, 0.85) !important;
+    border-color: rgba(255, 255, 255, 0.2) !important;
+    transform: translateX(2px) !important;
+}
+
+.plate-country-selector .country-select-btn.active {
+    background: linear-gradient(90deg, rgba(231, 36, 62, 0.35) 0%, rgba(20, 27, 40, 0.88) 100%) !important;
+    border-color: #E7243E !important;
+    border-top: 1px solid rgba(255, 120, 140, 0.75) !important;
+    box-shadow: 0 0 18px rgba(231, 36, 62, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.25) !important;
+}
+
+/* Center Stage Pedestal & Price Display (Fix Overflow & Center) */
+.podium-pedestal-3d {
+    width: min(460px, 94%) !important;
+    margin: -4px auto 0 auto !important;
+    padding: 10px 18px 8px 18px !important;
+    background: linear-gradient(180deg, rgba(20, 27, 39, 0.92) 0%, rgba(9, 12, 18, 0.96) 100%) !important;
+    border: 1px solid rgba(245, 158, 11, 0.35) !important;
+    border-top: 2px solid rgba(253, 224, 71, 0.75) !important;
+    border-radius: 16px !important;
+    box-shadow:
+        0 18px 44px rgba(0, 0, 0, 0.8),
+        0 0 26px rgba(245, 158, 11, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.18) !important;
+    text-align: center !important;
+}
+
+#current-price-display,
+.gen-garage-arena #current-price-display {
+    max-width: 100% !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    font-size: clamp(22px, 2.4vw, 34px) !important;
+    font-weight: 900 !important;
+    color: #FBBF24 !important;
+    -webkit-text-fill-color: #FBBF24 !important;
+    text-shadow: 0 4px 24px rgba(245, 158, 11, 0.55), 0 0 40px rgba(245, 158, 11, 0.25) !important;
+    line-height: 1.2 !important;
+    margin: 0 auto !important;
+    display: block !important;
+    text-align: center !important;
+}
+
+/* Controls Dock Blending with Stage */
+.gen-controls-dock {
+    background: linear-gradient(180deg, rgba(16, 23, 34, 0.78) 0%, rgba(9, 13, 20, 0.94) 100%) !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-top: 1.5px solid rgba(255, 255, 255, 0.2) !important;
+    border-radius: 20px !important;
+    box-shadow: 0 20px 52px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
 }
 
 /* 3. Luxury Collector Vault Crate Cards (#cases) */
@@ -12798,33 +12911,71 @@ body {
     }
 
     /* Mobile Generator Order:
-       1. Country Selector (.gen-left-panel)
-       2. Center Stage (.gen-center-stage: Plate -> Rarity -> Gold Price -> Red Spin CTA -> Secondary Actions -> Drawers)
+       1. Center Stage (Plate Podium -> Rarity -> Gold Price -> Red Spin CTA -> Secondary Actions)
+       2. Country Selector (.gen-left-panel as a smooth horizontal scrolling strip)
        3. Player Stats (.gen-right-panel)
-       4. Rarity Odds Strip (.gen-rarity-odds-strip) at the very BOTTOM */
+       4. Rarity Odds Strip (.gen-rarity-odds-strip) */
     .gen-garage-arena,
     .gen-garage-arena.gen-luxury-grid {
         display: flex !important;
         flex-direction: column !important;
     }
 
-    .gen-left-panel {
+    .gen-center-stage {
         order: 1 !important;
     }
 
-    .gen-center-stage {
+    .gen-left-panel {
         order: 2 !important;
+        margin-top: 8px !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    .gen-left-hero-heading {
+        display: none !important;
+    }
+
+    .gen-left-panel .gen-glass-sidebar {
+        padding: 8px 10px !important;
+    }
+
+    .plate-country-selector {
+        display: flex !important;
+        flex-wrap: nowrap !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        gap: 6px !important;
+        padding: 2px 2px 6px 2px !important;
+        scrollbar-width: none !important;
+    }
+    .plate-country-selector::-webkit-scrollbar {
+        display: none !important;
+    }
+    .plate-country-selector .country-select-btn {
+        flex: 0 0 auto !important;
+        min-width: 125px !important;
+        padding: 6px 10px !important;
+        border-radius: 10px !important;
+    }
+
+    .gen-left-panel .gen-sidebar-divider,
+    .gen-left-panel .gen-region-sidebar-section {
+        display: none !important;
     }
 
     .gen-right-panel {
         order: 3 !important;
+        margin-top: 8px !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
     }
 
     .gen-rarity-odds-strip {
         order: 4 !important;
         width: 100% !important;
         box-sizing: border-box !important;
-        margin: 6px 0 0 0 !important;
+        margin: 8px 0 0 0 !important;
         border-radius: 14px !important;
     }
 
@@ -12835,7 +12986,7 @@ body {
 
     .plate-hero-scale-wrap {
         order: 1 !important;
-        padding: 4px 0 12px 0 !important;
+        padding: 4px 0 10px 0 !important;
     }
 
     .gen-rarity-crown-wrap {
@@ -12845,7 +12996,7 @@ body {
     .podium-pedestal-3d {
         order: 3 !important;
         width: 100% !important;
-        padding: 10px 14px !important;
+        padding: 8px 12px !important;
     }
 
     .gen-controls-dock .gen-main-cta-wrap {
@@ -12875,16 +13026,16 @@ body {
     /* Japanese Plate Layout Fix on Mobile */
     .plate-container.country-jpn {
         min-height: clamp(136px, 36vw, 156px) !important;
-        padding: 46px 14px 14px 14px !important;
+        padding: 44px 12px 12px 12px !important;
     }
     .plate-container.country-jpn::before {
-        font-size: clamp(19px, 5.2vw, 23px) !important;
-        top: 10px !important;
+        font-size: clamp(18px, 4.8vw, 22px) !important;
+        top: 9px !important;
         letter-spacing: 2px !important;
     }
     .plate-container.country-jpn .plate-cell.letter-cell {
         position: absolute !important;
-        top: 12px !important;
+        top: 11px !important;
         height: 18px !important;
         min-width: 10px !important;
         width: 10px !important;
@@ -12897,7 +13048,7 @@ body {
     .plate-container.country-jpn #cell-l3 { left: 60px !important; }
     .plate-container.country-jpn .plate-region {
         position: absolute !important;
-        top: 10px !important;
+        top: 9px !important;
         right: 10px !important;
         min-width: 0 !important;
         width: auto !important;
@@ -12910,33 +13061,59 @@ body {
         line-height: 1.1 !important;
     }
     .plate-container.country-jpn .plate-cells-main {
-        padding: 4px 4px 2px 4px !important;
+        padding: 2px 4px 2px 4px !important;
         gap: 3px !important;
     }
     .plate-container.country-jpn .plate-cells-main::before {
-        font-size: clamp(28px, 8vw, 34px) !important;
-        margin-right: 12px !important;
+        font-size: clamp(26px, 7.5vw, 32px) !important;
+        margin-right: 10px !important;
     }
     .plate-container.country-jpn .plate-cell.num-cell {
-        font-size: clamp(38px, 11vw, 48px) !important;
-        min-width: clamp(24px, 7vw, 32px) !important;
-        height: 48px !important;
+        font-size: clamp(36px, 10.5vw, 46px) !important;
+        min-width: clamp(22px, 6.5vw, 30px) !important;
+        height: 46px !important;
         line-height: 1 !important;
     }
     .plate-container.country-jpn #cell-n1 {
-        margin-left: 18px !important;
-        margin-right: 18px !important;
+        margin-left: 16px !important;
+        margin-right: 16px !important;
     }
     .plate-container.country-jpn #cell-n1::before {
-        left: -20px !important;
-        font-size: clamp(28px, 8vw, 34px) !important;
+        left: -18px !important;
+        font-size: clamp(26px, 7.5vw, 32px) !important;
     }
     .plate-container.country-jpn #cell-n1:not(.jpn-no-hyphen)::after {
-        right: -16px !important;
-        font-size: clamp(28px, 8vw, 34px) !important;
+        right: -15px !important;
+        font-size: clamp(26px, 7.5vw, 32px) !important;
     }
 
-    /* Collection & Market Search 260px Height Bug Fix */
+    /* Collection Mobile Clean Layout: Subtabs Pill Bar & Collapsed Search */
+    #inventory .market-type-nav {
+        display: flex !important;
+        flex-wrap: nowrap !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        gap: 6px !important;
+        scrollbar-width: none !important;
+        padding-bottom: 2px !important;
+        width: 100% !important;
+    }
+    #inventory .market-type-nav::-webkit-scrollbar {
+        display: none !important;
+    }
+    #inventory .market-type-nav .market-type-btn {
+        flex: 0 0 auto !important;
+        width: auto !important;
+        white-space: nowrap !important;
+        min-height: 38px !important;
+        font-size: 11.5px !important;
+        padding: 6px 12px !important;
+    }
+    #col-actions-bar.mobile-collapsed,
+    .col-filter-toolbar.mobile-collapsed {
+        display: none !important;
+    }
+
     .col-filter-toolbar,
     .market-filter-toolbar,
     #col-actions-bar {
@@ -12954,6 +13131,48 @@ body {
         width: 100% !important;
         height: auto !important;
         min-height: 0 !important;
+    }
+
+    /* Market Mobile Master Switcher & 3-Column Actions */
+    .market-master-switcher {
+        padding: 8px !important;
+        gap: 6px !important;
+    }
+    .market-master-tabs {
+        display: grid !important;
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+        gap: 4px !important;
+    }
+    .market-master-btn {
+        padding: 6px 4px !important;
+        min-height: 42px !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
+        text-align: center !important;
+        gap: 2px !important;
+    }
+    .market-master-btn small {
+        display: none !important;
+    }
+    .market-master-btn strong {
+        font-size: 11px !important;
+        letter-spacing: -0.2px !important;
+    }
+    .market-master-actions {
+        display: grid !important;
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+        gap: 4px !important;
+        margin-top: 6px !important;
+    }
+    .market-master-actions .btn {
+        min-height: 40px !important;
+        font-size: 11px !important;
+        padding: 6px 2px !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        justify-content: center !important;
     }
 
     /* Cases Country Bar Horizontal Scroll Pill Bar */
@@ -12980,13 +13199,13 @@ body {
         white-space: nowrap !important;
     }
 
-    /* Mobile Garage 3D Podium Stage & Clean 2-Column Header Actions */
+    /* Mobile Garage 3D Podium Stage & Prioritized Car Showroom */
     #garage-preview-stage,
     .garage-preview-stage,
     #garage-preview-3d-wrap,
     .garage-preview-3d-wrap {
-        min-height: 250px !important;
-        height: clamp(250px, 38dvh, 330px) !important;
+        min-height: 270px !important;
+        height: clamp(270px, 42dvh, 360px) !important;
     }
 
     .garage-car-nav-arrow,
@@ -12998,25 +13217,37 @@ body {
         font-size: 18px !important;
     }
 
+    /* Clean mobile header over the 3D car: car title on left, change car on right */
     .garage-3d-header-actions {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: flex-end !important;
+        gap: 6px !important;
+        width: auto !important;
+    }
+    .garage-3d-header-actions #btn-garage-podium-toggle,
+    .garage-3d-header-actions #btn-garage-podium-styling,
+    .garage-3d-header-actions #btn-garage-podium-nfs-race,
+    .garage-3d-header-actions #btn-garage-podium-race {
+        display: none !important;
+    }
+    .garage-3d-header-actions #btn-mobile-garage-cars {
+        min-height: 38px !important;
+        font-size: 11.5px !important;
+        padding: 6px 12px !important;
+    }
+
+    /* Full-featured 3D Car Action Dock beneath the car on mobile */
+    .garage-podium-bottom-dock {
         display: grid !important;
         grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
         gap: 6px !important;
-        width: 100% !important;
-        box-sizing: border-box !important;
+        margin-top: 10px !important;
     }
-    .garage-3d-header-actions .btn {
-        min-height: 40px !important;
-        font-size: 11.5px !important;
-        padding: 6px 8px !important;
-        white-space: nowrap !important;
-        overflow: hidden !important;
-        text-overflow: ellipsis !important;
-        justify-content: center !important;
-        width: 100% !important;
-    }
-    .garage-3d-header-actions #btn-garage-podium-race {
+    .garage-podium-bottom-dock .podium-dock-btn-race {
         grid-column: 1 / -1 !important;
+        min-height: 48px !important;
+        font-size: 14px !important;
     }
 
     /* Race Game Mobile 2x2 Grid & Select Overflow Fix */
@@ -13034,15 +13265,90 @@ body {
         white-space: normal !important;
         line-height: 1.2 !important;
     }
-    #race-nfsmw-blacklist-select,
-    #nfs-quickstart-hero select,
-    #racegame select {
-        max-width: 100% !important;
-        width: 100% !important;
-        box-sizing: border-box !important;
-        text-overflow: ellipsis !important;
-        overflow: hidden !important;
-    }
+/* ==========================================================================
+   8. LUXURY UNSEAL & SINGLE CASE OPENING PRESENTATION (#roulette-result)
+   ========================================================================== */
+#roulette-result {
+    position: relative;
+    padding: 18px 14px 12px 14px !important;
+    background:
+        radial-gradient(circle at 50% 25%, rgba(245, 158, 11, 0.15) 0%, transparent 68%),
+        radial-gradient(circle at 50% 75%, rgba(231, 36, 62, 0.12) 0%, transparent 64%),
+        linear-gradient(180deg, rgba(16, 23, 34, 0.96) 0%, rgba(8, 11, 17, 0.98) 100%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.10) !important;
+    border-top: 1.5px solid rgba(255, 255, 255, 0.24) !important;
+    border-radius: 20px !important;
+    box-shadow: 0 20px 52px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.12) !important;
+}
+
+#roulette-plate-prize-box {
+    margin: 16px auto !important;
+    display: flex;
+    justify-content: center;
+    perspective: 800px;
+}
+
+#roulette-plate-card {
+    font-size: clamp(20px, 3.4vw, 30px) !important;
+    padding: 10px 24px !important;
+    border-width: 3.5px !important;
+    border-radius: 12px !important;
+    box-shadow: 0 18px 44px rgba(0, 0, 0, 0.75), 0 0 34px rgba(245, 158, 11, 0.3) !important;
+    transform: translateZ(0);
+    transition: transform 0.25s ease, box-shadow 0.25s ease !important;
+}
+
+#roulette-plate-card:hover {
+    transform: scale(1.02) !important;
+    box-shadow: 0 22px 50px rgba(0, 0, 0, 0.85), 0 0 44px rgba(245, 158, 11, 0.45) !important;
+}
+
+#roulette-price {
+    font-size: clamp(24px, 3.8vw, 36px) !important;
+    font-weight: 900 !important;
+    color: #FBBF24 !important;
+    text-shadow: 0 4px 22px rgba(245, 158, 11, 0.6), 0 0 40px rgba(245, 158, 11, 0.3) !important;
+    margin: 6px 0 16px 0 !important;
+    letter-spacing: -0.5px !important;
+}
+
+.roulette-action-row {
+    display: flex !important;
+    justify-content: center !important;
+    gap: 10px !important;
+    margin-bottom: 14px !important;
+    flex-wrap: wrap !important;
+}
+
+.roulette-action-row .btn {
+    min-height: 44px !important;
+    padding: 9px 20px !important;
+    font-size: 13.5px !important;
+    font-weight: 800 !important;
+    border-radius: 11px !important;
+}
+
+.roulette-reopen-bar {
+    display: flex !important;
+    justify-content: center !important;
+    gap: 8px !important;
+    flex-wrap: wrap !important;
+}
+
+.roulette-reopen-bar .btn {
+    min-height: 46px !important;
+    padding: 10px 20px !important;
+    font-size: 13.5px !important;
+    font-weight: 800 !important;
+    border-radius: 11px !important;
+}
+
+.roulette-reopen-bar #btn-roulette-open-again {
+    background: linear-gradient(180deg, #FF334F 0%, #D41430 48%, #8A081A 100%) !important;
+    border: 1px solid rgba(255, 175, 185, 0.55) !important;
+    border-top: 1.5px solid rgba(255, 255, 255, 0.8) !important;
+    box-shadow: 0 8px 24px rgba(231, 36, 62, 0.52), inset 0 1px 0 rgba(255, 255, 255, 0.45) !important;
+    color: #FFFFFF !important;
 }
 
 @media (max-width: 420px) {
