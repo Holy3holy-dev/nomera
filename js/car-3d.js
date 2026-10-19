@@ -183,13 +183,17 @@
         const defColor = getDefaultCarColor(carName, carId);
         const bodyHex = parseColor(styling.color || defColor, defColor);
 
-        // Body Paint (high-gloss automotive clearcoat simulation)
+        // Body Paint (high-gloss automotive clearcoat simulation; tuned for pearl/white so contours never overexpose)
+        const rCh = (bodyHex >> 16) & 255;
+        const gCh = (bodyHex >> 8) & 255;
+        const bCh = bodyHex & 255;
+        const isBrightWhitePaint = (rCh > 210 && gCh > 210 && bCh > 210);
         const paint = new (THREE.MeshPhysicalMaterial || THREE.MeshStandardMaterial)({
-            color: bodyHex,
-            roughness: 0.14,
-            metalness: 0.70,
+            color: isBrightWhitePaint ? 0xeef2f6 : bodyHex,
+            roughness: isBrightWhitePaint ? 0.22 : 0.14,
+            metalness: isBrightWhitePaint ? 0.28 : 0.70,
             clearcoat: 1.0,
-            clearcoatRoughness: 0.05,
+            clearcoatRoughness: isBrightWhitePaint ? 0.08 : 0.05,
             reflectivity: 0.95,
             name: 'CarPaint'
         });
@@ -7253,12 +7257,16 @@
         }
 
         const styledPaint = mats.paint.clone();
-        styledPaint.color.setHex(bodyColorHex);
-        styledPaint.roughness = 0.14;
-        styledPaint.metalness = 0.70;
+        const srCh = (bodyColorHex >> 16) & 255;
+        const sgCh = (bodyColorHex >> 8) & 255;
+        const sbCh = bodyColorHex & 255;
+        const isBrightWhiteGLB = (srCh > 210 && sgCh > 210 && sbCh > 210);
+        styledPaint.color.setHex(isBrightWhiteGLB ? 0xeef2f6 : bodyColorHex);
+        styledPaint.roughness = isBrightWhiteGLB ? 0.22 : 0.14;
+        styledPaint.metalness = isBrightWhiteGLB ? 0.28 : 0.70;
         if (styledPaint.clearcoat !== undefined) {
             styledPaint.clearcoat = 1.0;
-            styledPaint.clearcoatRoughness = 0.05;
+            styledPaint.clearcoatRoughness = isBrightWhiteGLB ? 0.08 : 0.05;
         }
         if (styling.vinyl && styling.vinyl !== 'none') {
             const vinylTex = createVinylCanvasTexture(THREE, styling.vinyl, bodyColorHex);
