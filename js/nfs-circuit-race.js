@@ -740,6 +740,7 @@
                 styling: this.carConfig.styling || {},
                 weather: config.weather === 'auto' ? 'night' : (config.weather || 'night'),
                 transmissionMode: config.transmissionMode || 'auto',
+                physicsKernel: config.physicsKernel || null,
                 x: playerStartX,
                 z: playerStartZ,
                 heading: playerGridSample.heading
@@ -887,6 +888,7 @@
                     },
                     weather: this.currentActiveWeather,
                     transmissionMode: 'auto',
+                    physicsKernel: this.carConfig.physicsKernel || null,
                     x: startX,
                     z: startZ,
                     heading: gridSample.heading
@@ -1065,6 +1067,7 @@
 
             // Fuel consumption check
             const hasFuel = this.state.fuelCurrent > 0.001;
+            if (this.carConfig.physicsKernel) pState.fuelCurrent = this.state.fuelCurrent;
             const playerInput = {
                 left: this.keys.left,
                 right: this.keys.right,
@@ -1515,7 +1518,7 @@
                 }
                 if (THREE.ACESFilmicToneMapping !== undefined && 'toneMapping' in this.renderer) {
                     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-                    this.renderer.toneMappingExposure = 1.28;
+                    this.renderer.toneMappingExposure = this.carConfig.physicsKernel ? .95 : 1.28;
                 }
                 if (typeof this.renderer.setSize === 'function') {
                     this.renderer.setSize(this.width, this.height, false);
@@ -1572,6 +1575,17 @@
             }
             if (this.ambientLight) this.ambientLight.intensity = preset.ambient;
             if (this.sunLight) this.sunLight.intensity = preset.sun;
+            if (this.carConfig.physicsKernel) {
+                // This renderer was previously dormant in the main race flow.
+                // Keep the asphalt/car readable when enabling it at night.
+                const dark = ['night', 'rain'].includes(this.currentActiveWeather);
+                if (this.hemiLight) this.hemiLight.intensity = dark ? .3 : .65;
+                if (this.fillLight) this.fillLight.intensity = dark ? .2 : .45;
+                if (dark) {
+                    this.ambientLight.intensity = preset.ambient * .5;
+                    this.sunLight.intensity = preset.sun * .4;
+                }
+            }
         }
 
         _trackDisposables(geo, mat, tex) {
@@ -1706,8 +1720,8 @@
             roadGeo.setAttribute('position', new THREE.Float32BufferAttribute(roadPositions, 3));
             roadGeo.setIndex(roadIndices);
             if (typeof roadGeo.computeVertexNormals === 'function') roadGeo.computeVertexNormals();
-            const roadMat = new THREE.MeshStandardMaterial
-                ? new THREE.MeshStandardMaterial({ color: 0x263449, roughness: 0.55, metalness: 0.14, side: THREE.DoubleSide })
+            const roadMat = THREE.MeshStandardMaterial
+                ? new THREE.MeshStandardMaterial({ color: this.carConfig.physicsKernel ? 0x0b1018 : 0x263449, roughness: this.carConfig.physicsKernel ? .85 : .55, metalness: this.carConfig.physicsKernel ? .04 : .14, side: THREE.DoubleSide })
                 : new THREE.MeshLambertMaterial({ color: 0x263449 });
             this._trackDisposables(roadGeo, roadMat);
             this.scene.add(new THREE.Mesh(roadGeo, roadMat));

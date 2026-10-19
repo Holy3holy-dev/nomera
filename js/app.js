@@ -20149,7 +20149,10 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     }
                 };
 
-                if (typeof Car3DManager !== 'undefined' && typeof Car3DManager.Car3DRacingEngine === 'function') {
+                const mwPhysicsKernel = (window.NOMERA_AUTHORS_PREVIEW && window.NomeraMW?.selected()) ? window.NomeraMW : null;
+                if (isNfsCircuit && mwPhysicsKernel && typeof NomeraCircuitRace !== 'undefined' && typeof NomeraCircuitRace.NomeraCircuitRaceEngine === 'function') {
+                    car3DRacingEngine = new NomeraCircuitRace.NomeraCircuitRaceEngine(container, engineOptions);
+                } else if (typeof Car3DManager !== 'undefined' && typeof Car3DManager.Car3DRacingEngine === 'function') {
                     car3DRacingEngine = new Car3DManager.Car3DRacingEngine(container, engineOptions);
                 } else if (isNfsCircuit && typeof NomeraCircuitRace !== 'undefined' && typeof NomeraCircuitRace.NomeraCircuitRaceEngine === 'function') {
                     car3DRacingEngine = new NomeraCircuitRace.NomeraCircuitRaceEngine(container, engineOptions);
@@ -20160,6 +20163,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 });
                 const raceUpgrades = Object.assign({}, activeRaceCar.upgrades || {}, activeRaceCar.styling || {});
                 car3DRacingEngine.start({
+                    physicsKernel: mwPhysicsKernel,
                     carName: selectedRaceCarName,
                     styling: raceStyling,
                     upgrades: raceUpgrades,

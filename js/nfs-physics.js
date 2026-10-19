@@ -2,8 +2,8 @@
  * 🏎️ H3H NOMERA — Clean-Room Vehicle Physics Engine
  *
  * Independent, deterministic 2D/3D rigid-body & 4-wheel dynamic vehicle simulation module.
- * Implements the mathematical principles documented in `docs/NFS_PHYSICS_RESEARCH.md`
- * without using any proprietary or decompiled source code.
+ * Default model is independent; an explicitly supplied physicsKernel enables
+ * the MW adapter documented in docs/MW_PHYSICS_PORT.md.
  *
  * Coordinate Convention (Planar Physics World):
  *   - Origin (0, 0), +Z is North / initial forward (heading = 0)
@@ -761,6 +761,8 @@
                 transmissionMode: 'auto', // 'auto' | 'manual'
                 stabilityAssist: true
             }, mergedOptions);
+            this.mwKernel = this.options.physicsKernel || null;
+            this.mwSpec = this.mwKernel ? this.mwKernel.createSpec(this.profile) : null;
 
             this.accumulator = 0;
             this.stepCount = 0;
@@ -944,7 +946,7 @@
             if (s.gear < maxForwardGear && s.shiftTimer <= 0) {
                 s.gear += 1;
                 if (s.gear === 0) s.gear = 1;
-                s.shiftTimer = 0.11;
+                s.shiftTimer = this.mwSpec ? this.mwSpec.shiftTime : 0.11;
                 s.clutchState = 'DISENGAGED';
                 s.clutchRatio = 0.25;
                 s.pitchVel += 0.25;
@@ -961,7 +963,7 @@
                 }
                 s.gear -= 1;
                 if (s.gear === 0 && s.vForward <= 1.5) s.gear = -1;
-                s.shiftTimer = 0.08;
+                s.shiftTimer = this.mwSpec ? this.mwSpec.shiftTime : 0.08;
                 s.clutchState = 'ENGAGING';
                 s.clutchRatio = 0.45;
                 return true;
@@ -1045,7 +1047,7 @@
             s.effectiveGrip = latGripMu * p.tireGripScale;
 
             // 4. Reverse / Forward gear transition logic (Brake-to-Reverse in Auto mode)
-            let throttle = rawGas;
+            let throttle = this.mwKernel && rawBrake > .1 ? 0 : rawGas;
             let brake = rawBrake;
             if (this.options.transmissionMode === 'auto') {
                 if (s.gear === -1) {
@@ -1094,7 +1096,7 @@
             // (SuspensionRacer::DoHumanSteering, CalculateMaxSteering, Chassis::ComputeAckerman)
             const absFwdMps = Math.abs(s.vForward);
             const speedNorm = clamp(absFwdMps / 100.0, 0, 1); // 0..360 km/h
-            let maxSteerDeg = sampleTable(STEER_ANGLE_DEG_VS_SPEED, speedNorm);
+            let maxSteerDeg = this.mwKernel ? this.mwKernel.steeringRange(absFwdMps) : sampleTable(STEER_ANGLE_DEG_VS_SPEED, speedNorm);
 
             // Brake / Handbrake turn-in steering boost (BrakeSteeringRangeMultiplier)
             const brakeSteerBoost = 1.0 + (brake * 0.32 + ebrake * 0.45) * sampleTable(STEER_RATE_VS_SPEED, speedNorm);
@@ -1119,11 +1121,11 @@
             if (gameBreaker > 0) {
                 maxSteerDeg = lerp(maxSteerDeg, 55.0, gameBreaker);
             }
-            maxSteerDeg = clamp(maxSteerDeg, 3.5, 55.0);
+            maxSteerDeg = clamp(maxSteerDeg, this.mwKernel ? 2.9 : 3.5, 55.0);
             s.maxSteerDeg = maxSteerDeg;
 
             const targetSteerDeg = rawSteer * maxSteerDeg;
-            const steerSpeedDegPerSec = 195.0 * sampleTable(STEER_RATE_VS_SPEED, speedNorm) * (isCounterInput ? 1.55 : 1.0);
+            const steerSpeedDegPerSec = 195.0 * (this.mwKernel ? this.mwKernel.steeringRate(absFwdMps) : sampleTable(STEER_RATE_VS_SPEED, speedNorm)) * (isCounterInput ? 1.55 : 1.0);
             const maxStepDeg = steerSpeedDegPerSec * dt;
             s.steerAngleDeg = clamp(
                 targetSteerDeg,
@@ -1147,7 +1149,14 @@
             }
 
             // 7. Engine Torque Curve, Forced Induction, Clutch & Gearbox (EngineRacer)
-            if (s.shiftTimer > 0) {
+            if (this.mwKernel) {
+                // Gear change initiates engagement; original clutch ramp supplies
+                // the torque interruption. Shift scheduling remains host policy.
+                const clutch = this.mwKernel.clutch(s.shiftTimer > 0 ? 'ENGAGING' : 'ENGAGED', s.shiftTimer, this.mwSpec.shiftTime, dt);
+                s.shiftTimer = clutch.time;
+                s.clutchState = clutch.state;
+                s.clutchRatio = clutch.ratio;
+            } else if (s.shiftTimer > 0) {
                 s.shiftTimer = Math.max(0, s.shiftTimer - dt);
                 if (s.shiftTimer <= 0) {
                     s.clutchState = 'ENGAGED';
@@ -1179,8 +1188,8 @@
             // Automatic transmission shift logic (Physics::Info::ShiftPoints & AutoShift)
             if (this.options.transmissionMode === 'auto' && s.gear >= 1 && s.shiftTimer <= 0) {
                 const maxForwardGear = p.gearRatios.length - 2;
-                const shiftUpRpm = p.redlineRpm * 0.94;
-                const shiftDownRpm = p.idleRpm + (p.redlineRpm - p.idleRpm) * (throttle > 0.3 ? 0.42 : 0.28);
+                const shiftUpRpm = this.mwSpec ? this.mwSpec.shifts.up[gearIdx] : p.redlineRpm * 0.94;
+                const shiftDownRpm = this.mwSpec ? this.mwSpec.shifts.down[gearIdx] * .92 : p.idleRpm + (p.redlineRpm - p.idleRpm) * (throttle > 0.3 ? 0.42 : 0.28);
                 if (s.rpm >= shiftUpRpm && s.gear < maxForwardGear && s.wheelSlipRatio < 0.45) {
                     this.shiftUp();
                 } else if (s.rpm <= shiftDownRpm && s.gear > 1) {
@@ -1231,7 +1240,8 @@
                 ecuCut = 1.0 - ramp(absFwdMps, 22.0, 25.0);
             }
 
-            const grossEngineTorque = p.baseTorqueNm * torqueShape * inductionMult * nosMult * throttle * ecuCut;
+            const curveTorque = this.mwKernel ? this.mwKernel.torque(this.mwSpec.engine, s.rpm) : p.baseTorqueNm * torqueShape;
+            const grossEngineTorque = curveTorque * inductionMult * nosMult * throttle * ecuCut;
             const engineBrakingTorque = (throttle < 0.05 && absFwdMps > 1.0)
                 ? -p.baseTorqueNm * 0.14 * (0.4 + 0.6 * rpmProgress)
                 : 0;
@@ -1348,6 +1358,13 @@
             // Raw lateral forces from Pacejka curve
             let fyFront = pacejkaFront * maxGripFrontN;
             let fyRear = pacejkaRear * maxGripRearN;
+            if (this.mwKernel) {
+                // Evaluate both loaded tires, rather than treating the entire
+                // axle as one tire: the source's load curve is nonlinear.
+                const tire = this.mwKernel.tireForce;
+                fyFront = (tire(s.wheelLoads.fl, s.slipAngleFront, p.tireGripScale) + tire(s.wheelLoads.fr, s.slipAngleFront, p.tireGripScale)) * latGripMu * frontGameBreakerBoost;
+                fyRear = (tire(s.wheelLoads.rl, s.slipAngleRear, p.tireGripScale) + tire(s.wheelLoads.rr, s.slipAngleRear, p.tireGripScale)) * latGripMu * rearDriftGripMult;
+            }
 
             // 11. Friction Circle / Ellipse Coupling (SuspensionRacer::Tire::UpdateLoaded)
             // Couples longitudinal drive/brake force with lateral cornering force!

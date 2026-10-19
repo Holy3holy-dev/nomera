@@ -92,6 +92,10 @@
  const carPane=make('section','ae-race-pane','<div class="ae-race-pane-heading"><span>03 / АВТОМОБИЛЬ</span><h2>Выбери машину</h2><label class="ae-show-locked"><input type="checkbox" id="ae-show-locked-cars"> Показать автомобили из автосалона</label></div>');
  carPane.classList.add('ae-owned-only');
  const prepPane=make('section','ae-race-pane','<div class="ae-race-pane-heading"><span>04 / ПОДГОТОВКА</span><h2>Всё готово к старту</h2></div><div class="ae-race-summary" id="ae-race-summary"></div>');
+ const physicsChoice=make('div','ae-physics-choice','<label for="ae-physics-model">Управление в 3D</label><select id="ae-physics-model"><option value="mw">Most Wanted · пробная версия</option><option value="classic">Прежнее управление</option></select><p>Тяга, переключения и сцепление шин по восстановленным расчётам MW. Характеристики и улучшения — от твоего автомобиля.</p>');
+ prepPane.append(physicsChoice);
+ physicsChoice.querySelector('select').value=window.NomeraMW?.selected()?'mw':'classic';
+ physicsChoice.querySelector('select').addEventListener('change',event=>{localStorage.setItem('authors_mw_physics_v1',event.target.value);});
  const oldHeader=menu.querySelector(':scope>.section-header');if(oldHeader)oldHeader.hidden=true;
  const quick=make('details','ae-race-advanced','<summary>Быстрые старты и тест-драйв <span>＋</span></summary>');quick.append($('#nfs-quickstart-hero'));prepPane.append(quick);
  for(const card of [...menu.querySelectorAll(':scope>.race-weather-card')])trackPane.append(card);
@@ -108,6 +112,7 @@
  function goStep(next){
   step=Math.max(0,Math.min(3,next));const isDrag=activeRaceMode==='drag';
   modePane.hidden=step!==0;trackPane.hidden=step!==1;carPane.hidden=step!==2;prepPane.hidden=step!==3;
+  physicsChoice.hidden=!['3d','nfs'].includes(activeRaceMode);
   fixedDrag.hidden=!isDrag||step!==1;dragCar.hidden=!isDrag||step!==2;
   if(!isRaceRunning){menu.classList.toggle('hidden',isDrag||step===0);drag.classList.toggle('hidden',!isDrag||step!==3);}
   stepper.querySelectorAll('button').forEach((btn,index)=>{btn.classList.toggle('active',index===step);btn.classList.toggle('complete',index<step);btn.setAttribute('aria-current',index===step?'step':'false');});

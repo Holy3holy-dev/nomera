@@ -13026,6 +13026,14 @@
             this.state.fuelCurrent = this.performance.tankCapacity || 45;
             this.state.fuelConsumption = this.performance.consumption || 9.0;
             this.state.fuelLiters = 0;
+            // The road runner keeps its traffic, economy and road coordinates.
+            // Only its drive forces and tire response opt into the MW adapter.
+            this.mwLongitudinal = config.physicsKernel ? new window.NomeraNfsPhysics.NfsVehiclePhysics({
+                carName: this.carName, performance: this.performance,
+                upgrades: config.upgrades || {}, styling: this.styling,
+                physicsKernel: config.physicsKernel, speedKmh: this.state.speed,
+                weather: config.weather === 'auto' ? 'night' : (config.weather || 'night')
+            }) : null;
             this.state.distanceKm = 0;
             this.state.peakSpeed = this.isNfsCircuit ? 0 : 40;
             this.state.earnedCash = 0;
@@ -14642,6 +14650,34 @@
             const nitroMult = state.isNitroActive ? 1.25 : 1.0;
             const targetMaxSpeed = state.maxSpeed * nitroMult * (1.0 + bestSlipstream * 0.06);
 
+            let netAccel = 0;
+            let brakeBite = 0;
+            let handbrakeBite = 0;
+            const isHandbrake = !!keys.drift;
+            if (this.mwLongitudinal) {
+                const physical = this.mwLongitudinal;
+                // Import collision speed losses and host-owned consumables.
+                physical.state.vForward = Math.max(0, state.speed / 3.6);
+                physical.state.fuelCurrent = state.fuelCurrent;
+                physical.state.nitroLevel = state.nitroLevel;
+                physical.state.slipstreamFactor = bestSlipstream;
+                physical.setWeather(this.currentActiveWeather || 'night');
+                const oldSpeed = state.speed;
+                physical.update(dt, { gas: gasActive, brake: keys.brake, handbrake: isHandbrake, nitro: state.isNitroActive });
+                // Highway has no reverse lane traversal; circuit retains reverse.
+                physical.state.vForward = Math.max(0, physical.state.vForward);
+                physical.state.gear = Math.max(1, physical.state.gear);
+                state.speed = physical.state.vForward * 3.6;
+                state.rpm = physical.state.rpm;
+                state.idleRpm = physical.profile.idleRpm;
+                state.maxRpm = physical.profile.redlineRpm;
+                if (state.gear !== physical.state.gear && this.options.onSound) this.options.onSound('backfire');
+                state.gear = physical.state.gear;
+                netAccel = (state.speed - oldSpeed) / Math.max(.0001, dt);
+                brakeBite = keys.brake ? Math.max(0, -netAccel) : 0;
+                handbrakeBite = isHandbrake ? Math.max(0, -netAccel) : 0;
+            } else {
+
             // 7-speed automatic gearbox definition
             const gearWindows = [
                 { min: 0, max: 62, down: 0 },
@@ -14679,10 +14715,6 @@
             if (state.shiftShock > 0) state.shiftShock = Math.max(0, state.shiftShock - dt);
 
             // Throttle & Braking (including Handbrake)
-            let netAccel = 0;
-            let brakeBite = 0;
-            let handbrakeBite = 0;
-            const isHandbrake = !!keys.drift;
 
             if (isHandbrake) {
                 // Handbrake applies strong rear braking force (~85-110 km/h per second deceleration)
@@ -14729,6 +14761,7 @@
                 }
                 const coastingDrag = (9.0 + Math.pow(state.speed / 100, 2) * 4.2) * (1.0 - bestSlipstream * 0.35);
                 state.speed = Math.max(0, state.speed - coastingDrag * dt);
+            }
             }
             if (!gasActive || isHandbrake) state.gasHoldTime = 0;
             state.prevGas = !!gasActive && !isHandbrake;
@@ -14944,7 +14977,7 @@
             // 2. TIRE GRIP & SLIP ANGLE (Pacejka-inspired curve scaled by weather grip)
             // Kinematic travel heading vs steering wheel angle
             const travelHeading = Math.atan2(state.vx, Math.max(2.5, forwardSpeedMps));
-            const steerAngleRad = steerInput * 0.32;
+            const steerAngleRad = steerInput * (this.mwLongitudinal ? this.config.physicsKernel.steeringRange(forwardSpeedMps) * Math.PI / 180 : .32);
             const slipAngle = steerAngleRad - travelHeading;
 
             // Pacejka Magic Formula normalized lateral curve: Fy = D * sin(C * atan(B*a - E*(B*a - atan(B*a))))
@@ -14968,7 +15001,24 @@
                 : 1.0;
             const corneringStiffness = (0.55 + 0.45 * weatherGrip) * (0.85 + 0.15 * pacejkaSaturation);
 
-            if (authorsDriving && !isDriftingNow && !isHandbrake) {
+            if (this.mwLongitudinal) {
+                const physical = this.mwLongitudinal, kernel = this.config.physicsKernel;
+                const loads = physical.state.wheelLoads;
+                const activity = Math.min(1, forwardSpeedMps / 1.5);
+                // Road-constrained adapter: forces move between lanes; yaw and
+                // road bends remain the existing highway game's responsibility.
+                const steps = Math.max(1, Math.ceil(dt * 60)), subDt = dt / steps;
+                for (let step = 0; step < steps; step++) {
+                    const travel = Math.atan2(state.vx, Math.max(2.5, forwardSpeedMps));
+                    const frontSlip = (steerAngleRad - travel) * activity;
+                    const rearSlip = -travel * activity;
+                    const grip = physical.profile.tireGripScale * weatherGrip;
+                    const frontForce = kernel.tireForce(loads.fl, frontSlip, grip) + kernel.tireForce(loads.fr, frontSlip, grip);
+                    const rearForce = (kernel.tireForce(loads.rl, rearSlip, grip) + kernel.tireForce(loads.rr, rearSlip, grip)) * (isHandbrake ? .48 : 1);
+                    state.vx += (frontForce + rearForce) / physical.profile.massKg * subDt;
+                    state.vx = Math.max(-lateralMax, Math.min(lateralMax, state.vx));
+                }
+            } else if (authorsDriving && !isDriftingNow && !isHandbrake) {
                 state.vx = authorsDriving.lateral(state.vx, steerInput, state.speed, lateralMax, effectiveSteerAuthority, weatherGrip, dt);
             } else if (steerInput !== 0 && effectiveSteerAuthority > 0) {
                 state.vx += steerInput * lateralMax * 4.2 * effectiveSteerAuthority * corneringStiffness * dt;
