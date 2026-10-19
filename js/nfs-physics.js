@@ -770,6 +770,8 @@
 
             // Current and previous discrete states for fixed-timestep interpolation
             this.state = this._createInitialState(this.options);
+            this.mwSteering = this.mwKernel ? new this.mwKernel.SteeringController() : null;
+            this.suspension = this.mwKernel ? new this.mwKernel.Suspension(this.profile) : null;
             this.prevState = Object.assign({}, this.state);
             this.renderState = Object.assign({}, this.state);
         }
@@ -829,6 +831,8 @@
 
                 // Steering & Ackermann
                 steerInput: 0,
+                wheelAngles: {fl:0,fr:0,rl:0,rr:0},
+                suspensionOffsets: {fl:0,fr:0,rl:0,rr:0},
                 steerAngleRad: 0,
                 steerAngleDeg: 0,
                 steerLeftRad: 0,
@@ -913,6 +917,7 @@
             this.stepCount = 0;
             this._speedbreakerLatch = false;
             this.state = this._createInitialState(init);
+            if(this.mwKernel){this.mwSteering=new this.mwKernel.SteeringController();this.suspension=new this.mwKernel.Suspension(this.profile);}
             this.prevState = Object.assign({}, this.state);
             this.renderState = Object.assign({}, this.state);
             return this.state;
@@ -1096,6 +1101,12 @@
             // (SuspensionRacer::DoHumanSteering, CalculateMaxSteering, Chassis::ComputeAckerman)
             const absFwdMps = Math.abs(s.vForward);
             const speedNorm = clamp(absFwdMps / 100.0, 0, 1); // 0..360 km/h
+            if(this.mwSteering){
+                const steering=this.mwSteering.step(dt,{input:rawSteer,speedMps:absFwdMps,gas:throttle,brake,handbrake:ebrake,rearSlipDeg:-s.slipAngleRear*RAD2DEG,collisionTimer:s.collisionTimer});
+                s.maxSteerDeg=steering.maxSteerDeg;s.steerAngleDeg=steering.angleDeg;
+                s.steerAngleRad=steering.angleDeg*DEG2RAD;s.steerInput=rawSteer;
+                s.collisionTimer=Math.max(0,s.collisionTimer-dt);
+            } else {
             let maxSteerDeg = this.mwKernel ? this.mwKernel.steeringRange(absFwdMps) : sampleTable(STEER_ANGLE_DEG_VS_SPEED, speedNorm);
 
             // Brake / Handbrake turn-in steering boost (BrakeSteeringRangeMultiplier)
@@ -1134,6 +1145,7 @@
             );
             s.steerAngleRad = s.steerAngleDeg * DEG2RAD;
             s.steerInput = rawSteer;
+            }
 
             // Ackermann geometry (Chassis::ComputeAckerman): inside wheel turns sharper than outside wheel
             const absSteerRad = Math.abs(s.steerAngleRad);
@@ -1260,8 +1272,8 @@
             const longTransferN = clamp((p.massKg * (s.longitudinalAccelG * GRAVITY) * p.cgHeight) / p.wheelbase, -totalWeightN * 0.32, totalWeightN * 0.32);
             const latTransferN = clamp((p.massKg * (s.lateralAccelG * GRAVITY) * p.cgHeight) / p.trackWidth, -totalWeightN * 0.38, totalWeightN * 0.38);
 
-            const frontAxleLoadN = clamp(totalWeightN * p.frontWeightBias - longTransferN, totalWeightN * 0.20, totalWeightN * 0.80);
-            const rearAxleLoadN = clamp(totalWeightN * (1 - p.frontWeightBias) + longTransferN, totalWeightN * 0.20, totalWeightN * 0.80);
+            let frontAxleLoadN = clamp(totalWeightN * p.frontWeightBias - longTransferN, totalWeightN * 0.20, totalWeightN * 0.80);
+            let rearAxleLoadN = clamp(totalWeightN * (1 - p.frontWeightBias) + longTransferN, totalWeightN * 0.20, totalWeightN * 0.80);
 
             const frontLatShift = latTransferN * p.rollBalance;
             const rearLatShift = latTransferN * (1 - p.rollBalance);
@@ -1271,6 +1283,17 @@
             s.wheelLoads.fr = clamp(frontAxleLoadN * 0.5 - frontLatShift, 400, totalWeightN * 0.65);
             s.wheelLoads.rl = clamp(rearAxleLoadN * 0.5 + rearLatShift, 400, totalWeightN * 0.65);
             s.wheelLoads.rr = clamp(rearAxleLoadN * 0.5 - rearLatShift, 400, totalWeightN * 0.65);
+            if(this.suspension){
+                const heights={};
+                for(const wheel of this.suspension.wheels){
+                    const x=s.x+Math.cos(s.heading)*wheel.x+Math.sin(s.heading)*wheel.z;
+                    const z=s.z-Math.sin(s.heading)*wheel.x+Math.cos(s.heading)*wheel.z;
+                    heights[wheel.key]=controls.groundHeights?.[wheel.key]??(typeof this.options.sampleGroundHeight==='function'?this.options.sampleGroundHeight(x,z):0);
+                }
+                this.suspension.step(dt,{longAccel:s.longitudinalAccelG*GRAVITY,latAccel:controls.externalLateralAccel??s.lateralAccelG*GRAVITY,downforce:aeroDownforceN,groundHeights:heights});
+                for(const wheel of this.suspension.wheels){s.wheelLoads[wheel.key]=wheel.load;s.suspensionOffsets[wheel.key]=wheel.offset;}
+                frontAxleLoadN=s.wheelLoads.fl+s.wheelLoads.fr;rearAxleLoadN=s.wheelLoads.rl+s.wheelLoads.rr;
+            }
 
             // 9. Drivetrain Torque Split (FWD vs RWD vs AWD) & Braking Forces
             const frontShare = p.torqueSplit;       // 1.0 = FWD, 0.0 = RWD, 0.25..0.45 = AWD
@@ -1400,6 +1423,10 @@
                 fyRear *= scaleR;
             }
             s.wheelSlipRatio = clamp(Math.max(frontDriveUsage * 0.3, rearSlip), 0, 1.5);
+            if(this.suspension){
+                if(frontAxleLoadN<=0){fxFront=0;fyFront=0;}
+                if(rearAxleLoadN<=0){fxRear=0;fyRear=0;}
+            }
 
             s.lateralForceFront = fyFront;
             s.lateralForceRear = fyRear;
@@ -1410,7 +1437,8 @@
             const offThrottleFactor = 1.0 + (1.0 - throttle) * 0.85; // OffThrottleDragFactor
             const draftDragReduction = 1.0 - clamp(s.slipstreamFactor || 0, 0, 1) * 0.42;
             const aeroDragForce = -Math.sign(s.vForward) * 0.5 * 1.225 * (p.dragCoeff || 0.32) * 2.15 * (s.vForward * s.vForward) * offThrottleFactor * draftDragReduction;
-            const rollingForce = -Math.sign(s.vForward) * (p.massKg * GRAVITY * 0.015 * surfPreset.rollingResistance);
+            const hasContact=!this.suspension||this.suspension.wheels.some(w=>w.contact);
+            const rollingForce = hasContact ? -Math.sign(s.vForward) * (p.massKg * GRAVITY * 0.015 * surfPreset.rollingResistance) : 0;
 
             // Cornering scrub drag (sin(slipAngle) projection of front lateral force)
             const cornerScrubForce = -Math.sin(s.steerAngleRad) * fyFront * 0.28;
@@ -1448,12 +1476,12 @@
             let yawTorque = (Lf * fyFront * Math.cos(s.steerAngleRad) - Lr * fyRear) * (p.yawSpeedMult || 1.15);
 
             // EBrake180 initiation torque when pulling handbrake & steering at moderate speeds
-            if (ebrake > 0.3 && Math.abs(rawSteer) > 0.15 && s.speedKmh > 25 && s.speedKmh < 160 && Math.abs(s.chassisSlipAngle) < 0.65) {
+            if (hasContact && ebrake > 0.3 && Math.abs(rawSteer) > 0.15 && s.speedKmh > 25 && s.speedKmh < 160 && Math.abs(s.chassisSlipAngle) < 0.65) {
                 yawTorque += rawSteer * fwdDirSign * p.massKg * 5.2 * ebrake;
             }
 
             // RWD power-oversteer yaw moment under throttle in corners
-            if (p.drivetrain === 'RWD' && throttle > 0.55 && Math.abs(rawSteer) > 0.2 && s.speedKmh > 30 && s.speedKmh < 190) {
+            if (hasContact && p.drivetrain === 'RWD' && throttle > 0.55 && Math.abs(rawSteer) > 0.2 && s.speedKmh > 30 && s.speedKmh < 190) {
                 const powerYaw = Math.sign(s.steerAngleRad) * (p.baseTorqueNm * 1.8) * (p.driftFactor / 1.5);
                 if (Math.abs(s.chassisSlipAngle) < 0.72) {
                     yawTorque += powerYaw * throttle;
@@ -1466,15 +1494,15 @@
             }
 
             // NFS MW DriftStabilizerTable: damp yaw rate when yaw opposes slip angle or exceeds safe drift envelope
-            const baseYawDamping = -s.yawRate * s.yawInertia * (s.isDrifting ? 2.6 : 4.2);
+            const baseYawDamping = -s.yawRate * s.yawInertia * (this.mwKernel ? .85 : (s.isDrifting ? 2.6 : 4.2));
             let stabilizerTorque = 0;
             if ((s.yawRate * s.chassisSlipAngle) < 0 || Math.abs(s.chassisSlipAngle) > 0.55) {
-                stabilizerTorque = -s.yawRate * s.yawInertia * 4.8 * (0.4 + s.driftValue * 0.6);
+                stabilizerTorque = -s.yawRate * s.yawInertia * (this.mwKernel ? 1.6 : 4.8) * (0.4 + s.driftValue * 0.6);
             }
             if (this.options.stabilityAssist && Math.abs(rawSteer) < 0.05 && ebrake < 0.1) {
                 // Straight-line alignment damping
-                stabilizerTorque -= s.yawRate * s.yawInertia * 5.5;
-                s.vLateral *= Math.max(0, 1 - 5.2 * latGripMu * dt);
+                stabilizerTorque -= s.yawRate * s.yawInertia * (this.mwKernel ? 1.1 : 5.5);
+                s.vLateral *= Math.max(0, 1 - (this.mwKernel ? .8 : 5.2) * latGripMu * dt);
             }
 
             const angularAccel = (yawTorque + baseYawDamping + stabilizerTorque) / s.yawInertia;
@@ -1524,6 +1552,15 @@
             const heaveAccel = (targetY - s.y) * 120.0 - s.heaveVel * 16.0;
             s.heaveVel += heaveAccel * dt;
             s.y = clamp(s.y + s.heaveVel * dt, -0.06, 0.08);
+            if(this.suspension){
+                s.pitch=this.suspension.pitch;s.pitchVel=this.suspension.pitchRate;
+                s.roll=this.suspension.roll;s.rollVel=this.suspension.rollRate;
+                s.y=this.suspension.y;s.heaveVel=this.suspension.vy;
+            }
+            for(const key of ['fl','fr','rl','rr']){
+                const wheelForward=s.vForward+(key[1]==='l'?1:-1)*s.yawRate*p.trackWidth*.5;
+                if(!(key[0]==='r'&&ebrake>.5))s.wheelAngles[key]=(s.wheelAngles[key]+wheelForward/p.wheelRadius*dt)%(2*Math.PI);
+            }
 
             // 15. Drift Scoring & Fuel / Distance Integration
             if (s.isDrifting) {

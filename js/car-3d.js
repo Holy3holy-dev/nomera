@@ -13034,6 +13034,7 @@
                 physicsKernel: config.physicsKernel, speedKmh: this.state.speed,
                 weather: config.weather === 'auto' ? 'night' : (config.weather || 'night')
             }) : null;
+            this.mwRoadSteering = config.physicsKernel ? new config.physicsKernel.SteeringController() : null;
             this.state.distanceKm = 0;
             this.state.peakSpeed = this.isNfsCircuit ? 0 : 40;
             this.state.earnedCash = 0;
@@ -13602,6 +13603,7 @@
                         this.playerCar = null;
                     }
                     this.playerCar = model;
+                    this.authorsWheelRig = (window.NOMERA_AUTHORS_PREVIEW && window.NomeraWheelRig) ? window.NomeraWheelRig.prepareAsync(THREE,model) : null;
                     if (this.styling && this.styling.plate !== undefined) {
                         applyLicensePlateToModel(
                             THREE,
@@ -13629,6 +13631,7 @@
                     const immediateModel = buildDetailedCarModel(THREE, this.carName, this.styling);
                     if (immediateModel) {
                         this.playerCar = immediateModel;
+                        this.authorsWheelRig = (window.NOMERA_AUTHORS_PREVIEW && window.NomeraWheelRig) ? window.NomeraWheelRig.prepare(THREE,immediateModel) : null;
                         if (this.styling && this.styling.plate !== undefined) {
                             applyLicensePlateToModel(
                                 THREE,
@@ -14421,6 +14424,7 @@
 
         resetKeys() {
             this.authorsSteerInput = 0;
+            if(this.mwRoadSteering){this.mwRoadSteering=new this.config.physicsKernel.SteeringController();this.state.steerAngle=0;}
             Object.keys(this.keys).forEach(k => { this.keys[k] = false; });
         }
 
@@ -14663,7 +14667,7 @@
                 physical.state.slipstreamFactor = bestSlipstream;
                 physical.setWeather(this.currentActiveWeather || 'night');
                 const oldSpeed = state.speed;
-                physical.update(dt, { gas: gasActive, brake: keys.brake, handbrake: isHandbrake, nitro: state.isNitroActive });
+                physical.update(dt, { gas: gasActive, brake: keys.brake, handbrake: isHandbrake, nitro: state.isNitroActive,externalLateralAccel:state.authorsLateralAccel||0 });
                 // Highway has no reverse lane traversal; circuit retains reverse.
                 physical.state.vForward = Math.max(0, physical.state.vForward);
                 physical.state.gear = Math.max(1, physical.state.gear);
@@ -14964,7 +14968,11 @@
             let steerInput = 0;
             if (keys.left) steerInput += 1;  // In Three.js with camera facing +Z: +X moves to screen LEFT
             if (keys.right) steerInput -= 1; // -X moves to screen RIGHT
-            if (authorsDriving) {
+            if (this.mwRoadSteering) {
+                const turn=this.mwRoadSteering.step(dt,{input:steerInput,speedMps:forwardSpeedMps,gas:gasActive,brake:keys.brake,handbrake:isHandbrake});
+                steerInput=turn.angleDeg/Math.max(1,turn.maxSteerDeg);
+                this.authorsSteerInput=steerInput;
+            } else if (authorsDriving) {
                 this.authorsSteerInput = authorsDriving.steer(this.authorsSteerInput, steerInput, dt);
                 steerInput = this.authorsSteerInput;
             }
@@ -14977,7 +14985,7 @@
             // 2. TIRE GRIP & SLIP ANGLE (Pacejka-inspired curve scaled by weather grip)
             // Kinematic travel heading vs steering wheel angle
             const travelHeading = Math.atan2(state.vx, Math.max(2.5, forwardSpeedMps));
-            const steerAngleRad = steerInput * (this.mwLongitudinal ? this.config.physicsKernel.steeringRange(forwardSpeedMps) * Math.PI / 180 : .32);
+            const steerAngleRad = this.mwRoadSteering ? this.mwRoadSteering.angle * Math.PI/180 : steerInput*.32;
             const slipAngle = steerAngleRad - travelHeading;
 
             // Pacejka Magic Formula normalized lateral curve: Fy = D * sin(C * atan(B*a - E*(B*a - atan(B*a))))
@@ -15008,6 +15016,7 @@
                 // Road-constrained adapter: forces move between lanes; yaw and
                 // road bends remain the existing highway game's responsibility.
                 const steps = Math.max(1, Math.ceil(dt * 60)), subDt = dt / steps;
+                const previousVx=state.vx;
                 for (let step = 0; step < steps; step++) {
                     const travel = Math.atan2(state.vx, Math.max(2.5, forwardSpeedMps));
                     const frontSlip = (steerAngleRad - travel) * activity;
@@ -15018,6 +15027,7 @@
                     state.vx += (frontForce + rearForce) / physical.profile.massKg * subDt;
                     state.vx = Math.max(-lateralMax, Math.min(lateralMax, state.vx));
                 }
+                state.authorsLateralAccel=(state.vx-previousVx)/Math.max(.0001,dt);
             } else if (authorsDriving && !isDriftingNow && !isHandbrake) {
                 state.vx = authorsDriving.lateral(state.vx, steerInput, state.speed, lateralMax, effectiveSteerAuthority, weatherGrip, dt);
             } else if (steerInput !== 0 && effectiveSteerAuthority > 0) {
@@ -15348,9 +15358,16 @@
             if (this.playerCar) {
                 this.playerCar.position.set(state.x, (state.downforceY || 0) + engineTremorY + (state.suspensionY || 0), state.z);
                 this.playerCar.rotation.set(state.pitchSquat, state.yawAngle, state.bodyRoll + engineTremorRoll);
+                if(this.mwLongitudinal?.suspension){
+                    const body=this.mwLongitudinal.state;
+                    this.playerCar.position.y=body.y+engineTremorY;
+                    this.playerCar.rotation.set(body.pitch,state.yawAngle,-body.roll+engineTremorRoll);
+                }
 
                 // Rotate dedicated procedural wheel spinners around local hub axis
-                if (this.playerWheels && this.playerWheels.length > 0) {
+                if (this.authorsWheelRig) {
+                    window.NomeraWheelRig.update(this.authorsWheelRig,{dt,speedMps:forwardSpeedMps,steer:steerAngleRad,handbrake:isHandbrake,compression:this.mwLongitudinal?.state.suspensionOffsets});
+                } else if (this.playerWheels && this.playerWheels.length > 0) {
                     const wheelRotSpeed = (forwardSpeedMps / 0.33) * dt;
                     this.playerWheels.forEach(spinner => {
                         const parent = spinner.parent;
@@ -15360,9 +15377,9 @@
                 }
 
                 // 3. INERTIA & STEERING MOMENTUM (Front wheel visual steering vs chassis yaw delay)
-                const targetSteerAngle = steerInput * 0.32;
+                const targetSteerAngle = this.mwRoadSteering ? steerAngleRad : steerInput * .32;
                 state.steerAngle = (state.steerAngle || 0) + (targetSteerAngle - (state.steerAngle || 0)) * Math.min(1.0, 22.0 * dt);
-                if (this.playerSteerWheels && this.playerSteerWheels.length > 0) {
+                if (!this.authorsWheelRig && this.playerSteerWheels && this.playerSteerWheels.length > 0) {
                     this.playerSteerWheels.forEach(w => {
                         const baseY = w.userData.baseRotY || 0;
                         w.rotation.y = baseY + state.steerAngle;
@@ -16722,6 +16739,7 @@
 
         destroy() {
             this._destroyed = true;
+            if(typeof window!=='undefined'&&window.NOMERA_AUTHORS_PREVIEW)window.NomeraWheelRig?.cancelAll();
             this.stop();
             this.clearNfsCircuitEntities();
             if (this._resizeObserver) {

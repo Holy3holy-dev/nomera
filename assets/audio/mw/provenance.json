@@ -1,0 +1,560 @@
+{
+  "decoder": "vgmstream r2117",
+  "files": [
+    {
+      "file": "standard-accel.wav",
+      "sha256": "c73a85529d7e8ea041004ef62ada7a3823094904c863db3639d9308767ddfa61",
+      "source": {
+        "index": 504,
+        "hash": "5F0DEEEF",
+        "name": "SOUND\\ENGINE\\GIN_TRUENO_AE86.GIN",
+        "archive": "ZZDATA5.BIN",
+        "offset": 130703360,
+        "size": 65478,
+        "checksum": "5C0A2500",
+        "signature": "476e7375323000006696d144333bfa45",
+        "ascii": "Gnsu20..f..D3;.E",
+        "sha256": "e0cf0be55b3f1398e44ae7dfbcc3b13ebb1f6f59411c66dabe8471c8a7d7986c"
+      },
+      "subsong": 1,
+      "loop": null
+    },
+    {
+      "file": "standard-decel.wav",
+      "sha256": "16f093eee4e567724aa863ab11e85f9279e2f79055b3a728d2dcbec17ec6629a",
+      "source": {
+        "index": 730,
+        "hash": "8974752E",
+        "name": "SOUND\\ENGINE\\GIN_TRUENO_DCL.GIN",
+        "archive": "ZZDATA5.BIN",
+        "offset": 130768896,
+        "size": 40045,
+        "checksum": "73205DA1",
+        "signature": "476e7375323000000060fc443367eb45",
+        "ascii": "Gnsu20...`.D3g.E",
+        "sha256": "f2ba70674d291d94041e2b660dd0e428070a78c0bcf1d0e695cc217204ba8ae6"
+      },
+      "subsong": 1,
+      "loop": null
+    },
+    {
+      "file": "sport-accel.wav",
+      "sha256": "3715da31560ff6246e9692ca3112744e8dfbb2f0ab5ea0e3f036174098767413",
+      "source": {
+        "index": 34,
+        "hash": "06FA3016",
+        "name": "SOUND\\ENGINE\\GIN_WRX_STREET.GIN",
+        "archive": "ZZDATA5.BIN",
+        "offset": 132644864,
+        "size": 73108,
+        "checksum": "E011432A",
+        "signature": "476e73753230000000e0aa44334fc545",
+        "ascii": "Gnsu20.....D3O.E",
+        "sha256": "ae1379be11e5c826a87d67f407ac5b61279adab442fd893db7e8d3940a64f9a0"
+      },
+      "subsong": 1,
+      "loop": null
+    },
+    {
+      "file": "sport-decel.wav",
+      "sha256": "1f731e15166181812c13337179c396c272866a69a7bfbaec67a77ab8483a3109",
+      "source": {
+        "index": 832,
+        "hash": "9DC2A048",
+        "name": "SOUND\\ENGINE\\GIN_WRX_STREET_DCL.GIN",
+        "archive": "ZZDATA5.BIN",
+        "offset": 132718592,
+        "size": 39808,
+        "checksum": "358E2989",
+        "signature": "476e73753230000033c37445661ec645",
+        "ascii": "Gnsu20..3.tEf..E",
+        "sha256": "ef6d0388a1c4498a279700964a77de778bae218c2f725bfb0dc4c9342ba965ce"
+      },
+      "subsong": 1,
+      "loop": null
+    },
+    {
+      "file": "v8-accel.wav",
+      "sha256": "7987221675aec5de5bfd5cf7efe8e82c39d68314d518fd9b48d98edb4525d730",
+      "source": {
+        "index": 1287,
+        "hash": "EDEE3BF8",
+        "name": "SOUND\\ENGINE\\GIN_MUSTANG_GT_A.GIN",
+        "archive": "ZZDATA5.BIN",
+        "offset": 126595072,
+        "size": 364116,
+        "checksum": "6FEE59AA",
+        "signature": "476e73753230000000a0bd44331bd745",
+        "ascii": "Gnsu20.....D3..E",
+        "sha256": "4564cf586a4eccd4e333da01bedfbd87bb0c96e9bfdb6a38c07ae64eab285863"
+      },
+      "subsong": 1,
+      "loop": null
+    },
+    {
+      "file": "v8-decel.wav",
+      "sha256": "682a0440010058c213388e08e21bfe77fb73e08ad7fce900eaeb3d5734069f0a",
+      "source": {
+        "index": 959,
+        "hash": "B5BDCD2A",
+        "name": "SOUND\\ENGINE\\GIN_MUSTANG_GT_A_DCL.GIN",
+        "archive": "ZZDATA5.BIN",
+        "offset": 126959616,
+        "size": 248709,
+        "checksum": "E27643AE",
+        "signature": "476e73753230000066d6ab446632bd45",
+        "ascii": "Gnsu20..f..Df2.E",
+        "sha256": "db499a224ef31d2b6b55e7b938abad7b9c715cf0bc651982047d8c3fca79d5ca"
+      },
+      "subsong": 1,
+      "loop": null
+    },
+    {
+      "file": "supercar-accel.wav",
+      "sha256": "4df2ff90917db825f1c957192359a735899de8041c12ed0805b51dad6824423d",
+      "source": {
+        "index": 540,
+        "hash": "68806D05",
+        "name": "SOUND\\ENGINE\\GIN_GALLARDO.GIN",
+        "archive": "ZZDATA5.BIN",
+        "offset": 123596800,
+        "size": 85722,
+        "checksum": "0BCE53A6",
+        "signature": "476e7375323000003353bf449ae10046",
+        "ascii": "Gnsu20..3S.D...F",
+        "sha256": "b5c8b52938d2deafcc36eac548d4fbfeae76b278b38d439dda950c3b5bbed448"
+      },
+      "subsong": 1,
+      "loop": null
+    },
+    {
+      "file": "supercar-decel.wav",
+      "sha256": "38d49576e29d719bc88f2baf46dc9e98476ad3aa6da9c89edb91728fdce44321",
+      "source": {
+        "index": 855,
+        "hash": "A0EBBCB7",
+        "name": "SOUND\\ENGINE\\GIN_GALLARDO_DCL.GIN",
+        "archive": "ZZDATA5.BIN",
+        "offset": 123682816,
+        "size": 91213,
+        "checksum": "38FB836E",
+        "signature": "476e737532300000cd84294566960446",
+        "ascii": "Gnsu20....)Ef..F",
+        "sha256": "96e9953902eba1b849d1ae72ba22096bcf64ef8ef70b410bf6e30aa48dd37c8d"
+      },
+      "subsong": 1,
+      "loop": null
+    },
+    {
+      "file": "m3gtr-accel.wav",
+      "sha256": "dd1c5a9542591fd0d3d9b804295e77d8a5908817ecc3f31b354d1e5caad71798",
+      "source": {
+        "index": 1326,
+        "hash": "F3E66F9E",
+        "name": "SOUND\\ENGINE\\GIN_BMW_M3_RACE.GIN",
+        "archive": "ZZDATA5.BIN",
+        "offset": 120578048,
+        "size": 142405,
+        "checksum": "28B89406",
+        "signature": "476e7375323000003373c0449ae1c945",
+        "ascii": "Gnsu20..3s.D...E",
+        "sha256": "c089e00a94e4b9b566075200b0ba525c218bcbd0e206addf0b1c84284ebf1b6b"
+      },
+      "subsong": 1,
+      "loop": null
+    },
+    {
+      "file": "m3gtr-decel.wav",
+      "sha256": "4eb84b327d462178ffd6e2a604fa589e11e5e16b35615251f2f88d7dd63469af",
+      "source": {
+        "index": 835,
+        "hash": "9E5363D0",
+        "name": "SOUND\\ENGINE\\GIN_BMW_M3_RACE_DCL.GIN",
+        "archive": "ZZDATA5.BIN",
+        "offset": 120721408,
+        "size": 62781,
+        "checksum": "A1E56167",
+        "signature": "476e73753230000000b82d45cd6cc745",
+        "ascii": "Gnsu20....-E.l.E",
+        "sha256": "89a0955bbaa9e49edef0bcece48d089fc619d0780847bdc0924e909ef5450ad7"
+      },
+      "subsong": 1,
+      "loop": null
+    },
+    {
+      "file": "truck-accel.wav",
+      "sha256": "f590aadd0dd466756d67f954bfde9c80d9b06bc87b5b8dfcbc8aef465dcf6a69",
+      "source": {
+        "index": 1385,
+        "hash": "FEE664EA",
+        "name": "SOUND\\ENGINE\\GIN_TRCK_ACCEL.GIN",
+        "archive": "ZZDATA5.BIN",
+        "offset": 130390016,
+        "size": 136034,
+        "checksum": "614D9851",
+        "signature": "476e7375323000006626d24466860f45",
+        "ascii": "Gnsu20..f&.Df..E",
+        "sha256": "56176190b075e4157130575bc5caf240f3cd339819e427d7a69716ef2932db7b"
+      },
+      "subsong": 1,
+      "loop": null
+    },
+    {
+      "file": "truck-decel.wav",
+      "sha256": "54f77345d302b0fd779ad7d1b096a183e17eaba7d3998e3fb6b557849fe7f97f",
+      "source": {
+        "index": 273,
+        "hash": "34DF61AF",
+        "name": "SOUND\\ENGINE\\GIN_TRCK_DECEL.GIN",
+        "archive": "ZZDATA5.BIN",
+        "offset": 130527232,
+        "size": 175794,
+        "checksum": "05BA19D7",
+        "signature": "476e7375323000009a991a4466b6fa44",
+        "ascii": "Gnsu20.....Df..D",
+        "sha256": "afb1c489465446cb3501c7762ea45f100cf336bdb5b3b5dd13cdc2b47640cdc9"
+      },
+      "subsong": 1,
+      "loop": null
+    },
+    {
+      "file": "skid.wav",
+      "sha256": "4ae4eb4df6f060268513fb6ae8da87dbba63c8100f1f7672394f5249215e3fd8",
+      "source": {
+        "index": 1208,
+        "hash": "E11469DE",
+        "name": "SOUND\\SKIDS\\SKID_SML_MB.ABK",
+        "archive": "ZZDATA5.BIN",
+        "offset": 143595520,
+        "size": 169304,
+        "checksum": "9D1E8434",
+        "signature": "41424b43010101000503000100000000",
+        "ascii": "ABKC............",
+        "sha256": "35ab60cb1e789b5fae1b779c65ab60d2d76bbd2fe9518db977e3e79cdfde5f2b"
+      },
+      "subsong": 1,
+      "loop": {
+        "start": 0,
+        "end": 65876
+      }
+    },
+    {
+      "file": "nitroSustain.wav",
+      "sha256": "a097716c052c442c1151ccfd5c156aba4fd96c7f178e6f9e947e37739137c93c",
+      "source": {
+        "index": 281,
+        "hash": "361EDD2D",
+        "name": "SOUND\\NOS\\NITROUS_00_MB.ABK",
+        "archive": "ZZDATA5.BIN",
+        "offset": 142426112,
+        "size": 118600,
+        "checksum": "B9FBF948",
+        "signature": "41424b43010101000503000200000000",
+        "ascii": "ABKC............",
+        "sha256": "759d6779278aeddb3f2a66adb6e1dfce606a7ffc8748f5916522eab1efab84cf"
+      },
+      "subsong": 1,
+      "loop": {
+        "start": 0,
+        "end": 113298
+      }
+    },
+    {
+      "file": "turboSustain.wav",
+      "sha256": "ef23321baaef049b125c1a0c02f9b059201f6636aef498e3af9d3d9040d28ec3",
+      "source": {
+        "index": 623,
+        "hash": "78A1DE06",
+        "name": "SOUND\\TURBO\\TURBO_MED_0_MB.ABK",
+        "archive": "ZZDATA5.BIN",
+        "offset": 145098752,
+        "size": 134112,
+        "checksum": "FCBADB72",
+        "signature": "41424b43010101000503000100000000",
+        "ascii": "ABKC............",
+        "sha256": "f2524a5dffa7b66e7765b8d9a11f8719c72e80390ec86b177c70899bddf3a529"
+      },
+      "subsong": 1,
+      "loop": {
+        "start": 0,
+        "end": 48182
+      }
+    },
+    {
+      "file": "gear-0.wav",
+      "sha256": "af44e38872e4b9fd74bd7677b9abe4decdd1364633e07d7b954c11c8a934454f",
+      "source": {
+        "index": 15,
+        "hash": "02A78546",
+        "name": "SOUND\\SHIFTING\\GEAR_MED_BASE.ABK",
+        "archive": "ZZDATA5.BIN",
+        "offset": 143132672,
+        "size": 39168,
+        "checksum": "4E19B552",
+        "signature": "41424b43010101000503000100000000",
+        "ascii": "ABKC............",
+        "sha256": "916348ba5610edba195465789b2754b01b80a4e6c0efa8020a2ece6f060bf122"
+      },
+      "subsong": 1,
+      "loop": null
+    },
+    {
+      "file": "gear-1.wav",
+      "sha256": "05d0936b93d479fc6d981ccca5b703d8df140b33afaa10b7d5925f50ff6e2173",
+      "source": {
+        "index": 15,
+        "hash": "02A78546",
+        "name": "SOUND\\SHIFTING\\GEAR_MED_BASE.ABK",
+        "archive": "ZZDATA5.BIN",
+        "offset": 143132672,
+        "size": 39168,
+        "checksum": "4E19B552",
+        "signature": "41424b43010101000503000100000000",
+        "ascii": "ABKC............",
+        "sha256": "916348ba5610edba195465789b2754b01b80a4e6c0efa8020a2ece6f060bf122"
+      },
+      "subsong": 2,
+      "loop": null
+    },
+    {
+      "file": "gear-2.wav",
+      "sha256": "0ddb16affc934a072889141472221275c49d13f5f9aa324b7749da7770aa7863",
+      "source": {
+        "index": 15,
+        "hash": "02A78546",
+        "name": "SOUND\\SHIFTING\\GEAR_MED_BASE.ABK",
+        "archive": "ZZDATA5.BIN",
+        "offset": 143132672,
+        "size": 39168,
+        "checksum": "4E19B552",
+        "signature": "41424b43010101000503000100000000",
+        "ascii": "ABKC............",
+        "sha256": "916348ba5610edba195465789b2754b01b80a4e6c0efa8020a2ece6f060bf122"
+      },
+      "subsong": 3,
+      "loop": null
+    },
+    {
+      "file": "collision-0.wav",
+      "sha256": "8cb58649c2a07399b4f4cf099c036d824c7d4c99b8ec3b1d69ba5854040644e6",
+      "source": {
+        "index": 790,
+        "hash": "958505D0",
+        "name": "SOUND\\IG_GLOBAL\\STICH_COLLISION_MB.ABK",
+        "archive": "ZZDATA5.BIN",
+        "offset": 140392448,
+        "size": 859764,
+        "checksum": "2546D510",
+        "signature": "41424b43010101000503000100000000",
+        "ascii": "ABKC............",
+        "sha256": "8dfc1354a72ade267e6a7407b6a6c0628b5001c206050b26398760b4f20ce033"
+      },
+      "subsong": 1,
+      "loop": null
+    },
+    {
+      "file": "collision-1.wav",
+      "sha256": "3af6955b18361e7dbaa46a453e52ead91adc94dd6454cd15665f1ca17cef5c23",
+      "source": {
+        "index": 790,
+        "hash": "958505D0",
+        "name": "SOUND\\IG_GLOBAL\\STICH_COLLISION_MB.ABK",
+        "archive": "ZZDATA5.BIN",
+        "offset": 140392448,
+        "size": 859764,
+        "checksum": "2546D510",
+        "signature": "41424b43010101000503000100000000",
+        "ascii": "ABKC............",
+        "sha256": "8dfc1354a72ade267e6a7407b6a6c0628b5001c206050b26398760b4f20ce033"
+      },
+      "subsong": 2,
+      "loop": null
+    },
+    {
+      "file": "collision-2.wav",
+      "sha256": "b1e4959005c6445c7b6ab52d463f0ac3f3c4ea4caf265bf078f780e9ebfa16af",
+      "source": {
+        "index": 790,
+        "hash": "958505D0",
+        "name": "SOUND\\IG_GLOBAL\\STICH_COLLISION_MB.ABK",
+        "archive": "ZZDATA5.BIN",
+        "offset": 140392448,
+        "size": 859764,
+        "checksum": "2546D510",
+        "signature": "41424b43010101000503000100000000",
+        "ascii": "ABKC............",
+        "sha256": "8dfc1354a72ade267e6a7407b6a6c0628b5001c206050b26398760b4f20ce033"
+      },
+      "subsong": 3,
+      "loop": null
+    },
+    {
+      "file": "collision-3.wav",
+      "sha256": "fa0668911f5f40d92bf3a7ea67aa66ef58c2d83a0ab71e753fd8d239e24414db",
+      "source": {
+        "index": 790,
+        "hash": "958505D0",
+        "name": "SOUND\\IG_GLOBAL\\STICH_COLLISION_MB.ABK",
+        "archive": "ZZDATA5.BIN",
+        "offset": 140392448,
+        "size": 859764,
+        "checksum": "2546D510",
+        "signature": "41424b43010101000503000100000000",
+        "ascii": "ABKC............",
+        "sha256": "8dfc1354a72ade267e6a7407b6a6c0628b5001c206050b26398760b4f20ce033"
+      },
+      "subsong": 4,
+      "loop": null
+    },
+    {
+      "file": "turboOneShots-0.wav",
+      "sha256": "e0ab15cfe7233d3eb86a70b5b93fe5026a88e85b251a278c3b33b4d9e2f84e5e",
+      "source": {
+        "index": 623,
+        "hash": "78A1DE06",
+        "name": "SOUND\\TURBO\\TURBO_MED_0_MB.ABK",
+        "archive": "ZZDATA5.BIN",
+        "offset": 145098752,
+        "size": 134112,
+        "checksum": "FCBADB72",
+        "signature": "41424b43010101000503000100000000",
+        "ascii": "ABKC............",
+        "sha256": "f2524a5dffa7b66e7765b8d9a11f8719c72e80390ec86b177c70899bddf3a529"
+      },
+      "subsong": 2,
+      "loop": null
+    },
+    {
+      "file": "turboOneShots-1.wav",
+      "sha256": "bc6fedba579432bb97696b6e23f4a8fd0b6773c911c31b2de31f493d101688d0",
+      "source": {
+        "index": 623,
+        "hash": "78A1DE06",
+        "name": "SOUND\\TURBO\\TURBO_MED_0_MB.ABK",
+        "archive": "ZZDATA5.BIN",
+        "offset": 145098752,
+        "size": 134112,
+        "checksum": "FCBADB72",
+        "signature": "41424b43010101000503000100000000",
+        "ascii": "ABKC............",
+        "sha256": "f2524a5dffa7b66e7765b8d9a11f8719c72e80390ec86b177c70899bddf3a529"
+      },
+      "subsong": 3,
+      "loop": null
+    },
+    {
+      "file": "turboOneShots-2.wav",
+      "sha256": "1bb7834e29b7d6e0c70c79f8abe3c9d032744e7eef59067c3e52cf470ff1d101",
+      "source": {
+        "index": 623,
+        "hash": "78A1DE06",
+        "name": "SOUND\\TURBO\\TURBO_MED_0_MB.ABK",
+        "archive": "ZZDATA5.BIN",
+        "offset": 145098752,
+        "size": 134112,
+        "checksum": "FCBADB72",
+        "signature": "41424b43010101000503000100000000",
+        "ascii": "ABKC............",
+        "sha256": "f2524a5dffa7b66e7765b8d9a11f8719c72e80390ec86b177c70899bddf3a529"
+      },
+      "subsong": 4,
+      "loop": null
+    },
+    {
+      "file": "nitroOneShots-0.wav",
+      "sha256": "2a1b39d7cbd5aabba7d7a4fa65ab7642464d94c2e6a40e552ed3b3d3f61a227b",
+      "source": {
+        "index": 281,
+        "hash": "361EDD2D",
+        "name": "SOUND\\NOS\\NITROUS_00_MB.ABK",
+        "archive": "ZZDATA5.BIN",
+        "offset": 142426112,
+        "size": 118600,
+        "checksum": "B9FBF948",
+        "signature": "41424b43010101000503000200000000",
+        "ascii": "ABKC............",
+        "sha256": "759d6779278aeddb3f2a66adb6e1dfce606a7ffc8748f5916522eab1efab84cf"
+      },
+      "subsong": 2,
+      "loop": null
+    },
+    {
+      "file": "nitroOneShots-1.wav",
+      "sha256": "121a7a61904a906372920b57f8460b04fdbfad870384a60ba4be655f84a91f31",
+      "source": {
+        "index": 281,
+        "hash": "361EDD2D",
+        "name": "SOUND\\NOS\\NITROUS_00_MB.ABK",
+        "archive": "ZZDATA5.BIN",
+        "offset": 142426112,
+        "size": 118600,
+        "checksum": "B9FBF948",
+        "signature": "41424b43010101000503000200000000",
+        "ascii": "ABKC............",
+        "sha256": "759d6779278aeddb3f2a66adb6e1dfce606a7ffc8748f5916522eab1efab84cf"
+      },
+      "subsong": 3,
+      "loop": null
+    },
+    {
+      "file": "road.wav",
+      "sha256": "ad76da127b3b315947a29d4965ce2802312c336c5b192fdf6b35f833d6304dd8",
+      "source": {
+        "index": 563,
+        "hash": "6CF7F04D",
+        "name": "SOUND\\IG_GLOBAL\\ROADNOISE_00_MB.ABK",
+        "archive": "ZZDATA5.BIN",
+        "offset": 140036096,
+        "size": 263188,
+        "checksum": "46A7055F",
+        "signature": "41424b43010101000503000200000000",
+        "ascii": "ABKC............",
+        "sha256": "4ae999795b2400dec9c6a68bf5509e9291dd49018a82bda0bde0f0fd9f201ba5"
+      },
+      "subsong": 5,
+      "loop": {
+        "start": 0,
+        "end": 61149
+      }
+    },
+    {
+      "file": "wind.wav",
+      "sha256": "1dffd1822503f0c04d3bf3ea14df063a796f67133b1d6d83a567303e249d4dbc",
+      "source": {
+        "index": 642,
+        "hash": "7D3F6D5B",
+        "name": "SOUND\\IG_GLOBAL\\WIND_00_MB.ABK",
+        "archive": "ZZDATA5.BIN",
+        "offset": 142213120,
+        "size": 212208,
+        "checksum": "7502E194",
+        "signature": "41424b43010101000503000200000000",
+        "ascii": "ABKC............",
+        "sha256": "b5c02d366aa44dedfecb7ec8e99291f553694ef6cb28da4012f9b75029658dcd"
+      },
+      "subsong": 1,
+      "loop": {
+        "start": 0,
+        "end": 125940
+      }
+    },
+    {
+      "file": "whoosh.wav",
+      "sha256": "e2714bb9e449444bf18ec7fdc38b3f9bbe590a215c109e64a3e08b8a4344a03d",
+      "source": {
+        "index": 271,
+        "hash": "3484F9D0",
+        "name": "SOUND\\IG_GLOBAL\\STITCH_WHOOSH_MB.ABK",
+        "archive": "ZZDATA5.BIN",
+        "offset": 141262848,
+        "size": 210588,
+        "checksum": "8CF3FCC4",
+        "signature": "41424b43010101000503000100000000",
+        "ascii": "ABKC............",
+        "sha256": "1ff9e735be8bdce45e10ab012151de844a41a71508519d6d5527b2c06d958c60"
+      },
+      "subsong": 1,
+      "loop": null
+    }
+  ]
+}

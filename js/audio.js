@@ -748,6 +748,11 @@
             }
         }
 
+        function mwEffect(name, strength = 1) {
+            if (!root.NOMERA_AUTHORS_PREVIEW || !root.NomeraAuthorsSamples?.effect) return false;
+            if (unlocked && context && level() > 0) root.NomeraAuthorsSamples.effect({context,master,name,strength});
+            return true;
+        }
         function stopEngine(keepAuthorsSample = false) {
             if (!keepAuthorsSample && root.NOMERA_AUTHORS_PREVIEW && root.NomeraAuthorsSamples) root.NomeraAuthorsSamples.stop();
             stopNitro(0.04, false);
@@ -851,7 +856,7 @@
             } catch (_) { stopSiren(); }
         }
 
-        function updateEngine({speed = 0, gas = false, nitro = false, running = false, carClass = 'standard', rpm = null} = {}) {
+        function updateEngine({speed = 0, gas = false, nitro = false, running = false, carClass = 'standard',carName='', rpm = null,gear=null,drifting=false,braking=false} = {}) {
             if (!running || !prefs.engine || level() <= 0 || !unlocked || !context || context.state === 'suspended') {
                 stopEngine();
                 return;
@@ -863,7 +868,7 @@
                 }
                 lastEngineNitroState = !!nitro;
 
-                if (root.NOMERA_AUTHORS_PREVIEW && root.NomeraAuthorsSamples?.update({ context, master, speed, gas, nitro, rpm, carClass })) {
+                if (root.NOMERA_AUTHORS_PREVIEW && root.NomeraAuthorsSamples?.update({ context, master, speed, gas, nitro, rpm, carClass,carName,gear,drifting,braking })) {
                     if (engine) stopEngine(true);
                     return;
                 }
@@ -1069,6 +1074,10 @@
                 [880, 1174.66, 1567.98].forEach((freq, i) => tone(freq, 0.24, 0.10, i * 0.065, 'triangle'));
             },
             nitro(active = true) {
+                if (root.NOMERA_AUTHORS_PREVIEW && root.NomeraAuthorsSamples?.effect) {
+                    if(active)mwEffect('nitro');
+                    return;
+                }
                 if (active === false) {
                     stopNitro(0.06, true);
                     return;
@@ -1145,6 +1154,7 @@
             },
             stopNitro(smooth = 0.06) { stopNitro(smooth, true); },
             brake() {
+                if(mwEffect('brake'))return;
                 // High-performance brake pad bite & rotor friction
                 noiseBurst({ duration: 0.16, gain: 0.08, filterType: 'bandpass', filterFreq: 1750, filterEndFreq: 900, filterQ: 2.2 });
                 tone(360, 0.14, 0.09, 0, 'triangle', 160);
@@ -1152,6 +1162,7 @@
                 tone(180, 0.15, 0.07, 0.01, 'triangle', 75);
             },
             handbrake() {
+                if(mwEffect('handbrake'))return;
                 if (!unlocked || !context || context.state === 'suspended' || level() <= 0) return;
                 const now = context.currentTime;
                 // Debounce rapid re-triggering within 250ms
@@ -1218,12 +1229,14 @@
                 tone(460, 0.30, 0.10 * oscScale, delay, 'triangle', 280);
             },
             scrape() {
+                if(mwEffect('scrape',.55))return;
                 // Textured guardrail / asphalt scrape (satisfies >= 2 created nodes in tests)
                 noiseBurst({ duration: 0.18, gain: 0.09, filterType: 'bandpass', filterFreq: 980, filterEndFreq: 520, filterQ: 2.0 });
                 tone(320, 0.12, 0.11, 0, 'sawtooth', 120);
                 tone(180, 0.15, 0.15, 0.02, 'triangle', 60);
             },
             drift(slip = 1.0) {
+                if(mwEffect('skid',slip))return;
                 const s = Math.max(0.4, Math.min(1.5, Number.isFinite(slip) ? slip : 1.0));
                 // High-fidelity rubber friction sound: dual-band filtered noise with frequency modulation
                 noiseBurst({ duration: 0.22, gain: 0.075 * s, filterType: 'bandpass', filterFreq: 780, filterEndFreq: 720, filterQ: 1.8 });
@@ -1303,6 +1316,7 @@
                 tone(220, 0.26, 0.16, 0, 'triangle', 75);
             },
             blowOff() {
+                if(mwEffect('turbo'))return;
                 // Soft, warm pneumatic air release ("ПШШШ...")
                 const useSample = hasSampleSupport();
                 if (useSample) {
@@ -1318,6 +1332,7 @@
                 tone(920, 0.045, 0.0002, 0.195, 'sine', 300);
             },
             backfire() {
+                if(mwEffect('backfire'))return;
                 // Explosive unburnt fuel detonation in exhaust manifold ("popcorn" crackle)
                 const pitch = 0.88 + Math.random() * 0.25;
                 noiseBurst({ duration: 0.08, gain: 0.10, filterType: 'bandpass', filterFreq: 1400 * pitch, filterEndFreq: 400, filterQ: 1.8 });
@@ -1336,6 +1351,7 @@
                 tone(640, 0.18, 0.07, 0, 'sine', 280);
             },
             nearMiss() {
+                if(mwEffect('nearMiss'))return;
                 // Dynamic Doppler near-miss slipstream whoosh
                 noiseBurst({ duration: 0.35, gain: 0.09, filterType: 'bandpass', filterFreq: 1600, filterEndFreq: 380, filterQ: 1.5 });
                 tone(540, 0.24, 0.08, 0, 'sine', 190);
@@ -1393,6 +1409,7 @@
             crash() {
                 stopEngine();
                 stopSiren();
+                if(mwEffect('collision'))return;
                 // 1. Visceral sub-bass chassis kinetic punch
                 tone(58, 0.34, 0.28, 0, 'triangle', 20);
                 // 2. Metallic deformation & crumple

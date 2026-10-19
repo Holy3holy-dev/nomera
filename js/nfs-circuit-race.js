@@ -741,6 +741,7 @@
                 weather: config.weather === 'auto' ? 'night' : (config.weather || 'night'),
                 transmissionMode: config.transmissionMode || 'auto',
                 physicsKernel: config.physicsKernel || null,
+                sampleGroundHeight: (x,z)=>this.track.projectPointToTrack(x,z).surface==='curb'?.04:0,
                 x: playerStartX,
                 z: playerStartZ,
                 heading: playerGridSample.heading
@@ -889,6 +890,7 @@
                     weather: this.currentActiveWeather,
                     transmissionMode: 'auto',
                     physicsKernel: this.carConfig.physicsKernel || null,
+                    sampleGroundHeight: (x,z)=>this.track.projectPointToTrack(x,z).surface==='curb'?.04:0,
                     x: startX,
                     z: startZ,
                     heading: gridSample.heading
@@ -1876,6 +1878,9 @@
                             }
                         }
                         applyPlateIfAvailable(loadedModel);
+                        if(root.NOMERA_AUTHORS_PREVIEW && root.NomeraWheelRig){
+                            root.NomeraWheelRig.prepareAsync(THREE,loadedModel,wheels);
+                        }
                         bodyGroup.add(loadedModel);
                     });
                 } catch (_) {}
@@ -1889,7 +1894,9 @@
                         applyPlateIfAvailable(mesh);
                         bodyGroup.add(mesh);
                     }
-                    if (built && Array.isArray(built.wheels)) wheels = built.wheels;
+                    if(root.NOMERA_AUTHORS_PREVIEW && root.NomeraWheelRig && mesh){
+                        wheels.splice(0,wheels.length,...root.NomeraWheelRig.prepare(THREE,mesh).wheels);
+                    } else if (built && Array.isArray(built.wheels)) wheels = built.wheels;
                 } catch (_) {}
             }
             if (bodyGroup.children.length === 0 && THREE.BoxGeometry) {
@@ -2043,13 +2050,16 @@
         _sync3DMeshes(snapCamera = false) {
             if (!this.scene || !this.playerPhysics) return;
             const p = this.playerPhysics.state;
+            if(root.NOMERA_AUTHORS_PREVIEW && root.NomeraWheelRig){
+                root.NomeraWheelRig.update({wheels:this.playerWheels||[]},{angles:p.wheelAngles,steer:-p.steerAngleRad,compression:p.suspensionOffsets});
+            }
             if (this.playerCar) {
                 this.playerCar.position.set(this.toThreeX(p.renderX), p.heave, this.toThreeZ(p.renderZ));
                 this.playerCar.rotation.y = this.toThreeYaw(p.renderHeading);
             }
             if (this.playerCarBodyGroup) {
                 this.playerCarBodyGroup.rotation.x = p.pitch;
-                this.playerCarBodyGroup.rotation.z = p.roll;
+                this.playerCarBodyGroup.rotation.z = this.playerPhysics.mwKernel ? -p.roll : p.roll;
             }
             if (this.playerTailLight) {
                 this.playerTailLight.intensity = (this.keys && (this.keys.brake || this.keys.drift)) ? 3.2 : 1.1;
@@ -2065,7 +2075,10 @@
                     rival.mesh.rotation.y = this.toThreeYaw(rs.renderHeading);
                     if (rival.bodyGroup) {
                         rival.bodyGroup.rotation.x = rs.pitch;
-                        rival.bodyGroup.rotation.z = rs.roll;
+                        rival.bodyGroup.rotation.z = rival.physics.mwKernel ? -rs.roll : rs.roll;
+                    }
+                    if(root.NOMERA_AUTHORS_PREVIEW && root.NomeraWheelRig){
+                        root.NomeraWheelRig.update({wheels:rival.wheels||[]},{angles:rs.wheelAngles,steer:-rs.steerAngleRad,compression:rs.suspensionOffsets});
                     }
                 }
             }
@@ -2386,6 +2399,7 @@
         }
 
         destroy() {
+            if(root.NOMERA_AUTHORS_PREVIEW)root.NomeraWheelRig?.cancelAll();
             this._destroyed = true;
             this.stop();
             if (this._onResize && typeof root !== 'undefined' && typeof root.removeEventListener === 'function') {

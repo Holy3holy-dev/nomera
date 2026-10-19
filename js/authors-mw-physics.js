@@ -67,6 +67,75 @@
     }
     function steeringRange(speedMps) { return table(RANGE, Math.abs(speedMps), 0, 160); }
     function steeringRate(speedMps) { return table(RATE, Math.abs(speedMps), 0, 160); }
+    const REMAP = [-1,-.736,-.542,-.4,-.292,-.214,-.16,-.123,-.078,-.036,0,.036,.078,.123,.16,.214,.292,.4,.542,.736,1];
+    class SteeringController {
+        constructor(){this.time=0;this.inputs=[];this.speeds=[];this.lastInput=0;this.angle=0;this.lastMaximum=0;}
+        step(dt,{input=0,speedMps=0,gas=0,brake=0,handbrake=0,rearSlipDeg=0,collisionTimer=0}={}){
+            if(!Number.isFinite(dt)||dt<=0)return{angleDeg:this.angle,maxSteerDeg:this.lastMaximum,rateDegPerSec:0};
+            this.time+=dt;
+            const record=(list,value,window)=>{list.push({value,time:this.time});while(list.length&&list[0].time<this.time-window+1e-7)list.shift();};
+            const average=list=>list.length?list.reduce((sum,s)=>sum+s.value,0)/list.length:0;
+            const avg=Math.abs(average(this.inputs)),rateScale=steeringRate(speedMps);
+            const tb=1-(Number(gas)+1-(Number(brake)+Number(handbrake))*.5)*.5;
+            let maximum=steeringRange(speedMps)*(1+1.45*tb*rateScale)*table([1,1,1.1,1.2,1.25,1.35],avg,0,1);
+            if(collisionTimer>0){const secs=1-collisionTimer;const recovery=secs<.2?mix(.2,.5,secs/.2):secs<.5?mix(.5,.7,(secs-.2)/.3):secs<.7?mix(.7,1,(secs-.5)/.2):1;maximum*=recovery;}
+            if(input*rearSlipDeg>0)maximum=Math.max(maximum,Math.abs(rearSlipDeg));
+            else if(avg>=.5)maximum=Math.max(maximum,this.lastMaximum); // MW HardTurnTightenSpeed=0.
+            maximum=clamp(maximum,0,45);this.lastMaximum=maximum;
+            record(this.speeds,table([1,1.05,1.1,1.5,2.2,3.1],Math.abs((input-this.lastInput)/dt),0,10),.15);
+            const rate=180*rateScale*average(this.speeds)*table([1,1.05,1.1,1.2,1.3,1.4],avg,0,1);
+            this.angle=clamp(clamp(input*maximum,-45,45),this.angle-rate*dt,this.angle+rate*dt);
+            this.lastInput=table(REMAP,input,-1,1);record(this.inputs,this.lastInput,.55);
+            return{angleDeg:this.angle,maxSteerDeg:maximum,rateDegPerSec:rate};
+        }
+    }
+    // Direct DoWheelForces spring/shock equations, SI units. Terrain query and
+    // the sprung-body integrator below are the NOMERA bridge, not MW WWorldPos.
+    function springForce({compression,previous,dt,stiffness,compressionDamping,extensionDamping,valving=.4318,digression=.3,progression=7.5,sway=0,blowout=5,mass}){
+        let rise=(compression-previous)/dt;
+        if(valving>1e-7&&digression>0&&Math.abs(rise)>valving)rise=Math.sign(rise)*valving*Math.pow(Math.abs(rise)/valving,1-digression);
+        let damping=rise*(rise>0?compressionDamping:extensionDamping);
+        if(damping>blowout*mass*9.81)damping=0;
+        return Math.max(0,stiffness*compression*(1+compression*progression)+damping+sway);
+    }
+    function staticCompression(load,stiffness,progression){return progression>0?(Math.sqrt(1+4*progression*load/stiffness)-1)/(2*progression):load/stiffness;}
+    class Suspension {
+        constructor(profile){
+            this.profile=profile;this.y=0;this.vy=0;this.pitch=0;this.pitchRate=0;this.roll=0;this.rollRate=0;
+            const kScale=profile.springStiffness/70050.72,dScale=profile.dampingRate/8756.34;
+            this.wheels=['fl','fr','rl','rr'].map((key,index)=>{
+                const front=index<2,bias=front?profile.frontWeightBias:1-profile.frontWeightBias;
+                const stiffness=70050.72*kScale,progression=front?7.5:6,c0=staticCompression(profile.massKg*9.81*bias*.5,stiffness,progression);
+                return{key,front,x:(index%2?1:-1)*profile.trackWidth*.5,z:front?profile.wheelbase*(1-profile.frontWeightBias):-profile.wheelbase*profile.frontWeightBias,
+                    stiffness,progression,compressionDamping:7005.072*dScale,extensionDamping:8756.34*dScale,swayStiffness:(front?48159.87:35025.36)*kScale,
+                    travel:Math.max(.1778,c0*1.8),neutral:c0,compression:c0,load:profile.massKg*9.81*bias*.5,contact:true,offset:0};
+            });
+        }
+        step(dt,{longAccel=0,latAccel=0,downforce=0,groundHeights={}}={}){
+            const p=this.profile,mass=p.massKg,steps=Math.max(1,Math.ceil(dt*240)),h=dt/steps;
+            const pitchInertia=mass*(p.wheelbase*p.wheelbase*1.5+p.cgHeight*p.cgHeight)/12;
+            const rollInertia=mass*(p.trackWidth*p.trackWidth+p.cgHeight*p.cgHeight)/12;
+            for(let step=0;step<steps;step++){
+                const previous=this.wheels.map(w=>w.compression);let force=0,pitchMoment=-mass*longAccel*p.cgHeight,rollMoment=mass*latAccel*p.cgHeight,bottomOut=0;
+                const upness=Math.max(0,Math.cos(this.pitch)*Math.cos(this.roll));
+                for(let i=0;i<4;i++){
+                    const w=this.wheels[i],ground=Number(groundHeights[w.key])||0;
+                    const raw=w.neutral+ground-this.y+this.pitch*w.z-this.roll*w.x;
+                    bottomOut=Math.max(bottomOut,raw-w.travel);
+                    const c=clamp(raw,0,w.travel),sway=(previous[i]-previous[i^1])*w.swayStiffness;
+                    w.contact=c>0&&upness>.2;
+                    w.load=w.contact?springForce({...w,compression:c,previous:previous[i],dt:h,sway,mass}):0;
+                    w.compression=c;w.offset=c-w.neutral;
+                    force+=w.load*upness;pitchMoment-=w.z*w.load;rollMoment+=w.x*w.load;
+                }
+                this.vy+=(force-mass*9.81-downforce)/mass*h;
+                this.pitchRate+=pitchMoment/pitchInertia*h;this.rollRate+=rollMoment/rollInertia*h;
+                this.y+=this.vy*h;this.pitch=clamp(this.pitch+this.pitchRate*h,-.45,.45);this.roll=clamp(this.roll+this.rollRate*h,-.45,.45);
+                if(bottomOut>0){this.y+=bottomOut;if(this.vy<0)this.vy=0;}
+            }
+            return this;
+        }
+    }
     // Adapter policy: keep NOMERA's mass, gearing, RPM limits, car condition and
     // upgrades; use the source curve's shape scaled to the resolved peak torque.
     function createSpec(profile) {
@@ -79,6 +148,6 @@
         try { return window.localStorage.getItem('authors_mw_physics_v1') !== 'classic'; }
         catch (_) { return true; }
     }
-    return Object.freeze({ torque, shiftPoints, clutch, tireForce, steeringRange, steeringRate,
+    return Object.freeze({ torque, shiftPoints, clutch, tireForce, steeringRange, steeringRate, SteeringController, springForce, staticCompression, Suspension,
         createSpec, selected, REFERENCE, LOAD });
 }));

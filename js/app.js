@@ -20097,6 +20097,10 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                         sound.updateEngine({
                             speed: hud.speed,
                             rpm: hud.rpm,
+                            gear:hud.gear,
+                            carName:selectedRaceCarName,
+                            drifting:!!hud.isDrifting,
+                            braking:!!car3DRacingEngine?.keys.brake,
                             gas: car3DRacingEngine ? car3DRacingEngine.keys.gas : false,
                             nitro: hud.isNitroActive,
                             running: isRaceRunning,
