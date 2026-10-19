@@ -919,6 +919,8 @@
             const p=this.profile,s=this.state;
             this.mwTires={};s.tires={};
             this.mwDrift=new this.mwKernel.DriftController();this.mwBurnout=new this.mwKernel.Burnout();
+            this.mwNos=new this.mwKernel.Nitrous(this.mwSpec.nos);
+            this.mwNos.tank=s.nitroLevel/100;
             for(const key of ['fl','fr','rl','rr']){
                 const tire=new this.mwKernel.Tire({radius:p.wheelRadius,front:key[0]==='f',gripScale:p.tireGripScale,
                     staticGrip:(key[0]==='f'?1.8:2)*p.tireGripScale,dynamicGrip:1.7*p.tireGripScale});
@@ -1041,7 +1043,15 @@
             const hasFuel = s.fuelCurrent === undefined || s.fuelCurrent > 0;
             const rawGas = hasFuel ? clamp(Number(controls.gas ? 1 : (controls.throttle || 0)), 0, 1) : 0;
             const rawBrake = clamp(Number(controls.brake ? 1 : (controls.brakeInput || 0)), 0, 1);
-            const ebrake = clamp(Number((controls.handbrake || controls.drift || controls.ebrake) ? 1 : 0), 0, 1);
+            const requestedEbrake = clamp(Number((controls.handbrake || controls.drift || controls.ebrake) ? 1 : 0), 0, 1);
+            let ebrake=requestedEbrake;
+            if(this.mwTires){
+                // A short pull builds rear brake pressure instead of instantly
+                // locking both wheels. Release is quicker so taps cannot stack.
+                const pressure=s.handbrakePressure||0,rate=requestedEbrake?7:14;
+                ebrake=s.handbrakePressure=clamp(requestedEbrake,pressure-rate*dt,pressure+rate*dt);
+                s.handbrakeRecovery=requestedEbrake?.35:Math.max(0,(s.handbrakeRecovery||0)-dt);
+            }
             let rawSteer = Number(controls.steer);
             if (!Number.isFinite(rawSteer)) {
                 rawSteer = (controls.right ? 1 : 0) - (controls.left ? 1 : 0);
@@ -1107,7 +1117,12 @@
                 }
             }
 
-            // 5. Nitrous (EngineRacer::DoNos — torque modifier + top speed boost)
+            // 5. Nitrous: MW DoNos modifies torque; host ECU owns its speed bonus.
+            if(this.mwNos){
+                this.mwNos.tank=clamp(s.nitroLevel/100,0,1);
+                s.nosMultiplier=this.mwNos.step(dt,{speedMps:s.speedMps,gear:s.gear,gas:throttle,button:hasFuel&&!!controls.nitro,canRecharge:hasFuel});
+                s.nitroLevel=this.mwNos.tank*100;s.isNitroActive=this.mwNos.active;s.nosCooldown=this.mwNos.timer*this.mwNos.spec.disengage;
+            }else{
             const canUseNitro = hasFuel && s.gear >= 1 && throttle > 0.2 && s.vForward > 2.2 && s.nitroLevel > 0.2;
             if (controls.nitro && canUseNitro) {
                 s.isNitroActive = true;
@@ -1118,6 +1133,7 @@
                     const rechargeMult = s.isDrifting ? 1.85 : 1.0;
                     s.nitroLevel = Math.min(100, s.nitroLevel + p.nitroRechargeRate * rechargeMult * dt);
                 }
+            }
             }
 
             // 6. Speed-Sensitive Steering, Brake Boost, Rear-Slip Floor & Ackermann
@@ -1214,7 +1230,7 @@
             const wheelDrivenRpm = (wheelAngularVel * totalGearRatio * 60) / (2 * Math.PI);
             const launchFreeRevRpm = throttle * (p.peakTorqueRpm * 0.92);
             const targetRpm = clamp(
-                Math.max(p.idleRpm, wheelDrivenRpm, absFwdMps < 6.0 ? launchFreeRevRpm : 0) + (s.isNitroActive ? 350 : 0),
+                Math.max(p.idleRpm, wheelDrivenRpm, absFwdMps < 6.0 ? launchFreeRevRpm : 0) + (s.isNitroActive&&!this.mwNos ? 350 : 0),
                 p.idleRpm,
                 p.maxRpm
             );
@@ -1262,7 +1278,7 @@
             }
 
             const inductionMult = 1.0 + (p.inductionBoost || 0) * s.turboSpool;
-            const nosMult = s.isNitroActive ? p.nitroTorqueMult : 1.0;
+            const nosMult = this.mwNos ? s.nosMultiplier : s.isNitroActive ? p.nitroTorqueMult : 1.0;
 
             // ECU Top Speed Governor (EngineRacer::DoECU)
             const draftTopBonus = 1.0 + (s.slipstreamFactor || 0) * 0.06;
@@ -1294,7 +1310,12 @@
             // 8. Dynamic 4-Wheel Weight Transfer & Suspension (SuspensionRacer::DoWheelForces)
             // Aerodynamic downforce increases tire vertical load at high speed
             const forwardness = s.speedMps > 0.5 ? clamp(Math.abs(s.vForward) / s.speedMps, 0.4, 1.0) : 1.0;
-            const aeroDownforceN = 0.5 * 1.225 * (p.downforceCoeff || 0.2) * 2.2 * (s.vForward * s.vForward) * Math.sqrt(forwardness);
+            const mwAero=this.mwTires?this.mwKernel.aerodynamics({...this.mwSpec.aero,speed:s.speedMps,forward:s.vForward,lateral:s.vLateral,
+                gas:throttle,groundEffect:this.suspension.wheels.filter(w=>w.contact).length/4,roll:s.roll,pitch:s.pitch,
+                frontZ:p.wheelbase*(1-p.frontWeightBias),rearZ:-p.wheelbase*p.frontWeightBias,
+                dragPct:1-clamp(s.slipstreamFactor||0,0,1)*.42}):null;
+            const aeroDownforceN = mwAero ? mwAero.downforce : 0.5 * 1.225 * (p.downforceCoeff || 0.2) * 2.2 * (s.vForward * s.vForward) * Math.sqrt(forwardness);
+            if(mwAero)s.aerodynamics={downforce:aeroDownforceN,dragForward:mwAero.drag[2],dragLateral:mwAero.drag[0],aeroCG:.47};
 
             const totalWeightN = p.massKg * GRAVITY + aeroDownforceN;
             const longTransferN = clamp((p.massKg * (s.longitudinalAccelG * GRAVITY) * p.cgHeight) / p.wheelbase, -totalWeightN * 0.32, totalWeightN * 0.32);
@@ -1318,7 +1339,10 @@
                     const z=s.z-Math.sin(s.heading)*wheel.x+Math.cos(s.heading)*wheel.z;
                     heights[wheel.key]=controls.groundHeights?.[wheel.key]??(typeof this.options.sampleGroundHeight==='function'?this.options.sampleGroundHeight(x,z):0);
                 }
-                this.suspension.step(dt,{longAccel:s.longitudinalAccelG*GRAVITY,latAccel:controls.externalLateralAccel??s.lateralAccelG*GRAVITY,downforce:aeroDownforceN,groundHeights:heights});
+                const dragHeight=this.suspension.wheels.filter(w=>w.contact).length>=2?-.1*(1-throttle):0;
+                this.suspension.step(dt,{longAccel:s.contactLongAccel??s.longitudinalAccelG*GRAVITY,latAccel:controls.externalLateralAccel??s.contactLatAccel??s.lateralAccelG*GRAVITY,
+                    downforce:aeroDownforceN*Math.cos(s.roll)*Math.cos(s.pitch),aeroCenterZ:p.wheelbase*(.47-p.frontWeightBias),
+                    dragPitchMoment:mwAero?dragHeight*mwAero.drag[2]:0,dragRollMoment:mwAero?-dragHeight*mwAero.drag[0]:0,groundHeights:heights});
                 for(const wheel of this.suspension.wheels){s.wheelLoads[wheel.key]=wheel.load;s.suspensionOffsets[wheel.key]=wheel.offset;}
                 frontAxleLoadN=s.wheelLoads.fl+s.wheelLoads.fr;rearAxleLoadN=s.wheelLoads.rl+s.wheelLoads.rr;
             }
@@ -1485,7 +1509,7 @@
                         driveTorque:mwDrive.torques[tireIndex],
                         brake,handbrake:front?0:ebrake,brakeCapacity:maxBrakeDecelForce*(front?.64:.36)*.5*p.wheelRadius,
                         ebrakeCapacity:850*1.3558*10*p.massKg/1500,
-                        tractionBoost:frame.tractionBoost*mwDrive.boost[tireIndex]*(front?frontGameBreakerBoost:mwDrift.rearTractionBoost),
+                        tractionBoost:frame.tractionBoost*nosMult*mwDrive.boost[tireIndex]*(front?frontGameBreakerBoost:mwDrift.rearTractionBoost),
                         driftFriction:front?1:mwDrift.rearFriction,gripBoost:frame.gripBoost,lateralBoost:1,
                         maxSlip:frame.maxSlip,lateralGrip:latGripMu,driveGrip:driveGripMu,
                         rollingResistance:surfPreset.rollingResistance});
@@ -1511,7 +1535,7 @@
             // 12. Aerodynamic Drag & Rolling Resistance (Chassis::DoAerodynamics)
             const offThrottleFactor = 1.0 + (1.0 - throttle) * 0.85; // OffThrottleDragFactor
             const draftDragReduction = 1.0 - clamp(s.slipstreamFactor || 0, 0, 1) * 0.42;
-            const aeroDragForce = -Math.sign(s.vForward) * 0.5 * 1.225 * (p.dragCoeff || 0.32) * 2.15 * (s.vForward * s.vForward) * offThrottleFactor * draftDragReduction;
+            const aeroDragForce = mwAero ? mwAero.drag[2] : -Math.sign(s.vForward) * 0.5 * 1.225 * (p.dragCoeff || 0.32) * 2.15 * (s.vForward * s.vForward) * offThrottleFactor * draftDragReduction;
             const hasContact=!this.suspension||this.suspension.wheels.some(w=>w.contact);
             const rollingForce = hasContact ? -Math.sign(s.vForward) * (p.massKg * GRAVITY * 0.015 * surfPreset.rollingResistance) : 0;
 
@@ -1520,16 +1544,16 @@
 
             // 13. Rigid-Body Planar Force & Yaw Torque Integration (Physics::IntegrateMotion)
             const totalFxBody = this.mwTires ? mwForwardForce+aeroDragForce+rollingForce : fxFront * Math.cos(s.steerAngleRad) + fxRear + aeroDragForce + rollingForce + cornerScrubForce;
-            const totalFyBody = this.mwTires ? mwRightForce : fyFront * Math.cos(s.steerAngleRad) + fyRear;
+            const totalFyBody = this.mwTires ? mwRightForce+mwAero.drag[0] : fyFront * Math.cos(s.steerAngleRad) + fyRear;
 
             const prevVForward = s.vForward;
             const prevVLateral = s.vLateral;
 
-            // Body-frame equations of motion:
+            // Classic body-frame equations of motion (MW rotates axes below):
             // dv_fwd/dt = F_x / m + v_lat * yawRate * (1 - arcadeForwardPreserve)
             // dv_lat/dt = F_y / m - v_fwd * yawRate
-            const axBody = (totalFxBody / p.massKg) + (s.vLateral * s.yawRate * (this.mwTires?1:.35));
-            const ayBody = (totalFyBody / p.massKg) - (s.vForward * s.yawRate);
+            const axBody = (totalFxBody / p.massKg) + (this.mwTires?0:s.vLateral * s.yawRate * .35);
+            const ayBody = (totalFyBody / p.massKg) - (this.mwTires?0:s.vForward * s.yawRate);
 
             s.vForward += axBody * dt;
             s.vLateral += ayBody * dt;
@@ -1571,7 +1595,18 @@
             // NFS MW DriftStabilizerTable: damp yaw rate when yaw opposes slip angle or exceeds safe drift envelope
             const baseYawDamping = -s.yawRate * s.yawInertia * (this.mwKernel ? .15 : (s.isDrifting ? 2.6 : 4.2));
             let stabilizerTorque = 0;
-            if(this.mwTires)stabilizerTorque=-s.yawRate*s.yawInertia*mwDrift.dampingRate;
+            if(this.mwTires){
+                stabilizerTorque=-s.yawRate*s.yawInertia*mwDrift.dampingRate;
+                if(s.handbrakeRecovery>0&&this.suspension.wheels.filter(w=>w.contact).length>=2){
+                    // Host handling assist, not a recovered MW constant. Only
+                    // dissipate excessive rotation during/just after a pull.
+                    const limit=1.2+.4*clamp(s.speedMps/30,0,1);
+                    const excess=Math.max(0,Math.abs(s.yawRate)-limit);
+                    const angleGain=s.yawRate*s.chassisSlipAngle<0?8*clamp((Math.abs(s.chassisSlipAngle)-25*DEG2RAD)/(15*DEG2RAD),0,1):0;
+                    const assist=-(Math.sign(s.yawRate)*excess*20+s.yawRate*angleGain)*s.yawInertia;
+                    stabilizerTorque+=assist;s.handbrakeAssistTorque=assist;
+                }else s.handbrakeAssistTorque=0;
+            }
             else if ((s.yawRate * s.chassisSlipAngle) < 0 || Math.abs(s.chassisSlipAngle) > 0.55) {
                 stabilizerTorque = -s.yawRate * s.yawInertia * (this.mwKernel ? .35 : 4.8) * (0.4 + s.driftValue * 0.6);
             }
@@ -1589,7 +1624,15 @@
             }
 
             // Integrate heading and world position (x, z)
-            s.heading = wrapAngle(s.heading + s.yawRate * dt);
+            const headingDelta=s.yawRate*dt;
+            s.heading = wrapAngle(s.heading + headingDelta);
+            if(this.mwTires){
+                // Rotate the coordinate frame exactly. Explicit Coriolis Euler
+                // steps injected translational energy during rapid yaw changes.
+                const f=s.vForward,l=s.vLateral,c=Math.cos(headingDelta),sn=Math.sin(headingDelta);
+                s.vForward=c*f+sn*l;s.vLateral=c*l-sn*f;
+                s.contactLongAccel=(mwForwardForce+rollingForce)/p.massKg;s.contactLatAccel=mwRightForce/p.massKg;
+            }
 
             const sinH = Math.sin(s.heading);
             const cosH = Math.cos(s.heading);
@@ -1605,8 +1648,8 @@
             if (s.speedKmh > s.peakSpeedKmh) s.peakSpeedKmh = s.speedKmh;
 
             // Compute G-forces for next step weight transfer & visual chassis pitch/roll
-            s.longitudinalAccelG = clamp(((s.vForward - prevVForward) / dt) / GRAVITY, -2.5, 2.5);
-            s.lateralAccelG = clamp((((s.vLateral - prevVLateral) / dt) + s.vForward * s.yawRate) / GRAVITY, -2.5, 2.5);
+            s.longitudinalAccelG = clamp((this.mwTires?totalFxBody/p.massKg:(s.vForward - prevVForward)/dt)/GRAVITY,-2.5,2.5);
+            s.lateralAccelG = clamp((this.mwTires?totalFyBody/p.massKg:((s.vLateral - prevVLateral)/dt)+s.vForward*s.yawRate)/GRAVITY,-2.5,2.5);
 
             // 14. Visual Chassis Pitch, Roll & Vertical Heave (2nd-order Spring-Damper)
             // Nose dives (+pitch) under braking, squats (-pitch) under acceleration

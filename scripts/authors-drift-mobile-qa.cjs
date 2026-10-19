@@ -18,10 +18,10 @@ const out=path.resolve('work/mw-drift-mobile-qa');fs.mkdirSync(out,{recursive:tr
    return{samples,ms:performance.now()-started,visual:e.playerCar?{visible:e.playerCar.visible,position:e.playerCar.position.toArray(),camera:e.camera.position.toArray(),bodyY:p.state.y,cameraMode:e.cameraMode,screenX:(center.x+1)/2}:null};
   },frames);
   for(const mode of ['3d','nfs','drift']){
-   await page.evaluate(mode=>{switchTab('racegame');switchRaceMode(mode==='drift'?'3d':mode);if(mode==='drift')setRaceMode('drift');NomeraAuthorsExpansion.goStep(3)},mode);
+   await page.evaluate(mode=>{switchTab('racegame');switchRaceMode(mode==='drift'?'3d':mode);if(mode==='drift')setRaceMode('drift');selectRaceCar(myCars[2].name,2);NomeraAuthorsExpansion.goStep(3)},mode);
    await page.locator('#ae-physics-model').selectOption('mw');await page.evaluate(()=>startRaceGame());
    await page.waitForFunction(()=>{const e=car3DRacingEngine;return e.playerPhysics?e.playerWheels?.length===4:e.authorsWheelRig?.wheels.length===4&&!e.authorsWheelRig.pending},null,{timeout:30000});
-   await page.evaluate(()=>{car3DRacingEngine.stop();car3DRacingEngine.state.racePhase='racing'});
+   await page.evaluate(()=>{car3DRacingEngine.stop();car3DRacingEngine.state.racePhase='racing';car3DRacingEngine.setWeather('night',true)});
    for(const[width,height]of [[320,740],[390,844],[844,390]]){
     await page.setViewportSize({width,height});
     await page.evaluate(()=>{
@@ -34,7 +34,8 @@ const out=path.resolve('work/mw-drift-mobile-qa');fs.mkdirSync(out,{recursive:tr
     for(const b of boxes)assert(b.x>=0&&b.y>=0&&b.right<=width+1&&b.bottom<=height+1&&b.width>=40&&b.height>=40);
     await pointer('gas',1,'pointerdown');await pointer('left',2,'pointerdown');const turn=await step(9);
     assert(Math.abs(turn.samples.at(-1).angle)>10);
-    await pointer('drift',3,'pointerdown');const entry=await step(12);
+    // A held pull includes the new pressure rise; short taps have their own QA.
+    await pointer('drift',3,'pointerdown');const entry=await step(18);
     assert(entry.samples.at(-1).keys.drift&&entry.samples.at(-1).keys.left&&entry.samples.at(-1).keys.gas);
     await pointer('drift',3,'pointercancel');await pointer('left',2,'pointerup');await pointer('right',4,'pointerdown');
     const counter=await step(9);assert(!counter.samples.at(-1).keys.drift);

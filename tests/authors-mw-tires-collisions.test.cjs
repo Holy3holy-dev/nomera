@@ -22,7 +22,9 @@ test('MW tire matches ten independently compiled upstream C++ float fixtures',()
 
 test('MW tires lock, release at rest, spin airborne, and keep all state finite through reverse',()=>{
  const p=car({speedKmh:100});
- p.update(1/60,{handbrake:true});assert(p.mwTires.rl.locked&&p.mwTires.rr.locked);
+ p.update(1/60,{handbrake:true});assert(p.state.handbrakePressure<1);
+ for(let i=0;i<20;i++)p.update(1/60,{handbrake:true});
+ assert(p.mwTires.rl.locked&&p.mwTires.rr.locked);
  const angle=p.state.wheelAngles.rr;p.update(1/60,{handbrake:true});near(p.state.wheelAngles.rr,angle);
  p.state.vForward=0;p.state.vLateral=0;p.state.yawRate=0;
  for(let i=0;i<240;i++)p.update(1/60,{gas:true});assert(p.speedKmh>50);assert(!p.mwTires.rr.locked);

@@ -4,6 +4,7 @@
  * Source lineage, units, deviations and license: docs/MW_PHYSICS_PORT.md.
  * Tire/contact integration and remaining limits: docs/MW_TIRES_COLLISIONS.md.
  * Traction control, burnout and drift: docs/MW_TRACTION_DRIFT.md.
+ * Nitrous, aerodynamics and handbrake integration: docs/MW_NOS_AERO.md.
  * This partial adapter does not claim Xbox retail equivalence.
  */
 (function (root, factory) {
@@ -69,6 +70,57 @@
     }
     function steeringRange(speedMps) { return table(RANGE, Math.abs(speedMps), 0, 160); }
     function steeringRate(speedMps) { return table(RATE, Math.abs(speedMps), 0, 160); }
+    class Nitrous {
+        constructor(spec={}){
+            this.spec={capacitySeconds:5,boost:1,rechargeMinSpeed:50,rechargeMaxSpeed:100,rechargeMin:50,rechargeMax:30,disengage:2,...spec};
+            this.tank=1;this.timer=0;this.active=false;
+        }
+        step(dt,{speedMps=0,gear=1,gas=0,button=false,canRecharge=true,blown=false,hasNOS=true,tuning=0,catchup=0,remote=false,infinite=false}={}){
+            this.active=false;
+            const p=this.spec,mph=speedMps*2.23699;
+            if(!hasNOS||p.capacitySeconds<=0||p.boost<=0||!(dt>0))return 1;
+            let recharge=0;
+            if(canRecharge&&mph>=p.rechargeMinSpeed&&gear>=1)recharge=mix(p.rechargeMin,p.rechargeMax,clamp((mph-p.rechargeMinSpeed)/(p.rechargeMaxSpeed-p.rechargeMinSpeed),0,1));
+            let engaged=button&&gear>=1&&gas>0&&!blown;
+            if(mph<(this.timer>=1?5:10))engaged=false;
+            const capacity=p.capacitySeconds*(1-.25*tuning);
+            if(capacity<=0){this.tank=0;this.timer=0;return 1;}
+            if(engaged&&this.tank>0){
+                // Human/non-remote path is used by NOMERA; cheat arguments are
+                // retained solely to compare the isolated upstream fixtures.
+                this.tank=Math.max(0,this.tank-(infinite||remote?0:dt/capacity)*mix(1,.5,catchup));
+                this.timer=1;this.active=true;return 1+p.boost*(1+.25*tuning);
+            }
+            if(this.timer>0&&p.disengage>0)this.timer=Math.max(0,this.timer-dt/p.disengage);
+            else if(this.tank<1&&recharge>0){this.tank=Math.min(1,this.tank+dt/recharge*mix(1,2,catchup));this.timer=0;}
+            else this.timer=0;
+            return 1;
+        }
+    }
+    // Body/pose-independent source aerodynamic force calculation. The pose
+    // below is the same orthonormal basis used by the compiled C++ oracle.
+    function aerodynamics({speed=0,lateral=0,forward=0,gas=1,groundEffect=1,roll=0,pitch=0,tuning=0,
+        dragPct=1,aeroPct=1,cog=[0,0,0],frontZ=1.25,rearZ=-1.45,dragCoefficient=.32,aeroCoefficient=.24,aeroCG=47}={}){
+        const cr=Math.cos(roll),sr=Math.sin(roll),cp=Math.cos(pitch),sp=Math.sin(pitch);
+        const rotate=([x,y,z])=>[cr*x-sr*cp*y+sr*sp*z,sr*x+cr*cp*y-cr*sp*z,sp*y+cp*z];
+        const forces=[];let downforce=0,drag=[0,0,0];
+        if(dragPct>0){
+            const amount=speed*dragPct*dragCoefficient*(2-gas)*(1+.25*tuning);
+            drag=[-lateral*amount,0,-forward*amount];
+            const center=[...cog];if(groundEffect>=.5)center[1]-=.1*(1-gas);
+            forces.push({force:drag,point:rotate(center)});
+        }
+        if(aeroPct>0){
+            const upness=groundEffect>=.5?1:Math.max(0,cr*cp);
+            const dot=speed>.0001?(lateral*sr*sp+forward*cp)/speed:1;
+            const forwardness=Math.max(.4,Math.sqrt(Math.max(dot,0)));
+            downforce=aeroPct*upness*forwardness*speed*aeroCoefficient*2000;
+            if(groundEffect===0)downforce*=.8;
+            downforce*=1+.25*tuning;
+            if(downforce>0){const center=[...cog];if(groundEffect!==0)center[2]=(frontZ-rearZ)*aeroCG*.01+rearZ;forces.push({force:rotate([0,-downforce,0]),point:rotate(center)});}
+        }
+        return{forces,downforce,drag};
+    }
     // SuspensionRacer::Tire, SI interface. Brake/drive specifications supplied
     // here are already Nm; the catalogue bridge performs no lb-ft conversion.
     class Tire {
@@ -321,12 +373,12 @@
                     travel:Math.max(.1778,c0*1.8),neutral:c0,compression:c0,load:profile.massKg*9.81*bias*.5,contact:true,offset:0};
             });
         }
-        step(dt,{longAccel=0,latAccel=0,downforce=0,groundHeights={}}={}){
+        step(dt,{longAccel=0,latAccel=0,downforce=0,aeroCenterZ=0,dragPitchMoment=0,dragRollMoment=0,groundHeights={}}={}){
             const p=this.profile,mass=p.massKg,steps=Math.max(1,Math.ceil(dt*240)),h=dt/steps;
             const pitchInertia=mass*(p.wheelbase*p.wheelbase*1.5+p.cgHeight*p.cgHeight)/12;
             const rollInertia=mass*(p.trackWidth*p.trackWidth+p.cgHeight*p.cgHeight)/12;
             for(let step=0;step<steps;step++){
-                const previous=this.wheels.map(w=>w.compression);let force=0,pitchMoment=-mass*longAccel*this.cgHeight,rollMoment=mass*latAccel*this.cgHeight,bottomOut=0;
+                const previous=this.wheels.map(w=>w.compression);let force=0,pitchMoment=-mass*longAccel*this.cgHeight+downforce*aeroCenterZ+dragPitchMoment,rollMoment=mass*latAccel*this.cgHeight+dragRollMoment,bottomOut=0;
                 const upness=Math.max(0,Math.cos(this.pitch)*Math.cos(this.roll));
                 for(let i=0;i<4;i++){
                     const w=this.wheels[i],ground=Number(groundHeights[w.key])||0;
@@ -351,13 +403,17 @@
     function createSpec(profile) {
         const engine = { idle: profile.idleRpm, redline: profile.redlineRpm, maxRpm: profile.maxRpm,
             torque: REFERENCE.torque.map(value => value / 283 * profile.baseTorqueNm) };
-        return { engine, shifts: shiftPoints(engine, profile.gearRatios), shiftTime: .25 };
+        return { engine, shifts: shiftPoints(engine, profile.gearRatios), shiftTime: .25,
+            nos:{capacitySeconds:100/profile.nitroDrainRate,boost:profile.nitroTorqueMult-1,rechargeMin:100/profile.nitroRechargeRate,rechargeMax:60/profile.nitroRechargeRate},
+            // Calibrate the catalogue BMW M3 to the source BMW coefficients;
+            // preserve relative car/wing/upgrade differences in NOMERA.
+            aero:{dragCoefficient:profile.dragCoeff*.32/.24,aeroCoefficient:profile.downforceCoeff*.24/.76,aeroCG:47} };
     }
     function selected() {
         if (typeof window === 'undefined' || !window.NOMERA_AUTHORS_PREVIEW) return false;
         try { return window.localStorage.getItem('authors_mw_physics_v1') !== 'classic'; }
         catch (_) { return true; }
     }
-    return Object.freeze({ torque, shiftPoints, clutch, tireForce, Tire, tireFrame, differential, driveControl, Burnout, DriftController, yawFrictionBoost, wallSteer, steeringRange, steeringRate, SteeringController, springForce, staticCompression, Suspension,
+    return Object.freeze({ torque, shiftPoints, clutch, Nitrous, aerodynamics, tireForce, Tire, tireFrame, differential, driveControl, Burnout, DriftController, yawFrictionBoost, wallSteer, steeringRange, steeringRate, SteeringController, springForce, staticCompression, Suspension,
         createSpec, selected, REFERENCE, LOAD });
 }));

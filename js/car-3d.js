@@ -14594,45 +14594,12 @@
                 state.nitroActive = false;
             }
 
-            // 1. NITRO BOOST HANDLING
-            if (nitroActive) {
-                state.isNitroActive = true;
-                state.nitroLevel = Math.max(0, state.nitroLevel - 30 * dt);
-
-                // High-frequency organic combustion flutter and aerodynamic speed stretch
-                const flutterLen = 0.88 + Math.random() * 0.26;
-                const flutterW = 0.94 + Math.random() * 0.12;
-                const speedStretch = 1.0 + Math.min(0.35, state.speed / 450);
-
-                this.playerNitroFlames.forEach((flame, idx) => {
-                    flame.visible = true;
-                    const isCore = (idx % 2 === 1);
-                    const curW = flutterW * (isCore ? 0.92 : 1.0);
-                    const curL = flutterLen * speedStretch * (isCore ? 0.85 : 1.0);
-                    flame.scale.set(curW, curW, curL);
-                    if (flame.material) {
-                        flame.material.opacity = (isCore ? 0.85 : 0.65) * (0.85 + Math.random() * 0.30);
-                    }
-                });
-                if (this.playerNitroLight) {
-                    this.playerNitroLight.intensity = 2.0 + Math.random() * 0.7;
-                }
-                if (Math.random() < 0.25) {
-                    this.spawnSparks(state.x + (Math.random() - 0.5) * 0.5, 0.22, state.z - 2.1, 2);
-                }
-                if (this.options.onSound && Math.random() < 0.2) {
-                    this.options.onSound('nitro');
-                }
-            } else {
-                state.isNitroActive = false;
-                this.playerNitroFlames.forEach(flame => { flame.visible = false; });
-                if (this.playerNitroLight) {
-                    this.playerNitroLight.intensity = 0;
-                }
-                // Slow passive nitro recharge when driving fast or drifting
-                if (!keys.nitro && hasFuel && state.speed > 60) {
-                    state.nitroLevel = Math.min(100, state.nitroLevel + (state.isDrifting ? 12 : 5) * dt);
-                }
+            // MW owns the tank/cooldown in its fixed-step engine. The legacy
+            // branch retains its existing rates; pickups still edit host level.
+            if(!this.mwLongitudinal){
+                state.isNitroActive=nitroActive;
+                if(nitroActive)state.nitroLevel=Math.max(0,state.nitroLevel-30*dt);
+                else if(!keys.nitro&&hasFuel&&state.speed>60)state.nitroLevel=Math.min(100,state.nitroLevel+(state.isDrifting?12:5)*dt);
             }
 
             // 2. TRANSMISSION, SLIPSTREAM DRAFTING, THROTTLE, ACCELERATION & BRAKING
@@ -14685,11 +14652,15 @@
                 physical.state.slipstreamFactor = bestSlipstream;
                 physical.setWeather(this.currentActiveWeather || 'night');
                 const oldSpeed = state.speed;
-                physical.update(dt, { gas: gasActive, brake: keys.brake, steer:roadInput,handbrake: isHandbrake, nitro: state.isNitroActive });
+                physical.update(dt, { gas: gasActive, brake: keys.brake, steer:roadInput,handbrake: isHandbrake, nitro: keys.nitro });
                 // Highway has no reverse lane traversal; circuit retains reverse.
                 physical.state.vForward = Math.max(0, physical.state.vForward);
                 physical.state.gear = Math.max(1, physical.state.gear);
                 state.speed = Math.max(0,physical.state.vz) * 3.6;
+                state.nitroLevel=physical.state.nitroLevel;
+                state.isNitroActive=physical.state.isNitroActive;
+                state.nitroDepleted=physical.state.nitroDepleted;
+                state.nosCooldown=physical.state.nosCooldown;
                 state.rpm = physical.state.rpm;
                 state.idleRpm = physical.profile.idleRpm;
                 state.maxRpm = physical.profile.redlineRpm;
@@ -14789,6 +14760,41 @@
             state.prevGas = !!gasActive && !isHandbrake;
             state.wasBraking = !!keys.brake;
             state.wasHandbraking = isHandbrake;
+
+            // 1. NITRO BOOST HANDLING
+            if (state.isNitroActive) {
+
+                // High-frequency organic combustion flutter and aerodynamic speed stretch
+                const flutterLen = 0.88 + Math.random() * 0.26;
+                const flutterW = 0.94 + Math.random() * 0.12;
+                const speedStretch = 1.0 + Math.min(0.35, state.speed / 450);
+
+                this.playerNitroFlames.forEach((flame, idx) => {
+                    flame.visible = true;
+                    const isCore = (idx % 2 === 1);
+                    const curW = flutterW * (isCore ? 0.92 : 1.0);
+                    const curL = flutterLen * speedStretch * (isCore ? 0.85 : 1.0);
+                    flame.scale.set(curW, curW, curL);
+                    if (flame.material) {
+                        flame.material.opacity = (isCore ? 0.85 : 0.65) * (0.85 + Math.random() * 0.30);
+                    }
+                });
+                if (this.playerNitroLight) {
+                    this.playerNitroLight.intensity = 2.0 + Math.random() * 0.7;
+                }
+                if (Math.random() < 0.25) {
+                    this.spawnSparks(state.x + (Math.random() - 0.5) * 0.5, 0.22, state.z - 2.1, 2);
+                }
+                if (this.options.onSound && Math.random() < 0.2) {
+                    this.options.onSound('nitro');
+                }
+            } else {
+                this.playerNitroFlames.forEach(flame => { flame.visible = false; });
+                if (this.playerNitroLight) {
+                    this.playerNitroLight.intensity = 0;
+                }
+            }
+
 
             // 1. WEIGHT TRANSFER & BODY DYNAMICS (Dynamic Chassis Pitch & Squat)
             // Dynamic chassis pitch (rear squat on hard acceleration, nose dive under heavy braking)

@@ -42,7 +42,10 @@ test('MW response reaches sustained turn sooner without changing fixed-step dete
  const car=new NfsVehiclePhysics({carName:'Subaru Impreza WRX STI',speedKmh:100,physicsKernel:mw});
  for(let i=0;i<10;i++)car.update(1/60,{gas:true,right:true});assert(car.state.steerAngleDeg>15);assert(car.state.yawRate>.05);
  assert(car.state.wheelAngles.fl!==0&&car.state.wheelAngles.rr!==0);
- const before=car.state.wheelAngles.rr;car.update(1/60,{gas:true,handbrake:true});near(car.state.wheelAngles.rr,before);
+ car.update(1/60,{gas:true,handbrake:true});assert(car.state.handbrakePressure>0&&car.state.handbrakePressure<1);
+ for(let i=0;i<20;i++)car.update(1/60,{handbrake:true});
+ assert(car.mwTires.rr.locked);const before=car.state.wheelAngles.rr;
+ car.update(1/60,{handbrake:true});near(car.state.wheelAngles.rr,before);
 });
 test('Original MW audio bytes, native RPM/grain maps and loop bounds are intact',()=>{
  const base='assets/audio/mw/',manifest=JSON.parse(fs.readFileSync(base+'manifest.json')),provenance=JSON.parse(fs.readFileSync(base+'provenance.json'));

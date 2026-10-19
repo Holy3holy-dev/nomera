@@ -2138,16 +2138,18 @@
                     lookAhead = 26.0;
                 }
 
+                const portraitMWChase=this.playerPhysics.mwKernel&&this.camera.aspect<1&&this.cameraMode!=='hood'&&this.cameraMode!=='bumper';
+                if(portraitMWChase){distBack=Math.max(distBack,9.4);heightUp=Math.max(heightUp,3.35);lookAhead=Math.min(lookAhead,10);}
                 const nitroPullback = p.isNitroActive ? 0.85 : 0;
                 const targetCamX = threeX - camDirX * (distBack + nitroPullback);
                 const targetCamY = heightUp + p.heave;
                 const targetCamZ = threeZ - camDirZ * (distBack + nitroPullback);
 
-                const targetLookX = threeX + fwdX * lookAhead;
+                const targetLookX = threeX + (portraitMWChase?camDirX:fwdX) * lookAhead;
                 const targetLookY = 0.95 + p.pitch * 2.0;
-                const targetLookZ = threeZ + fwdZ * lookAhead;
+                const targetLookZ = threeZ + (portraitMWChase?camDirZ:fwdZ) * lookAhead;
 
-                const smooth = (snapCamera || this.cameraMode === 'hood' || this.cameraMode === 'bumper') ? 1.0 : 0.22;
+                const smooth = (snapCamera || this.cameraMode === 'hood' || this.cameraMode === 'bumper') ? 1.0 : portraitMWChase?.55:0.22;
                 this._camPos.x = lerp(this._camPos.x, targetCamX, smooth);
                 this._camPos.y = lerp(this._camPos.y, targetCamY, smooth);
                 this._camPos.z = lerp(this._camPos.z, targetCamZ, smooth);

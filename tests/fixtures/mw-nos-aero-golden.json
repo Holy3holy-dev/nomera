@@ -1,0 +1,1710 @@
+{
+  "nos": [
+    {
+      "name": "start_9mph",
+      "input": {
+        "speedMph": 9,
+        "gear": 2,
+        "gas": 1,
+        "button": true,
+        "tank": 1,
+        "timer": 0,
+        "dt": 0.01666666754,
+        "tuning": 0,
+        "canRecharge": true,
+        "blown": false,
+        "catchup": 0,
+        "remote": false,
+        "capacitySeconds": 5,
+        "boost": 1
+      },
+      "expected": {
+        "multiplier": 1,
+        "tank": 1,
+        "timer": 0
+      }
+    },
+    {
+      "name": "start_10mph",
+      "input": {
+        "speedMph": 10,
+        "gear": 2,
+        "gas": 1,
+        "button": true,
+        "tank": 1,
+        "timer": 0,
+        "dt": 0.01666666754,
+        "tuning": 0,
+        "canRecharge": true,
+        "blown": false,
+        "catchup": 0,
+        "remote": false,
+        "capacitySeconds": 5,
+        "boost": 1
+      },
+      "expected": {
+        "multiplier": 2,
+        "tank": 0.9966666698,
+        "timer": 1
+      }
+    },
+    {
+      "name": "start_100mph",
+      "input": {
+        "speedMph": 100,
+        "gear": 2,
+        "gas": 1,
+        "button": true,
+        "tank": 1,
+        "timer": 0,
+        "dt": 0.5,
+        "tuning": 0,
+        "canRecharge": true,
+        "blown": false,
+        "catchup": 0,
+        "remote": false,
+        "capacitySeconds": 5,
+        "boost": 1
+      },
+      "expected": {
+        "multiplier": 2,
+        "tank": 0.8999999762,
+        "timer": 1
+      }
+    },
+    {
+      "name": "continue_5mph",
+      "input": {
+        "speedMph": 5,
+        "gear": 2,
+        "gas": 1,
+        "button": true,
+        "tank": 1,
+        "timer": 1,
+        "dt": 0.5,
+        "tuning": 0,
+        "canRecharge": true,
+        "blown": false,
+        "catchup": 0,
+        "remote": false,
+        "capacitySeconds": 5,
+        "boost": 1
+      },
+      "expected": {
+        "multiplier": 2,
+        "tank": 0.8999999762,
+        "timer": 1
+      }
+    },
+    {
+      "name": "stop_4mph",
+      "input": {
+        "speedMph": 4,
+        "gear": 2,
+        "gas": 1,
+        "button": true,
+        "tank": 1,
+        "timer": 1,
+        "dt": 0.5,
+        "tuning": 0,
+        "canRecharge": true,
+        "blown": false,
+        "catchup": 0,
+        "remote": false,
+        "capacitySeconds": 5,
+        "boost": 1
+      },
+      "expected": {
+        "multiplier": 1,
+        "tank": 1,
+        "timer": 0.75
+      }
+    },
+    {
+      "name": "cooldown_7mph_restart_rejected",
+      "input": {
+        "speedMph": 7,
+        "gear": 2,
+        "gas": 1,
+        "button": true,
+        "tank": 0.5,
+        "timer": 0.6999999881,
+        "dt": 0.1000000015,
+        "tuning": 0,
+        "canRecharge": true,
+        "blown": false,
+        "catchup": 0,
+        "remote": false,
+        "capacitySeconds": 5,
+        "boost": 1
+      },
+      "expected": {
+        "multiplier": 1,
+        "tank": 0.5,
+        "timer": 0.6499999762
+      }
+    },
+    {
+      "name": "zero_gas_stops",
+      "input": {
+        "speedMph": 100,
+        "gear": 2,
+        "gas": 0,
+        "button": true,
+        "tank": 0.5,
+        "timer": 1,
+        "dt": 0.5,
+        "tuning": 0,
+        "canRecharge": true,
+        "blown": false,
+        "catchup": 0,
+        "remote": false,
+        "capacitySeconds": 5,
+        "boost": 1
+      },
+      "expected": {
+        "multiplier": 1,
+        "tank": 0.5,
+        "timer": 0.75
+      }
+    },
+    {
+      "name": "reverse_stops",
+      "input": {
+        "speedMph": 100,
+        "gear": 0,
+        "gas": 1,
+        "button": true,
+        "tank": 0.5,
+        "timer": 1,
+        "dt": 0.5,
+        "tuning": 0,
+        "canRecharge": true,
+        "blown": false,
+        "catchup": 0,
+        "remote": false,
+        "capacitySeconds": 5,
+        "boost": 1
+      },
+      "expected": {
+        "multiplier": 1,
+        "tank": 0.5,
+        "timer": 0.75
+      }
+    },
+    {
+      "name": "neutral_stops",
+      "input": {
+        "speedMph": 100,
+        "gear": 1,
+        "gas": 1,
+        "button": true,
+        "tank": 0.5,
+        "timer": 1,
+        "dt": 0.5,
+        "tuning": 0,
+        "canRecharge": true,
+        "blown": false,
+        "catchup": 0,
+        "remote": false,
+        "capacitySeconds": 5,
+        "boost": 1
+      },
+      "expected": {
+        "multiplier": 1,
+        "tank": 0.5,
+        "timer": 0.75
+      }
+    },
+    {
+      "name": "blown_stops",
+      "input": {
+        "speedMph": 100,
+        "gear": 2,
+        "gas": 1,
+        "button": true,
+        "tank": 0.5,
+        "timer": 1,
+        "dt": 0.5,
+        "tuning": 0,
+        "canRecharge": true,
+        "blown": true,
+        "catchup": 0,
+        "remote": false,
+        "capacitySeconds": 5,
+        "boost": 1
+      },
+      "expected": {
+        "multiplier": 1,
+        "tank": 0.5,
+        "timer": 0.75
+      }
+    },
+    {
+      "name": "release_has_no_torque_fade",
+      "input": {
+        "speedMph": 100,
+        "gear": 2,
+        "gas": 1,
+        "button": false,
+        "tank": 0.5,
+        "timer": 1,
+        "dt": 0.5,
+        "tuning": 0,
+        "canRecharge": true,
+        "blown": false,
+        "catchup": 0,
+        "remote": false,
+        "capacitySeconds": 5,
+        "boost": 1
+      },
+      "expected": {
+        "multiplier": 1,
+        "tank": 0.5,
+        "timer": 0.75
+      }
+    },
+    {
+      "name": "cooldown_reaches_zero_no_same_frame_recharge",
+      "input": {
+        "speedMph": 100,
+        "gear": 2,
+        "gas": 1,
+        "button": false,
+        "tank": 0.5,
+        "timer": 0.25,
+        "dt": 0.5,
+        "tuning": 0,
+        "canRecharge": true,
+        "blown": false,
+        "catchup": 0,
+        "remote": false,
+        "capacitySeconds": 5,
+        "boost": 1
+      },
+      "expected": {
+        "multiplier": 1,
+        "tank": 0.5,
+        "timer": 0
+      }
+    },
+    {
+      "name": "no_recharge_49mph",
+      "input": {
+        "speedMph": 49,
+        "gear": 2,
+        "gas": 0,
+        "button": false,
+        "tank": 0.5,
+        "timer": 0,
+        "dt": 1,
+        "tuning": 0,
+        "canRecharge": true,
+        "blown": false,
+        "catchup": 0,
+        "remote": false,
+        "capacitySeconds": 5,
+        "boost": 1
+      },
+      "expected": {
+        "multiplier": 1,
+        "tank": 0.5,
+        "timer": 0
+      }
+    },
+    {
+      "name": "recharge_50mph",
+      "input": {
+        "speedMph": 50,
+        "gear": 2,
+        "gas": 0,
+        "button": false,
+        "tank": 0.5,
+        "timer": 0,
+        "dt": 1,
+        "tuning": 0,
+        "canRecharge": true,
+        "blown": false,
+        "catchup": 0,
+        "remote": false,
+        "capacitySeconds": 5,
+        "boost": 1
+      },
+      "expected": {
+        "multiplier": 1,
+        "tank": 0.5199999809,
+        "timer": 0
+      }
+    },
+    {
+      "name": "recharge_75mph",
+      "input": {
+        "speedMph": 75,
+        "gear": 2,
+        "gas": 0,
+        "button": false,
+        "tank": 0.5,
+        "timer": 0,
+        "dt": 1,
+        "tuning": 0,
+        "canRecharge": true,
+        "blown": false,
+        "catchup": 0,
+        "remote": false,
+        "capacitySeconds": 5,
+        "boost": 1
+      },
+      "expected": {
+        "multiplier": 1,
+        "tank": 0.5249999762,
+        "timer": 0
+      }
+    },
+    {
+      "name": "recharge_100mph",
+      "input": {
+        "speedMph": 100,
+        "gear": 2,
+        "gas": 0,
+        "button": false,
+        "tank": 0.5,
+        "timer": 0,
+        "dt": 1,
+        "tuning": 0,
+        "canRecharge": true,
+        "blown": false,
+        "catchup": 0,
+        "remote": false,
+        "capacitySeconds": 5,
+        "boost": 1
+      },
+      "expected": {
+        "multiplier": 1,
+        "tank": 0.5333333611,
+        "timer": 0
+      }
+    },
+    {
+      "name": "recharge_150mph_clamped",
+      "input": {
+        "speedMph": 150,
+        "gear": 2,
+        "gas": 0,
+        "button": false,
+        "tank": 0.5,
+        "timer": 0,
+        "dt": 1,
+        "tuning": 0,
+        "canRecharge": true,
+        "blown": false,
+        "catchup": 0,
+        "remote": false,
+        "capacitySeconds": 5,
+        "boost": 1
+      },
+      "expected": {
+        "multiplier": 1,
+        "tank": 0.5333333611,
+        "timer": 0
+      }
+    },
+    {
+      "name": "player_disallows_recharge",
+      "input": {
+        "speedMph": 100,
+        "gear": 2,
+        "gas": 0,
+        "button": false,
+        "tank": 0.5,
+        "timer": 0,
+        "dt": 1,
+        "tuning": 0,
+        "canRecharge": false,
+        "blown": false,
+        "catchup": 0,
+        "remote": false,
+        "capacitySeconds": 5,
+        "boost": 1
+      },
+      "expected": {
+        "multiplier": 1,
+        "tank": 0.5,
+        "timer": 0
+      }
+    },
+    {
+      "name": "tank_clamp_full",
+      "input": {
+        "speedMph": 100,
+        "gear": 2,
+        "gas": 0,
+        "button": false,
+        "tank": 0.9990000129,
+        "timer": 0,
+        "dt": 1,
+        "tuning": 0,
+        "canRecharge": true,
+        "blown": false,
+        "catchup": 0,
+        "remote": false,
+        "capacitySeconds": 5,
+        "boost": 1
+      },
+      "expected": {
+        "multiplier": 1,
+        "tank": 1,
+        "timer": 0
+      }
+    },
+    {
+      "name": "tank_clamp_empty_still_full_frame_boost",
+      "input": {
+        "speedMph": 100,
+        "gear": 2,
+        "gas": 1,
+        "button": true,
+        "tank": 0.001000000047,
+        "timer": 0,
+        "dt": 1,
+        "tuning": 0,
+        "canRecharge": true,
+        "blown": false,
+        "catchup": 0,
+        "remote": false,
+        "capacitySeconds": 5,
+        "boost": 1
+      },
+      "expected": {
+        "multiplier": 2,
+        "tank": 0,
+        "timer": 1
+      }
+    },
+    {
+      "name": "tuning_positive",
+      "input": {
+        "speedMph": 100,
+        "gear": 2,
+        "gas": 1,
+        "button": true,
+        "tank": 1,
+        "timer": 0,
+        "dt": 1,
+        "tuning": 1,
+        "canRecharge": true,
+        "blown": false,
+        "catchup": 0,
+        "remote": false,
+        "capacitySeconds": 5,
+        "boost": 1
+      },
+      "expected": {
+        "multiplier": 2.25,
+        "tank": 0.7333333492,
+        "timer": 1
+      }
+    },
+    {
+      "name": "tuning_negative",
+      "input": {
+        "speedMph": 100,
+        "gear": 2,
+        "gas": 1,
+        "button": true,
+        "tank": 1,
+        "timer": 0,
+        "dt": 1,
+        "tuning": -1,
+        "canRecharge": true,
+        "blown": false,
+        "catchup": 0,
+        "remote": false,
+        "capacitySeconds": 5,
+        "boost": 1
+      },
+      "expected": {
+        "multiplier": 1.75,
+        "tank": 0.8400000334,
+        "timer": 1
+      }
+    },
+    {
+      "name": "ai_catchup_half_discharge",
+      "input": {
+        "speedMph": 100,
+        "gear": 2,
+        "gas": 1,
+        "button": true,
+        "tank": 1,
+        "timer": 0,
+        "dt": 1,
+        "tuning": 0,
+        "canRecharge": true,
+        "blown": false,
+        "catchup": 1,
+        "remote": false,
+        "capacitySeconds": 5,
+        "boost": 1
+      },
+      "expected": {
+        "multiplier": 2,
+        "tank": 0.8999999762,
+        "timer": 1
+      }
+    },
+    {
+      "name": "ai_catchup_double_recharge",
+      "input": {
+        "speedMph": 100,
+        "gear": 2,
+        "gas": 0,
+        "button": false,
+        "tank": 0.5,
+        "timer": 0,
+        "dt": 1,
+        "tuning": 0,
+        "canRecharge": true,
+        "blown": false,
+        "catchup": 1,
+        "remote": false,
+        "capacitySeconds": 5,
+        "boost": 1
+      },
+      "expected": {
+        "multiplier": 1,
+        "tank": 0.5666666627,
+        "timer": 0
+      }
+    },
+    {
+      "name": "remote_infinite_tank",
+      "input": {
+        "speedMph": 100,
+        "gear": 2,
+        "gas": 1,
+        "button": true,
+        "tank": 1,
+        "timer": 0,
+        "dt": 1,
+        "tuning": 0,
+        "canRecharge": true,
+        "blown": false,
+        "catchup": 0,
+        "remote": true,
+        "capacitySeconds": 5,
+        "boost": 1
+      },
+      "expected": {
+        "multiplier": 2,
+        "tank": 1,
+        "timer": 1
+      }
+    },
+    {
+      "name": "zero_capacity_no_nos_early_return",
+      "input": {
+        "speedMph": 100,
+        "gear": 2,
+        "gas": 1,
+        "button": true,
+        "tank": 0.5,
+        "timer": 0.5,
+        "dt": 1,
+        "tuning": 0,
+        "canRecharge": true,
+        "blown": false,
+        "catchup": 0,
+        "remote": false,
+        "capacitySeconds": 0,
+        "boost": 1
+      },
+      "expected": {
+        "multiplier": 1,
+        "tank": 0.5,
+        "timer": 0.5
+      }
+    },
+    {
+      "name": "zero_boost_no_nos_early_return",
+      "input": {
+        "speedMph": 100,
+        "gear": 2,
+        "gas": 1,
+        "button": true,
+        "tank": 0.5,
+        "timer": 0.5,
+        "dt": 1,
+        "tuning": 0,
+        "canRecharge": true,
+        "blown": false,
+        "catchup": 0,
+        "remote": false,
+        "capacitySeconds": 5,
+        "boost": 0
+      },
+      "expected": {
+        "multiplier": 1,
+        "tank": 0.5,
+        "timer": 0.5
+      }
+    },
+    {
+      "name": "uncapped_tuning_capacity_zero",
+      "input": {
+        "speedMph": 100,
+        "gear": 2,
+        "gas": 1,
+        "button": true,
+        "tank": 0.5,
+        "timer": 0.5,
+        "dt": 1,
+        "tuning": 4,
+        "canRecharge": true,
+        "blown": false,
+        "catchup": 0,
+        "remote": false,
+        "capacitySeconds": 5,
+        "boost": 1
+      },
+      "expected": {
+        "multiplier": 1,
+        "tank": 0,
+        "timer": 0
+      }
+    }
+  ],
+  "aero": [
+    {
+      "name": "stopped",
+      "input": {
+        "speed": 0,
+        "lateral": 0,
+        "forward": 0,
+        "gas": 1,
+        "groundEffect": 1,
+        "roll": 0,
+        "pitch": 0,
+        "tuning": 0,
+        "dragPct": 1,
+        "aeroPct": 1,
+        "cog": [
+          0.1,
+          0.2,
+          0.15
+        ],
+        "frontZ": 1.25,
+        "rearZ": -1.45,
+        "dragCoefficient": 0.32,
+        "aeroCoefficient": 0.24,
+        "aeroCG": 47
+      },
+      "expected": {
+        "forces": [
+          {
+            "force": [
+              0,
+              0,
+              0
+            ],
+            "point": [
+              0.1000000015,
+              0.200000003,
+              0.150000006
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "50mps_flat_throttle",
+      "input": {
+        "speed": 50,
+        "lateral": 0,
+        "forward": 50,
+        "gas": 1,
+        "groundEffect": 1,
+        "roll": 0,
+        "pitch": 0,
+        "tuning": 0,
+        "dragPct": 1,
+        "aeroPct": 1,
+        "cog": [
+          0.1,
+          0.2,
+          0.15
+        ],
+        "frontZ": 1.25,
+        "rearZ": -1.45,
+        "dragCoefficient": 0.32,
+        "aeroCoefficient": 0.24,
+        "aeroCG": 47
+      },
+      "expected": {
+        "forces": [
+          {
+            "force": [
+              0,
+              0,
+              -800
+            ],
+            "point": [
+              0.1000000015,
+              0.200000003,
+              0.150000006
+            ]
+          },
+          {
+            "force": [
+              0,
+              -24000,
+              0
+            ],
+            "point": [
+              0.1000000015,
+              0.200000003,
+              -0.1809999943
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "50mps_flat_coast",
+      "input": {
+        "speed": 50,
+        "lateral": 0,
+        "forward": 50,
+        "gas": 0,
+        "groundEffect": 1,
+        "roll": 0,
+        "pitch": 0,
+        "tuning": 0,
+        "dragPct": 1,
+        "aeroPct": 1,
+        "cog": [
+          0.1,
+          0.2,
+          0.15
+        ],
+        "frontZ": 1.25,
+        "rearZ": -1.45,
+        "dragCoefficient": 0.32,
+        "aeroCoefficient": 0.24,
+        "aeroCG": 47
+      },
+      "expected": {
+        "forces": [
+          {
+            "force": [
+              0,
+              0,
+              -1600
+            ],
+            "point": [
+              0.1000000015,
+              0.1000000015,
+              0.150000006
+            ]
+          },
+          {
+            "force": [
+              0,
+              -24000,
+              0
+            ],
+            "point": [
+              0.1000000015,
+              0.200000003,
+              -0.1809999943
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "50mps_half_throttle",
+      "input": {
+        "speed": 50,
+        "lateral": 0,
+        "forward": 50,
+        "gas": 0.5,
+        "groundEffect": 1,
+        "roll": 0,
+        "pitch": 0,
+        "tuning": 0,
+        "dragPct": 1,
+        "aeroPct": 1,
+        "cog": [
+          0.1,
+          0.2,
+          0.15
+        ],
+        "frontZ": 1.25,
+        "rearZ": -1.45,
+        "dragCoefficient": 0.32,
+        "aeroCoefficient": 0.24,
+        "aeroCG": 47
+      },
+      "expected": {
+        "forces": [
+          {
+            "force": [
+              0,
+              0,
+              -1200
+            ],
+            "point": [
+              0.1000000015,
+              0.150000006,
+              0.150000006
+            ]
+          },
+          {
+            "force": [
+              0,
+              -24000,
+              0
+            ],
+            "point": [
+              0.1000000015,
+              0.200000003,
+              -0.1809999943
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "100mps_downforce_linear",
+      "input": {
+        "speed": 100,
+        "lateral": 0,
+        "forward": 100,
+        "gas": 1,
+        "groundEffect": 1,
+        "roll": 0,
+        "pitch": 0,
+        "tuning": 0,
+        "dragPct": 1,
+        "aeroPct": 1,
+        "cog": [
+          0.1,
+          0.2,
+          0.15
+        ],
+        "frontZ": 1.25,
+        "rearZ": -1.45,
+        "dragCoefficient": 0.32,
+        "aeroCoefficient": 0.24,
+        "aeroCG": 47
+      },
+      "expected": {
+        "forces": [
+          {
+            "force": [
+              0,
+              0,
+              -3200
+            ],
+            "point": [
+              0.1000000015,
+              0.200000003,
+              0.150000006
+            ]
+          },
+          {
+            "force": [
+              0,
+              -48000,
+              0
+            ],
+            "point": [
+              0.1000000015,
+              0.200000003,
+              -0.1809999943
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "sideways_dropoff_floor",
+      "input": {
+        "speed": 50,
+        "lateral": 50,
+        "forward": 0,
+        "gas": 1,
+        "groundEffect": 1,
+        "roll": 0,
+        "pitch": 0,
+        "tuning": 0,
+        "dragPct": 1,
+        "aeroPct": 1,
+        "cog": [
+          0.1,
+          0.2,
+          0.15
+        ],
+        "frontZ": 1.25,
+        "rearZ": -1.45,
+        "dragCoefficient": 0.32,
+        "aeroCoefficient": 0.24,
+        "aeroCG": 47
+      },
+      "expected": {
+        "forces": [
+          {
+            "force": [
+              -800,
+              0,
+              0
+            ],
+            "point": [
+              0.1000000015,
+              0.200000003,
+              0.150000006
+            ]
+          },
+          {
+            "force": [
+              0,
+              -9600,
+              0
+            ],
+            "point": [
+              0.1000000015,
+              0.200000003,
+              -0.1809999943
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "backwards_dropoff_floor",
+      "input": {
+        "speed": 50,
+        "lateral": 0,
+        "forward": -50,
+        "gas": 1,
+        "groundEffect": 1,
+        "roll": 0,
+        "pitch": 0,
+        "tuning": 0,
+        "dragPct": 1,
+        "aeroPct": 1,
+        "cog": [
+          0.1,
+          0.2,
+          0.15
+        ],
+        "frontZ": 1.25,
+        "rearZ": -1.45,
+        "dragCoefficient": 0.32,
+        "aeroCoefficient": 0.24,
+        "aeroCG": 47
+      },
+      "expected": {
+        "forces": [
+          {
+            "force": [
+              0,
+              0,
+              800
+            ],
+            "point": [
+              0.1000000015,
+              0.200000003,
+              0.150000006
+            ]
+          },
+          {
+            "force": [
+              0,
+              -9600,
+              0
+            ],
+            "point": [
+              0.1000000015,
+              0.200000003,
+              -0.1809999943
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "diagonal_dropoff_sqrt",
+      "input": {
+        "speed": 50,
+        "lateral": 30,
+        "forward": 40,
+        "gas": 1,
+        "groundEffect": 1,
+        "roll": 0,
+        "pitch": 0,
+        "tuning": 0,
+        "dragPct": 1,
+        "aeroPct": 1,
+        "cog": [
+          0.1,
+          0.2,
+          0.15
+        ],
+        "frontZ": 1.25,
+        "rearZ": -1.45,
+        "dragCoefficient": 0.32,
+        "aeroCoefficient": 0.24,
+        "aeroCG": 47
+      },
+      "expected": {
+        "forces": [
+          {
+            "force": [
+              -480,
+              0,
+              -640
+            ],
+            "point": [
+              0.1000000015,
+              0.200000003,
+              0.150000006
+            ]
+          },
+          {
+            "force": [
+              0,
+              -21466.25195,
+              0
+            ],
+            "point": [
+              0.1000000015,
+              0.200000003,
+              -0.1809999943
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "airborne_flat",
+      "input": {
+        "speed": 50,
+        "lateral": 0,
+        "forward": 50,
+        "gas": 1,
+        "groundEffect": 0,
+        "roll": 0,
+        "pitch": 0,
+        "tuning": 0,
+        "dragPct": 1,
+        "aeroPct": 1,
+        "cog": [
+          0.1,
+          0.2,
+          0.15
+        ],
+        "frontZ": 1.25,
+        "rearZ": -1.45,
+        "dragCoefficient": 0.32,
+        "aeroCoefficient": 0.24,
+        "aeroCG": 47
+      },
+      "expected": {
+        "forces": [
+          {
+            "force": [
+              0,
+              0,
+              -800
+            ],
+            "point": [
+              0.1000000015,
+              0.200000003,
+              0.150000006
+            ]
+          },
+          {
+            "force": [
+              0,
+              -19200,
+              0
+            ],
+            "point": [
+              0.1000000015,
+              0.200000003,
+              0.150000006
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "one_wheel_rolled",
+      "input": {
+        "speed": 50,
+        "lateral": 0,
+        "forward": 50,
+        "gas": 1,
+        "groundEffect": 0.25,
+        "roll": 0.6000000238,
+        "pitch": 0,
+        "tuning": 0,
+        "dragPct": 1,
+        "aeroPct": 1,
+        "cog": [
+          0.1,
+          0.2,
+          0.15
+        ],
+        "frontZ": 1.25,
+        "rearZ": -1.45,
+        "dragCoefficient": 0.32,
+        "aeroCoefficient": 0.24,
+        "aeroCG": 47
+      },
+      "expected": {
+        "forces": [
+          {
+            "force": [
+              0,
+              0,
+              -800
+            ],
+            "point": [
+              -0.03039494157,
+              0.2215313762,
+              0.150000006
+            ]
+          },
+          {
+            "force": [
+              11184.46973,
+              -16348.29297,
+              0
+            ],
+            "point": [
+              -0.03039494157,
+              0.2215313762,
+              -0.1809999943
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "two_wheels_rolled_upness_forced_one",
+      "input": {
+        "speed": 50,
+        "lateral": 0,
+        "forward": 50,
+        "gas": 1,
+        "groundEffect": 0.5,
+        "roll": 0.6000000238,
+        "pitch": 0,
+        "tuning": 0,
+        "dragPct": 1,
+        "aeroPct": 1,
+        "cog": [
+          0.1,
+          0.2,
+          0.15
+        ],
+        "frontZ": 1.25,
+        "rearZ": -1.45,
+        "dragCoefficient": 0.32,
+        "aeroCoefficient": 0.24,
+        "aeroCG": 47
+      },
+      "expected": {
+        "forces": [
+          {
+            "force": [
+              0,
+              0,
+              -800
+            ],
+            "point": [
+              -0.03039494157,
+              0.2215313762,
+              0.150000006
+            ]
+          },
+          {
+            "force": [
+              13551.41992,
+              -19808.05469,
+              0
+            ],
+            "point": [
+              -0.03039494157,
+              0.2215313762,
+              -0.1809999943
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "inverted_airborne_no_downforce",
+      "input": {
+        "speed": 50,
+        "lateral": 0,
+        "forward": 50,
+        "gas": 1,
+        "groundEffect": 0,
+        "roll": 3.141592741,
+        "pitch": 0,
+        "tuning": 0,
+        "dragPct": 1,
+        "aeroPct": 1,
+        "cog": [
+          0.1,
+          0.2,
+          0.15
+        ],
+        "frontZ": 1.25,
+        "rearZ": -1.45,
+        "dragCoefficient": 0.32,
+        "aeroCoefficient": 0.24,
+        "aeroCG": 47
+      },
+      "expected": {
+        "forces": [
+          {
+            "force": [
+              0,
+              0,
+              -800
+            ],
+            "point": [
+              -0.09999998659,
+              -0.2000000179,
+              0.150000006
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "inverted_two_wheels_upness_forced_one",
+      "input": {
+        "speed": 50,
+        "lateral": 0,
+        "forward": 50,
+        "gas": 1,
+        "groundEffect": 0.5,
+        "roll": 3.141592741,
+        "pitch": 0,
+        "tuning": 0,
+        "dragPct": 1,
+        "aeroPct": 1,
+        "cog": [
+          0.1,
+          0.2,
+          0.15
+        ],
+        "frontZ": 1.25,
+        "rearZ": -1.45,
+        "dragCoefficient": 0.32,
+        "aeroCoefficient": 0.24,
+        "aeroCG": 47
+      },
+      "expected": {
+        "forces": [
+          {
+            "force": [
+              0,
+              0,
+              -800
+            ],
+            "point": [
+              -0.09999998659,
+              -0.2000000179,
+              0.150000006
+            ]
+          },
+          {
+            "force": [
+              -0.002098146593,
+              24000,
+              0
+            ],
+            "point": [
+              -0.09999998659,
+              -0.2000000179,
+              -0.1809999943
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "tilted_force_rotates_body_up",
+      "input": {
+        "speed": 50,
+        "lateral": 0,
+        "forward": 50,
+        "gas": 0,
+        "groundEffect": 1,
+        "roll": 0.3000000119,
+        "pitch": 0.200000003,
+        "tuning": 0,
+        "dragPct": 1,
+        "aeroPct": 1,
+        "cog": [
+          0.1,
+          0.2,
+          0.15
+        ],
+        "frontZ": 1.25,
+        "rearZ": -1.45,
+        "dragCoefficient": 0.32,
+        "aeroCoefficient": 0.24,
+        "aeroCG": 47
+      },
+      "expected": {
+        "forces": [
+          {
+            "force": [
+              0,
+              0,
+              -1600
+            ],
+            "point": [
+              0.07537733018,
+              0.09471195936,
+              0.166876927
+            ]
+          },
+          {
+            "force": [
+              6881.479492,
+              -22245.95312,
+              -4720.302734
+            ],
+            "point": [
+              0.02698110044,
+              0.2511638105,
+              -0.1376581788
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "aero_tuning_positive",
+      "input": {
+        "speed": 50,
+        "lateral": 0,
+        "forward": 50,
+        "gas": 1,
+        "groundEffect": 1,
+        "roll": 0,
+        "pitch": 0,
+        "tuning": 1,
+        "dragPct": 1,
+        "aeroPct": 1,
+        "cog": [
+          0.1,
+          0.2,
+          0.15
+        ],
+        "frontZ": 1.25,
+        "rearZ": -1.45,
+        "dragCoefficient": 0.32,
+        "aeroCoefficient": 0.24,
+        "aeroCG": 47
+      },
+      "expected": {
+        "forces": [
+          {
+            "force": [
+              0,
+              0,
+              -1000
+            ],
+            "point": [
+              0.1000000015,
+              0.200000003,
+              0.150000006
+            ]
+          },
+          {
+            "force": [
+              0,
+              -30000,
+              0
+            ],
+            "point": [
+              0.1000000015,
+              0.200000003,
+              -0.1809999943
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "aero_tuning_negative",
+      "input": {
+        "speed": 50,
+        "lateral": 0,
+        "forward": 50,
+        "gas": 1,
+        "groundEffect": 1,
+        "roll": 0,
+        "pitch": 0,
+        "tuning": -1,
+        "dragPct": 1,
+        "aeroPct": 1,
+        "cog": [
+          0.1,
+          0.2,
+          0.15
+        ],
+        "frontZ": 1.25,
+        "rearZ": -1.45,
+        "dragCoefficient": 0.32,
+        "aeroCoefficient": 0.24,
+        "aeroCG": 47
+      },
+      "expected": {
+        "forces": [
+          {
+            "force": [
+              0,
+              0,
+              -600
+            ],
+            "point": [
+              0.1000000015,
+              0.200000003,
+              0.150000006
+            ]
+          },
+          {
+            "force": [
+              0,
+              -18000,
+              0
+            ],
+            "point": [
+              0.1000000015,
+              0.200000003,
+              -0.1809999943
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "drag_style_extra_downforce",
+      "input": {
+        "speed": 50,
+        "lateral": 0,
+        "forward": 50,
+        "gas": 1,
+        "groundEffect": 1,
+        "roll": 0,
+        "pitch": 0,
+        "tuning": 0,
+        "dragPct": 1,
+        "aeroPct": 1.5,
+        "cog": [
+          0.1,
+          0.2,
+          0.15
+        ],
+        "frontZ": 1.25,
+        "rearZ": -1.45,
+        "dragCoefficient": 0.32,
+        "aeroCoefficient": 0.24,
+        "aeroCG": 47
+      },
+      "expected": {
+        "forces": [
+          {
+            "force": [
+              0,
+              0,
+              -800
+            ],
+            "point": [
+              0.1000000015,
+              0.200000003,
+              0.150000006
+            ]
+          },
+          {
+            "force": [
+              0,
+              -36000,
+              0
+            ],
+            "point": [
+              0.1000000015,
+              0.200000003,
+              -0.1809999943
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "gamebreaker_reduced_drag",
+      "input": {
+        "speed": 50,
+        "lateral": 0,
+        "forward": 50,
+        "gas": 1,
+        "groundEffect": 1,
+        "roll": 0,
+        "pitch": 0,
+        "tuning": 0,
+        "dragPct": 0.25,
+        "aeroPct": 1,
+        "cog": [
+          0.1,
+          0.2,
+          0.15
+        ],
+        "frontZ": 1.25,
+        "rearZ": -1.45,
+        "dragCoefficient": 0.32,
+        "aeroCoefficient": 0.24,
+        "aeroCG": 47
+      },
+      "expected": {
+        "forces": [
+          {
+            "force": [
+              0,
+              0,
+              -200
+            ],
+            "point": [
+              0.1000000015,
+              0.200000003,
+              0.150000006
+            ]
+          },
+          {
+            "force": [
+              0,
+              -24000,
+              0
+            ],
+            "point": [
+              0.1000000015,
+              0.200000003,
+              -0.1809999943
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "aero_disabled",
+      "input": {
+        "speed": 50,
+        "lateral": 0,
+        "forward": 50,
+        "gas": 1,
+        "groundEffect": 1,
+        "roll": 0,
+        "pitch": 0,
+        "tuning": 0,
+        "dragPct": 1,
+        "aeroPct": 0,
+        "cog": [
+          0.1,
+          0.2,
+          0.15
+        ],
+        "frontZ": 1.25,
+        "rearZ": -1.45,
+        "dragCoefficient": 0.32,
+        "aeroCoefficient": 0.24,
+        "aeroCG": 47
+      },
+      "expected": {
+        "forces": [
+          {
+            "force": [
+              0,
+              0,
+              -800
+            ],
+            "point": [
+              0.1000000015,
+              0.200000003,
+              0.150000006
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "drag_disabled",
+      "input": {
+        "speed": 50,
+        "lateral": 0,
+        "forward": 50,
+        "gas": 1,
+        "groundEffect": 1,
+        "roll": 0,
+        "pitch": 0,
+        "tuning": 0,
+        "dragPct": 0,
+        "aeroPct": 1,
+        "cog": [
+          0.1,
+          0.2,
+          0.15
+        ],
+        "frontZ": 1.25,
+        "rearZ": -1.45,
+        "dragCoefficient": 0.32,
+        "aeroCoefficient": 0.24,
+        "aeroCG": 47
+      },
+      "expected": {
+        "forces": [
+          {
+            "force": [
+              0,
+              -24000,
+              0
+            ],
+            "point": [
+              0.1000000015,
+              0.200000003,
+              -0.1809999943
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "provenance": {
+    "portCommit": "9c6e26194b531f68f66fcc94a770ee7f89f2682e",
+    "files": {
+      "work\\mw-research\\prostreet-port\\decomp\\behaviors\\EngineRacer.cpp": "6e1a72556102be905ad25b84ea23a135a1fe677213a6e3da5e8a8c1ddddce087",
+      "work\\mw-research\\prostreet-port\\decomp\\behaviors\\MWChassisBase.cpp": "f0ca2392cf59de600a6e9de165cda0486609ed4708a28ace69a845c19ee0ef7a",
+      "work\\mw-research\\prostreet-port\\decomp\\Physics.h": "52b9cf76b39a6ec3ffd23cab8b11e07faa5d5a560321553b4ffb8fd45ce76a91",
+      "work\\mw-research\\prostreet-port\\decomp\\behaviors\\EngineRacer.h": "a87166e46a979c4cd4187db3a3592cb55125039dd6789e49227a875d70acc97b",
+      "work\\mw-research\\prostreet-port\\MWCarTuning.h": "fc26b7ddd9a8474ba1611dad6080776adf9b4523a8eaf57fc4ebce55cd77e73c",
+      "work\\mw-research\\prostreet-port\\decomp\\ConversionUtil.hpp": "a627feb5de356c04251ce9025b4ba722136deae6350f0329aee8d2da5d2b505e",
+      "work\\mw-research\\prostreet-port\\decomp\\UMathExtras.h": "bb89d538ef44a65f9a5b60dffb00613041ab6dac290c9f9c50fe1c3cc16508ad"
+    },
+    "compiler": "g++ (MinGW-W64 x86_64-ucrt-posix-seh, built by Brecht Sanders, r2) 16.2.0",
+    "flags": [
+      "-std=c++20",
+      "-O0",
+      "-fno-fast-math"
+    ],
+    "scope": "Extracted actual source methods, float32 C++ on x64; mocked engine ABI and rigid force collection; no original binary or rigid body integration.",
+    "conversion": "Exact upstream MPS2MPH multiplication 2.23699f; no game JavaScript imported."
+  }
+}
