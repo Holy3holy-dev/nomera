@@ -16,9 +16,10 @@ html = html.replace('<meta charset="UTF-8">', `<meta charset="UTF-8">
 // in this generated entry only so the isolated design system can control layout.
 fs.writeFileSync(path.join(root, 'authors-legacy.css'), fs.readFileSync(path.join(root,'styles.css'),'utf8').replace(/!important/g,''));
 fs.writeFileSync(path.join(root, 'antigravity.html'), html);
+html = html.replace('</head>', '<script src="./js/authors-driving.js"></script><script src="./js/authors-race-audio.js"></script></head>');
 html = html.replace(/\.\/styles\.css\?v=[a-f0-9]+/, './authors-legacy.css');
-html = html.replace('</head>', '<link rel="stylesheet" href="./authors.css"><link rel="stylesheet" href="./authors-expansion.css"></head>');
+html = html.replace('</head>', '<link rel="stylesheet" href="./authors.css"><link rel="stylesheet" href="./authors-expansion.css"><link rel="stylesheet" href="./authors-secondary.css"></head>');
 html = html.replace(/<body([^>]*)>/, '<body$1 class="authors-edition">');
-html = html.replace('</body>', '<script src="./js/plate-presentation.js"></script><script src="./js/authors-ui.js"></script><script src="./js/authors-preview-market.js"></script><script src="./js/authors-expansion.js"></script></body>');
+html = html.replace('</body>', '<script src="./js/plate-presentation.js"></script><script src="./js/authors-ui.js"></script><script src="./js/authors-preview-market.js"></script><script src="./js/authors-expansion.js"></script><script src="./js/authors-secondary.js"></script></body>');
 fs.writeFileSync(path.join(root, 'authors.html'), html);
 console.log('authors.html: isolated local entry generated from index.html');

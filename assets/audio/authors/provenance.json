@@ -1,0 +1,36 @@
+{
+  "sourceDirectory": "E:/nfsmw_extracted/candidate_loops",
+  "verifiedOriginalGameBank": false,
+  "files": [
+    {
+      "name": "kamaz_diesel.mp3",
+      "bytes": 61676,
+      "sha256": "868b426adf35af28b28439aef27d2c865fcfe7d543eac77dff397144ab756144"
+    },
+    {
+      "name": "m3gtr_whine.mp3",
+      "bytes": 61676,
+      "sha256": "dab40038a86c86d9b24b1653f710bee252f8edbc97f350952d5fa50269845442"
+    },
+    {
+      "name": "sport_turbo_roar.mp3",
+      "bytes": 61676,
+      "sha256": "9d888d67e16e70c61f96cf8073286d62ff571291b6e2f4447253f20d3b17cade"
+    },
+    {
+      "name": "standard_inline4.mp3",
+      "bytes": 61676,
+      "sha256": "bd783ea65a699083241307fc20de5c0101e2014b45cd24b0fd66062520d3d669"
+    },
+    {
+      "name": "supercar_scream.mp3",
+      "bytes": 61676,
+      "sha256": "782cb80eac6f90354413b8c197afc4236aed2ed3e8b293ef2be03a896962a46b"
+    },
+    {
+      "name": "v8_deep_rumble.mp3",
+      "bytes": 61676,
+      "sha256": "22bcd84589d5ba71e3ab1a6cb61a9883ba0038ed1ea51254939ac534a3538c63"
+    }
+  ]
+}

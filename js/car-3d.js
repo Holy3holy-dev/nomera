@@ -14412,6 +14412,7 @@
         }
 
         resetKeys() {
+            this.authorsSteerInput = 0;
             Object.keys(this.keys).forEach(k => { this.keys[k] = false; });
         }
 
@@ -14566,7 +14567,8 @@
             }
 
             const hasFuel = state.fuelCurrent === undefined || state.fuelCurrent > 0;
-            const gasActive = !!(keys.gas && hasFuel);
+            const authorsDriving = (typeof window !== 'undefined' && window.NOMERA_AUTHORS_PREVIEW) ? window.NomeraAuthorsDriving : null;
+            const gasActive = authorsDriving ? authorsDriving.throttle(keys.gas, keys.brake, hasFuel) : !!(keys.gas && hasFuel);
             const nitroActive = !!(keys.nitro && state.nitroLevel > 0 && hasFuel);
             if (!hasFuel) {
                 state.targetSpeed = 0;
@@ -14929,6 +14931,10 @@
             let steerInput = 0;
             if (keys.left) steerInput += 1;  // In Three.js with camera facing +Z: +X moves to screen LEFT
             if (keys.right) steerInput -= 1; // -X moves to screen RIGHT
+            if (authorsDriving) {
+                this.authorsSteerInput = authorsDriving.steer(this.authorsSteerInput, steerInput, dt);
+                steerInput = this.authorsSteerInput;
+            }
 
             // Steering authority: tied to forward rolling motion and throttle. Car cannot steer sideways on the spot when stationary!
             const speedSteerAuthority = Math.min(1.0, Math.max(0, state.speed / 18));
@@ -14962,7 +14968,9 @@
                 : 1.0;
             const corneringStiffness = (0.55 + 0.45 * weatherGrip) * (0.85 + 0.15 * pacejkaSaturation);
 
-            if (steerInput !== 0 && effectiveSteerAuthority > 0) {
+            if (authorsDriving && !isDriftingNow && !isHandbrake) {
+                state.vx = authorsDriving.lateral(state.vx, steerInput, state.speed, lateralMax, effectiveSteerAuthority, weatherGrip, dt);
+            } else if (steerInput !== 0 && effectiveSteerAuthority > 0) {
                 state.vx += steerInput * lateralMax * 4.2 * effectiveSteerAuthority * corneringStiffness * dt;
                 state.vx = Math.max(-lateralMax, Math.min(lateralMax, state.vx));
             } else if (!isDriftingNow && !isHandbrake) {

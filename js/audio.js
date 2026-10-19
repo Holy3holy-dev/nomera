@@ -748,7 +748,8 @@
             }
         }
 
-        function stopEngine() {
+        function stopEngine(keepAuthorsSample = false) {
+            if (!keepAuthorsSample && root.NOMERA_AUTHORS_PREVIEW && root.NomeraAuthorsSamples) root.NomeraAuthorsSamples.stop();
             stopNitro(0.04, false);
             lastEngineNitroState = false;
             if (!engine) return;
@@ -861,6 +862,11 @@
                     stopNitro(0.06, true);
                 }
                 lastEngineNitroState = !!nitro;
+
+                if (root.NOMERA_AUTHORS_PREVIEW && root.NomeraAuthorsSamples?.update({ context, master, speed, gas, nitro, rpm, carClass })) {
+                    if (engine) stopEngine(true);
+                    return;
+                }
 
                 if (!engine) {
                     const gain = context.createGain();
