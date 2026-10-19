@@ -1919,20 +1919,24 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                         if (typeof gb.spunNum === 'boolean') hasSpunNumSinceSave = gb.spunNum;
                         if (typeof syncPlateCountryDOM === 'function') syncPlateCountryDOM();
                         if (typeof setCellChar === 'function') {
-                            setCellChar('l1', currentL1);
-                            setCellChar('n1', currentNum[0] || '-');
-                            setCellChar('n2', currentNum[1] || '-');
-                            setCellChar('n3', currentNum[2] || '-');
-                            setCellChar('l2', currentL2);
-                            setCellChar('l3', currentL3);
+                            setCellChar('cell-l1', currentL1);
+                            setCellChar('cell-n1', currentNum[0] || '-');
+                            setCellChar('cell-n2', currentNum[1] || '-');
+                            setCellChar('cell-n3', currentNum[2] || '-');
+                            setCellChar('cell-l2', currentL2);
+                            setCellChar('cell-l3', currentL3);
                         }
-                        const regEl = document.getElementById('reg-code');
+                        const regEl = document.getElementById('region') || document.getElementById('reg-code');
                         if (regEl) regEl.innerText = currentReg;
                         if (typeof syncPlateBoxCellsLayout === 'function') syncPlateBoxCellsLayout();
                         if (typeof checkCanSaveButton === 'function') checkCanSaveButton();
                     }
                     if (d.raceRecords && typeof setRaceRecords === 'function') {
                         setRaceRecords(d.raceRecords);
+                    }
+                    if (typeof recentRareDrops !== 'undefined' && Array.isArray(recentRareDrops) && recentRareDrops.length === 0 && Array.isArray(inventory) && inventory.length > 0 && typeof recordRecentRareDrop === 'function') {
+                        const rareSamples = inventory.filter(p => p && Number(p.price) >= 18000).slice(0, 5).reverse();
+                        rareSamples.forEach(p => recordRecentRareDrop(p));
                     }
                 } catch(e) {}
             }
@@ -5616,6 +5620,10 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 }
             }
 
+            const specialBadgeEl = document.getElementById('special-series-badge');
+            const plateDescEl = document.getElementById('current-plate-desc');
+            const uaePassportEl = document.getElementById('uae-plate-passport');
+
             if (boardHasLetters && boardHasNumbers) {
                 let price = calculatePrice();
                 let rarity = getRarity(price);
@@ -5623,9 +5631,25 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 const cCode = String(currentCountry || 'RUS').toUpperCase();
                 const isRoyalRarity = ['БЛАТНОЙ', 'Легендарный', 'Крутой', 'Мифический', 'МИФИЧЕСКИЙ'].includes(rarity.text);
                 const isEpicRarity = ['Эпический', 'Супер редкий'].includes(rarity.text);
+
+                if (specialBadgeEl) {
+                    specialBadgeEl.innerHTML = specialMeta
+                        ? `<div class="special-series-pill" style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;background:rgba(245,158,11,0.16);border:1px solid rgba(245,158,11,0.4);color:#fbbf24;font-weight:800;font-size:11px;margin-bottom:6px;">🏛️ ${escapeHtml(specialMeta.title)}</div>`
+                        : '';
+                }
+                if (plateDescEl) {
+                    const descParts = [];
+                    if (specialMeta && specialMeta.desc) descParts.push(escapeHtml(specialMeta.desc));
+                    descParts.push(`Категория: <b>${escapeHtml(rarity.text)}</b> • Страна: <b>${escapeHtml(cCode)}</b> • Регион/код: <b>${escapeHtml(String(currentReg || ''))}</b>`);
+                    plateDescEl.innerHTML = descParts.join('<br>');
+                }
+
                 if (cCode === 'UAE') {
                     const uaeInfo = evaluateUaePlateDetails(currentL1, currentL2, currentL3, currentNum, currentReg);
-                    document.getElementById('current-price-display').innerHTML = `<span class="price-hero-value">${price.toLocaleString('ru-RU')} ₽</span> <span class="price-sub-aed">≈ ${uaeInfo.estimatedAed.toLocaleString('ru-RU')} AED ($${uaeInfo.estimatedUsd.toLocaleString('ru-RU')})</span><div class="price-uae-passport"><b>${escapeHtml(uaeInfo.tierTitle)}</b> · ${escapeHtml(uaeInfo.codePrestige)}<br><span>${escapeHtml(uaeInfo.realWorldNote)}</span></div>`;
+                    document.getElementById('current-price-display').innerHTML = `<span class="price-hero-value" style="white-space:nowrap;">${price.toLocaleString('ru-RU')} ₽</span> <span class="price-sub-aed">≈ ${uaeInfo.estimatedAed.toLocaleString('ru-RU')} AED ($${uaeInfo.estimatedUsd.toLocaleString('ru-RU')})</span>`;
+                    if (uaePassportEl) {
+                        uaePassportEl.innerHTML = `<div class="price-uae-passport"><b>${escapeHtml(uaeInfo.tierTitle)}</b> · ${escapeHtml(uaeInfo.codePrestige)}<br><span>${escapeHtml(uaeInfo.realWorldNote)}</span></div>`;
+                    }
                     let rLabel = document.getElementById('gen-rarity');
                     rLabel.innerText = `${uaeInfo.tierBadge} • ${rarity.text}`;
                     rLabel.style.background = rarity.bg;
@@ -5633,7 +5657,8 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     rLabel.setAttribute('data-rarity-glow', rarity.glow || 'none');
                     rLabel.classList.remove('hidden');
                 } else {
-                    document.getElementById('current-price-display').innerHTML = `<span class="price-hero-value">${price.toLocaleString('ru-RU')} ₽</span>`;
+                    document.getElementById('current-price-display').innerHTML = `<span class="price-hero-value" style="white-space:nowrap;">${price.toLocaleString('ru-RU')} ₽</span>`;
+                    if (uaePassportEl) uaePassportEl.innerHTML = '';
                     let rLabel = document.getElementById('gen-rarity');
                     const baseBadgeText = specialMeta ? `${specialMeta.title} • ${rarity.text}` : rarity.text;
                     rLabel.innerText = isRoyalRarity
@@ -5650,6 +5675,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 if (priceEl) {
                     priceEl.innerHTML = `<span class="price-hero-value price-placeholder">— ₽</span>`;
                 }
+                if (specialBadgeEl) specialBadgeEl.innerHTML = '';
+                if (plateDescEl) plateDescEl.innerHTML = 'Сделайте спин, чтобы узнать подробности серии, региона и редкости госномера.';
+                if (uaePassportEl) uaePassportEl.innerHTML = '';
                 document.getElementById('gen-rarity')?.classList.add('hidden');
                 updatePlateGlow('none');
             }
@@ -5659,7 +5687,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         const cellSpanCache = {};
         function getCellSpan(cellId) {
             if (!cellSpanCache[cellId]) {
-                const cell = document.getElementById(cellId);
+                const cell = document.getElementById(cellId) || document.getElementById('cell-' + cellId);
                 if (cell) {
                     cellSpanCache[cellId] = cell.querySelector('.char-span');
                 }
@@ -8386,6 +8414,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             renderInventory();
         }
         window.togglePlateFavorite = togglePlateFavorite;
+        window.toggleFavoritePlate = togglePlateFavorite;
 
         function updateBulkSellButtons() {
             if (typeof document === 'undefined') return;
@@ -8551,7 +8580,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 const norm = String(plateText || '').trim();
                 if (!norm) return { status: 'collection', label: 'В коллекции', carIndex: -1, carName: '' };
                 if (equippedByText.has(norm)) return equippedByText.get(norm);
-                if (marketSet.has(norm)) return { status: 'market', label: '🏪 На рынке', carIndex: -1, carName: '' };
+                if (marketSet.has(norm)) return { status: 'market', label: '🏛️ На рынке', carIndex: -1, carName: '' };
                 return { status: 'collection', label: 'В коллекции', carIndex: -1, carName: '' };
             };
 
@@ -8611,8 +8640,11 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                                         ? 'tier-uncommon'
                                         : 'tier-common';
 
+                const isRoyalTier = tierClass === 'tier-mythic' || tierClass === 'tier-legend';
+                const tierIcon = isRoyalTier ? '👑' : '●';
+
                 const usage = fromGarageCarIdx !== -1
-                    ? { status: 'equipped', label: `🚗 ${myCars[fromGarageCarIdx]?.name || 'В гараже'}`, carIndex: fromGarageCarIdx }
+                    ? { status: 'equipped', label: `🚗 ${myCars[fromGarageCarIdx]?.name || 'На авто'}`, carIndex: fromGarageCarIdx }
                     : fastUsageMeta(item.text);
 
                 const statusBadgeClass = usage.status === 'equipped'
@@ -8621,31 +8653,32 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                         ? 'status-market'
                         : '';
 
+                const isFav = Boolean(item.favorite);
                 const favBtnHtml = index >= 0
-                    ? `<button type="button" class="inv-fav-btn ${item.favorite ? 'is-fav' : ''}" onclick="togglePlateFavorite(${index}, event)" title="${item.favorite ? 'В избранном' : 'Добавить в избранное'}">${item.favorite ? '★' : '☆'}</button>`
+                    ? `<button type="button" class="inv-fav-btn ${isFav ? 'active is-fav' : ''}" onclick="event.stopPropagation(); togglePlateFavorite(${index}, event)" title="${isFav ? 'В избранном' : 'В избранное'}">${isFav ? '♥' : '♡'}</button>`
                     : '';
 
-                const clickAttr = index >= 0 ? `onclick="openPlateDetailModal(${index})"` : '';
-                const actionBtnHtml = index >= 0
-                    ? `<div style="display:flex; gap:6px; margin-top:4px;" onclick="event.stopPropagation()">
-                            <button type="button" class="case-open-btn" style="flex:1; padding:7px 8px;" onclick="openPlateDetailModal(${index})">🔍 Управление</button>
-                       </div>`
-                    : `<button type="button" class="case-open-btn" style="width:100%;" onclick="switchTab('garage')">🚗 Перейти в гараж</button>`;
+                const clickAttr = index >= 0 ? `onclick="openPlateDetailModal(${index})"` : `onclick="switchTab('garage')"`;
+                const statusActionHtml = usage.status === 'equipped' || usage.status === 'market'
+                    ? `<span class="plate-status-badge ${statusBadgeClass}">${escapeHtml(usage.label)}</span>`
+                    : (index >= 0
+                        ? `<button type="button" class="case-open-btn inv-card-manage-pill" onclick="event.stopPropagation(); openPlateDetailModal(${index})">🔍 Управление</button>`
+                        : `<span class="plate-status-badge status-garage">🚗 На авто</span>`);
 
                 html += `
-                    <div class="inv-card inv-item luxury-plate-card ${tierClass}" ${clickAttr}>
-                        <div class="plate-card-top-bar">
-                            <span class="plate-card-rarity-pill" style="background:${r.bg}; color:${r.color};">${escapeHtml(r.text)}</span>
+                    <div class="inv-card inv-item luxury-plate-card inv-plate-card ${tierClass}" ${clickAttr}>
+                        <div class="inv-card-aura" aria-hidden="true"></div>
+                        <div class="inv-card-top plate-card-top-bar">
+                            <span class="plate-card-rarity-pill" style="background:${r.bg}; color:${r.color};">${tierIcon} ${escapeHtml(r.text)}</span>
                             ${favBtnHtml}
                         </div>
-                        <div style="display:flex; justify-content:center; margin:4px 0;">
+                        <div class="inv-card-plate-stage" style="display:flex; justify-content:center; margin:6px 0;">
                             <div class="mini-plate ${getMiniPlateCountryClass(item.text)}">${renderMiniPlateInnerHtml(item.text)}</div>
                         </div>
-                        <div class="plate-card-status-row">
-                            <span class="plate-status-badge ${statusBadgeClass}">${escapeHtml(usage.label)}</span>
-                            <span class="inv-card-price" style="font-weight:900; color:#fbbf24;">${price.toLocaleString('ru-RU')} ₽</span>
+                        <div class="inv-card-bottom plate-card-status-row">
+                            <span class="plate-card-price inv-card-price">${price.toLocaleString('ru-RU')} ₽</span>
+                            ${statusActionHtml}
                         </div>
-                        ${actionBtnHtml}
                     </div>`;
             });
             list.innerHTML = html;
@@ -10321,6 +10354,94 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         }
         window.renderGarageCarSidebarList = renderGarageCarSidebarList;
 
+        let activeGarageInspectorTab = 'overview';
+        let activeGarageSubView = 'showroom';
+
+        function switchGarageSubView(view = 'showroom') {
+            const validView = (view === 'shop' || view === 'fleet') ? view : 'showroom';
+            activeGarageSubView = validView;
+            if (typeof document === 'undefined') return validView;
+
+            const btnShowroom = document.getElementById('btn-garage-sub-showroom');
+            const btnShop = document.getElementById('btn-garage-sub-shop');
+            const btnFleet = document.getElementById('btn-garage-sub-fleet');
+            if (btnShowroom && btnShowroom.classList) btnShowroom.classList.toggle('active', validView === 'showroom');
+            if (btnShop && btnShop.classList) btnShop.classList.toggle('active', validView === 'shop');
+            if (btnFleet && btnFleet.classList) btnFleet.classList.toggle('active', validView === 'fleet');
+
+            const showroomEl = document.getElementById('garage-showroom-layout') ||
+                (typeof document.querySelector === 'function' ? document.querySelector('#garage .garage-luxury-layout') : null);
+            const shopHeader = document.getElementById('garage-shop-section');
+            const shopFilters = document.getElementById('dealership-filter-bar');
+            const shopGrid = document.getElementById('garage-list');
+            const fleetCard = document.getElementById('garage-fleet-card');
+            const myCarsEl = document.getElementById('my-cars');
+
+            if (showroomEl && showroomEl.classList) showroomEl.classList.toggle('hidden', validView !== 'showroom');
+            if (shopHeader && shopHeader.classList) shopHeader.classList.toggle('hidden', validView !== 'shop');
+            if (shopFilters && shopFilters.classList) shopFilters.classList.toggle('hidden', validView !== 'shop');
+            if (shopGrid && shopGrid.classList) shopGrid.classList.toggle('hidden', validView !== 'shop');
+            if (fleetCard && fleetCard.classList) fleetCard.classList.toggle('hidden', validView !== 'fleet');
+            if (myCarsEl && myCarsEl.classList) myCarsEl.classList.toggle('hidden', validView !== 'fleet');
+
+            if (validView === 'showroom') {
+                if (garage3DShowroom) {
+                    try {
+                        garage3DShowroom.resize();
+                        garage3DShowroom.start();
+                        garage3DShowroom.requestRender();
+                    } catch (_) {}
+                }
+            } else if (garage3DShowroom) {
+                try { garage3DShowroom.stop(); } catch (_) {}
+            }
+            if (validView === 'fleet' && typeof renderFleetBusiness === 'function') {
+                renderFleetBusiness();
+            }
+            return validView;
+        }
+        window.switchGarageSubView = switchGarageSubView;
+
+        function switchGarageInspectorTab(tabId = 'overview') {
+            const validTabs = ['overview', 'tuning', 'plates', 'styling', 'camera'];
+            const nextTab = validTabs.includes(tabId) ? tabId : 'overview';
+            activeGarageInspectorTab = nextTab;
+            if (typeof document === 'undefined') return nextTab;
+
+            if (typeof document.querySelectorAll === 'function') {
+                document.querySelectorAll('#garage-active-inspector [data-garage-tab]').forEach(btn => {
+                    const bTab = typeof btn.getAttribute === 'function' ? btn.getAttribute('data-garage-tab') : (btn.dataset && btn.dataset.garageTab);
+                    if (btn.classList) btn.classList.toggle('active', bTab === nextTab);
+                });
+                document.querySelectorAll('#garage-active-inspector [data-garage-tab-panel]').forEach(panel => {
+                    const pTab = typeof panel.getAttribute === 'function' ? panel.getAttribute('data-garage-tab-panel') : (panel.dataset && panel.dataset.garageTabPanel);
+                    if (panel.classList) panel.classList.toggle('hidden', pTab !== nextTab);
+                });
+            }
+            const camPanel = document.getElementById('garage-inspector-camera-panel');
+            if (camPanel && camPanel.classList) {
+                camPanel.classList.toggle('hidden', nextTab !== 'camera');
+            }
+            return nextTab;
+        }
+        window.switchGarageInspectorTab = switchGarageInspectorTab;
+
+        function prevGarageCar() {
+            if (!Array.isArray(myCars) || myCars.length === 0) return;
+            const prevIdx = (activeGarageCarIndex - 1 + myCars.length) % myCars.length;
+            selectGarageCarForPodium(prevIdx);
+            if (typeof playTick === 'function') playTick();
+        }
+        window.prevGarageCar = prevGarageCar;
+
+        function nextGarageCar() {
+            if (!Array.isArray(myCars) || myCars.length === 0) return;
+            const nextIdx = (activeGarageCarIndex + 1) % myCars.length;
+            selectGarageCarForPodium(nextIdx);
+            if (typeof playTick === 'function') playTick();
+        }
+        window.nextGarageCar = nextGarageCar;
+
         function renderGarageActiveCarInspector(index = activeGarageCarIndex) {
             if (typeof document === 'undefined') return;
             const bodyEl = document.getElementById('garage-inspector-body');
@@ -10376,8 +10497,11 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             const engCost = (typeof NomeraRaceEconomy !== 'undefined') ? NomeraRaceEconomy.upgradeCost(basePrice, 'engine', engLvl) : null;
             const hndCost = (typeof NomeraRaceEconomy !== 'undefined') ? NomeraRaceEconomy.upgradeCost(basePrice, 'handling', hndLvl) : null;
             const nitCost = (typeof NomeraRaceEconomy !== 'undefined') ? NomeraRaceEconomy.upgradeCost(basePrice, 'nitro', nitLvl) : null;
+            const ecoCost = (typeof NomeraRaceEconomy !== 'undefined') ? NomeraRaceEconomy.upgradeCost(basePrice, 'economy', ecoLvl) : null;
             const cond = Math.round(Number(car.condition ?? 100));
             const repCost = (typeof NomeraRaceEconomy !== 'undefined' && cond < 100) ? NomeraRaceEconomy.repairCost(basePrice, cond) : 0;
+
+            const curTab = activeGarageInspectorTab || 'overview';
 
             bodyEl.innerHTML = `
                 <div class="inspector-car-header">
@@ -10388,54 +10512,88 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     </div>
                 </div>
 
-                ${plateSlotHtml}
-
-                <div class="inspector-telemetry-list">
-                    <div class="inspector-stat-row">
-                        <div class="inspector-stat-head"><span>⚡ Макс. скорость</span><b>${baseSpeed} км/ч</b></div>
-                        <div class="inspector-stat-bar-bg"><div class="inspector-stat-bar-fill" style="width:${speedPct}%;"></div></div>
-                    </div>
-                    <div class="inspector-stat-row">
-                        <div class="inspector-stat-head"><span>🚀 Динамика разгона</span><b>${accelPct}/100</b></div>
-                        <div class="inspector-stat-bar-bg"><div class="inspector-stat-bar-fill" style="width:${accelPct}%;"></div></div>
-                    </div>
-                    <div class="inspector-stat-row">
-                        <div class="inspector-stat-head"><span>🛞 Управляемость</span><b>${handlingPct}/100</b></div>
-                        <div class="inspector-stat-bar-bg"><div class="inspector-stat-bar-fill" style="width:${handlingPct}%;"></div></div>
-                    </div>
-                    <div class="inspector-stat-row">
-                        <div class="inspector-stat-head"><span>🔥 Запас нитро (Stage ${nitLvl})</span><b>${nitroPct}/100</b></div>
-                        <div class="inspector-stat-bar-bg"><div class="inspector-stat-bar-fill" style="width:${nitroPct}%;"></div></div>
+                <!-- ВКЛАДКА 1: ОБЗОР -->
+                <div class="garage-inspector-panel ${curTab === 'overview' ? '' : 'hidden'}" data-garage-tab-panel="overview">
+                    ${plateSlotHtml}
+                    <div class="inspector-telemetry-list">
+                        <div class="inspector-stat-row">
+                            <div class="inspector-stat-head"><span>⚡ Макс. скорость</span><b>${baseSpeed} км/ч</b></div>
+                            <div class="inspector-stat-bar-bg"><div class="inspector-stat-bar-fill" style="width:${speedPct}%;"></div></div>
+                        </div>
+                        <div class="inspector-stat-row">
+                            <div class="inspector-stat-head"><span>🚀 Динамика разгона</span><b>${accelPct}/100</b></div>
+                            <div class="inspector-stat-bar-bg"><div class="inspector-stat-bar-fill" style="width:${accelPct}%;"></div></div>
+                        </div>
+                        <div class="inspector-stat-row">
+                            <div class="inspector-stat-head"><span>🛞 Управляемость</span><b>${handlingPct}/100</b></div>
+                            <div class="inspector-stat-bar-bg"><div class="inspector-stat-bar-fill" style="width:${handlingPct}%;"></div></div>
+                        </div>
+                        <div class="inspector-stat-row">
+                            <div class="inspector-stat-head"><span>🔥 Запас нитро (Stage ${nitLvl})</span><b>${nitroPct}/100</b></div>
+                            <div class="inspector-stat-bar-bg"><div class="inspector-stat-bar-fill" style="width:${nitroPct}%;"></div></div>
+                        </div>
                     </div>
                 </div>
 
-                <div id="inspector-tuning-box" style="display:flex; flex-direction:column; gap:6px;">
-                    <div class="luxury-panel-eyebrow" style="margin-bottom:2px;">БЫСТРЫЙ ТЮНИНГ (STAGE ${engLvl + hndLvl + nitLvl + ecoLvl})</div>
-                    <button type="button" class="case-open-btn" style="display:flex; justify-content:space-between; padding:7px 10px;" onclick="upgradeGarageCar(${index}, 'engine')" ${engCost === null ? 'disabled' : ''}>
-                        <span>🛠️ Двигатель (${engLvl}/${maxLvl})</span>
-                        <b style="color:#fbbf24;">${engCost !== null ? engCost.toLocaleString('ru-RU') + ' ₽' : 'MAX'}</b>
-                    </button>
-                    <button type="button" class="case-open-btn" style="display:flex; justify-content:space-between; padding:7px 10px;" onclick="upgradeGarageCar(${index}, 'handling')" ${hndCost === null ? 'disabled' : ''}>
-                        <span>🛞 Подвеска (${hndLvl}/${maxLvl})</span>
-                        <b style="color:#fbbf24;">${hndCost !== null ? hndCost.toLocaleString('ru-RU') + ' ₽' : 'MAX'}</b>
-                    </button>
-                    <button type="button" class="case-open-btn" style="display:flex; justify-content:space-between; padding:7px 10px;" onclick="upgradeGarageCar(${index}, 'nitro')" ${nitCost === null ? 'disabled' : ''}>
-                        <span>🔥 Нитро (${nitLvl}/${maxLvl})</span>
-                        <b style="color:#fbbf24;">${nitCost !== null ? nitCost.toLocaleString('ru-RU') + ' ₽' : 'MAX'}</b>
-                    </button>
-                    ${repCost > 0 ? `<button type="button" class="btn btn-gold" style="margin:4px 0 0 0; padding:8px; font-size:11.5px;" onclick="repairGarageCar(${index})">🔧 Отремонтировать (${repCost.toLocaleString('ru-RU')} ₽)</button>` : ''}
+                <!-- ВКЛАДКА 2: ТЮНИНГ STAGE -->
+                <div class="garage-inspector-panel ${curTab === 'tuning' ? '' : 'hidden'}" data-garage-tab-panel="tuning">
+                    <div id="inspector-tuning-box" style="display:flex; flex-direction:column; gap:6px;">
+                        <div class="luxury-panel-eyebrow" style="margin-bottom:2px;">ТЕХНИЧЕСКИЙ ТЮНИНГ (STAGE ${engLvl + hndLvl + nitLvl + ecoLvl})</div>
+                        <button type="button" class="case-open-btn" style="display:flex; justify-content:space-between; padding:8px 10px;" onclick="upgradeGarageCar(${index}, 'engine')" ${engCost === null ? 'disabled' : ''}>
+                            <span>🛠️ Двигатель (${engLvl}/${maxLvl})</span>
+                            <b style="color:#fbbf24;">${engCost !== null ? engCost.toLocaleString('ru-RU') + ' ₽' : 'MAX'}</b>
+                        </button>
+                        <button type="button" class="case-open-btn" style="display:flex; justify-content:space-between; padding:8px 10px;" onclick="upgradeGarageCar(${index}, 'handling')" ${hndCost === null ? 'disabled' : ''}>
+                            <span>🛞 Подвеска (${hndLvl}/${maxLvl})</span>
+                            <b style="color:#fbbf24;">${hndCost !== null ? hndCost.toLocaleString('ru-RU') + ' ₽' : 'MAX'}</b>
+                        </button>
+                        <button type="button" class="case-open-btn" style="display:flex; justify-content:space-between; padding:8px 10px;" onclick="upgradeGarageCar(${index}, 'nitro')" ${nitCost === null ? 'disabled' : ''}>
+                            <span>🔥 Нитро (${nitLvl}/${maxLvl})</span>
+                            <b style="color:#fbbf24;">${nitCost !== null ? nitCost.toLocaleString('ru-RU') + ' ₽' : 'MAX'}</b>
+                        </button>
+                        <button type="button" class="case-open-btn" style="display:flex; justify-content:space-between; padding:8px 10px;" onclick="upgradeGarageCar(${index}, 'economy')" ${ecoCost === null ? 'disabled' : ''}>
+                            <span>⛽ Топливная система (${ecoLvl}/${maxLvl})</span>
+                            <b style="color:#fbbf24;">${ecoCost !== null ? ecoCost.toLocaleString('ru-RU') + ' ₽' : 'MAX'}</b>
+                        </button>
+                        ${repCost > 0 ? `<button type="button" class="btn btn-gold" style="margin:4px 0 0 0; padding:8px; font-size:11.5px;" onclick="repairGarageCar(${index})">🔧 Отремонтировать (${repCost.toLocaleString('ru-RU')} ₽)</button>` : ''}
+                    </div>
+                </div>
+
+                <!-- ВКЛАДКА 3: НОМЕРА -->
+                <div class="garage-inspector-panel ${curTab === 'plates' ? '' : 'hidden'}" data-garage-tab-panel="plates">
+                    ${plateSlotHtml}
+                    <div style="display:flex; flex-direction:column; gap:6px; margin-top:8px;">
+                        <button type="button" class="case-open-btn" onclick="toggleGaragePlateView()">🔍 Крупный план 3D-номера на бампере</button>
+                        <button type="button" class="case-open-btn" onclick="openSellCarModal(${index})">🏛️ Выставить авто на онлайн-рынок</button>
+                    </div>
+                </div>
+
+                <!-- ВКЛАДКА 4: СТАЙЛИНГ -->
+                <div class="garage-inspector-panel ${curTab === 'styling' ? '' : 'hidden'}" data-garage-tab-panel="styling">
+                    <div style="display:flex; flex-direction:column; gap:8px;">
+                        <button type="button" class="btn btn-red-cta" style="margin:0; padding:10px 12px; font-size:12.5px;" onclick="openStylingForActiveGarageCar()">🎨 Открыть 3D-ателье стайлинга (Цвет, Винилы, Обвес)</button>
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+                            <button type="button" class="case-open-btn" onclick="cycleGaragePneumo()">💨 Пневмоподвеска</button>
+                            <button type="button" class="case-open-btn" onclick="toggleGarageFso()">🚨 Спецсигналы ФСО</button>
+                            <button type="button" class="case-open-btn" onclick="cycleGarageEnvironment()">🌦️ Сменить студию</button>
+                            <button type="button" class="case-open-btn" onclick="captureGaragePhotoPoster()">📸 3D-Постер</button>
+                        </div>
+                    </div>
                 </div>
             `;
+            switchGarageInspectorTab(curTab);
         }
         window.renderGarageActiveCarInspector = renderGarageActiveCarInspector;
 
         function openActiveCarQuickAction(action) {
             const idx = Math.max(0, Math.min(activeGarageCarIndex || 0, (myCars?.length || 1) - 1));
-            if (action === 'plate') {
+            if (action === 'plate' || action === 'plates') {
+                switchGarageInspectorTab('plates');
                 openAttachModal(idx);
                 return;
             }
             if (action === 'tuning') {
+                switchGarageInspectorTab('tuning');
                 const box = document.getElementById('inspector-tuning-box');
                 if (box && typeof box.scrollIntoView === 'function') {
                     box.scrollIntoView({ behavior: 'smooth', block: 'center' });

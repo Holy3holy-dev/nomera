@@ -11365,3 +11365,1035 @@ body {
         height: calc(100dvh - 54px) !important;
     }
 }
+
+/* ==========================================================================
+   ЭТАП 3: PREMIUM COLLECTOR + GARAGE LUXURY + NEON AUCTION DESIGN SYSTEM
+   (Единая система токенов, витринное освещение, 3D-подиум, коллекция и гараж)
+   ========================================================================== */
+
+/* 1. UNIFIED DESIGN TOKENS & SHOWROOM ATMOSPHERE */
+:root {
+    --bg-obsidian: #080B10;
+    --bg-anthracite: #0D1118;
+    --bg-charcoal: #121822;
+    --bg-main: #080B10;
+    --bg-card: rgba(15, 20, 28, 0.82);
+    --bg-card-solid: #0D1118;
+    --bg-secondary: #121822;
+    --bg-panel: rgba(15, 20, 28, 0.82);
+    --bg-elevated: #141B26;
+    --border-subtle: rgba(255, 255, 255, 0.07);
+    --border-strong: rgba(255, 255, 255, 0.14);
+    --accent-red: #E7243E;
+    --accent-red-deep: #9E1124;
+    --accent-gold: #F59E0B;
+    --accent-gold-bright: #FBBF24;
+    --accent-purple: #A855F7;
+    --accent-cyan: #06B6D4;
+    --accent-blue: #3B82F6;
+    --accent-emerald: #10B981;
+    --text-main: #F8FAFC;
+    --text-muted: #94A3B8;
+    --text-dim: #64748B;
+    --shadow-glass-panel: 0 20px 50px rgba(0, 0, 0, 0.6);
+}
+
+body {
+    background-color: #080B10 !important;
+    background-image:
+        radial-gradient(ellipse 68% 42% at 50% 0%, rgba(231, 36, 62, 0.14) 0%, transparent 62%),
+        radial-gradient(ellipse 52% 38% at 85% 18%, rgba(245, 158, 11, 0.10) 0%, transparent 58%),
+        radial-gradient(ellipse 55% 42% at 15% 78%, rgba(59, 130, 246, 0.08) 0%, transparent 60%),
+        linear-gradient(180deg, #080B10 0%, #0D1118 52%, #080B10 100%) !important;
+    color: #F8FAFC !important;
+}
+
+.section-box,
+.luxury-panel-card,
+.gen-glass-sidebar,
+.col-sidebar,
+.garage-left-sidebar,
+.garage-right-inspector,
+.garage-3d-podium-card,
+.garage-center-podium {
+    background: rgba(15, 20, 28, 0.82) !important;
+    backdrop-filter: blur(16px) !important;
+    -webkit-backdrop-filter: blur(16px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.07) !important;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6) !important;
+}
+
+/* 2. TOP HEADER, MOBILE BALANCE OVERFLOW FIX, 5-COLUMN NAV & TOASTS */
+.top-game-header {
+    min-height: 68px !important;
+    height: auto !important;
+    padding: 10px 22px !important;
+    border-radius: 16px !important;
+    background: linear-gradient(180deg, rgba(18, 24, 34, 0.94) 0%, rgba(10, 14, 20, 0.96) 100%) !important;
+    backdrop-filter: blur(18px) !important;
+    -webkit-backdrop-filter: blur(18px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.07) !important;
+    border-bottom: 1px solid rgba(231, 36, 62, 0.36) !important;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 16px !important;
+}
+
+.top-game-header .brand-lockup {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    text-decoration: none !important;
+    flex-shrink: 0 !important;
+}
+
+.top-game-header .brand-mark {
+    width: auto !important;
+    height: auto !important;
+    min-width: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    position: relative !important;
+    font-size: 15px !important;
+    font-weight: 900 !important;
+    font-style: italic !important;
+    letter-spacing: 0.6px !important;
+    padding: 6px 11px !important;
+    border-radius: 9px !important;
+    transform: skew(-6deg) !important;
+    background: linear-gradient(180deg, #E7243E 0%, #9E1124 100%) !important;
+    color: #FFFFFF !important;
+    box-shadow: 0 4px 18px rgba(231, 36, 62, 0.52), inset 0 1px 0 rgba(255, 255, 255, 0.28) !important;
+}
+
+.top-game-header .brand-mark-line {
+    display: none !important;
+}
+
+.top-game-header .brand-word {
+    font-size: 20px !important;
+    font-weight: 900 !important;
+    letter-spacing: 1.6px !important;
+    background: linear-gradient(180deg, #FFFFFF 0%, #CBD5E1 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: #F8FAFC !important;
+    text-shadow: 0 2px 14px rgba(0, 0, 0, 0.65);
+}
+
+.top-game-header .nav-tabs {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 4px !important;
+}
+
+.top-game-header .nav-tabs .tab-btn,
+.top-game-header .nav-tabs .nav-tab {
+    background: transparent !important;
+    border: none !important;
+    color: #94A3B8 !important;
+    font-weight: 700 !important;
+    font-size: 14px !important;
+    padding: 9px 18px !important;
+    border-radius: 10px !important;
+    min-height: 38px !important;
+    box-shadow: none !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    cursor: pointer !important;
+    transition: color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease, transform 0.15s ease !important;
+}
+
+.top-game-header .nav-tabs .tab-btn:hover,
+.top-game-header .nav-tabs .nav-tab:hover {
+    color: #FFFFFF !important;
+    background: rgba(255, 255, 255, 0.06) !important;
+}
+
+.top-game-header .nav-tabs .tab-btn.active,
+.top-game-header .nav-tabs .nav-tab.active {
+    background: linear-gradient(180deg, #E7243E 0%, #9E1124 100%) !important;
+    color: #FFFFFF !important;
+    border: none !important;
+    box-shadow: 0 4px 18px rgba(231, 36, 62, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.25) !important;
+}
+
+/* Toast Notifications — Centered below top header, never covering generator buttons */
+#toast-container,
+#h3h-toast-stack,
+.h3h-toast-stack {
+    position: fixed !important;
+    top: 74px !important;
+    bottom: auto !important;
+    left: 50% !important;
+    right: auto !important;
+    transform: translateX(-50%) !important;
+    z-index: 1500 !important;
+    pointer-events: none !important;
+    width: auto !important;
+    max-width: min(92vw, 420px) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 6px !important;
+}
+
+#toast-container > *,
+.h3h-toast-stack .h3h-toast,
+.h3h-toast {
+    pointer-events: none !important;
+    padding: 7px 16px !important;
+    border-radius: 999px !important;
+    background: rgba(13, 17, 24, 0.92) !important;
+    backdrop-filter: blur(14px) !important;
+    -webkit-backdrop-filter: blur(14px) !important;
+    border: 1px solid rgba(231, 36, 62, 0.45) !important;
+    border-left: 3px solid #E7243E !important;
+    color: #F8FAFC !important;
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    line-height: 1.3 !important;
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.65) !important;
+    max-width: 100% !important;
+}
+
+/* 3. SCREEN 1 & 2: ГЕНЕРАТОР ПК И СМАРТФОНА (#generator) */
+.gen-garage-arena {
+    position: relative !important;
+    border-radius: 24px !important;
+    overflow: hidden !important;
+    background:
+        radial-gradient(ellipse 64% 40% at 50% 8%, rgba(245, 158, 11, 0.14) 0%, rgba(231, 36, 62, 0.10) 42%, transparent 72%),
+        radial-gradient(ellipse 75% 48% at 50% 62%, rgba(231, 36, 62, 0.14) 0%, rgba(245, 158, 11, 0.08) 46%, transparent 74%),
+        radial-gradient(ellipse 90% 60% at 50% 100%, rgba(18, 24, 34, 0.95) 0%, #080B10 75%),
+        linear-gradient(180deg, #0D1118 0%, #080B10 58%, #0A0E15 100%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    box-shadow: 0 28px 70px rgba(0, 0, 0, 0.78), inset 0 1px 0 rgba(255, 255, 255, 0.07) !important;
+}
+
+/* 3D Circular Showroom Podium (#gen-plate-stage) */
+#gen-plate-stage,
+.gen-plate-podium {
+    position: relative !important;
+    isolation: isolate !important;
+    min-height: 315px !important;
+    padding: 18px 16px 14px 16px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+}
+
+/* Elliptical glowing pedestal base & concentric golden/crimson neon floor rings */
+#gen-plate-stage::after,
+.podium-floor-reflection {
+    content: "" !important;
+    display: block !important;
+    position: absolute !important;
+    left: 50% !important;
+    bottom: 6px !important;
+    transform: translateX(-50%) !important;
+    width: min(640px, 96%) !important;
+    height: 150px !important;
+    border-radius: 50% !important;
+    background:
+        radial-gradient(ellipse 70% 28% at 50% 82%, rgba(245, 158, 11, 0.28) 0%, rgba(231, 36, 62, 0.16) 45%, transparent 75%),
+        radial-gradient(ellipse 56% 20% at 50% 66%, rgba(251, 191, 36, 0.22) 0%, transparent 65%) !important;
+    pointer-events: none !important;
+    z-index: 1 !important;
+    transition: background 0.35s ease, filter 0.35s ease, transform 0.35s ease !important;
+}
+
+/* Physical 3D circular showroom stage disc under #plate-box */
+.plate-hero-scale-wrap {
+    position: relative !important;
+    z-index: 4 !important;
+    padding: 18px 0 28px 0 !important;
+}
+
+.plate-hero-scale-wrap::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    bottom: 2px;
+    transform: translateX(-50%);
+    width: min(520px, 92%);
+    height: 44px;
+    border-radius: 50%;
+    background:
+        radial-gradient(ellipse 68% 55% at 50% 35%, rgba(251, 191, 36, 0.26) 0%, rgba(231, 36, 62, 0.18) 46%, rgba(13, 17, 24, 0.96) 76%, transparent 100%);
+    border-top: 2px solid rgba(251, 191, 36, 0.72);
+    border-bottom: 2px solid rgba(231, 36, 62, 0.58);
+    box-shadow:
+        0 14px 36px rgba(0, 0, 0, 0.88),
+        0 0 28px rgba(245, 158, 11, 0.32),
+        inset 0 2px 12px rgba(251, 191, 36, 0.24);
+    pointer-events: none;
+    z-index: -1;
+    transition: all 0.35s ease;
+}
+
+/* Dynamic rarity lighting on #gen-plate-stage[data-rarity-tier="..."] */
+#gen-plate-stage[data-rarity-tier="common"]::after,
+#gen-plate-stage[data-rarity-tier="common"] .podium-floor-reflection {
+    background: radial-gradient(ellipse 68% 26% at 50% 82%, rgba(148, 163, 184, 0.18) 0%, rgba(231, 36, 62, 0.08) 48%, transparent 75%) !important;
+}
+
+#gen-plate-stage[data-rarity-tier="uncommon"]::after,
+#gen-plate-stage[data-rarity-tier="uncommon"] .podium-floor-reflection {
+    background: radial-gradient(ellipse 70% 28% at 50% 82%, rgba(16, 185, 129, 0.28) 0%, rgba(6, 182, 212, 0.14) 45%, transparent 75%) !important;
+}
+
+#gen-plate-stage[data-rarity-tier="rare"]::after,
+#gen-plate-stage[data-rarity-tier="rare"] .podium-floor-reflection {
+    background: radial-gradient(ellipse 70% 28% at 50% 82%, rgba(59, 130, 246, 0.32) 0%, rgba(6, 182, 212, 0.16) 45%, transparent 75%) !important;
+}
+
+#gen-plate-stage[data-rarity-tier="super"]::after,
+#gen-plate-stage[data-rarity-tier="super"] .podium-floor-reflection {
+    background: radial-gradient(ellipse 72% 30% at 50% 82%, rgba(6, 182, 212, 0.35) 0%, rgba(59, 130, 246, 0.18) 45%, transparent 75%) !important;
+}
+
+#gen-plate-stage[data-rarity-tier="epic"]::after,
+#gen-plate-stage[data-rarity-tier="epic"] .podium-floor-reflection {
+    background: radial-gradient(ellipse 74% 30% at 50% 82%, rgba(168, 85, 247, 0.38) 0%, rgba(231, 36, 62, 0.18) 48%, transparent 76%) !important;
+}
+
+#gen-plate-stage[data-rarity-tier="legendary"]::after,
+#gen-plate-stage[data-rarity-tier="legend"]::after,
+#gen-plate-stage[data-rarity-tier="blatnoy"]::after,
+#gen-plate-stage[data-rarity-tier="legendary"] .podium-floor-reflection,
+#gen-plate-stage[data-rarity-tier="blatnoy"] .podium-floor-reflection {
+    background: radial-gradient(ellipse 76% 32% at 50% 82%, rgba(245, 158, 11, 0.45) 0%, rgba(231, 36, 62, 0.24) 48%, transparent 78%) !important;
+}
+
+#gen-plate-stage[data-rarity-tier="mythic"]::after,
+#gen-plate-stage[data-rarity-tier="mythic"] .podium-floor-reflection {
+    background: radial-gradient(ellipse 78% 34% at 50% 82%, rgba(231, 36, 62, 0.48) 0%, rgba(245, 158, 11, 0.28) 48%, transparent 78%) !important;
+}
+
+#gen-plate-stage[data-rarity-tier="uncommon"] .plate-hero-scale-wrap::after {
+    border-top-color: rgba(16, 185, 129, 0.78);
+    box-shadow: 0 14px 36px rgba(0, 0, 0, 0.88), 0 0 28px rgba(16, 185, 129, 0.35);
+}
+
+#gen-plate-stage[data-rarity-tier="rare"] .plate-hero-scale-wrap::after {
+    border-top-color: rgba(59, 130, 246, 0.82);
+    box-shadow: 0 14px 36px rgba(0, 0, 0, 0.88), 0 0 30px rgba(59, 130, 246, 0.38);
+}
+
+#gen-plate-stage[data-rarity-tier="epic"] .plate-hero-scale-wrap::after {
+    border-top-color: rgba(168, 85, 247, 0.88);
+    box-shadow: 0 14px 36px rgba(0, 0, 0, 0.88), 0 0 34px rgba(168, 85, 247, 0.42);
+}
+
+#gen-plate-stage[data-rarity-tier="legendary"] .plate-hero-scale-wrap::after,
+#gen-plate-stage[data-rarity-tier="blatnoy"] .plate-hero-scale-wrap::after,
+#gen-plate-stage[data-rarity-tier="mythic"] .plate-hero-scale-wrap::after {
+    border-top-color: #FDE047;
+    border-bottom-color: #E7243E;
+    box-shadow: 0 16px 42px rgba(0, 0, 0, 0.92), 0 0 42px rgba(245, 158, 11, 0.55), inset 0 2px 16px rgba(251, 191, 36, 0.35);
+}
+
+/* Podium Pedestal & Showcase Gold Price Readout */
+.podium-pedestal-3d {
+    position: relative !important;
+    z-index: 4 !important;
+    width: min(580px, 96%) !important;
+    margin-top: -4px !important;
+    padding: 12px 20px 10px 20px !important;
+    background: linear-gradient(180deg, rgba(13, 17, 24, 0.78) 0%, rgba(8, 11, 16, 0.92) 100%) !important;
+    border: 1px solid rgba(245, 158, 11, 0.24) !important;
+    border-top: 2px solid rgba(251, 191, 36, 0.55) !important;
+    border-radius: 18px !important;
+    box-shadow: 0 16px 38px rgba(0, 0, 0, 0.75), 0 0 24px rgba(245, 158, 11, 0.14) !important;
+}
+
+/* Remove harsh floating oval line that previously cut through "Оценочная стоимость" */
+.gen-garage-arena .podium-base-ring,
+.podium-pedestal-3d .podium-base-ring {
+    position: absolute !important;
+    inset: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    margin: 0 !important;
+    border-radius: inherit !important;
+    border: none !important;
+    background: radial-gradient(ellipse 75% 60% at 50% 0%, rgba(245, 158, 11, 0.15) 0%, transparent 70%) !important;
+    box-shadow: none !important;
+    pointer-events: none !important;
+}
+
+.podium-price-caption {
+    display: block !important;
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.6px !important;
+    text-transform: uppercase !important;
+    color: #94A3B8 !important;
+    margin-bottom: 2px !important;
+}
+
+#current-price-display,
+.gen-garage-arena #current-price-display,
+#current-price-display .price-hero-value {
+    font-size: clamp(24px, 3.2vw, 38px) !important;
+    font-weight: 900 !important;
+    color: #FBBF24 !important;
+    -webkit-text-fill-color: #FBBF24 !important;
+    text-shadow: 0 4px 24px rgba(245, 158, 11, 0.45) !important;
+    white-space: nowrap !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    line-height: 1.15 !important;
+}
+
+#current-price-display .price-sub-aed {
+    display: block !important;
+    font-size: 12px !important;
+    font-weight: 800 !important;
+    color: #FDE68A !important;
+    text-shadow: none !important;
+    margin: 2px 0 0 0 !important;
+}
+
+/* Collapsible Format Drawer (.gen-plate-desc-drawer) */
+.gen-plate-desc-drawer {
+    width: 100%;
+    background: rgba(13, 17, 24, 0.78);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    overflow: hidden;
+    text-align: left;
+    transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.gen-plate-desc-drawer[open] {
+    border-color: rgba(245, 158, 11, 0.35);
+    background: rgba(13, 17, 24, 0.92);
+}
+
+.gen-plate-desc-drawer summary {
+    padding: 9px 14px;
+    font-size: 12.5px;
+    font-weight: 800;
+    color: #CBD5E1;
+    cursor: pointer;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    user-select: none;
+}
+
+.gen-plate-desc-drawer summary::-webkit-details-marker {
+    display: none;
+}
+
+.gen-plate-desc-drawer summary::after {
+    content: "▾";
+    font-size: 12px;
+    color: #94A3B8;
+    transition: transform 0.2s ease;
+}
+
+.gen-plate-desc-drawer[open] summary::after {
+    transform: rotate(180deg);
+    color: #FBBF24;
+}
+
+.gen-plate-desc-body,
+.gen-plate-desc-content {
+    padding: 0 14px 12px 14px;
+    font-size: 12px;
+    line-height: 1.45;
+    color: #94A3B8;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    padding-top: 10px;
+}
+
+/* 4. SCREEN 3 & 4: КОЛЛЕКЦИЯ ПК И СМАРТФОНА (#inventory) — JEWEL-BOX CARDS */
+.inv-plate-card,
+.inv-item.luxury-plate-card,
+.inv-card.luxury-plate-card {
+    border-radius: 16px !important;
+    padding: 14px 16px !important;
+    position: relative !important;
+    overflow: hidden !important;
+    cursor: pointer !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+    gap: 10px !important;
+    background:
+        radial-gradient(ellipse 80% 55% at 50% 0%, rgba(148, 163, 184, 0.10) 0%, transparent 70%),
+        linear-gradient(180deg, rgba(20, 27, 38, 0.92) 0%, rgba(13, 17, 24, 0.96) 100%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.09) !important;
+    box-shadow: 0 14px 34px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease !important;
+}
+
+.inv-plate-card:hover,
+.inv-item.luxury-plate-card:hover,
+.inv-card.luxury-plate-card:hover {
+    transform: translateY(-3px) !important;
+    box-shadow: 0 18px 42px rgba(0, 0, 0, 0.72), inset 0 1px 0 rgba(255, 255, 255, 0.12) !important;
+}
+
+.inv-card-top,
+.plate-card-top-bar {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 8px !important;
+}
+
+.plate-card-rarity-pill {
+    font-size: 11px !important;
+    font-weight: 800 !important;
+    letter-spacing: 0.06em !important;
+    text-transform: uppercase !important;
+    padding: 4px 10px !important;
+    border-radius: 999px !important;
+    line-height: 1.2 !important;
+}
+
+.inv-fav-btn {
+    background: transparent !important;
+    border: none !important;
+    font-size: 18px !important;
+    color: rgba(255, 255, 255, 0.45) !important;
+    width: 30px !important;
+    height: 30px !important;
+    padding: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    cursor: pointer !important;
+    transition: transform 0.15s ease, color 0.15s ease !important;
+}
+
+.inv-fav-btn:hover {
+    color: rgba(255, 255, 255, 0.85) !important;
+    transform: scale(1.1);
+}
+
+.inv-fav-btn.is-fav {
+    color: #FBBF24 !important;
+    text-shadow: 0 0 12px rgba(245, 158, 11, 0.65) !important;
+}
+
+.inv-card-plate-stage {
+    padding: 12px 0 !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+}
+
+.inv-plate-card .mini-plate,
+.inv-item.luxury-plate-card .mini-plate,
+.inv-card-plate-stage .mini-plate {
+    font-size: clamp(17px, 1.45vw, 22px) !important;
+    padding: 8px 16px !important;
+    min-height: 48px !important;
+    border-radius: 8px !important;
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.55) !important;
+}
+
+.inv-card-bottom,
+.plate-card-status-row {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 8px !important;
+    padding-top: 6px !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+
+.plate-card-price,
+.inv-card-price {
+    font-size: 17px !important;
+    font-weight: 900 !important;
+    color: #F8FAFC !important;
+    white-space: nowrap !important;
+    font-variant-numeric: tabular-nums !important;
+}
+
+/* Jewel-Box Rarity Borders & Inner Radial Spotlights */
+.inv-plate-card.tier-common,
+.inv-item.luxury-plate-card.tier-common {
+    border-color: rgba(148, 163, 184, 0.22) !important;
+    background:
+        radial-gradient(ellipse 85% 55% at 50% 0%, rgba(148, 163, 184, 0.12) 0%, transparent 68%),
+        linear-gradient(180deg, rgba(18, 24, 34, 0.92) 0%, rgba(11, 15, 22, 0.96) 100%) !important;
+}
+
+.inv-plate-card.tier-uncommon,
+.inv-item.luxury-plate-card.tier-uncommon {
+    border-color: rgba(16, 185, 129, 0.45) !important;
+    background:
+        radial-gradient(ellipse 85% 55% at 50% 0%, rgba(16, 185, 129, 0.18) 0%, transparent 68%),
+        linear-gradient(180deg, rgba(18, 24, 34, 0.92) 0%, rgba(11, 15, 22, 0.96) 100%) !important;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.55), 0 0 18px rgba(16, 185, 129, 0.14) !important;
+}
+
+.inv-plate-card.tier-rare,
+.inv-item.luxury-plate-card.tier-rare {
+    border-color: rgba(59, 130, 246, 0.52) !important;
+    background:
+        radial-gradient(ellipse 85% 55% at 50% 0%, rgba(59, 130, 246, 0.22) 0%, transparent 68%),
+        linear-gradient(180deg, rgba(18, 24, 34, 0.92) 0%, rgba(11, 15, 22, 0.96) 100%) !important;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55), 0 0 22px rgba(59, 130, 246, 0.18) !important;
+}
+
+.inv-plate-card.tier-super,
+.inv-item.luxury-plate-card.tier-super {
+    border-color: rgba(6, 182, 212, 0.55) !important;
+    background:
+        radial-gradient(ellipse 85% 55% at 50% 0%, rgba(6, 182, 212, 0.24) 0%, transparent 68%),
+        linear-gradient(180deg, rgba(18, 24, 34, 0.92) 0%, rgba(11, 15, 22, 0.96) 100%) !important;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55), 0 0 24px rgba(6, 182, 212, 0.20) !important;
+}
+
+.inv-plate-card.tier-epic,
+.inv-item.luxury-plate-card.tier-epic {
+    border-color: rgba(168, 85, 247, 0.62) !important;
+    background:
+        radial-gradient(ellipse 85% 58% at 50% 0%, rgba(168, 85, 247, 0.26) 0%, transparent 70%),
+        linear-gradient(180deg, rgba(18, 24, 34, 0.92) 0%, rgba(11, 15, 22, 0.96) 100%) !important;
+    box-shadow: 0 14px 36px rgba(0, 0, 0, 0.6), 0 0 26px rgba(168, 85, 247, 0.24) !important;
+}
+
+.inv-plate-card.tier-legend,
+.inv-plate-card.tier-legendary,
+.inv-item.luxury-plate-card.tier-legend,
+.inv-item.luxury-plate-card.tier-legendary {
+    border-color: rgba(245, 158, 11, 0.72) !important;
+    background:
+        radial-gradient(ellipse 88% 60% at 50% 0%, rgba(245, 158, 11, 0.28) 0%, transparent 72%),
+        linear-gradient(180deg, rgba(22, 26, 34, 0.94) 0%, rgba(12, 15, 22, 0.98) 100%) !important;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.65), 0 0 30px rgba(245, 158, 11, 0.28) !important;
+}
+
+.inv-plate-card.tier-mythic,
+.inv-plate-card.tier-blatnoy,
+.inv-item.luxury-plate-card.tier-mythic,
+.inv-item.luxury-plate-card.tier-blatnoy {
+    border-color: rgba(231, 36, 62, 0.78) !important;
+    background:
+        radial-gradient(ellipse 88% 60% at 50% 0%, rgba(231, 36, 62, 0.30) 0%, rgba(245, 158, 11, 0.12) 45%, transparent 74%),
+        linear-gradient(180deg, rgba(24, 18, 26, 0.94) 0%, rgba(12, 15, 22, 0.98) 100%) !important;
+    box-shadow: 0 16px 42px rgba(0, 0, 0, 0.7), 0 0 32px rgba(231, 36, 62, 0.32) !important;
+}
+
+/* 5. SCREEN 5 & 6: ГАРАЖ ПК И СМАРТФОНА (#garage) */
+.garage-subview-bar,
+.garage-quick-nav {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    background: rgba(13, 17, 24, 0.85) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    padding: 5px !important;
+    border-radius: 12px !important;
+    flex-wrap: wrap !important;
+}
+
+.garage-subview-btn,
+.garage-quick-nav .market-type-btn {
+    background: transparent !important;
+    border: 1px solid transparent !important;
+    color: #94A3B8 !important;
+    font-size: 13px !important;
+    font-weight: 800 !important;
+    padding: 8px 14px !important;
+    border-radius: 9px !important;
+    cursor: pointer !important;
+    transition: all 0.18s ease !important;
+}
+
+.garage-subview-btn:hover,
+.garage-quick-nav .market-type-btn:hover {
+    color: #FFFFFF !important;
+    background: rgba(255, 255, 255, 0.06) !important;
+}
+
+.garage-subview-btn.active,
+.garage-quick-nav .market-type-btn.active {
+    background: linear-gradient(180deg, #E7243E 0%, #9E1124 100%) !important;
+    color: #FFFFFF !important;
+    border-color: rgba(255, 255, 255, 0.18) !important;
+    box-shadow: 0 4px 16px rgba(231, 36, 62, 0.42) !important;
+}
+
+/* 5 Inspector Tabs (.garage-inspector-tabs, .garage-insp-tab.active) */
+.garage-inspector-tabs {
+    display: grid !important;
+    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+    gap: 4px !important;
+    background: rgba(8, 11, 16, 0.85) !important;
+    border: 1px solid rgba(255, 255, 255, 0.07) !important;
+    border-radius: 12px !important;
+    padding: 4px !important;
+    margin-bottom: 12px !important;
+}
+
+.garage-insp-tab {
+    background: transparent !important;
+    border: 1px solid transparent !important;
+    color: #94A3B8 !important;
+    font-size: 11px !important;
+    font-weight: 800 !important;
+    padding: 7px 4px !important;
+    border-radius: 8px !important;
+    cursor: pointer !important;
+    text-align: center !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    transition: all 0.16s ease !important;
+}
+
+.garage-insp-tab:hover {
+    color: #F8FAFC !important;
+    background: rgba(255, 255, 255, 0.05) !important;
+}
+
+.garage-insp-tab.active {
+    background: linear-gradient(180deg, #E7243E 0%, #9E1124 100%) !important;
+    color: #FFFFFF !important;
+    border-color: rgba(255, 255, 255, 0.2) !important;
+    box-shadow: 0 4px 14px rgba(231, 36, 62, 0.4) !important;
+}
+
+/* Unobstructed 3D Showroom Stage (.garage-center-podium, #garage-preview-3d-wrap) */
+.garage-center-podium,
+.garage-3d-podium-card {
+    position: relative !important;
+    border-radius: 20px !important;
+    padding: 16px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+}
+
+#garage-preview-stage,
+.garage-preview-stage {
+    position: relative !important;
+    min-height: 440px !important;
+    border-radius: 16px !important;
+    overflow: hidden !important;
+    background:
+        radial-gradient(ellipse 70% 45% at 50% 18%, rgba(231, 36, 62, 0.14) 0%, transparent 68%),
+        radial-gradient(ellipse 65% 32% at 50% 82%, rgba(245, 158, 11, 0.16) 0%, transparent 72%),
+        linear-gradient(180deg, #0B0F17 0%, #070A10 100%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.75) !important;
+}
+
+#garage-preview-3d-wrap,
+.garage-preview-3d-wrap {
+    width: 100% !important;
+    min-height: 440px !important;
+    height: 440px !important;
+    position: relative !important;
+}
+
+/* Floating < > Car Cycle Arrows on Left and Right Edges */
+.garage-car-nav-arrow {
+    position: absolute !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    z-index: 18 !important;
+    width: 42px !important;
+    height: 42px !important;
+    border-radius: 50% !important;
+    background: rgba(13, 17, 24, 0.82) !important;
+    backdrop-filter: blur(10px) !important;
+    -webkit-backdrop-filter: blur(10px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.16) !important;
+    color: #F8FAFC !important;
+    font-size: 18px !important;
+    font-weight: 900 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    cursor: pointer !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.65) !important;
+    transition: all 0.18s ease !important;
+}
+
+.garage-car-nav-arrow:hover {
+    background: linear-gradient(180deg, #E7243E 0%, #9E1124 100%) !important;
+    border-color: rgba(255, 255, 255, 0.35) !important;
+    box-shadow: 0 8px 24px rgba(231, 36, 62, 0.5) !important;
+    transform: translateY(-50%) scale(1.06) !important;
+}
+
+.garage-car-nav-arrow.prev,
+.garage-car-nav-arrow.garage-car-nav-prev,
+#btn-garage-car-prev {
+    left: 12px !important;
+}
+
+.garage-car-nav-arrow.next,
+.garage-car-nav-arrow.garage-car-nav-next,
+#btn-garage-car-next {
+    right: 12px !important;
+}
+
+/* Sleek 5-Button Dock (.garage-podium-bottom-dock) */
+.garage-podium-bottom-dock {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)) !important;
+    gap: 8px !important;
+    margin-top: 12px !important;
+}
+
+.garage-podium-bottom-dock .podium-dock-btn {
+    background: rgba(18, 24, 34, 0.9) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    color: #F8FAFC !important;
+    border-radius: 11px !important;
+    padding: 10px 12px !important;
+    font-size: 12.5px !important;
+    font-weight: 800 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 6px !important;
+    transition: all 0.18s ease !important;
+}
+
+.garage-podium-bottom-dock .podium-dock-btn:hover {
+    background: rgba(28, 36, 50, 0.96) !important;
+    border-color: rgba(255, 255, 255, 0.24) !important;
+    transform: translateY(-1px) !important;
+}
+
+.garage-podium-bottom-dock .podium-dock-btn-race {
+    background: linear-gradient(180deg, #E7243E 0%, #9E1124 100%) !important;
+    border-color: rgba(255, 255, 255, 0.25) !important;
+    color: #FFFFFF !important;
+    box-shadow: 0 6px 20px rgba(231, 36, 62, 0.42) !important;
+}
+
+/* ==========================================================================
+   MOBILE OVERRIDES (@media (max-width: 860px)) — ZERO OVERFLOW & STRICT ORDER
+   ========================================================================== */
+@media (max-width: 860px) {
+    /* Mobile Top Header — Fix Balance Overflow on 320px–430px */
+    .top-game-header {
+        min-height: 52px !important;
+        padding: 6px 10px !important;
+        gap: 6px !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+        overflow: hidden !important;
+        flex-wrap: nowrap !important;
+    }
+
+    .top-game-header .brand-lockup {
+        gap: 6px !important;
+        flex: 0 0 auto !important;
+        min-width: 0 !important;
+    }
+
+    .top-game-header .brand-mark {
+        width: auto !important;
+        height: auto !important;
+        padding: 4px 7px !important;
+        font-size: 11.5px !important;
+        border-radius: 7px !important;
+    }
+
+    .top-game-header .brand-word {
+        font-size: clamp(12.5px, 3.5vw, 15px) !important;
+        letter-spacing: 0.5px !important;
+    }
+
+    .top-game-header .header-hud {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: flex-end !important;
+        flex-wrap: nowrap !important;
+        gap: 5px !important;
+        flex: 1 1 auto !important;
+        min-width: 0 !important;
+        overflow: hidden !important;
+    }
+
+    .hud-balance-pill {
+        padding: 5px 10px !important;
+        max-width: 165px !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        white-space: nowrap !important;
+        font-size: 13px !important;
+        min-width: 0 !important;
+        flex: 0 1 auto !important;
+        gap: 5px !important;
+    }
+
+    .hud-balance-pill .hud-balance {
+        font-size: 13px !important;
+        min-width: 0 !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        white-space: nowrap !important;
+        flex-wrap: nowrap !important;
+    }
+
+    .hud-balance-pill .hud-balance-val,
+    #balance {
+        font-size: clamp(12px, 3.6vw, 15px) !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+    }
+
+    .top-game-header .hud-level-box {
+        min-width: 0 !important;
+        max-width: 64px !important;
+        padding: 4px 6px !important;
+        flex: 0 0 auto !important;
+    }
+
+    /* Mobile Bottom Navigation — Strict 5-column grid */
+    .mobile-bottom-nav {
+        display: grid !important;
+        grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+        gap: 4px !important;
+    }
+
+    /* Toast Container on Mobile */
+    #toast-container,
+    #h3h-toast-stack,
+    .h3h-toast-stack {
+        top: 64px !important;
+        bottom: auto !important;
+        max-width: min(92vw, 420px) !important;
+    }
+
+    /* Mobile Generator Order:
+       1. Country Selector (.gen-left-panel)
+       2. Center Stage (.gen-center-stage: Plate -> Rarity -> Gold Price -> Red Spin CTA -> Secondary Actions -> Drawers)
+       3. Player Stats (.gen-right-panel)
+       4. Rarity Odds Strip (.gen-rarity-odds-strip) at the very BOTTOM */
+    .gen-garage-arena,
+    .gen-garage-arena.gen-luxury-grid {
+        display: flex !important;
+        flex-direction: column !important;
+    }
+
+    .gen-left-panel {
+        order: 1 !important;
+    }
+
+    .gen-center-stage {
+        order: 2 !important;
+    }
+
+    .gen-right-panel {
+        order: 3 !important;
+    }
+
+    .gen-rarity-odds-strip {
+        order: 4 !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+        margin: 6px 0 0 0 !important;
+        border-radius: 14px !important;
+    }
+
+    #gen-plate-stage {
+        min-height: auto !important;
+        padding: 8px 4px 6px 4px !important;
+    }
+
+    .plate-hero-scale-wrap {
+        order: 1 !important;
+        padding: 4px 0 12px 0 !important;
+    }
+
+    .gen-rarity-crown-wrap {
+        order: 2 !important;
+    }
+
+    .podium-pedestal-3d {
+        order: 3 !important;
+        width: 100% !important;
+        padding: 10px 14px !important;
+    }
+
+    .gen-controls-dock .gen-main-cta-wrap {
+        order: 1 !important;
+    }
+
+    .gen-controls-dock .gen-secondary-actions-grid {
+        order: 2 !important;
+    }
+
+    .gen-controls-dock .gen-plate-desc-drawer {
+        order: 3 !important;
+    }
+
+    .gen-controls-dock .pity-status-bar {
+        order: 4 !important;
+    }
+
+    .gen-controls-dock #btn-gen-mobile-settings {
+        order: 5 !important;
+    }
+
+    .gen-controls-dock #gen-quick-toggles-bar {
+        order: 6 !important;
+    }
+
+    /* Mobile Garage 3D Podium Stage */
+    #garage-preview-stage,
+    .garage-preview-stage,
+    #garage-preview-3d-wrap,
+    .garage-preview-3d-wrap {
+        min-height: 250px !important;
+        height: clamp(250px, 38dvh, 330px) !important;
+    }
+
+    .garage-car-nav-arrow {
+        width: 36px !important;
+        height: 36px !important;
+        font-size: 16px !important;
+    }
+}
+
+@media (max-width: 420px) {
+    /* On ultra-compact phones (320px–420px), hide level box in top bar so logo + balance + profile + icons never crowd */
+    .top-game-header .hud-level-box {
+        display: none !important;
+    }
+
+    .hud-balance-pill {
+        max-width: 155px !important;
+        padding: 4px 8px !important;
+    }
+}
+

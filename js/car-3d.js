@@ -5984,6 +5984,24 @@
             return null;
         }
 
+        function isUnsliceableMeshOrTransform(node, relMat) {
+            const nm = String((node && node.name) || '').toLowerCase();
+            if (/(?:rear_window|front_window|windshield|headlight|brakelight|taillight|rearkit|frontkit|spoiler|wing|skirt|sill|fender|bumper|diffuser|splitter|grille|exhaust|wheel|tire|tyre|rim|brake|caliper|hub|disk|disc|mirror_glass|placa|plate|logo|emblem|badge)/i.test(nm)) {
+                return true;
+            }
+            if (relMat && relMat.elements) {
+                const e = relMat.elements;
+                const sx = Math.hypot(e[0], e[1], e[2]) || 1;
+                const sy = Math.hypot(e[4], e[5], e[6]) || 1;
+                const sz = Math.hypot(e[8], e[9], e[10]) || 1;
+                // If child mesh has a rotated/axis-swapped local coordinate frame relative to modelRoot, do not slice its triangles
+                if (Math.abs(e[0]) / sx < 0.70 || Math.abs(e[5]) / sy < 0.70 || Math.abs(e[10]) / sz < 0.70) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
         modelRoot.traverse(c => {
             if (!c.isMesh || !c.visible || !c.geometry || !c.geometry.attributes || !c.geometry.attributes.position) return;
             if (isIgnoredAccessoryOrRigNode(c, modelRoot) || isInsideWheelOrSkippedAncestor(c)) return;
@@ -5998,6 +6016,9 @@
                 ? c.geometry.boundingBox.clone().applyMatrix4(relMat)
                 : new THREE.Box3();
 
+            const ancestorBucket = getAncestorPartGroupBucket(c);
+            const skipSlicing = !ancestorBucket && isUnsliceableMeshOrTransform(c, relMat);
+
             candidateMeshes.push({
                 mesh: c,
                 role0,
@@ -6006,7 +6027,7 @@
                 relMat,
                 normalMat,
                 meshBox,
-                ancestorBucket: getAncestorPartGroupBucket(c)
+                ancestorBucket: skipSlicing ? 'static' : ancestorBucket
             });
 
             if (role0 === 'body') {
@@ -6130,11 +6151,16 @@
             const posAttr = geo.attributes.position;
             const normAttr = geo.attributes.normal;
             const uvAttr = geo.attributes.uv;
+            const uv2Attr = geo.attributes.uv2;
+            const colorAttr = geo.attributes.color;
             const indexAttr = geo.index;
             const vCount = triList.length * 3;
             const positions = new Float32Array(vCount * 3);
             const normals = new Float32Array(vCount * 3);
             const uvs = uvAttr ? new Float32Array(vCount * 2) : null;
+            const uv2s = uv2Attr ? new Float32Array(vCount * 2) : null;
+            const colorItemSize = colorAttr ? (colorAttr.itemSize || 3) : 0;
+            const colors = colorAttr ? new Float32Array(vCount * colorItemSize) : null;
 
             const hasGroups = Array.isArray(geo.groups) && geo.groups.length > 0;
             const groups = geo.groups;
@@ -6214,6 +6240,16 @@
                         uvs[dstVert * 2] = uvAttr.getX(srcIdx);
                         uvs[dstVert * 2 + 1] = uvAttr.getY(srcIdx);
                     }
+                    if (uv2s && uv2Attr) {
+                        uv2s[dstVert * 2] = uv2Attr.getX(srcIdx);
+                        uv2s[dstVert * 2 + 1] = uv2Attr.getY(srcIdx);
+                    }
+                    if (colors && colorAttr) {
+                        colors[dstVert * colorItemSize] = colorAttr.getX(srcIdx);
+                        if (colorItemSize > 1) colors[dstVert * colorItemSize + 1] = colorAttr.getY(srcIdx);
+                        if (colorItemSize > 2) colors[dstVert * colorItemSize + 2] = colorAttr.getZ(srcIdx);
+                        if (colorItemSize > 3 && typeof colorAttr.getW === 'function') colors[dstVert * colorItemSize + 3] = colorAttr.getW(srcIdx);
+                    }
                 }
             }
 
@@ -6226,6 +6262,12 @@
             newGeo.setAttribute('normal', new THREE.BufferAttribute(normals, 3));
             if (uvs) {
                 newGeo.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
+            }
+            if (uv2s) {
+                newGeo.setAttribute('uv2', new THREE.BufferAttribute(uv2s, 2));
+            }
+            if (colors) {
+                newGeo.setAttribute('color', new THREE.BufferAttribute(colors, colorItemSize));
             }
             for (let gi = 0; gi < outGroups.length; gi++) {
                 const og = outGroups[gi];
@@ -6278,6 +6320,16 @@
                     const cy = (tv0.y + tv1.y + tv2.y) / 3;
                     const cz = (tv0.z + tv1.z + tv2.z) / 3;
 
+                    const minX = Math.min(tv0.x, tv1.x, tv2.x);
+                    const maxX = Math.max(tv0.x, tv1.x, tv2.x);
+                    const minYTri = Math.min(tv0.y, tv1.y, tv2.y);
+                    const maxYTri = Math.max(tv0.y, tv1.y, tv2.y);
+                    const minZ = Math.min(tv0.z, tv1.z, tv2.z);
+                    const maxZ = Math.max(tv0.z, tv1.z, tv2.z);
+                    const triSpanX = maxX - minX;
+                    const triSpanY = maxYTri - minYTri;
+                    const triSpanZ = maxZ - minZ;
+
                     if (normAttr) {
                         tn0.fromBufferAttribute(normAttr, i0).applyMatrix3(normalMat).normalize();
                     } else {
@@ -6290,46 +6342,56 @@
                     const nz = tn0.z;
 
                     let targetBucket = 'static';
+                    // Guard against slicing long side planks, side skirts, fenders, or decals spanning across panel seams
+                    const isCompactPanelTri = (
+                        triSpanZ <= L * 0.22 &&
+                        triSpanY <= H * 0.30 &&
+                        triSpanX <= W * 0.38
+                    );
 
-                    // A. Hood region
-                    if (!hasDedicated.hood && (role0 === 'body' || role0 === 'chrome' || role0 === 'trim') &&
-                        Math.abs(cx) < W * 0.37 &&
-                        cz >= zHoodHinge && cz <= box.max.z - L * 0.04 &&
-                        cy > hoodDeckY - 0.10 && ny > 0.35) {
-                        targetBucket = 'hood';
-                    }
-                    // B. Trunk region
-                    else if (!hasDedicated.trunk && Math.abs(cx) < W * 0.37 &&
-                        cz >= box.min.z + L * 0.025 && cz <= zTrunkHinge &&
-                        cy > trunkDeckY - 0.10) {
-                        if (isHatch || isSUV) {
-                            if ((role0 === 'body' || role0 === 'glass' || role0 === 'chrome' || role0 === 'trim') &&
-                                (ny > 0.25 || nz < -0.35)) {
-                                targetBucket = 'trunk';
-                            }
-                        } else {
-                            if ((role0 === 'body' || role0 === 'chrome' || role0 === 'trim') &&
-                                cy < minY + H * 0.76 &&
-                                (ny > 0.30 || (nz < -0.45 && cy > trunkDeckY - 0.05))) {
-                                targetBucket = 'trunk';
+                    if (isCompactPanelTri) {
+                        // A. Hood region (all 3 vertices strictly within hood bounds)
+                        if (!hasDedicated.hood && (role0 === 'body' || role0 === 'chrome' || role0 === 'trim') &&
+                            Math.abs(cx) < W * 0.37 &&
+                            minX >= -W * 0.39 && maxX <= W * 0.39 &&
+                            minZ >= zHoodHinge - 0.02 && maxZ <= box.max.z - L * 0.03 &&
+                            minYTri > hoodDeckY - 0.11 && ny > 0.35) {
+                            targetBucket = 'hood';
+                        }
+                        // B. Trunk region (all 3 vertices strictly within trunk bounds)
+                        else if (!hasDedicated.trunk && Math.abs(cx) < W * 0.37 &&
+                            minX >= -W * 0.39 && maxX <= W * 0.39 &&
+                            minZ >= box.min.z + L * 0.02 && maxZ <= zTrunkHinge + 0.02 &&
+                            minYTri > trunkDeckY - 0.11) {
+                            if (isHatch || isSUV) {
+                                if ((role0 === 'body' || role0 === 'glass' || role0 === 'chrome' || role0 === 'trim') &&
+                                    (ny > 0.25 || nz < -0.35)) {
+                                    targetBucket = 'trunk';
+                                }
+                            } else {
+                                if ((role0 === 'body' || role0 === 'chrome' || role0 === 'trim') &&
+                                    maxYTri < minY + H * 0.78 &&
+                                    (ny > 0.30 || (nz < -0.45 && cy > trunkDeckY - 0.05))) {
+                                    targetBucket = 'trunk';
+                                }
                             }
                         }
-                    }
-                    // C. Front Left Door region
-                    else if (!hasDedicated.doorFL && (role0 === 'body' || role0 === 'glass' || role0 === 'chrome' || role0 === 'trim') &&
-                        cx < -W * 0.26 &&
-                        cz >= zDoorRear && cz <= zDoorFront &&
-                        cy >= minY + H * 0.16 && cy <= box.max.y - 0.02 &&
-                        nx < -0.25 && !(role0 === 'glass' && Math.abs(nx) < 0.42)) {
-                        targetBucket = 'doorFL';
-                    }
-                    // D. Front Right Door region
-                    else if (!hasDedicated.doorFR && (role0 === 'body' || role0 === 'glass' || role0 === 'chrome' || role0 === 'trim') &&
-                        cx > W * 0.26 &&
-                        cz >= zDoorRear && cz <= zDoorFront &&
-                        cy >= minY + H * 0.16 && cy <= box.max.y - 0.02 &&
-                        nx > 0.25 && !(role0 === 'glass' && Math.abs(nx) < 0.42)) {
-                        targetBucket = 'doorFR';
+                        // C. Front Left Door region (all 3 vertices strictly within left door hinge box)
+                        else if (!hasDedicated.doorFL && (role0 === 'body' || role0 === 'glass' || role0 === 'chrome' || role0 === 'trim') &&
+                            cx < -W * 0.26 && maxX <= -W * 0.22 &&
+                            minZ >= zDoorRear - 0.015 && maxZ <= zDoorFront + 0.015 &&
+                            minYTri >= minY + H * 0.15 && maxYTri <= box.max.y - 0.015 &&
+                            nx < -0.25 && !(role0 === 'glass' && Math.abs(nx) < 0.42)) {
+                            targetBucket = 'doorFL';
+                        }
+                        // D. Front Right Door region (all 3 vertices strictly within right door hinge box)
+                        else if (!hasDedicated.doorFR && (role0 === 'body' || role0 === 'glass' || role0 === 'chrome' || role0 === 'trim') &&
+                            cx > W * 0.26 && minX >= W * 0.22 &&
+                            minZ >= zDoorRear - 0.015 && maxZ <= zDoorFront + 0.015 &&
+                            minYTri >= minY + H * 0.15 && maxYTri <= box.max.y - 0.015 &&
+                            nx > 0.25 && !(role0 === 'glass' && Math.abs(nx) < 0.42)) {
+                            targetBucket = 'doorFR';
+                        }
                     }
 
                     buckets[targetBucket].push(t);
@@ -6361,6 +6423,9 @@
                 subMesh.renderOrder = mesh.renderOrder || (role0 === 'glass' ? 2 : 0);
                 subMesh.userData._stylingRoles = roles.slice();
                 subMesh.userData._origMatNames = origMatNames.slice();
+                if (mesh.userData && mesh.userData._origBodyMats) {
+                    subMesh.userData._origBodyMats = mesh.userData._origBodyMats.slice();
+                }
                 subMesh.userData.isSlicedGLBPart = true;
                 subMesh.userData.sliceBucket = bKey;
                 subMesh.userData.preserveBuffers = true;
@@ -6586,10 +6651,14 @@
             pFL.children.forEach(ch => {
                 if (ch.userData && ch.userData.isOpenOnlyLiner) ch.visible = dOpen;
             });
-            if (pFL.userData && pFL.userData.isButterflyDoor) {
+            if (!dOpen) {
+                pFL.rotation.set(0, 0, 0);
+            } else if (pFL.userData && pFL.userData.isButterflyDoor) {
+                pFL.rotation.x = 0;
                 pFL.rotation.y = doorAngle * 0.72;
                 pFL.rotation.z = -doorAngle * 0.55;
             } else {
+                pFL.rotation.x = 0;
                 pFL.rotation.y = doorAngle;
                 pFL.rotation.z = 0;
             }
@@ -6599,10 +6668,14 @@
             pFR.children.forEach(ch => {
                 if (ch.userData && ch.userData.isOpenOnlyLiner) ch.visible = dOpen;
             });
-            if (pFR.userData && pFR.userData.isButterflyDoor) {
+            if (!dOpen) {
+                pFR.rotation.set(0, 0, 0);
+            } else if (pFR.userData && pFR.userData.isButterflyDoor) {
+                pFR.rotation.x = 0;
                 pFR.rotation.y = -doorAngle * 0.72;
                 pFR.rotation.z = doorAngle * 0.55;
             } else {
+                pFR.rotation.x = 0;
                 pFR.rotation.y = -doorAngle;
                 pFR.rotation.z = 0;
             }
@@ -6614,7 +6687,11 @@
             pHood.children.forEach(ch => {
                 if (ch.userData && ch.userData.isOpenOnlyLiner) ch.visible = hOpen;
             });
-            pHood.rotation.x = -hoodAngle;
+            if (!hOpen) {
+                pHood.rotation.set(0, 0, 0);
+            } else {
+                pHood.rotation.set(-hoodAngle, 0, 0);
+            }
         }
 
         if (subGroup) subGroup.visible = tOpen;
@@ -6623,7 +6700,11 @@
             pTrunk.children.forEach(ch => {
                 if (ch.userData && ch.userData.isOpenOnlyLiner) ch.visible = tOpen;
             });
-            pTrunk.rotation.x = trunkAngle;
+            if (!tOpen) {
+                pTrunk.rotation.set(0, 0, 0);
+            } else {
+                pTrunk.rotation.set(trunkAngle, 0, 0);
+            }
         }
 
         // If car has a trunk-mounted spoiler, rotate it smoothly with the trunk lid
@@ -6894,7 +6975,7 @@
             if (baseCarId === 'huracan' && (mn === 'mt_interior_black' || ms.includes('digital_gauge') || ms.includes('bump_plastic3'))) return true;
             if (baseCarId === 'cullinan' && (mn.includes('interior_side_box') || mn.includes('interior_ac') || mn.includes('inside_button') || mn.includes('car_stearning') || mn.includes('steering_box') || mn.includes('back_speaker'))) return true;
             if (baseCarId === 'sf90' && (mn.includes('leather') || mn.includes('interior') || mn === 'carpet' || ms.includes('steering'))) return true;
-            if (baseCarId === 'm3gtr' && (mn.includes('mmat_details_int') || mn === 'driver')) return true;
+            if (baseCarId === 'm3gtr') return mn.includes('mmat_details_int') || mn === 'driver' || (ms.includes('sm_interior') && mn === 'mmat_carbon1');
             return (
                 mn.includes('interior') ||
                 mn.includes('salon') ||
@@ -7072,7 +7153,7 @@
             );
         }
 
-        function isBodyMaterial(matName, meshName) {
+        function isBodyMaterial(matName, meshName, mat) {
             const mn = String(matName || '').toLowerCase();
             const ms = String(meshName || '').toLowerCase();
 
@@ -7139,7 +7220,7 @@
             if (baseCarId === 'x5m') return mn.includes('paint1mtl') || mn.includes('colouredmtl');
             if (baseCarId === 'rs7') return mn === 'material' && (ms === 'car' || ms === 'fronthood' || ms === 'sidemirrorrcase');
 
-            return (
+            if (
                 mn.includes('carpaint') ||
                 mn.includes('paint') ||
                 mn.includes('bodycolor') ||
@@ -7155,7 +7236,20 @@
                 ms.includes('bumper') ||
                 ms.includes('chassis') ||
                 ms.includes('exterior')
-            );
+            ) {
+                return true;
+            }
+
+            // Fallback for untextured near-white GLB shell materials (r > 0.9, g > 0.9, b > 0.9 and no texture map)
+            if (mat && !mat.map && mat.color &&
+                mat.color.r > 0.9 && mat.color.g > 0.9 && mat.color.b > 0.9 &&
+                !mn.includes('chrom') && !ms.includes('chrom') &&
+                !mn.includes('trim') && !mn.includes('plastic') && !mn.includes('carpet') &&
+                !mn.includes('diffuser') && !mn.includes('arch') && !mn.includes('vent')) {
+                return true;
+            }
+
+            return false;
         }
 
         const styledPaint = mats.paint.clone();
@@ -7217,7 +7311,7 @@
                         if (isGrilleMaterial(matName, mName)) return 'grille';
                         if (isInteriorMaterial(matName, mName)) return 'interior';
                         if (isGlassMaterial(mat, matName, mName)) return 'glass';
-                        if (isBodyMaterial(matName, mName)) return 'body';
+                        if (isBodyMaterial(matName, mName, mat)) return 'body';
                         if (baseCarId === 'm5e60' && (matName === 'palettematerial001' || matName === 'gris' || matName === 'black' || matName === 'black_dessous')) return 'trim';
                         if (baseCarId === 'corvette_cross' && (matName === 'espejo' || matName === 'chrome_headlight_left')) return 'chrome';
                         if (baseCarId === 'corvette_cross' && (matName === 'material.042' || matName === 'material.044' || matName === 'material.045' || matName === 'nwgros')) return 'trim';
@@ -7231,6 +7325,7 @@
                             matName.toLowerCase() === 'standardmater1' ||
                             matName.toLowerCase() === 'standardmater2'
                         ))) return 'trim';
+                        if (!mat.map && mat.color && mat.color.r > 0.9 && mat.color.g > 0.9 && mat.color.b > 0.9) return 'body';
                         return 'stock';
                     });
                     child.userData._origMatNames = matList.map(mat => mat ? (mat.name || '') : '');
@@ -7251,11 +7346,13 @@
 
                     // 1. Rubber Tires (Always deep black/charcoal realistic rubber)
                     if (role === 'tire') {
+                        if (!styling.wheels || styling.wheels === 'stock') child.visible = true;
                         return mats.tireRubber;
                     }
 
                     // 2. Wheels / Rims
                     if (role === 'rim') {
+                        if (!styling.wheels || styling.wheels === 'stock') child.visible = true;
                         if (styling.wheels === 'stamps') {
                             return new THREE.MeshStandardMaterial({ color: 0x141416, roughness: 0.72, metalness: 0.35, name: 'Rim_Stamps' });
                         } else if (styling.wheels === 'deepdish') {
@@ -7280,6 +7377,7 @@
 
                     // 3. Brake Rotors & Calipers
                     if (role === 'brake') {
+                        if (!styling.wheels || styling.wheels === 'stock') child.visible = true;
                         const isCaliperPart = mName.includes('caliper') || matName.includes('caliper') || matName.includes('etrier') || mName === 'object_4' || matName === 'material_1' || matName.includes('red');
                         if (!isCaliperPart && child) {
                             child.userData = child.userData || {};
@@ -7347,10 +7445,11 @@
                         return mats.glass;
                     }
 
-                    // 9. Car Body Paint (Preserve authentic factory/racing livery textures on M3 GTR, Corvette C6.R, and Mustang GT unless custom vinyl/paint override is active)
+                    // 9. Car Body Paint (Preserve authentic factory/racing livery textures on M3 GTR, Corvette C6.R, and Mustang GT unless custom vinyl/paint override is active; exclude mmat_details_mat_025 white placeholder texture so it gets metallic body paint)
                     if (role === 'body') {
                         const origBodyMat = child.userData._origBodyMats && child.userData._origBodyMats[idx];
-                        if ((carId === 'm3gtr' || carId === 'corvette_cross' || carId === 'mustang_razor') && origBodyMat && origBodyMat.map && !styling.customPaintOverride && (!styling.vinyl || styling.vinyl === 'none')) {
+                        const isPlaceholderWhiteMap = (baseCarId === 'm3gtr' && matName === 'mmat_details_mat_025');
+                        if ((carId === 'm3gtr' || carId === 'corvette_cross' || carId === 'mustang_razor') && !isPlaceholderWhiteMap && origBodyMat && origBodyMat.map && !styling.customPaintOverride && (!styling.vinyl || styling.vinyl === 'none')) {
                             const liveryMat = origBodyMat.clone();
                             liveryMat.roughness = 0.15;
                             liveryMat.metalness = 0.52;
@@ -7863,16 +7962,16 @@
                     center = box.getCenter(new THREE.Vector3());
                 }
 
-                // Standardize car dimensions with realistic relative scale
+                // Standardize car dimensions with realistic relative scale (capped at <= 4.80 units to fit comfortably inside the 3.0-radius showroom podium ring)
                 let targetLength = 4.45;
                 if (carId === 'vaz2107' || carId === 'vaz2109' || carId === 'polo' || carId === 'golf_sonny') {
                     targetLength = 4.05;
                 } else if (carId === 'cullinan') {
-                    targetLength = 5.25;
+                    targetLength = 4.80;
                 } else if (carId === 'g63' || carId === 'lc300' || carId === 'x5m' || carId === 'panamera') {
-                    targetLength = 4.90;
+                    targetLength = 4.78;
                 } else if (carId === 'camry' || carId === 'e63' || carId === 'clk_kaze' || carId === 'rs6' || carId === 'rs7' || carId === 'm8' || carId === 'gaz24' || carId === 'db9' || carId === 'maserati') {
-                    targetLength = 4.75;
+                    targetLength = 4.72;
                 } else if (carId === 'jesko' || carId === 'chiron' || carId === 'sf90' || carId === 'huracan' || carId === 'gallardo_ming' || carId === 'porsche911' || carId === 'cayman_baron' || carId === 'mclaren' || carId === 'audir8' || carId === 'corvette_cross' || carId === 'corvette_webster' || carId === 'mustang_razor' || carId === 'mustang_jewels') {
                     targetLength = 4.50;
                 } else if (carId === 'priora' || carId === 'solaris' || carId === 'vesta' || carId === 'eclipse_lou') {
@@ -7880,6 +7979,7 @@
                 } else if (carId === 'mark2' || carId === 'is300_taz' || carId === 'subaru' || carId === 'evo8_earl' || carId === 'm5e60' || carId === 'm3_g80' || carId === 'm5f90' || carId === 'gtr' || carId === 'silvia' || carId === 'viper_jv' || carId === 'rx7' || carId === 'supra' || carId === 'elantra_n') {
                     targetLength = 4.55;
                 }
+                targetLength = Math.min(4.80, targetLength);
                 const currentLength = size.z || 1;
                 const scaleFactor = targetLength / currentLength;
                 clonedScene.scale.setScalar(scaleFactor);
@@ -7895,6 +7995,7 @@
                 modelGroup.add(clonedScene);
                 modelGroup.updateMatrixWorld(true);
                 modelGroup.userData.baseBoundingBox = computeTightBoundingBox(clonedScene);
+                fitModelToShowroom(THREE, modelGroup, 4.8);
                 applyStylingToGLTF(THREE, modelGroup, styling, carId);
 
                 return modelGroup;
@@ -8002,6 +8103,35 @@
             const fallbackModel = buildDetailedCarModel(THREE, carName, styling);
             if (onLoaded) onLoaded(fallbackModel);
         });
+    }
+
+    function fitModelToShowroom(THREE, modelRoot, maxLength = 4.8) {
+        if (!THREE || !modelRoot) return modelRoot;
+        try {
+            let box = (modelRoot.userData && modelRoot.userData.baseBoundingBox && !modelRoot.userData.baseBoundingBox.isEmpty())
+                ? modelRoot.userData.baseBoundingBox.clone()
+                : null;
+            if (!box) {
+                box = new THREE.Box3().setFromObject(modelRoot);
+            }
+            if (box && !box.isEmpty()) {
+                const spanZ = box.max.z - box.min.z;
+                const spanX = box.max.x - box.min.x;
+                const length = Math.max(spanZ || 0, spanX || 0);
+                if (Number.isFinite(length) && length > maxLength && modelRoot.scale && typeof modelRoot.scale.multiplyScalar === 'function') {
+                    const factor = maxLength / length;
+                    modelRoot.scale.multiplyScalar(factor);
+                    if (typeof modelRoot.updateMatrixWorld === 'function') {
+                        modelRoot.updateMatrixWorld(true);
+                    }
+                    if (modelRoot.userData && modelRoot.userData.baseBoundingBox) {
+                        modelRoot.userData.baseBoundingBox.min.multiplyScalar(factor);
+                        modelRoot.userData.baseBoundingBox.max.multiplyScalar(factor);
+                    }
+                }
+            }
+        } catch (_) {}
+        return modelRoot;
     }
 
     function preloadCarModel(THREE, carName) {
@@ -8239,6 +8369,7 @@
             this.cameraAngleY = Math.PI / 4.2;
             this.cameraAngleX = 0.26;
             this.cameraDistance = 4.3;
+            this.cameraDist = this.cameraDistance;
             this.targetY = 0.52;
 
             this.targetAngleY = this.cameraAngleY;
@@ -8246,6 +8377,7 @@
             this.targetDistance = this.cameraDistance;
             this.targetCenterY = this.targetY;
             this.currentPreset = 'isometric';
+            this.activeViewPreset = this.currentPreset;
 
             this.isDragging = false;
             this.dragVelX = 0;
@@ -8444,19 +8576,48 @@
         }
 
         updateCameraPosition() {
-            const aspect = (this.camera && Number.isFinite(this.camera.aspect) && this.camera.aspect > 0)
+            const rawAspect = (this.camera && Number.isFinite(this.camera.aspect) && this.camera.aspect > 0)
                 ? this.camera.aspect
-                : 1.5;
-            const isCloseUpPlate = this.currentPreset === 'plate_front' || this.currentPreset === 'plate_rear';
-            const aspectScale = isCloseUpPlate
-                ? (aspect < 1.15 ? Math.min(1.32, 1.12 / Math.max(0.65, aspect)) : 1.0)
-                : (aspect < 1.35 ? Math.min(1.42, 1.32 / Math.max(0.68, aspect)) : 1.0);
-            const effDist = this.cameraDistance * aspectScale;
-            const cx = Math.sin(this.cameraAngleY) * Math.cos(this.cameraAngleX) * effDist;
-            const cy = Math.sin(this.cameraAngleX) * effDist + this.targetY;
-            const cz = Math.cos(this.cameraAngleY) * Math.cos(this.cameraAngleX) * effDist;
+                : ((this.width || 320) / Math.max(1, this.height || 240));
+            const aspect = Math.max(0.45, rawAspect);
+            const preset = this.activeViewPreset || this.currentPreset || 'isometric';
+            const isCloseUpPlate = preset === 'plate_zoom' || preset === 'plate_front' || preset === 'plate_rear';
+            const aspectFitMult = isCloseUpPlate
+                ? (aspect < 1.15 ? Math.min(1.35, 1.15 / aspect) : 1.0)
+                : (aspect < 1.55 ? Math.min(1.85, 1.55 / Math.pow(aspect, 0.78)) : 1.0);
+            this.cameraDist = this.cameraDistance;
+            this.activeViewPreset = this.currentPreset;
+            const effectiveDist = this.cameraDistance * aspectFitMult;
+            const cx = Math.sin(this.cameraAngleY) * Math.cos(this.cameraAngleX) * effectiveDist;
+            const cy = Math.sin(this.cameraAngleX) * effectiveDist + this.targetY;
+            const cz = Math.cos(this.cameraAngleY) * Math.cos(this.cameraAngleX) * effectiveDist;
             this.camera.position.set(cx, cy, cz);
             this.camera.lookAt(0, this.targetY, 0);
+        }
+
+        fitCameraToCar() {
+            if (this.container && this.camera) {
+                const rect = (typeof this.container.getBoundingClientRect === 'function') ? this.container.getBoundingClientRect() : null;
+                const w = Math.floor(rect && rect.width ? rect.width : (this.container.clientWidth || this.width || 320));
+                const h = Math.floor(rect && rect.height ? rect.height : (this.container.clientHeight || this.height || 240));
+                if (w > 0 && h > 0) {
+                    this.width = w;
+                    this.height = h;
+                    this.camera.aspect = w / h;
+                    if (typeof this.camera.updateProjectionMatrix === 'function') {
+                        this.camera.updateProjectionMatrix();
+                    }
+                    if (this.renderer && typeof this.renderer.setSize === 'function') {
+                        this.renderer.setSize(w, h, false);
+                    }
+                }
+            }
+            const activeModel = this.glbCar || this.proceduralCar || this.carGroup;
+            if (activeModel && this.THREE) {
+                fitModelToShowroom(this.THREE, activeModel, 4.8);
+            }
+            this.updateCameraPosition();
+            this.needsRender = true;
         }
 
         setLoading(isLoading, text) {
@@ -8490,6 +8651,7 @@
                 this.updateCapabilities();
                 this.updateLightsRigPositions();
                 this.updateHeadlightsState();
+                this.fitCameraToCar();
                 this.needsRender = true;
                 if (!this.active) this.start();
                 return;
@@ -8504,11 +8666,13 @@
                     try {
                         this.proceduralCar = buildDetailedCarModel(THREE, this.currentCarName, this.currentStyling);
                         if (this.proceduralCar) {
+                            fitModelToShowroom(THREE, this.proceduralCar, 4.8);
                             applyInteractiveAnglesToModel(this.proceduralCar, this.doorAngle, this.hoodAngle, this.trunkAngle);
                             this.scene.add(this.proceduralCar);
                             this.carGroup = this.proceduralCar;
                             this.updateActiveCarVisibility();
                             this.updateCapabilities();
+                            this.fitCameraToCar();
                         }
                     } catch (_) {}
                 }
@@ -8544,6 +8708,7 @@
                                 c.rotation.y = c.userData.baseRotY || 0;
                             }
                         });
+                        fitModelToShowroom(THREE, loadedModel, 4.8);
                         applyInteractiveAnglesToModel(loadedModel, this.doorAngle, this.hoodAngle, this.trunkAngle);
                         this.glbCar = loadedModel;
                         this.carGroup = loadedModel;
@@ -8554,6 +8719,7 @@
                         this.updateCapabilities();
                         this.updateLightsRigPositions();
                         this.updateHeadlightsState();
+                        this.fitCameraToCar();
                         this.needsRender = true;
                     },
                     pct => {
@@ -8584,6 +8750,7 @@
                 try {
                     this.proceduralCar = buildDetailedCarModel(THREE, this.currentCarName, this.currentStyling);
                     if (this.proceduralCar) {
+                        fitModelToShowroom(THREE, this.proceduralCar, 4.8);
                         this.proceduralCar.traverse(c => {
                             if (c.userData && c.userData.isSteerable) {
                                 c.rotation.y = c.userData.baseRotY || 0;
@@ -8609,6 +8776,7 @@
                 this.updateCapabilities();
                 this.updateLightsRigPositions();
                 this.updateHeadlightsState();
+                this.fitCameraToCar();
                 this.needsRender = true;
             }
         }
@@ -8810,6 +8978,7 @@
 
         setViewPreset(presetName, immediate = false) {
             this.currentPreset = presetName || 'isometric';
+            this.activeViewPreset = this.currentPreset;
             switch (presetName) {
                 case 'front':
                     this.targetAngleY = 0;
@@ -8823,6 +8992,7 @@
                     this.targetDistance = 4.2;
                     this.targetCenterY = 0.50;
                     break;
+                case 'plate_zoom':
                 case 'plate_front':
                     this.targetAngleY = 0;
                     this.targetAngleX = 0.08;
@@ -8851,6 +9021,7 @@
                 case '3d':
                 default:
                     this.currentPreset = 'isometric';
+                    this.activeViewPreset = 'isometric';
                     this.targetAngleY = Math.PI / 4.2;
                     this.targetAngleX = 0.26;
                     this.targetDistance = 4.3;
@@ -8861,10 +9032,15 @@
                 this.cameraAngleY = this.targetAngleY;
                 this.cameraAngleX = this.targetAngleX;
                 this.cameraDistance = this.targetDistance;
+                this.cameraDist = this.cameraDistance;
                 this.targetY = this.targetCenterY;
                 this.updateCameraPosition();
             }
             this.needsRender = true;
+        }
+
+        setCameraView(presetName, immediate = false) {
+            this.setViewPreset(presetName, immediate);
         }
 
         resetCamera() {
@@ -9650,6 +9826,10 @@
             }
         }
 
+        onResize() {
+            this.resize();
+        }
+
         resize() {
             if (!this.container || !this.renderer || !this.camera) return;
             const rect = (typeof this.container.getBoundingClientRect === 'function') ? this.container.getBoundingClientRect() : null;
@@ -9662,6 +9842,7 @@
             this.camera.aspect = w / h;
             this.camera.updateProjectionMatrix();
             this.renderer.setSize(w, h, false);
+            this.fitCameraToCar();
             this.needsRender = true;
         }
 
@@ -9689,6 +9870,7 @@
                 }, 100);
                 return;
             }
+            this.fitCameraToCar();
             this.active = true;
             this.needsRender = true;
             let lastTime = performance.now();

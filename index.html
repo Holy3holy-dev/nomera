@@ -60,7 +60,7 @@
     <!-- Подключение Firebase SDK для базы данных, аккаунтов и мультиплеера -->
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
-    <link rel="stylesheet" href="./styles.css?v=b9123222930a">
+    <link rel="stylesheet" href="./styles.css?v=be3c7fd6cc28">
     <style>
         /* Collector's Book («Книга коллекционера») & Car-Plate Synergy UI */
         .collector-book-summary {
@@ -219,7 +219,7 @@
             </a>
 
             <!-- ГЛАВНАЯ НАВИГАЦИЯ (6 ОСНОВНЫХ РАЗДЕЛОВ + МЕНЮ «ЕЩЁ») -->
-            <nav class="nav-tabs" aria-label="Разделы игры" role="tablist">
+            <nav class="nav-tabs" id="main-nav-tabs" aria-label="Разделы игры" role="tablist">
                 <button type="button" role="tab" class="nav-tab active" id="nav-tab-generator" onclick="switchTab('generator', this)" data-tab="generator" aria-controls="generator" aria-selected="true">
                     <svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24"><use href="#icon-plate"/></svg>
                     <span>Генератор</span>
@@ -400,27 +400,37 @@
                             <div class="gen-sidebar-label">Выбор страны</div>
                             <div class="plate-country-selector" id="plate-country-selector" role="group" aria-label="Страна госномера">
                                 <button type="button" class="country-select-btn active" id="btn-country-RUS" data-country="RUS" onclick="selectPlateCountry('RUS')">
-                                    <span class="country-btn-flag">🇷🇺</span>
+                                    <span class="country-btn-flag country-flag-icon" aria-hidden="true">
+                                        <svg viewBox="0 0 28 20" width="24" height="17" style="border-radius:3px;box-shadow:0 1px 3px rgba(0,0,0,0.4);"><rect width="28" height="6.67" fill="#fff"/><rect y="6.67" width="28" height="6.67" fill="#0039A6"/><rect y="13.33" width="28" height="6.67" fill="#D52B1E"/></svg>
+                                    </span>
                                     <span class="country-btn-info"><strong>Россия</strong><small>ГОСТ • 900 ₽</small></span>
                                     <span class="country-mult-pill">x1.0</span>
                                 </button>
                                 <button type="button" class="country-select-btn" id="btn-country-KZ" data-country="KZ" onclick="selectPlateCountry('KZ')">
-                                    <span class="country-btn-flag">🇰🇿</span>
+                                    <span class="country-btn-flag country-flag-icon" aria-hidden="true">
+                                        <svg viewBox="0 0 28 20" width="24" height="17" style="border-radius:3px;box-shadow:0 1px 3px rgba(0,0,0,0.4);"><rect width="28" height="20" fill="#00AFCA"/><circle cx="14" cy="10" r="4.2" fill="#FEC50C"/></svg>
+                                    </span>
                                     <span class="country-btn-info"><strong>Казахстан</strong><small>VIP • 1 800 ₽</small></span>
                                     <span class="country-mult-pill">x1.8</span>
                                 </button>
                                 <button type="button" class="country-select-btn" id="btn-country-USA" data-country="USA" onclick="selectPlateCountry('USA')">
-                                    <span class="country-btn-flag">🇺🇸</span>
+                                    <span class="country-btn-flag country-flag-icon" aria-hidden="true">
+                                        <svg viewBox="0 0 28 20" width="24" height="17" style="border-radius:3px;box-shadow:0 1px 3px rgba(0,0,0,0.4);"><rect width="28" height="20" fill="#B22234"/><rect y="3" width="28" height="2.5" fill="#fff"/><rect y="8" width="28" height="2.5" fill="#fff"/><rect y="13" width="28" height="2.5" fill="#fff"/><rect width="12" height="10.5" fill="#3C3B6E"/></svg>
+                                    </span>
                                     <span class="country-btn-info"><strong>США</strong><small>State • 3 500 ₽</small></span>
                                     <span class="country-mult-pill">x3.5</span>
                                 </button>
                                 <button type="button" class="country-select-btn" id="btn-country-UAE" data-country="UAE" onclick="selectPlateCountry('UAE')">
-                                    <span class="country-btn-flag">🇦🇪</span>
+                                    <span class="country-btn-flag country-flag-icon" aria-hidden="true">
+                                        <svg viewBox="0 0 28 20" width="24" height="17" style="border-radius:3px;box-shadow:0 1px 3px rgba(0,0,0,0.4);"><rect width="28" height="6.67" fill="#00732F"/><rect y="6.67" width="28" height="6.67" fill="#fff"/><rect y="13.33" width="28" height="6.67" fill="#000"/><rect width="7.5" height="20" fill="#FF0000"/></svg>
+                                    </span>
                                     <span class="country-btn-info"><strong>ОАЭ (Дубай)</strong><small>RTA • 9 000 ₽</small></span>
                                     <span class="country-mult-pill">x8.0</span>
                                 </button>
                                 <button type="button" class="country-select-btn" id="btn-country-JPN" data-country="JPN" onclick="selectPlateCountry('JPN')">
-                                    <span class="country-btn-flag">🇯🇵</span>
+                                    <span class="country-btn-flag country-flag-icon" aria-hidden="true">
+                                        <svg viewBox="0 0 28 20" width="24" height="17" style="border-radius:3px;box-shadow:0 1px 3px rgba(0,0,0,0.4);"><rect width="28" height="20" fill="#fff"/><circle cx="14" cy="10" r="5.5" fill="#BC002D"/></svg>
+                                    </span>
                                     <span class="country-btn-info"><strong>Япония</strong><small>JDM • 5 000 ₽</small></span>
                                     <span class="country-mult-pill">x5.0</span>
                                 </button>
@@ -449,7 +459,7 @@
 
                         <!-- Корона / бейдж категории редкости прямо над номером (на мобильном — под номером) -->
                         <div class="gen-rarity-crown-wrap">
-                            <div id="gen-rarity" class="rarity-label gen-rarity-hero-badge">Обычный</div>
+                            <div id="gen-rarity" class="rarity-label gen-rarity-hero-badge rarity-crown-pill">Обычный</div>
                         </div>
 
                         <div id="region-editor" class="region-editor hidden" role="dialog" aria-modal="true" aria-label="Смена региона госномера">
@@ -509,6 +519,7 @@
                         <!-- Многоуровневый автомобильный подиум с подсветкой и оценочной стоимостью -->
                         <div class="podium-pedestal-3d" id="gen-podium-pedestal">
                             <div class="podium-base-ring" id="gen-podium-base" aria-hidden="true"></div>
+                            <div class="podium-floor-reflection" aria-hidden="true"></div>
                             <div class="podium-price-readout">
                                 <span class="podium-price-caption">Оценочная стоимость</span>
                                 <div class="current-price-badge" id="current-price-display">
@@ -586,6 +597,16 @@
                                 <small id="spin-cost-let">500 ₽</small>
                             </button>
                         </div>
+
+                        <!-- Компактная раскрывающаяся справка о формате и серии госномера (не сдвигает кнопки на смартфоне) -->
+                        <details class="gen-plate-desc-drawer" id="gen-plate-desc-drawer">
+                            <summary>ℹ️ О формате и серии номера</summary>
+                            <div class="gen-plate-desc-body">
+                                <div id="special-series-badge"></div>
+                                <div id="current-plate-desc">Сделайте спин, чтобы узнать подробности серии, региона и редкости госномера.</div>
+                                <div id="uae-plate-passport"></div>
+                            </div>
+                        </details>
 
                         <!-- Индикатор гаранта удачи -->
                         <div class="pity-status-bar" id="pity-status-bar" aria-live="polite">
@@ -790,32 +811,32 @@
             </div>
         </div>
 
-        <!-- 3. ВКЛАДКА: ГАРАЖ (3-КОЛОНОЧНЫЙ ПОДИУМ + АВТОСАЛОН) -->
+        <!-- 3. ВКЛАДКА: ГАРАЖ (3-КОЛОНОЧНЫЙ ПОДИУМ + АВТОСАЛОН + КОРТЕЖ) -->
         <div id="garage" class="tab-content hidden">
             <div class="section-box">
                 <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
                     <div class="section-title">🏎️ Гараж и 3D-Шоурум</div>
-                    <div class="garage-quick-nav">
-                        <button type="button" class="market-type-btn active" onclick="document.getElementById('garage-3d-podium-card')?.scrollIntoView({behavior:'smooth'})">🏎️ 3D Подиум</button>
-                        <button type="button" class="market-type-btn" onclick="document.getElementById('my-cars')?.scrollIntoView({behavior:'smooth'})">📋 Все мои авто</button>
-                        <button type="button" class="market-type-btn" onclick="document.getElementById('garage-shop-section')?.scrollIntoView({behavior:'smooth'})">🏪 Автосалон (49)</button>
+                    <div class="garage-quick-nav garage-subview-nav" id="garage-subview-nav" role="tablist" aria-label="Режимы гаража">
+                        <button type="button" class="market-type-btn garage-subview-btn active" id="btn-garage-sub-showroom" onclick="switchGarageSubView('showroom')">🏎️ 3D Подиум и Тюнинг</button>
+                        <button type="button" class="market-type-btn garage-subview-btn" id="btn-garage-sub-shop" onclick="switchGarageSubView('shop')">🏪 Автосалон (49)</button>
+                        <button type="button" class="market-type-btn garage-subview-btn" id="btn-garage-sub-fleet" onclick="switchGarageSubView('fleet')">💼 Кортеж и Прокат</button>
                     </div>
                 </div>
 
                 <!-- 3-КОЛОНОЧНЫЙ ГАРАЖНЫЙ КОМПЛЕКС: СПИСОК АВТО СЛЕВА | 3D-ПОДИУМ В ЦЕНТРЕ | ИНСПЕКТОР И НОМЕР СПРАВА -->
-                <div class="garage-luxury-layout">
+                <div class="garage-luxury-layout" id="garage-showroom-layout">
                     <!-- Левая колонка: Список автомобилей игрока -->
-                    <aside class="garage-left-sidebar" id="garage-left-sidebar" aria-label="Мои автомобили">
+                    <aside class="garage-left-sidebar garage-left-roster" id="garage-left-sidebar" aria-label="Мои автомобили">
                         <div class="luxury-panel-header">
                             <span class="luxury-panel-eyebrow">МОИ АВТОМОБИЛИ</span>
                         </div>
                         <div class="garage-car-sidebar-list" id="garage-car-sidebar-list"></div>
-                        <button type="button" class="btn btn-red-outline garage-buy-more-btn" onclick="document.getElementById('garage-shop-section')?.scrollIntoView({behavior:'smooth'})">
-                            ＋ Купить авто в салоне
+                        <button type="button" class="btn btn-red-outline garage-buy-more-btn" onclick="switchGarageSubView('shop')">
+                            ＋ Автосалон (Купить машину)
                         </button>
                     </aside>
 
-                    <!-- Центральная колонка: Интерактивный 3D-подиум -->
+                    <!-- Центральная колонка: Чистый интерактивный 3D-подиум (без нагромождения кнопок поверх авто) -->
                     <div class="garage-3d-podium-card" id="garage-3d-podium-card">
                         <div class="garage-3d-podium-header">
                             <div class="garage-3d-title-group">
@@ -837,26 +858,64 @@
                             </div>
                         </div>
 
-                        <div class="styling-view-switch garage-view-switch" id="garage-view-switch">
-                            <button type="button" class="styling-view-btn active" id="btn-gview-3d" onclick="setGarageViewMode('3d')" title="Изометрический ракурс 3D (3/4)">🌟 3/4</button>
-                            <button type="button" class="styling-view-btn" id="btn-gview-front" onclick="setGarageViewMode('front')" title="Вид спереди">🏎️ Спереди</button>
-                            <button type="button" class="styling-view-btn" id="btn-gview-side" onclick="setGarageViewMode('side')" title="Вид сбоку (профиль)">🚘 Сбоку</button>
-                            <button type="button" class="styling-view-btn" id="btn-gview-rear" onclick="setGarageViewMode('rear')" title="Вид сзади">🏁 Сзади</button>
-                            <button type="button" class="styling-view-btn" id="btn-gview-top" onclick="setGarageViewMode('top')" title="Вид сверху">🔝 Сверху</button>
-                            <button type="button" class="styling-view-btn" id="btn-gview-turn-left" onclick="rotateGarageShowroom(-0.45)" title="Повернуть влево на 45°">◀ Влево</button>
-                            <button type="button" class="styling-view-btn" id="btn-gview-turn-right" onclick="rotateGarageShowroom(0.45)" title="Повернуть вправо на 45°">Вправо ▶</button>
-                            <button type="button" class="styling-view-btn" id="btn-gview-reset" onclick="resetGarageCamera()" title="Сбросить ракурс камеры">🔄 Сброс</button>
-                            <button type="button" class="styling-view-btn" id="btn-gview-autorotate" onclick="toggleGarageAutoRotate()" title="Включить / отключить автовращение">🔁 Вращение</button>
-                        </div>
-
                         <div id="garage-preview-stage" class="garage-preview-stage">
+                            <button type="button" class="podium-car-nav-arrow prev" id="btn-podium-prev-car" onclick="prevGarageCar()" aria-label="Предыдущий автомобиль" title="Предыдущий автомобиль">‹</button>
                             <div id="garage-preview-3d-wrap" class="garage-preview-3d-wrap"></div>
+                            <button type="button" class="podium-car-nav-arrow next" id="btn-podium-next-car" onclick="nextGarageCar()" aria-label="Следующий автомобиль" title="Следующий автомобиль">›</button>
+
                             <div id="garage-3d-loader" class="showroom-loading-overlay" style="display: none;">
                                 <div class="showroom-spinner"></div>
                                 <div class="showroom-loading-text" id="garage-3d-loader-text">⏳ Загрузка 3D модели...</div>
                             </div>
 
-                            <!-- Интерактивный тулбар 3D осмотра в гараже -->
+                            <div id="garage-3d-hint" class="garage-3d-hint">
+                                ↔️ Вращайте авто мышью или свайпом · Стрелки ‹ › переключают машину
+                            </div>
+                        </div>
+
+                        <!-- Нижний док быстрых действий с выбранным автомобилем -->
+                        <div class="garage-podium-bottom-dock">
+                            <button type="button" class="podium-dock-btn" onclick="switchGarageInspectorTab('tuning')">🛠️ Тюнинг</button>
+                            <button type="button" class="podium-dock-btn" onclick="switchGarageInspectorTab('plates')">🎲 Номер</button>
+                            <button type="button" class="podium-dock-btn" onclick="switchGarageInspectorTab('styling')">🎨 Стайлинг</button>
+                            <button type="button" class="podium-dock-btn" onclick="switchGarageInspectorTab('camera')">📷 Камера</button>
+                            <button type="button" class="podium-dock-btn podium-dock-btn-race" onclick="start3DRaceWithActiveGarageCar()">🏁 В гонку</button>
+                        </div>
+                    </div>
+
+                    <!-- Правая колонка: 5-вкладочный инспектор (Обзор / Тюнинг / Номера / Стайлинг / Камера) -->
+                    <aside class="garage-right-inspector" id="garage-active-inspector" aria-label="Характеристики и управление автомобилем">
+                        <div class="luxury-panel-header">
+                            <span class="luxury-panel-eyebrow">ИНСПЕКТОР АВТОМОБИЛЯ</span>
+                        </div>
+                        <div class="garage-inspector-tabs" role="tablist" aria-label="Разделы инспектора авто">
+                            <button type="button" class="garage-inspector-tab active" id="btn-gtab-overview" data-garage-tab="overview" onclick="switchGarageInspectorTab('overview')">Обзор</button>
+                            <button type="button" class="garage-inspector-tab" id="btn-gtab-tuning" data-garage-tab="tuning" onclick="switchGarageInspectorTab('tuning')">Тюнинг</button>
+                            <button type="button" class="garage-inspector-tab" id="btn-gtab-plates" data-garage-tab="plates" onclick="switchGarageInspectorTab('plates')">Номера</button>
+                            <button type="button" class="garage-inspector-tab" id="btn-gtab-styling" data-garage-tab="styling" onclick="switchGarageInspectorTab('styling')">Стайлинг</button>
+                            <button type="button" class="garage-inspector-tab" id="btn-gtab-camera" data-garage-tab="camera" onclick="switchGarageInspectorTab('camera')">Камера</button>
+                        </div>
+
+                        <div id="garage-inspector-body">
+                            <div style="color: var(--text-muted); font-size: 13px; padding: 16px 0;">Выберите автомобиль для просмотра характеристик и установки госномера.</div>
+                        </div>
+
+                        <!-- Вкладка «Камера и 3D-интерактив» (перенесена с подиума в правый инспектор) -->
+                        <div class="garage-inspector-panel hidden" id="garage-inspector-camera-panel" data-garage-tab-panel="camera">
+                            <div class="luxury-panel-eyebrow" style="margin-bottom:6px;">РАКУРС 3D КАМЕРЫ</div>
+                            <div class="styling-view-switch garage-view-switch" id="garage-view-switch">
+                                <button type="button" class="styling-view-btn active" id="btn-gview-3d" onclick="setGarageViewMode('3d')" title="Изометрический ракурс 3D (3/4)">🌟 3/4</button>
+                                <button type="button" class="styling-view-btn" id="btn-gview-front" onclick="setGarageViewMode('front')" title="Вид спереди">🏎️ Спереди</button>
+                                <button type="button" class="styling-view-btn" id="btn-gview-side" onclick="setGarageViewMode('side')" title="Вид сбоку (профиль)">🚘 Сбоку</button>
+                                <button type="button" class="styling-view-btn" id="btn-gview-rear" onclick="setGarageViewMode('rear')" title="Вид сзади">🏁 Сзади</button>
+                                <button type="button" class="styling-view-btn" id="btn-gview-top" onclick="setGarageViewMode('top')" title="Вид сверху">🔝 Сверху</button>
+                                <button type="button" class="styling-view-btn" id="btn-gview-turn-left" onclick="rotateGarageShowroom(-0.45)" title="Повернуть влево на 45°">◀ Влево</button>
+                                <button type="button" class="styling-view-btn" id="btn-gview-turn-right" onclick="rotateGarageShowroom(0.45)" title="Повернуть вправо на 45°">Вправо ▶</button>
+                                <button type="button" class="styling-view-btn" id="btn-gview-reset" onclick="resetGarageCamera()" title="Сбросить ракурс камеры">🔄 Сброс</button>
+                                <button type="button" class="styling-view-btn" id="btn-gview-autorotate" onclick="toggleGarageAutoRotate()" title="Включить / отключить автовращение">🔁 Вращение</button>
+                            </div>
+
+                            <div class="luxury-panel-eyebrow" style="margin:12px 0 6px;">ИНТЕРАКТИВНЫЕ ФУНКЦИИ КУЗОВА</div>
                             <div class="showroom-interact-toolbar" id="garage-showroom-toolbar" style="display: flex; flex-wrap: wrap;">
                                 <button type="button" class="showroom-interact-btn" id="btn-gshow-doors" onclick="toggleGarageDoors()" title="Распахнуть двери">🚪 Двери</button>
                                 <button type="button" class="showroom-interact-btn" id="btn-gshow-hood" onclick="toggleGarageHood()" title="Открыть капот (двигатель)">⚙️ Капот</button>
@@ -869,36 +928,24 @@
                                 <button type="button" class="showroom-interact-btn showroom-tool-btn" id="btn-gshow-env" onclick="cycleGarageEnvironment()" title="Атмосфера 3D-шоурума (Студия / Ночь / Закат / Ливень)">🌦️ Подиум: Студия</button>
                                 <button type="button" class="showroom-interact-btn showroom-tool-btn" id="btn-gshow-photo" onclick="captureGaragePhotoPoster()" title="Создать коллекционный 3D-постер автомобиля с госномером">📸 Постер</button>
                             </div>
-
-                            <div id="garage-3d-hint" class="garage-3d-hint">
-                                ↔️ Вращайте авто мышью или свайпом · Выбирайте ракурс камеры и открывайте двери/капот
-                            </div>
                         </div>
 
-                        <!-- Нижний док быстрых действий с выбранным автомобилем -->
-                        <div class="garage-podium-bottom-dock">
-                            <button type="button" class="podium-dock-btn" onclick="openActiveCarQuickAction('tuning')">🛠️ Тюнинг Stage</button>
-                            <button type="button" class="podium-dock-btn" onclick="openActiveCarQuickAction('plate')">🏷️ Установить номер</button>
-                            <button type="button" class="podium-dock-btn" onclick="openStylingForActiveGarageCar()">🎨 Цвет и Винилы</button>
-                            <button type="button" class="podium-dock-btn podium-dock-btn-race" onclick="start3DRaceWithActiveGarageCar()">🏁 Выехать в гонку</button>
-                        </div>
-
-                        <!-- Коллекция 3D спорткаров: быстрый выбор и покупка на подиум -->
-                        <div id="garage-nfsmw-legends-bar" style="margin-top: 10px; padding: 10px 12px; background: rgba(18, 24, 33, 0.9); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
-                            <div style="font-size: 11.5px; font-weight: 800; color: var(--text-muted);">
-                                🏆 Быстрый тест-драйв и покупка 3D-спорткаров:
+                        <!-- Быстрый выбор 3D-спорткаров (внутри инспектора без загромождения подиума) -->
+                        <div id="garage-nfsmw-legends-bar" class="garage-inspector-legends-bar" style="margin-top: 10px; padding: 10px 12px; background: rgba(18, 24, 33, 0.9); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; display: flex; flex-direction: column; gap: 8px;">
+                            <div style="font-size: 11px; font-weight: 800; color: var(--text-muted);">
+                                🏆 Быстрый тест-драйв 3D-спорткаров:
                             </div>
                             <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center;">
                                 <button type="button" class="styling-chip" onclick="claimAndSelectNfsMwCar('m3gtr', 'garage')">
-                                    🏎️ BMW M3 E46 GTR · 19.5 млн ₽
+                                    🏎️ M3 GTR · 19.5 млн ₽
                                 </button>
                                 <button type="button" class="styling-chip" onclick="claimAndSelectNfsMwCar('corvette_c6r', 'garage')">
-                                    🏁 Corvette C6.R · 14.8 млн ₽
+                                    🏁 C6.R · 14.8 млн ₽
                                 </button>
                                 <button type="button" class="styling-chip" onclick="claimAndSelectNfsMwCar('mustang_gt', 'garage')">
-                                    🔥 Ford Mustang GT · 8.5 млн ₽
+                                    🔥 Mustang GT · 8.5 млн ₽
                                 </button>
-                                <select id="garage-nfsmw-blacklist-select" onchange="if(this.value) claimAndSelectNfsMwCar(this.value, 'garage')" style="background: #121821; color: #F5F6F8; border: 1px solid rgba(255,255,255,0.14); border-radius: 8px; padding: 5px 8px; font-size: 11px; font-weight: 700; cursor: pointer;">
+                                <select id="garage-nfsmw-blacklist-select" onchange="if(this.value) claimAndSelectNfsMwCar(this.value, 'garage')" style="width: 100%; background: #121821; color: #F5F6F8; border: 1px solid rgba(255,255,255,0.14); border-radius: 8px; padding: 6px 8px; font-size: 11px; font-weight: 700; cursor: pointer;">
                                     <option value="">📋 Все спорткары 3D-коллекции (с ценниками)...</option>
                                     <option value="golf_gti">Volkswagen Golf GTI — 1 650 000 ₽</option>
                                     <option value="lexus_is300">Lexus IS300 — 2 100 000 ₽</option>
@@ -927,21 +974,11 @@
                                 </select>
                             </div>
                         </div>
-                    </div>
-
-                    <!-- Правая колонка: Характеристики выбранного авто, госномер и управление -->
-                    <aside class="garage-right-inspector" id="garage-active-inspector" aria-label="Характеристики выбранного автомобиля">
-                        <div class="luxury-panel-header">
-                            <span class="luxury-panel-eyebrow">ИНСПЕКТОР АВТОМОБИЛЯ</span>
-                        </div>
-                        <div id="garage-inspector-body">
-                            <div style="color: var(--text-muted); font-size: 13px; padding: 16px 0;">Выберите автомобиль для просмотра характеристик и установки госномера.</div>
-                        </div>
                     </aside>
                 </div>
 
-                <!-- 💼 ПАССИВНЫЙ БИЗНЕС: VIP-КОРТЕЖ И ПРОКАТ АВТОПАРКА -->
-                <div class="garage-fleet-card" id="garage-fleet-card" style="background: linear-gradient(135deg, rgba(18, 24, 33, 0.95), rgba(27, 34, 45, 0.9)); border: 1px solid rgba(251, 191, 36, 0.3); border-radius: 16px; padding: 16px; margin: 18px 0; box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);">
+                <!-- 💼 ПАССИВНЫЙ БИЗНЕС: VIP-КОРТЕЖ И ПРОКАТ АВТОПАРКА (вкладка «Кортеж и Прокат») -->
+                <div class="garage-fleet-card hidden" id="garage-fleet-card" style="background: linear-gradient(135deg, rgba(18, 24, 33, 0.95), rgba(27, 34, 45, 0.9)); border: 1px solid rgba(251, 191, 36, 0.3); border-radius: 16px; padding: 16px; margin: 18px 0; box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);">
                     <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap;">
                         <div>
                             <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
@@ -979,19 +1016,19 @@
                     </div>
                 </div>
 
-                <div id="my-cars" style="margin-bottom: 24px;"></div>
+                <div id="my-cars" class="hidden" style="margin-bottom: 24px;"></div>
 
-                <div id="garage-shop-section" class="section-header" style="border-top: 1px solid var(--border-subtle); padding-top: 20px; margin-top: 10px;">
+                <div id="garage-shop-section" class="section-header hidden" style="border-top: 1px solid var(--border-subtle); padding-top: 20px; margin-top: 10px;">
                     <div class="section-title">🏪 Автосалон (49 автомобилей)</div>
                 </div>
-                <div class="dealership-filter-bar" id="dealership-filter-bar">
+                <div class="dealership-filter-bar hidden" id="dealership-filter-bar">
                     <button type="button" class="dealership-filter-btn active" id="btn-shop-all" onclick="filterShopCars('all')">Все (49)</button>
                     <button type="button" class="dealership-filter-btn" id="btn-shop-budget" onclick="filterShopCars('budget')">Бюджет / Стрит</button>
                     <button type="button" class="dealership-filter-btn" id="btn-shop-jdm" onclick="filterShopCars('jdm')">JDM & Дрифт</button>
                     <button type="button" class="dealership-filter-btn" id="btn-shop-premium" onclick="filterShopCars('premium')">Премиум & Спорт</button>
                     <button type="button" class="dealership-filter-btn" id="btn-shop-hyper" onclick="filterShopCars('hyper')">🔥 Гиперкары</button>
                 </div>
-                <div class="dealership-grid" id="garage-list"></div>
+                <div class="dealership-grid hidden" id="garage-list"></div>
             </div>
         </div>
 
@@ -3084,7 +3121,7 @@
     <script src="./js/race-effects.js?v=6883d3af7d80"></script>
     <script src="./js/nfs-physics.js?v=8345fce74626"></script>
     <script src="./js/nfs-circuit-race.js?v=6b87132535ec"></script>
-    <script src="./js/car-3d.js?v=2ab04d039b88"></script>
-    <script src="./js/app.js?v=38e81a895310"></script>
+    <script src="./js/car-3d.js?v=ff11873151c5"></script>
+    <script src="./js/app.js?v=0ba803f01c00"></script>
 </body>
 </html>
