@@ -4195,7 +4195,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         window.setMarketFilterState = setMarketFilterState;
 
         function openSellPlateModal() {
-            if (!ensureOnlineAccess()) return;
+            if (!window.NOMERA_AUTHORS_PREVIEW && !ensureOnlineAccess()) return;
             const plates = (onlineProfile && Array.isArray(onlineProfile.inventory) && onlineProfile.inventory.length > 0)
                 ? onlineProfile.inventory
                 : inventory;
@@ -4226,6 +4226,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         }
 
         async function confirmSellPlate() {
+            if (window.NOMERA_AUTHORS_PREVIEW && window.NomeraPreviewMarket) return window.NomeraPreviewMarket.sellPlate();
             if(sellPlateBusy||!ensureOnlineAccess())return;
             const plateId=document.getElementById('sell-plate-select').value;
             const price=Number(document.getElementById('sell-plate-price').value);
@@ -4243,6 +4244,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         }
         let marketActionBusy = false;
         async function buyMarketLot(lotId) {
+            if (window.NOMERA_AUTHORS_PREVIEW && window.NomeraPreviewMarket) return window.NomeraPreviewMarket.buy(lotId);
             if (marketActionBusy) return;
             const lot = marketLots[lotId];
             if (!lot) return notifyUser('Лот недоступен', 'error');
@@ -4322,6 +4324,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             }
         }
         async function cancelMarketLot(lotId) {
+            if (window.NOMERA_AUTHORS_PREVIEW && window.NomeraPreviewMarket) return window.NomeraPreviewMarket.cancel(lotId);
             if (marketActionBusy) return;
             const lot = marketLots[lotId];
             marketActionBusy = true;
@@ -4380,6 +4383,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             }
         }
         async function fetchMarketListings() {
+            if (window.NOMERA_AUTHORS_PREVIEW && window.NomeraPreviewMarket) return window.NomeraPreviewMarket.refresh();
             try { await refreshOnlinePublic(); notifyUser('Рынок обновлён'); }
             catch (e) { notifyUser('Ошибка загрузки рынка: ' + e.message, 'error'); }
         }
@@ -7164,7 +7168,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         let activeSingleRevealCallback = null;
 
         try {
-            const savedCaseAnimMode = typeof localStorage !== 'undefined' ? localStorage.getItem('nomera_case_anim_mode') : null;
+            const savedCaseAnimMode = localStore.get('nomera_case_anim_mode');
             if (savedCaseAnimMode && ['standard', 'fast', 'instant'].includes(savedCaseAnimMode)) {
                 caseAnimMode = savedCaseAnimMode;
             }
@@ -7174,7 +7178,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             caseAnimMode = ['standard', 'fast', 'instant'].includes(mode) ? mode : 'standard';
             try {
                 if (typeof localStorage !== 'undefined') {
-                    localStorage.setItem('nomera_case_anim_mode', caseAnimMode);
+                    localStore.set('nomera_case_anim_mode', caseAnimMode);
                 }
             } catch (_) {}
             if (typeof document !== 'undefined') {
@@ -7576,6 +7580,8 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
         function persistAutoSavedCaseReward(reward) {
             if (!reward) return;
+            // Item, XP and rare-drop notification are one idempotent award.
+            if (reward._openingId && [...inventory, ...myCars].some(item => item && item._openingId === reward._openingId)) return;
             if (reward.isCar) {
                 const exists = reward._openingId && myCars.some(c => c && c._openingId === reward._openingId);
                 if (!exists) {
@@ -8902,7 +8908,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             });
             list.innerHTML = html;
 
-            if (typeof Car3DManager !== 'undefined' && typeof Car3DManager.renderSideThumbnail === 'function') {
+            if (!window.NOMERA_AUTHORS_PREVIEW && typeof Car3DManager !== 'undefined' && typeof Car3DManager.renderSideThumbnail === 'function') {
                 filteredCars.forEach((car, idx) => {
                     const imgId = 'shop-car-img-' + encodeURIComponent(car.name).replace(/%/g, '_') + '-' + idx;
                     const cached = Car3DManager.getSideThumbnail(car.name);
@@ -19247,7 +19253,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                         tint: carStyling.tint,
                         neon: carStyling.neon
                     });
-                    if (typeof Car3DManager !== 'undefined' && typeof Car3DManager.renderSideThumbnail === 'function') {
+                    if (!window.NOMERA_AUTHORS_PREVIEW && typeof Car3DManager !== 'undefined' && typeof Car3DManager.renderSideThumbnail === 'function') {
                         Car3DManager.renderSideThumbnail(carItem.name, carStyling, (url) => {
                             if (url) drawThumbOnCvs(url);
                         });

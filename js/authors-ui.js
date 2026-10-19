@@ -95,8 +95,10 @@
     // Retain the real plate renderer's national layouts, scale the whole object uniformly.
     const plate = $('#plate-box'), wrap = $('.plate-hero-scale-wrap');
     function fitPlate() {
-        const width = plate.offsetWidth;
-        if (width) wrap.style.setProperty('--ae-plate-scale', Math.min(1.5, (wrap.clientWidth - 34) / width));
+        const format = NomeraPlatePresentation.formats[plate.dataset.country] || NomeraPlatePresentation.formats.RUS;
+        plate.style.setProperty('--ae-board-width',format.width+'px');
+        plate.style.setProperty('--ae-board-height',format.height+'px');
+        wrap.style.setProperty('--ae-plate-scale',NomeraPlatePresentation.sceneScale(wrap.clientWidth,wrap.clientHeight));
     }
     new ResizeObserver(fitPlate).observe(wrap);
     new MutationObserver(fitPlate).observe(plate,{attributes:true,attributeFilter:['class','data-country']});
