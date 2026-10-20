@@ -3,9 +3,10 @@
 (()=>{'use strict';if(!window.NOMERA_AUTHORS_PREVIEW)return;const pools=new Map(),visualJobs=new WeakMap();
  function queueVisual(car,token,template,apply){if(template&&car.userData.trafficVisualToken===token){visualJobs.set(car,{token,apply});car.userData.pendingTrafficVisual=true;}}
  function map(T,e,file,repeat,color=true){const t=new T.TextureLoader().load('./assets/authors-mw/textures/'+file);t.wrapS=t.wrapT=T.RepeatWrapping;t.repeat.set(...repeat);t.anisotropy=Math.min(4,e.renderer?.capabilities?.getMaxAnisotropy?.()||1);if(color)t.encoding=T.sRGBEncoding;(e.authorsSceneTextures||(e.authorsSceneTextures=[])).push(t);return t;}
- function prepare(e){if(e.authorsSceneReady||!e.scene)return;e.authorsSceneReady=true;const T=e.THREE,road=e.asphaltMat;let mat=road;
-  if(!mat&&e.playerPhysics)e.scene.traverse(n=>{if(n.isMesh&&n.userData.mwRoadSurface){mat=n.material;if(!n.geometry.attributes.uv){const p=n.geometry.attributes.position,uv=[];for(let i=0;i<p.count;i++)uv.push(p.getX(i)/4,p.getZ(i)/4);n.geometry.setAttribute('uv',new T.Float32BufferAttribute(uv,2));}}});
-  if(mat){const repeat=road?[17.5/4,(e.chunkLength||60)/4]:[1,1];mat.map=map(T,e,'d5a08d5f_RO_GENFILL_CRK.png',repeat);mat.roughnessMap=null;mat.normalMap=map(T,e,'7ce0b047_RO_GENFILL_CRK_NORMAL.png',repeat,false);mat.normalScale=new T.Vector2(.45,.45);mat.color.setHex(0xffffff);mat.metalness=.04;mat.roughness=.88;mat.needsUpdate=true;e.authorsRoadMaterial=mat;}
+ function prepare(e){if(e.authorsSceneReady||!e.scene)return;e.authorsSceneReady=true;const T=e.THREE,road=e.asphaltMat,mat=road||e.authorsRoadMaterial;
+  // Bind by the engine's asphalt material, never by a shared road-contact tag:
+  // curbs also participate in contact but keep their red/white vertex colors.
+  if(mat){e.scene.traverse(n=>{if(n.isMesh&&n.material===mat&&!n.geometry.attributes.uv){const p=n.geometry.attributes.position,uv=[];for(let i=0;i<p.count;i++)uv.push(p.getX(i)/4,p.getZ(i)/4);n.geometry.setAttribute('uv',new T.Float32BufferAttribute(uv,2));}});const repeat=road?[17.5/4,(e.chunkLength||60)/4]:[1,1];mat.map=map(T,e,'d5a08d5f_RO_GENFILL_CRK.png',repeat);mat.roughnessMap=null;mat.normalMap=map(T,e,'7ce0b047_RO_GENFILL_CRK_NORMAL.png',repeat,false);mat.normalScale=new T.Vector2(.45,.45);mat.vertexColors=false;mat.color.setHex(0xffffff);mat.metalness=.04;mat.roughness=.88;mat.needsUpdate=true;e.authorsRoadMaterial=mat;}
   if(e.tunnelConcreteMat){const m=e.tunnelConcreteMat;m.map=map(T,e,'dca86b52_ARC_TUNNEL_WALL_A_MM.png',[(e.chunkLength||60)/8,1]);m.normalMap=map(T,e,'b64b3f8d_ARC_TUNNEL_WALL_A_NORMA.png',[(e.chunkLength||60)/8,1],false);m.normalScale=new T.Vector2(.35,.35);m.color.setHex(0xffffff);m.metalness=.02;m.roughness=.92;m.needsUpdate=true;
    // Box side UVs put U along the tunnel length. The roof uses its own concrete.
    e.authorsTunnelRoofMaterial=m.clone();e.authorsTunnelRoofMaterial.map=map(T,e,'f7d6b83c_ARC_CONCRETE02_D_JG.png',[4,(e.chunkLength||60)/4]);e.authorsTunnelRoofMaterial.normalMap=null;
@@ -13,7 +14,7 @@
   if(e.authorsTunnelRoofMaterial)e.scene.traverse(n=>{if(n.name==='TunnelVaultRoof')n.material=e.authorsTunnelRoofMaterial;});
  }
  function weather(e){const inside=e.currentBiome==='tunnel';if(e.rainSystem)e.rainSystem.visible=!inside&&e.currentActiveWeather==='rain';if(e.snowSystem)e.snowSystem.visible=!inside&&e.currentActiveWeather==='snow';if(inside&&e.lightningFlash){e.lightningFlash=0;const p=e.getWeatherPreset(e.currentActiveWeather);if(p){if(e.ambientLight)e.ambientLight.intensity=p.ambientIntensity;if(e.sunLight)e.sunLight.intensity=p.sunIntensity;e.scene?.background?.setHex?.(p.bgColor);e.scene?.fog?.color?.setHex?.(p.bgColor);}}
-  if(e.authorsRoadMaterial){const wet=!inside&&['rain','snow'].includes(e.currentActiveWeather);e.authorsRoadMaterial.roughness=wet?.42:.88;e.authorsRoadMaterial.metalness=wet?.1:.04;}
+  if(e.authorsRoadMaterial){const wet=!inside&&['rain','snow'].includes(e.currentActiveWeather);e.authorsRoadMaterial.color.setHex(0xffffff);e.authorsRoadMaterial.roughness=wet?.42:.88;e.authorsRoadMaterial.metalness=wet?.1:.04;}
  }
  function originalTraffic(T,car,fallback,type,key){
   const poolKey='mw-'+key;if(!pools.has(poolKey)){const loader=T._nomeraGLTFLoader||new T.GLTFLoader();pools.set(poolKey,new Promise((resolve,reject)=>loader.load('./assets/authors-mw/traffic/'+key+'.glb',g=>resolve(g.scene),undefined,reject)).catch(()=>null));}

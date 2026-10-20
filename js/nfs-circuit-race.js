@@ -1750,6 +1750,11 @@
                 const mat=new THREE.MeshLambertMaterial({color:0x182b20,side:THREE.DoubleSide});this._trackDisposables(geo,mat);this.scene.add(new THREE.Mesh(geo,mat));
             }
             roadGeo.setAttribute('position', new THREE.Float32BufferAttribute(roadPositions, 3));
+            // Banking can put an edge below zero. The flat terrain must remain
+            // below the lowest asphalt vertex, rather than cut through a bend.
+            let lowestRoadY = 0;
+            for (let i = 1; i < roadPositions.length; i += 3) lowestRoadY = Math.min(lowestRoadY, roadPositions[i]);
+            ground.position.y = Math.min(ground.position.y, lowestRoadY - .12);
             roadGeo.setIndex(roadIndices);
             if (typeof roadGeo.computeVertexNormals === 'function') roadGeo.computeVertexNormals();
             const roadMat = THREE.MeshStandardMaterial
@@ -1757,7 +1762,7 @@
                 : new THREE.MeshLambertMaterial({ color: 0x263449 });
             this._trackDisposables(roadGeo, roadMat);
             this.authorsRoadMaterial=roadMat;
-            const roadMesh=new THREE.Mesh(roadGeo, roadMat);roadMesh.userData.mwRoadSurface=!!this.roadSurface;this.scene.add(roadMesh);
+            const roadMesh=new THREE.Mesh(roadGeo, roadMat);roadMesh.name='CircuitAsphalt';roadMesh.userData.mwRoadSurface=!!this.roadSurface;this.scene.add(roadMesh);
 
             if (linePositions.length > 0) {
                 const lineGeo = new THREE.BufferGeometry();
@@ -1777,7 +1782,7 @@
             curbGeo.setIndex(curbIndices);
             const curbMat = new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide });
             this._trackDisposables(curbGeo, curbMat);
-            const curbMesh=new THREE.Mesh(curbGeo, curbMat);curbMesh.userData.mwRoadSurface=!!this.roadSurface;this.scene.add(curbMesh);
+            const curbMesh=new THREE.Mesh(curbGeo, curbMat);curbMesh.name='CircuitCurbs';curbMesh.userData.mwRoadSurface=!!this.roadSurface;this.scene.add(curbMesh);
 
             const wallGeo = new THREE.BufferGeometry();
             wallGeo.setAttribute('position', new THREE.Float32BufferAttribute(wallPositions, 3));
