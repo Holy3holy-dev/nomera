@@ -25,3 +25,13 @@ Verified locally: all four output GLBs reproduce byte for byte. PNG hashes are c
 `build-glb.cjs` preserves original LOD B triangles, UVs, normals and tire meshes. It changes coordinates to +Z forward/+Y up. Four wheel mounts are fitted to visible arches, rather than claimed as recovered VLT locators. Material batching and PBR bindings are NOMERA adaptations. Glass is inexpensive opaque tinted PBR. Four police dynamic lamp slots have documented bindings to original ON/OFF maps. Original console shaders and dynamic texture-swap logic were not ported.
 
 The original EA meshes and pixels remain game assets, separate from the MIT tool code. This work is a local integration; no publication or upload was performed.
+
+## Original world solids
+
+`rebuild-world.cjs` reads the selected permanent BUN and23 JDLZ blocks from two stream sections. Exact source ranges, raw block hashes, decoded hashes and per-solid chunk hashes are in `assets/authors-mw/world/geometry-provenance.json`. It checks original pixel payloads and produces all ten GLBs byte for byte in a new output directory. Usage matches `rebuild.cjs`, with an additional choice of a new destination directory.
+
+```powershell
+node scripts/mw-assets/rebuild-world.cjs sourceRoot quickbms.exe nfsu_bun.bms python.exe work/mw-world-new
+```
+
+The world shader4 uses an extra third vertex stream: the decoder skips the additional multi-UV data correctly. Geometry indices and UV0 are retained; face normals replace the unsupported shader4 packed-normal interpretation. PBR does not reproduce the original terrain blend/lightmap shader. Two road slots bind the original MW asphalt map and one tunnel slot binds the original MW tunnel wall map, explicitly recorded as aliases. Runtime affine fitting and terrain conformity are separate from untouched normalized GLBs. Native collision databases are not imported.

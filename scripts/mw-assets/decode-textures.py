@@ -8,7 +8,8 @@ from PIL import Image
 import sys, json, struct, hashlib, subprocess, io
 
 source, output, quickbms, bms = map(Path, sys.argv[1:5])
-manifest = json.loads((Path(__file__).resolve().parents[2] / 'assets/authors-mw/provenance.json').read_text())
+manifest_path = Path(sys.argv[5]) if len(sys.argv) > 5 else Path(__file__).resolve().parents[2] / 'assets/authors-mw/provenance.json'
+manifest = json.loads(manifest_path.read_text())
 output.mkdir(parents=True, exist_ok=True)
 rows = {t['hash']: t for t in manifest['textures'] + manifest['trafficTextures']}
 verified, unpacked, result = set(), {}, {}

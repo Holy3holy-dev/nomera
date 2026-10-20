@@ -1,0 +1,1339 @@
+{
+  "models": [
+    {
+      "id": "road",
+      "kind": "road",
+      "file": "road.glb",
+      "sha256": "da6db734b7e9f007942d525f2f56a3e587d078998936576bb8183d2d7c639cd4",
+      "bytes": 651008,
+      "triangles": 56,
+      "materials": 2,
+      "textures": [
+        {
+          "hash": "db34b2a4",
+          "binding": "d5a08d5f",
+          "file": "d5a08d5f_RO_GENFILL_CRK.png",
+          "pngSHA256": "ec8b06df6efbbac0e62e90f2d177808f79cf02bfbc9d5bbd33a39d9f2b481898",
+          "alias": true
+        },
+        {
+          "hash": "914a8455",
+          "binding": "d5a08d5f",
+          "file": "d5a08d5f_RO_GENFILL_CRK.png",
+          "pngSHA256": "ec8b06df6efbbac0e62e90f2d177808f79cf02bfbc9d5bbd33a39d9f2b481898",
+          "alias": true
+        }
+      ],
+      "source": {
+        "id": "road",
+        "kind": "road",
+        "name": "TRN_CP_IT_ROAD_A_17_CHOP_O13_R0",
+        "p": 139780,
+        "n": 10468,
+        "hash": "9bc85889",
+        "bounds": [
+          3194.66015625,
+          645.0343017578125,
+          17.18938446044922,
+          3210.533447265625,
+          695.4285888671875,
+          21.810253143310547
+        ],
+        "file": "section-104f7484.bun",
+        "decodedFileSHA256": "88b3a8aff562d233157dda42d4eedbc03a207d8ac6816d64f8113ace75e31b5e",
+        "solidChunkSHA256": "4dab1bbc89299dfea5b5615dffe8467b243b412b715341ea34a340284b65d352"
+      },
+      "basis": {
+        "horizontalAngle": -1.5707963267948966,
+        "origin": [
+          3202.5337084790217,
+          677.3655826595277,
+          17.199384689331055
+        ],
+        "originalUV": true
+      }
+    },
+    {
+      "id": "tunnel",
+      "kind": "tunnel",
+      "file": "tunnel.glb",
+      "sha256": "7f7fe95eaad1574731635159904e3eb448075190a78852066a85ac9ec62e254f",
+      "bytes": 314872,
+      "triangles": 72,
+      "materials": 2,
+      "textures": [
+        {
+          "hash": "bfc797c0",
+          "binding": "bfc797c0",
+          "file": "bfc797c0_ARC_CITYEASTBLD1CONC.png",
+          "pngSHA256": "4165d06d79f295e794a4b9584245f72001dd4e58633da7672ec34ea392534900",
+          "alias": false
+        },
+        {
+          "hash": "268013a0",
+          "binding": "dca86b52",
+          "file": "dca86b52_ARC_TUNNEL_WALL_A_MM.png",
+          "pngSHA256": "ed9a4698a4324f55cfc5a7239cd2005c070f3563c1f11fd7d73ae9661fd689d0",
+          "alias": true
+        }
+      ],
+      "source": {
+        "id": "tunnel",
+        "kind": "tunnel",
+        "name": "TRN_TC_CITYCENTERTUNNEL_CHOP_T23_R0",
+        "p": 4384,
+        "n": 10184,
+        "hash": "ab1979fa",
+        "bounds": [
+          1102.4954833984375,
+          500.4557189941406,
+          99.29751586914062,
+          1181.26953125,
+          533.5662231445312,
+          109.32337188720703
+        ],
+        "file": "section-14511500.bun",
+        "decodedFileSHA256": "9da4f950dc983f6cf90d6836a1c34a10a4ab6c38da121f14034da69137de4d53",
+        "solidChunkSHA256": "d1814d04160b32571511ba7cbeaa4c1f67de61d775294455ef60e4b7c2686309"
+      },
+      "basis": {
+        "horizontalAngle": 0.33920938189132316,
+        "origin": [
+          1131.9494895031103,
+          518.6797472334589,
+          99.3075180053711
+        ],
+        "originalUV": true
+      }
+    },
+    {
+      "id": "building",
+      "kind": "building",
+      "file": "building.glb",
+      "sha256": "6650edbab0129733636bf18b80f0c12901239244d2db49c4e2de11028e8b2119",
+      "bytes": 59532,
+      "triangles": 58,
+      "materials": 1,
+      "textures": [
+        {
+          "hash": "9d9f58de",
+          "binding": "9d9f58de",
+          "file": "9d9f58de_ARC_UC_THSTAIRS_LV.png",
+          "pngSHA256": "32d8122de1216203cc6d30455592537fbf2bd041b94f1371f77cd60efe6535f3",
+          "alias": false
+        }
+      ],
+      "source": {
+        "id": "building",
+        "kind": "building",
+        "name": "STR_TC_53_CHOP_T23_R0",
+        "p": 227228,
+        "n": 7736,
+        "hash": "32acbdb7",
+        "bounds": [
+          1176.486328125,
+          557.3109741210938,
+          97.94480895996094,
+          1207.078125,
+          565.2178344726562,
+          102.02863311767578
+        ],
+        "file": "section-14511500.bun",
+        "decodedFileSHA256": "9da4f950dc983f6cf90d6836a1c34a10a4ab6c38da121f14034da69137de4d53",
+        "solidChunkSHA256": "a9ffe49b8c0700b7b1d501ce7f84f16a972c93fde516c755189903b833f2f378"
+      },
+      "basis": {
+        "horizontalAngle": 0,
+        "origin": [
+          1192.1725794780693,
+          560.9676561470488,
+          97.9548110961914
+        ],
+        "originalUV": true
+      }
+    },
+    {
+      "id": "tree",
+      "kind": "tree",
+      "file": "tree.glb",
+      "sha256": "3ff2d1d95456e1f8ac6fe583f8e0d2394557732d135e703bd969c2a6da5d64ef",
+      "bytes": 91056,
+      "triangles": 50,
+      "materials": 2,
+      "textures": [
+        {
+          "hash": "6714390a",
+          "binding": "6714390a",
+          "file": "6714390a_ORG_CT_POPLARBARK.png",
+          "pngSHA256": "29310e2c88052c4381ee2a1e606e84f37899ab74e8c8f38bf78d6f620e7701fd",
+          "alias": false
+        },
+        {
+          "hash": "49e9b8de",
+          "binding": "49e9b8de",
+          "file": "49e9b8de_ORG_CT_POPLARFLORA.png",
+          "pngSHA256": "d426b5f0188d00c636ebff3fe2d721e81ab8f1787fef73adf988c3644eadd510",
+          "alias": false
+        }
+      ],
+      "source": {
+        "id": "tree",
+        "kind": "tree",
+        "name": "XT_CT_POPLARS_1C_JG_00",
+        "p": 25668,
+        "n": 6016,
+        "hash": "1d33e823",
+        "bounds": [
+          -7.357656478881836,
+          -4.148458480834961,
+          -0.009999999776482582,
+          6.148794174194336,
+          7.120244979858398,
+          20.413225173950195
+        ],
+        "triangles": 50,
+        "strides": [
+          20,
+          24
+        ],
+        "textures": [
+          "6714390a",
+          "49e9b8de"
+        ],
+        "file": "STREAML2RA_PERM.BUN",
+        "decodedFileSHA256": "fc6e2eda6d84a8f5585cb19a739a801898640cdb6a2c792971fd8be6aa1ad263",
+        "solidChunkSHA256": "95e628e8facd70e8fe970498db163f926137e2f44da5dd0eed97c9c0dc374a39"
+      },
+      "basis": {
+        "horizontalAngle": 0,
+        "origin": [
+          -0.17916357421874998,
+          -0.10404425048828125,
+          0
+        ],
+        "originalUV": true
+      }
+    },
+    {
+      "id": "barrier",
+      "kind": "barrier",
+      "file": "barrier.glb",
+      "sha256": "a3ca90930220d96016c0d96ba33f16f1c7ce15d32e811fcb9ed4f19d77b5884a",
+      "bytes": 150540,
+      "triangles": 36,
+      "materials": 2,
+      "textures": [
+        {
+          "hash": "db8effc3",
+          "binding": "db8effc3",
+          "file": "db8effc3_ARC_CORRUGATEDTINA_RB.png",
+          "pngSHA256": "1a5ca4a449be2292e09b632bd7e26bfe1bd9bbd35321e6bf211f37fc0396aeff",
+          "alias": false
+        },
+        {
+          "hash": "5f5acd6f",
+          "binding": "5f5acd6f",
+          "file": "5f5acd6f_ARC_CONCRETEOILWALLA_RB.png",
+          "pngSHA256": "2c9525ad8470d9a025f70e66804935a12ac2997c531e93e7b617dfa3b3cbf5c3",
+          "alias": false
+        }
+      ],
+      "source": {
+        "id": "barrier",
+        "kind": "barrier",
+        "name": "XW_CONCBARRIERCORRUGATEDA_1B_RB_00",
+        "p": 800044,
+        "n": 5316,
+        "hash": "dc5f716c",
+        "bounds": [
+          -8.008783340454102,
+          -1.1494653224945068,
+          -0.009999999776482582,
+          0.027448425069451332,
+          0.009999999776482582,
+          1.3466476202011108
+        ],
+        "triangles": 36,
+        "strides": [
+          20,
+          20
+        ],
+        "textures": [
+          "db8effc3",
+          "5f5acd6f"
+        ],
+        "file": "STREAML2RA_PERM.BUN",
+        "decodedFileSHA256": "fc6e2eda6d84a8f5585cb19a739a801898640cdb6a2c792971fd8be6aa1ad263",
+        "solidChunkSHA256": "8410c00808309e24cafa9426d28779e4988411fdd819329361a2bb61791341a1"
+      },
+      "basis": {
+        "horizontalAngle": 0,
+        "origin": [
+          -4.168243959214954,
+          -0.514461941189236,
+          0
+        ],
+        "originalUV": true
+      }
+    },
+    {
+      "id": "sign",
+      "kind": "sign",
+      "file": "sign.glb",
+      "sha256": "c9c2089024fbcbaaac8e1a9d98b6a5a122fb1dacb61bf0806e71671dbbeadfc8",
+      "bytes": 25756,
+      "triangles": 24,
+      "materials": 2,
+      "textures": [
+        {
+          "hash": "17f2b2e7",
+          "binding": "17f2b2e7",
+          "file": "17f2b2e7_SGN_BACK_001.png",
+          "pngSHA256": "565d26d7001c6e93664098dac969d7129554889f36a2179349d769d74805529f",
+          "alias": false
+        },
+        {
+          "hash": "bc7cd196",
+          "binding": "bc7cd196",
+          "file": "bc7cd196_OBJ_ORANGEWHITE.png",
+          "pngSHA256": "1b847380c7a02e1148cf33d455db9bd255d6bc5368e54609a44d59dda844c66c",
+          "alias": false
+        }
+      ],
+      "source": {
+        "id": "sign",
+        "kind": "sign",
+        "name": "XO_ROADSIGNA_1B_00",
+        "p": 2977060,
+        "n": 4048,
+        "hash": "d894a12e",
+        "bounds": [
+          -1.3714501857757568,
+          -0.5794274806976318,
+          -0.01180984452366829,
+          1.3404443264007568,
+          0.5813500881195068,
+          1.568872332572937
+        ],
+        "triangles": 24,
+        "strides": [
+          32,
+          32
+        ],
+        "textures": [
+          "17f2b2e7",
+          "bc7cd196"
+        ],
+        "file": "STREAML2RA_PERM.BUN",
+        "decodedFileSHA256": "fc6e2eda6d84a8f5585cb19a739a801898640cdb6a2c792971fd8be6aa1ad263",
+        "solidChunkSHA256": "1afc25a8b6a5543ad2e6289879a2a68ff1c00155160bd317bc8bf8648b6db5f2"
+      },
+      "basis": {
+        "horizontalAngle": 0,
+        "origin": [
+          0.013880112591911822,
+          0.00026448567708331635,
+          -0.0018098449800163507
+        ],
+        "originalUV": true
+      }
+    },
+    {
+      "id": "tunnel-beam",
+      "kind": "beam",
+      "file": "tunnel-beam.glb",
+      "sha256": "f78678de4afae30976a98ac3277578399c5dee790df9c53547ea9a8942b77aa3",
+      "bytes": 208036,
+      "triangles": 44,
+      "materials": 2,
+      "textures": [
+        {
+          "hash": "dca86b52",
+          "binding": "dca86b52",
+          "file": "dca86b52_ARC_TUNNEL_WALL_A_MM.png",
+          "pngSHA256": "ed9a4698a4324f55cfc5a7239cd2005c070f3563c1f11fd7d73ae9661fd689d0",
+          "alias": false
+        },
+        {
+          "hash": "52281a3c",
+          "binding": "52281a3c",
+          "file": "52281a3c_OBJ_TUNNEL_BEAM_A_MM.png",
+          "pngSHA256": "97972214e5745756af3ef919f44d9cdf632a993321408424fa43636ffd63b684",
+          "alias": false
+        }
+      ],
+      "source": {
+        "id": "tunnel-beam",
+        "kind": "beam",
+        "name": "XO_TUNNELBEAMA_1C_MM_00",
+        "p": 3216572,
+        "n": 4132,
+        "hash": "f48eabbc",
+        "bounds": [
+          0.47440552711486816,
+          -11.929494857788086,
+          -2.067840099334717,
+          18.55122947692871,
+          11.929494857788086,
+          0.837611734867096
+        ],
+        "triangles": 44,
+        "strides": [
+          20,
+          32
+        ],
+        "textures": [
+          "dca86b52",
+          "52281a3c"
+        ],
+        "file": "STREAML2RA_PERM.BUN",
+        "decodedFileSHA256": "fc6e2eda6d84a8f5585cb19a739a801898640cdb6a2c792971fd8be6aa1ad263",
+        "solidChunkSHA256": "9790dcf6a00a0b841ab10793c8448d4c94ad27e09db184e6579f98fc51224605"
+      },
+      "basis": {
+        "horizontalAngle": 0,
+        "origin": [
+          9.512777475210333,
+          0.000125982822515934,
+          -2.05784010887146
+        ],
+        "originalUV": true
+      }
+    },
+    {
+      "id": "gantry",
+      "kind": "gantry",
+      "file": "gantry.glb",
+      "sha256": "51bd059a54e46b5dbb5b16d555d418e3b3cc7894b049ac46e35a80c4c0f79ec8",
+      "bytes": 61372,
+      "triangles": 72,
+      "materials": 1,
+      "textures": [
+        {
+          "hash": "fc8c503b",
+          "binding": "fc8c503b",
+          "file": "fc8c503b_OBJ_SPOTTEDMETAL_A_BK.png",
+          "pngSHA256": "d849674d69c9ebb583dfedabb5a43907bfc198986caf85bfaf7cb3435250f1d3",
+          "alias": false
+        }
+      ],
+      "source": {
+        "id": "gantry",
+        "kind": "gantry",
+        "name": "XO_FWY_SIGNSUPPORTTRUSS_1C_00",
+        "p": 3601120,
+        "n": 5736,
+        "hash": "a93e213b",
+        "bounds": [
+          -10.399160385131836,
+          -1.8172509670257568,
+          -0.035108812153339386,
+          10.399160385131836,
+          1.9307763576507568,
+          10.425901412963867
+        ],
+        "triangles": 72,
+        "strides": [
+          32
+        ],
+        "textures": [
+          "fc8c503b"
+        ],
+        "file": "STREAML2RA_PERM.BUN",
+        "decodedFileSHA256": "fc6e2eda6d84a8f5585cb19a739a801898640cdb6a2c792971fd8be6aa1ad263",
+        "solidChunkSHA256": "2e3b60dd8adaed4bb385ae1845ae22b69c1aa176d7a0ec57ae026eedde1eec38"
+      },
+      "basis": {
+        "horizontalAngle": 0,
+        "origin": [
+          0.2967494419642869,
+          0.06081194196428565,
+          -0.025108814239501953
+        ],
+        "originalUV": true
+      }
+    },
+    {
+      "id": "lamp",
+      "kind": "lamp",
+      "file": "lamp.glb",
+      "sha256": "61996e173e43e68863727661e766c59e3bcfe626292484ca6a99a422577a251f",
+      "bytes": 32944,
+      "triangles": 42,
+      "materials": 2,
+      "textures": [
+        {
+          "hash": "1ff171df",
+          "binding": "1ff171df",
+          "file": "1ff171df_OBJ_TELEPOLE_LITE_BRIGH.png",
+          "pngSHA256": "7d99f399d3b7d52b44a1aef1ac837bced53dbb0e203798fc0539c8a5c86bf242",
+          "alias": false
+        },
+        {
+          "hash": "b81f130b",
+          "binding": "b81f130b",
+          "file": "b81f130b_ARC_A_CROSSBEAM_GR.png",
+          "pngSHA256": "27cb753b2462c48f26a99ab5fa04e4effb5c1059d7c7fd9e8f3e7f1261376bb1",
+          "alias": false
+        }
+      ],
+      "source": {
+        "id": "lamp",
+        "kind": "lamp",
+        "name": "XO_STREETLIGHTCB_1C_00",
+        "p": 4523920,
+        "n": 3524,
+        "hash": "132918ab",
+        "bounds": [
+          -0.34963011741638184,
+          -6.482046127319336,
+          -0.02529105730354786,
+          0.34676146507263184,
+          0.13963867723941803,
+          10.659929275512695
+        ],
+        "triangles": 42,
+        "strides": [
+          32,
+          32
+        ],
+        "textures": [
+          "1ff171df",
+          "b81f130b"
+        ],
+        "file": "STREAML2RA_PERM.BUN",
+        "decodedFileSHA256": "fc6e2eda6d84a8f5585cb19a739a801898640cdb6a2c792971fd8be6aa1ad263",
+        "solidChunkSHA256": "2d8d2313de291e8cad1d4be9d8d86f20fece28b4a7a8dfbeab4fa791e8a97f4f"
+      },
+      "basis": {
+        "horizontalAngle": 0,
+        "origin": [
+          0.0001817591050091924,
+          -2.5885027717141553,
+          -0.015291057527065277
+        ],
+        "originalUV": true
+      }
+    },
+    {
+      "id": "pipe",
+      "kind": "pipe",
+      "file": "pipe.glb",
+      "sha256": "26370c5545fb8a62c75103bb8bbe5e8e38707e0e4d35301cae77d60253ec9b00",
+      "bytes": 16728,
+      "triangles": 26,
+      "materials": 1,
+      "textures": [
+        {
+          "hash": "f7cb79c8",
+          "binding": "f7cb79c8",
+          "file": "f7cb79c8_OBJ_TUNNEL_PIPES_A_MM.png",
+          "pngSHA256": "739d1556383bdff4894b52539f3652f7f594cdb79eaac359d2cc6251952c484e",
+          "alias": false
+        }
+      ],
+      "source": {
+        "id": "pipe",
+        "kind": "pipe",
+        "name": "XO_TUNNELPIPELARGE_1B_00",
+        "p": 2884704,
+        "n": 3956,
+        "hash": "cd9d3d25",
+        "bounds": [
+          -0.03131652623414993,
+          -0.36601805686950684,
+          -0.03250690549612045,
+          8.041082382202148,
+          0.36601805686950684,
+          1.155764102935791
+        ],
+        "triangles": 26,
+        "strides": [
+          20
+        ],
+        "textures": [
+          "f7cb79c8"
+        ],
+        "file": "STREAML2RA_PERM.BUN",
+        "decodedFileSHA256": "fc6e2eda6d84a8f5585cb19a739a801898640cdb6a2c792971fd8be6aa1ad263",
+        "solidChunkSHA256": "ccdc3a182e5a9a3d88635b5062c72cc081bff0fea615212c28e71e9d76dd3592"
+      },
+      "basis": {
+        "horizontalAngle": 0,
+        "origin": [
+          2.0368550618489585,
+          0.012153625488281253,
+          -0.02250690385699272
+        ],
+        "originalUV": true
+      }
+    }
+  ],
+  "shaderNote": "Original vertex positions/UVs/normals and source indices; game blend/lightmap shaders replaced by PBR. One tunnel wall slot explicitly binds original MW tunnel wall pixels.",
+  "runtimeFit": "Modular placement and road/tunnel fit to NOMERA route; this is not a complete Rockport world or native collision database.",
+  "sourceRoot": "E:/Torrent/Need-For-Speed-Most-Wanted/switch/nfsmw-nx/game_root/NFS",
+  "readOnlySource": true,
+  "permanentSource": {
+    "archive": "ZZDATA0.BIN",
+    "offset": 22501376,
+    "size": 132581008,
+    "sha256": "fc6e2eda6d84a8f5585cb19a739a801898640cdb6a2c792971fd8be6aa1ad263"
+  },
+  "streamSources": [
+    {
+      "file": "section-104f7484.bun",
+      "archive": "ZZDATA6.BIN",
+      "decodedSHA256": "88b3a8aff562d233157dda42d4eedbc03a207d8ac6816d64f8113ace75e31b5e",
+      "blocks": [
+        {
+          "p": 273642628,
+          "size": 32768,
+          "span": 16228,
+          "tag": "JDLZ",
+          "uncomp": 32768,
+          "compressed": 16201,
+          "sha256": "5b6f943e6492dfc0f76d66af7e817261a40ff28b10bddac5c987d208bdd8489d"
+        },
+        {
+          "p": 273658856,
+          "size": 32768,
+          "span": 15068,
+          "tag": "JDLZ",
+          "uncomp": 32768,
+          "compressed": 15044,
+          "sha256": "df25421a260229b0b133b86aa7efbbd77d318b7fbc39e86cf666d8c85a23cf31"
+        },
+        {
+          "p": 273673924,
+          "size": 32768,
+          "span": 14124,
+          "tag": "JDLZ",
+          "uncomp": 32768,
+          "compressed": 14099,
+          "sha256": "cb32893535533ceb4f44cc0cd2737c6b8f14ee57446606dc017036a9130901d7"
+        },
+        {
+          "p": 273688048,
+          "size": 32768,
+          "span": 15576,
+          "tag": "JDLZ",
+          "uncomp": 32768,
+          "compressed": 15551,
+          "sha256": "1240dcd68af33bce1519cace69081dfcb5928bdd2b2e8067d786ee393e5c01f4"
+        },
+        {
+          "p": 273703624,
+          "size": 32768,
+          "span": 13600,
+          "tag": "JDLZ",
+          "uncomp": 32768,
+          "compressed": 13576,
+          "sha256": "99405abad7a3a92af21aaf24315d10b302389884c6da16cbbce48290096d78c3"
+        },
+        {
+          "p": 273717224,
+          "size": 32768,
+          "span": 17436,
+          "tag": "JDLZ",
+          "uncomp": 32768,
+          "compressed": 17410,
+          "sha256": "a6777691d8ae4f644700663e912b77a2915fc3a18acf11c0301962dd838b4e04"
+        },
+        {
+          "p": 273734660,
+          "size": 32768,
+          "span": 11048,
+          "tag": "JDLZ",
+          "uncomp": 32768,
+          "compressed": 11021,
+          "sha256": "f9670bd32c6cd7eb3457f6f99637260d011ad3d7476ecf11fbe7b379f0b29512"
+        },
+        {
+          "p": 273745708,
+          "size": 32768,
+          "span": 12848,
+          "tag": "JDLZ",
+          "uncomp": 32768,
+          "compressed": 12822,
+          "sha256": "c1ec45c3dee76fd1ead11bed667fd9a70472a57251985a76a716ea21a0b8147f"
+        },
+        {
+          "p": 273758556,
+          "size": 30928,
+          "span": 19852,
+          "tag": "JDLZ",
+          "uncomp": 30928,
+          "compressed": 19827,
+          "sha256": "aabfe940396591a6103d888cfffe6b8204a1f098c042150aeb270166cf6a2a1c"
+        },
+        {
+          "p": 273778408,
+          "size": 32768,
+          "span": 8564,
+          "tag": "JDLZ",
+          "uncomp": 32768,
+          "compressed": 8538,
+          "sha256": "376d36da96279278fdc8917d926093210cca51d3236b695a118ab49b12173a75"
+        }
+      ]
+    },
+    {
+      "file": "section-14511500.bun",
+      "archive": "ZZDATA6.BIN",
+      "decodedSHA256": "9da4f950dc983f6cf90d6836a1c34a10a4ab6c38da121f14034da69137de4d53",
+      "blocks": [
+        {
+          "p": 340858112,
+          "size": 32768,
+          "span": 11068,
+          "tag": "JDLZ",
+          "uncomp": 32768,
+          "compressed": 11043,
+          "sha256": "ffed62cef06bff6791fd114c499296e33d7eca36f695a12826f9721c1aba3a15"
+        },
+        {
+          "p": 340869180,
+          "size": 32768,
+          "span": 13664,
+          "tag": "JDLZ",
+          "uncomp": 32768,
+          "compressed": 13637,
+          "sha256": "58df002478e2cf9321491e173e1ca225126c357e91405aca281209b2402ece68"
+        },
+        {
+          "p": 340882844,
+          "size": 32768,
+          "span": 7128,
+          "tag": "JDLZ",
+          "uncomp": 32768,
+          "compressed": 7103,
+          "sha256": "bc0ec6e14a40bdca57960ed572db5fa0e5c83ee08ec385c251e9fd290bd96e5b"
+        },
+        {
+          "p": 340889972,
+          "size": 32768,
+          "span": 8288,
+          "tag": "JDLZ",
+          "uncomp": 32768,
+          "compressed": 8261,
+          "sha256": "4c51c2ac3f459123a2154d47a16a026e6bb133274901322029f16d3f80135845"
+        },
+        {
+          "p": 340898260,
+          "size": 32768,
+          "span": 12264,
+          "tag": "JDLZ",
+          "uncomp": 32768,
+          "compressed": 12237,
+          "sha256": "948d3af264b5e97f947f86d145daaac74cfd62449438408a0d94d16059c778fc"
+        },
+        {
+          "p": 340910524,
+          "size": 32768,
+          "span": 12712,
+          "tag": "JDLZ",
+          "uncomp": 32768,
+          "compressed": 12687,
+          "sha256": "19b403145b94b8de86c5fc32d52f3d88a804601e1353f775c0218a281ed8f97e"
+        },
+        {
+          "p": 340923236,
+          "size": 32768,
+          "span": 12764,
+          "tag": "JDLZ",
+          "uncomp": 32768,
+          "compressed": 12739,
+          "sha256": "2f7fc4f6662f38b6caf29c69d462c758e0367b3f453cf9b8e136885394aa4973"
+        },
+        {
+          "p": 340936000,
+          "size": 32768,
+          "span": 15816,
+          "tag": "JDLZ",
+          "uncomp": 32768,
+          "compressed": 15792,
+          "sha256": "4055b57548aa29b745c7ebc72e95e08526a8f91638d231e4c48bb86e91716b6c"
+        },
+        {
+          "p": 340951816,
+          "size": 32768,
+          "span": 17876,
+          "tag": "JDLZ",
+          "uncomp": 32768,
+          "compressed": 17850,
+          "sha256": "5a7b54256deb12664b8896d4f1381e8bbd067c5fb256f1d53f2221146eb4ee66"
+        },
+        {
+          "p": 340969692,
+          "size": 32768,
+          "span": 17408,
+          "tag": "JDLZ",
+          "uncomp": 32768,
+          "compressed": 17384,
+          "sha256": "01d8004f87aa80090e92cd9508e0354b6b4c113deb39436dd3b8667dda68ef61"
+        },
+        {
+          "p": 340987100,
+          "size": 32768,
+          "span": 15968,
+          "tag": "JDLZ",
+          "uncomp": 32768,
+          "compressed": 15943,
+          "sha256": "fc2003851208b5482fabbc9d09a15a747719dddf7aaf1bd67d1ad146603c7088"
+        },
+        {
+          "p": 341003068,
+          "size": 28800,
+          "span": 13420,
+          "tag": "JDLZ",
+          "uncomp": 28800,
+          "compressed": 13395,
+          "sha256": "5b20434795344c9dc70297fd0a93077d8e7e68a71f0cb9483289784f8836df2e"
+        },
+        {
+          "p": 341016488,
+          "size": 32768,
+          "span": 6264,
+          "tag": "JDLZ",
+          "uncomp": 32768,
+          "compressed": 6237,
+          "sha256": "90d614374fe47c9aa27c4f6857db13073e9f28f759ab0b74285e1ee7ce4f8d54"
+        }
+      ]
+    }
+  ],
+  "pixelSources": [
+    {
+      "name": "RO_GENFILL_CRK",
+      "hash": "d5a08d5f",
+      "width": 512,
+      "height": 512,
+      "compression": "0x26",
+      "source": "TRACKS/STREAML2RA_PERM.BUN",
+      "packOffset": 44167168,
+      "pixelOffset": 58933248,
+      "pixelBytes": 393216,
+      "rawSHA256": "3ad301b6eb01c88f8e52d09ae88a4b980ee3b26a2eb8edecd9a53a58c0ce6bb8",
+      "d3dFormat": "0x1a200154",
+      "pngSHA256": "ec8b06df6efbbac0e62e90f2d177808f79cf02bfbc9d5bbd33a39d9f2b481898",
+      "archive": "ZZDATA0.BIN",
+      "archiveEntryOffset": 22501376,
+      "archiveEntrySize": 132581008,
+      "archiveEntrySHA256": "fc6e2eda6d84a8f5585cb19a739a801898640cdb6a2c792971fd8be6aa1ad263",
+      "absolutePixelOffset": 81434624,
+      "file": "d5a08d5f_RO_GENFILL_CRK.png"
+    },
+    {
+      "name": "ARC_CITYEASTBLD1CONC",
+      "hash": "bfc797c0",
+      "width": 256,
+      "height": 256,
+      "compression": "0x26",
+      "source": "TRACKS/STREAML2RA_PERM.BUN",
+      "packOffset": 5709824,
+      "pixelOffset": 12615680,
+      "pixelBytes": 131072,
+      "rawSHA256": "d0223c68b61c6653bb536e4ef2257ba84659e8039abce706d87f3a4d7e32c3d2",
+      "d3dFormat": "0x1a200154",
+      "pngSHA256": "4165d06d79f295e794a4b9584245f72001dd4e58633da7672ec34ea392534900",
+      "archive": "ZZDATA0.BIN",
+      "archiveEntryOffset": 22501376,
+      "archiveEntrySize": 132581008,
+      "archiveEntrySHA256": "fc6e2eda6d84a8f5585cb19a739a801898640cdb6a2c792971fd8be6aa1ad263",
+      "absolutePixelOffset": 35117056,
+      "file": "bfc797c0_ARC_CITYEASTBLD1CONC.png"
+    },
+    {
+      "name": "ARC_TUNNEL_WALL_A_MM",
+      "hash": "dca86b52",
+      "width": 256,
+      "height": 512,
+      "compression": "0x22",
+      "source": "TRACKS/STREAML2RA_PERM.BUN",
+      "packOffset": 59678720,
+      "pixelOffset": 69713920,
+      "pixelBytes": 106496,
+      "rawSHA256": "9cae9d180396bfec627c0d905ab20524ca0d79798296cb8b761273f191b1d50c",
+      "d3dFormat": "0x1a200152",
+      "pngSHA256": "ed9a4698a4324f55cfc5a7239cd2005c070f3563c1f11fd7d73ae9661fd689d0",
+      "archive": "ZZDATA0.BIN",
+      "archiveEntryOffset": 22501376,
+      "archiveEntrySize": 132581008,
+      "archiveEntrySHA256": "fc6e2eda6d84a8f5585cb19a739a801898640cdb6a2c792971fd8be6aa1ad263",
+      "absolutePixelOffset": 92215296,
+      "file": "dca86b52_ARC_TUNNEL_WALL_A_MM.png"
+    },
+    {
+      "name": "ARC_UC_THSTAIRS_LV",
+      "hash": "9d9f58de",
+      "width": 256,
+      "height": 128,
+      "compression": "0x22",
+      "source": "TRACKS/STREAML2RA_PERM.BUN",
+      "packOffset": 33525760,
+      "pixelOffset": 39907328,
+      "pixelBytes": 40960,
+      "rawSHA256": "dc2365d5e633a4b8ed566ed7d05e00c3232233cdef297b89b021d3cb0391b4ca",
+      "d3dFormat": "0x1a200152",
+      "pngSHA256": "32d8122de1216203cc6d30455592537fbf2bd041b94f1371f77cd60efe6535f3",
+      "archive": "ZZDATA0.BIN",
+      "archiveEntryOffset": 22501376,
+      "archiveEntrySize": 132581008,
+      "archiveEntrySHA256": "fc6e2eda6d84a8f5585cb19a739a801898640cdb6a2c792971fd8be6aa1ad263",
+      "absolutePixelOffset": 62408704,
+      "file": "9d9f58de_ARC_UC_THSTAIRS_LV.png"
+    },
+    {
+      "name": "ORG_CT_POPLARBARK",
+      "hash": "6714390a",
+      "width": 64,
+      "height": 128,
+      "compression": "0x22",
+      "source": "TRACKS/STREAML2RA_PERM.BUN",
+      "packOffset": 84766720,
+      "pixelOffset": 88018944,
+      "pixelBytes": 24576,
+      "rawSHA256": "b4da6fee6dd3012137d1a77c6fb677d5386aa7060f891b0218542d1c635cb46f",
+      "d3dFormat": "0x1a200152",
+      "pngSHA256": "29310e2c88052c4381ee2a1e606e84f37899ab74e8c8f38bf78d6f620e7701fd",
+      "archive": "ZZDATA0.BIN",
+      "archiveEntryOffset": 22501376,
+      "archiveEntrySize": 132581008,
+      "archiveEntrySHA256": "fc6e2eda6d84a8f5585cb19a739a801898640cdb6a2c792971fd8be6aa1ad263",
+      "absolutePixelOffset": 110520320,
+      "file": "6714390a_ORG_CT_POPLARBARK.png"
+    },
+    {
+      "name": "ORG_CT_POPLARFLORA",
+      "hash": "49e9b8de",
+      "width": 256,
+      "height": 256,
+      "compression": "0x24",
+      "source": "TRACKS/STREAML2RA_PERM.BUN",
+      "packOffset": 59678720,
+      "pixelOffset": 62644224,
+      "pixelBytes": 131072,
+      "rawSHA256": "b750a107486b14284cbb2bb9e5ac7f2b17dc9f6824eab803f7ada6f9619280fa",
+      "d3dFormat": "0x1a200153",
+      "pngSHA256": "d426b5f0188d00c636ebff3fe2d721e81ab8f1787fef73adf988c3644eadd510",
+      "archive": "ZZDATA0.BIN",
+      "archiveEntryOffset": 22501376,
+      "archiveEntrySize": 132581008,
+      "archiveEntrySHA256": "fc6e2eda6d84a8f5585cb19a739a801898640cdb6a2c792971fd8be6aa1ad263",
+      "absolutePixelOffset": 85145600,
+      "file": "49e9b8de_ORG_CT_POPLARFLORA.png"
+    },
+    {
+      "name": "ARC_CORRUGATEDTINA_RB",
+      "hash": "db8effc3",
+      "width": 256,
+      "height": 128,
+      "compression": "0x22",
+      "source": "TRACKS/STREAML2RA_PERM.BUN",
+      "packOffset": 17543168,
+      "pixelOffset": 30707712,
+      "pixelBytes": 40960,
+      "rawSHA256": "0daa8d8e38d6d126bd36eaf069073cf7591545ce3d40b9bb8774cfc4be6c2ec4",
+      "d3dFormat": "0x1a200152",
+      "pngSHA256": "1a5ca4a449be2292e09b632bd7e26bfe1bd9bbd35321e6bf211f37fc0396aeff",
+      "archive": "ZZDATA0.BIN",
+      "archiveEntryOffset": 22501376,
+      "archiveEntrySize": 132581008,
+      "archiveEntrySHA256": "fc6e2eda6d84a8f5585cb19a739a801898640cdb6a2c792971fd8be6aa1ad263",
+      "absolutePixelOffset": 53209088,
+      "file": "db8effc3_ARC_CORRUGATEDTINA_RB.png"
+    },
+    {
+      "name": "ARC_CONCRETEOILWALLA_RB",
+      "hash": "5f5acd6f",
+      "width": 256,
+      "height": 256,
+      "compression": "0x22",
+      "source": "TRACKS/STREAML2RA_PERM.BUN",
+      "packOffset": 119500800,
+      "pixelOffset": 124055552,
+      "pixelBytes": 65536,
+      "rawSHA256": "d2261ba6905a6064874f68306b8149c8d65187c0150560ad26620793b76bf4c6",
+      "d3dFormat": "0x1a200152",
+      "pngSHA256": "2c9525ad8470d9a025f70e66804935a12ac2997c531e93e7b617dfa3b3cbf5c3",
+      "archive": "ZZDATA0.BIN",
+      "archiveEntryOffset": 22501376,
+      "archiveEntrySize": 132581008,
+      "archiveEntrySHA256": "fc6e2eda6d84a8f5585cb19a739a801898640cdb6a2c792971fd8be6aa1ad263",
+      "absolutePixelOffset": 146556928,
+      "file": "5f5acd6f_ARC_CONCRETEOILWALLA_RB.png"
+    },
+    {
+      "name": "SGN_BACK_001",
+      "hash": "17f2b2e7",
+      "width": 128,
+      "height": 64,
+      "compression": "0x22",
+      "source": "TRACKS/STREAML2RA_PERM.BUN",
+      "packOffset": 70549504,
+      "pixelOffset": 71151616,
+      "pixelBytes": 24576,
+      "rawSHA256": "1785cb9aded9a37d9ad343264a51ed47d311819b1b79f2a9b1349ff034f8c6f5",
+      "d3dFormat": "0x1a200152",
+      "pngSHA256": "565d26d7001c6e93664098dac969d7129554889f36a2179349d769d74805529f",
+      "archive": "ZZDATA0.BIN",
+      "archiveEntryOffset": 22501376,
+      "archiveEntrySize": 132581008,
+      "archiveEntrySHA256": "fc6e2eda6d84a8f5585cb19a739a801898640cdb6a2c792971fd8be6aa1ad263",
+      "absolutePixelOffset": 93652992,
+      "file": "17f2b2e7_SGN_BACK_001.png"
+    },
+    {
+      "name": "OBJ_ORANGEWHITE",
+      "hash": "bc7cd196",
+      "width": 64,
+      "height": 128,
+      "compression": "0x22",
+      "source": "TRACKS/STREAML2RA_PERM.BUN",
+      "packOffset": 84766720,
+      "pixelOffset": 90910720,
+      "pixelBytes": 24576,
+      "rawSHA256": "b18e77e83b3287634652fd57a6feddc487e92a420114c7db215e393aa3d857b1",
+      "d3dFormat": "0x1a200152",
+      "pngSHA256": "1b847380c7a02e1148cf33d455db9bd255d6bc5368e54609a44d59dda844c66c",
+      "archive": "ZZDATA0.BIN",
+      "archiveEntryOffset": 22501376,
+      "archiveEntrySize": 132581008,
+      "archiveEntrySHA256": "fc6e2eda6d84a8f5585cb19a739a801898640cdb6a2c792971fd8be6aa1ad263",
+      "absolutePixelOffset": 113412096,
+      "file": "bc7cd196_OBJ_ORANGEWHITE.png"
+    },
+    {
+      "name": "OBJ_TUNNEL_BEAM_A_MM",
+      "hash": "52281a3c",
+      "width": 256,
+      "height": 128,
+      "compression": "0x24",
+      "source": "TRACKS/STREAML2RA_PERM.BUN",
+      "packOffset": 5709824,
+      "pixelOffset": 8757248,
+      "pixelBytes": 81920,
+      "rawSHA256": "b5e17e2cf4ad324fd7ac62e3d41fdf38a8b93a9b1f74eb5acb0a9743bf269182",
+      "d3dFormat": "0x1a200153",
+      "pngSHA256": "97972214e5745756af3ef919f44d9cdf632a993321408424fa43636ffd63b684",
+      "archive": "ZZDATA0.BIN",
+      "archiveEntryOffset": 22501376,
+      "archiveEntrySize": 132581008,
+      "archiveEntrySHA256": "fc6e2eda6d84a8f5585cb19a739a801898640cdb6a2c792971fd8be6aa1ad263",
+      "absolutePixelOffset": 31258624,
+      "file": "52281a3c_OBJ_TUNNEL_BEAM_A_MM.png"
+    },
+    {
+      "name": "OBJ_SPOTTEDMETAL_A_BK",
+      "hash": "fc8c503b",
+      "width": 128,
+      "height": 256,
+      "compression": "0x22",
+      "source": "TRACKS/STREAML2RA_PERM.BUN",
+      "packOffset": 44167168,
+      "pixelOffset": 59572224,
+      "pixelBytes": 40960,
+      "rawSHA256": "5e2e3725b2620f8d46ab996a384779baf1132cc6dd0b13e35ca53021f8870616",
+      "d3dFormat": "0x1a200152",
+      "pngSHA256": "d849674d69c9ebb583dfedabb5a43907bfc198986caf85bfaf7cb3435250f1d3",
+      "archive": "ZZDATA0.BIN",
+      "archiveEntryOffset": 22501376,
+      "archiveEntrySize": 132581008,
+      "archiveEntrySHA256": "fc6e2eda6d84a8f5585cb19a739a801898640cdb6a2c792971fd8be6aa1ad263",
+      "absolutePixelOffset": 82073600,
+      "file": "fc8c503b_OBJ_SPOTTEDMETAL_A_BK.png"
+    },
+    {
+      "name": "OBJ_TELEPOLE_LITE_BRIGH",
+      "hash": "1ff171df",
+      "width": 64,
+      "height": 64,
+      "compression": "0x22",
+      "source": "TRACKS/STREAML2RA_PERM.BUN",
+      "packOffset": 95277056,
+      "pixelOffset": 96907264,
+      "pixelBytes": 24576,
+      "rawSHA256": "5939a77b0fbb013c0bec36cdd3d130f9763e70e247f7b25bbb0f82bd0ff74acb",
+      "d3dFormat": "0x1a200152",
+      "pngSHA256": "7d99f399d3b7d52b44a1aef1ac837bced53dbb0e203798fc0539c8a5c86bf242",
+      "archive": "ZZDATA0.BIN",
+      "archiveEntryOffset": 22501376,
+      "archiveEntrySize": 132581008,
+      "archiveEntrySHA256": "fc6e2eda6d84a8f5585cb19a739a801898640cdb6a2c792971fd8be6aa1ad263",
+      "absolutePixelOffset": 119408640,
+      "file": "1ff171df_OBJ_TELEPOLE_LITE_BRIGH.png"
+    },
+    {
+      "name": "ARC_A_CROSSBEAM_GR",
+      "hash": "b81f130b",
+      "width": 64,
+      "height": 256,
+      "compression": "0x22",
+      "source": "TRACKS/STREAML2RA_PERM.BUN",
+      "packOffset": 119500800,
+      "pixelOffset": 128544768,
+      "pixelBytes": 32768,
+      "rawSHA256": "a5bdc515d90a570d81e61b7585932bd4e8462e12c8fc6ed8fa8de0b3e6c18929",
+      "d3dFormat": "0x1a200152",
+      "pngSHA256": "27cb753b2462c48f26a99ab5fa04e4effb5c1059d7c7fd9e8f3e7f1261376bb1",
+      "archive": "ZZDATA0.BIN",
+      "archiveEntryOffset": 22501376,
+      "archiveEntrySize": 132581008,
+      "archiveEntrySHA256": "fc6e2eda6d84a8f5585cb19a739a801898640cdb6a2c792971fd8be6aa1ad263",
+      "absolutePixelOffset": 151046144,
+      "file": "b81f130b_ARC_A_CROSSBEAM_GR.png"
+    },
+    {
+      "name": "OBJ_TUNNEL_PIPES_A_MM",
+      "hash": "f7cb79c8",
+      "width": 128,
+      "height": 64,
+      "compression": "0x22",
+      "source": "TRACKS/STREAML2RA_PERM.BUN",
+      "packOffset": 106815488,
+      "pixelOffset": 119279616,
+      "pixelBytes": 24576,
+      "rawSHA256": "13f31506d4c4ab59febd2618c8891b0d7a3bc1dc22590e32acc35509c3f4241b",
+      "d3dFormat": "0x1a200152",
+      "pngSHA256": "739d1556383bdff4894b52539f3652f7f594cdb79eaac359d2cc6251952c484e",
+      "archive": "ZZDATA0.BIN",
+      "archiveEntryOffset": 22501376,
+      "archiveEntrySize": 132581008,
+      "archiveEntrySHA256": "fc6e2eda6d84a8f5585cb19a739a801898640cdb6a2c792971fd8be6aa1ad263",
+      "absolutePixelOffset": 141780992,
+      "file": "f7cb79c8_OBJ_TUNNEL_PIPES_A_MM.png"
+    }
+  ],
+  "sourceSelection": [
+    {
+      "id": "road",
+      "kind": "road",
+      "name": "TRN_CP_IT_ROAD_A_17_CHOP_O13_R0",
+      "p": 139780,
+      "n": 10468,
+      "hash": "9bc85889",
+      "bounds": [
+        3194.66015625,
+        645.0343017578125,
+        17.18938446044922,
+        3210.533447265625,
+        695.4285888671875,
+        21.810253143310547
+      ],
+      "file": "section-104f7484.bun"
+    },
+    {
+      "id": "tunnel",
+      "kind": "tunnel",
+      "name": "TRN_TC_CITYCENTERTUNNEL_CHOP_T23_R0",
+      "p": 4384,
+      "n": 10184,
+      "hash": "ab1979fa",
+      "bounds": [
+        1102.4954833984375,
+        500.4557189941406,
+        99.29751586914062,
+        1181.26953125,
+        533.5662231445312,
+        109.32337188720703
+      ],
+      "file": "section-14511500.bun"
+    },
+    {
+      "id": "building",
+      "kind": "building",
+      "name": "STR_TC_53_CHOP_T23_R0",
+      "p": 227228,
+      "n": 7736,
+      "hash": "32acbdb7",
+      "bounds": [
+        1176.486328125,
+        557.3109741210938,
+        97.94480895996094,
+        1207.078125,
+        565.2178344726562,
+        102.02863311767578
+      ],
+      "file": "section-14511500.bun"
+    },
+    {
+      "id": "tree",
+      "kind": "tree",
+      "name": "XT_CT_POPLARS_1C_JG_00",
+      "p": 25668,
+      "n": 6016,
+      "hash": "1d33e823",
+      "bounds": [
+        -7.357656478881836,
+        -4.148458480834961,
+        -0.009999999776482582,
+        6.148794174194336,
+        7.120244979858398,
+        20.413225173950195
+      ],
+      "triangles": 50,
+      "strides": [
+        20,
+        24
+      ],
+      "textures": [
+        "6714390a",
+        "49e9b8de"
+      ],
+      "file": "STREAML2RA_PERM.BUN"
+    },
+    {
+      "id": "barrier",
+      "kind": "barrier",
+      "name": "XW_CONCBARRIERCORRUGATEDA_1B_RB_00",
+      "p": 800044,
+      "n": 5316,
+      "hash": "dc5f716c",
+      "bounds": [
+        -8.008783340454102,
+        -1.1494653224945068,
+        -0.009999999776482582,
+        0.027448425069451332,
+        0.009999999776482582,
+        1.3466476202011108
+      ],
+      "triangles": 36,
+      "strides": [
+        20,
+        20
+      ],
+      "textures": [
+        "db8effc3",
+        "5f5acd6f"
+      ],
+      "file": "STREAML2RA_PERM.BUN"
+    },
+    {
+      "id": "sign",
+      "kind": "sign",
+      "name": "XO_ROADSIGNA_1B_00",
+      "p": 2977060,
+      "n": 4048,
+      "hash": "d894a12e",
+      "bounds": [
+        -1.3714501857757568,
+        -0.5794274806976318,
+        -0.01180984452366829,
+        1.3404443264007568,
+        0.5813500881195068,
+        1.568872332572937
+      ],
+      "triangles": 24,
+      "strides": [
+        32,
+        32
+      ],
+      "textures": [
+        "17f2b2e7",
+        "bc7cd196"
+      ],
+      "file": "STREAML2RA_PERM.BUN"
+    },
+    {
+      "id": "tunnel-beam",
+      "kind": "beam",
+      "name": "XO_TUNNELBEAMA_1C_MM_00",
+      "p": 3216572,
+      "n": 4132,
+      "hash": "f48eabbc",
+      "bounds": [
+        0.47440552711486816,
+        -11.929494857788086,
+        -2.067840099334717,
+        18.55122947692871,
+        11.929494857788086,
+        0.837611734867096
+      ],
+      "triangles": 44,
+      "strides": [
+        20,
+        32
+      ],
+      "textures": [
+        "dca86b52",
+        "52281a3c"
+      ],
+      "file": "STREAML2RA_PERM.BUN"
+    },
+    {
+      "id": "gantry",
+      "kind": "gantry",
+      "name": "XO_FWY_SIGNSUPPORTTRUSS_1C_00",
+      "p": 3601120,
+      "n": 5736,
+      "hash": "a93e213b",
+      "bounds": [
+        -10.399160385131836,
+        -1.8172509670257568,
+        -0.035108812153339386,
+        10.399160385131836,
+        1.9307763576507568,
+        10.425901412963867
+      ],
+      "triangles": 72,
+      "strides": [
+        32
+      ],
+      "textures": [
+        "fc8c503b"
+      ],
+      "file": "STREAML2RA_PERM.BUN"
+    },
+    {
+      "id": "lamp",
+      "kind": "lamp",
+      "name": "XO_STREETLIGHTCB_1C_00",
+      "p": 4523920,
+      "n": 3524,
+      "hash": "132918ab",
+      "bounds": [
+        -0.34963011741638184,
+        -6.482046127319336,
+        -0.02529105730354786,
+        0.34676146507263184,
+        0.13963867723941803,
+        10.659929275512695
+      ],
+      "triangles": 42,
+      "strides": [
+        32,
+        32
+      ],
+      "textures": [
+        "1ff171df",
+        "b81f130b"
+      ],
+      "file": "STREAML2RA_PERM.BUN"
+    },
+    {
+      "id": "pipe",
+      "kind": "pipe",
+      "name": "XO_TUNNELPIPELARGE_1B_00",
+      "p": 2884704,
+      "n": 3956,
+      "hash": "cd9d3d25",
+      "bounds": [
+        -0.03131652623414993,
+        -0.36601805686950684,
+        -0.03250690549612045,
+        8.041082382202148,
+        0.36601805686950684,
+        1.155764102935791
+      ],
+      "triangles": 26,
+      "strides": [
+        20
+      ],
+      "textures": [
+        "f7cb79c8"
+      ],
+      "file": "STREAML2RA_PERM.BUN"
+    }
+  ],
+  "normalNote": "Shader4 has a third multi-UV stream. Source topology/UVs preserved; shader4 normals regenerated from original face winding. Other source packed normals converted; fitted runtime geometry recalculates normals."
+}

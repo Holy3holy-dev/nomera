@@ -12065,6 +12065,7 @@
 
                 this.trafficCars.push(trafficCar);
                 this.scene.add(trafficCar);
+                if(window.NOMERA_AUTHORS_PREVIEW&&window.NomeraTraffic){this.trafficGroundAt=(x,z)=>window.NomeraRoadSurface.highway(x,z);window.NomeraTraffic.spawn(this,trafficCar,{lane:laneIdx,ahead:180+i*34});}
             }
         }
 
@@ -15754,6 +15755,7 @@
             const state = this.state;
             const ai=window.NOMERA_AUTHORS_PREVIEW&&window.NomeraTraffic;if(ai)ai.begin(this,dt);
             this.resetTrafficDamage=car=>window.NomeraBodyDamage?.reset(car);
+            this.trafficGroundAt=(x,z)=>window.NomeraRoadSurface.highway(x,z);
             this.authorsTrafficImpact=(car,event)=>{window.NomeraBodyDamage?.record(car.userData.contactBody.state,event.point,event.normal,event);if(car.userData.type==='police'&&ai?.policeHit(this,car,event).disabled){car.userData.isWrecked=true;car.userData.wrecked=true;ai.retire(this,car);}};
             let minPoliceDist = 999;
 
@@ -15802,7 +15804,7 @@
                                 u.laneIndex = newLane;
                                 u.targetX = lanes[newLane];
                                 car.rotation.set(0, 0, 0);
-                                car.position.set(lanes[newLane], 0, ai?state.z-85-idx*9:state.z+55+idx*15);
+                                if(ai){if(!ai.spawn(this,car,{lane:newLane}))return;}else car.position.set(lanes[newLane],0,state.z+55+idx*15);
                                 u.speed = Math.max(120, state.speed * 0.95);
                             } else {
                                 return;
@@ -16362,6 +16364,7 @@
                         return;
                     }
                     const newLane = (u.type === 'truck' || u.type === 'kamaz') ? (Math.random() < 0.8 ? 3 : 2) : Math.floor(Math.random() * 4);
+                    if(ai){ai.spawn(this,car,{lane:newLane});return;}
                     car.position.set(this.trafficLanes[newLane], 0, state.z + 180 + Math.random() * 120);
                     u.laneIndex = newLane;
                     u.targetX = this.trafficLanes[newLane];

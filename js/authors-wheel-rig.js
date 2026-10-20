@@ -56,7 +56,7 @@
    }
    result.setAttribute(name,new T.BufferAttribute(data,attribute.itemSize,attribute.normalized));
   }
-  result.setIndex(newIndices);result.computeBoundingBox();result.computeBoundingSphere();return result;
+  result.setIndex(newIndices);if(triangles.some((t,i)=>t.start!==i*3)||geometry.userData.nomeraSourceTriangleStarts){const previous=geometry.userData.nomeraSourceTriangleStarts;result.userData.nomeraSourceTriangleStarts=new Uint32Array(triangles.map(t=>previous?.[t.start/3]??t.start));}result.computeBoundingBox();result.computeBoundingSphere();return result;
  }
  function* build(T,model){
   if(rigs.has(model))return rigs.get(model);
@@ -219,5 +219,5 @@
    if(compression)wheel.steer.position.y=wheel.baseY+(compression[key]||0);
   }
  }
- return{prepare,prepareAsync,cancelAll,update};
+ return{prepare,prepareAsync,cancelAll,update,isPending:model=>pending.has(model)};
 });

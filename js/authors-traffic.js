@@ -6,8 +6,22 @@
   if(s.speedMps<4||s.handbrake||s.rollover?.inverted||s.rollover?.up<.65||s.roadContact?.airborne)return input;
   // A straight highway uses bounded lane-change heading. Only the wheel is
   // commanded: neither world position nor body orientation is overwritten.
-  const speed=Math.max(4,s.speedMps),heading=wrap(s.heading),target=input*Math.atan2(Math.min(4.3,1.8+speed*.055),speed);
-  return clamp((target-heading)*3.8-s.yawRate*.72,-1,1);
+  const speed=Math.max(4,s.speedMps),heading=wrap(s.heading),target=input*Math.atan2(Math.min(5.3,2.4+speed*.065),speed);
+  return clamp((target-heading)*9-s.yawRate*1.1,-1,1);
+ }
+ function visualSafe(e,car){const distance=car.position.z-e.state.z;return car.position.y< -500||Math.abs(distance)>Math.max(85,(e.state.speed||0)/3.6*1.8);}
+ function spawn(e,car,{lane=0,ahead=0}={}){
+  const u=car.userData,lanes=e.trafficLanes||[-6.375,-2.125,2.125,6.375],playerSpeed=Math.max(0,e.state.speed||0)/3.6;
+  const distance=Math.max(180,ahead,60+Math.max(0,playerSpeed-(u.baseSpeed||80)/3.6)*3.5);
+  let chosen=null;for(let row=0;row<64&&!chosen;row++)for(let i=0;i<lanes.length&&!chosen;i++){
+   const index=(lane+i)%lanes.length,x=lanes[index],z=e.state.z+distance+row*18;
+   if(e.trafficCars.every(other=>other===car||other.position.y< -500||Math.abs(other.position.x-x)>(u.halfWidth||.95)+(other.userData.halfWidth||.95)+.5||Math.abs(other.position.z-z)>(u.halfLength||2.2)+(other.userData.halfLength||2.2)+12))chosen={index,x,z};
+  }
+  if(!chosen)return false;
+  const ground=e.trafficGroundAt?.(chosen.x,chosen.z)||{height:0,normal:[0,1,0]};car.position.set(chosen.x,ground.height,chosen.z);car.quaternion.set(0,0,0,1);
+  if(ground.normal&&car.quaternion.setFromUnitVectors)car.quaternion.setFromUnitVectors(car.position.clone().set(0,1,0),car.position.clone().fromArray(ground.normal));
+  Object.assign(u,{contactBody:null,damageState:null,dynamicTime:0,deflectVx:0,isWrecked:false,wrecked:false,wreckTimer:0,wreckSpinVx:0,changingLane:false,plannedLaneIndex:null,hazardTimer:0,evadeBoostTimer:0,isBraking:false,overtaken:false,nearMissed:false,collisionTimer:0,durabilityCooldown:0,integrity:100,laneIndex:chosen.index,targetX:chosen.x,prevDz:chosen.z-e.state.z});
+  u.baseSpeed=e.getLaneSpeed(chosen.index,u.type);u.speed=u.baseSpeed;u.authorsPreviousPose={x:car.position.x,y:car.position.y,z:car.position.z};u.collisionPreviousPose={...u.authorsPreviousPose};e.resetTrafficDamage?.(car);return true;
  }
  function laneClear(e,car,target){const u=car.userData,half=u.halfLength||2.2;return e.trafficCars.every(other=>{
   if(other===car||other.position.y< -500)return true;const v=other.userData,gap=other.position.z-car.position.z,closing=Math.max(0,((gap>0?u.speed:v.speed)-(gap>0?v.speed:u.speed))/3.6);
@@ -54,5 +68,5 @@
    if(u.dynamicTime>1.2&&d.m.up[1]>.97&&Math.abs(b.suspension.vy)<.4&&Math.hypot(...w)<.5){u.speed=Math.max(0,b.state.vz*3.6);u.targetX=car.position.x;u.damageState=b.state;u.contactBody=null;}
   }
  }
- return{highwaySteer,laneClear,begin,cruise,observe,dispatch,policeHit,retire,owner,finish};
+ return{highwaySteer,visualSafe,spawn,laneClear,begin,cruise,observe,dispatch,policeHit,retire,owner,finish};
 });
