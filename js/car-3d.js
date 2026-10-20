@@ -11298,16 +11298,16 @@
             const roadW = 17.5; // 4 lanes
 
             // Shared reusable geometries across all chunks
-            this.roadGeo = new THREE.PlaneGeometry(roadW, L);
+            this.roadGeo = new THREE.PlaneGeometry(roadW, L, 7, Math.ceil(L/2));
             this.roadGeo.rotateX(-Math.PI / 2);
 
-            this.grassGeo = new THREE.PlaneGeometry(35, L);
+            this.grassGeo = new THREE.PlaneGeometry(35, L, 14, Math.ceil(L/2));
             this.grassGeo.rotateX(-Math.PI / 2);
 
             this.dashGeo = new THREE.PlaneGeometry(0.20, 3.6);
             this.dashGeo.rotateX(-Math.PI / 2);
 
-            this.outerGeo = new THREE.PlaneGeometry(0.25, L);
+            this.outerGeo = new THREE.PlaneGeometry(0.25, L, 1, Math.ceil(L/2));
             this.outerGeo.rotateX(-Math.PI / 2);
 
             this.curbBoxGeo = new THREE.BoxGeometry(0.35, 0.04, 1.4);
@@ -11315,8 +11315,8 @@
             // Cat's-eye reflective road studs (botts' dots)
             this.catsEyeGeo = new THREE.BoxGeometry(0.12, 0.03, 0.12);
 
-            this.beamGeo = new THREE.BoxGeometry(0.12, 0.28, L);
-            this.lowerBeamGeo = new THREE.BoxGeometry(0.10, 0.20, L);
+            this.beamGeo = new THREE.BoxGeometry(0.12, 0.28, L, 1, 1, Math.ceil(L/2));
+            this.lowerBeamGeo = new THREE.BoxGeometry(0.10, 0.20, L, 1, 1, Math.ceil(L/2));
             this.postGeo = new THREE.BoxGeometry(0.10, 0.65, 0.10);
             this.refGeo = new THREE.BoxGeometry(0.06, 0.12, 0.06);
 
@@ -12925,11 +12925,11 @@
                 const u = item.userData || {};
                 u.phase = (u.phase || 0) + dt * 3.2;
                 item.rotation.y += dt * 2.4;
-                item.position.y = 0.75 + Math.sin(u.phase) * 0.14;
+                item.position.y = 0.75 + Math.sin(u.phase) * 0.14+(this.mwLongitudinal&&window.NomeraRoadSurface?window.NomeraRoadSurface.highway(item.position.x,item.position.z).height:0);
 
                 const dz = Math.abs(item.position.z - state.z);
                 const dx = Math.abs(item.position.x - state.x);
-                if (!u.collected && dz < 3.2 && dx < 1.65) {
+                if (!u.collected && dz < 3.2 && dx < 1.65 && Math.abs((this.mwLongitudinal?.state.y||0)-(item.position.y-.75))<1.2) {
                     u.collected = true;
                     u.pickupCount = (u.pickupCount || 0) + 1;
                     const cType = u.type || 'cash';
@@ -13050,6 +13050,7 @@
                 carName: this.carName, performance: this.performance,
                 upgrades: config.upgrades || {}, styling: this.styling,
                 physicsKernel: config.physicsKernel, speedKmh: this.state.speed,
+                sampleGroundContact: window.NomeraRoadSurface ? window.NomeraRoadSurface.highway : null,
                 weather: config.weather === 'auto' ? 'night' : (config.weather || 'night')
             }) : null;
             this.mwRoadSteering = config.physicsKernel ? new config.physicsKernel.SteeringController() : null;
@@ -13169,6 +13170,7 @@
                     const chunkZ = (i - 1) * this.chunkLength;
                     chunk.position.set(0, 0, chunkZ);
                     chunk.rotation.set(0, 0, 0);
+                    this.deformHighwayChunk(chunk);
                     if (chunkZ > this.highestChunkZ) {
                         this.highestChunkZ = chunkZ;
                     }
@@ -14664,6 +14666,7 @@
                 const roadH=physical.state.heading,roadForward=Math.max(0,state.speed/3.6);
                 physical.state.vForward=roadForward*Math.cos(roadH)+state.vx*Math.sin(roadH);
                 physical.state.vLateral=state.vx*Math.cos(roadH)-roadForward*Math.sin(roadH);
+                physical.state.x=state.x;physical.state.z=state.z;
                 physical.state.vx=state.vx;physical.state.vz=roadForward;
                 physical.state.fuelCurrent = state.fuelCurrent;
                 physical.state.nitroLevel = state.nitroLevel;
@@ -15204,7 +15207,7 @@
             if (this.mwLongitudinal&&(state.x < -roadLimit || state.x > roadLimit)) {
                 const physical=this.mwLongitudinal,wallSide=state.x>0?1:-1;
                 physical.state.x=state.x;physical.state.vx=state.vx;physical.state.vz=state.speed/3.6;
-                const contact=physical.resolveWallCollision({normalX:-wallSide,normalZ:0,penetration:Math.abs(state.x)-roadLimit,restitution:.18,friction:.1,duration:dt});
+                const contact=physical.resolveWallCollision({normalX:-wallSide,normalZ:0,penetration:Math.abs(state.x)-roadLimit,restitution:.18,friction:.1,duration:dt,wallHeight:.7,groundHeight:window.NomeraRoadSurface?window.NomeraRoadSurface.highway(state.x,state.z).height:0});
                 state.x=physical.x;state.vx=physical.state.vx;state.speed=Math.max(0,physical.state.vz*3.6);
                 state.damageTaken=Math.min(100,(state.damageTaken||0)+contact.damageAdded);
                 if(contact.closingSpeedMps>1){
@@ -15405,7 +15408,8 @@
                 if(this.mwLongitudinal?.suspension){
                     const body=this.mwLongitudinal.state;
                     this.playerCar.position.y=body.y+engineTremorY;
-                    this.playerCar.rotation.set(body.pitch,state.yawAngle,-body.roll+engineTremorRoll);
+                    this.playerCar.rotation.order='YZX';
+                    this.playerCar.rotation.set(body.pitch,state.yawAngle,body.roll+engineTremorRoll);
                 }
 
                 // Rotate dedicated procedural wheel spinners around local hub axis
@@ -15892,7 +15896,7 @@
                 }
 
                 // Traffic suspension micro-bounce
-                car.position.y = Math.sin(car.position.z * 0.16 + (u.laneIndex || 0)) * 0.005;
+                car.position.y = Math.sin(car.position.z * 0.16 + (u.laneIndex || 0)) * 0.005+(this.mwLongitudinal&&window.NomeraRoadSurface?window.NomeraRoadSurface.highway(car.position.x,car.position.z).height:0);
 
                 // Relative distances to player
                 const dx = Math.abs(state.x - car.position.x);
@@ -16073,7 +16077,7 @@
                 const trafficHalfL = car.userData.halfLength || 2.2;
                 const lateralClearance = trafficHalfW + 0.55;
                 const longitudinalClearance = trafficHalfL + 1.6;
-                const isColliding = (dx < lateralClearance && Math.abs(dz) < longitudinalClearance);
+                const isColliding = (dx < lateralClearance && Math.abs(dz) < longitudinalClearance&&Math.abs((this.mwLongitudinal?.state.y||0)-car.position.y)<1.25);
 
                 // 3a. Near-Miss «Шашки впритирку» & Overtake Detection (when NOT colliding)
                 if (!isColliding) {
@@ -16448,6 +16452,34 @@
             }
         }
 
+        deformHighwayChunk(chunk) {
+            const T=this.THREE,sample=this.mwLongitudinal&&window.NomeraRoadSurface?window.NomeraRoadSurface.highway:()=>({height:0,normal:[0,1,0]});
+            if(chunk.userData.mwDeformedZ===chunk.position.z&&chunk.userData.mwDeformedActive===!!this.mwLongitudinal)return;
+            const v=new T.Vector3(),q=new T.Quaternion(),scale=new T.Vector3(),matrix=new T.Matrix4(),up=new T.Vector3(0,1,0);
+            for(const node of chunk.children){
+                if(!node.userData.mwTerrainBase)node.userData.mwTerrainBase=node.position.clone();
+                const base=node.userData.mwTerrainBase;
+                const isRibbon=node.isMesh&&[this.roadGeo,this.grassGeo,this.outerGeo,this.beamGeo,this.lowerBeamGeo].includes(node.userData.mwOriginalGeometry||node.geometry);
+                if(isRibbon){
+                    if(!node.userData.mwTerrainVertices){node.userData.mwOriginalGeometry=node.geometry;node.geometry=node.geometry.clone();node.userData.mwTerrainVertices=node.geometry.attributes.position.array.slice();}
+                    node.userData.mwRoadSurface=node.userData.mwOriginalGeometry===this.roadGeo;
+                    const p=node.geometry.attributes.position,original=node.userData.mwTerrainVertices;
+                    for(let i=0;i<p.count;i++)p.setY(i,original[i*3+1]+sample(base.x+original[i*3],chunk.position.z+base.z+original[i*3+2]).height);
+                    p.needsUpdate=true;node.geometry.computeVertexNormals();node.geometry.computeBoundingBox();node.geometry.computeBoundingSphere();
+                }else if(node.isInstancedMesh){
+                    if(!node.userData.mwTerrainMatrices)node.userData.mwTerrainMatrices=node.instanceMatrix.array.slice();
+                    const original=node.userData.mwTerrainMatrices;
+                    for(let i=0;i<node.count;i++){
+                        matrix.fromArray(original,i*16);matrix.decompose(v,q,scale);const g=sample(v.x+base.x,v.z+base.z+chunk.position.z);v.y+=g.height;
+                        if(node.geometry===this.dashGeo||node.geometry===this.catsEyeGeo||node.geometry===this.curbBoxGeo)q.premultiply(new T.Quaternion().setFromUnitVectors(up,new T.Vector3(...g.normal)));
+                        matrix.compose(v,q,scale);node.setMatrixAt(i,matrix);
+                    }
+                    node.instanceMatrix.needsUpdate=true;
+                }else node.position.y=base.y+sample(base.x,chunk.position.z+base.z).height;
+            }
+            chunk.userData.mwDeformedZ=chunk.position.z;chunk.userData.mwDeformedActive=!!this.mwLongitudinal;
+        }
+
         updateRoadChunks() {
             const state = this.state;
             this.roadChunks.forEach(chunk => {
@@ -16478,6 +16510,7 @@
                 }
                 chunk.position.x = 0;
                 chunk.rotation.y = 0;
+                this.deformHighwayChunk(chunk);
             });
         }
 
@@ -16507,9 +16540,10 @@
             const targetCamX = isCockpit
                 ? (state.x + mode.offset.x * cosYaw + mode.offset.z * sinYaw)
                 : (isTopDown ? (state.x * 0.65) : (isHood||mwPortraitChase ? state.x : state.x * 0.75));
-            const targetCamY = isCockpit
+            const terrainY=this.mwLongitudinal?.state.y||0;
+            const targetCamY = terrainY+(isCockpit
                 ? (mode.offset.y + (state.downforceY || 0) + (state.suspensionY || 0))
-                : (mode.offset.y + (isPortrait && !isHood && !isTopDown ? 0.85 : 0));
+                : (mode.offset.y + (isPortrait && !isHood && !isTopDown ? 0.85 : 0)));
             const targetCamZ = isCockpit
                 ? (state.z - mode.offset.x * sinYaw + mode.offset.z * cosYaw)
                 : (state.z + mode.offset.z - (isPortrait && !isHood && !isTopDown && !isCockpit ? 1.05 : 0) - accelLag * Math.min(1.0, state.speed / 100));
@@ -16552,9 +16586,9 @@
             const targetLookX = isCockpit
                 ? (state.x + mode.lookOffset.x * cosYaw + mode.lookOffset.z * sinYaw)
                 : (isTopDown ? (state.x * 0.65) : (isHood||mwPortraitChase ? state.x : (this.camPos.x * 0.82 + state.x * 0.18 + driftLookBias)));
-            const targetLookY = isCockpit
+            const targetLookY = terrainY+(isCockpit
                 ? (mode.lookOffset.y - (state.pitchSquat || 0) * mode.lookOffset.z)
-                : (mode.lookOffset.y - (isPortrait && !isHood && !isTopDown ? 0.45 : 0));
+                : (mode.lookOffset.y - (isPortrait && !isHood && !isTopDown ? 0.45 : 0)));
             const targetLookZ = isCockpit
                 ? (state.z - mode.lookOffset.x * sinYaw + mode.lookOffset.z * cosYaw)
                 : (state.z + mode.lookOffset.z);

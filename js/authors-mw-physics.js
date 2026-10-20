@@ -8,13 +8,14 @@
  * Gear selection, clutch scheduling and RPM smoothing: docs/MW_GEARBOX.md.
  * Angular engine/clutch solver and induction: docs/MW_ENGINE_CLUTCH.md.
  * Center differential and wheel rendering: docs/MW_DRIVELINE_WHEELS.md.
+ * Spatial wheel contacts and jump stabilizer: docs/MW_3D_CONTACT.md.
  * This partial adapter does not claim Xbox retail equivalence.
  */
 (function (root, factory) {
-    const api = factory();
+    const api = factory(typeof module==='object'&&module.exports?require('./authors-mw-contact.js'):root.NomeraMWContact);
     if (typeof module === 'object' && module.exports) module.exports = api;
     else root.NomeraMW = api;
-}(typeof globalThis !== 'undefined' ? globalThis : this, function () {
+}(typeof globalThis !== 'undefined' ? globalThis : this, function (Contact3D) {
     'use strict';
     const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
     const mix = (a, b, t) => a + (b - a) * t;
@@ -629,5 +630,5 @@
         catch (_) { return true; }
     }
     return Object.freeze({ torque, shiftPoints, clutch, Clutch, smoothRPM, engineInertia, brakingTorque, engineOutputTorque, Induction, AngularEngine, Gearbox, Nitrous, aerodynamics, tireForce, Tire, tireFrame, differential, driveControl, Burnout, DriftController, yawFrictionBoost, wallSteer, steeringRange, steeringRate, SteeringController, springForce, staticCompression, Suspension,
-        createSpec, selected, REFERENCE, LOAD });
+        Contact3D, createSpec, selected, REFERENCE, LOAD });
 }));

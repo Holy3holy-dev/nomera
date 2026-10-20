@@ -22,11 +22,11 @@
 (function (root, factory) {
     if (typeof module === 'object' && module.exports) {
         const nfsPhysics = require('./nfs-physics.js');
-        module.exports = factory(nfsPhysics, root);
+        module.exports = factory(nfsPhysics, root, require('./authors-road-surface.js'));
     } else {
-        root.NomeraCircuitRace = factory(root.NomeraNfsPhysics, root);
+        root.NomeraCircuitRace = factory(root.NomeraNfsPhysics, root, root.NomeraRoadSurface);
     }
-}(typeof globalThis !== 'undefined' ? globalThis : (typeof window !== 'undefined' ? window : this), function (NomeraNfsPhysics, root) {
+}(typeof globalThis !== 'undefined' ? globalThis : (typeof window !== 'undefined' ? window : this), function (NomeraNfsPhysics, root, RoadSurface) {
     'use strict';
 
     const clamp = (val, min, max) => Math.max(min, Math.min(max, val));
@@ -715,6 +715,8 @@
             if (config.trackId && TRACK_PRESETS[config.trackId]) {
                 this.track = buildCircuitTrack(config.trackId);
             }
+            if(config.physicsKernel&&RoadSurface)this.track=buildCircuitTrack(this.track.id,100);
+            this.roadSurface=config.physicsKernel&&RoadSurface?RoadSurface.circuit(this.track):null;
             if (config.totalLaps) {
                 this.totalLaps = Math.max(1, Number(config.totalLaps));
             }
@@ -741,7 +743,7 @@
                 weather: config.weather === 'auto' ? 'night' : (config.weather || 'night'),
                 transmissionMode: config.transmissionMode || 'auto',
                 physicsKernel: config.physicsKernel || null,
-                sampleGroundHeight: (x,z)=>this.track.projectPointToTrack(x,z).surface==='curb'?.04:0,
+                sampleGroundContact: this.roadSurface?(x,z)=>this.roadSurface.sample(x,z):null,
                 x: playerStartX,
                 z: playerStartZ,
                 heading: playerGridSample.heading
@@ -890,7 +892,7 @@
                     weather: this.currentActiveWeather,
                     transmissionMode: 'auto',
                     physicsKernel: this.carConfig.physicsKernel || null,
-                    sampleGroundHeight: (x,z)=>this.track.projectPointToTrack(x,z).surface==='curb'?.04:0,
+                    sampleGroundContact: this.roadSurface?(x,z)=>this.roadSurface.sample(x,z):null,
                     x: startX,
                     z: startZ,
                     heading: gridSample.heading
@@ -1092,7 +1094,7 @@
                     pState.x = pTrackAfter.centerX + pTrackAfter.nx * clampedLat;
                     pState.z = pTrackAfter.centerZ + pTrackAfter.nz * clampedLat;
                 }
-                const impact = this.playerPhysics.mwTires ? this.playerPhysics.resolveWallCollision({normalX:pTrackAfter.wallNormalX,normalZ:pTrackAfter.wallNormalZ,penetration:pTrackAfter.wallPenetration,restitution:.28,duration:safeDt}).closingSpeedMps : this.playerPhysics.resolveWallCollision(
+                const impact = this.playerPhysics.mwTires ? this.playerPhysics.resolveWallCollision({normalX:pTrackAfter.wallNormalX,normalZ:pTrackAfter.wallNormalZ,penetration:pTrackAfter.wallPenetration,restitution:.28,duration:safeDt,wallHeight:1.15,groundHeight:this.roadSurface?this.roadSurface.heightAt(pTrackAfter.s,pTrackAfter.lateralOffset):0}).closingSpeedMps : this.playerPhysics.resolveWallCollision(
                     pTrackAfter.wallNormalX,
                     pTrackAfter.wallNormalZ,
                     pTrackAfter.wallPenetration,
@@ -1425,7 +1427,7 @@
                     rState.x = projAfter.centerX + projAfter.nx * clampedLat;
                     rState.z = projAfter.centerZ + projAfter.nz * clampedLat;
                 }
-                if(rPhys.mwTires)rPhys.resolveWallCollision({normalX:projAfter.wallNormalX,normalZ:projAfter.wallNormalZ,penetration:projAfter.wallPenetration,restitution:.25,duration:dt});
+                if(rPhys.mwTires)rPhys.resolveWallCollision({normalX:projAfter.wallNormalX,normalZ:projAfter.wallNormalZ,penetration:projAfter.wallPenetration,restitution:.25,duration:dt,wallHeight:1.15,groundHeight:this.roadSurface?this.roadSurface.heightAt(projAfter.s,projAfter.lateralOffset):0});
                 else rPhys.resolveWallCollision(projAfter.wallNormalX, projAfter.wallNormalZ, projAfter.wallPenetration, 0.25);
             }
 
@@ -1628,6 +1630,7 @@
 
             const segs = this.track.segments;
             const n = segs.length;
+            const roadY=(seg,lateral)=>this.roadSurface?this.roadSurface.heightAt(seg.s,lateral):0;
 
             // Build merged closed-loop ribbon for asphalt road + lane markings
             const roadPositions = [];
@@ -1654,7 +1657,7 @@
                 const rx = this.toThreeX(seg.x + seg.nx * hw);
                 const rz = this.toThreeZ(seg.z + seg.nz * hw);
 
-                roadPositions.push(lx, 0.02, lz, rx, 0.02, rz);
+                roadPositions.push(lx, roadY(seg,-hw)+(this.roadSurface?0:.02), lz, rx, roadY(seg,hw)+(this.roadSurface?0:.02), rz);
                 if (i < n) {
                     const base = i * 2;
                     roadIndices.push(base, base + 1, base + 2, base + 1, base + 3, base + 2);
@@ -1678,7 +1681,7 @@
                         const z2 = this.toThreeZ(nextSeg.z + nextSeg.nz * (offsetLat - halfStripeW));
                         const x3 = this.toThreeX(nextSeg.x + nextSeg.nx * (offsetLat + halfStripeW));
                         const z3 = this.toThreeZ(nextSeg.z + nextSeg.nz * (offsetLat + halfStripeW));
-                        linePositions.push(x0, 0.045, z0, x1, 0.045, z1, x2, 0.045, z2, x3, 0.045, z3);
+                        linePositions.push(x0, roadY(seg,offsetLat-halfStripeW)+.045, z0, x1, roadY(seg,offsetLat+halfStripeW)+.045, z1, x2, roadY(nextSeg,offsetLat-halfStripeW)+.045, z2, x3, roadY(nextSeg,offsetLat+halfStripeW)+.045, z3);
                         for (let k = 0; k < 4; k++) lineColors.push(rCol, gCol, bCol);
                         lineIndices.push(
                             lineVertCount, lineVertCount + 1, lineVertCount + 2,
@@ -1704,7 +1707,7 @@
                         const x3 = this.toThreeX(nextSeg.x + nextSeg.nx * outerOff);
                         const z3 = this.toThreeZ(nextSeg.z + nextSeg.nz * outerOff);
 
-                        curbPositions.push(x0, 0.05, z0, x1, 0.06, z1, x2, 0.05, z2, x3, 0.06, z3);
+                        curbPositions.push(x0, roadY(seg,innerOff)+.05, z0, x1, roadY(seg,outerOff)+.06, z1, x2, roadY(nextSeg,innerOff)+.05, z2, x3, roadY(nextSeg,outerOff)+.06, z3);
                         for (let k = 0; k < 4; k++) curbColors.push(cr, cg, cb);
                         curbIndices.push(
                             curbVertCount, curbVertCount + 1, curbVertCount + 2,
@@ -1723,7 +1726,7 @@
                         const wx1 = this.toThreeX(nextSeg.x + nextSeg.nx * wOff);
                         const wz1 = this.toThreeZ(nextSeg.z + nextSeg.nz * wOff);
                         const wallH = 1.15;
-                        wallPositions.push(wx0, 0, wz0, wx0, wallH, wz0, wx1, 0, wz1, wx1, wallH, wz1);
+                        wallPositions.push(wx0, roadY(seg,wOff), wz0, wx0, roadY(seg,wOff)+wallH, wz0, wx1, roadY(nextSeg,wOff), wz1, wx1, roadY(nextSeg,wOff)+wallH, wz1);
                         wallIndices.push(
                             wallVertCount, wallVertCount + 1, wallVertCount + 2,
                             wallVertCount + 1, wallVertCount + 3, wallVertCount + 2
@@ -1736,6 +1739,14 @@
             }
 
             const roadGeo = new THREE.BufferGeometry();
+            if(this.roadSurface){
+                const terrain=[];
+                for(const t of this.roadSurface.triangles)if(t.surface==='grass'){
+                    for(const[x,z]of [[t.a[0],t.a[2]],[t.a[0]+t.x1,t.a[2]+t.z1],[t.a[0]+t.x2,t.a[2]+t.z2]])terrain.push(this.toThreeX(x),t.a[1]+t.dx*(x-t.a[0])+t.dz*(z-t.a[2]),this.toThreeZ(z));
+                }
+                const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(terrain,3));geo.computeVertexNormals();
+                const mat=new THREE.MeshLambertMaterial({color:0x182b20,side:THREE.DoubleSide});this._trackDisposables(geo,mat);this.scene.add(new THREE.Mesh(geo,mat));
+            }
             roadGeo.setAttribute('position', new THREE.Float32BufferAttribute(roadPositions, 3));
             roadGeo.setIndex(roadIndices);
             if (typeof roadGeo.computeVertexNormals === 'function') roadGeo.computeVertexNormals();
@@ -1743,7 +1754,7 @@
                 ? new THREE.MeshStandardMaterial({ color: this.carConfig.physicsKernel ? 0x0b1018 : 0x263449, roughness: this.carConfig.physicsKernel ? .85 : .55, metalness: this.carConfig.physicsKernel ? .04 : .14, side: THREE.DoubleSide })
                 : new THREE.MeshLambertMaterial({ color: 0x263449 });
             this._trackDisposables(roadGeo, roadMat);
-            this.scene.add(new THREE.Mesh(roadGeo, roadMat));
+            const roadMesh=new THREE.Mesh(roadGeo, roadMat);roadMesh.userData.mwRoadSurface=!!this.roadSurface;this.scene.add(roadMesh);
 
             if (linePositions.length > 0) {
                 const lineGeo = new THREE.BufferGeometry();
@@ -1763,7 +1774,7 @@
             curbGeo.setIndex(curbIndices);
             const curbMat = new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide });
             this._trackDisposables(curbGeo, curbMat);
-            this.scene.add(new THREE.Mesh(curbGeo, curbMat));
+            const curbMesh=new THREE.Mesh(curbGeo, curbMat);curbMesh.userData.mwRoadSurface=!!this.roadSurface;this.scene.add(curbMesh);
 
             const wallGeo = new THREE.BufferGeometry();
             wallGeo.setAttribute('position', new THREE.Float32BufferAttribute(wallPositions, 3));
@@ -1797,7 +1808,7 @@
             for (const cp of this.track.checkpoints) {
                 const isStart = cp.index === 0;
                 const gateGroup = new THREE.Group();
-                gateGroup.position.set(this.toThreeX(cp.x), 0, this.toThreeZ(cp.z));
+                gateGroup.position.set(this.toThreeX(cp.x), this.roadSurface?this.roadSurface.sample(cp.x,cp.z).height:0, this.toThreeZ(cp.z));
                 gateGroup.rotation.y = this.toThreeYaw(Math.atan2(cp.tx, cp.tz));
 
                 const pL = new THREE.Mesh(pillarGeo, isStart ? startMat : cpMat);
@@ -1819,34 +1830,35 @@
             const bldgMat = new THREE.MeshLambertMaterial({ color: 0x1e293b });
             this._trackDisposables(bldgGeo, bldgMat);
 
-            for (let i = 0; i < n; i += 3) {
+            const propStride=this.roadSurface?5:1;
+            for (let i = 0; i < n; i += 3*propStride) {
                 const seg = segs[i];
                 if (seg.hasChevronLeft || seg.hasChevronRight) {
                     const sideSign = seg.hasChevronLeft ? -1 : 1;
                     const cx = this.toThreeX(seg.x + seg.nx * (seg.halfWidth + 1.1) * sideSign);
                     const cz = this.toThreeZ(seg.z + seg.nz * (seg.halfWidth + 1.1) * sideSign);
                     const chev = new THREE.Mesh(chevGeo, chevMat);
-                    chev.position.set(cx, 1.6, cz);
+                    chev.position.set(cx, roadY(seg,(seg.halfWidth+1.1)*sideSign)+1.6, cz);
                     chev.rotation.y = this.toThreeYaw(seg.heading);
                     this.scene.add(chev);
                 }
-                if (i % 6 === 0) {
-                    const lampSide = (i % 12 === 0) ? -1 : 1;
+                if (i % (6*propStride) === 0) {
+                    const lampSide = (i % (12*propStride) === 0) ? -1 : 1;
                     const lx = this.toThreeX(seg.x + seg.nx * (seg.halfWidth + 1.2) * lampSide);
                     const lz = this.toThreeZ(seg.z + seg.nz * (seg.halfWidth + 1.2) * lampSide);
                     const pole = new THREE.Mesh(poleGeo, poleMat);
-                    pole.position.set(lx, 3.1, lz);
+                    pole.position.set(lx, roadY(seg,(seg.halfWidth+1.2)*lampSide)+3.1, lz);
                     const bulb = new THREE.Mesh(bulbGeo, bulbMat);
                     bulb.position.set(
                         this.toThreeX(seg.x + seg.nx * (seg.halfWidth - 0.3) * lampSide),
-                        6.1,
+                        roadY(seg,(seg.halfWidth-.3)*lampSide)+6.1,
                         this.toThreeZ(seg.z + seg.nz * (seg.halfWidth - 0.3) * lampSide)
                     );
                     bulb.rotation.y = this.toThreeYaw(seg.heading);
                     this.scene.add(pole, bulb);
                 }
-                if (i % 12 === 0) {
-                    const bSide = (i % 24 === 0) ? -1 : 1;
+                if (i % (12*propStride) === 0) {
+                    const bSide = (i % (24*propStride) === 0) ? -1 : 1;
                     const bx = this.toThreeX(seg.x + seg.nx * (seg.halfWidth + 24) * bSide);
                     const bz = this.toThreeZ(seg.z + seg.nz * (seg.halfWidth + 24) * bSide);
                     const bldg = new THREE.Mesh(bldgGeo, bldgMat);
@@ -2075,6 +2087,7 @@
                 this.playerCar.rotation.y = this.toThreeYaw(p.renderHeading);
             }
             if (this.playerCarBodyGroup) {
+                if(this.playerPhysics.mwKernel)this.playerCarBodyGroup.rotation.order='ZXY';
                 this.playerCarBodyGroup.rotation.x = p.pitch;
                 this.playerCarBodyGroup.rotation.z = this.playerPhysics.mwKernel ? -p.roll : p.roll;
             }
@@ -2091,6 +2104,7 @@
                     rival.mesh.position.set(this.toThreeX(rs.renderX), rs.heave, this.toThreeZ(rs.renderZ));
                     rival.mesh.rotation.y = this.toThreeYaw(rs.renderHeading);
                     if (rival.bodyGroup) {
+                    if(this.playerPhysics.mwKernel)rival.bodyGroup.rotation.order='ZXY';
                         rival.bodyGroup.rotation.x = rs.pitch;
                         rival.bodyGroup.rotation.z = rival.physics.mwKernel ? -rs.roll : rs.roll;
                     }
@@ -2146,7 +2160,7 @@
                 const targetCamZ = threeZ - camDirZ * (distBack + nitroPullback);
 
                 const targetLookX = threeX + (portraitMWChase?camDirX:fwdX) * lookAhead;
-                const targetLookY = 0.95 + p.pitch * 2.0;
+                const targetLookY = 0.95 + p.heave + p.pitch * 2.0;
                 const targetLookZ = threeZ + (portraitMWChase?camDirZ:fwdZ) * lookAhead;
 
                 const smooth = (snapCamera || this.cameraMode === 'hood' || this.cameraMode === 'bumper') ? 1.0 : portraitMWChase?.55:0.22;

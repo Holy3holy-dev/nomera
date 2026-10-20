@@ -774,6 +774,7 @@
             this.state = this._createInitialState(this.options);
             this.mwSteering = this.mwKernel ? new this.mwKernel.SteeringController() : null;
             this.suspension = this.mwKernel ? new this.mwKernel.Suspension(this.profile) : null;
+            this._initializeMWContact(this.options);
             this._resetMWTires();
             this.prevState = Object.assign({}, this.state);
             this.renderState = Object.assign({}, this.state);
@@ -915,6 +916,21 @@
             };
         }
 
+        _sampleMWGround(x,z,controls={},key){
+            const contact=key&&controls.groundContacts?.[key];if(contact!==undefined)return contact;
+            if(key&&controls.groundHeights?.[key]!==undefined)return{height:controls.groundHeights[key],normal:controls.groundNormals?.[key]||[0,1,0]};
+            if(typeof this.options.sampleGroundContact==='function')return this.options.sampleGroundContact(x,z);
+            const sample=this.options.sampleGroundHeight;if(typeof sample!=='function')return 0;
+            const h=sample(x,z),e=.1,dx=(sample(x+e,z)-sample(x-e,z))/(2*e),dz=(sample(x,z+e)-sample(x,z-e))/(2*e);
+            return{height:h,normal:this.mwKernel.Contact3D.unit([-dx,1,-dz])};
+        }
+
+        _initializeMWContact(init={}){
+            if(!this.mwKernel?.Contact3D||!this.suspension)return;
+            this.mwKernel.Contact3D.initialize(this.suspension,this.state,(x,z)=>this._sampleMWGround(x,z),Object.hasOwn(init,'y'));
+            const b=this.suspension,s=this.state;s.y=s.heave=b.y;s.pitch=b.pitch;s.roll=b.roll;
+        }
+
         _resetMWTires() {
             this.mwTires=null;
             if(!this.mwKernel?.Tire)return;
@@ -953,6 +969,7 @@
             this._speedbreakerLatch = false;
             this.state = this._createInitialState(init);
             if(this.mwKernel){this.mwSteering=new this.mwKernel.SteeringController();this.suspension=new this.mwKernel.Suspension(this.profile);}
+            this._initializeMWContact(init);
             this._resetMWTires();
             this.prevState = Object.assign({}, this.state);
             this.renderState = Object.assign({}, this.state);
@@ -1113,6 +1130,7 @@
                 s.wallEscapeTime=Math.max(0,(s.wallEscapeTime||0)-dt);
             }
             let brake = rawBrake;
+            let directionBrake=false;
             if (this.options.transmissionMode === 'auto') {
                 if (s.gear === -1) {
                     if (rawGas > 0.1 && rawBrake < 0.1) {
@@ -1123,6 +1141,7 @@
                         } else {
                             throttle = 0;
                             brake = rawGas;
+                            directionBrake=true;
                         }
                     } else if (rawBrake > 0.1 && rawGas < 0.1) {
                         // Holding brake in reverse acts as reverse throttle
@@ -1380,7 +1399,12 @@
             s.wheelLoads.fr = clamp(frontAxleLoadN * 0.5 - frontLatShift, 400, totalWeightN * 0.65);
             s.wheelLoads.rl = clamp(rearAxleLoadN * 0.5 + rearLatShift, 400, totalWeightN * 0.65);
             s.wheelLoads.rr = clamp(rearAxleLoadN * 0.5 - rearLatShift, 400, totalWeightN * 0.65);
-            if(this.suspension){
+            let mwContact=null;
+            if(this.suspension&&this.mwKernel.Contact3D){
+                mwContact=this.mwKernel.Contact3D.begin(this.suspension,dt,s,(x,z,key)=>this._sampleMWGround(x,z,controls,key),this.mwKernel.springForce);
+                for(const wheel of this.suspension.wheels){s.wheelLoads[wheel.key]=wheel.load;s.suspensionOffsets[wheel.key]=wheel.offset;}
+                frontAxleLoadN=s.wheelLoads.fl+s.wheelLoads.fr;rearAxleLoadN=s.wheelLoads.rl+s.wheelLoads.rr;
+            }else if(this.suspension){
                 const heights={};
                 for(const wheel of this.suspension.wheels){
                     const x=s.x+Math.cos(s.heading)*wheel.x+Math.sin(s.heading)*wheel.z;
@@ -1540,7 +1564,7 @@
             }
             s.wheelSlipRatio = clamp(Math.max(frontDriveUsage * 0.3, rearSlip), 0, 1.5);
             }
-            let mwRightForce=0,mwForwardForce=0,mwYawMoment=0;
+            let mwRightForce=0,mwForwardForce=0,mwYawMoment=0,mwRollingLoad=0,mwRollingWeighted=0;
             if(this.mwTires){
                 fxFront=0;fxRear=0;fyFront=0;fyRear=0;s.wheelSlipRatio=0;
                 const frame=this.mwKernel.tireFrame(s.speedMps,s.gear<0);
@@ -1548,24 +1572,38 @@
                     const tireIndex=['fl','fr','rl','rr'].indexOf(key);
                     const front=key[0]==='f',x=(key[1]==='l'?-1:1)*p.trackWidth*.5,z=front?Lf:-Lr;
                     const angle=front?(key[1]==='l'?s.steerLeftRad:s.steerRightRad):0,c=Math.cos(angle),sn=Math.sin(angle);
+                    const contactWheel=mwContact?this.suspension.wheels[tireIndex]:null,q=contactWheel?.contact3D,C=this.mwKernel.Contact3D;
+                    const wheelSurface=SURFACE_PRESETS[q?.ground.surface]||surfPreset;
+                    mwRollingLoad+=s.wheelLoads[key];mwRollingWeighted+=s.wheelLoads[key]*wheelSurface.rollingResistance;
                     const lat=s.vLateral+z*s.yawRate,fwd=s.vForward-x*s.yawRate;
+                    const lateral=q?C.dot(q.velocity,q.frame.lateral):c*lat-sn*fwd;
+                    const forward=q?C.dot(q.velocity,q.frame.forward):sn*lat+c*fwd;
                     const tire=this.mwTires[key];
                     // Host wake rule: upstream locked-at-rest state otherwise
                     // never re-enters its moving brake-lock check after release.
                     if(!brake&&(front||!ebrake))tire.locked=false;
-                    tire.step(dt,{lateral:c*lat-sn*fwd,forward:sn*lat+c*fwd,speed:s.speedMps,load:s.wheelLoads[key],
+                    tire.step(dt,{lateral,forward,speed:s.speedMps,load:s.wheelLoads[key],
                         driveTorque:mwDrive.torques[tireIndex],
                         brake,handbrake:front?0:ebrake,brakeCapacity:maxBrakeDecelForce*(front?.64:.36)*.5*p.wheelRadius,
                         ebrakeCapacity:850*1.3558*10*p.massKg/1500,
                         tractionBoost:frame.tractionBoost*nosMult*mwDrive.boost[tireIndex]*(front?frontGameBreakerBoost:mwDrift.rearTractionBoost),
                         driftFriction:front?1:mwDrift.rearFriction,gripBoost:frame.gripBoost,lateralBoost:1,
-                        maxSlip:frame.maxSlip,lateralGrip:latGripMu,driveGrip:driveGripMu,
-                        rollingResistance:surfPreset.rollingResistance});
+                        maxSlip:frame.maxSlip,lateralGrip:wheelSurface.lateralGrip*weathPreset.lateralGrip,driveGrip:wheelSurface.driveGrip*weathPreset.driveGrip,
+                        rollingResistance:wheelSurface.rollingResistance});
                     // Source bounds each lateral contact impulse against reversal.
-                    const cap=Math.abs((c*lat-sn*fwd)/dt*.25*p.massKg);
-                    const fy=clamp(tire.fy,-cap,cap),fx=tire.fx;
-                    const right=c*fy+sn*fx,forward=c*fx-sn*fy;
-                    mwRightForce+=right;mwForwardForce+=forward;mwYawMoment+=z*right-x*forward;
+                    const cap=Math.abs(lateral/dt*.25*p.massKg);
+                    const fy=clamp(tire.fy,-cap,cap);
+                    // Host contact solver: braking cannot reverse the body's
+                    // momentum in one discrete step (reverse-to-drive chatter).
+                    const brakingFx=directionBrake?-Math.sign(forward)*Math.min(maxBrakeDecelForce*(front?.64:.36)*.5,s.wheelLoads[key]*driveGripMu):tire.fx;
+                    const fx=brake>0&&brakingFx*forward<0?Math.sign(brakingFx)*Math.min(Math.abs(brakingFx),Math.abs(forward)/dt*p.massKg*.25):brakingFx;
+                    if(q){
+                        const r=C.resolve(this.suspension,mwContact,contactWheel,fx,fy,dt),ch=Math.cos(s.heading),sh=Math.sin(s.heading);
+                        mwRightForce+=r.force[0]*ch-r.force[2]*sh;mwForwardForce+=r.force[0]*sh+r.force[2]*ch;mwYawMoment+=C.dot(r.torque,mwContact.matrix.up);
+                    }else{
+                        const right=c*fy+sn*fx,fwdForce=c*fx-sn*fy;
+                        mwRightForce+=right;mwForwardForce+=fwdForce;mwYawMoment+=z*right-x*fwdForce;
+                    }
                     if(front){fxFront+=fx;fyFront+=fy;}else{fxRear+=fx;fyRear+=fy;}
                     s.wheelSlipRatio=Math.max(s.wheelSlipRatio,Math.min(1.5,Math.abs(tire.slip)/Math.max(2,Math.abs(fwd))));
                 }
@@ -1585,7 +1623,7 @@
             const draftDragReduction = 1.0 - clamp(s.slipstreamFactor || 0, 0, 1) * 0.42;
             const aeroDragForce = mwAero ? mwAero.drag[2] : -Math.sign(s.vForward) * 0.5 * 1.225 * (p.dragCoeff || 0.32) * 2.15 * (s.vForward * s.vForward) * offThrottleFactor * draftDragReduction;
             const hasContact=!this.suspension||this.suspension.wheels.some(w=>w.contact);
-            const rollingForce = hasContact ? -Math.sign(s.vForward) * (p.massKg * GRAVITY * 0.015 * surfPreset.rollingResistance) : 0;
+            const rollingForce = hasContact ? -Math.sign(s.vForward) * (p.massKg * GRAVITY * 0.015 * (mwRollingLoad>0?mwRollingWeighted/mwRollingLoad:surfPreset.rollingResistance)) : 0;
 
             // Cornering scrub drag (sin(slipAngle) projection of front lateral force)
             const cornerScrubForce = -Math.sin(s.steerAngleRad) * fyFront * 0.28;
@@ -1641,7 +1679,7 @@
             }
 
             // NFS MW DriftStabilizerTable: damp yaw rate when yaw opposes slip angle or exceeds safe drift envelope
-            const baseYawDamping = -s.yawRate * s.yawInertia * (this.mwKernel ? .15 : (s.isDrifting ? 2.6 : 4.2));
+            const baseYawDamping = !hasContact&&this.mwTires?0:-s.yawRate * s.yawInertia * (this.mwKernel ? .15 : (s.isDrifting ? 2.6 : 4.2));
             let stabilizerTorque = 0;
             if(this.mwTires){
                 stabilizerTorque=-s.yawRate*s.yawInertia*mwDrift.dampingRate;
@@ -1658,7 +1696,7 @@
             else if ((s.yawRate * s.chassisSlipAngle) < 0 || Math.abs(s.chassisSlipAngle) > 0.55) {
                 stabilizerTorque = -s.yawRate * s.yawInertia * (this.mwKernel ? .35 : 4.8) * (0.4 + s.driftValue * 0.6);
             }
-            if (this.options.stabilityAssist && Math.abs(rawSteer) < 0.05 && ebrake < 0.1) {
+            if (hasContact && this.options.stabilityAssist && Math.abs(rawSteer) < 0.05 && ebrake < 0.1) {
                 // Straight-line alignment damping
                 stabilizerTorque -= s.yawRate * s.yawInertia * (this.mwKernel ? 1.1 : 5.5);
                 s.vLateral *= Math.max(0, 1 - (this.mwKernel ? .8 : 5.2) * latGripMu * dt);
@@ -1719,6 +1757,12 @@
             const heaveAccel = (targetY - s.y) * 120.0 - s.heaveVel * 16.0;
             s.heaveVel += heaveAccel * dt;
             s.y = clamp(s.y + s.heaveVel * dt, -0.06, 0.08);
+            if(mwContact){
+                const dragHeight=mwContact.touching>=2?-.1*(1-throttle):0;
+                this.mwKernel.Contact3D.finish(this.suspension,dt,s,mwContact,{downforce:aeroDownforceN,aeroCenterZ:p.wheelbase*(.47-p.frontWeightBias),
+                    dragPitchMoment:dragHeight*mwAero.drag[2],dragRollMoment:-dragHeight*mwAero.drag[0]});
+                s.roadContact=this.suspension.telemetry;
+            }
             if(this.suspension){
                 s.pitch=this.suspension.pitch;s.pitchVel=this.suspension.pitchRate;
                 s.roll=this.suspension.roll;s.rollVel=this.suspension.rollRate;
@@ -1795,6 +1839,7 @@
         // Oriented rectangles are a NOMERA collision shape, not MW geometry.
         getVehicleContact(other) {
             const a=this.state,b=other.state||other,pa=this.profile,pb=other.profile||pa;
+            if(Math.abs((a.y||0)-(b.y||0))>1.25)return null;
             const axes=s=>[{x:Math.cos(s.heading),z:-Math.sin(s.heading)},{x:Math.sin(s.heading),z:Math.cos(s.heading)}];
             const aa=axes(a),ab=axes(b),ha=[pa.trackWidth*1.15*.5,pa.wheelbase*1.65*.5],hb=[pb.trackWidth*1.15*.5,pb.wheelbase*1.65*.5];
             let penetration=Infinity,normal;
@@ -1868,6 +1913,10 @@
 
         resolveWallCollision(contactOrNx = {}, argNz = 0, argPen = 0, argRestitution = 0.20) {
             if(this.mwTires){
+                if(typeof contactOrNx==='object'&&Number.isFinite(contactOrNx.wallHeight)){
+                    const s=this.state,p=this.profile,lowest=s.y-Math.abs(Math.sin(s.pitch))*p.wheelbase*.65-Math.abs(Math.sin(s.roll))*p.trackWidth*.5-.1;
+                    if(lowest>(contactOrNx.groundHeight||0)+contactOrNx.wallHeight)return{closingSpeedMps:0,impactSeverity:0,damageAdded:0};
+                }
                 const positional=typeof contactOrNx==='number';
                 const result=this._resolveMWContact(null,positional?{normalX:contactOrNx,normalZ:argNz,penetration:argPen,restitution:argRestitution}:contactOrNx);
                 return positional?result.closingSpeedMps:result;

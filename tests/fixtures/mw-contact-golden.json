@@ -1,0 +1,4539 @@
+{
+  "provenance": {
+    "repository": "https://github.com/gaycoderprincess/ProStreetMWPhysics",
+    "commit": "9c6e26194b531f68f66fcc94a770ee7f89f2682e",
+    "files": {
+      "decomp/behaviors/MWWheel.cpp": "42e85620c8154f2c3814f57aab45e9cb86d6ed173534805016589f4aeafd31df",
+      "decomp/behaviors/SuspensionRacer.cpp": "ed051005245538ec0ed7a9bcf83c128b71aa208ac95b57b2e52442a868a18a52",
+      "decomp/behaviors/MWChassisBase.cpp": "f0ca2392cf59de600a6e9de165cda0486609ed4708a28ace69a845c19ee0ef7a",
+      "decomp/AverageWindow.h": "73f5887de816f8a21149741fe21ec1db3a6d6422b6d366483ec3bf03702d709e"
+    },
+    "methods": [
+      "WheelMW::UpdatePosition",
+      "SuspensionRacerMW::DoWheelForces",
+      "ChassisMW::DoJumpStabilizer"
+    ],
+    "compiler": "g++ -std=c++20 -O0",
+    "scope": "Unedited source methods. Harness supplies vector math, fixed road query normals/penetration, fixed tire lateral and longitudinal outputs, and recording rigid body. No JavaScript or NOMERA code imported. Does not verify original WWorldPos or body integrator."
+  },
+  "cases": [
+    {
+      "kind": "wheelPosition",
+      "name": "flat",
+      "input": {
+        "matrix": {
+          "right": [
+            1.0,
+            0.0,
+            0.0
+          ],
+          "up": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "forward": [
+            0.0,
+            -0.0,
+            1.0
+          ],
+          "position": [
+            10,
+            3,
+            -8
+          ]
+        },
+        "linearVelocity": [
+          0,
+          0,
+          20
+        ],
+        "angularVelocity": [
+          0,
+          0,
+          0
+        ],
+        "worldCG": [
+          0,
+          0.25,
+          0
+        ],
+        "localArm": [
+          -0.8,
+          -0.25,
+          1.4
+        ],
+        "dt": 0.008333333333333333,
+        "radius": 0.33,
+        "vehicleHeight": 1.5
+      },
+      "expected": {
+        "worldArm": [
+          -0.8000000119,
+          -0.25,
+          1.399999976
+        ],
+        "position": [
+          9.199999809,
+          2.75,
+          -6.599999905
+        ],
+        "velocity": [
+          0,
+          0,
+          20
+        ],
+        "tolerance": 0.4966666698
+      }
+    },
+    {
+      "kind": "wheelPosition",
+      "name": "pitch_bump",
+      "input": {
+        "matrix": {
+          "right": [
+            1.0,
+            0.0,
+            0.0
+          ],
+          "up": [
+            0.0,
+            0.9800665778412416,
+            0.19866933079506122
+          ],
+          "forward": [
+            0.0,
+            -0.19866933079506122,
+            0.9800665778412416
+          ],
+          "position": [
+            10,
+            3,
+            -8
+          ]
+        },
+        "linearVelocity": [
+          0,
+          1,
+          20
+        ],
+        "angularVelocity": [
+          0.8,
+          0,
+          0
+        ],
+        "worldCG": [
+          0,
+          0.25,
+          0
+        ],
+        "localArm": [
+          -0.8,
+          -0.25,
+          1.4
+        ],
+        "dt": 0.008333333333333333,
+        "radius": 0.33,
+        "vehicleHeight": 1.5
+      },
+      "expected": {
+        "worldArm": [
+          -0.8000000119,
+          -0.5231537223,
+          1.322425842
+        ],
+        "position": [
+          9.199999809,
+          2.476846218,
+          -6.677574158
+        ],
+        "velocity": [
+          0,
+          -0.05794072151,
+          19.38147736
+        ],
+        "tolerance": 0.4919951558
+      }
+    },
+    {
+      "kind": "wheelPosition",
+      "name": "roll_bank",
+      "input": {
+        "matrix": {
+          "right": [
+            0.9689124217106447,
+            0.24740395925452294,
+            0.0
+          ],
+          "up": [
+            -0.24740395925452294,
+            0.9689124217106447,
+            0.0
+          ],
+          "forward": [
+            0.0,
+            -0.0,
+            1.0
+          ],
+          "position": [
+            10,
+            3,
+            -8
+          ]
+        },
+        "linearVelocity": [
+          2,
+          -4,
+          30
+        ],
+        "angularVelocity": [
+          0,
+          0.5,
+          -0.7
+        ],
+        "worldCG": [
+          0.1,
+          0.28,
+          0.05
+        ],
+        "localArm": [
+          0.8,
+          -0.25,
+          -1.3
+        ],
+        "dt": 0.016666666666666666,
+        "radius": 0.36,
+        "vehicleHeight": 1.8
+      },
+      "expected": {
+        "worldArm": [
+          0.8369809389,
+          -0.04430493712,
+          -1.299999952
+        ],
+        "position": [
+          10.83698082,
+          2.955695152,
+          -9.300000191
+        ],
+        "velocity": [
+          1.097986579,
+          -4.515886784,
+          29.63150978
+        ],
+        "tolerance": 0.8999999762
+      }
+    },
+    {
+      "kind": "wheelPosition",
+      "name": "yaw_pitch_roll",
+      "input": {
+        "matrix": {
+          "right": [
+            0.6719688914233759,
+            0.1372886132147418,
+            -0.7277428430708283
+          ],
+          "up": [
+            -0.22439203956638254,
+            0.9742177623717094,
+            -0.023408632140699076
+          ],
+          "forward": [
+            0.7057662655146378,
+            0.17902957342582418,
+            0.6854505017143756
+          ],
+          "position": [
+            10,
+            3,
+            -8
+          ]
+        },
+        "linearVelocity": [
+          10,
+          -5,
+          20
+        ],
+        "angularVelocity": [
+          0.3,
+          0.6,
+          -0.4
+        ],
+        "worldCG": [
+          0.12,
+          0.3,
+          0.1
+        ],
+        "localArm": [
+          -0.8,
+          -0.2,
+          1.4
+        ],
+        "dt": 0.008333333333333333,
+        "radius": 0.31,
+        "vehicleHeight": 1.4
+      },
+      "expected": {
+        "worldArm": [
+          0.4953760505,
+          -0.054033041,
+          1.546506643
+        ],
+        "position": [
+          10.49537563,
+          2.945966959,
+          -6.453493118
+        ],
+        "velocity": [
+          10.7262907,
+          -5.584102631,
+          19.66856384
+        ],
+        "tolerance": 0.5432279706
+      }
+    },
+    {
+      "kind": "wheelPosition",
+      "name": "fast_tolerance_cap",
+      "input": {
+        "matrix": {
+          "right": [
+            1.0,
+            0.0,
+            0.0
+          ],
+          "up": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "forward": [
+            0.0,
+            -0.0,
+            1.0
+          ],
+          "position": [
+            10,
+            3,
+            -8
+          ]
+        },
+        "linearVelocity": [
+          20,
+          -50,
+          80
+        ],
+        "angularVelocity": [
+          1,
+          2,
+          3
+        ],
+        "worldCG": [
+          0,
+          0.25,
+          0
+        ],
+        "localArm": [
+          0.9,
+          -0.4,
+          -1.4
+        ],
+        "dt": 0.03333333333333333,
+        "radius": 0.35,
+        "vehicleHeight": 1.6
+      },
+      "expected": {
+        "worldArm": [
+          0.8999999762,
+          -0.400000006,
+          -1.399999976
+        ],
+        "position": [
+          10.89999962,
+          2.599999905,
+          -9.399999619
+        ],
+        "velocity": [
+          19.14999962,
+          -45.90000153,
+          77.55000305
+        ],
+        "tolerance": 0.8000000119
+      }
+    },
+    {
+      "kind": "wheelPosition",
+      "name": "rising_tolerance",
+      "input": {
+        "matrix": {
+          "right": [
+            1.0,
+            0.0,
+            0.0
+          ],
+          "up": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "forward": [
+            0.0,
+            -0.0,
+            1.0
+          ],
+          "position": [
+            10,
+            3,
+            -8
+          ]
+        },
+        "linearVelocity": [
+          0,
+          8,
+          0
+        ],
+        "angularVelocity": [
+          0,
+          0,
+          0
+        ],
+        "worldCG": [
+          0,
+          0.25,
+          0
+        ],
+        "localArm": [
+          0.8,
+          -0.2,
+          1.3
+        ],
+        "dt": 0.016666666666666666,
+        "radius": 0.3,
+        "vehicleHeight": 1.4
+      },
+      "expected": {
+        "worldArm": [
+          0.8000000119,
+          -0.200000003,
+          1.299999952
+        ],
+        "position": [
+          10.80000019,
+          2.799999952,
+          -6.699999809
+        ],
+        "velocity": [
+          0,
+          8,
+          0
+        ],
+        "tolerance": 0.3000000119
+      }
+    },
+    {
+      "kind": "wheelForces",
+      "name": "flat_static",
+      "input": {
+        "matrix": {
+          "right": [
+            0.9210609940028851,
+            0.0,
+            -0.3894183423086505
+          ],
+          "up": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "forward": [
+            0.3894183423086505,
+            -0.0,
+            0.9210609940028851
+          ],
+          "position": [
+            10,
+            3,
+            -8
+          ]
+        },
+        "normal": [
+          0,
+          1,
+          0
+        ],
+        "penetrations": [
+          -0.03,
+          -0.03,
+          -0.03,
+          -0.03
+        ],
+        "previousCompression": [
+          0.0462,
+          0.0462,
+          0.0462,
+          0.0462
+        ],
+        "lateralForces": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "longitudeForces": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "linearVelocity": [
+          0,
+          0,
+          20
+        ],
+        "angularVelocity": [
+          0,
+          0,
+          0
+        ],
+        "localAngularVelocity": [
+          0.5,
+          0.8,
+          0.3
+        ],
+        "previousGrounded": 4,
+        "driverStyle": 0,
+        "mass": 1500,
+        "worldCG": [
+          0,
+          0.25,
+          0
+        ],
+        "dt": 0.008333333333333333,
+        "springSpecs": {
+          "shock": [
+            40,
+            40
+          ],
+          "extension": [
+            50,
+            50
+          ],
+          "valvingInches": [
+            17,
+            17
+          ],
+          "digression": [
+            0.3,
+            0.3
+          ],
+          "stiffness": [
+            400,
+            400
+          ],
+          "sway": [
+            275,
+            200
+          ],
+          "travelInches": [
+            7,
+            7
+          ],
+          "rideHeightInches": [
+            3,
+            3
+          ],
+          "progression": [
+            7.5,
+            6
+          ],
+          "blowout": 5,
+          "yawSpeed": 1.2
+        },
+        "arms": [
+          [
+            -0.8,
+            -0.25,
+            1.4
+          ],
+          [
+            0.8,
+            -0.25,
+            1.4
+          ],
+          [
+            -0.8,
+            -0.25,
+            -1.3
+          ],
+          [
+            0.8,
+            -0.25,
+            -1.3
+          ]
+        ]
+      },
+      "expected": {
+        "force": [
+          0,
+          16982.38672,
+          0
+        ],
+        "torque": [
+          -1339.841309,
+          0,
+          566.4762573
+        ],
+        "correction": 0,
+        "grounded": 4,
+        "landing": false,
+        "angularVelocity": [
+          0,
+          0,
+          0
+        ],
+        "wheels": [
+          {
+            "compression": 0.04619999975,
+            "load": 4357.736328,
+            "xspeed": -7.788366795,
+            "zspeed": 18.42121887,
+            "force": [
+              0,
+              4357.736328,
+              0
+            ],
+            "position": [
+              9.808337212,
+              2.720000029,
+              -6.398980141
+            ],
+            "free": false,
+            "airtime": 0
+          },
+          {
+            "compression": 0.04619999975,
+            "load": 4357.736328,
+            "xspeed": -7.788366795,
+            "zspeed": 18.42121887,
+            "force": [
+              0,
+              4357.736328,
+              0
+            ],
+            "position": [
+              11.28203392,
+              2.720000029,
+              -7.022049427
+            ],
+            "free": false,
+            "airtime": 0
+          },
+          {
+            "compression": 0.04619999975,
+            "load": 4133.45752,
+            "xspeed": -7.788366795,
+            "zspeed": 18.42121887,
+            "force": [
+              0,
+              4133.45752,
+              0
+            ],
+            "position": [
+              8.756907463,
+              2.720000029,
+              -8.885844231
+            ],
+            "free": false,
+            "airtime": 0
+          },
+          {
+            "compression": 0.04619999975,
+            "load": 4133.45752,
+            "xspeed": -7.788366795,
+            "zspeed": 18.42121887,
+            "force": [
+              0,
+              4133.45752,
+              0
+            ],
+            "position": [
+              10.23060513,
+              2.720000029,
+              -9.508913994
+            ],
+            "free": false,
+            "airtime": 0
+          }
+        ]
+      }
+    },
+    {
+      "kind": "wheelForces",
+      "name": "front_bump",
+      "input": {
+        "matrix": {
+          "right": [
+            0.9210609940028851,
+            0.0,
+            -0.3894183423086505
+          ],
+          "up": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "forward": [
+            0.3894183423086505,
+            -0.0,
+            0.9210609940028851
+          ],
+          "position": [
+            10,
+            3,
+            -8
+          ]
+        },
+        "normal": [
+          0,
+          1,
+          0
+        ],
+        "penetrations": [
+          0.02,
+          0.02,
+          -0.03,
+          -0.03
+        ],
+        "previousCompression": [
+          0.0462,
+          0.0462,
+          0.0462,
+          0.0462
+        ],
+        "lateralForces": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "longitudeForces": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "linearVelocity": [
+          0,
+          0,
+          20
+        ],
+        "angularVelocity": [
+          0,
+          0,
+          0
+        ],
+        "localAngularVelocity": [
+          0.5,
+          0.8,
+          0.3
+        ],
+        "previousGrounded": 4,
+        "driverStyle": 0,
+        "mass": 1500,
+        "worldCG": [
+          0,
+          0.25,
+          0
+        ],
+        "dt": 0.008333333333333333,
+        "springSpecs": {
+          "shock": [
+            40,
+            40
+          ],
+          "extension": [
+            50,
+            50
+          ],
+          "valvingInches": [
+            17,
+            17
+          ],
+          "digression": [
+            0.3,
+            0.3
+          ],
+          "stiffness": [
+            400,
+            400
+          ],
+          "sway": [
+            275,
+            200
+          ],
+          "travelInches": [
+            7,
+            7
+          ],
+          "rideHeightInches": [
+            3,
+            3
+          ],
+          "progression": [
+            7.5,
+            6
+          ],
+          "blowout": 5,
+          "yawSpeed": 1.2
+        },
+        "arms": [
+          [
+            -0.8,
+            -0.25,
+            1.4
+          ],
+          [
+            0.8,
+            -0.25,
+            1.4
+          ],
+          [
+            -0.8,
+            -0.25,
+            -1.3
+          ],
+          [
+            0.8,
+            -0.25,
+            -1.3
+          ]
+        ]
+      },
+      "expected": {
+        "force": [
+          0,
+          69639.85938,
+          0
+        ],
+        "torque": [
+          -69240.875,
+          0,
+          29274.56836
+        ],
+        "correction": 0,
+        "grounded": 4,
+        "landing": false,
+        "angularVelocity": [
+          0,
+          0,
+          0
+        ],
+        "wheels": [
+          {
+            "compression": 0.09620000422,
+            "load": 30686.47266,
+            "xspeed": -7.788366795,
+            "zspeed": 18.42121887,
+            "force": [
+              0,
+              30686.47266,
+              0
+            ],
+            "position": [
+              9.808337212,
+              2.769999981,
+              -6.398980141
+            ],
+            "free": false,
+            "airtime": 0
+          },
+          {
+            "compression": 0.09620000422,
+            "load": 30686.47266,
+            "xspeed": -7.788366795,
+            "zspeed": 18.42121887,
+            "force": [
+              0,
+              30686.47266,
+              0
+            ],
+            "position": [
+              11.28203392,
+              2.769999981,
+              -7.022049427
+            ],
+            "free": false,
+            "airtime": 0
+          },
+          {
+            "compression": 0.04619999975,
+            "load": 4133.45752,
+            "xspeed": -7.788366795,
+            "zspeed": 18.42121887,
+            "force": [
+              0,
+              4133.45752,
+              0
+            ],
+            "position": [
+              8.756907463,
+              2.720000029,
+              -8.885844231
+            ],
+            "free": false,
+            "airtime": 0
+          },
+          {
+            "compression": 0.04619999975,
+            "load": 4133.45752,
+            "xspeed": -7.788366795,
+            "zspeed": 18.42121887,
+            "force": [
+              0,
+              4133.45752,
+              0
+            ],
+            "position": [
+              10.23060513,
+              2.720000029,
+              -9.508913994
+            ],
+            "free": false,
+            "airtime": 0
+          }
+        ]
+      }
+    },
+    {
+      "kind": "wheelForces",
+      "name": "one_wheel_bump",
+      "input": {
+        "matrix": {
+          "right": [
+            0.9210609940028851,
+            0.0,
+            -0.3894183423086505
+          ],
+          "up": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "forward": [
+            0.3894183423086505,
+            -0.0,
+            0.9210609940028851
+          ],
+          "position": [
+            10,
+            3,
+            -8
+          ]
+        },
+        "normal": [
+          0,
+          1,
+          0
+        ],
+        "penetrations": [
+          0.04,
+          -0.03,
+          -0.03,
+          -0.03
+        ],
+        "previousCompression": [
+          0.0462,
+          0.0462,
+          0.0462,
+          0.0462
+        ],
+        "lateralForces": [
+          100,
+          -80,
+          20,
+          -30
+        ],
+        "longitudeForces": [
+          200,
+          220,
+          400,
+          410
+        ],
+        "linearVelocity": [
+          2,
+          -1,
+          20
+        ],
+        "angularVelocity": [
+          0.3,
+          0.2,
+          -0.1
+        ],
+        "localAngularVelocity": [
+          0.5,
+          0.8,
+          0.3
+        ],
+        "previousGrounded": 4,
+        "driverStyle": 0,
+        "mass": 1500,
+        "worldCG": [
+          0,
+          0.25,
+          0
+        ],
+        "dt": 0.008333333333333333,
+        "springSpecs": {
+          "shock": [
+            40,
+            40
+          ],
+          "extension": [
+            50,
+            50
+          ],
+          "valvingInches": [
+            17,
+            17
+          ],
+          "digression": [
+            0.3,
+            0.3
+          ],
+          "stiffness": [
+            400,
+            400
+          ],
+          "sway": [
+            275,
+            200
+          ],
+          "travelInches": [
+            7,
+            7
+          ],
+          "rideHeightInches": [
+            3,
+            3
+          ],
+          "progression": [
+            7.5,
+            6
+          ],
+          "blowout": 5,
+          "yawSpeed": 1.2
+        },
+        "arms": [
+          [
+            -0.8,
+            -0.25,
+            1.4
+          ],
+          [
+            0.8,
+            -0.25,
+            1.4
+          ],
+          [
+            -0.8,
+            -0.25,
+            -1.3
+          ],
+          [
+            0.8,
+            -0.25,
+            -1.3
+          ]
+        ]
+      },
+      "expected": {
+        "force": [
+          488.1951294,
+          52012.67188,
+          1129.010742
+        ],
+        "torque": [
+          -58012.23438,
+          20.40000153,
+          -5900.682129
+        ],
+        "correction": 0,
+        "grounded": 4,
+        "landing": false,
+        "angularVelocity": [
+          0,
+          0,
+          0
+        ],
+        "wheels": [
+          {
+            "compression": 0.1162,
+            "load": 39388.02344,
+            "xspeed": -5.653884888,
+            "zspeed": 19.20242691,
+            "force": [
+              169.9897614,
+              39388.02344,
+              145.2703552
+            ],
+            "position": [
+              9.808337212,
+              2.789999962,
+              -6.398980141
+            ],
+            "free": false,
+            "airtime": 0
+          },
+          {
+            "compression": 0.04619999975,
+            "load": 4357.736328,
+            "xspeed": -5.653885365,
+            "zspeed": 18.88242531,
+            "force": [
+              11.98715973,
+              4357.736328,
+              233.7868958
+            ],
+            "position": [
+              11.28203392,
+              2.720000029,
+              -7.022049427
+            ],
+            "free": false,
+            "airtime": 0
+          },
+          {
+            "compression": 0.04619999975,
+            "load": 4133.45752,
+            "xspeed": -6.19388485,
+            "zspeed": 19.202425,
+            "force": [
+              174.1885529,
+              4133.45752,
+              360.6360168
+            ],
+            "position": [
+              8.756907463,
+              2.720000029,
+              -8.885844231
+            ],
+            "free": false,
+            "airtime": 0
+          },
+          {
+            "compression": 0.04619999975,
+            "load": 4133.45752,
+            "xspeed": -6.19388485,
+            "zspeed": 18.88242531,
+            "force": [
+              132.0296783,
+              4133.45752,
+              389.3175659
+            ],
+            "position": [
+              10.23060513,
+              2.720000029,
+              -9.508913994
+            ],
+            "free": false,
+            "airtime": 0
+          }
+        ]
+      }
+    },
+    {
+      "kind": "wheelForces",
+      "name": "slope_15deg",
+      "input": {
+        "matrix": {
+          "right": [
+            0.9210609940028851,
+            0.0,
+            -0.3894183423086505
+          ],
+          "up": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "forward": [
+            0.3894183423086505,
+            -0.0,
+            0.9210609940028851
+          ],
+          "position": [
+            10,
+            3,
+            -8
+          ]
+        },
+        "normal": [
+          0,
+          0.9659258,
+          -0.258819
+        ],
+        "penetrations": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "previousCompression": [
+          0.0462,
+          0.0462,
+          0.0462,
+          0.0462
+        ],
+        "lateralForces": [
+          100,
+          100,
+          100,
+          100
+        ],
+        "longitudeForces": [
+          500,
+          500,
+          500,
+          500
+        ],
+        "linearVelocity": [
+          1,
+          -1,
+          20
+        ],
+        "angularVelocity": [
+          0.1,
+          0.2,
+          0
+        ],
+        "localAngularVelocity": [
+          0.5,
+          0.8,
+          0.3
+        ],
+        "previousGrounded": 4,
+        "driverStyle": 0,
+        "mass": 1500,
+        "worldCG": [
+          0,
+          0.25,
+          0
+        ],
+        "dt": 0.008333333333333333,
+        "springSpecs": {
+          "shock": [
+            40,
+            40
+          ],
+          "extension": [
+            50,
+            50
+          ],
+          "valvingInches": [
+            17,
+            17
+          ],
+          "digression": [
+            0.3,
+            0.3
+          ],
+          "stiffness": [
+            400,
+            400
+          ],
+          "sway": [
+            275,
+            200
+          ],
+          "travelInches": [
+            7,
+            7
+          ],
+          "rideHeightInches": [
+            3,
+            3
+          ],
+          "progression": [
+            7.5,
+            6
+          ],
+          "blowout": 5,
+          "yawSpeed": 1.2
+        },
+        "arms": [
+          [
+            -0.8,
+            -0.25,
+            1.4
+          ],
+          [
+            0.8,
+            -0.25,
+            1.4
+          ],
+          [
+            -0.8,
+            -0.25,
+            -1.3
+          ],
+          [
+            0.8,
+            -0.25,
+            -1.3
+          ]
+        ]
+      },
+      "expected": {
+        "force": [
+          1168.392212,
+          81415.91406,
+          1614.818848
+        ],
+        "torque": [
+          -5976.695312,
+          26.83923531,
+          2770.993652
+        ],
+        "correction": 0,
+        "grounded": 4,
+        "landing": false,
+        "angularVelocity": [
+          0,
+          0,
+          0
+        ],
+        "wheels": [
+          {
+            "compression": 0.07360354811,
+            "load": 15863.54102,
+            "xspeed": -6.411972523,
+            "zspeed": 18.92458534,
+            "force": [
+              292.098053,
+              20638.60156,
+              403.7047119
+            ],
+            "position": [
+              9.808337212,
+              2.747403622,
+              -6.398980141
+            ],
+            "free": false,
+            "airtime": 0
+          },
+          {
+            "compression": 0.07360354811,
+            "load": 15863.54102,
+            "xspeed": -6.418439388,
+            "zspeed": 18.60458565,
+            "force": [
+              292.098053,
+              20638.60156,
+              403.7047119
+            ],
+            "position": [
+              11.28203392,
+              2.747403622,
+              -7.022049427
+            ],
+            "free": false,
+            "airtime": 0
+          },
+          {
+            "compression": 0.07360354811,
+            "load": 15423.69434,
+            "xspeed": -6.97486496,
+            "zspeed": 18.92458344,
+            "force": [
+              292.098053,
+              20069.35547,
+              403.7047119
+            ],
+            "position": [
+              8.756907463,
+              2.747403622,
+              -8.885844231
+            ],
+            "free": false,
+            "airtime": 0
+          },
+          {
+            "compression": 0.07360354811,
+            "load": 15423.69434,
+            "xspeed": -6.981331825,
+            "zspeed": 18.60458565,
+            "force": [
+              292.098053,
+              20069.35547,
+              403.7047119
+            ],
+            "position": [
+              10.23060513,
+              2.747403622,
+              -9.508913994
+            ],
+            "free": false,
+            "airtime": 0
+          }
+        ]
+      }
+    },
+    {
+      "kind": "wheelForces",
+      "name": "bank_15deg",
+      "input": {
+        "matrix": {
+          "right": [
+            0.9210609940028851,
+            0.0,
+            -0.3894183423086505
+          ],
+          "up": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "forward": [
+            0.3894183423086505,
+            -0.0,
+            0.9210609940028851
+          ],
+          "position": [
+            10,
+            3,
+            -8
+          ]
+        },
+        "normal": [
+          -0.258819,
+          0.9659258,
+          0
+        ],
+        "penetrations": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "previousCompression": [
+          0.0462,
+          0.0462,
+          0.0462,
+          0.0462
+        ],
+        "lateralForces": [
+          -500,
+          -500,
+          -500,
+          -500
+        ],
+        "longitudeForces": [
+          200,
+          200,
+          200,
+          200
+        ],
+        "linearVelocity": [
+          2,
+          0,
+          20
+        ],
+        "angularVelocity": [
+          0,
+          0.2,
+          0.3
+        ],
+        "localAngularVelocity": [
+          0.5,
+          0.8,
+          0.3
+        ],
+        "previousGrounded": 4,
+        "driverStyle": 0,
+        "mass": 1500,
+        "worldCG": [
+          0,
+          0.25,
+          0
+        ],
+        "dt": 0.008333333333333333,
+        "springSpecs": {
+          "shock": [
+            40,
+            40
+          ],
+          "extension": [
+            50,
+            50
+          ],
+          "valvingInches": [
+            17,
+            17
+          ],
+          "digression": [
+            0.3,
+            0.3
+          ],
+          "stiffness": [
+            400,
+            400
+          ],
+          "sway": [
+            275,
+            200
+          ],
+          "travelInches": [
+            7,
+            7
+          ],
+          "rideHeightInches": [
+            3,
+            3
+          ],
+          "progression": [
+            7.5,
+            6
+          ],
+          "blowout": 5,
+          "yawSpeed": 1.2
+        },
+        "arms": [
+          [
+            -0.8,
+            -0.25,
+            1.4
+          ],
+          [
+            0.8,
+            -0.25,
+            1.4
+          ],
+          [
+            -0.8,
+            -0.25,
+            -1.3
+          ],
+          [
+            0.8,
+            -0.25,
+            -1.3
+          ]
+        ]
+      },
+      "expected": {
+        "force": [
+          -1496.306885,
+          80582.28906,
+          1496.769043
+        ],
+        "torque": [
+          -5878.970703,
+          -117.6635818,
+          1415.495605
+        ],
+        "correction": 0,
+        "grounded": 4,
+        "landing": false,
+        "angularVelocity": [
+          0,
+          0,
+          0
+        ],
+        "wheels": [
+          {
+            "compression": 0.07360354811,
+            "load": 19696.19727,
+            "xspeed": -5.380827904,
+            "zspeed": 19.41846848,
+            "force": [
+              -374.0767212,
+              20430.19531,
+              374.1922607
+            ],
+            "position": [
+              9.808337212,
+              2.747403622,
+              -6.398980141
+            ],
+            "free": false,
+            "airtime": 0
+          },
+          {
+            "compression": 0.07360354811,
+            "load": 19696.19727,
+            "xspeed": -5.274895191,
+            "zspeed": 19.09846878,
+            "force": [
+              -374.0767212,
+              20430.19531,
+              374.1922607
+            ],
+            "position": [
+              11.28203392,
+              2.747403622,
+              -7.022049427
+            ],
+            "free": false,
+            "airtime": 0
+          },
+          {
+            "compression": 0.07360354811,
+            "load": 19150.08203,
+            "xspeed": -5.980677605,
+            "zspeed": 19.41847038,
+            "force": [
+              -374.0767212,
+              19860.94922,
+              374.1922607
+            ],
+            "position": [
+              8.756907463,
+              2.747403622,
+              -8.885844231
+            ],
+            "free": false,
+            "airtime": 0
+          },
+          {
+            "compression": 0.07360354811,
+            "load": 19150.08203,
+            "xspeed": -5.874743938,
+            "zspeed": 19.09846878,
+            "force": [
+              -374.0767212,
+              19860.94922,
+              374.1922607
+            ],
+            "position": [
+              10.23060513,
+              2.747403622,
+              -9.508913994
+            ],
+            "free": false,
+            "airtime": 0
+          }
+        ]
+      }
+    },
+    {
+      "kind": "wheelForces",
+      "name": "body_pitch_roll",
+      "input": {
+        "matrix": {
+          "right": [
+            0.899157118816908,
+            -0.1464593190923865,
+            -0.4123907655754082
+          ],
+          "up": [
+            0.21413838534202997,
+            0.9690614866211725,
+            0.12273787952653914
+          ],
+          "forward": [
+            0.3816559020950483,
+            -0.19866933079506122,
+            0.90270109637546
+          ],
+          "position": [
+            10,
+            3,
+            -8
+          ]
+        },
+        "normal": [
+          0,
+          1,
+          0
+        ],
+        "penetrations": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "previousCompression": [
+          0.0462,
+          0.0462,
+          0.0462,
+          0.0462
+        ],
+        "lateralForces": [
+          -120,
+          -120,
+          -120,
+          -120
+        ],
+        "longitudeForces": [
+          300,
+          300,
+          300,
+          300
+        ],
+        "linearVelocity": [
+          2,
+          -3,
+          20
+        ],
+        "angularVelocity": [
+          0.3,
+          0.4,
+          -0.2
+        ],
+        "localAngularVelocity": [
+          0.5,
+          0.8,
+          0.3
+        ],
+        "previousGrounded": 4,
+        "driverStyle": 0,
+        "mass": 1500,
+        "worldCG": [
+          0,
+          0.25,
+          0
+        ],
+        "dt": 0.008333333333333333,
+        "springSpecs": {
+          "shock": [
+            40,
+            40
+          ],
+          "extension": [
+            50,
+            50
+          ],
+          "valvingInches": [
+            17,
+            17
+          ],
+          "digression": [
+            0.3,
+            0.3
+          ],
+          "stiffness": [
+            400,
+            400
+          ],
+          "sway": [
+            275,
+            200
+          ],
+          "travelInches": [
+            7,
+            7
+          ],
+          "rideHeightInches": [
+            3,
+            3
+          ],
+          "progression": [
+            7.5,
+            6
+          ],
+          "blowout": 5,
+          "yawSpeed": 1.2
+        },
+        "arms": [
+          [
+            -0.8,
+            -0.25,
+            1.4
+          ],
+          [
+            0.8,
+            -0.25,
+            1.4
+          ],
+          [
+            -0.8,
+            -0.25,
+            -1.3
+          ],
+          [
+            0.8,
+            -0.25,
+            -1.3
+          ]
+        ]
+      },
+      "expected": {
+        "force": [
+          17460.82812,
+          78903.1875,
+          11285.79102
+        ],
+        "torque": [
+          -8205.838867,
+          850.1435547,
+          6686.150391
+        ],
+        "correction": 0,
+        "grounded": 4,
+        "landing": false,
+        "angularVelocity": [
+          0,
+          0,
+          0
+        ],
+        "wheels": [
+          {
+            "compression": 0.07384248823,
+            "load": 17383.11523,
+            "xspeed": -5.451570511,
+            "zspeed": 19.59499931,
+            "force": [
+              4426.552246,
+              20003.4082,
+              2856.609131
+            ],
+            "position": [
+              9.76095295,
+              2.594480515,
+              -6.437279701
+            ],
+            "free": false,
+            "airtime": 0
+          },
+          {
+            "compression": 0.07384248823,
+            "load": 17383.11523,
+            "xspeed": -5.486362457,
+            "zspeed": 18.91128922,
+            "force": [
+              4426.552246,
+              20003.4082,
+              2856.609131
+            ],
+            "position": [
+              11.19960403,
+              2.360145569,
+              -7.097105026
+            ],
+            "free": false,
+            "airtime": 0
+          },
+          {
+            "compression": 0.07384248823,
+            "load": 16900.62305,
+            "xspeed": -6.473896027,
+            "zspeed": 19.59499931,
+            "force": [
+              4303.861816,
+              19448.18555,
+              2786.286621
+            ],
+            "position": [
+              8.730482101,
+              3.130887508,
+              -8.874572754
+            ],
+            "free": false,
+            "airtime": 0
+          },
+          {
+            "compression": 0.07384248823,
+            "load": 16900.62305,
+            "xspeed": -6.508687496,
+            "zspeed": 18.91128922,
+            "force": [
+              4303.861816,
+              19448.18555,
+              2786.286621
+            ],
+            "position": [
+              10.16913414,
+              2.896552801,
+              -9.534398079
+            ],
+            "free": false,
+            "airtime": 0
+          }
+        ]
+      }
+    },
+    {
+      "kind": "wheelForces",
+      "name": "airborne",
+      "input": {
+        "matrix": {
+          "right": [
+            0.9210609940028851,
+            0.0,
+            -0.3894183423086505
+          ],
+          "up": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "forward": [
+            0.3894183423086505,
+            -0.0,
+            0.9210609940028851
+          ],
+          "position": [
+            10,
+            3,
+            -8
+          ]
+        },
+        "normal": [
+          0,
+          1,
+          0
+        ],
+        "penetrations": [
+          -1,
+          -1,
+          -1,
+          -1
+        ],
+        "previousCompression": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "lateralForces": [
+          100,
+          100,
+          100,
+          100
+        ],
+        "longitudeForces": [
+          500,
+          500,
+          500,
+          500
+        ],
+        "linearVelocity": [
+          0,
+          -4,
+          20
+        ],
+        "angularVelocity": [
+          0.5,
+          0.8,
+          0.3
+        ],
+        "localAngularVelocity": [
+          0.5,
+          0.8,
+          0.3
+        ],
+        "previousGrounded": 0,
+        "driverStyle": 0,
+        "mass": 1500,
+        "worldCG": [
+          0,
+          0.25,
+          0
+        ],
+        "dt": 0.008333333333333333,
+        "springSpecs": {
+          "shock": [
+            40,
+            40
+          ],
+          "extension": [
+            50,
+            50
+          ],
+          "valvingInches": [
+            17,
+            17
+          ],
+          "digression": [
+            0.3,
+            0.3
+          ],
+          "stiffness": [
+            400,
+            400
+          ],
+          "sway": [
+            275,
+            200
+          ],
+          "travelInches": [
+            7,
+            7
+          ],
+          "rideHeightInches": [
+            3,
+            3
+          ],
+          "progression": [
+            7.5,
+            6
+          ],
+          "blowout": 5,
+          "yawSpeed": 1.2
+        },
+        "arms": [
+          [
+            -0.8,
+            -0.25,
+            1.4
+          ],
+          [
+            0.8,
+            -0.25,
+            1.4
+          ],
+          [
+            -0.8,
+            -0.25,
+            -1.3
+          ],
+          [
+            0.8,
+            -0.25,
+            -1.3
+          ]
+        ]
+      },
+      "expected": {
+        "force": [
+          0,
+          0,
+          0
+        ],
+        "torque": [
+          0,
+          0,
+          0
+        ],
+        "correction": 0,
+        "grounded": 0,
+        "landing": false,
+        "angularVelocity": [
+          0,
+          0,
+          0
+        ],
+        "wheels": [
+          {
+            "compression": 0,
+            "load": 0,
+            "xspeed": 0,
+            "zspeed": 0,
+            "force": [
+              0,
+              0,
+              0
+            ],
+            "position": [
+              9.808337212,
+              2.75,
+              -6.398980141
+            ],
+            "free": true,
+            "airtime": 0.008333333768
+          },
+          {
+            "compression": 0,
+            "load": 0,
+            "xspeed": 0,
+            "zspeed": 0,
+            "force": [
+              0,
+              0,
+              0
+            ],
+            "position": [
+              11.28203392,
+              2.75,
+              -7.022049427
+            ],
+            "free": true,
+            "airtime": 0.008333333768
+          },
+          {
+            "compression": 0,
+            "load": 0,
+            "xspeed": 0,
+            "zspeed": 0,
+            "force": [
+              0,
+              0,
+              0
+            ],
+            "position": [
+              8.756907463,
+              2.75,
+              -8.885844231
+            ],
+            "free": true,
+            "airtime": 0.008333333768
+          },
+          {
+            "compression": 0,
+            "load": 0,
+            "xspeed": 0,
+            "zspeed": 0,
+            "force": [
+              0,
+              0,
+              0
+            ],
+            "position": [
+              10.23060513,
+              2.75,
+              -9.508913994
+            ],
+            "free": true,
+            "airtime": 0.008333333768
+          }
+        ]
+      }
+    },
+    {
+      "kind": "wheelForces",
+      "name": "landing",
+      "input": {
+        "matrix": {
+          "right": [
+            0.9118054783806335,
+            -0.09911547819376812,
+            -0.39848072924231215
+          ],
+          "up": [
+            0.1383378988188791,
+            0.9878487279985917,
+            0.07083442907190046
+          ],
+          "forward": [
+            0.38661789320392526,
+            -0.11971220728891936,
+            0.9144373089942105
+          ],
+          "position": [
+            10,
+            3,
+            -8
+          ]
+        },
+        "normal": [
+          0,
+          1,
+          0
+        ],
+        "penetrations": [
+          -0.015,
+          0.01,
+          -0.03,
+          -0.04
+        ],
+        "previousCompression": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "lateralForces": [
+          100,
+          100,
+          100,
+          100
+        ],
+        "longitudeForces": [
+          500,
+          500,
+          500,
+          500
+        ],
+        "linearVelocity": [
+          0,
+          -5,
+          20
+        ],
+        "angularVelocity": [
+          0.5,
+          0.8,
+          0.3
+        ],
+        "localAngularVelocity": [
+          0.5,
+          0.8,
+          0.3
+        ],
+        "previousGrounded": 0,
+        "driverStyle": 0,
+        "mass": 1500,
+        "worldCG": [
+          0,
+          0.25,
+          0
+        ],
+        "dt": 0.008333333333333333,
+        "springSpecs": {
+          "shock": [
+            40,
+            40
+          ],
+          "extension": [
+            50,
+            50
+          ],
+          "valvingInches": [
+            17,
+            17
+          ],
+          "digression": [
+            0.3,
+            0.3
+          ],
+          "stiffness": [
+            400,
+            400
+          ],
+          "sway": [
+            275,
+            200
+          ],
+          "travelInches": [
+            7,
+            7
+          ],
+          "rideHeightInches": [
+            3,
+            3
+          ],
+          "progression": [
+            7.5,
+            6
+          ],
+          "blowout": 5,
+          "yawSpeed": 1.2
+        },
+        "arms": [
+          [
+            -0.8,
+            -0.25,
+            1.4
+          ],
+          [
+            0.8,
+            -0.25,
+            1.4
+          ],
+          [
+            -0.8,
+            -0.25,
+            -1.3
+          ],
+          [
+            0.8,
+            -0.25,
+            -1.3
+          ]
+        ]
+      },
+      "expected": {
+        "force": [
+          15699.25586,
+          103913.4609,
+          9137.546875
+        ],
+        "torque": [
+          -37309.89453,
+          3457.050781,
+          24326.7168
+        ],
+        "correction": 0,
+        "grounded": 4,
+        "landing": true,
+        "angularVelocity": [
+          0.5692305565,
+          0.327624917,
+          -0.03374099731
+        ],
+        "wheels": [
+          {
+            "compression": 0.06027407199,
+            "load": 26285.3457,
+            "xspeed": -6.416918755,
+            "zspeed": 19.44229126,
+            "force": [
+              4144.194824,
+              27544.92773,
+              2396.718262
+            ],
+            "position": [
+              9.775032997,
+              2.649000645,
+              -6.419839859
+            ],
+            "free": false,
+            "airtime": 0
+          },
+          {
+            "compression": 0.0852740705,
+            "load": 35375.67188,
+            "xspeed": -6.357517719,
+            "zspeed": 18.03317261,
+            "force": [
+              5478.202148,
+              37070.85938,
+              3079.782227
+            ],
+            "position": [
+              11.23738003,
+              2.515112162,
+              -7.055638313
+            ],
+            "free": false,
+            "airtime": 0
+          },
+          {
+            "compression": 0.0452740714,
+            "load": 20585.26758,
+            "xspeed": -8.713632584,
+            "zspeed": 19.44229126,
+            "force": [
+              3307.707031,
+              21571.70508,
+              1968.403809
+            ],
+            "position": [
+              8.729089737,
+              2.957406044,
+              -8.889883041
+            ],
+            "free": false,
+            "airtime": 0
+          },
+          {
+            "compression": 0.03527407348,
+            "load": 16915.39062,
+            "xspeed": -8.654231071,
+            "zspeed": 18.03317261,
+            "force": [
+              2769.152344,
+              17725.96875,
+              1692.642578
+            ],
+            "position": [
+              10.18659496,
+              2.788942575,
+              -9.528160095
+            ],
+            "free": false,
+            "airtime": 0
+          }
+        ]
+      }
+    },
+    {
+      "kind": "wheelForces",
+      "name": "bottom_out",
+      "input": {
+        "matrix": {
+          "right": [
+            0.9210609940028851,
+            0.0,
+            -0.3894183423086505
+          ],
+          "up": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "forward": [
+            0.3894183423086505,
+            -0.0,
+            0.9210609940028851
+          ],
+          "position": [
+            10,
+            3,
+            -8
+          ]
+        },
+        "normal": [
+          0,
+          1,
+          0
+        ],
+        "penetrations": [
+          0.2,
+          0.2,
+          0.2,
+          0.2
+        ],
+        "previousCompression": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "lateralForces": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "longitudeForces": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "linearVelocity": [
+          0,
+          -10,
+          20
+        ],
+        "angularVelocity": [
+          0,
+          0,
+          0
+        ],
+        "localAngularVelocity": [
+          0.5,
+          0.8,
+          0.3
+        ],
+        "previousGrounded": 0,
+        "driverStyle": 0,
+        "mass": 1500,
+        "worldCG": [
+          0,
+          0.25,
+          0
+        ],
+        "dt": 0.008333333333333333,
+        "springSpecs": {
+          "shock": [
+            40,
+            40
+          ],
+          "extension": [
+            50,
+            50
+          ],
+          "valvingInches": [
+            17,
+            17
+          ],
+          "digression": [
+            0.3,
+            0.3
+          ],
+          "stiffness": [
+            400,
+            400
+          ],
+          "sway": [
+            275,
+            200
+          ],
+          "travelInches": [
+            7,
+            7
+          ],
+          "rideHeightInches": [
+            3,
+            3
+          ],
+          "progression": [
+            7.5,
+            6
+          ],
+          "blowout": 5,
+          "yawSpeed": 1.2
+        },
+        "arms": [
+          [
+            -0.8,
+            -0.25,
+            1.4
+          ],
+          [
+            0.8,
+            -0.25,
+            1.4
+          ],
+          [
+            -0.8,
+            -0.25,
+            -1.3
+          ],
+          [
+            0.8,
+            -0.25,
+            -1.3
+          ]
+        ]
+      },
+      "expected": {
+        "force": [
+          0,
+          295151.1562,
+          0
+        ],
+        "torque": [
+          -21853.35156,
+          0,
+          9239.453125
+        ],
+        "correction": 0.09839999676,
+        "grounded": 4,
+        "landing": true,
+        "angularVelocity": [
+          0.5189432502,
+          0.400000006,
+          -0.05655001104
+        ],
+        "wheels": [
+          {
+            "compression": 0.1777999997,
+            "load": 75448.66406,
+            "xspeed": -7.788366795,
+            "zspeed": 18.42121887,
+            "force": [
+              0,
+              75448.66406,
+              0
+            ],
+            "position": [
+              9.808337212,
+              2.949999809,
+              -6.398980141
+            ],
+            "free": false,
+            "airtime": 0
+          },
+          {
+            "compression": 0.1777999997,
+            "load": 75448.66406,
+            "xspeed": -7.788366795,
+            "zspeed": 18.42121887,
+            "force": [
+              0,
+              75448.66406,
+              0
+            ],
+            "position": [
+              11.28203392,
+              2.949999809,
+              -7.022049427
+            ],
+            "free": false,
+            "airtime": 0
+          },
+          {
+            "compression": 0.1777999997,
+            "load": 72126.91406,
+            "xspeed": -7.788366795,
+            "zspeed": 18.42121887,
+            "force": [
+              0,
+              72126.91406,
+              0
+            ],
+            "position": [
+              8.756907463,
+              2.949999809,
+              -8.885844231
+            ],
+            "free": false,
+            "airtime": 0
+          },
+          {
+            "compression": 0.1777999997,
+            "load": 72126.91406,
+            "xspeed": -7.788366795,
+            "zspeed": 18.42121887,
+            "force": [
+              0,
+              72126.91406,
+              0
+            ],
+            "position": [
+              10.23060513,
+              2.949999809,
+              -9.508913994
+            ],
+            "free": false,
+            "airtime": 0
+          }
+        ]
+      }
+    },
+    {
+      "kind": "wheelForces",
+      "name": "wall_not_ground",
+      "input": {
+        "matrix": {
+          "right": [
+            0.9210609940028851,
+            0.0,
+            -0.3894183423086505
+          ],
+          "up": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "forward": [
+            0.3894183423086505,
+            -0.0,
+            0.9210609940028851
+          ],
+          "position": [
+            10,
+            3,
+            -8
+          ]
+        },
+        "normal": [
+          0.99,
+          0.141067,
+          0
+        ],
+        "penetrations": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "previousCompression": [
+          0.04,
+          0.04,
+          0.04,
+          0.04
+        ],
+        "lateralForces": [
+          100,
+          100,
+          100,
+          100
+        ],
+        "longitudeForces": [
+          500,
+          500,
+          500,
+          500
+        ],
+        "linearVelocity": [
+          0,
+          0,
+          20
+        ],
+        "angularVelocity": [
+          0,
+          0,
+          0
+        ],
+        "localAngularVelocity": [
+          0.5,
+          0.8,
+          0.3
+        ],
+        "previousGrounded": 4,
+        "driverStyle": 0,
+        "mass": 1500,
+        "worldCG": [
+          0,
+          0.25,
+          0
+        ],
+        "dt": 0.008333333333333333,
+        "springSpecs": {
+          "shock": [
+            40,
+            40
+          ],
+          "extension": [
+            50,
+            50
+          ],
+          "valvingInches": [
+            17,
+            17
+          ],
+          "digression": [
+            0.3,
+            0.3
+          ],
+          "stiffness": [
+            400,
+            400
+          ],
+          "sway": [
+            275,
+            200
+          ],
+          "travelInches": [
+            7,
+            7
+          ],
+          "rideHeightInches": [
+            3,
+            3
+          ],
+          "progression": [
+            7.5,
+            6
+          ],
+          "blowout": 5,
+          "yawSpeed": 1.2
+        },
+        "arms": [
+          [
+            -0.8,
+            -0.25,
+            1.4
+          ],
+          [
+            0.8,
+            -0.25,
+            1.4
+          ],
+          [
+            -0.8,
+            -0.25,
+            -1.3
+          ],
+          [
+            0.8,
+            -0.25,
+            -1.3
+          ]
+        ]
+      },
+      "expected": {
+        "force": [
+          0,
+          0,
+          0
+        ],
+        "torque": [
+          0,
+          0,
+          0
+        ],
+        "correction": 0,
+        "grounded": 0,
+        "landing": false,
+        "angularVelocity": [
+          0,
+          0,
+          0
+        ],
+        "wheels": [
+          {
+            "compression": 0.0107493056,
+            "load": 0,
+            "xspeed": 0,
+            "zspeed": 0,
+            "force": [
+              0,
+              0,
+              0
+            ],
+            "position": [
+              9.808337212,
+              2.75,
+              -6.398980141
+            ],
+            "free": true,
+            "airtime": 0
+          },
+          {
+            "compression": 0.0107493056,
+            "load": 0,
+            "xspeed": 0,
+            "zspeed": 0,
+            "force": [
+              0,
+              0,
+              0
+            ],
+            "position": [
+              11.28203392,
+              2.75,
+              -7.022049427
+            ],
+            "free": true,
+            "airtime": 0
+          },
+          {
+            "compression": 0.0107493056,
+            "load": 0,
+            "xspeed": 0,
+            "zspeed": 0,
+            "force": [
+              0,
+              0,
+              0
+            ],
+            "position": [
+              8.756907463,
+              2.75,
+              -8.885844231
+            ],
+            "free": true,
+            "airtime": 0
+          },
+          {
+            "compression": 0.0107493056,
+            "load": 0,
+            "xspeed": 0,
+            "zspeed": 0,
+            "force": [
+              0,
+              0,
+              0
+            ],
+            "position": [
+              10.23060513,
+              2.75,
+              -9.508913994
+            ],
+            "free": true,
+            "airtime": 0
+          }
+        ]
+      }
+    },
+    {
+      "kind": "wheelForces",
+      "name": "lateral_impulse_limit",
+      "input": {
+        "matrix": {
+          "right": [
+            0.9210609940028851,
+            0.0,
+            -0.3894183423086505
+          ],
+          "up": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "forward": [
+            0.3894183423086505,
+            -0.0,
+            0.9210609940028851
+          ],
+          "position": [
+            10,
+            3,
+            -8
+          ]
+        },
+        "normal": [
+          0,
+          1,
+          0
+        ],
+        "penetrations": [
+          -0.03,
+          -0.03,
+          -0.03,
+          -0.03
+        ],
+        "previousCompression": [
+          0.0462,
+          0.0462,
+          0.0462,
+          0.0462
+        ],
+        "lateralForces": [
+          1000000.0,
+          1000000.0,
+          1000000.0,
+          1000000.0
+        ],
+        "longitudeForces": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "linearVelocity": [
+          0.001,
+          0,
+          20
+        ],
+        "angularVelocity": [
+          0,
+          0,
+          0
+        ],
+        "localAngularVelocity": [
+          0.5,
+          0.8,
+          0.3
+        ],
+        "previousGrounded": 4,
+        "driverStyle": 0,
+        "mass": 1500,
+        "worldCG": [
+          0,
+          0.25,
+          0
+        ],
+        "dt": 0.008333333333333333,
+        "springSpecs": {
+          "shock": [
+            40,
+            40
+          ],
+          "extension": [
+            50,
+            50
+          ],
+          "valvingInches": [
+            17,
+            17
+          ],
+          "digression": [
+            0.3,
+            0.3
+          ],
+          "stiffness": [
+            400,
+            400
+          ],
+          "sway": [
+            275,
+            200
+          ],
+          "travelInches": [
+            7,
+            7
+          ],
+          "rideHeightInches": [
+            3,
+            3
+          ],
+          "progression": [
+            7.5,
+            6
+          ],
+          "blowout": 5,
+          "yawSpeed": 1.2
+        },
+        "arms": [
+          [
+            -0.8,
+            -0.25,
+            1.4
+          ],
+          [
+            0.8,
+            -0.25,
+            1.4
+          ],
+          [
+            -0.8,
+            -0.25,
+            -1.3
+          ],
+          [
+            0.8,
+            -0.25,
+            -1.3
+          ]
+        ]
+      },
+      "expected": {
+        "force": [
+          1291088.125,
+          16982.38672,
+          -545863.3125
+        ],
+        "torque": [
+          287967.6875,
+          84104.36719,
+          684843.125
+        ],
+        "correction": 0,
+        "grounded": 4,
+        "landing": false,
+        "angularVelocity": [
+          0,
+          0,
+          0
+        ],
+        "wheels": [
+          {
+            "compression": 0.04619999975,
+            "load": 4357.736328,
+            "xspeed": -7.787445545,
+            "zspeed": 18.42160797,
+            "force": [
+              322772.0312,
+              4357.736328,
+              -136465.8281
+            ],
+            "position": [
+              9.808337212,
+              2.720000029,
+              -6.398980141
+            ],
+            "free": false,
+            "airtime": 0
+          },
+          {
+            "compression": 0.04619999975,
+            "load": 4357.736328,
+            "xspeed": -7.787445545,
+            "zspeed": 18.42160797,
+            "force": [
+              322772.0312,
+              4357.736328,
+              -136465.8281
+            ],
+            "position": [
+              11.28203392,
+              2.720000029,
+              -7.022049427
+            ],
+            "free": false,
+            "airtime": 0
+          },
+          {
+            "compression": 0.04619999975,
+            "load": 4133.45752,
+            "xspeed": -7.787445545,
+            "zspeed": 18.42160797,
+            "force": [
+              322772.0312,
+              4133.45752,
+              -136465.8281
+            ],
+            "position": [
+              8.756907463,
+              2.720000029,
+              -8.885844231
+            ],
+            "free": false,
+            "airtime": 0
+          },
+          {
+            "compression": 0.04619999975,
+            "load": 4133.45752,
+            "xspeed": -7.787445545,
+            "zspeed": 18.42160797,
+            "force": [
+              322772.0312,
+              4133.45752,
+              -136465.8281
+            ],
+            "position": [
+              10.23060513,
+              2.720000029,
+              -9.508913994
+            ],
+            "free": false,
+            "airtime": 0
+          }
+        ]
+      }
+    },
+    {
+      "kind": "wheelForces",
+      "name": "drag_yaw",
+      "input": {
+        "matrix": {
+          "right": [
+            0.9210609940028851,
+            0.0,
+            -0.3894183423086505
+          ],
+          "up": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "forward": [
+            0.3894183423086505,
+            -0.0,
+            0.9210609940028851
+          ],
+          "position": [
+            10,
+            3,
+            -8
+          ]
+        },
+        "normal": [
+          0,
+          1,
+          0
+        ],
+        "penetrations": [
+          -0.03,
+          -0.03,
+          -0.03,
+          -0.03
+        ],
+        "previousCompression": [
+          0.0462,
+          0.0462,
+          0.0462,
+          0.0462
+        ],
+        "lateralForces": [
+          200,
+          -300,
+          400,
+          -500
+        ],
+        "longitudeForces": [
+          100,
+          200,
+          300,
+          400
+        ],
+        "linearVelocity": [
+          3,
+          0,
+          20
+        ],
+        "angularVelocity": [
+          0,
+          0,
+          0
+        ],
+        "localAngularVelocity": [
+          0.5,
+          0.8,
+          0.3
+        ],
+        "previousGrounded": 4,
+        "driverStyle": 1,
+        "mass": 1500,
+        "worldCG": [
+          0,
+          0.25,
+          0
+        ],
+        "dt": 0.008333333333333333,
+        "springSpecs": {
+          "shock": [
+            40,
+            40
+          ],
+          "extension": [
+            50,
+            50
+          ],
+          "valvingInches": [
+            17,
+            17
+          ],
+          "digression": [
+            0.3,
+            0.3
+          ],
+          "stiffness": [
+            400,
+            400
+          ],
+          "sway": [
+            275,
+            200
+          ],
+          "travelInches": [
+            7,
+            7
+          ],
+          "rideHeightInches": [
+            3,
+            3
+          ],
+          "progression": [
+            7.5,
+            6
+          ],
+          "blowout": 5,
+          "yawSpeed": 1.2
+        },
+        "arms": [
+          [
+            -0.8,
+            -0.25,
+            1.4
+          ],
+          [
+            0.8,
+            -0.25,
+            1.4
+          ],
+          [
+            -0.8,
+            -0.25,
+            -1.3
+          ],
+          [
+            0.8,
+            -0.25,
+            -1.3
+          ]
+        ]
+      },
+      "expected": {
+        "force": [
+          205.2061157,
+          16982.38672,
+          998.9446411
+        ],
+        "torque": [
+          -1869.282227,
+          -326.3995056,
+          675.2354736
+        ],
+        "correction": 0,
+        "grounded": 4,
+        "landing": false,
+        "angularVelocity": [
+          0,
+          0,
+          0
+        ],
+        "wheels": [
+          {
+            "compression": 0.04619999975,
+            "load": 4357.736328,
+            "xspeed": -5.025183678,
+            "zspeed": 19.58947372,
+            "force": [
+              223.1540222,
+              4357.736328,
+              14.22242737
+            ],
+            "position": [
+              9.808337212,
+              2.720000029,
+              -6.398980141
+            ],
+            "free": false,
+            "airtime": 0
+          },
+          {
+            "compression": 0.04619999975,
+            "load": 4357.736328,
+            "xspeed": -5.025183678,
+            "zspeed": 19.58947372,
+            "force": [
+              -198.4346313,
+              4357.736328,
+              301.0376892
+            ],
+            "position": [
+              11.28203392,
+              2.720000029,
+              -7.022049427
+            ],
+            "free": false,
+            "airtime": 0
+          },
+          {
+            "compression": 0.04619999975,
+            "load": 4133.45752,
+            "xspeed": -5.025183678,
+            "zspeed": 19.58947372,
+            "force": [
+              485.2498779,
+              4133.45752,
+              120.5509644
+            ],
+            "position": [
+              8.756907463,
+              2.720000029,
+              -8.885844231
+            ],
+            "free": false,
+            "airtime": 0
+          },
+          {
+            "compression": 0.04619999975,
+            "load": 4133.45752,
+            "xspeed": -5.025183678,
+            "zspeed": 19.58947372,
+            "force": [
+              -304.7631531,
+              4133.45752,
+              563.1335449
+            ],
+            "position": [
+              10.23060513,
+              2.720000029,
+              -9.508913994
+            ],
+            "free": false,
+            "airtime": 0
+          }
+        ]
+      }
+    },
+    {
+      "kind": "jumpStabilizer",
+      "name": "level_low_flight",
+      "input": {
+        "matrix": {
+          "right": [
+            0.9210609940028851,
+            0.0,
+            -0.3894183423086505
+          ],
+          "up": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "forward": [
+            0.3894183423086505,
+            -0.0,
+            0.9210609940028851
+          ],
+          "position": [
+            0,
+            0,
+            0
+          ]
+        },
+        "normal": [
+          0,
+          1,
+          0
+        ],
+        "altitude": 0.5,
+        "linearVelocity": [
+          0,
+          0,
+          20
+        ],
+        "localAngularVelocity": [
+          0,
+          0,
+          0
+        ],
+        "groundContact": false,
+        "grounded": 0,
+        "jumpTime": 0,
+        "peakAltitude": 0,
+        "mass": 1500,
+        "inertia": [
+          2000,
+          2300,
+          1000
+        ],
+        "dt": 0.008333333333333333,
+        "speed": 20.0
+      },
+      "expected": {
+        "force": [
+          0,
+          -4500,
+          0
+        ],
+        "torque": [
+          0,
+          0,
+          0
+        ],
+        "jumpTime": 0.008333333768,
+        "peakAltitude": 0.5
+      }
+    },
+    {
+      "kind": "jumpStabilizer",
+      "name": "passive_pitch_roll",
+      "input": {
+        "matrix": {
+          "right": [
+            0.9222692263472502,
+            0.0987123949919223,
+            -0.3737316379540319
+          ],
+          "up": [
+            -0.034049443501009594,
+            0.9838313410528056,
+            0.17583096359717149
+          ],
+          "forward": [
+            0.38504559409259104,
+            -0.14943813247359922,
+            0.9107184718850753
+          ],
+          "position": [
+            0,
+            0,
+            0
+          ]
+        },
+        "normal": [
+          0,
+          1,
+          0
+        ],
+        "altitude": 1,
+        "linearVelocity": [
+          0,
+          -2,
+          20
+        ],
+        "localAngularVelocity": [
+          0.6,
+          0.9,
+          -0.3
+        ],
+        "groundContact": false,
+        "grounded": 0,
+        "jumpTime": 0.4,
+        "peakAltitude": 2,
+        "mass": 1500,
+        "inertia": [
+          2000,
+          2300,
+          1000
+        ],
+        "dt": 0.008333333333333333,
+        "speed": 20.09975124224178
+      },
+      "expected": {
+        "force": [
+          0,
+          -4500,
+          0
+        ],
+        "torque": [
+          -2905.181396,
+          -444.7879944,
+          1926.149536
+        ],
+        "jumpTime": 0.4083333313,
+        "peakAltitude": 2
+      }
+    },
+    {
+      "kind": "jumpStabilizer",
+      "name": "passive_one_wheel",
+      "input": {
+        "matrix": {
+          "right": [
+            0.9222692263472502,
+            0.0987123949919223,
+            -0.3737316379540319
+          ],
+          "up": [
+            -0.034049443501009594,
+            0.9838313410528056,
+            0.17583096359717149
+          ],
+          "forward": [
+            0.38504559409259104,
+            -0.14943813247359922,
+            0.9107184718850753
+          ],
+          "position": [
+            0,
+            0,
+            0
+          ]
+        },
+        "normal": [
+          0,
+          1,
+          0
+        ],
+        "altitude": 1,
+        "linearVelocity": [
+          0,
+          -2,
+          20
+        ],
+        "localAngularVelocity": [
+          0.6,
+          0.9,
+          -0.3
+        ],
+        "groundContact": false,
+        "grounded": 1,
+        "jumpTime": 0.4,
+        "peakAltitude": 2,
+        "mass": 1500,
+        "inertia": [
+          2000,
+          2300,
+          1000
+        ],
+        "dt": 0.008333333333333333,
+        "speed": 20.09975124224178
+      },
+      "expected": {
+        "force": [
+          0,
+          0,
+          0
+        ],
+        "torque": [
+          -2319.499268,
+          -382.1013489,
+          1688.813232
+        ],
+        "jumpTime": 0,
+        "peakAltitude": 0
+      }
+    },
+    {
+      "kind": "jumpStabilizer",
+      "name": "ground_chassis_disables_passive",
+      "input": {
+        "matrix": {
+          "right": [
+            0.9222692263472502,
+            0.0987123949919223,
+            -0.3737316379540319
+          ],
+          "up": [
+            -0.034049443501009594,
+            0.9838313410528056,
+            0.17583096359717149
+          ],
+          "forward": [
+            0.38504559409259104,
+            -0.14943813247359922,
+            0.9107184718850753
+          ],
+          "position": [
+            0,
+            0,
+            0
+          ]
+        },
+        "normal": [
+          0,
+          1,
+          0
+        ],
+        "altitude": 1,
+        "linearVelocity": [
+          0,
+          -2,
+          20
+        ],
+        "localAngularVelocity": [
+          0.6,
+          0.9,
+          -0.3
+        ],
+        "groundContact": true,
+        "grounded": 1,
+        "jumpTime": 0.4,
+        "peakAltitude": 2,
+        "mass": 1500,
+        "inertia": [
+          2000,
+          2300,
+          1000
+        ],
+        "dt": 0.008333333333333333,
+        "speed": 20.09975124224178
+      },
+      "expected": {
+        "force": [
+          0,
+          0,
+          0
+        ],
+        "torque": [
+          0,
+          0,
+          0
+        ],
+        "jumpTime": 0,
+        "peakAltitude": 0
+      }
+    },
+    {
+      "kind": "jumpStabilizer",
+      "name": "two_wheel_grounded",
+      "input": {
+        "matrix": {
+          "right": [
+            0.9222692263472502,
+            0.0987123949919223,
+            -0.3737316379540319
+          ],
+          "up": [
+            -0.034049443501009594,
+            0.9838313410528056,
+            0.17583096359717149
+          ],
+          "forward": [
+            0.38504559409259104,
+            -0.14943813247359922,
+            0.9107184718850753
+          ],
+          "position": [
+            0,
+            0,
+            0
+          ]
+        },
+        "normal": [
+          0,
+          1,
+          0
+        ],
+        "altitude": 1,
+        "linearVelocity": [
+          0,
+          -2,
+          20
+        ],
+        "localAngularVelocity": [
+          0.6,
+          0.9,
+          -0.3
+        ],
+        "groundContact": false,
+        "grounded": 2,
+        "jumpTime": 0.4,
+        "peakAltitude": 2,
+        "mass": 1500,
+        "inertia": [
+          2000,
+          2300,
+          1000
+        ],
+        "dt": 0.008333333333333333,
+        "speed": 20.09975124224178
+      },
+      "expected": {
+        "force": [
+          0,
+          0,
+          0
+        ],
+        "torque": [
+          0,
+          0,
+          0
+        ],
+        "jumpTime": 0,
+        "peakAltitude": 0
+      }
+    },
+    {
+      "kind": "jumpStabilizer",
+      "name": "active_pitch",
+      "input": {
+        "matrix": {
+          "right": [
+            0.9210609940028851,
+            0.0,
+            -0.3894183423086505
+          ],
+          "up": [
+            0.1335306957605727,
+            0.9393727128473789,
+            0.31582979537632794
+          ],
+          "forward": [
+            0.36580896464700624,
+            -0.34289780745545134,
+            0.8652195646343935
+          ],
+          "position": [
+            0,
+            0,
+            0
+          ]
+        },
+        "normal": [
+          0,
+          1,
+          0
+        ],
+        "altitude": 3,
+        "linearVelocity": [
+          0,
+          0,
+          20
+        ],
+        "localAngularVelocity": [
+          0,
+          0,
+          0
+        ],
+        "groundContact": false,
+        "grounded": 0,
+        "jumpTime": 0.4,
+        "peakAltitude": 4,
+        "mass": 1500,
+        "inertia": [
+          2000,
+          2300,
+          1000
+        ],
+        "dt": 0.008333333333333333,
+        "speed": 20.0
+      },
+      "expected": {
+        "force": [
+          0,
+          -4500,
+          0
+        ],
+        "torque": [
+          -2680.388428,
+          0,
+          1133.25
+        ],
+        "jumpTime": 0.4083333313,
+        "peakAltitude": 4
+      }
+    },
+    {
+      "kind": "jumpStabilizer",
+      "name": "active_roll",
+      "input": {
+        "matrix": {
+          "right": [
+            0.8652195646343935,
+            0.34289780745545134,
+            -0.36580896464700624
+          ],
+          "up": [
+            -0.31582979537632794,
+            0.9393727128473789,
+            0.1335306957605727
+          ],
+          "forward": [
+            0.3894183423086505,
+            -0.0,
+            0.9210609940028851
+          ],
+          "position": [
+            0,
+            0,
+            0
+          ]
+        },
+        "normal": [
+          0,
+          1,
+          0
+        ],
+        "altitude": 3,
+        "linearVelocity": [
+          0,
+          0,
+          20
+        ],
+        "localAngularVelocity": [
+          0,
+          0,
+          0
+        ],
+        "groundContact": false,
+        "grounded": 0,
+        "jumpTime": 0.4,
+        "peakAltitude": 4,
+        "mass": 1500,
+        "inertia": [
+          2000,
+          2300,
+          1000
+        ],
+        "dt": 0.008333333333333333,
+        "speed": 20.0
+      },
+      "expected": {
+        "force": [
+          0,
+          -4500,
+          0
+        ],
+        "torque": [
+          -566.625,
+          0,
+          -1340.194214
+        ],
+        "jumpTime": 0.4083333313,
+        "peakAltitude": 4
+      }
+    },
+    {
+      "kind": "jumpStabilizer",
+      "name": "active_banked_ground",
+      "input": {
+        "matrix": {
+          "right": [
+            0.9180712448049045,
+            0.19470917115432523,
+            -0.3453020824303971
+          ],
+          "up": [
+            -0.10716324863677842,
+            0.9605304970014426,
+            0.2567045041906624
+          ],
+          "forward": [
+            0.3816559020950483,
+            -0.19866933079506122,
+            0.90270109637546
+          ],
+          "position": [
+            0,
+            0,
+            0
+          ]
+        },
+        "normal": [
+          -0.1,
+          0.98,
+          0.1720465
+        ],
+        "altitude": 4,
+        "linearVelocity": [
+          0,
+          -1,
+          20
+        ],
+        "localAngularVelocity": [
+          0.2,
+          0.4,
+          0.1
+        ],
+        "groundContact": false,
+        "grounded": 0,
+        "jumpTime": 0.4,
+        "peakAltitude": 4,
+        "mass": 1500,
+        "inertia": [
+          2000,
+          2300,
+          1000
+        ],
+        "dt": 0.008333333333333333,
+        "speed": 20.024984394500787
+      },
+      "expected": {
+        "force": [
+          0,
+          -4500,
+          0
+        ],
+        "torque": [
+          -132.3989868,
+          -18.94787598,
+          15.6277256
+        ],
+        "jumpTime": 0.4083333313,
+        "peakAltitude": 4
+      }
+    },
+    {
+      "kind": "jumpStabilizer",
+      "name": "long_jump_descending",
+      "input": {
+        "matrix": {
+          "right": [
+            0.9210609940028851,
+            0.0,
+            -0.3894183423086505
+          ],
+          "up": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "forward": [
+            0.3894183423086505,
+            -0.0,
+            0.9210609940028851
+          ],
+          "position": [
+            0,
+            0,
+            0
+          ]
+        },
+        "normal": [
+          0,
+          1,
+          0
+        ],
+        "altitude": 3,
+        "linearVelocity": [
+          0,
+          -2,
+          20
+        ],
+        "localAngularVelocity": [
+          0,
+          0,
+          0
+        ],
+        "groundContact": false,
+        "grounded": 0,
+        "jumpTime": 1.2,
+        "peakAltitude": 5,
+        "mass": 1500,
+        "inertia": [
+          2000,
+          2300,
+          1000
+        ],
+        "dt": 0.008333333333333333,
+        "speed": 20.09975124224178
+      },
+      "expected": {
+        "force": [
+          0,
+          -12000,
+          0
+        ],
+        "torque": [
+          0,
+          0,
+          0
+        ],
+        "jumpTime": 1.208333373,
+        "peakAltitude": 5
+      }
+    },
+    {
+      "kind": "jumpStabilizer",
+      "name": "long_jump_rising",
+      "input": {
+        "matrix": {
+          "right": [
+            0.9210609940028851,
+            0.0,
+            -0.3894183423086505
+          ],
+          "up": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "forward": [
+            0.3894183423086505,
+            -0.0,
+            0.9210609940028851
+          ],
+          "position": [
+            0,
+            0,
+            0
+          ]
+        },
+        "normal": [
+          0,
+          1,
+          0
+        ],
+        "altitude": 3,
+        "linearVelocity": [
+          0,
+          2,
+          20
+        ],
+        "localAngularVelocity": [
+          0,
+          0,
+          0
+        ],
+        "groundContact": false,
+        "grounded": 0,
+        "jumpTime": 1.2,
+        "peakAltitude": 5,
+        "mass": 1500,
+        "inertia": [
+          2000,
+          2300,
+          1000
+        ],
+        "dt": 0.008333333333333333,
+        "speed": 20.09975124224178
+      },
+      "expected": {
+        "force": [
+          0,
+          -4500,
+          0
+        ],
+        "torque": [
+          0,
+          0,
+          0
+        ],
+        "jumpTime": 1.208333373,
+        "peakAltitude": 5
+      }
+    },
+    {
+      "kind": "jumpStabilizer",
+      "name": "long_jump_slow",
+      "input": {
+        "matrix": {
+          "right": [
+            0.9210609940028851,
+            0.0,
+            -0.3894183423086505
+          ],
+          "up": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "forward": [
+            0.3894183423086505,
+            -0.0,
+            0.9210609940028851
+          ],
+          "position": [
+            0,
+            0,
+            0
+          ]
+        },
+        "normal": [
+          0,
+          1,
+          0
+        ],
+        "altitude": 3,
+        "linearVelocity": [
+          0,
+          -2,
+          5
+        ],
+        "localAngularVelocity": [
+          0,
+          0,
+          0
+        ],
+        "groundContact": false,
+        "grounded": 0,
+        "jumpTime": 1.2,
+        "peakAltitude": 5,
+        "mass": 1500,
+        "inertia": [
+          2000,
+          2300,
+          1000
+        ],
+        "dt": 0.008333333333333333,
+        "speed": 5.385164807134504
+      },
+      "expected": {
+        "force": [
+          0,
+          -6519.436523,
+          0
+        ],
+        "torque": [
+          0,
+          0,
+          0
+        ],
+        "jumpTime": 1.208333373,
+        "peakAltitude": 5
+      }
+    },
+    {
+      "kind": "jumpStabilizer",
+      "name": "long_jump_too_low",
+      "input": {
+        "matrix": {
+          "right": [
+            0.9210609940028851,
+            0.0,
+            -0.3894183423086505
+          ],
+          "up": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "forward": [
+            0.3894183423086505,
+            -0.0,
+            0.9210609940028851
+          ],
+          "position": [
+            0,
+            0,
+            0
+          ]
+        },
+        "normal": [
+          0,
+          1,
+          0
+        ],
+        "altitude": 1,
+        "linearVelocity": [
+          0,
+          -2,
+          20
+        ],
+        "localAngularVelocity": [
+          0,
+          0,
+          0
+        ],
+        "groundContact": false,
+        "grounded": 0,
+        "jumpTime": 1.2,
+        "peakAltitude": 1,
+        "mass": 1500,
+        "inertia": [
+          2000,
+          2300,
+          1000
+        ],
+        "dt": 0.008333333333333333,
+        "speed": 20.09975124224178
+      },
+      "expected": {
+        "force": [
+          0,
+          -4500,
+          0
+        ],
+        "torque": [
+          0,
+          0,
+          0
+        ],
+        "jumpTime": 1.208333373,
+        "peakAltitude": 1
+      }
+    },
+    {
+      "kind": "jumpStabilizer",
+      "name": "long_jump_high",
+      "input": {
+        "matrix": {
+          "right": [
+            0.9210609940028851,
+            0.0,
+            -0.3894183423086505
+          ],
+          "up": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "forward": [
+            0.3894183423086505,
+            -0.0,
+            0.9210609940028851
+          ],
+          "position": [
+            0,
+            0,
+            0
+          ]
+        },
+        "normal": [
+          0,
+          1,
+          0
+        ],
+        "altitude": 9,
+        "linearVelocity": [
+          0,
+          -2,
+          20
+        ],
+        "localAngularVelocity": [
+          0,
+          0,
+          0
+        ],
+        "groundContact": false,
+        "grounded": 0,
+        "jumpTime": 1.2,
+        "peakAltitude": 10,
+        "mass": 1500,
+        "inertia": [
+          2000,
+          2300,
+          1000
+        ],
+        "dt": 0.008333333333333333,
+        "speed": 20.09975124224178
+      },
+      "expected": {
+        "force": [
+          0,
+          -4500,
+          0
+        ],
+        "torque": [
+          0,
+          0,
+          0
+        ],
+        "jumpTime": 1.208333373,
+        "peakAltitude": 10
+      }
+    },
+    {
+      "kind": "jumpStabilizer",
+      "name": "upside_down",
+      "input": {
+        "matrix": {
+          "right": [
+            0.9210609940028851,
+            -0.0,
+            -0.3894183423086505
+          ],
+          "up": [
+            4.768999264375572e-17,
+            -1.0,
+            1.1279743981251128e-16
+          ],
+          "forward": [
+            -0.3894183423086505,
+            -1.2246467991473532e-16,
+            -0.9210609940028851
+          ],
+          "position": [
+            0,
+            0,
+            0
+          ]
+        },
+        "normal": [
+          0,
+          1,
+          0
+        ],
+        "altitude": 3,
+        "linearVelocity": [
+          0,
+          -2,
+          20
+        ],
+        "localAngularVelocity": [
+          0.4,
+          0.8,
+          0.2
+        ],
+        "groundContact": false,
+        "grounded": 0,
+        "jumpTime": 1.2,
+        "peakAltitude": 5,
+        "mass": 1500,
+        "inertia": [
+          2000,
+          2300,
+          1000
+        ],
+        "dt": 0.008333333333333333,
+        "speed": 20.09975124224178
+      },
+      "expected": {
+        "force": [
+          0,
+          -4500,
+          0
+        ],
+        "torque": [
+          0,
+          0,
+          0
+        ],
+        "jumpTime": 1.208333373,
+        "peakAltitude": 5
+      }
+    },
+    {
+      "kind": "jumpStabilizer",
+      "name": "graph_clamp",
+      "input": {
+        "matrix": {
+          "right": [
+            0.9210609940028851,
+            0.0,
+            -0.3894183423086505
+          ],
+          "up": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "forward": [
+            0.3894183423086505,
+            -0.0,
+            0.9210609940028851
+          ],
+          "position": [
+            0,
+            0,
+            0
+          ]
+        },
+        "normal": [
+          0,
+          1,
+          0
+        ],
+        "altitude": 3,
+        "linearVelocity": [
+          0,
+          -2,
+          20
+        ],
+        "localAngularVelocity": [
+          3,
+          4,
+          2
+        ],
+        "groundContact": false,
+        "grounded": 0,
+        "jumpTime": 0.5,
+        "peakAltitude": 3,
+        "mass": 1500,
+        "inertia": [
+          2000,
+          2300,
+          1000
+        ],
+        "dt": 0.008333333333333333,
+        "speed": 20.09975124224178
+      },
+      "expected": {
+        "force": [
+          0,
+          -4500,
+          0
+        ],
+        "torque": [
+          -31526.01367,
+          0,
+          2471.94043
+        ],
+        "jumpTime": 0.5083333254,
+        "peakAltitude": 3
+      }
+    },
+    {
+      "kind": "jumpStabilizer",
+      "name": "low_speed_damping",
+      "input": {
+        "matrix": {
+          "right": [
+            0.9210609940028851,
+            0.0,
+            -0.3894183423086505
+          ],
+          "up": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "forward": [
+            0.3894183423086505,
+            -0.0,
+            0.9210609940028851
+          ],
+          "position": [
+            0,
+            0,
+            0
+          ]
+        },
+        "normal": [
+          0,
+          1,
+          0
+        ],
+        "altitude": 1,
+        "linearVelocity": [
+          0,
+          0,
+          1
+        ],
+        "localAngularVelocity": [
+          0.3,
+          0.1,
+          0.2
+        ],
+        "groundContact": false,
+        "grounded": 0,
+        "jumpTime": 0.5,
+        "peakAltitude": 3,
+        "mass": 1500,
+        "inertia": [
+          2000,
+          2300,
+          1000
+        ],
+        "dt": 0.008333333333333333,
+        "speed": 1.0
+      },
+      "expected": {
+        "force": [
+          0,
+          -4500,
+          0
+        ],
+        "torque": [
+          -17.69393158,
+          0,
+          1.387372971
+        ],
+        "jumpTime": 0.5083333254,
+        "peakAltitude": 3
+      }
+    },
+    {
+      "kind": "jumpStabilizer",
+      "name": "active_altitude_zero",
+      "input": {
+        "matrix": {
+          "right": [
+            0.9193841950880539,
+            0.2776036182326806,
+            -0.27869146554283863
+          ],
+          "up": [
+            -0.14462538921702645,
+            0.897417029472011,
+            0.4168047168728483
+          ],
+          "forward": [
+            0.36580896464700624,
+            -0.34289780745545134,
+            0.8652195646343935
+          ],
+          "position": [
+            0,
+            0,
+            0
+          ]
+        },
+        "normal": [
+          0,
+          1,
+          0
+        ],
+        "altitude": 0,
+        "linearVelocity": [
+          0,
+          -2,
+          20
+        ],
+        "localAngularVelocity": [
+          0,
+          0,
+          0
+        ],
+        "groundContact": false,
+        "grounded": 0,
+        "jumpTime": 0.5,
+        "peakAltitude": 3,
+        "mass": 1500,
+        "inertia": [
+          2000,
+          2300,
+          1000
+        ],
+        "dt": 0.008333333333333333,
+        "speed": 20.09975124224178
+      },
+      "expected": {
+        "force": [
+          0,
+          -4500,
+          0
+        ],
+        "torque": [
+          0,
+          0,
+          0
+        ],
+        "jumpTime": 0.5083333254,
+        "peakAltitude": 3
+      }
+    },
+    {
+      "kind": "jumpStabilizer",
+      "name": "active_altitude_far",
+      "input": {
+        "matrix": {
+          "right": [
+            0.9193841950880539,
+            0.2776036182326806,
+            -0.27869146554283863
+          ],
+          "up": [
+            -0.14462538921702645,
+            0.897417029472011,
+            0.4168047168728483
+          ],
+          "forward": [
+            0.36580896464700624,
+            -0.34289780745545134,
+            0.8652195646343935
+          ],
+          "position": [
+            0,
+            0,
+            0
+          ]
+        },
+        "normal": [
+          0,
+          1,
+          0
+        ],
+        "altitude": 16,
+        "linearVelocity": [
+          0,
+          -2,
+          20
+        ],
+        "localAngularVelocity": [
+          0,
+          0,
+          0
+        ],
+        "groundContact": false,
+        "grounded": 0,
+        "jumpTime": 0.5,
+        "peakAltitude": 17,
+        "mass": 1500,
+        "inertia": [
+          2000,
+          2300,
+          1000
+        ],
+        "dt": 0.008333333333333333,
+        "speed": 20.09975124224178
+      },
+      "expected": {
+        "force": [
+          0,
+          -4500,
+          0
+        ],
+        "torque": [
+          0,
+          0,
+          0
+        ],
+        "jumpTime": 0.5083333254,
+        "peakAltitude": 17
+      }
+    }
+  ]
+}
