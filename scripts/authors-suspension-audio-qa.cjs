@@ -1,7 +1,7 @@
 const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
-const {chromium}=require(process.env.NOMERA_PLAYWRIGHT_MODULE||'playwright'),out=path.resolve('work/suspension-audio-qa');fs.mkdirSync(out,{recursive:true});
+const {chromium}=require(process.env.NOMERA_PLAYWRIGHT_MODULE||'playwright'),out=path.resolve(process.env.NOMERA_QA_DIR||'work/suspension-audio-qa');fs.mkdirSync(out,{recursive:true});
 (async()=>{const b=await chromium.launch({channel:'msedge',headless:true,args:['--autoplay-policy=no-user-gesture-required']});const errors=[],results={audio:[],race:[]};try{
- const page=await b.newPage({viewport:{width:390,height:844},hasTouch:true});page.on('pageerror',e=>errors.push(e.message));await page.route('**/*',r=>r.request().url().startsWith('http://127.0.0.1:4317/')?r.continue():r.abort());await page.goto('http://127.0.0.1:4317/authors.html');await page.waitForTimeout(500);
+ const page=await b.newPage({viewport:{width:390,height:844},hasTouch:true});if(process.env.NOMERA_AUDIO_FORCE_FALLBACK==='1')await page.addInitScript(()=>{window.AudioWorkletNode=undefined;});page.on('pageerror',e=>errors.push(e.message));await page.route('**/*',r=>r.request().url().startsWith('http://127.0.0.1:4317/')?r.continue():r.abort());await page.goto('http://127.0.0.1:4317/authors.html');await page.waitForTimeout(500);
  for(const sampleRate of [44100,48000]){
   await page.evaluate(async sampleRate=>{window.mwQaCtx=new AudioContext({sampleRate});await mwQaCtx.resume();window.mwQaGain=mwQaCtx.createGain();window.mwQaAnalyser=mwQaCtx.createAnalyser();mwQaGain.connect(mwQaAnalyser);mwQaAnalyser.connect(mwQaCtx.destination);},sampleRate);
   for(const carClass of ['standard','sport','v8','supercar','m3gtr','kamaz']){

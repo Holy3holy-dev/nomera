@@ -12,10 +12,10 @@
  * This partial adapter does not claim Xbox retail equivalence.
  */
 (function (root, factory) {
-    const api = factory(typeof module==='object'&&module.exports?require('./authors-mw-contact.js'):root.NomeraMWContact);
+    const api = factory(typeof module==='object'&&module.exports?require('./authors-mw-contact.js'):root.NomeraMWContact,typeof module==='object'&&module.exports?require('./authors-mw-mass.js'):root.NomeraMWMass);
     if (typeof module === 'object' && module.exports) module.exports = api;
     else root.NomeraMW = api;
-}(typeof globalThis !== 'undefined' ? globalThis : this, function (Contact3D) {
+}(typeof globalThis !== 'undefined' ? globalThis : this, function (Contact3D,Mass) {
     'use strict';
     const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
     const mix = (a, b, t) => a + (b - a) * t;
@@ -570,9 +570,8 @@
     class Suspension {
         constructor(profile){
             this.profile=profile;this.y=0;this.vy=0;this.pitch=0;this.pitchRate=0;this.roll=0;this.rollRate=0;
-            // Source BMW ROLL_CENTER=9 inches. Preserve relative catalogue body
-            // height while avoiding the old, much taller arcade CG with MW grip.
-            this.cgHeight=.2286*profile.cgHeight/.5;
+            // Per-car source mass attributes; modern cars use explicit estimates.
+            this.massProperties=Mass.properties(profile);this.cgHeight=this.massProperties.rollCenter;this.cgZ=0;
             const kScale=profile.springStiffness/70050.72,dScale=profile.dampingRate/8756.34;
             this.wheels=['fl','fr','rl','rr'].map((key,index)=>{
                 const front=index<2,bias=front?profile.frontWeightBias:1-profile.frontWeightBias;
@@ -581,6 +580,16 @@
                     stiffness,progression,compressionDamping:7005.072*dScale,extensionDamping:8756.34*dScale,swayStiffness:(front?48159.87:35025.36)*kScale,
                     travel:Math.max(.1778,c0*1.8),neutral:c0,compression:c0,load:profile.massKg*9.81*bias*.5,contact:true,offset:0};
             });
+            this.staticCompression=this.wheels.reduce((sum,w)=>sum+w.neutral,0)/4;
+            this.sourceOriginY=this.massProperties.dimensions[1]/2+Math.max(...this.massProperties.ride)-this.staticCompression;
+            this.updateCenterOfGravity(4);
+            for(const w of this.wheels)w.queryY=this.massProperties.ride[w.front?0:1]-w.neutral;
+        }
+        updateCenterOfGravity(touching){
+            const p=this.profile,m=this.massProperties;
+            const local=Mass.sourceCOG({frontAxle:p.wheelbase*(1-p.frontWeightBias),wheelbase:p.wheelbase,halfHeight:m.dimensions[1]/2,
+                bias:p.frontWeightBias*100,rollCenter:m.rollCenter/.0254,ride:m.ride.map(v=>v/.0254),touching});
+            this.cgHeight=local[1]+this.sourceOriginY;this.cgZ=local[2];
         }
         step(dt,{longAccel=0,latAccel=0,downforce=0,aeroCenterZ=0,dragPitchMoment=0,dragRollMoment=0,groundHeights={}}={}){
             const p=this.profile,mass=p.massKg,steps=Math.max(1,Math.ceil(dt*240)),h=dt/steps;
@@ -630,5 +639,5 @@
         catch (_) { return true; }
     }
     return Object.freeze({ torque, shiftPoints, clutch, Clutch, smoothRPM, engineInertia, brakingTorque, engineOutputTorque, Induction, AngularEngine, Gearbox, Nitrous, aerodynamics, tireForce, Tire, tireFrame, differential, driveControl, Burnout, DriftController, yawFrictionBoost, wallSteer, steeringRange, steeringRate, SteeringController, springForce, staticCompression, Suspension,
-        Contact3D, createSpec, selected, REFERENCE, LOAD });
+        Contact3D, Mass, createSpec, selected, REFERENCE, LOAD });
 }));

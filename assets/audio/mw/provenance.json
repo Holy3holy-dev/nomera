@@ -555,6 +555,366 @@
       },
       "subsong": 1,
       "loop": null
+    },
+    {
+      "file": "m5-accel.wav",
+      "sha256": "6b6b0b72f32d7c28168a83d6c9e5a777e4c3b4fefc19b74ed9c4596e3639ce9a",
+      "source": {
+        "index": 1012,
+        "hash": "BFBF4846",
+        "name": "SOUND\\ENGINE\\GIN_BMW_M5.GIN",
+        "archive": "ZZDATA5.BIN",
+        "offset": 121102336,
+        "size": 85037,
+        "checksum": "552C553F",
+        "signature": "476e7375323000006666c644330bff45",
+        "ascii": "Gnsu20..ff.D3..E",
+        "sha256": "b58e4a472f6e16df910d9d7578937f4e8d633a6c5c4c3c8b023ff91f82e71beb"
+      },
+      "subsong": 1,
+      "loop": null
+    },
+    {
+      "file": "m5-decel.wav",
+      "sha256": "b9d234eb51871b5bc356c82cdffd1df8565ad230fd6b8945b7596a3f9ead1e46",
+      "source": {
+        "index": 1244,
+        "hash": "E6B85078",
+        "name": "SOUND\\ENGINE\\GIN_BMW_M5_DCL.GIN",
+        "archive": "ZZDATA5.BIN",
+        "offset": 121188352,
+        "size": 33279,
+        "checksum": "4E55270B",
+        "signature": "476e73753230000000301a45336be345",
+        "ascii": "Gnsu20...0.E3k.E",
+        "sha256": "df79aa03a919da4e3ffe12dc7e97d1e98fc5fbf78614a44a8c867bbb26c9b9b2"
+      },
+      "subsong": 1,
+      "loop": null
+    },
+    {
+      "file": "db9-accel.wav",
+      "sha256": "cc591e558b5cc89c38e53eb55ab0ff91cdbb1aabd181fa3805cb67e133a81f3a",
+      "source": {
+        "index": 24,
+        "hash": "04EE839E",
+        "name": "SOUND\\ENGINE\\GIN_DB9.GIN",
+        "archive": "ZZDATA5.BIN",
+        "offset": 122075136,
+        "size": 145508,
+        "checksum": "3FA0EBCD",
+        "signature": "476e737532300000cd7cdb4400f4ba45",
+        "ascii": "Gnsu20...|.D...E",
+        "sha256": "dcd222b328a5b6fb156f8b130e7395488f19fd0c9bd2b6ad28a8db34ada5e85a"
+      },
+      "subsong": 1,
+      "loop": null
+    },
+    {
+      "file": "db9-decel.wav",
+      "sha256": "d2fafba4a40507bd69a4c7517a12060fe9af9767a228339e9a22083c3e0c97cd",
+      "source": {
+        "index": 496,
+        "hash": "5D4577D0",
+        "name": "SOUND\\ENGINE\\GIN_DB9_DCL.GIN",
+        "archive": "ZZDATA5.BIN",
+        "offset": 122222592,
+        "size": 46603,
+        "checksum": "40DEC488",
+        "signature": "476e73753230000000b04445666ac245",
+        "ascii": "Gnsu20....DEfj.E",
+        "sha256": "e7541bb2d6e9f179272759ca6860e7b0bacf8a71e9f42e4a584830d78d401275"
+      },
+      "subsong": 1,
+      "loop": null
+    },
+    {
+      "file": "flat6-accel.wav",
+      "sha256": "3724aa7ea75b047d9d99673372bb2f28ed3b5c1585d7244179e92f9cbbd2fb6f",
+      "source": {
+        "index": 1091,
+        "hash": "CAAC10F7",
+        "name": "SOUND\\ENGINE\\GIN_POR_996.GIN",
+        "archive": "ZZDATA5.BIN",
+        "offset": 129087488,
+        "size": 47326,
+        "checksum": "A25A4917",
+        "signature": "476e737532300000cd84064566fafd45",
+        "ascii": "Gnsu20.....Ef..E",
+        "sha256": "588ae30fbea00d620b18198609ea2a2d244481c38daf83324a55de017d3a8249"
+      },
+      "subsong": 1,
+      "loop": null
+    },
+    {
+      "file": "flat6-decel.wav",
+      "sha256": "be812bc76e022460215a5c2a55b55058c8e796ddfd1e212cc2c950330b12b926",
+      "source": {
+        "index": 972,
+        "hash": "B74C09A9",
+        "name": "SOUND\\ENGINE\\GIN_POR_996_DCL.GIN",
+        "archive": "ZZDATA5.BIN",
+        "offset": 129136640,
+        "size": 63591,
+        "checksum": "CE00CFBE",
+        "signature": "476e7375323000009a398544cd1c0346",
+        "ascii": "Gnsu20...9.D...F",
+        "sha256": "6c80b46bc670e8abe6185f1768c584eb96aa0e0241e6a4391726ba765a09879e"
+      },
+      "subsong": 1,
+      "loop": null
+    },
+    {
+      "file": "rotary-accel.wav",
+      "sha256": "7a1d35e6d7bdac568d92ffae32e25b6c3b4bc7dea99bdf0206c67b0fc95ff8e5",
+      "source": {
+        "index": 690,
+        "hash": "84C2917C",
+        "name": "SOUND\\ENGINE\\GIN_RX8_RAMP_V1_CD.GIN",
+        "archive": "ZZDATA5.BIN",
+        "offset": 130146304,
+        "size": 95679,
+        "checksum": "4EAEBF42",
+        "signature": "476e7375323000003383c344cd2c0b46",
+        "ascii": "Gnsu20..3..D.,.F",
+        "sha256": "525aadccdedb3e43843eb29bfe9214f169eea7e7c08b78e51b61c20bf4be085c"
+      },
+      "subsong": 1,
+      "loop": null
+    },
+    {
+      "file": "rotary-decel.wav",
+      "sha256": "1228c6682efd27f36aac958409cd1162e1e3e8d3ff9e0b9bedc49e2f3c96f756",
+      "source": {
+        "index": 788,
+        "hash": "953AC13F",
+        "name": "SOUND\\ENGINE\\GIN_MAZDA_RX8_DCL.GIN",
+        "archive": "ZZDATA5.BIN",
+        "offset": 125454336,
+        "size": 22408,
+        "checksum": "7113BACE",
+        "signature": "476e7375323000006642a6459ad10846",
+        "ascii": "Gnsu20..fB.E...F",
+        "sha256": "1c7916226fe2d3645ba160395dadcd22f87104754890937fdf832a9a67aac897"
+      },
+      "subsong": 1,
+      "loop": null
+    },
+    {
+      "file": "slr-accel.wav",
+      "sha256": "7124429eb38a8cfcdb7cd562113a51222d89319690ffbfaa3904fa95b04f95bf",
+      "source": {
+        "index": 895,
+        "hash": "A9A6F838",
+        "name": "SOUND\\ENGINE\\GIN_MBZ_SLR.GIN",
+        "archive": "ZZDATA5.BIN",
+        "offset": 125949952,
+        "size": 87690,
+        "checksum": "0D806EDE",
+        "signature": "476e7375323000009a990a450010eb45",
+        "ascii": "Gnsu20.....E...E",
+        "sha256": "8bddef533c7cd84637f5e5f786362ebd386a4854d2d9bb546aa5d7a7096ccd6f"
+      },
+      "subsong": 1,
+      "loop": null
+    },
+    {
+      "file": "slr-decel.wav",
+      "sha256": "d2fafba4a40507bd69a4c7517a12060fe9af9767a228339e9a22083c3e0c97cd",
+      "source": {
+        "index": 1186,
+        "hash": "DBFAA96A",
+        "name": "SOUND\\ENGINE\\GIN_MBZ_SLR_DCL.GIN",
+        "archive": "ZZDATA5.BIN",
+        "offset": 126038016,
+        "size": 46603,
+        "checksum": "40DEC488",
+        "signature": "476e73753230000000b04445666ac245",
+        "ascii": "Gnsu20....DEfj.E",
+        "sha256": "e7541bb2d6e9f179272759ca6860e7b0bacf8a71e9f42e4a584830d78d401275"
+      },
+      "subsong": 1,
+      "loop": null
+    },
+    {
+      "file": "clk-accel.wav",
+      "sha256": "4824282711b1a9f3e518fbb48a986135bebe459612fcb14fa7ed5091695718d0",
+      "source": {
+        "index": 1054,
+        "hash": "C4E912D6",
+        "name": "SOUND\\ENGINE\\GIN_MBZ_CLK500.GIN",
+        "archive": "ZZDATA5.BIN",
+        "offset": 125618176,
+        "size": 94491,
+        "checksum": "6DF1F65E",
+        "signature": "476e737532300000cdbc9844339bd445",
+        "ascii": "Gnsu20.....D3..E",
+        "sha256": "f11533b17d5835d4bf78712165a0c0102cde1eb5861dd1678f14fe0b4a6acd64"
+      },
+      "subsong": 1,
+      "loop": null
+    },
+    {
+      "file": "clk-decel.wav",
+      "sha256": "8c2c0c7d0e223309b11251bc69c8fdf801b09499c001da18bc4f77921493d116",
+      "source": {
+        "index": 897,
+        "hash": "A9E4E308",
+        "name": "SOUND\\ENGINE\\GIN_MBZ_CLK500_DCL.GIN",
+        "archive": "ZZDATA5.BIN",
+        "offset": 125714432,
+        "size": 50854,
+        "checksum": "285ABE2D",
+        "signature": "476e737532300000339338450044c845",
+        "ascii": "Gnsu20..3.8E.D.E",
+        "sha256": "4bae90f297b5141e23bc54063db12494c02b326ddf5d868b0799dde269dd6c1c"
+      },
+      "subsong": 1,
+      "loop": null
+    },
+    {
+      "file": "viper-accel.wav",
+      "sha256": "88665bb921dbb8163d5f36271612f7a3b7b90afab0c1366fa6d19e79d0493794",
+      "source": {
+        "index": 1084,
+        "hash": "C8CB6D25",
+        "name": "SOUND\\ENGINE\\GIN_VIPER_A.GIN",
+        "archive": "ZZDATA5.BIN",
+        "offset": 131262464,
+        "size": 152976,
+        "checksum": "28F6586D",
+        "signature": "476e7375323000009ad9954400f4c345",
+        "ascii": "Gnsu20.....D...E",
+        "sha256": "893cb96e562e7254151e73fe75d5dc7b2cf1b1491c978673f5d9caf8e8deabd6"
+      },
+      "subsong": 1,
+      "loop": null
+    },
+    {
+      "file": "viper-decel.wav",
+      "sha256": "48c0167ae0518726c8351869c358891143ad78f47f48e1d9c006e6fdbaaccc02",
+      "source": {
+        "index": 244,
+        "hash": "30F9CCD7",
+        "name": "SOUND\\ENGINE\\GIN_VIPER_A_DCL.GIN",
+        "archive": "ZZDATA5.BIN",
+        "offset": 131416064,
+        "size": 153227,
+        "checksum": "70A48BF9",
+        "signature": "476e73753230000000e0c6440098c245",
+        "ascii": "Gnsu20.....D...E",
+        "sha256": "078323debb9d43ba84e440213c0b9181e69d6e6c722cd184a25b50847df9d609"
+      },
+      "subsong": 1,
+      "loop": null
+    },
+    {
+      "file": "corvette-accel.wav",
+      "sha256": "8dea89ad236433b4d56542db6d30619f0686dd5a197b456ed80a17654879de9e",
+      "source": {
+        "index": 1105,
+        "hash": "CD2B802A",
+        "name": "SOUND\\ENGINE\\GIN_CORVETTE_Z06.GIN",
+        "archive": "ZZDATA5.BIN",
+        "offset": 121780224,
+        "size": 133963,
+        "checksum": "B9CBF3B5",
+        "signature": "476e73753230000033737e449ac1d045",
+        "ascii": "Gnsu20..3s~D...E",
+        "sha256": "fe9b30f0e37cf58add5af2e5f43b68c78eea2af517de65b04f0325c7d2c9a161"
+      },
+      "subsong": 1,
+      "loop": null
+    },
+    {
+      "file": "corvette-decel.wav",
+      "sha256": "d5039343998c2c9a2d6cc02ad21b94c561e94fb99af9eaddfcd7e6d418379072",
+      "source": {
+        "index": 1002,
+        "hash": "BD85DA5C",
+        "name": "SOUND\\ENGINE\\GIN_CORVETTE_Z06_DCL.GIN",
+        "archive": "ZZDATA5.BIN",
+        "offset": 121915392,
+        "size": 159233,
+        "checksum": "66FC4286",
+        "signature": "476e737532300000cd5c44459a75cd45",
+        "ascii": "Gnsu20...\\DE.u.E",
+        "sha256": "c8a5714fc4e112fb0c2e780c4c00e01e395ad0fb0e41b191f3ba36126ff859c1"
+      },
+      "subsong": 1,
+      "loop": null
+    },
+    {
+      "file": "gti-accel.wav",
+      "sha256": "1a4dd509528497bb716e63729d9b3ac815344a92aeab0fde446e679a5f3096b3",
+      "source": {
+        "index": 1108,
+        "hash": "CDB84661",
+        "name": "SOUND\\ENGINE\\GIN_GTI_PULL_01B_SHRT.GIN",
+        "archive": "ZZDATA5.BIN",
+        "offset": 123801600,
+        "size": 83080,
+        "checksum": "EDCCFCE1",
+        "signature": "476e73753230000033e3004566aae545",
+        "ascii": "Gnsu20..3..Ef..E",
+        "sha256": "9b53c81e28a99d365e50a7e631cbac5f86937128c5fc128d5f2b68c05ff38a50"
+      },
+      "subsong": 1,
+      "loop": null
+    },
+    {
+      "file": "gti-decel.wav",
+      "sha256": "69fb9d0cee89c76bf2542b19abc1cadaec437429fdf3a5f1b8326d5d57ccc938",
+      "source": {
+        "index": 1371,
+        "hash": "FCF15C37",
+        "name": "SOUND\\ENGINE\\GIN_GTI_01B_DCL.GIN",
+        "archive": "ZZDATA5.BIN",
+        "offset": 123774976,
+        "size": 25089,
+        "checksum": "B8D75058",
+        "signature": "476e7375323000009a59294566a6c845",
+        "ascii": "Gnsu20...Y)Ef..E",
+        "sha256": "9fa73ecd5dd37207634d8783a2c92d89dab987b62fe1b430c656d0a4e2f176f7"
+      },
+      "subsong": 1,
+      "loop": null
+    },
+    {
+      "file": "inline6-accel.wav",
+      "sha256": "72b58fa716dd176cefe7db8420e5dd66d68131e7c6fbf2cf7698fb2f7c0872ae",
+      "source": {
+        "index": 505,
+        "hash": "5F2ADC18",
+        "name": "SOUND\\ENGINE\\GIN_BMW_328I_E46.GIN",
+        "archive": "ZZDATA5.BIN",
+        "offset": 119525376,
+        "size": 95224,
+        "checksum": "1F6021DA",
+        "signature": "476e73753230000000f0af44006ccb45",
+        "ascii": "Gnsu20.....D.l.E",
+        "sha256": "947f16acf3516813c471003fe94dd3ea760df9dac7354a52be73a12e26d6ed7d"
+      },
+      "subsong": 1,
+      "loop": null
+    },
+    {
+      "file": "inline6-decel.wav",
+      "sha256": "4eb84b327d462178ffd6e2a604fa589e11e5e16b35615251f2f88d7dd63469af",
+      "source": {
+        "index": 967,
+        "hash": "B68D7D4A",
+        "name": "SOUND\\ENGINE\\GIN_BMW_328I_E46_DCL.GIN",
+        "archive": "ZZDATA5.BIN",
+        "offset": 119621632,
+        "size": 62781,
+        "checksum": "A1E56167",
+        "signature": "476e73753230000000b82d45cd6cc745",
+        "ascii": "Gnsu20....-E.l.E",
+        "sha256": "89a0955bbaa9e49edef0bcece48d089fc619d0780847bdc0924e909ef5450ad7"
+      },
+      "subsong": 1,
+      "loop": null
     }
   ]
 }

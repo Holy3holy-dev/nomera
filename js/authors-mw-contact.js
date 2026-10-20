@@ -64,13 +64,14 @@
  }
  function begin(body,dt,pose,sample,springForce){
   const p=body.profile,m=basis(pose.heading,body.pitch,body.roll);m.position=[pose.x,body.y,pose.z];
-  const cog=rotate([0,body.cgHeight,0],m),angular=rotate([body.pitchRate,pose.yawRate,body.rollRate],m),velocity=[pose.vx,body.vy,pose.vz],previous=body.wheels.map(w=>w.compression);
+  body.updateCenterOfGravity(body.grounded);
+  const cog=rotate([0,body.cgHeight,body.cgZ],m),angular=rotate([body.pitchRate,pose.yawRate,body.rollRate],m),velocity=[pose.vx,body.vy,pose.vz],previous=body.wheels.map(w=>w.compression);
   let touching=0,bottomDelta=0;
   for(let i=0;i<4;i++){
-   const w=body.wheels[i],arm=[w.x,0,w.z],position=wheelPosition({matrix:m,localArm:arm,worldCG:cog,linearVelocity:velocity,angularVelocity:angular,dt,radius:p.wheelRadius,vehicleHeight:1.5});
+   const w=body.wheels[i],arm=[w.x,w.queryY||0,w.z],position=wheelPosition({matrix:m,localArm:arm,worldCG:cog,linearVelocity:velocity,angularVelocity:angular,dt,radius:p.wheelRadius,vehicleHeight:1.5});
    const g=ground(sample,position.position[0],position.position[2],w.key),angle=w.front?(w.key==='fl'?pose.steerLeftRad:pose.steerRightRad):0;
    const forward=rotate([Math.sin(angle),0,Math.cos(angle)],m);
-   const f=frame({normal:g.normal,forward,up:m.up,rideHeight:w.neutral,penetration:(g.height-position.position[1])*g.normal[1],travel:w.travel});
+   const f=frame({normal:g.normal,forward,up:m.up,rideHeight:body.massProperties.ride[w.front?0:1],penetration:(g.height-position.position[1])*g.normal[1],travel:w.travel});
    if(!g.valid){f.contact=false;f.compression=0;f.bottomDelta=0;}
    w.springForce=f.contact?springForce({...w,compression:f.compression,previous:previous[i],dt,sway:(previous[i]-previous[i^1])*w.swayStiffness,mass:p.massKg}):0;
    w.load=f.contact?w.springForce*f.loadFactor:0;w.contact=f.contact;w.compression=f.compression;w.offset=f.compression-w.neutral;
@@ -85,26 +86,29 @@
  function resolve(body,context,wheel,fx,fy,dt){
   const q=wheel.contact3D;
   const result=wheelForce({frame:q.frame,up:context.matrix.up,springForce:wheel.springForce,fx,fy,velocity:q.velocity,dt,mass:body.profile.massKg,
-   localArm:q.localArm,compression:wheel.compression,rideHeight:wheel.neutral,matrix:context.matrix,worldCG:context.worldCG});
+   localArm:q.localArm,compression:wheel.compression,rideHeight:body.massProperties.ride[wheel.front?0:1],matrix:context.matrix,worldCG:context.worldCG});
   q.force=result.force;q.torque=result.torque;q.point=result.point;return result;
  }
  function finish(body,dt,pose,context,{downforce=0,aeroCenterZ=0,dragPitchMoment=0,dragRollMoment=0}={}){
-  const p=body.profile,mass=p.massKg,inertia=[mass*(p.wheelbase*p.wheelbase*1.5+p.cgHeight*p.cgHeight)/12,pose.yawInertia,mass*(p.trackWidth*p.trackWidth+p.cgHeight*p.cgHeight)/12];
+  const p=body.profile,mass=p.massKg,inertia=body.massProperties.inertia;
   let force=[0,-mass*9.81-downforce,0],torque=cross(rotate([0,0,aeroCenterZ],context.matrix),[0,-downforce,0]);
   for(const w of body.wheels){force=add(force,w.contact3D.force);torque=add(torque,w.contact3D.torque);}
   const j=jump({dt,mass,speed:pose.speedMps,vy:body.vy,normal:context.ground.normal,altitude:Math.max(0,body.y-context.ground.height),touching:context.touching,
    matrix:context.matrix,angularVelocity:[body.pitchRate,pose.yawRate,body.rollRate],inertia,jumpTime:body.jumpTime,jumpAltitude:body.jumpAltitude});
   body.jumpTime=j.jumpTime;body.jumpAltitude=j.jumpAltitude;force=add(force,j.force);torque=add(torque,j.torque);
   body.vy+=force[1]/mass*dt;body.y+=body.vy*dt;
-  body.pitchRate+=(dot(torque,context.matrix.right)+dragPitchMoment)/inertia[0]*dt;
-  body.rollRate+=(dot(torque,context.matrix.forward)+dragRollMoment)/inertia[2]*dt;
+  // Body-space Euler coupling, using the same diagonal tensor as yaw/collisions.
+  const omega=[body.pitchRate,pose.yawRate,body.rollRate],moment=[dot(torque,context.matrix.right)+dragPitchMoment,0,dot(torque,context.matrix.forward)+dragRollMoment];
+  const momentum=omega.map((v,i)=>v*inertia[i]),gyro=cross(omega,momentum);
+  body.pitchRate+=(moment[0]-gyro[0])/inertia[0]*dt;
+  body.rollRate+=(moment[2]-gyro[2])/inertia[2]*dt;
   body.pitch=clamp(body.pitch+body.pitchRate*dt,-1.3,1.3);body.roll=clamp(body.roll+body.rollRate*dt,-1.3,1.3);
-  const newCG=rotate([0,body.cgHeight,0],basis(pose.heading,body.pitch,body.roll));
+  const newCG=rotate([0,body.cgHeight,body.cgZ],basis(pose.heading,body.pitch,body.roll));
   pose.x+=context.worldCG[0]-newCG[0];pose.z+=context.worldCG[2]-newCG[2];body.y+=context.worldCG[1]-newCG[1];
   // MW lifts world Y at bottom-out; velocity is resolved by the spring forces.
   body.y+=context.bottomDelta;
   body.telemetry={grounded:context.touching,airborne:!context.touching,landed:context.landed,landings:body.landings,flightTime:body.jumpTime,
-   verticalVelocity:body.vy,force,torque,bottomDelta:context.bottomDelta,normal:context.ground.normal,wheels:Object.fromEntries(body.wheels.map(w=>[w.key,{normal:w.contact3D.ground.normal,surface:w.contact3D.ground.surface,point:w.contact3D.point,velocity:w.contact3D.velocity,load:w.load,contact:w.contact,compression:w.compression}]))};
+   verticalVelocity:body.vy,centerOfGravity:[0,body.cgHeight,body.cgZ],inertia:inertia.slice(),massSource:body.massProperties.source,force,torque,bottomDelta:context.bottomDelta,normal:context.ground.normal,wheels:Object.fromEntries(body.wheels.map(w=>[w.key,{normal:w.contact3D.ground.normal,surface:w.contact3D.ground.surface,point:w.contact3D.point,velocity:w.contact3D.velocity,load:w.load,contact:w.contact,compression:w.compression}]))};
  }
  return{add,sub,scale,dot,cross,unit,rotate,basis,wheelPosition,frame,wheelForce,jump,ground,initialize,begin,resolve,finish};
 });

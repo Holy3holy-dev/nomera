@@ -1054,7 +1054,7 @@
                     );
                 }
                 this.state.rpm = Math.round(this.playerPhysics.state.rpm);
-                this._sync3DMeshes();
+                this._sync3DMeshes(false,safeDt);
                 this.notifyHUD();
                 return this.state;
             }
@@ -1210,7 +1210,7 @@
                 return this.state;
             }
 
-            this._sync3DMeshes();
+            this._sync3DMeshes(false,safeDt);
             this._updateCircuitOverlayDOM();
             this.notifyHUD();
             return this.state;
@@ -2076,7 +2076,7 @@
             }
         }
 
-        _sync3DMeshes(snapCamera = false) {
+        _sync3DMeshes(snapCamera = false, dt = 1/60) {
             if (!this.scene || !this.playerPhysics) return;
             const p = this.playerPhysics.state;
             if(root.NOMERA_AUTHORS_PREVIEW && root.NomeraWheelRig){
@@ -2163,21 +2163,23 @@
                 const targetLookY = 0.95 + p.heave + p.pitch * 2.0;
                 const targetLookZ = threeZ + (portraitMWChase?camDirZ:fwdZ) * lookAhead;
 
-                const smooth = (snapCamera || this.cameraMode === 'hood' || this.cameraMode === 'bumper') ? 1.0 : portraitMWChase?.55:0.22;
+                const instant=snapCamera||this.cameraMode==='hood'||this.cameraMode==='bumper',base=portraitMWChase?.55:.22;
+                const alpha=value=>instant?1:1-Math.pow(1-value,Math.max(0,dt)*60);
+                const smooth=alpha(base),lookSmooth=alpha(Math.min(1,base*1.2));
                 this._camPos.x = lerp(this._camPos.x, targetCamX, smooth);
                 this._camPos.y = lerp(this._camPos.y, targetCamY, smooth);
                 this._camPos.z = lerp(this._camPos.z, targetCamZ, smooth);
 
-                this._camLook.x = lerp(this._camLook.x, targetLookX, smooth * 1.2);
-                this._camLook.y = lerp(this._camLook.y, targetLookY, smooth * 1.2);
-                this._camLook.z = lerp(this._camLook.z, targetLookZ, smooth * 1.2);
+                this._camLook.x = lerp(this._camLook.x, targetLookX, lookSmooth);
+                this._camLook.y = lerp(this._camLook.y, targetLookY, lookSmooth);
+                this._camLook.z = lerp(this._camLook.z, targetLookZ, lookSmooth);
 
                 this.camera.position.set(this._camPos.x, this._camPos.y, this._camPos.z);
                 this.camera.lookAt(this._camLook.x, this._camLook.y, this._camLook.z);
 
                 const targetFov = p.isSpeedbreakerActive ? 50 : (60 + clamp(p.speedKmh / 24, 0, 14) + (p.isNitroActive ? 6 : 0));
                 if (Math.abs(this.camera.fov - targetFov) > 0.2) {
-                    this.camera.fov = lerp(this.camera.fov, targetFov, 0.15);
+                    this.camera.fov = lerp(this.camera.fov, targetFov, alpha(.15));
                     if (typeof this.camera.updateProjectionMatrix === 'function') {
                         this.camera.updateProjectionMatrix();
                     }

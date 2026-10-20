@@ -21058,7 +21058,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             updateRacePhysics(dt);
             const activeCar = myCars[selectedRaceCarIndex] || myCars.find(c => c.name === selectedRaceCarName) || activeRaceCar;
             const audioProfile = getCarAudioProfile(activeCar);
-            sound.updateEngine({ speed: racePlayer.speed, gas: raceKeys.gas, nitro: racePlayer.isNitroActive, running: isRaceRunning, carClass: audioProfile });
+            sound.updateEngine({ speed: racePlayer.speed, gas: raceKeys.gas, nitro: racePlayer.isNitroActive, running: isRaceRunning, carClass: audioProfile, carName: selectedRaceCarName });
             renderRaceFrame();
 
             if (isRaceRunning) raceAnimFrame = requestAnimationFrame(raceGameLoop);

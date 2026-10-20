@@ -1,0 +1,173 @@
+{
+  "provenance": {
+    "repository": "https://github.com/gaycoderprincess/ProStreetMWPhysics",
+    "commit": "9c6e26194b531f68f66fcc94a770ee7f89f2682e",
+    "file": "decomp/behaviors/MWChassisBase.cpp",
+    "sha256": "f0ca2392cf59de600a6e9de165cda0486609ed4708a28ace69a845c19ee0ef7a",
+    "method": "ChassisMW::SetCOG",
+    "compiler": "g++ -std=c++20 -O0",
+    "scope": "Unedited source method; harness provides attribute access and recording body. Does not assert original rigid-body tensor integration."
+  },
+  "cases": [
+    {
+      "name": "m3_ground",
+      "frontAxle": 1.3,
+      "wheelbase": 2.7,
+      "halfHeight": 0.65,
+      "bias": 54,
+      "rollCenter": 9,
+      "ride": [
+        7.5,
+        7.5
+      ],
+      "touching": 4,
+      "extraBias": 0,
+      "extraRide": 0,
+      "expected": [
+        0,
+        -0.611899972,
+        0.05799984932
+      ]
+    },
+    {
+      "name": "m3_air",
+      "frontAxle": 1.3,
+      "wheelbase": 2.7,
+      "halfHeight": 0.65,
+      "bias": 54,
+      "rollCenter": 9,
+      "ride": [
+        7.5,
+        7.5
+      ],
+      "touching": 0,
+      "extraBias": 0,
+      "extraRide": 0,
+      "expected": [
+        0,
+        -0.611899972,
+        -0.05000007153
+      ]
+    },
+    {
+      "name": "tuned_front",
+      "frontAxle": 1.5,
+      "wheelbase": 2.9,
+      "halfHeight": 0.8,
+      "bias": 61,
+      "rollCenter": 11,
+      "ride": [
+        8,
+        9.5
+      ],
+      "touching": 2,
+      "extraBias": -3,
+      "extraRide": -1.25,
+      "expected": [
+        0,
+        -0.7301499844,
+        0.2819999456
+      ]
+    },
+    {
+      "name": "rear_engine",
+      "frontAxle": 1.1,
+      "wheelbase": 2.4,
+      "halfHeight": 0.5,
+      "bias": 39,
+      "rollCenter": 8,
+      "ride": [
+        6,
+        5
+      ],
+      "touching": 1,
+      "extraBias": 2,
+      "extraRide": 0.5,
+      "expected": [
+        0,
+        -0.4618999958,
+        -0.3160000443
+      ]
+    },
+    {
+      "name": "air_ignores_extra_bias",
+      "frontAxle": 1.1,
+      "wheelbase": 2.4,
+      "halfHeight": 0.5,
+      "bias": 39,
+      "rollCenter": 8,
+      "ride": [
+        6,
+        5
+      ],
+      "touching": 0,
+      "extraBias": 20,
+      "extraRide": 0.5,
+      "expected": [
+        0,
+        -0.4618999958,
+        -0.1000000238
+      ]
+    },
+    {
+      "name": "large_body",
+      "frontAxle": 2,
+      "wheelbase": 3.3,
+      "halfHeight": 1.1,
+      "bias": 55,
+      "rollCenter": 16,
+      "ride": [
+        11,
+        12
+      ],
+      "touching": 4,
+      "extraBias": 0,
+      "extraRide": 0,
+      "expected": [
+        0,
+        -0.9984000921,
+        0.5150001049
+      ]
+    },
+    {
+      "name": "ride_front_max",
+      "frontAxle": 1.2,
+      "wheelbase": 2.5,
+      "halfHeight": 0.6,
+      "bias": 50,
+      "rollCenter": 9,
+      "ride": [
+        9,
+        7
+      ],
+      "touching": 3,
+      "extraBias": 0,
+      "extraRide": 1,
+      "expected": [
+        0,
+        -0.6254000664,
+        -0.04999995232
+      ]
+    },
+    {
+      "name": "bias_no_clamp",
+      "frontAxle": 1.2,
+      "wheelbase": 2.5,
+      "halfHeight": 0.6,
+      "bias": 95,
+      "rollCenter": 9,
+      "ride": [
+        9,
+        7
+      ],
+      "touching": 4,
+      "extraBias": 10,
+      "extraRide": 0,
+      "expected": [
+        0,
+        -0.6000000238,
+        1.325000048
+      ]
+    }
+  ]
+}

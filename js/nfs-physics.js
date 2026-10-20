@@ -101,11 +101,11 @@
     }
 
     // =========================================================================
-    // 3. AUTHENTIC PROFILES FOR ALL 25 H3H NOMERA VEHICLES
+    // 3. CATALOGUE PROFILES FOR ALL 49 H3H NOMERA VEHICLES
     // =========================================================================
     // Each car has distinct drivetrain ('FWD' | 'RWD' | 'AWD'), torqueSplit (front share 0..1),
     // massKg, wheelbase, trackWidth, cgHeight, frontWeightBias, engine curve, induction, and gearing.
-    const VEHICLE_PROFILES = Object.freeze({
+    const BASE_VEHICLE_PROFILES = {
         "ВАЗ-2107 «Жигули»": {
             id: 'vaz2107', category: 'budget', drivetrain: 'RWD', torqueSplit: 0.0,
             massKg: 1060, wheelbase: 2.42, trackWidth: 1.36, cgHeight: 0.54, frontWeightBias: 0.54,
@@ -514,6 +514,16 @@
             springStiffness: 86000, dampingRate: 9800, rollBalance: 0.48, yawSpeedMult: 1.38,
             engineSoundClass: 'supercar'
         }
+    };
+    // Separate catalogue calibrations; no retail MW data exists for these models.
+    const derived=(base,values)=>({...BASE_VEHICLE_PROFILES[base],...values,calibration:'NOMERA estimate'});
+    const VEHICLE_PROFILES=Object.freeze({...BASE_VEHICLE_PROFILES,
+        'Hyundai Elantra N':derived('Lada Vesta Sport',{id:'elantra_n',category:'sport',massKg:1440,wheelbase:2.72,trackWidth:1.58,cgHeight:.48,frontWeightBias:.61,drivetrain:'FWD',torqueSplit:1,baseTorqueNm:440,topSpeedKmh:260,accelRating:4.4,handlingRating:7.8,driftFactor:1.14,inductionType:'turbo',inductionBoost:.28,springStiffness:58000,dampingRate:6900}),
+        'BMW M3 G80 Competition':derived('BMW M5 F90 Competition',{id:'m3g80',massKg:1800,wheelbase:2.86,trackWidth:1.61,cgHeight:.47,frontWeightBias:.53,drivetrain:'AWD',torqueSplit:.35,baseTorqueNm:650,topSpeedKmh:325,handlingRating:8.7}),
+        'BMW X5M Competition':derived('Mercedes-Benz G63 AMG «Гелик»',{id:'x5m',massKg:2400,wheelbase:2.98,trackWidth:1.69,cgHeight:.65,frontWeightBias:.53,drivetrain:'AWD',torqueSplit:.4,baseTorqueNm:750,topSpeedKmh:300,handlingRating:7.4,springStiffness:66000,dampingRate:7800}),
+        'Audi RS7 Sportback':derived('Audi RS6 Avant',{id:'rs7',massKg:2050,wheelbase:2.93,trackWidth:1.66,cgHeight:.48,frontWeightBias:.55,drivetrain:'AWD',torqueSplit:.4}),
+        'Porsche Panamera Turbo':derived('Mercedes-Benz E63s AMG',{id:'panamera',massKg:2100,wheelbase:2.95,trackWidth:1.66,cgHeight:.47,frontWeightBias:.53,drivetrain:'AWD',torqueSplit:.38,baseTorqueNm:770,topSpeedKmh:320,handlingRating:8.2}),
+        'Maserati GranTurismo':derived('BMW M8 Gran Coupe',{id:'granturismo',massKg:1900,wheelbase:2.94,trackWidth:1.61,cgHeight:.45,frontWeightBias:.48,drivetrain:'RWD',torqueSplit:0,baseTorqueNm:540,topSpeedKmh:305,handlingRating:8,inductionType:'na',inductionBoost:0,redlineRpm:7500,maxRpm:7800})
     });
 
     function resolveVehicleProfile(carOrName, customOverrides = {}, extraStyling = {}) {
@@ -533,7 +543,13 @@
         let base = VEHICLE_PROFILES[name];
         if (!base) {
             const lower = name.toLowerCase();
-            if (lower.includes('m3 e46') || lower.includes('m3 gtr') || lower.includes('m3gtr')) base = VEHICLE_PROFILES["BMW M3 E46 GTR"];
+            if(lower.includes('elantra'))base=VEHICLE_PROFILES['Hyundai Elantra N'];
+            else if(lower.includes('m3 g80'))base=VEHICLE_PROFILES['BMW M3 G80 Competition'];
+            else if(lower.includes('x5'))base=VEHICLE_PROFILES['BMW X5M Competition'];
+            else if(lower.includes('rs7'))base=VEHICLE_PROFILES['Audi RS7 Sportback'];
+            else if(lower.includes('panamera'))base=VEHICLE_PROFILES['Porsche Panamera Turbo'];
+            else if(lower.includes('maserati')||lower.includes('granturismo'))base=VEHICLE_PROFILES['Maserati GranTurismo'];
+            else if (lower.includes('m3 e46') || lower.includes('m3 gtr') || lower.includes('m3gtr')) base = VEHICLE_PROFILES["BMW M3 E46 GTR"];
             else if (lower.includes('corvette c6.r') || lower.includes('c6r')) base = VEHICLE_PROFILES["Chevrolet Corvette C6.R"];
             else if (lower.includes('corvette')) base = VEHICLE_PROFILES["Chevrolet Corvette C6"];
             else if (lower.includes('mustang gt coupe')) base = VEHICLE_PROFILES["Ford Mustang GT Coupe"];
@@ -764,6 +780,7 @@
                 stabilityAssist: true
             }, mergedOptions);
             this.mwKernel = this.options.physicsKernel || null;
+            if(this.mwKernel?.Mass){this.massProperties=this.mwKernel.Mass.properties(this.profile);this.profile={...this.profile,frontWeightBias:this.massProperties.bias};this.spec=this.profile;}
             this.mwSpec = this.mwKernel ? this.mwKernel.createSpec(this.profile) : null;
 
             this.accumulator = 0;
@@ -786,10 +803,10 @@
             const frontStaticN = totalWeightN * p.frontWeightBias * 0.5;
             const rearStaticN = totalWeightN * (1 - p.frontWeightBias) * 0.5;
 
-            // Compute yaw moment of inertia (Dynamics::Inertia::Box)
+            // Classic box estimate; the MW adapter supplies its scaled tensor
             const lengthM = p.wheelbase * 1.65;
             const widthM = p.trackWidth * 1.15;
-            const yawInertia = (p.massKg * (widthM * widthM + lengthM * lengthM)) / 12.0;
+            const yawInertia = this.massProperties?.inertia[1] || (p.massKg * (widthM * widthM + lengthM * lengthM)) / 12.0;
 
             const x0 = Number(init.x) || 0;
             const y0 = Number(init.y) || 0;
@@ -1091,7 +1108,8 @@
                 // locking both wheels. Release is quicker so taps cannot stack.
                 const pressure=s.handbrakePressure||0,rate=requestedEbrake?7:14;
                 ebrake=s.handbrakePressure=clamp(requestedEbrake,pressure-rate*dt,pressure+rate*dt);
-                s.handbrakeRecovery=requestedEbrake?.35:Math.max(0,(s.handbrakeRecovery||0)-dt);
+                const recovering=(s.handbrakeRecovery||0)>0,unsettled=Math.abs(s.chassisSlipAngle)>10*DEG2RAD||Math.abs(s.yawRate)>.4;
+                s.handbrakeRecovery=requestedEbrake?.35:Math.max(recovering&&unsettled?.1:0,(s.handbrakeRecovery||0)-dt);
             }
             let rawSteer = Number(controls.steer);
             if (!Number.isFinite(rawSteer)) {
@@ -1658,7 +1676,7 @@
             }
 
             // Yaw Moment (tau_yaw = Lf * Fy_front - Lr * Fy_rear + EBrake180 + DriftStabilizer)
-            let yawTorque = this.mwTires ? mwYawMoment*.3*(p.yawSpeedMult||1.15)/1.15 : (Lf * fyFront * Math.cos(s.steerAngleRad) - Lr * fyRear) * (p.yawSpeedMult || 1.15);
+            let yawTorque = this.mwTires ? mwYawMoment*(this.massProperties?this.massProperties.yawSpeed*2:.3)*(p.yawSpeedMult||1.15)/1.15 : (Lf * fyFront * Math.cos(s.steerAngleRad) - Lr * fyRear) * (p.yawSpeedMult || 1.15);
 
             // EBrake180 initiation torque when pulling handbrake & steering at moderate speeds
             if (!this.mwTires && hasContact && ebrake > 0.3 && Math.abs(rawSteer) > 0.15 && s.speedKmh > 25 && s.speedKmh < 160 && Math.abs(s.chassisSlipAngle) < 0.65) {
@@ -1702,7 +1720,14 @@
                 s.vLateral *= Math.max(0, 1 - (this.mwKernel ? .8 : 5.2) * latGripMu * dt);
             }
 
-            const angularAccel = (yawTorque + baseYawDamping + stabilizerTorque) / s.yawInertia;
+            // ×2 is NOMERA's responsive handling bridge, not an original MW multiplier.
+            const gyroscopicYaw=this.massProperties?this.suspension.rollRate*this.suspension.pitchRate*(this.massProperties.inertia[0]-this.massProperties.inertia[2]):0;
+            if(this.mwTires&&s.handbrakeRecovery>0&&this.suspension.wheels.filter(w=>w.contact).length>=2){
+                const limit=1.2+.4*clamp(s.speedMps/30,0,1),predicted=s.yawRate+(yawTorque+baseYawDamping+stabilizerTorque-gyroscopicYaw)/s.yawInertia*dt;
+                const extra=-Math.sign(predicted)*Math.max(0,Math.abs(predicted)-limit)*s.yawInertia/dt;
+                if(extra*s.yawRate<=0){stabilizerTorque+=extra;s.handbrakeAssistTorque+=extra;}
+            }
+            const angularAccel = (yawTorque + baseYawDamping + stabilizerTorque-gyroscopicYaw) / s.yawInertia;
             s.yawRate += angularAccel * dt;
             if (s.speedMps < 0.4) {
                 s.yawRate *= Math.max(0, 1 - 20.0 * dt);
