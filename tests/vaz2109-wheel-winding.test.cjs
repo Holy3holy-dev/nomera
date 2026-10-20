@@ -1,0 +1,11 @@
+'use strict';
+const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),os=require('node:os');
+const {repair}=require('../scripts/repair-vaz2109-wheel.cjs');
+test('VAZ-2109 wheel repair is idempotent and all four source wheels face outward',()=>{
+ const file=path.resolve(__dirname,'../assets/models/vaz2109.glb'),data=fs.readFileSync(file),temp=fs.mkdtempSync(path.join(os.tmpdir(),'nomera-vaz-wheel-')),copy=path.join(temp,'car.glb');
+ try{fs.writeFileSync(copy,data);assert.equal(repair(copy).corrected,0,'No reversed wheel faces remain in the shipped asset');assert.deepEqual(fs.readFileSync(copy),data,'An already repaired asset is unchanged');}finally{fs.rmSync(temp,{recursive:true,force:true});}
+ let gltf,binary;for(let at=12;at<data.length;){const length=data.readUInt32LE(at),type=data.readUInt32LE(at+4);if(type===0x4e4f534a)gltf=JSON.parse(data.subarray(at+8,at+8+length));if(type===0x004e4942)binary=data.subarray(at+8,at+8+length);at+=length+8;}
+ function accessor(id){const a=gltf.accessors[id],view=gltf.bufferViews[a.bufferView],float=a.componentType===5126,size=float||a.componentType===5125?4:2,stride=view.byteStride||size*(a.type==='VEC3'?3:1),start=(view.byteOffset||0)+(a.byteOffset||0);return{count:a.count,get:(i,k=0)=>binary[float?'readFloatLE':size===4?'readUInt32LE':'readUInt16LE'](start+i*stride+k*size)};}
+ let primitives=0,triangles=0;const hubs=new Set();for(const m of gltf.meshes){if(!/Standardmater(?:46|47|48|49|50|52)_0$/.test(m.name))continue;for(const p of m.primitives){primitives++;const position=accessor(p.attributes.POSITION),normal=accessor(p.attributes.NORMAL),index=accessor(p.indices);for(let at=0;at<index.count;at+=3){triangles++;const ids=[0,1,2].map(k=>index.get(at+k)),v=ids.map(i=>[0,1,2].map(k=>position.get(i,k))),n=[0,1,2].map(k=>ids.reduce((sum,i)=>sum+normal.get(i,k),0)),ab=v[1].map((x,k)=>x-v[0][k]),ac=v[2].map((x,k)=>x-v[0][k]),face=[ab[1]*ac[2]-ab[2]*ac[1],ab[2]*ac[0]-ab[0]*ac[2],ab[0]*ac[1]-ab[1]*ac[0]];assert(face.reduce((sum,x,k)=>sum+x*n[k],0)>=-1e-5,m.name+' triangle '+at/3+' faces its authored normal');hubs.add((v[0][0]>0?'+':'-')+(v[0][2]>0?'+':'-'));}}}
+ assert.equal(primitives,6);assert.equal(triangles,7728);assert.equal(hubs.size,4);
+});

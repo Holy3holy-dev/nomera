@@ -20,6 +20,6 @@ html = html.replace('</head>', '<script src="./js/authors-preview-pause.js"></sc
 html = html.replace(/\.\/styles\.css\?v=[a-f0-9]+/, './authors-legacy.css');
 html = html.replace('</head>', '<link rel="stylesheet" href="./authors.css"><link rel="stylesheet" href="./authors-expansion.css"><link rel="stylesheet" href="./authors-secondary.css"><link rel="stylesheet" href="./authors-plate-effects.css"></head>');
 html = html.replace(/<body([^>]*)>/, '<body$1 class="authors-edition">');
-html = html.replace('</body>', '<script src="./js/plate-presentation.js"></script><script src="./js/authors-ui.js"></script><script src="./js/authors-preview-market.js"></script><script src="./js/authors-expansion.js"></script><script src="./js/authors-secondary.js"></script></body>');
+html = html.replace('</body>', '<script src="./js/plate-presentation.js"></script><script src="./js/authors-plate-passport.js"></script><script src="./js/authors-ui.js"></script><script src="./js/authors-preview-market.js"></script><script src="./js/authors-expansion.js"></script><script src="./js/authors-secondary.js"></script></body>');
 fs.writeFileSync(path.join(root, 'authors.html'), html);
 console.log('authors.html: isolated local entry generated from index.html');

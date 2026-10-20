@@ -105,7 +105,18 @@
 
     // Clean presentation of inherited emoji labels without touching handlers or data.
     const emoji = /[\p{Extended_Pictographic}\uFE0F\u200D]/gu;
+    function refreshPassport() {
+        if(!boardHasLetters || !boardHasNumbers || currentCountry === 'UAE') return;
+        const price=calculatePrice(), rarity=getRarity(price);
+        const info=NomeraPlatePassport.describe({country:currentCountry,letters:[currentL1,currentL2,currentL3],digits:currentNum,region:String(currentReg),price,rarity:rarity.text,eliteSeries:PLATE_COUNTRIES[currentCountry]?.eliteLetters||[],special:getUltraSpecialPlateMeta(currentL1,currentL2,currentL3,currentNum,currentReg,currentCountry)});
+        if(!info)return;
+        const esc=value=>String(value).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+        const html=`<article class="ae-plate-passport"><span class="ae-passport-country">${esc(info.country)} / ПАСПОРТ КОЛЛЕКЦИИ</span><h3>${esc(info.title)}</h3><p class="ae-passport-region">${esc(info.region)}</p><p>${esc(info.format)}</p><dl>${info.features.map(f=>`<div><dt>${esc(f.label)}</dt><dd>${esc(f.body)}</dd></div>`).join('')}</dl><strong class="ae-passport-value">${esc(info.valuation)}</strong><p class="ae-passport-note">${esc(info.note)}</p></article>`;
+        const target=$('#current-plate-desc');
+        if(target.innerHTML!==html)target.innerHTML=html;
+    }
     function polish(root) {
+        if(root === gen) refreshPassport();
         if(root === inv) {
             const items = Array.isArray(inventory) ? inventory : [];
             const metrics = {'ae-total-count':items.length.toLocaleString('ru-RU'),'ae-total-value':items.reduce((s,p)=>s+(Number(p?.price)||0),0).toLocaleString('ru-RU')+' ₽','ae-favorite-count':items.filter(p=>p?.favorite).length.toLocaleString('ru-RU')};
