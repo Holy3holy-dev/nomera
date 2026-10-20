@@ -1628,6 +1628,7 @@
             const ground = new THREE.Mesh(groundGeo, groundMat);
             ground.rotation.x = -Math.PI / 2;
             ground.position.y = -0.05;
+            ground.name = 'CircuitTerrain';
             this.scene.add(ground);
 
             const segs = this.track.segments;
@@ -1747,7 +1748,7 @@
                     for(const[x,z]of [[t.a[0],t.a[2]],[t.a[0]+t.x1,t.a[2]+t.z1],[t.a[0]+t.x2,t.a[2]+t.z2]])terrain.push(this.toThreeX(x),t.a[1]+t.dx*(x-t.a[0])+t.dz*(z-t.a[2]),this.toThreeZ(z));
                 }
                 const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(terrain,3));geo.computeVertexNormals();
-                const mat=new THREE.MeshLambertMaterial({color:0x182b20,side:THREE.DoubleSide});this._trackDisposables(geo,mat);this.scene.add(new THREE.Mesh(geo,mat));
+                const mat=new THREE.MeshLambertMaterial({color:0x182b20,side:THREE.DoubleSide});this._trackDisposables(geo,mat);const shoulders=new THREE.Mesh(geo,mat);shoulders.name='CircuitShoulders';this.scene.add(shoulders);
             }
             roadGeo.setAttribute('position', new THREE.Float32BufferAttribute(roadPositions, 3));
             // Banking can put an edge below zero. The flat terrain must remain
@@ -1790,7 +1791,7 @@
             if (typeof wallGeo.computeVertexNormals === 'function') wallGeo.computeVertexNormals();
             const wallMat = new THREE.MeshLambertMaterial({ color: 0x64748b, side: THREE.DoubleSide });
             this._trackDisposables(wallGeo, wallMat);
-            this.scene.add(new THREE.Mesh(wallGeo, wallMat));
+            const guardrail=new THREE.Mesh(wallGeo, wallMat);guardrail.name='CircuitGuardrail';this.scene.add(guardrail);
 
             // Start / Finish Gantry Arch + Checkpoint Pillars + Chevron Turn Signs + Streetlamps
             const pillarGeo = new THREE.BoxGeometry(1.2, 6.5, 1.2);
@@ -1816,6 +1817,7 @@
             for (const cp of this.track.checkpoints) {
                 const isStart = cp.index === 0;
                 const gateGroup = new THREE.Group();
+                gateGroup.userData.authorsCheckpointGate=true;
                 gateGroup.position.set(this.toThreeX(cp.x), this.roadSurface?this.roadSurface.sample(cp.x,cp.z).height:0, this.toThreeZ(cp.z));
                 gateGroup.rotation.y = this.toThreeYaw(Math.atan2(cp.tx, cp.tz));
 
@@ -1855,8 +1857,10 @@
                     const lx = this.toThreeX(seg.x + seg.nx * (seg.halfWidth + 1.2) * lampSide);
                     const lz = this.toThreeZ(seg.z + seg.nz * (seg.halfWidth + 1.2) * lampSide);
                     const pole = new THREE.Mesh(poleGeo, poleMat);
+                    pole.userData.authorsLegacyScenery=true;
                     pole.position.set(lx, roadY(seg,(seg.halfWidth+1.2)*lampSide)+3.1, lz);
                     const bulb = new THREE.Mesh(bulbGeo, bulbMat);
+                    bulb.userData.authorsLegacyScenery=true;
                     bulb.position.set(
                         this.toThreeX(seg.x + seg.nx * (seg.halfWidth - 0.3) * lampSide),
                         roadY(seg,(seg.halfWidth-.3)*lampSide)+6.1,
@@ -1870,6 +1874,7 @@
                     const bx = this.toThreeX(seg.x + seg.nx * (seg.halfWidth + 24) * bSide);
                     const bz = this.toThreeZ(seg.z + seg.nz * (seg.halfWidth + 24) * bSide);
                     const bldg = new THREE.Mesh(bldgGeo, bldgMat);
+                    bldg.userData.authorsLegacyScenery=true;
                     bldg.position.set(bx, 13, bz);
                     bldg.rotation.y = this.toThreeYaw(seg.heading);
                     this.scene.add(bldg);
