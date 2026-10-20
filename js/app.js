@@ -9713,6 +9713,25 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         }
 
         // --- 2. СТАЙЛИНГ АВТОМОБИЛЕЙ (ПОКРАСКА, ТОНИРОВКА, ДИСКИ, КЛИРЕНС, СГУ, НЕОН, БОДИ-КИТЫ И PRO-ТЮНИНГ) ---
+        let racePreviewPause = null;
+        function pauseRaceForCarPreview() {
+            if (!window.NomeraPreviewPause) return;
+            if (!racePreviewPause) {
+                racePreviewPause = window.NomeraPreviewPause.create({
+                    engine: () => car3DRacingEngine, session: () => racePlayer,
+                    running: () => isRaceRunning && window.isRaceRunning,
+                    visible: () => !document.getElementById('race-3d-play-container')?.classList.contains('hidden'),
+                    modal: () => document.getElementById('styling-modal')?.classList.contains('show'),
+                    hidden: () => document.hidden, now: () => performance.now(), raf: fn => requestAnimationFrame(fn),
+                    reset: () => resetRaceKeys(),
+                    quiet: () => { sound.stopEngine(); stopRaceRadioAudio(); },
+                    audio: () => { if (raceRadioStation !== 'off') startRaceRadioAudio(); }
+                });
+                window.nomeraRacePreviewAllowsViewer = () => racePreviewPause.allowsViewer();
+                document.addEventListener('visibilitychange', () => racePreviewPause.resume());
+            }
+            racePreviewPause.pause();
+        }
         function openStylingModal(carIndex, initialMode) {
             if (garage3DShowroom) {
                 try { garage3DShowroom.stop(); } catch (_) {}
@@ -9848,6 +9867,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             renderStylingPlateChips();
 
             const modal = document.getElementById('styling-modal');
+            pauseRaceForCarPreview();
             if (modal) modal.classList.add('show');
             setStylingViewMode(stylingViewMode);
             updateStylingModalPreview();
@@ -9862,6 +9882,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 if (typeof car3DShowroom.setLoading === 'function') car3DShowroom.setLoading(false);
                 car3DShowroom.stop();
             }
+            racePreviewPause?.resume();
             const garageTab = document.getElementById('garage');
             if (garageTab && !garageTab.classList.contains('hidden') && garage3DShowroom) {
                 try {
@@ -19527,6 +19548,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         }
 
         function setRaceKey(key, state) {
+            if (state && racePreviewPause?.allowsViewer()) return;
             if (raceKeys[key] !== undefined) {
                 raceKeys[key] = !!state;
                 updateTouchBtnUI(key, !!state);
@@ -19660,7 +19682,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         }
 
         window.addEventListener('keydown', (e) => {
-            if (!isRaceRunning) return;
+            if (!isRaceRunning || racePreviewPause?.allowsViewer()) return;
             const code = e.code || '';
             const key = (e.key || '').toLowerCase();
             const is3d = is3DOrNfsRaceActive();
@@ -19865,6 +19887,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         let car3DRacingEngine = null;
 
         function start3DRaceGame() {
+            racePreviewPause?.cancel();
             if (raceGameOverModalTimeout) {
                 clearTimeout(raceGameOverModalTimeout);
                 raceGameOverModalTimeout = null;
@@ -20227,6 +20250,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         }
 
         function exit3DRaceGame() {
+            racePreviewPause?.cancel();
             stopRaceRadioAudio();
             if (car3DRacingEngine) {
                 const st = car3DRacingEngine.getState();
@@ -21010,6 +21034,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         }
 
         function exitRaceGame() {
+            racePreviewPause?.cancel();
             stopRaceRadioAudio();
             if (isRaceRunning) {
                 if (is3DOrNfsRaceActive()) {
@@ -22914,6 +22939,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
         // Single settlement path for accidents AND early exit. No duplicate payouts.
         function settleRaceRun(crashed) {
+            racePreviewPause?.cancel();
             stopRaceRadioAudio();
             if (!isRaceRunning) return;
             isRaceRunning = false;

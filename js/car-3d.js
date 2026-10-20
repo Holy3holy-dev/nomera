@@ -9929,7 +9929,7 @@
                     this.stop();
                     return;
                 }
-                if (typeof window !== 'undefined' && window.isRaceRunning) {
+                if (typeof window !== 'undefined' && window.isRaceRunning && !(this.container?.id === 'styling-preview-3d-wrap' && window.nomeraRacePreviewAllowsViewer?.())) {
                     this.stop();
                     return;
                 }
@@ -11953,7 +11953,7 @@
                 refStrip.position.set(wallX - side * 0.50, 1.25, 0);
                 tunnelGroup.add(refStrip);
             });
-            const roof = new THREE.Mesh(this.tunnelRoofGeo, this.tunnelConcreteMat);
+            const roof = new THREE.Mesh(this.tunnelRoofGeo, (window.NOMERA_AUTHORS_PREVIEW && this.authorsTunnelRoofMaterial) || this.tunnelConcreteMat);
             roof.name = 'TunnelVaultRoof';
             roof.position.set(0, 8.6, 0);
             tunnelGroup.add(roof);

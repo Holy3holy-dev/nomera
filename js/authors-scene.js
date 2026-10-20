@@ -1,16 +1,32 @@
-/* Small authored road/concrete maps and a cached low-poly traffic fleet.
- * Original EA console TPK containers were not converted into these assets. */
+/* Selectively decoded original MW textures and low-LOD traffic. See
+ * assets/authors-mw/provenance.json for exact local archive byte hashes. */
 (()=>{'use strict';if(!window.NOMERA_AUTHORS_PREVIEW)return;const pools=new Map();
- function map(T,e,file,repeat,color=true){const t=new T.TextureLoader().load('./assets/authors-scene/'+file);t.wrapS=t.wrapT=T.RepeatWrapping;t.repeat.set(...repeat);t.anisotropy=Math.min(4,e.renderer?.capabilities?.getMaxAnisotropy?.()||1);if(color)t.encoding=T.sRGBEncoding;(e.authorsSceneTextures||(e.authorsSceneTextures=[])).push(t);return t;}
+ function map(T,e,file,repeat,color=true){const t=new T.TextureLoader().load('./assets/authors-mw/textures/'+file);t.wrapS=t.wrapT=T.RepeatWrapping;t.repeat.set(...repeat);t.anisotropy=Math.min(4,e.renderer?.capabilities?.getMaxAnisotropy?.()||1);if(color)t.encoding=T.sRGBEncoding;(e.authorsSceneTextures||(e.authorsSceneTextures=[])).push(t);return t;}
  function prepare(e){if(e.authorsSceneReady||!e.scene)return;e.authorsSceneReady=true;const T=e.THREE,road=e.asphaltMat;let mat=road;
   if(!mat&&e.playerPhysics)e.scene.traverse(n=>{if(n.isMesh&&n.userData.mwRoadSurface){mat=n.material;if(!n.geometry.attributes.uv){const p=n.geometry.attributes.position,uv=[];for(let i=0;i<p.count;i++)uv.push(p.getX(i)/4,p.getZ(i)/4);n.geometry.setAttribute('uv',new T.Float32BufferAttribute(uv,2));}}});
-  if(mat){mat.map=map(T,e,'asphalt.png',road?[17.5/4,(e.chunkLength||60)/4]:[1,1]);mat.roughnessMap=map(T,e,'asphalt-roughness.png',road?[17.5/4,(e.chunkLength||60)/4]:[1,1],false);mat.color.setHex(0xffffff);mat.metalness=.04;mat.roughness=.88;mat.needsUpdate=true;e.authorsRoadMaterial=mat;}
-  if(e.tunnelConcreteMat){const m=e.tunnelConcreteMat;m.map=map(T,e,'tunnel-concrete.png',[3,15]);m.color.setHex(0xe3e4e1);m.metalness=.02;m.roughness=.92;m.needsUpdate=true;}
+  if(mat){const repeat=road?[17.5/4,(e.chunkLength||60)/4]:[1,1];mat.map=map(T,e,'d5a08d5f_RO_GENFILL_CRK.png',repeat);mat.roughnessMap=null;mat.normalMap=map(T,e,'7ce0b047_RO_GENFILL_CRK_NORMAL.png',repeat,false);mat.normalScale=new T.Vector2(.45,.45);mat.color.setHex(0xffffff);mat.metalness=.04;mat.roughness=.88;mat.needsUpdate=true;e.authorsRoadMaterial=mat;}
+  if(e.tunnelConcreteMat){const m=e.tunnelConcreteMat;m.map=map(T,e,'dca86b52_ARC_TUNNEL_WALL_A_MM.png',[(e.chunkLength||60)/8,1]);m.normalMap=map(T,e,'b64b3f8d_ARC_TUNNEL_WALL_A_NORMA.png',[(e.chunkLength||60)/8,1],false);m.normalScale=new T.Vector2(.35,.35);m.color.setHex(0xffffff);m.metalness=.02;m.roughness=.92;m.needsUpdate=true;
+   // Box side UVs put U along the tunnel length. The roof uses its own concrete.
+   e.authorsTunnelRoofMaterial=m.clone();e.authorsTunnelRoofMaterial.map=map(T,e,'f7d6b83c_ARC_CONCRETE02_D_JG.png',[4,(e.chunkLength||60)/4]);e.authorsTunnelRoofMaterial.normalMap=null;
+  }
+  if(e.authorsTunnelRoofMaterial)e.scene.traverse(n=>{if(n.name==='TunnelVaultRoof')n.material=e.authorsTunnelRoofMaterial;});
  }
  function weather(e){const inside=e.currentBiome==='tunnel';if(e.rainSystem)e.rainSystem.visible=!inside&&e.currentActiveWeather==='rain';if(e.snowSystem)e.snowSystem.visible=!inside&&e.currentActiveWeather==='snow';if(inside&&e.lightningFlash){e.lightningFlash=0;const p=e.getWeatherPreset(e.currentActiveWeather);if(p){if(e.ambientLight)e.ambientLight.intensity=p.ambientIntensity;if(e.sunLight)e.sunLight.intensity=p.sunIntensity;e.scene?.background?.setHex?.(p.bgColor);e.scene?.fog?.color?.setHex?.(p.bgColor);}}
   if(e.authorsRoadMaterial){const wet=!inside&&['rain','snow'].includes(e.currentActiveWeather);e.authorsRoadMaterial.roughness=wet?.42:.88;e.authorsRoadMaterial.metalness=wet?.1:.04;}
  }
- function traffic(T,car,fallback,type){if(!T.GLTFLoader||['truck','kamaz','ambulance'].includes(type))return;const baseChildren=new Set(fallback.children),key=type==='suv'?'hyundai':type==='sport'?'mustang_razor':'mark2';
+ function originalTraffic(T,car,fallback,type,key){
+  const poolKey='mw-'+key;if(!pools.has(poolKey)){const loader=T._nomeraGLTFLoader||new T.GLTFLoader();pools.set(poolKey,new Promise((resolve,reject)=>loader.load('./assets/authors-mw/traffic/'+key+'.glb',g=>resolve(g.scene),undefined,reject)).catch(()=>null));}
+  const token=car.userData.trafficVisualToken={};pools.get(poolKey).then(template=>{if(!template||car.userData.trafficVisualToken!==token||!car.parent)return;const model=template.clone(true),geometries=new Map(),materials=new Map(),textures=new Map();model.name='OriginalMW_'+key;
+   model.traverse(n=>{if(!n.isMesh)return;if(!geometries.has(n.geometry))geometries.set(n.geometry,n.geometry.clone());n.geometry=geometries.get(n.geometry);const clone=m=>{if(materials.has(m))return materials.get(m);const c=m.clone();for(const slot of ['map','normalMap','roughnessMap','metalnessMap','emissiveMap'])if(c[slot]){const t=c[slot];if(!textures.has(t)){const copy=t.clone();copy.needsUpdate=true;textures.set(t,copy);}c[slot]=textures.get(t);}materials.set(m,c);return c;};n.material=Array.isArray(n.material)?n.material.map(clone):clone(n.material);});
+   model.updateMatrixWorld(true);const box=new T.Box3().setFromObject(model),size=box.getSize(new T.Vector3()),center=box.getCenter(new T.Vector3()),k=(car.userData.halfLength||2.25)*2/size.z;model.scale.setScalar(k);model.position.set(-center.x*k,-box.min.y*k,-center.z*k);
+   const wheels=[],mounts=[];model.traverse(n=>{if(/^wheel-(front|back)-(left|right)$/.test(n.name))mounts.push(n);});for(const n of mounts){const front=n.name.includes('front'),left=n.name.includes('left'),steer=new T.Group(),spin=new T.Group(),base=n.position.clone(),radius=n.userData.wheelRadius||.33;steer.position.copy(base);steer.name='MW_TrafficHub_'+n.name;spin.name='MW_TrafficSpin_'+n.name;n.parent.add(steer);steer.add(spin);spin.add(n);n.position.set(0,0,0);wheels.push({key:(front?'f':'r')+(left?'l':'r'),steer,spin,radius:radius*k,baseY:base.y,angle:0});}
+   // Preserve gameplay plates and active beacon controls; the original body
+   // already includes its livery, taxi sign and police lightbar geometry.
+   const keep=[];fallback.traverse(n=>{if(/^(?:GLB_)?(?:Front|Rear)LicensePlate$/.test(n.name))keep.push(n);});for(const n of [car.userData.policeRed,car.userData.policeBlue,car.userData.policeLight])if(n)keep.push(n);car.updateMatrixWorld(true);for(const n of keep){car.attach(n);if(n===car.userData.policeRed||n===car.userData.policeBlue||n===car.userData.policeLight)n.position.y+=size.y*k-1.55;}
+   car.remove(fallback);window.Car3DManager?.deepDispose(fallback);car.add(model);Object.assign(car.userData,{wheels:wheels.map(w=>w.spin),trafficVisualRig:{wheels,imported:true,pending:false},importedTraffic:key,originalMWTraffic:true,trafficVisualTriangles:0});for(const slot of ['roofRack','spareWheelCover','taxiCheckers','taxiSign'])car.userData[slot]=null;model.traverse(n=>{if(n.isMesh)car.userData.trafficVisualTriangles+=(n.geometry.index?.count||n.geometry.attributes.position.count)/3;});
+  });
+ }
+ function traffic(T,car,fallback,type){if(!T.GLTFLoader||['truck','kamaz','ambulance'].includes(type))return;if(type!=='sport'){originalTraffic(T,car,fallback,type,type==='police'?'copmidsize':type==='taxi'?'traftaxi':type==='suv'?'trafsuva':'traf4dsedb');return;}const baseChildren=new Set(fallback.children),key='mustang_razor';
   if(!pools.has(key)){const loader=T._nomeraGLTFLoader||new T.GLTFLoader();pools.set(key,new Promise((resolve,reject)=>loader.load('./assets/models/'+key+'.glb',g=>resolve(g.scene),undefined,reject)).catch(()=>null));}
   const token=car.userData.trafficVisualToken={};pools.get(key).then(template=>{if(!template||car.userData.trafficVisualToken!==token||!car.parent)return;const raw=template.clone(true),model=new T.Group();model.name='TrafficGLB_'+key;
    const remove=[];raw.traverse(n=>{if(/shadow.*plane|ground.*shadow|floor.*shadow|shadow_plane/i.test(n.name))remove.push(n)});for(const n of remove)n.removeFromParent();raw.updateMatrixWorld(true);let box=new T.Box3().setFromObject(raw),size=box.getSize(new T.Vector3());if(size.y>size.z*1.2&&size.y>size.x*1.2){raw.rotation.x=-Math.PI/2;raw.updateMatrixWorld(true);box.setFromObject(raw);size=box.getSize(new T.Vector3());}if(size.x>size.z*1.15){raw.rotation.y=Math.PI/2;raw.updateMatrixWorld(true);box.setFromObject(raw);size=box.getSize(new T.Vector3());}
@@ -21,6 +37,6 @@
   });
  }
  function update(e){prepare(e);weather(e);for(const car of e.trafficCars||[]){const u=car.userData;if(u.trafficVisualRig&&!u.trafficVisualRig.pending&&u.wheels.length===0)u.wheels=u.trafficVisualRig.wheels.map(w=>w.spin);}}
- function destroy(e){for(const t of e.authorsSceneTextures||[])t.dispose();e.authorsSceneTextures=[];e.authorsSceneReady=false;for(const car of e.trafficCars||[])car.userData.trafficVisualToken=null;}
+ function destroy(e){for(const t of e.authorsSceneTextures||[])t.dispose();e.authorsTunnelRoofMaterial?.dispose();e.authorsTunnelRoofMaterial=null;e.authorsSceneTextures=[];e.authorsSceneReady=false;for(const car of e.trafficCars||[])car.userData.trafficVisualToken=null;}
  window.NomeraScene={prepare,weather,traffic,update,destroy};
 })();

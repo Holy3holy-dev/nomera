@@ -1,0 +1,2309 @@
+{
+  "sourceRoot": "E:/Torrent/Need-For-Speed-Most-Wanted/switch/nfsmw-nx/game_root/NFS",
+  "readOnlySource": true,
+  "localIntegration": true,
+  "textures": [
+    {
+      "name": "RO_GENFILL_CRK",
+      "hash": "d5a08d5f",
+      "width": 512,
+      "height": 512,
+      "compression": "0x26",
+      "source": "TRACKS/STREAML2RA_PERM.BUN",
+      "packOffset": 44167168,
+      "pixelOffset": 58933248,
+      "pixelBytes": 393216,
+      "rawSHA256": "3ad301b6eb01c88f8e52d09ae88a4b980ee3b26a2eb8edecd9a53a58c0ce6bb8",
+      "d3dFormat": "0x1a200154",
+      "pngSHA256": "ec8b06df6efbbac0e62e90f2d177808f79cf02bfbc9d5bbd33a39d9f2b481898",
+      "archive": "ZZDATA0.BIN",
+      "archiveEntryOffset": 22501376,
+      "archiveEntrySize": 132581008,
+      "archiveEntrySHA256": "fc6e2eda6d84a8f5585cb19a739a801898640cdb6a2c792971fd8be6aa1ad263",
+      "absolutePixelOffset": 81434624,
+      "file": "textures/d5a08d5f_RO_GENFILL_CRK.png"
+    },
+    {
+      "name": "RO_GENFILL_CRK_NORMAL",
+      "hash": "7ce0b047",
+      "width": 512,
+      "height": 512,
+      "compression": "0x22",
+      "source": "TRACKS/STREAML2RA_PERM.BUN",
+      "packOffset": 70549504,
+      "pixelOffset": 77377536,
+      "pixelBytes": 196608,
+      "rawSHA256": "5f0a0175b1ab40992bd018eee3a9530c5cc13d0cca0312c927d84d1a42428360",
+      "d3dFormat": "0x1a200152",
+      "pngSHA256": "487257f84fe0b3d36ac91c554c9d34f6a25798779bcf4cefd90265b734cb82d6",
+      "archive": "ZZDATA0.BIN",
+      "archiveEntryOffset": 22501376,
+      "archiveEntrySize": 132581008,
+      "archiveEntrySHA256": "fc6e2eda6d84a8f5585cb19a739a801898640cdb6a2c792971fd8be6aa1ad263",
+      "absolutePixelOffset": 99878912,
+      "file": "textures/7ce0b047_RO_GENFILL_CRK_NORMAL.png"
+    },
+    {
+      "name": "RO_GENFILL_CRK_SPEC",
+      "hash": "2580b989",
+      "width": 512,
+      "height": 512,
+      "compression": "0x22",
+      "source": "TRACKS/STREAML2RA_PERM.BUN",
+      "packOffset": 119500800,
+      "pixelOffset": 122654720,
+      "pixelBytes": 196608,
+      "rawSHA256": "b6b5f2caa2485722b35df2becadf11e30a85f566c2139852809e26ade7a0745f",
+      "d3dFormat": "0x1a200152",
+      "pngSHA256": "3d522f09208785f0c986c68fab6d9edf556d36147425f8a856f50c31158136c3",
+      "archive": "ZZDATA0.BIN",
+      "archiveEntryOffset": 22501376,
+      "archiveEntrySize": 132581008,
+      "archiveEntrySHA256": "fc6e2eda6d84a8f5585cb19a739a801898640cdb6a2c792971fd8be6aa1ad263",
+      "absolutePixelOffset": 145156096,
+      "file": "textures/2580b989_RO_GENFILL_CRK_SPEC.png"
+    },
+    {
+      "name": "ARC_TUNNEL_WALL_A_MM",
+      "hash": "dca86b52",
+      "width": 256,
+      "height": 512,
+      "compression": "0x22",
+      "source": "TRACKS/STREAML2RA_PERM.BUN",
+      "packOffset": 59678720,
+      "pixelOffset": 69713920,
+      "pixelBytes": 106496,
+      "rawSHA256": "9cae9d180396bfec627c0d905ab20524ca0d79798296cb8b761273f191b1d50c",
+      "d3dFormat": "0x1a200152",
+      "pngSHA256": "ed9a4698a4324f55cfc5a7239cd2005c070f3563c1f11fd7d73ae9661fd689d0",
+      "archive": "ZZDATA0.BIN",
+      "archiveEntryOffset": 22501376,
+      "archiveEntrySize": 132581008,
+      "archiveEntrySHA256": "fc6e2eda6d84a8f5585cb19a739a801898640cdb6a2c792971fd8be6aa1ad263",
+      "absolutePixelOffset": 92215296,
+      "file": "textures/dca86b52_ARC_TUNNEL_WALL_A_MM.png"
+    },
+    {
+      "name": "ARC_TUNNEL_WALL_A_NORMA",
+      "hash": "b64b3f8d",
+      "width": 128,
+      "height": 256,
+      "compression": "0x22",
+      "source": "TRACKS/STREAML2RA_PERM.BUN",
+      "packOffset": 70549504,
+      "pixelOffset": 81752064,
+      "pixelBytes": 40960,
+      "rawSHA256": "f4e2908c8a0bd5226da8f45c46906537fa952e4adf4aa6128f5c954a6d11aad2",
+      "d3dFormat": "0x1a200152",
+      "pngSHA256": "6a2caf91a58a7bbaf283d7ef2775262b34d400bc60a6ea2152d84ca3ee293fd7",
+      "archive": "ZZDATA0.BIN",
+      "archiveEntryOffset": 22501376,
+      "archiveEntrySize": 132581008,
+      "archiveEntrySHA256": "fc6e2eda6d84a8f5585cb19a739a801898640cdb6a2c792971fd8be6aa1ad263",
+      "absolutePixelOffset": 104253440,
+      "file": "textures/b64b3f8d_ARC_TUNNEL_WALL_A_NORMA.png"
+    },
+    {
+      "name": "ARC_TUNNEL_WALL_A_SPECU",
+      "hash": "fbe970b0",
+      "width": 256,
+      "height": 512,
+      "compression": "0x22",
+      "source": "TRACKS/STREAML2RA_PERM.BUN",
+      "packOffset": 5709824,
+      "pixelOffset": 16818176,
+      "pixelBytes": 106496,
+      "rawSHA256": "52b22c047613566bedfaa65c3d4367f6dd49b49ab053daa326835b48279371be",
+      "d3dFormat": "0x1a200152",
+      "pngSHA256": "da88cba022f84912754df58fa6fae55cc4501b289dca5364b9587288d0eecd97",
+      "archive": "ZZDATA0.BIN",
+      "archiveEntryOffset": 22501376,
+      "archiveEntrySize": 132581008,
+      "archiveEntrySHA256": "fc6e2eda6d84a8f5585cb19a739a801898640cdb6a2c792971fd8be6aa1ad263",
+      "absolutePixelOffset": 39319552,
+      "file": "textures/fbe970b0_ARC_TUNNEL_WALL_A_SPECU.png"
+    },
+    {
+      "name": "ARC_CONCRETE02_D_JG",
+      "hash": "f7d6b83c",
+      "width": 256,
+      "height": 256,
+      "compression": "0x22",
+      "source": "TRACKS/STREAML2RA_PERM.BUN",
+      "packOffset": 106815488,
+      "pixelOffset": 119304192,
+      "pixelBytes": 65536,
+      "rawSHA256": "832e37347f6bf83444b4a99299d605fe7d8e380bdead7c5117ba889835d7bc56",
+      "d3dFormat": "0x1a200152",
+      "pngSHA256": "0f85833c4a31070f8a800a88202ba0184f784af89476f06fd0abecc35a4a6c25",
+      "archive": "ZZDATA0.BIN",
+      "archiveEntryOffset": 22501376,
+      "archiveEntrySize": 132581008,
+      "archiveEntrySHA256": "fc6e2eda6d84a8f5585cb19a739a801898640cdb6a2c792971fd8be6aa1ad263",
+      "absolutePixelOffset": 141805568,
+      "file": "textures/f7d6b83c_ARC_CONCRETE02_D_JG.png"
+    },
+    {
+      "name": "TRN_OLDCONCRETE_SIMPLE",
+      "hash": "032ea50d",
+      "width": 512,
+      "height": 512,
+      "compression": "0x26",
+      "source": "TRACKS/STREAML2RA_PERM.BUN",
+      "packOffset": 44167168,
+      "pixelOffset": 44236800,
+      "pixelBytes": 393216,
+      "rawSHA256": "b27c209da567ec1840af4571de592ee4210d81919807b5dd8c3071595a2afe6a",
+      "d3dFormat": "0x1a200154",
+      "pngSHA256": "db7fc6683cd128e00faa00abecb692ec220f01fb87f798e08b63c515c5bbc591",
+      "archive": "ZZDATA0.BIN",
+      "archiveEntryOffset": 22501376,
+      "archiveEntrySize": 132581008,
+      "archiveEntrySHA256": "fc6e2eda6d84a8f5585cb19a739a801898640cdb6a2c792971fd8be6aa1ad263",
+      "absolutePixelOffset": 66738176,
+      "file": "textures/032ea50d_TRN_OLDCONCRETE_SIMPLE.png"
+    }
+  ],
+  "models": [
+    {
+      "id": "TRAF4DSEDB",
+      "file": "traffic/traf4dsedb.glb",
+      "bytes": 285108,
+      "sha256": "c3fc20e07f0c17deff789ee8e3a8bd0c6fdcfc04fb7ca5cd223fd2e0101025fd",
+      "geometrySHA256": "d39130e55f0c318d4eb1f4fc4ac4fc9c79b4a9d1cd24df6c38964f5f7a7046f4",
+      "bodyParts": [
+        "TRAF4DSEDB_KIT00_BODY_B",
+        "TRAF4DSEDB_KIT00_FRONT_WINDOW_B"
+      ],
+      "lod": "B",
+      "bodyTriangles": 950,
+      "wheelTriangles": 68,
+      "totalTriangles": 1222,
+      "primitiveBatches": [
+        7,
+        1
+      ],
+      "materialCount": 8,
+      "textureCount": 7,
+      "unresolved": [],
+      "textureAliases": [],
+      "radius": 0.31885093450546265,
+      "wheelMounts": {
+        "front": 1.45,
+        "rear": -1.45,
+        "track": 1.68
+      },
+      "coordinateTransform": "(sourceY, sourceZ+wheelRadius, sourceX), determinant +1, original winding retained",
+      "wheels": "4 nodes share original tire geometry, rotate around local X; mounts fitted to original wheel arch silhouette",
+      "excluded": "Driver flat image cards not decoded/imported; damage1 meshes excluded",
+      "sourceEntries": [
+        {
+          "name": "CARS\\TRAF4DSEDB\\GEOMETRY.BIN",
+          "archive": "ZZDATA4.BIN",
+          "offset": 279074816,
+          "size": 330880,
+          "sha256": "d39130e55f0c318d4eb1f4fc4ac4fc9c79b4a9d1cd24df6c38964f5f7a7046f4"
+        },
+        {
+          "name": "CARS\\TRAF4DSEDB\\TEXTURES.BIN",
+          "archive": "ZZDATA4.BIN",
+          "offset": 279406592,
+          "size": 45568,
+          "sha256": "ec8ddf9ff8f50bb81239a0811c49a3a007d37168f9285ae565e4c622ecfabfc0"
+        }
+      ],
+      "materialChecks": [
+        {
+          "part": "TRAF4DSEDB_KIT00_BODY_B",
+          "textureHash": "0b6c2b07",
+          "vertices": 602,
+          "indices": 1449,
+          "triangles": 483,
+          "uvBounds": [
+            0.0009765625,
+            0.99755859375
+          ],
+          "normalWinding": {
+            "positive": 483,
+            "negative": 0,
+            "degenerate": 0
+          }
+        },
+        {
+          "part": "TRAF4DSEDB_KIT00_BODY_B",
+          "textureHash": "ba83d68d",
+          "vertices": 339,
+          "indices": 606,
+          "triangles": 202,
+          "uvBounds": [
+            0.00146484375,
+            0.9990234375
+          ],
+          "normalWinding": {
+            "positive": 202,
+            "negative": 0,
+            "degenerate": 0
+          }
+        },
+        {
+          "part": "TRAF4DSEDB_KIT00_BODY_B",
+          "textureHash": "cc772afb",
+          "vertices": 218,
+          "indices": 318,
+          "triangles": 106,
+          "uvBounds": [
+            0.1376953125,
+            0.64599609375
+          ],
+          "normalWinding": {
+            "positive": 106,
+            "negative": 0,
+            "degenerate": 0
+          }
+        },
+        {
+          "part": "TRAF4DSEDB_KIT00_BODY_B",
+          "textureHash": "1b049702",
+          "vertices": 140,
+          "indices": 324,
+          "triangles": 108,
+          "uvBounds": [
+            0.142578125,
+            0.994140625
+          ],
+          "normalWinding": {
+            "positive": 108,
+            "negative": 0,
+            "degenerate": 0
+          }
+        },
+        {
+          "part": "TRAF4DSEDB_KIT00_BODY_B",
+          "textureHash": "4c95c6f8",
+          "vertices": 8,
+          "indices": 12,
+          "triangles": 4,
+          "uvBounds": [
+            0.00048828125,
+            0.99951171875
+          ],
+          "normalWinding": {
+            "positive": 4,
+            "negative": 0,
+            "degenerate": 0
+          }
+        },
+        {
+          "part": "TRAF4DSEDB_KIT00_BODY_B",
+          "textureHash": "bd1f0e0a",
+          "vertices": 26,
+          "indices": 66,
+          "triangles": 22,
+          "uvBounds": [
+            0.00048828125,
+            0.99951171875
+          ],
+          "normalWinding": {
+            "positive": 22,
+            "negative": 0,
+            "degenerate": 0
+          }
+        },
+        {
+          "part": "TRAF4DSEDB_KIT00_FRONT_TIRE_B",
+          "textureHash": "896efc91",
+          "vertices": 204,
+          "indices": 204,
+          "triangles": 68,
+          "uvBounds": [
+            0.013671875,
+            0.7919921875
+          ],
+          "normalWinding": {
+            "positive": 68,
+            "negative": 0,
+            "degenerate": 0
+          }
+        },
+        {
+          "part": "TRAF4DSEDB_KIT00_FRONT_WINDOW_B",
+          "textureHash": "7b220ddf",
+          "vertices": 41,
+          "indices": 75,
+          "triangles": 25,
+          "uvBounds": [
+            0,
+            0.99755859375
+          ],
+          "normalWinding": {
+            "positive": 25,
+            "negative": 0,
+            "degenerate": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "TRAFSUVA",
+      "file": "traffic/trafsuva.glb",
+      "bytes": 292228,
+      "sha256": "e31c20cef0c2cb3472109f1a4691321a69c1e85580d984757b0325c31777f35c",
+      "geometrySHA256": "bee932fcfe7edeb1802498fdba3848c7bfbdabab53d6f5b5ed7a64e531ecc6c7",
+      "bodyParts": [
+        "TRAFSUVA_KIT00_BODY_B",
+        "TRAFSUVA_KIT00_FRONT_WINDOW_B"
+      ],
+      "lod": "B",
+      "bodyTriangles": 1002,
+      "wheelTriangles": 58,
+      "totalTriangles": 1234,
+      "primitiveBatches": [
+        8,
+        2
+      ],
+      "materialCount": 10,
+      "textureCount": 8,
+      "unresolved": [],
+      "textureAliases": [],
+      "radius": 0.3989644944667816,
+      "wheelMounts": {
+        "front": 1.65,
+        "rear": -1.25,
+        "track": 1.94
+      },
+      "coordinateTransform": "(sourceY, sourceZ+wheelRadius, sourceX), determinant +1, original winding retained",
+      "wheels": "4 nodes share original tire geometry, rotate around local X; mounts fitted to original wheel arch silhouette",
+      "excluded": "Driver flat image cards not decoded/imported; damage1 meshes excluded",
+      "sourceEntries": [
+        {
+          "name": "CARS\\TRAFSUVA\\GEOMETRY.BIN",
+          "archive": "ZZDATA4.BIN",
+          "offset": 285835264,
+          "size": 357760,
+          "sha256": "bee932fcfe7edeb1802498fdba3848c7bfbdabab53d6f5b5ed7a64e531ecc6c7"
+        },
+        {
+          "name": "CARS\\TRAFSUVA\\TEXTURES.BIN",
+          "archive": "ZZDATA4.BIN",
+          "offset": 286193664,
+          "size": 55040,
+          "sha256": "10721674aa9e16a28b793578ff7a8a8d6a4dc5b94dd71f931dd991e12bd01414"
+        }
+      ],
+      "materialChecks": [
+        {
+          "part": "TRAFSUVA_KIT00_BODY_B",
+          "textureHash": "26172096",
+          "vertices": 372,
+          "indices": 714,
+          "triangles": 238,
+          "uvBounds": [
+            0.00439453125,
+            0.9921875
+          ],
+          "normalWinding": {
+            "positive": 238,
+            "negative": 0,
+            "degenerate": 0
+          }
+        },
+        {
+          "part": "TRAFSUVA_KIT00_BODY_B",
+          "textureHash": "26172096",
+          "vertices": 12,
+          "indices": 24,
+          "triangles": 8,
+          "uvBounds": [
+            0.2978515625,
+            0.71044921875
+          ],
+          "normalWinding": {
+            "positive": 8,
+            "negative": 0,
+            "degenerate": 0
+          }
+        },
+        {
+          "part": "TRAFSUVA_KIT00_BODY_B",
+          "textureHash": "e968b630",
+          "vertices": 479,
+          "indices": 1083,
+          "triangles": 361,
+          "uvBounds": [
+            0.0087890625,
+            0.98583984375
+          ],
+          "normalWinding": {
+            "positive": 360,
+            "negative": 0,
+            "degenerate": 1
+          }
+        },
+        {
+          "part": "TRAFSUVA_KIT00_BODY_B",
+          "textureHash": "cc772afb",
+          "vertices": 354,
+          "indices": 522,
+          "triangles": 174,
+          "uvBounds": [
+            0.140625,
+            0.984375
+          ],
+          "normalWinding": {
+            "positive": 172,
+            "negative": 2,
+            "degenerate": 0
+          }
+        },
+        {
+          "part": "TRAFSUVA_KIT00_BODY_B",
+          "textureHash": "1b049702",
+          "vertices": 187,
+          "indices": 429,
+          "triangles": 143,
+          "uvBounds": [
+            0.947265625,
+            0.984375
+          ],
+          "normalWinding": {
+            "positive": 143,
+            "negative": 0,
+            "degenerate": 0
+          }
+        },
+        {
+          "part": "TRAFSUVA_KIT00_BODY_B",
+          "textureHash": "4c95c6f8",
+          "vertices": 4,
+          "indices": 6,
+          "triangles": 2,
+          "uvBounds": [
+            0.00048828125,
+            0.99951171875
+          ],
+          "normalWinding": {
+            "positive": 2,
+            "negative": 0,
+            "degenerate": 0
+          }
+        },
+        {
+          "part": "TRAFSUVA_KIT00_BODY_B",
+          "textureHash": "bd1f0e0a",
+          "vertices": 26,
+          "indices": 72,
+          "triangles": 24,
+          "uvBounds": [
+            0.00048828125,
+            0.99951171875
+          ],
+          "normalWinding": {
+            "positive": 24,
+            "negative": 0,
+            "degenerate": 0
+          }
+        },
+        {
+          "part": "TRAFSUVA_KIT00_FRONT_TIRE_B",
+          "textureHash": "896efc91",
+          "vertices": 150,
+          "indices": 150,
+          "triangles": 50,
+          "uvBounds": [
+            0,
+            0.99853515625
+          ],
+          "normalWinding": {
+            "positive": 50,
+            "negative": 0,
+            "degenerate": 0
+          }
+        },
+        {
+          "part": "TRAFSUVA_KIT00_FRONT_TIRE_B",
+          "textureHash": "e38806e3",
+          "vertices": 24,
+          "indices": 24,
+          "triangles": 8,
+          "uvBounds": [
+            0.4921875,
+            0.5078125
+          ],
+          "normalWinding": {
+            "positive": 8,
+            "negative": 0,
+            "degenerate": 0
+          }
+        },
+        {
+          "part": "TRAFSUVA_KIT00_FRONT_WINDOW_B",
+          "textureHash": "7b220ddf",
+          "vertices": 44,
+          "indices": 72,
+          "triangles": 24,
+          "uvBounds": [
+            0.02392578125,
+            0.97509765625
+          ],
+          "normalWinding": {
+            "positive": 24,
+            "negative": 0,
+            "degenerate": 0
+          }
+        },
+        {
+          "part": "TRAFSUVA_KIT00_FRONT_WINDOW_B",
+          "textureHash": "1b049702",
+          "vertices": 28,
+          "indices": 84,
+          "triangles": 28,
+          "uvBounds": [
+            0.02734375,
+            0.96484375
+          ],
+          "normalWinding": {
+            "positive": 28,
+            "negative": 0,
+            "degenerate": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "TRAFTAXI",
+      "file": "traffic/traftaxi.glb",
+      "bytes": 340240,
+      "sha256": "37b92409d9c4d7c74c3e0efbf3c127973a0d84348adf742537aa9e072e80b7b6",
+      "geometrySHA256": "93f7710640047575a4b344bb69bb7b2098771956dcb50a1b9d1c4a7eba2e9ac6",
+      "bodyParts": [
+        "TRAFTAXI_KIT00_BODY_B",
+        "TRAFTAXI_KIT00_FRONT_WINDOW_B"
+      ],
+      "lod": "B",
+      "bodyTriangles": 916,
+      "wheelTriangles": 68,
+      "totalTriangles": 1188,
+      "primitiveBatches": [
+        9,
+        1
+      ],
+      "materialCount": 10,
+      "textureCount": 9,
+      "unresolved": [],
+      "textureAliases": [],
+      "radius": 0.31186020374298096,
+      "wheelMounts": {
+        "front": 1.5,
+        "rear": -1.25,
+        "track": 1.66
+      },
+      "coordinateTransform": "(sourceY, sourceZ+wheelRadius, sourceX), determinant +1, original winding retained",
+      "wheels": "4 nodes share original tire geometry, rotate around local X; mounts fitted to original wheel arch silhouette",
+      "excluded": "Driver flat image cards not decoded/imported; damage1 meshes excluded",
+      "sourceEntries": [
+        {
+          "name": "CARS\\TRAFTAXI\\GEOMETRY.BIN",
+          "archive": "ZZDATA4.BIN",
+          "offset": 286248960,
+          "size": 301440,
+          "sha256": "93f7710640047575a4b344bb69bb7b2098771956dcb50a1b9d1c4a7eba2e9ac6"
+        },
+        {
+          "name": "CARS\\TRAFTAXI\\TEXTURES.BIN",
+          "archive": "ZZDATA4.BIN",
+          "offset": 286552064,
+          "size": 78016,
+          "sha256": "3ac09dfa071312bf77fc8ca891b563d4eecddf4bc577d373ced0a1fdafa5b601"
+        }
+      ],
+      "materialChecks": [
+        {
+          "part": "TRAFTAXI_KIT00_BODY_B",
+          "textureHash": "7b220ddf",
+          "vertices": 44,
+          "indices": 66,
+          "triangles": 22,
+          "uvBounds": [
+            0.04296875,
+            0.9697265625
+          ],
+          "normalWinding": {
+            "positive": 22,
+            "negative": 0,
+            "degenerate": 0
+          }
+        },
+        {
+          "part": "TRAFTAXI_KIT00_BODY_B",
+          "textureHash": "cc772afb",
+          "vertices": 372,
+          "indices": 372,
+          "triangles": 124,
+          "uvBounds": [
+            0.080078125,
+            0.96630859375
+          ],
+          "normalWinding": {
+            "positive": 124,
+            "negative": 0,
+            "degenerate": 0
+          }
+        },
+        {
+          "part": "TRAFTAXI_KIT00_BODY_B",
+          "textureHash": "1b049702",
+          "vertices": 159,
+          "indices": 303,
+          "triangles": 101,
+          "uvBounds": [
+            0.3544921875,
+            0.9697265625
+          ],
+          "normalWinding": {
+            "positive": 101,
+            "negative": 0,
+            "degenerate": 0
+          }
+        },
+        {
+          "part": "TRAFTAXI_KIT00_BODY_B",
+          "textureHash": "4c95c6f8",
+          "vertices": 4,
+          "indices": 6,
+          "triangles": 2,
+          "uvBounds": [
+            0.00048828125,
+            0.99951171875
+          ],
+          "normalWinding": {
+            "positive": 2,
+            "negative": 0,
+            "degenerate": 0
+          }
+        },
+        {
+          "part": "TRAFTAXI_KIT00_BODY_B",
+          "textureHash": "bd1f0e0a",
+          "vertices": 33,
+          "indices": 87,
+          "triangles": 29,
+          "uvBounds": [
+            0.00048828125,
+            0.99951171875
+          ],
+          "normalWinding": {
+            "positive": 29,
+            "negative": 0,
+            "degenerate": 0
+          }
+        },
+        {
+          "part": "TRAFTAXI_KIT00_BODY_B",
+          "textureHash": "14100307",
+          "vertices": 533,
+          "indices": 1299,
+          "triangles": 433,
+          "uvBounds": [
+            0.01953125,
+            0.98291015625
+          ],
+          "normalWinding": {
+            "positive": 431,
+            "negative": 2,
+            "degenerate": 0
+          }
+        },
+        {
+          "part": "TRAFTAXI_KIT00_BODY_B",
+          "textureHash": "d20cae8d",
+          "vertices": 253,
+          "indices": 453,
+          "triangles": 151,
+          "uvBounds": [
+            0.0126953125,
+            0.98828125
+          ],
+          "normalWinding": {
+            "positive": 151,
+            "negative": 0,
+            "degenerate": 0
+          }
+        },
+        {
+          "part": "TRAFTAXI_KIT00_BODY_B",
+          "textureHash": "23cd60ed",
+          "vertices": 100,
+          "indices": 102,
+          "triangles": 34,
+          "uvBounds": [
+            0.0078125,
+            0.9970703125
+          ],
+          "normalWinding": {
+            "positive": 34,
+            "negative": 0,
+            "degenerate": 0
+          }
+        },
+        {
+          "part": "TRAFTAXI_KIT00_FRONT_TIRE_B",
+          "textureHash": "896efc91",
+          "vertices": 115,
+          "indices": 204,
+          "triangles": 68,
+          "uvBounds": [
+            0.07080078125,
+            0.99755859375
+          ],
+          "normalWinding": {
+            "positive": 68,
+            "negative": 0,
+            "degenerate": 0
+          }
+        },
+        {
+          "part": "TRAFTAXI_KIT00_FRONT_WINDOW_B",
+          "textureHash": "7b220ddf",
+          "vertices": 32,
+          "indices": 60,
+          "triangles": 20,
+          "uvBounds": [
+            0.005859375,
+            0.994140625
+          ],
+          "normalWinding": {
+            "positive": 20,
+            "negative": 0,
+            "degenerate": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "COPMIDSIZE",
+      "file": "traffic/copmidsize.glb",
+      "bytes": 805064,
+      "sha256": "2889823403c287517f90cab7e6a536ec2e244644a6c957e79ee59283539e7485",
+      "geometrySHA256": "afe26e6cc047fc806321d07a30a73dc6c815a704071f9fd0627d2d704cb5b355",
+      "bodyParts": [
+        "COPMIDSIZE_KIT00_DAMAGE0_BODY_B",
+        "COPMIDSIZE_KIT00_DAMAGE0_COP_LIGHTS_B",
+        "COPMIDSIZE_KIT00_DAMAGE0_FRONT_BUMPER_B",
+        "COPMIDSIZE_KIT00_DAMAGE0_FRONT_WINDOW_B",
+        "COPMIDSIZE_KIT00_DAMAGE0_HOOD_B",
+        "COPMIDSIZE_KIT00_DAMAGE0_LEFT_BRAKELIGHT_B",
+        "COPMIDSIZE_KIT00_DAMAGE0_LEFT_DOOR_B",
+        "COPMIDSIZE_KIT00_DAMAGE0_LEFT_HEADLIGHT_B",
+        "COPMIDSIZE_KIT00_DAMAGE0_LEFT_REAR_DOOR_B",
+        "COPMIDSIZE_KIT00_DAMAGE0_REAR_BUMPER_B",
+        "COPMIDSIZE_KIT00_DAMAGE0_RIGHT_BRAKELIGHT_B",
+        "COPMIDSIZE_KIT00_DAMAGE0_RIGHT_DOOR_B",
+        "COPMIDSIZE_KIT00_DAMAGE0_RIGHT_HEADLIGHT_B",
+        "COPMIDSIZE_KIT00_DAMAGE0_RIGHT_REAR_DOOR_B",
+        "COPMIDSIZE_KIT00_DAMAGE0_TRUNK_B"
+      ],
+      "lod": "B",
+      "bodyTriangles": 2023,
+      "wheelTriangles": 156,
+      "totalTriangles": 2647,
+      "primitiveBatches": [
+        13,
+        3
+      ],
+      "materialCount": 16,
+      "textureCount": 14,
+      "unresolved": [
+        "d947f346",
+        "a7e6ea53",
+        "02b52399",
+        "a532fc46"
+      ],
+      "textureAliases": [
+        {
+          "sourceTextureHash": "d947f346",
+          "sourceTextureResolved": false,
+          "bindingTextureHash": "14c82dd3",
+          "semanticLampAlias": true
+        },
+        {
+          "sourceTextureHash": "a7e6ea53",
+          "sourceTextureResolved": false,
+          "bindingTextureHash": "0c7be022",
+          "semanticLampAlias": true
+        },
+        {
+          "sourceTextureHash": "02b52399",
+          "sourceTextureResolved": false,
+          "bindingTextureHash": "14c82dd3",
+          "semanticLampAlias": true
+        },
+        {
+          "sourceTextureHash": "a532fc46",
+          "sourceTextureResolved": false,
+          "bindingTextureHash": "0c7be022",
+          "semanticLampAlias": true
+        }
+      ],
+      "radius": 0.35432982444763184,
+      "wheelMounts": {
+        "front": 1.78,
+        "rear": -1.32,
+        "track": 1.74
+      },
+      "coordinateTransform": "(sourceY, sourceZ+wheelRadius, sourceX), determinant +1, original winding retained",
+      "wheels": "4 nodes share original tire geometry, rotate around local X; mounts fitted to original wheel arch silhouette",
+      "excluded": "Driver flat image cards not decoded/imported; damage1 meshes excluded",
+      "sourceEntries": [
+        {
+          "name": "CARS\\COPMIDSIZE\\GEOMETRY.BIN",
+          "archive": "ZZDATA4.BIN",
+          "offset": 259899392,
+          "size": 1407680,
+          "sha256": "afe26e6cc047fc806321d07a30a73dc6c815a704071f9fd0627d2d704cb5b355"
+        },
+        {
+          "name": "CARS\\COPMIDSIZE\\TEXTURES.BIN",
+          "archive": "ZZDATA4.BIN",
+          "offset": 261308416,
+          "size": 385408,
+          "sha256": "c5a1fb3534daa9a1b75194876f560625bc64ef2752fe91498e3af188cbcca74f"
+        }
+      ],
+      "materialChecks": [
+        {
+          "part": "COPMIDSIZE_KIT00_DAMAGE0_BODY_B",
+          "textureHash": "b0f43241",
+          "vertices": 39,
+          "indices": 93,
+          "triangles": 31,
+          "uvBounds": [
+            0.00439453125,
+            0.9912109375
+          ],
+          "normalWinding": {
+            "positive": 31,
+            "negative": 0,
+            "degenerate": 0
+          }
+        },
+        {
+          "part": "COPMIDSIZE_KIT00_DAMAGE0_BODY_B",
+          "textureHash": "00ea6f5b",
+          "vertices": 360,
+          "indices": 957,
+          "triangles": 319,
+          "uvBounds": [
+            0.01611328125,
+            0.9765625
+          ],
+          "normalWinding": {
+            "positive": 319,
+            "negative": 0,
+            "degenerate": 0
+          }
+        },
+        {
+          "part": "COPMIDSIZE_KIT00_DAMAGE0_BODY_B",
+          "textureHash": "00ea6f5b",
+          "vertices": 424,
+          "indices": 822,
+          "triangles": 274,
+          "uvBounds": [
+            0.00146484375,
+            0.9921875
+          ],
+          "normalWinding": {
+            "positive": 273,
+            "negative": 1,
+            "degenerate": 0
+          }
+        },
+        {
+          "part": "COPMIDSIZE_KIT00_DAMAGE0_BODY_B",
+          "textureHash": "00ea6f5b",
+          "vertices": 366,
+          "indices": 873,
+          "triangles": 291,
+          "uvBounds": [
+            0.0205078125,
+            0.9970703125
+          ],
+          "normalWinding": {
+            "positive": 291,
+            "negative": 0,
+            "degenerate": 0
+          }
+        },
+        {
+          "part": "COPMIDSIZE_KIT00_DAMAGE0_BODY_B",
+          "textureHash": "1b049702",
+          "vertices": 58,
+          "indices": 132,
+          "triangles": 44,
+          "uvBounds": [
+            0.02685546875,
+            0.97998046875
+          ],
+          "normalWinding": {
+            "positive": 44,
+            "negative": 0,
+            "degenerate": 0
+          }
+        },
+        {
+          "part": "COPMIDSIZE_KIT00_DAMAGE0_BODY_B",
+          "textureHash": "bd1f0e0a",
+          "vertices": 54,
+          "indices": 78,
+          "triangles": 26,
+          "uvBounds": [
+            0.00341796875,
+            0.998046875
+          ],
+          "normalWinding": {
+            "positive": 26,
+            "negative": 0,
+            "degenerate": 0
+          }
+        },
+        {
+          "part": "COPMIDSIZE_KIT00_DAMAGE0_COP_LIGHTS_B",
+          "textureHash": "00ea6f5b",
+          "vertices": 240,
+          "indices": 474,
+          "triangles": 158,
+          "uvBounds": [
+            0.046875,
+            0.99658203125
+          ],
+          "normalWinding": {
+            "positive": 158,
+            "negative": 0,
+            "degenerate": 0
+          }
+        },
+        {
+          "part": "COPMIDSIZE_KIT00_DAMAGE0_FRONT_BUMPER_B",
+          "textureHash": "b0f43241",
+          "vertices": 12,
+          "indices": 24,
+          "triangles": 8,
+          "uvBounds": [
+            0.7783203125,
+            0.99169921875
+          ],
+          "normalWinding": {
+            "positive": 8,
+            "negative": 0,
+            "degenerate": 0
+          }
+        },
+        {
+          "part": "COPMIDSIZE_KIT00_DAMAGE0_FRONT_BUMPER_B",
+          "textureHash": "69c032ba",
+          "vertices": 14,
+          "indices": 24,
+          "triangles": 8,
+          "uvBounds": [
+            -3.396484375,
+            4.05126953125
+          ],
+          "normalWinding": {
+            "positive": 8,
+            "negative": 0,
+            "degenerate": 0
+          }
+        },
+        {
+          "part": "COPMIDSIZE_KIT00_DAMAGE0_FRONT_BUMPER_B",
+          "textureHash": "00ea6f5b",
+          "vertices": 120,
+          "indices": 372,
+          "triangles": 124,
+          "uvBounds": [
+            0.05029296875,
+            0.9384765625
+          ],
+          "normalWinding": {
+            "positive": 124,
+            "negative": 0,
+            "degenerate": 0
+          }
+        },
+        {
+          "part": "COPMIDSIZE_KIT00_DAMAGE0_FRONT_BUMPER_B",
+          "textureHash": "00ea6f5b",
+          "vertices": 36,
+          "indices": 120,
+          "triangles": 40,
+          "uvBounds": [
+            0.0283203125,
+            0.97021484375
+          ],
+          "normalWinding": {
+            "positive": 40,
+            "negative": 0,
+            "degenerate": 0
+          }
+        },
+        {
+          "part": "COPMIDSIZE_KIT00_DAMAGE0_FRONT_BUMPER_B",
+          "textureHash": "4c95c6f8",
+          "vertices": 4,
+          "indices": 6,
+          "triangles": 2,
+          "uvBounds": [
+            0,
+            1
+          ],
+          "normalWinding": {
+            "positive": 2,
+            "negative": 0,
+            "degenerate": 0
+          }
+        },
+        {
+          "part": "COPMIDSIZE_KIT00_DAMAGE0_FRONT_WINDOW_B",
+          "textureHash": "d195be56",
+          "vertices": 12,
+          "indices": 30,
+          "triangles": 10,
+          "uvBounds": [
+            0.0400390625,
+            0.9296875
+          ],
+          "normalWinding": {
+            "positive": 10,
+            "negative": 0,
+            "degenerate": 0
+          }
+        },
+        {
+          "part": "COPMIDSIZE_KIT00_DAMAGE0_FRONT_WINDOW_B",
+          "textureHash": "7b220ddf",
+          "vertices": 10,
+          "indices": 24,
+          "triangles": 8,
+          "uvBounds": [
+            0,
+            0.99951171875
+          ],
+          "normalWinding": {
+            "positive": 8,
+            "negative": 0,
+            "degenerate": 0
+          }
+        },
+        {
+          "part": "COPMIDSIZE_KIT00_DAMAGE0_HOOD_B",
+          "textureHash": "b0f43241",
+          "vertices": 24,
+          "indices": 87,
+          "triangles": 29,
+          "uvBounds": [
+            0.01220703125,
+            0.9931640625
+          ],
+          "normalWinding": {
+            "positive": 29,
+            "negative": 0,
+            "degenerate": 0
+          }
+        },
+        {
+          "part": "COPMIDSIZE_KIT00_DAMAGE0_HOOD_B",
+          "textureHash": "00ea6f5b",
+          "vertices": 71,
+          "indices": 198,
+          "triangles": 66,
+          "uvBounds": [
+            0.0166015625,
+            0.98046875
+          ],
+          "normalWinding": {
+            "positive": 66,
+            "negative": 0,
+            "degenerate": 0
+          }
+        },
+        {
+          "part": "COPMIDSIZE_KIT00_DAMAGE0_LEFT_BRAKELIGHT_B",
+          "textureHash": "d947f346",
+          "vertices": 18,
+          "indices": 18,
+          "triangles": 6,
+          "uvBounds": [
+            0,
+            0.9931640625
+          ],
+          "normalWinding": {
+            "positive": 6,
+            "negative": 0,
+            "degenerate": 0
+          }
+        },
+        {
+          "part": "COPMIDSIZE_KIT00_DAMAGE0_LEFT_DOOR_B",
+          "textureHash": "b0f43241",
+          "vertices": 12,
+          "indices": 18,
+          "triangles": 6,
+          "uvBounds": [
+            0.005859375,
+            0.99609375
+          ],
+          "normalWinding": {
+            "positive": 6,
+            "negative": 0,
+            "degenerate": 0
+          }
+        },
+        {
+          "part": "COPMIDSIZE_KIT00_DAMAGE0_LEFT_DOOR_B",
+          "textureHash": "7b220ddf",
+          "vertices": 6,
+          "indices": 12,
+          "triangles": 4,
+          "uvBounds": [
+            0.11572265625,
+            0.95263671875
+          ],
+          "normalWinding": {
+            "positive": 4,
+            "negative": 0,
+            "degenerate": 0
+          }
+        },
+        {
+          "part": "COPMIDSIZE_KIT00_DAMAGE0_LEFT_DOOR_B",
+          "textureHash": "00ea6f5b",
+          "vertices": 20,
+          "indices": 36,
+          "triangles": 12,
+          "uvBounds": [
+            0.560546875,
+            0.85546875
+          ],
+          "normalWinding": {
+            "positive": 12,
+            "negative": 0,
+            "degenerate": 0
+          }
+        },
+        {
+          "part": "COPMIDSIZE_KIT00_DAMAGE0_LEFT_DOOR_B",
+          "textureHash": "00ea6f5b",
+          "vertices": 52,
+          "indices": 108,
+          "triangles": 36,
+          "uvBounds": [
+            0.02099609375,
+            0.978515625
+          ],
+          "normalWinding": {
+            "positive": 36,
+            "negative": 0,
+            "degenerate": 0
+          }
+        },
+        {
+          "part": "COPMIDSIZE_KIT00_DAMAGE0_LEFT_DOOR_B",
+          "textureHash": "00ea6f5b",
+          "vertices": 28,
+          "indices": 54,
+          "triangles": 18,
+          "uvBounds": [
+            0.03662109375,
+            0.958984375
+          ],
+          "normalWinding": {
+            "positive": 17,
+            "negative": 1,
+            "degenerate": 0
+          }
+        },
+        {
+          "part": "COPMIDSIZE_KIT00_DAMAGE0_LEFT_DOOR_B",
+          "textureHash": "00ea6f5b",
+          "vertices": 7,
+          "indices": 15,
+          "triangles": 5,
+          "uvBounds": [
+            0.53857421875,
+            0.9150390625
+          ],
+          "normalWinding": {
+            "positive": 5,
+            "negative": 0,
+            "degenerate": 0
+          }
+        },
+        {
+          "part": "COPMIDSIZE_KIT00_DAMAGE0_LEFT_DOOR_B",
+          "textureHash": "00ea6f5b",
+          "vertices": 31,
+          "indices": 63,
+          "triangles": 21,
+          "uvBounds": [
+            0.0205078125,
+            0.95654296875
+          ],
+          "normalWinding": {
+            "positive": 21,
+            "negative": 0,
+            "degenerate": 0
+          }
+        },
+        {
+          "part": "COPMIDSIZE_KIT00_DAMAGE0_LEFT_HEADLIGHT_B",
+          "textureHash": "a7e6ea53",
+          "vertices": 5,
+          "indices": 9,
+          "triangles": 3,
+          "uvBounds": [
+            0.00537109375,
+            0.99755859375
+          ],
+          "normalWinding": {
+            "positive": 3,
+            "negative": 0,
+            "degenerate": 0
+          }
+        },
+        {
+          "part": "COPMIDSIZE_KIT00_DAMAGE0_LEFT_REAR_DOOR_B",
+          "textureHash": "b0f43241",
+          "vertices": 4,
+          "indices": 6,
+          "triangles": 2,
+          "uvBounds": [
+            0.24072265625,
+            0.99462890625
+          ],
+          "normalWinding": {
+            "positive": 2,
+            "negative": 0,
+            "degenerate": 0
+          }
+        },
+        {
+          "part": "COPMIDSIZE_KIT00_DAMAGE0_LEFT_REAR_DOOR_B",
+          "textureHash": "7b220ddf",
+          "vertices": 4,
+          "indices": 6,
+          "triangles": 2,
+          "uvBounds": [
+            0.0830078125,
+            0.9765625
+          ],
+          "normalWinding": {
+            "positive": 2,
+            "negative": 0,
+            "degenerate": 0
+          }
+        },
+        {
+          "part": "COPMIDSIZE_KIT00_DAMAGE0_LEFT_REAR_DOOR_B",
+          "textureHash": "00ea6f5b",
+          "vertices": 16,
+          "indices": 30,
+          "triangles": 10,
+          "uvBounds": [
+            0.55908203125,
+            0.865234375
+          ],
+          "normalWinding": {
+            "positive": 10,
+            "negative": 0,
+            "degenerate": 0
+          }
+        },
+        {
+          "part": "COPMIDSIZE_KIT00_DAMAGE0_LEFT_REAR_DOOR_B",
+          "textureHash": "00ea6f5b",
+          "vertices": 8,
+          "indices": 12,
+          "triangles": 4,
+          "uvBounds": [
+            0.08544921875,
+            0.890625
+          ],
+          "normalWinding": {
+            "positive": 4,
+            "negative": 0,
+            "degenerate": 0
+          }
+        },
+        {
+          "part": "COPMIDSIZE_KIT00_DAMAGE0_LEFT_REAR_DOOR_B",
+          "textureHash": "00ea6f5b",
+          "vertices": 65,
+          "indices": 126,
+          "triangles": 42,
+          "uvBounds": [
+            0.0166015625,
+            0.9765625
+          ],
+          "normalWinding": {
+            "positive": 42,
+            "negative": 0,
+            "degenerate": 0
+          }
+        },
+        {
+          "part": "COPMIDSIZE_KIT00_DAMAGE0_LEFT_REAR_DOOR_B",
+          "textureHash": "00ea6f5b",
+          "vertices": 26,
+          "indices": 66,
+          "triangles": 22,
+          "uvBounds": [
+            0.0439453125,
+            0.8427734375
+          ],
+          "normalWinding": {
+            "positive": 22,
+            "negative": 0,
+            "degenerate": 0
+          }
+        },
+        {
+          "part": "COPMIDSIZE_KIT00_DAMAGE0_REAR_BUMPER_B",
+          "textureHash": "b0f43241",
+          "vertices": 23,
+          "indices": 48,
+          "triangles": 16,
+          "uvBounds": [
+            0.01171875,
+            0.99365234375
+          ],
+          "normalWinding": {
+            "positive": 16,
+            "negative": 0,
+            "degenerate": 0
+          }
+        },
+        {
+          "part": "COPMIDSIZE_KIT00_DAMAGE0_REAR_BUMPER_B",
+          "textureHash": "00ea6f5b",
+          "vertices": 147,
+          "indices": 288,
+          "triangles": 96,
+          "uvBounds": [
+            0.072265625,
+            0.81591796875
+          ],
+          "normalWinding": {
+            "positive": 96,
+            "negative": 0,
+            "degenerate": 0
+          }
+        },
+        {
+          "part": "COPMIDSIZE_KIT00_DAMAGE0_RIGHT_BRAKELIGHT_B",
+          "textureHash": "02b52399",
+          "vertices": 18,
+          "indices": 18,
+          "triangles": 6,
+          "uvBounds": [
+            -0.0009765625,
+            0.99462890625
+          ],
+          "normalWinding": {
+            "positive": 6,
+            "negative": 0,
+            "degenerate": 0
+          }
+        },
+        {
+          "part": "COPMIDSIZE_KIT00_DAMAGE0_RIGHT_DOOR_B",
+          "textureHash": "b0f43241",
+          "vertices": 12,
+          "indices": 18,
+          "triangles": 6,
+          "uvBounds": [
+            0.005859375,
+            0.99609375
+          ],
+          "normalWinding": {
+            "positive": 6,
+            "negative": 0,
+            "degenerate": 0
+          }
+        },
+        {
+          "part": "COPMIDSIZE_KIT00_DAMAGE0_RIGHT_DOOR_B",
+          "textureHash": "7b220ddf",
+          "vertices": 6,
+          "indices": 12,
+          "triangles": 4,
+          "uvBounds": [
+            0.11572265625,
+            0.95263671875
+          ],
+          "normalWinding": {
+            "positive": 4,
+            "negative": 0,
+            "degenerate": 0
+          }
+        },
+        {
+          "part": "COPMIDSIZE_KIT00_DAMAGE0_RIGHT_DOOR_B",
+          "textureHash": "00ea6f5b",
+          "vertices": 20,
+          "indices": 36,
+          "triangles": 12,
+          "uvBounds": [
+            0.560546875,
+            0.85546875
+          ],
+          "normalWinding": {
+            "positive": 12,
+            "negative": 0,
+            "degenerate": 0
+          }
+        },
+        {
+          "part": "COPMIDSIZE_KIT00_DAMAGE0_RIGHT_DOOR_B",
+          "textureHash": "00ea6f5b",
+          "vertices": 52,
+          "indices": 108,
+          "triangles": 36,
+          "uvBounds": [
+            0.02099609375,
+            0.978515625
+          ],
+          "normalWinding": {
+            "positive": 36,
+            "negative": 0,
+            "degenerate": 0
+          }
+        },
+        {
+          "part": "COPMIDSIZE_KIT00_DAMAGE0_RIGHT_DOOR_B",
+          "textureHash": "00ea6f5b",
+          "vertices": 28,
+          "indices": 54,
+          "triangles": 18,
+          "uvBounds": [
+            0.03662109375,
+            0.958984375
+          ],
+          "normalWinding": {
+            "positive": 17,
+            "negative": 1,
+            "degenerate": 0
+          }
+        },
+        {
+          "part": "COPMIDSIZE_KIT00_DAMAGE0_RIGHT_DOOR_B",
+          "textureHash": "00ea6f5b",
+          "vertices": 7,
+          "indices": 15,
+          "triangles": 5,
+          "uvBounds": [
+            0.53857421875,
+            0.9150390625
+          ],
+          "normalWinding": {
+            "positive": 5,
+            "negative": 0,
+            "degenerate": 0
+          }
+        },
+        {
+          "part": "COPMIDSIZE_KIT00_DAMAGE0_RIGHT_DOOR_B",
+          "textureHash": "00ea6f5b",
+          "vertices": 31,
+          "indices": 63,
+          "triangles": 21,
+          "uvBounds": [
+            0.0205078125,
+            0.95654296875
+          ],
+          "normalWinding": {
+            "positive": 21,
+            "negative": 0,
+            "degenerate": 0
+          }
+        },
+        {
+          "part": "COPMIDSIZE_KIT00_DAMAGE0_RIGHT_HEADLIGHT_B",
+          "textureHash": "a532fc46",
+          "vertices": 5,
+          "indices": 9,
+          "triangles": 3,
+          "uvBounds": [
+            0,
+            1
+          ],
+          "normalWinding": {
+            "positive": 3,
+            "negative": 0,
+            "degenerate": 0
+          }
+        },
+        {
+          "part": "COPMIDSIZE_KIT00_DAMAGE0_RIGHT_REAR_DOOR_B",
+          "textureHash": "b0f43241",
+          "vertices": 4,
+          "indices": 6,
+          "triangles": 2,
+          "uvBounds": [
+            0.24072265625,
+            0.99462890625
+          ],
+          "normalWinding": {
+            "positive": 2,
+            "negative": 0,
+            "degenerate": 0
+          }
+        },
+        {
+          "part": "COPMIDSIZE_KIT00_DAMAGE0_RIGHT_REAR_DOOR_B",
+          "textureHash": "7b220ddf",
+          "vertices": 4,
+          "indices": 6,
+          "triangles": 2,
+          "uvBounds": [
+            0.0830078125,
+            0.9765625
+          ],
+          "normalWinding": {
+            "positive": 2,
+            "negative": 0,
+            "degenerate": 0
+          }
+        },
+        {
+          "part": "COPMIDSIZE_KIT00_DAMAGE0_RIGHT_REAR_DOOR_B",
+          "textureHash": "00ea6f5b",
+          "vertices": 16,
+          "indices": 30,
+          "triangles": 10,
+          "uvBounds": [
+            0.55908203125,
+            0.865234375
+          ],
+          "normalWinding": {
+            "positive": 10,
+            "negative": 0,
+            "degenerate": 0
+          }
+        },
+        {
+          "part": "COPMIDSIZE_KIT00_DAMAGE0_RIGHT_REAR_DOOR_B",
+          "textureHash": "00ea6f5b",
+          "vertices": 8,
+          "indices": 12,
+          "triangles": 4,
+          "uvBounds": [
+            0.08544921875,
+            0.890625
+          ],
+          "normalWinding": {
+            "positive": 4,
+            "negative": 0,
+            "degenerate": 0
+          }
+        },
+        {
+          "part": "COPMIDSIZE_KIT00_DAMAGE0_RIGHT_REAR_DOOR_B",
+          "textureHash": "00ea6f5b",
+          "vertices": 65,
+          "indices": 126,
+          "triangles": 42,
+          "uvBounds": [
+            0.0166015625,
+            0.9765625
+          ],
+          "normalWinding": {
+            "positive": 42,
+            "negative": 0,
+            "degenerate": 0
+          }
+        },
+        {
+          "part": "COPMIDSIZE_KIT00_DAMAGE0_RIGHT_REAR_DOOR_B",
+          "textureHash": "00ea6f5b",
+          "vertices": 26,
+          "indices": 66,
+          "triangles": 22,
+          "uvBounds": [
+            0.0439453125,
+            0.8427734375
+          ],
+          "normalWinding": {
+            "positive": 22,
+            "negative": 0,
+            "degenerate": 0
+          }
+        },
+        {
+          "part": "COPMIDSIZE_KIT00_DAMAGE0_TRUNK_B",
+          "textureHash": "b0f43241",
+          "vertices": 10,
+          "indices": 24,
+          "triangles": 8,
+          "uvBounds": [
+            0.01025390625,
+            0.9931640625
+          ],
+          "normalWinding": {
+            "positive": 8,
+            "negative": 0,
+            "degenerate": 0
+          }
+        },
+        {
+          "part": "COPMIDSIZE_KIT00_DAMAGE0_TRUNK_B",
+          "textureHash": "00ea6f5b",
+          "vertices": 75,
+          "indices": 210,
+          "triangles": 70,
+          "uvBounds": [
+            0.05322265625,
+            0.912109375
+          ],
+          "normalWinding": {
+            "positive": 69,
+            "negative": 0,
+            "degenerate": 1
+          }
+        },
+        {
+          "part": "COPMIDSIZE_KIT00_DAMAGE0_TRUNK_B",
+          "textureHash": "00ea6f5b",
+          "vertices": 8,
+          "indices": 21,
+          "triangles": 7,
+          "uvBounds": [
+            0.53955078125,
+            0.8515625
+          ],
+          "normalWinding": {
+            "positive": 7,
+            "negative": 0,
+            "degenerate": 0
+          }
+        },
+        {
+          "part": "COPMIDSIZE_KIT00_DAMAGE0_TRUNK_B",
+          "textureHash": "4c95c6f8",
+          "vertices": 4,
+          "indices": 6,
+          "triangles": 2,
+          "uvBounds": [
+            0,
+            1
+          ],
+          "normalWinding": {
+            "positive": 2,
+            "negative": 0,
+            "degenerate": 0
+          }
+        },
+        {
+          "part": "COPMIDSIZE_KIT00_FRONT_TIRE_B",
+          "textureHash": "e38806e3",
+          "vertices": 4,
+          "indices": 6,
+          "triangles": 2,
+          "uvBounds": [
+            0,
+            1
+          ],
+          "normalWinding": {
+            "positive": 2,
+            "negative": 0,
+            "degenerate": 0
+          }
+        },
+        {
+          "part": "COPMIDSIZE_KIT00_FRONT_TIRE_B",
+          "textureHash": "03c906ef",
+          "vertices": 84,
+          "indices": 168,
+          "triangles": 56,
+          "uvBounds": [
+            0,
+            0.9970703125
+          ],
+          "normalWinding": {
+            "positive": 56,
+            "negative": 0,
+            "degenerate": 0
+          }
+        },
+        {
+          "part": "COPMIDSIZE_KIT00_FRONT_TIRE_B",
+          "textureHash": "7464b6e9",
+          "vertices": 28,
+          "indices": 84,
+          "triangles": 28,
+          "uvBounds": [
+            0.03173828125,
+            0.96826171875
+          ],
+          "normalWinding": {
+            "positive": 28,
+            "negative": 0,
+            "degenerate": 0
+          }
+        },
+        {
+          "part": "COPMIDSIZE_KIT00_FRONT_TIRE_B",
+          "textureHash": "7464b6e9",
+          "vertices": 57,
+          "indices": 210,
+          "triangles": 70,
+          "uvBounds": [
+            0.197265625,
+            0.802734375
+          ],
+          "normalWinding": {
+            "positive": 70,
+            "negative": 0,
+            "degenerate": 0
+          }
+        }
+      ]
+    }
+  ],
+  "runtime": {
+    "environment": [
+      "RO_GENFILL_CRK",
+      "RO_GENFILL_CRK_NORMAL",
+      "ARC_TUNNEL_WALL_A_MM",
+      "ARC_TUNNEL_WALL_A_NORMA",
+      "ARC_CONCRETE02_D_JG"
+    ],
+    "specularMaps": "Retained for audit; not bound as roughness.",
+    "traffic": "Original LOD B geometry and pixels with NOMERA PBR materials; original tire meshes on fitted mounts.",
+    "unchanged": "Vehicle physics, collision extents, economy and AI.",
+    "fallback": "Existing detailed procedural cars stay visible if GLB loading fails; existing Mustang sport and specialized trucks retained."
+  },
+  "trafficTextures": [
+    {
+      "name": "TRAF4DSEDB_SKIN1",
+      "hash": "0b6c2b07",
+      "width": 128,
+      "height": 128,
+      "compression": "0x22",
+      "source": "CARS/TRAF4DSEDB/TEXTURES.BIN",
+      "packOffset": null,
+      "pixelOffset": null,
+      "pixelBytes": 32768,
+      "rawSHA256": "45ec115b2ca7b3b10e357a0fa4eaa7b99d322ba1cf96c11565d2710f6da1f369",
+      "d3dFormat": "0x1a200152",
+      "pngSHA256": "28bd4563aeaae1f4bc0c7ac1e802d4758c55f34b0c00ed85531745677e7411a6",
+      "archive": "ZZDATA4.BIN",
+      "archiveEntryOffset": 279406592,
+      "archiveEntrySize": 45568,
+      "archiveEntrySHA256": "ec8ddf9ff8f50bb81239a0811c49a3a007d37168f9285ae565e4c622ecfabfc0",
+      "compressedSourceOffset": 27264,
+      "compressedSourceBytes": 18298,
+      "absoluteCompressedOffset": 279433856,
+      "compressedSHA256": "baae2c7d20f196ce8bf2d2e26e0d255e0441a6997b60e124fd03a71534932575",
+      "decompressedBytes": 32924,
+      "headerFromEnd": 256,
+      "file": "0b6c2b07_TRAF4DSEDB_SKIN1.png",
+      "embedded": true
+    },
+    {
+      "name": "TRAF4DSEDB_MISC",
+      "hash": "ba83d68d",
+      "width": 128,
+      "height": 128,
+      "compression": "0x22",
+      "source": "CARS/TRAF4DSEDB/TEXTURES.BIN",
+      "packOffset": null,
+      "pixelOffset": null,
+      "pixelBytes": 32768,
+      "rawSHA256": "45d690ab315e1390932cb0d9a20f64b3356964718714fb9e46b05ec76b70ad66",
+      "d3dFormat": "0x1a200152",
+      "pngSHA256": "418778946f703a62a5e5130351cba0deaafdd96e909cdf7b85804856c168f9d4",
+      "archive": "ZZDATA4.BIN",
+      "archiveEntryOffset": 279406592,
+      "archiveEntrySize": 45568,
+      "archiveEntrySHA256": "ec8ddf9ff8f50bb81239a0811c49a3a007d37168f9285ae565e4c622ecfabfc0",
+      "compressedSourceOffset": 4096,
+      "compressedSourceBytes": 23130,
+      "absoluteCompressedOffset": 279410688,
+      "compressedSHA256": "34a8a1661989866aba447d96f65abfc5605a3240d143d85bea4efb71c1c93009",
+      "decompressedBytes": 32924,
+      "headerFromEnd": 256,
+      "file": "ba83d68d_TRAF4DSEDB_MISC.png",
+      "embedded": true
+    },
+    {
+      "name": "DOORLINE",
+      "hash": "cc772afb",
+      "width": 64,
+      "height": 32,
+      "compression": "0x26",
+      "source": "GLOBAL/GLOBALB.BUN",
+      "packOffset": 28672,
+      "pixelOffset": 3768320,
+      "pixelBytes": 32768,
+      "rawSHA256": "fa7aa469f1fad6bc8022c1045f7136b8624c9eac062e905736f1fb041da9beb6",
+      "d3dFormat": "0x1a200154",
+      "pngSHA256": "d308cbba94257eae162ccb4c788afd035ec6f28e2e5888bc09410086cee3c4d9",
+      "archive": "ZZDATA4.BIN",
+      "archiveEntryOffset": 306728960,
+      "archiveEntrySize": 18285616,
+      "archiveEntrySHA256": "6ef059bc912809cfdb58e6d7326c5dfdea43fb2d25e335e24903b771fd360d3e",
+      "absolutePixelOffset": 310497280,
+      "file": "cc772afb_DOORLINE.png",
+      "embedded": true
+    },
+    {
+      "name": "WINDOW_MASK",
+      "hash": "1b049702",
+      "width": 16,
+      "height": 16,
+      "compression": "0x22",
+      "source": "GLOBAL/GLOBALB.BUN",
+      "packOffset": 28672,
+      "pixelOffset": 540672,
+      "pixelBytes": 8192,
+      "rawSHA256": "621534793836e2573c421b21c3bf3eb1e40adc32dc767aba2299845e00d16429",
+      "d3dFormat": "0x1a200152",
+      "pngSHA256": "52dfe43025076f8a3b6d08d341916b9e38c0ecf7f4e6c75f0097e9ead901da27",
+      "archive": "ZZDATA4.BIN",
+      "archiveEntryOffset": 306728960,
+      "archiveEntrySize": 18285616,
+      "archiveEntrySHA256": "6ef059bc912809cfdb58e6d7326c5dfdea43fb2d25e335e24903b771fd360d3e",
+      "absolutePixelOffset": 307269632,
+      "file": "1b049702_WINDOW_MASK.png",
+      "embedded": true
+    },
+    {
+      "name": "LICENSEPLATE",
+      "hash": "4c95c6f8",
+      "width": 256,
+      "height": 128,
+      "compression": "0x22",
+      "source": "GLOBAL/GLOBALB.BUN",
+      "packOffset": 28672,
+      "pixelOffset": 1556480,
+      "pixelBytes": 40960,
+      "rawSHA256": "4e05a3da6f57028e2ec99e3395db0e740b5820374f4094e08bbc2f49ed9d61de",
+      "d3dFormat": "0x1a200152",
+      "pngSHA256": "b8b16996bc362b4d63d763fdaf108877c9d81f5e53d081a7dcbf6fffd42465e9",
+      "archive": "ZZDATA4.BIN",
+      "archiveEntryOffset": 306728960,
+      "archiveEntrySize": 18285616,
+      "archiveEntrySHA256": "6ef059bc912809cfdb58e6d7326c5dfdea43fb2d25e335e24903b771fd360d3e",
+      "absolutePixelOffset": 308285440,
+      "file": "4c95c6f8_LICENSEPLATE.png",
+      "embedded": true
+    },
+    {
+      "name": "CARBOTTOM",
+      "hash": "bd1f0e0a",
+      "width": 256,
+      "height": 128,
+      "compression": "0x22",
+      "source": "GLOBAL/GLOBALB.BUN",
+      "packOffset": 28672,
+      "pixelOffset": 3571712,
+      "pixelBytes": 40960,
+      "rawSHA256": "8f198ccae14636102e20f6b0d96a42f58117c7f34e3feef4580c47ac5b50e85e",
+      "d3dFormat": "0x1a200152",
+      "pngSHA256": "2a6f830240370fc3160138811208b2215dfdb59a505beba1f4121618c5ec1b91",
+      "archive": "ZZDATA4.BIN",
+      "archiveEntryOffset": 306728960,
+      "archiveEntrySize": 18285616,
+      "archiveEntrySHA256": "6ef059bc912809cfdb58e6d7326c5dfdea43fb2d25e335e24903b771fd360d3e",
+      "absolutePixelOffset": 310300672,
+      "file": "bd1f0e0a_CARBOTTOM.png",
+      "embedded": true
+    },
+    {
+      "name": "TRAFFIC_TIRE",
+      "hash": "896efc91",
+      "width": 256,
+      "height": 256,
+      "compression": "0x22",
+      "source": "GLOBAL/GLOBALB.BUN",
+      "packOffset": 28672,
+      "pixelOffset": 2867200,
+      "pixelBytes": 65536,
+      "rawSHA256": "e39284e104d14c49ef6a1cfd29445e41acd5355e212f38334b078d8350b886d5",
+      "d3dFormat": "0x1a200152",
+      "pngSHA256": "5469dc02783565b6eb07ca3be17ab16cbbdfd642903b9223b870f973a04b6fc4",
+      "archive": "ZZDATA4.BIN",
+      "archiveEntryOffset": 306728960,
+      "archiveEntrySize": 18285616,
+      "archiveEntrySHA256": "6ef059bc912809cfdb58e6d7326c5dfdea43fb2d25e335e24903b771fd360d3e",
+      "absolutePixelOffset": 309596160,
+      "file": "896efc91_TRAFFIC_TIRE.png",
+      "embedded": true
+    },
+    {
+      "name": "TRAFSUVA_MISC",
+      "hash": "26172096",
+      "width": 128,
+      "height": 128,
+      "compression": "0x22",
+      "source": "CARS/TRAFSUVA/TEXTURES.BIN",
+      "packOffset": null,
+      "pixelOffset": null,
+      "pixelBytes": 32768,
+      "rawSHA256": "4b4ccbcb2451df67a93d3a99e1411e7acfe574edc8a6cd395c12900aca60a786",
+      "d3dFormat": "0x1a200152",
+      "pngSHA256": "28b46abb510df1850bfb5da58dc5fd92b0bed06f67c6feb50773909aebfdf898",
+      "archive": "ZZDATA4.BIN",
+      "archiveEntryOffset": 286193664,
+      "archiveEntrySize": 55040,
+      "archiveEntrySHA256": "10721674aa9e16a28b793578ff7a8a8d6a4dc5b94dd71f931dd991e12bd01414",
+      "compressedSourceOffset": 16064,
+      "compressedSourceBytes": 17244,
+      "absoluteCompressedOffset": 286209728,
+      "compressedSHA256": "a8fd389e70ce2bcd3227d72c6ea03ac2237b57fb497d6b65334bd36a76332ed0",
+      "decompressedBytes": 32924,
+      "headerFromEnd": 256,
+      "file": "26172096_TRAFSUVA_MISC.png",
+      "embedded": true
+    },
+    {
+      "name": "TRAFSUVA_SKIN1",
+      "hash": "e968b630",
+      "width": 256,
+      "height": 128,
+      "compression": "0x22",
+      "source": "CARS/TRAFSUVA/TEXTURES.BIN",
+      "packOffset": null,
+      "pixelOffset": null,
+      "pixelBytes": 40960,
+      "rawSHA256": "8091f47ed7799a379e3e205e343c002289a5065555e2c54ce768b1ea2b41977b",
+      "d3dFormat": "0x1a200152",
+      "pngSHA256": "72e4c054adddf290569e23c2634bf5c55ac72bddf2be89762ec8abdc60445f0b",
+      "archive": "ZZDATA4.BIN",
+      "archiveEntryOffset": 286193664,
+      "archiveEntrySize": 55040,
+      "archiveEntrySHA256": "10721674aa9e16a28b793578ff7a8a8d6a4dc5b94dd71f931dd991e12bd01414",
+      "compressedSourceOffset": 33344,
+      "compressedSourceBytes": 21695,
+      "absoluteCompressedOffset": 286227008,
+      "compressedSHA256": "d0df2319d4e8bc31818fe13f2371673d4a0bd9027df645fbb6ab81833a2e02d8",
+      "decompressedBytes": 41116,
+      "headerFromEnd": 256,
+      "file": "e968b630_TRAFSUVA_SKIN1.png",
+      "embedded": true
+    },
+    {
+      "name": "TIRE_BACK",
+      "hash": "e38806e3",
+      "width": 128,
+      "height": 128,
+      "compression": "0x24",
+      "source": "GLOBAL/GLOBALB.BUN",
+      "packOffset": 28672,
+      "pixelOffset": 4030464,
+      "pixelBytes": 65536,
+      "rawSHA256": "4168db7fe62e6f642fa072cbeaa9c70fcbbb6f48fb9ea3441f6ac91b2b09e77f",
+      "d3dFormat": "0x1a200153",
+      "pngSHA256": "72c59e251cb982705225cf00e5ea56837975710a89b91647513332237efb9923",
+      "archive": "ZZDATA4.BIN",
+      "archiveEntryOffset": 306728960,
+      "archiveEntrySize": 18285616,
+      "archiveEntrySHA256": "6ef059bc912809cfdb58e6d7326c5dfdea43fb2d25e335e24903b771fd360d3e",
+      "absolutePixelOffset": 310759424,
+      "file": "e38806e3_TIRE_BACK.png",
+      "embedded": true
+    },
+    {
+      "name": "WINDOW_FRONT",
+      "hash": "7b220ddf",
+      "width": 128,
+      "height": 128,
+      "compression": "0x26",
+      "source": "GLOBAL/GLOBALB.BUN",
+      "packOffset": 28672,
+      "pixelOffset": 2465792,
+      "pixelBytes": 65536,
+      "rawSHA256": "dc5bb7298f4fbc6f8b9b312b195081ad3ca82acd2551b9e8967982ae129adcd1",
+      "d3dFormat": "0x1a200154",
+      "pngSHA256": "61c64ae31f4ff5af5a8f0a220b00a64c90cac0a0de5e37465548ae4d73ccfe39",
+      "archive": "ZZDATA4.BIN",
+      "archiveEntryOffset": 306728960,
+      "archiveEntrySize": 18285616,
+      "archiveEntrySHA256": "6ef059bc912809cfdb58e6d7326c5dfdea43fb2d25e335e24903b771fd360d3e",
+      "absolutePixelOffset": 309194752,
+      "file": "7b220ddf_WINDOW_FRONT.png",
+      "embedded": true
+    },
+    {
+      "name": "TRAFTAXI_SKIN1",
+      "hash": "14100307",
+      "width": 256,
+      "height": 128,
+      "compression": "0x22",
+      "source": "CARS/TRAFTAXI/TEXTURES.BIN",
+      "packOffset": null,
+      "pixelOffset": null,
+      "pixelBytes": 40960,
+      "rawSHA256": "1a29fd02a1084e0d4120bdc4c03a4cdca0d1ff229bd4afb1b8ba69c662f3c409",
+      "d3dFormat": "0x1a200152",
+      "pngSHA256": "5e697d0806b1ff2e4174cd84a328a66c458043f1276f2c4936d52e703ac2cd9e",
+      "archive": "ZZDATA4.BIN",
+      "archiveEntryOffset": 286552064,
+      "archiveEntrySize": 78016,
+      "archiveEntrySHA256": "3ac09dfa071312bf77fc8ca891b563d4eecddf4bc577d373ced0a1fdafa5b601",
+      "compressedSourceOffset": 55808,
+      "compressedSourceBytes": 22176,
+      "absoluteCompressedOffset": 286607872,
+      "compressedSHA256": "41e2707df4a762bb959901e0363b42aa8555247de462b52a0af92bb110c9cd47",
+      "decompressedBytes": 41116,
+      "headerFromEnd": 256,
+      "file": "14100307_TRAFTAXI_SKIN1.png",
+      "embedded": true
+    },
+    {
+      "name": "TRAFTAXI_MISC",
+      "hash": "d20cae8d",
+      "width": 128,
+      "height": 128,
+      "compression": "0x22",
+      "source": "CARS/TRAFTAXI/TEXTURES.BIN",
+      "packOffset": null,
+      "pixelOffset": null,
+      "pixelBytes": 32768,
+      "rawSHA256": "c8b921bff0cda59e9a76de9a8f3e3bef4473d94d6a407f8456a2ae40b5ca14f1",
+      "d3dFormat": "0x1a200152",
+      "pngSHA256": "0bc02ac10c0ccfaa927ae725ba95bed698740e783fd15c46255aa862db9c73be",
+      "archive": "ZZDATA4.BIN",
+      "archiveEntryOffset": 286552064,
+      "archiveEntrySize": 78016,
+      "archiveEntrySHA256": "3ac09dfa071312bf77fc8ca891b563d4eecddf4bc577d373ced0a1fdafa5b601",
+      "compressedSourceOffset": 34240,
+      "compressedSourceBytes": 21521,
+      "absoluteCompressedOffset": 286586304,
+      "compressedSHA256": "aaa1e2398ee719609990f2b6eba54b41801adbe34cf97f3af3886907d0eea8da",
+      "decompressedBytes": 32924,
+      "headerFromEnd": 256,
+      "file": "d20cae8d_TRAFTAXI_MISC.png",
+      "embedded": true
+    },
+    {
+      "name": "TRAFTAXI_BADGING",
+      "hash": "23cd60ed",
+      "width": 256,
+      "height": 128,
+      "compression": "0x22",
+      "source": "CARS/TRAFTAXI/TEXTURES.BIN",
+      "packOffset": null,
+      "pixelOffset": null,
+      "pixelBytes": 40960,
+      "rawSHA256": "fcc38e4ec1a9da8e518e169803b8b7e0c4ceef94276b6155bdb5554ad557c681",
+      "d3dFormat": "0x1a200152",
+      "pngSHA256": "d343194da3dbdb31d0ac34dbe31e2c0c7dfcd3effae873a4e1fad3ae7c1a31e7",
+      "archive": "ZZDATA4.BIN",
+      "archiveEntryOffset": 286552064,
+      "archiveEntrySize": 78016,
+      "archiveEntrySHA256": "3ac09dfa071312bf77fc8ca891b563d4eecddf4bc577d373ced0a1fdafa5b601",
+      "compressedSourceOffset": 4096,
+      "compressedSourceBytes": 30124,
+      "absoluteCompressedOffset": 286556160,
+      "compressedSHA256": "f03329904430c67a1daf4f939c42c7e9515be4e439874c0edbfe0dd139a343cf",
+      "decompressedBytes": 41116,
+      "headerFromEnd": 256,
+      "file": "23cd60ed_TRAFTAXI_BADGING.png",
+      "embedded": true
+    },
+    {
+      "name": "COPMIDSIZE_BADGING",
+      "hash": "b0f43241",
+      "width": 256,
+      "height": 256,
+      "compression": "0x26",
+      "source": "CARS/COPMIDSIZE/TEXTURES.BIN",
+      "packOffset": null,
+      "pixelOffset": null,
+      "pixelBytes": 131072,
+      "rawSHA256": "48fe8d24b75da0416f19686b732f78440bfe1c154c3b51c0a23be8c219948592",
+      "d3dFormat": "0x1a200154",
+      "pngSHA256": "6da2b616fa91ecb56882dfd7a9c0187c581fc01f37fd11caf8f03133adc63643",
+      "archive": "ZZDATA4.BIN",
+      "archiveEntryOffset": 261308416,
+      "archiveEntrySize": 385408,
+      "archiveEntrySHA256": "c5a1fb3534daa9a1b75194876f560625bc64ef2752fe91498e3af188cbcca74f",
+      "compressedSourceOffset": 4096,
+      "compressedSourceBytes": 72481,
+      "absoluteCompressedOffset": 261312512,
+      "compressedSHA256": "5422245a7967c29cd7a28b118e9dffa7602a66de8fe51139bbebd4955bc24c53",
+      "decompressedBytes": 131228,
+      "headerFromEnd": 256,
+      "file": "b0f43241_COPMIDSIZE_BADGING.png",
+      "embedded": true
+    },
+    {
+      "name": "COPMIDSIZE_SKIN1",
+      "hash": "00ea6f5b",
+      "width": 512,
+      "height": 512,
+      "compression": "0x22",
+      "source": "CARS/COPMIDSIZE/TEXTURES.BIN",
+      "packOffset": null,
+      "pixelOffset": null,
+      "pixelBytes": 196608,
+      "rawSHA256": "5c165f5db34144187625ef1f55c1135226a7a4f84d80680268c33836db485fa6",
+      "d3dFormat": "0x1a200152",
+      "pngSHA256": "1548f6fb1a269749e7185e4a7be48e2c5194d3708a6efe88fb2400e8a8c6622f",
+      "archive": "ZZDATA4.BIN",
+      "archiveEntryOffset": 261308416,
+      "archiveEntrySize": 385408,
+      "archiveEntrySHA256": "c5a1fb3534daa9a1b75194876f560625bc64ef2752fe91498e3af188cbcca74f",
+      "compressedSourceOffset": 206528,
+      "compressedSourceBytes": 131976,
+      "absoluteCompressedOffset": 261514944,
+      "compressedSHA256": "4565fc1a94ad684a5c493b3203f2f16eda94f28dd48cbee9579196ae06b5014f",
+      "decompressedBytes": 196764,
+      "headerFromEnd": 256,
+      "file": "00ea6f5b_COPMIDSIZE_SKIN1.png",
+      "embedded": true
+    },
+    {
+      "name": "GRILL_02",
+      "hash": "69c032ba",
+      "width": 64,
+      "height": 64,
+      "compression": "0x22",
+      "source": "GLOBAL/GLOBALB.BUN",
+      "packOffset": 28672,
+      "pixelOffset": 1949696,
+      "pixelBytes": 24576,
+      "rawSHA256": "8cd10b31d08770983a0e0ab5f9d27ba2dc7f577a88a8cc83814c7ec90b1d8374",
+      "d3dFormat": "0x1a200152",
+      "pngSHA256": "6f05a346f758918b84311439ca0f6af29d34600af1078c9283fec7f56e412ea1",
+      "archive": "ZZDATA4.BIN",
+      "archiveEntryOffset": 306728960,
+      "archiveEntrySize": 18285616,
+      "archiveEntrySHA256": "6ef059bc912809cfdb58e6d7326c5dfdea43fb2d25e335e24903b771fd360d3e",
+      "absolutePixelOffset": 308678656,
+      "file": "69c032ba_GRILL_02.png",
+      "embedded": true
+    },
+    {
+      "name": "COPMIDSIZE_KIT00_BRAKEL",
+      "hash": "14c82dd3",
+      "width": 256,
+      "height": 128,
+      "compression": "0x22",
+      "source": "CARS/COPMIDSIZE/TEXTURES.BIN",
+      "packOffset": null,
+      "pixelOffset": null,
+      "pixelBytes": 40960,
+      "rawSHA256": "c5711b59d3147b89a031f5480f346ef68ad7bcbf58f4288609c8df65087cd042",
+      "d3dFormat": "0x1a200152",
+      "pngSHA256": "dd6e6e71fb0f757e92a9688cf4ffd396b6ea7055a8f97dd01540e185ff4ca561",
+      "archive": "ZZDATA4.BIN",
+      "archiveEntryOffset": 261308416,
+      "archiveEntrySize": 385408,
+      "archiveEntrySHA256": "c5a1fb3534daa9a1b75194876f560625bc64ef2752fe91498e3af188cbcca74f",
+      "compressedSourceOffset": 76608,
+      "compressedSourceBytes": 26614,
+      "absoluteCompressedOffset": 261385024,
+      "compressedSHA256": "5974dd8147ff46f93c505d9363483af388d7e6e0b0f956934a9ab9588c2f0cdf",
+      "decompressedBytes": 41116,
+      "headerFromEnd": 256,
+      "file": "14c82dd3_COPMIDSIZE_KIT00_BRAKEL.png",
+      "embedded": true
+    },
+    {
+      "name": "COPMIDSIZE_KIT00_HEADLI",
+      "hash": "0c7be022",
+      "width": 256,
+      "height": 128,
+      "compression": "0x22",
+      "source": "CARS/COPMIDSIZE/TEXTURES.BIN",
+      "packOffset": null,
+      "pixelOffset": null,
+      "pixelBytes": 40960,
+      "rawSHA256": "e20b5d86e8bfcb907fc3bcc6c22821697ba40c5aef66fed64f5936a0889a038a",
+      "d3dFormat": "0x1a200152",
+      "pngSHA256": "295a6cf39cf9c15e853bff157fd4b1ee9ec293be35c56d7845fb259ec47c375d",
+      "archive": "ZZDATA4.BIN",
+      "archiveEntryOffset": 261308416,
+      "archiveEntrySize": 385408,
+      "archiveEntrySHA256": "c5a1fb3534daa9a1b75194876f560625bc64ef2752fe91498e3af188cbcca74f",
+      "compressedSourceOffset": 129856,
+      "compressedSourceBytes": 27698,
+      "absoluteCompressedOffset": 261438272,
+      "compressedSHA256": "1a54569443c2eb7ff7a68a64592d1d9594f8f0e2bf6dc9ba8befb0bac19c1e3a",
+      "decompressedBytes": 41116,
+      "headerFromEnd": 256,
+      "file": "0c7be022_COPMIDSIZE_KIT00_HEADLI.png",
+      "embedded": true
+    },
+    {
+      "name": "TREAD",
+      "hash": "03c906ef",
+      "width": 128,
+      "height": 64,
+      "compression": "0x22",
+      "source": "GLOBAL/GLOBALB.BUN",
+      "packOffset": 28672,
+      "pixelOffset": 147456,
+      "pixelBytes": 24576,
+      "rawSHA256": "cb0b91a6edef7d36b55121369260e0f54234f6c13f2bbc9650bb092c4485c8cf",
+      "d3dFormat": "0x1a200152",
+      "pngSHA256": "5e868d392430b60645515360d05ffd3cfd38960d87bd9193dbcbdb556e68519f",
+      "archive": "ZZDATA4.BIN",
+      "archiveEntryOffset": 306728960,
+      "archiveEntrySize": 18285616,
+      "archiveEntrySHA256": "6ef059bc912809cfdb58e6d7326c5dfdea43fb2d25e335e24903b771fd360d3e",
+      "absolutePixelOffset": 306876416,
+      "file": "03c906ef_TREAD.png",
+      "embedded": true
+    },
+    {
+      "name": "COPMIDSIZE_TIRE",
+      "hash": "7464b6e9",
+      "width": 256,
+      "height": 256,
+      "compression": "0x22",
+      "source": "CARS/COPMIDSIZE/TEXTURES.BIN",
+      "packOffset": null,
+      "pixelOffset": null,
+      "pixelBytes": 65536,
+      "rawSHA256": "84842b794292cb5ce8fef6e96e7ab89be016dcf4a7e0ff7d08c6273d4eefb66f",
+      "d3dFormat": "0x1a200152",
+      "pngSHA256": "16436862610d243d723a7dd20ed7c3fa914441b364a58b9d5aa558fe69759fef",
+      "archive": "ZZDATA4.BIN",
+      "archiveEntryOffset": 261308416,
+      "archiveEntrySize": 385408,
+      "archiveEntrySHA256": "c5a1fb3534daa9a1b75194876f560625bc64ef2752fe91498e3af188cbcca74f",
+      "compressedSourceOffset": 338560,
+      "compressedSourceBytes": 46795,
+      "absoluteCompressedOffset": 261646976,
+      "compressedSHA256": "77b9b3dd36ea34c81abcb909cb0d0d7d34d7b35a848e31223d60d2bdaca7aa58",
+      "decompressedBytes": 65692,
+      "headerFromEnd": 256,
+      "file": "7464b6e9_COPMIDSIZE_TIRE.png",
+      "embedded": true
+    },
+    {
+      "name": "REAR_DEFROSTER",
+      "hash": "d195be56",
+      "width": 128,
+      "height": 128,
+      "compression": "0x24",
+      "source": "GLOBAL/GLOBALB.BUN",
+      "packOffset": 28672,
+      "pixelOffset": 3833856,
+      "pixelBytes": 65536,
+      "rawSHA256": "7b40af80c6f7d780eed2475d6753298246b5101a470bdfe386d167d3823a582b",
+      "d3dFormat": "0x1a200153",
+      "pngSHA256": "de0e6f9076ac186dfaa575e507074b95aa3f637d5092f91e65f499e2ec4c905e",
+      "archive": "ZZDATA4.BIN",
+      "archiveEntryOffset": 306728960,
+      "archiveEntrySize": 18285616,
+      "archiveEntrySHA256": "6ef059bc912809cfdb58e6d7326c5dfdea43fb2d25e335e24903b771fd360d3e",
+      "absolutePixelOffset": 310562816,
+      "file": "d195be56_REAR_DEFROSTER.png",
+      "embedded": false
+    }
+  ]
+}
