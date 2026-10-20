@@ -932,6 +932,9 @@
             const gearbox=this.mwGearbox;gearbox.radius=p.wheelRadius;gearbox.finalDrive=p.finalDrive;
             gearbox.gear=gearbox.guessGear(s.vForward);
             s.gear=gearbox.gear-1;s.rpm=s.engineRpm=s.transmissionRpm=gearbox.guessRPM(s.vForward,gearbox.gear);
+            this.mwEngine=new this.mwKernel.AngularEngine(this.mwSpec);
+            this.mwEngine.angularVelocity=s.engineRpm*Math.PI/30;this.mwEngine.transmissionVelocity=s.transmissionRpm*Math.PI/30;this.mwEngine.rpm=s.rpm;
+            this.mwInduction=new this.mwKernel.Induction(this.mwSpec.induction);
             this._mwShiftUpHeld=false;this._mwShiftDownHeld=false;
             this._syncMWGearbox();
         }
@@ -1221,12 +1224,25 @@
             }
 
             // 7. Engine Torque Curve, Forced Induction, Clutch & Gearbox (EngineRacer)
+            // NOMERA's catalogue top-speed governor is retained; source order
+            // applies the resulting throttle before induction and shifting.
+            const draftTopBonus = 1.0 + (s.slipstreamFactor || 0) * 0.06;
+            const maxAllowedKmh = p.topSpeedKmh * (s.isNitroActive ? p.nitroTopSpeedMult : 1.0) * draftTopBonus;
+            const maxAllowedMps = maxAllowedKmh / 3.6;
+            let ecuCut = 1.0;
+            if (s.gear >= 1 && absFwdMps > maxAllowedMps * 0.96) {
+                ecuCut = 1.0 - ramp(absFwdMps, maxAllowedMps * 0.96, maxAllowedMps * 1.01);
+            } else if (s.gear === -1 && absFwdMps > 22.0) {
+                ecuCut = 1.0 - ramp(absFwdMps, 22.0, 25.0);
+            }
+            const powerThrottle=throttle*ecuCut;
             if (this.mwGearbox) {
                 const g=this.mwGearbox;
                 if(s.gear!==g.gear-1)g.changeGear(s.gear+1);
-                g.stepShifting(dt,{automatic:this.options.transmissionMode==='auto',gas:throttle,staging:!!controls.staging,
+                this.mwInduction.step(dt,{gas:powerThrottle,rpm:this.mwEngine.angularVelocity*30/Math.PI,gearChanging:g.timer>0});
+                s.turboSpool=this.mwInduction.spool;s.turboPsi=this.mwInduction.psi;
+                g.stepShifting(dt,{automatic:this.options.transmissionMode==='auto',gas:powerThrottle,controlGas:throttle,staging:!!controls.staging,
                     transmissionRpm:s.transmissionRpm,contacts:Object.values(this.mwTires).map(t=>t.load>0),slips:Object.values(this.mwTires).map(t=>t.slip)});
-                s.clutchRatio=g.updateClutch(dt,{gas:throttle,rpm:s.engineRpm,transmissionRpm:s.transmissionRpm});
                 this._syncMWGearbox();
             } else if (s.shiftTimer > 0) {
                 s.shiftTimer = Math.max(0, s.shiftTimer - dt);
@@ -1261,14 +1277,7 @@
                 p.idleRpm,
                 p.maxRpm
             );
-            if(this.mwGearbox){
-                // Source differential -> transmission RPM relation. Full engine
-                // angular-acceleration/clutch torque solver remains a host bridge.
-                s.transmissionRpm=clamp(p.idleRpm+wheelDrivenRpm*(p.redlineRpm-p.idleRpm)/p.redlineRpm,p.idleRpm,p.redlineRpm);
-                s.engineRpm=clamp(Math.max(s.transmissionRpm,absFwdMps<6?launchFreeRevRpm:0),p.idleRpm,p.maxRpm);
-                s.rpm=this.mwKernel.smoothRPM({shifting:s.shiftTimer>0||s.clutchState==='DISENGAGED',gear:s.gear+1,dt,oldRpm:s.rpm,newRpm:s.engineRpm,inertia:this.mwKernel.engineInertia(10,s.gear!==0)});
-                this.mwGearbox.updatePotential(s.transmissionRpm,throttle,!!controls.staging);this._syncMWGearbox();
-            }else s.rpm = lerp(s.rpm, targetRpm, clamp(dt * 18.0, 0, 1));
+            if(!this.mwEngine)s.rpm = lerp(s.rpm, targetRpm, clamp(dt * 18.0, 0, 1));
 
             // Automatic transmission shift logic (Physics::Info::ShiftPoints & AutoShift)
             if (!this.mwGearbox && this.options.transmissionMode === 'auto' && s.gear >= 1 && s.shiftTimer <= 0) {
@@ -1283,6 +1292,7 @@
             }
 
             // Forced induction spool (EngineRacer::DoInduction)
+            if(!this.mwInduction){
             if (p.inductionType === 'turbo') {
                 const spoolThresholdRpm = p.idleRpm + (p.redlineRpm - p.idleRpm) * (p.spoolRpmRatio || 0.34);
                 const wantSpool = (throttle > 0.25 && s.rpm >= spoolThresholdRpm && s.shiftTimer <= 0)
@@ -1298,6 +1308,7 @@
                 s.turboSpool = 0;
                 s.turboPsi = 0;
             }
+            }
 
             // Normalized engine torque curve (rises to peakTorqueRpm, tapers slightly to redline)
             const rpmSpan = Math.max(1000, p.redlineRpm - p.idleRpm);
@@ -1311,30 +1322,29 @@
                 torqueShape = 1.0 - 0.18 * clamp(over * over, 0, 1.2);
             }
 
-            const inductionMult = 1.0 + (p.inductionBoost || 0) * s.turboSpool;
+            const inductionMult = 1.0 + (this.mwInduction?this.mwInduction.boost:(p.inductionBoost || 0) * s.turboSpool);
             const nosMult = this.mwNos ? s.nosMultiplier : s.isNitroActive ? p.nitroTorqueMult : 1.0;
-
-            // ECU Top Speed Governor (EngineRacer::DoECU)
-            const draftTopBonus = 1.0 + (s.slipstreamFactor || 0) * 0.06;
-            const maxAllowedKmh = p.topSpeedKmh * (s.isNitroActive ? p.nitroTopSpeedMult : 1.0) * draftTopBonus;
-            const maxAllowedMps = maxAllowedKmh / 3.6;
-            let ecuCut = 1.0;
-            if (s.gear >= 1 && absFwdMps > maxAllowedMps * 0.96) {
-                ecuCut = 1.0 - ramp(absFwdMps, maxAllowedMps * 0.96, maxAllowedMps * 1.01);
-            } else if (s.gear === -1 && absFwdMps > 22.0) {
-                ecuCut = 1.0 - ramp(absFwdMps, 22.0, 25.0);
-            }
 
             const curveTorque = this.mwKernel ? this.mwKernel.torque(this.mwSpec.engine, s.rpm) : p.baseTorqueNm * torqueShape;
             const grossEngineTorque = curveTorque * inductionMult * nosMult * throttle * ecuCut;
             const engineBrakingTorque = (throttle < 0.05 && absFwdMps > 1.0)
                 ? -p.baseTorqueNm * 0.14 * (0.4 + 0.6 * rpmProgress)
                 : 0;
-            s.engineTorqueNm = grossEngineTorque + engineBrakingTorque;
-
             const gearDirection = s.gear < 0 ? -1 : (s.gear > 0 ? 1 : 0);
-            const coupling=this.mwGearbox&&s.clutchState==='DISENGAGED'?0:s.clutchRatio;
-            const totalWheelDriveTorque = s.engineTorqueNm * totalGearRatio * 0.92 * coupling * gearDirection;
+            let totalWheelDriveTorque;
+            if(this.mwEngine){
+                const engine=this.mwEngine.step(dt,{gear:s.gear+1,clutch:this.mwGearbox.clutch,gas:powerThrottle,wheels:Object.values(this.mwTires),
+                    speedMps:s.speedMps,inductionBoost:this.mwInduction.boost,nosBoost:nosMult,peakTorqueRpm:p.peakTorqueRpm,
+                    peakTorque:p.baseTorqueNm,gearChanging:this.mwGearbox.timer>0,staging:!!controls.staging,revLimiter:this.options.revLimiter!==false});
+                s.engineTorqueNm=engine.totalEngineTorque;totalWheelDriveTorque=engine.driveTorque;
+                s.rpm=engine.rpm;s.engineRpm=engine.engineRpm;s.transmissionRpm=engine.transmissionRpm;s.clutchRatio=engine.clutchRatio;
+                s.angularEngine={omega:this.mwEngine.angularVelocity,acceleration:this.mwEngine.angularAcceleration,driveTorque:engine.driveTorqueAtEngine,
+                    roadTorque:engine.roadTorque,clutchRpmDiff:this.mwEngine.clutchRpmDiff,ratio:engine.totalRatio,boost:this.mwInduction.boost};
+                this.mwGearbox.updatePotential(s.transmissionRpm,powerThrottle,!!controls.staging);this._syncMWGearbox();
+            }else{
+                s.engineTorqueNm=grossEngineTorque+engineBrakingTorque;
+                totalWheelDriveTorque=s.engineTorqueNm*totalGearRatio*.92*s.clutchRatio*gearDirection;
+            }
             s.wheelDriveTorqueNm = totalWheelDriveTorque;
             // The source drive controller uses the LAST tire update and burnout
             // state, before current suspension/steering/drift tuning.

@@ -6,6 +6,7 @@
  * Traction control, burnout and drift: docs/MW_TRACTION_DRIFT.md.
  * Nitrous, aerodynamics and handbrake integration: docs/MW_NOS_AERO.md.
  * Gear selection, clutch scheduling and RPM smoothing: docs/MW_GEARBOX.md.
+ * Angular engine/clutch solver and induction: docs/MW_ENGINE_CLUTCH.md.
  * This partial adapter does not claim Xbox retail equivalence.
  */
 (function (root, factory) {
@@ -71,9 +72,10 @@
         constructor(){this.engageTime=0;this.reset();}
         reset(){this.state='ENGAGED';this.time=0;this.shiftingUp=false;}
         disengage(){if(this.state==='ENGAGED')this.state='DISENGAGED';}
-        engage(time){if(this.state==='DISENGAGED'){this.state=time>0?'ENGAGING':'ENGAGED';this.time=this.engageTime=time;}}
+        engage(time){if(this.state==='DISENGAGED'){this.state=time>0?'ENGAGING':'ENGAGED';this.time=this.engageTime=Math.fround(time);}}
         update(dt){
-            if(this.time>0){this.time-=dt;if(this.time<=0&&this.state==='ENGAGING')this.state='ENGAGED';}
+            // Source float timing matters at .05/.25 second boundaries.
+            if(this.time>0){this.time=Math.fround(Math.fround(this.time)-Math.fround(dt));if(this.time<=0&&this.state==='ENGAGING')this.state='ENGAGED';}
             return this.state==='DISENGAGED'?.25:this.state==='ENGAGING'?1-clamp(this.engageTime>1e-6?this.time/this.engageTime:0,0,1)*.75:1;
         }
     }
@@ -114,7 +116,7 @@
             if(!this.changeGear(gear))return false;
             this.sportTimer=1.25;return true;
         }
-        stepShifting(dt,{automatic=true,override=0,staging=false,gas=0,transmissionRpm=0,contacts=[true,true,true,true],slips=[0,0,0,0],input=true}={}){
+        stepShifting(dt,{automatic=true,override=0,staging=false,gas=0,controlGas=gas,transmissionRpm=0,contacts=[true,true,true,true],slips=[0,0,0,0],input=true}={}){
             automatic=input&&automatic;if(override)automatic=override===1;
             if(automatic&&this.gear!==0&&this.timer<=0&&!staging&&this.sportTimer<=0){
                 if(this.gear===1)this.gear=2;
@@ -127,7 +129,7 @@
                 }else if([2,4,5].includes(this.potential)&&contacts.length===4&&contacts.every((v,i)=>v&&slips[i]<4))this.changeGear(this.gear+1,{staging});
             }
             if(this.timer>0)this.timer=Math.max(0,this.timer-dt);
-            if(this.sportTimer>0&&this.potential)this.sportTimer=input?Math.max(0,this.sportTimer-dt*(2-gas)):0;
+            if(this.sportTimer>0&&this.potential)this.sportTimer=input?Math.max(0,this.sportTimer-dt*(2-controlGas)):0;
         }
         updateClutch(dt,{gas=0,rpm=0,transmissionRpm=0}={}){
             const c=this.clutch,ratio=c.update(dt);
@@ -142,6 +144,124 @@
         updatePotential(rpm,gas=0,staging=false){this.potential=this.clutch.state==='ENGAGED'&&!staging?this.findPotential(this.gear,rpm,gas):0;return this.potential;}
     }
     function engineInertia(flywheelMass,loaded=true){return(flywheelMass*.025+.25)*(loaded?1:.35);}
+    function brakingTorque(engineTorque,rpm,engine,values=[.7,.8,.9]){
+        return-engineTorque*(values.length>1?clamp(table(values,clamp(rpm,engine.idle,engine.redline),engine.idle,engine.maxRpm),0,1):values[0]);
+    }
+    function engineOutputTorque(engine,rpm,{inductionBoost=0,nosBoost=1,remote=false,ftlb=false}={}){return torque(engine,rpm)*(ftlb?1.3558:1)*(1+inductionBoost)*(remote?1:nosBoost);}
+    class Induction {
+        constructor(spec={}){this.spec={idle:800,redline:8500,spoolRpm:.3,highBoost:0,lowBoost:0,vacuum:0,psi:20,spoolUp:.5,spoolDown:.25,...spec};this.spool=0;this.psi=0;this.boost=0;}
+        step(dt,{gas=0,rpm=800,gearChanging=false,tuning=0,tuningsPresent=true}={}){
+            const p=this.spec,ramp=(v,a,b)=>b-a>1e-6?clamp((v-a)/(b-a),0,1):0;
+            if(!(p.highBoost>0||p.lowBoost>0)){this.spool=this.psi=this.boost=0;return this;}
+            let threshold=p.spoolRpm;
+            if(tuningsPresent&&threshold>0)threshold+=(tuning<0?threshold:1-threshold)*.25*tuning;
+            threshold=p.idle+threshold*(p.redline-p.idle);
+            let desired=ramp(gas,0,.5);
+            if(gearChanging||p.spoolRpm>0&&rpm<threshold)desired=0;
+            if(this.spool>desired)this.spool=p.spoolDown>1e-6?Math.max(desired,this.spool-dt/p.spoolDown):desired;
+            else if(this.spool<desired)this.spool=p.spoolUp>1e-6?Math.min(desired,this.spool+dt/p.spoolUp):desired;
+            this.spool=clamp(this.spool,0,1);
+            const low=p.lowBoost*(1-(tuningsPresent?tuning:0)*.25),high=p.highBoost*(1+(tuningsPresent?tuning:0)*.25);
+            let boost=0,targetPsi=0;
+            if(rpm>=threshold){const ratio=ramp(rpm,threshold,p.redline);boost=mix(low,high,ratio);targetPsi=this.spool*p.psi*ramp(boost,0,Math.max(low,high));}
+            else if(p.vacuum<0){const ratio=ramp(rpm,p.idle,threshold);boost=ratio*p.vacuum;targetPsi=ratio*-p.psi*ramp(-boost,0,Math.max(low,high));}
+            this.boost=boost*this.spool;
+            if(this.psi>targetPsi)this.psi=Math.max(this.psi-dt*20,targetPsi);else if(this.psi<targetPsi)this.psi=Math.min(this.psi+dt*20,targetPsi);
+            return this;
+        }
+    }
+    // Complete angular coupling portion of EngineRacer::OnTaskSimulate. The
+    // caller supplies throttle/NOS/ECU/induction and schedules gearbox first.
+    class AngularEngine {
+        constructor({engine,gears,powertrain={}}={}){
+            this.engine=engine;this.gears=gears;
+            this.spec={flywheelMass:10,torqueConverter:.2,frontShare:0,clutchSlip:.8,finalDrive:3.85,efficiencies:gears.map(()=>1),braking:[.7,.8,.9],...powertrain};
+            this.angularVelocity=engine.idle*Math.PI/30;this.angularAcceleration=0;this.transmissionVelocity=0;
+            this.clutchRpmDiff=0;this.rpm=engine.idle;this.driveTorque=0;this.driveTorqueAtEngine=0;this.engineBraking=false;
+        }
+        differential(wheels,locked,gear){
+            let value=0;const front=this.spec.frontShare>0,rear=this.spec.frontShare<1;
+            for(const[enabled,a,b]of [[front,0,1],[rear,2,3]])if(enabled){
+                const w=(wheels[a].omega+wheels[b].omega)*.5;
+                if(!locked){if(Math.abs(w)>Math.abs(value))value=w;}
+                else value=gear===0?Math.min(w,value):Math.max(w,value);
+            }
+            return value;
+        }
+        setDifferential(wheels,omega,speedMps,gear){
+            const delta=omega-this.differential(wheels,false,gear),front=this.spec.frontShare>0,rear=this.spec.frontShare<1;
+            for(const[enabled,a,b]of [[rear,2,3],[front,0,1]])if(enabled){
+                if(speedMps*2.23699<40||!wheels[a].load&&!wheels[b].load){const avg=(wheels[a].omega+wheels[b].omega)*.5;wheels[a].omega=wheels[b].omega=avg;}
+                wheels[a].omega+=delta;wheels[b].omega+=delta;
+            }
+        }
+        limitFreeWheels(wheels,limit){
+            wheels.forEach((w,i)=>{
+                if(w.load>0||(i<2?this.spec.frontShare<=0:this.spec.frontShare>=1))return;
+                w.omega=w.omega*limit<0?0:w.omega>0?Math.min(w.omega,limit):w.omega<0?Math.max(w.omega,limit):0;
+            });
+        }
+        step(dt,{gear=2,clutch,gas=0,wheels,speedMps=0,engineTorqueNm,brakingTorqueNm,inductionBoost=0,nosBoost=1,
+            peakTorqueRpm=5000,peakTorque=0,staging=false,perfectLaunch=0,revLimiter=true,gearChanging=false,catchup=0,remote=false,
+            inputPresent=true,suspensionPresent=true,numWheels=4}={}){
+            if(!(dt>0)||!inputPresent||!suspensionPresent||numWheels!==4)return this.last;
+            const p=this.spec,e=this.engine,toW=Math.PI/30,toR=30/Math.PI;
+            const maxW=(revLimiter?e.redline:e.maxRpm)*toW,minW=e.idle*toW,inertia=engineInertia(p.flywheelMass,gear!==1);
+            const axle=this.differential(wheels,false,gear),diff=this.differential(wheels,true,gear),grounded=wheels.filter(w=>w.load>0).length;
+            const wheelRatio=Math.max(.25,grounded*.25),clutchRatio=clutch.update(dt),direction=gear===0?-1:1,rpm=this.angularVelocity*toR;
+            let totalRatio=this.gears[gear]*p.finalDrive*direction;
+            if(p.torqueConverter>0){let converter=p.torqueConverter*gas*(1-clamp((rpm-e.idle)/(peakTorqueRpm-e.idle),0,1));if(gearChanging)converter*=clutchRatio;totalRatio*=1+converter;}
+            if(totalRatio===0&&gear!==1)return this.last;
+            if(gear===0||gear===2){
+                const idle=minW+(gear===0?2400:800)*toW;
+                if(this.angularVelocity>idle||this.transmissionVelocity>idle||gas>=.1)clutch.engage(.05);else clutch.disengage();
+            }else if(gear===1)clutch.disengage();else clutch.engage(.25);
+            let engineTorque=engineTorqueNm??engineOutputTorque(e,rpm,{inductionBoost,nosBoost,remote});
+            let brake=brakingTorqueNm??brakingTorque(engineTorque,rpm,e,p.braking);
+            if(!staging&&perfectLaunch>0&&gas>0){gas=1;engineTorque=peakTorque*nosBoost;brake=0;}
+            const oldTransmission=this.transmissionVelocity;
+            this.transmissionVelocity=minW+diff*totalRatio*(maxW-minW)/maxW;
+            const transAcceleration=(this.transmissionVelocity-oldTransmission)/dt;
+            if(gear!==1&&clutch.state==='ENGAGED'&&brake*axle*direction>0)brake=-brake;
+            const totalTorque=engineTorque*gas+brake*(1-gas);let drive=0,road=0;
+            this.engineBraking=totalTorque<0;
+            if(gear!==1){
+                if(clutch.state==='ENGAGED'){this.clutchRpmDiff=0;drive=totalTorque;road-=totalTorque*wheelRatio;}
+                else if(clutch.state==='ENGAGING'){
+                    const delta=clamp(this.angularVelocity-this.transmissionVelocity,-300,300),rpmDiff=(this.transmissionVelocity-this.angularVelocity)*toR;
+                    const stiffness=this.clutchRpmDiff!==0&&rpmDiff*this.clutchRpmDiff<0&&Math.abs(rpmDiff)>2000&&Math.abs(this.clutchRpmDiff)>2000?10:20;
+                    this.clutchRpmDiff=rpmDiff;drive+=delta*stiffness*clutchRatio;road-=delta*stiffness*clutchRatio*wheelRatio;
+                }else this.clutchRpmDiff=0;
+                if(clutch.state==='ENGAGED'){
+                    const acceleration=(totalTorque+road)/inertia;
+                    let response=1/inertia;
+                    if(p.frontShare>0)response+=p.frontShare*.1*totalRatio*totalRatio*.5;
+                    if(p.frontShare<1)response+=(1-p.frontShare)*.1*totalRatio*totalRatio*.5;
+                    const reaction=(acceleration-transAcceleration)/response;
+                    drive+=Math.min(reaction,0);road-=reaction*wheelRatio;
+                }
+                if(clutch.state==='ENGAGED'&&grounded>0){
+                    const driven=wheels.filter((_,i)=>i<2?p.frontShare>0:p.frontShare<1),slip=driven.reduce((sum,w)=>sum+w.slip,0)/driven.length;
+                    const delta=this.transmissionVelocity-this.angularVelocity;
+                    if(gas>.2&&slip*direction>.1&&gear<=2&&delta<0){this.transmissionVelocity=this.angularVelocity;this.setDifferential(wheels,this.angularVelocity/totalRatio,speedMps,gear);}
+                    else road+=clamp(delta*20,-Math.abs(totalTorque),Math.abs(totalTorque));
+                }
+                if(gear===0||gear===2){const sum=totalTorque+road;if(road<totalTorque&&sum<0)road+=graph([[-10,1],[-7.5,.96],[-3.5,.925],[-.3,.875],[-.05,0]],sum*1000)*sum*p.clutchSlip;}
+            }
+            if(gear!==1&&gas>0&&gear<=2&&clutch.state==='ENGAGED'&&road*totalTorque<0){
+                const slip=p.clutchSlip*gas*(1-gas*clamp((rpm-e.idle)/(peakTorqueRpm-e.idle),0,1));road*=(1-slip)*(1-slip);
+            }
+            this.angularAcceleration=(totalTorque+road)/inertia;
+            this.angularVelocity=clamp(this.angularVelocity+this.angularAcceleration*dt,minW,maxW);
+            if(totalRatio!==0)this.limitFreeWheels(wheels,maxW/totalRatio);
+            if(this.transmissionVelocity>maxW&&totalRatio!==0){if(drive*totalRatio>0)drive=0;this.transmissionVelocity=maxW;this.setDifferential(wheels,maxW/totalRatio,speedMps,gear);}
+            if(drive>0)drive*=1+catchup*.5;
+            this.driveTorque=drive*totalRatio*(p.efficiencies[gear]??1);this.driveTorqueAtEngine=drive;
+            this.rpm=smoothRPM({shifting:gearChanging||clutch.state==='DISENGAGED',gear,dt,oldRpm:this.rpm,newRpm:this.angularVelocity*toR,inertia});
+            return this.last={driveTorque:this.driveTorque,driveTorqueAtEngine:drive,engineTorque,totalEngineTorque:totalTorque,roadTorque:road,
+                clutchRatio,totalRatio,throttle:gas,engineRpm:this.angularVelocity*toR,transmissionRpm:this.transmissionVelocity*toR,rpm:this.rpm};
+        }
+    }
     // Public API accepts radians; MW's original angle unit is turns (1=360deg).
     // Signed force is a NOMERA wrapper around original absolute slip magnitude.
     function tireForce(loadN, slipRad, gripScale = 1, gripBoost = 1) {
@@ -486,7 +606,12 @@
     function createSpec(profile) {
         const engine = { idle: profile.idleRpm, redline: profile.redlineRpm, maxRpm: profile.maxRpm,
             torque: REFERENCE.torque.map(value => value / 283 * profile.baseTorqueNm) };
+        const inductionBoost=['turbo','supercharger'].includes(profile.inductionType)?profile.inductionBoost:0;
         return { engine, gears:profile.gearRatios.map(Math.abs),shifts: shiftPoints(engine, profile.gearRatios), shiftTime: .25,shiftSpeed:.25,
+            powertrain:{flywheelMass:10,torqueConverter:.2,frontShare:profile.torqueSplit,clutchSlip:.8,finalDrive:profile.finalDrive,efficiencies:profile.gearRatios.map(()=>.92),braking:[.7,.8,.9]},
+            induction:{idle:profile.idleRpm,redline:profile.redlineRpm,spoolRpm:profile.inductionType==='turbo'?(profile.spoolRpmRatio||.34):0,
+                highBoost:inductionBoost,lowBoost:inductionBoost,
+                vacuum:0,psi:profile.inductionType==='supercharger'?12:18.5,spoolUp:1/2.8,spoolDown:1/4.5},
             nos:{capacitySeconds:100/profile.nitroDrainRate,boost:profile.nitroTorqueMult-1,rechargeMin:100/profile.nitroRechargeRate,rechargeMax:60/profile.nitroRechargeRate},
             // Calibrate the catalogue BMW M3 to the source BMW coefficients;
             // preserve relative car/wing/upgrade differences in NOMERA.
@@ -497,6 +622,6 @@
         try { return window.localStorage.getItem('authors_mw_physics_v1') !== 'classic'; }
         catch (_) { return true; }
     }
-    return Object.freeze({ torque, shiftPoints, clutch, Clutch, smoothRPM, engineInertia, Gearbox, Nitrous, aerodynamics, tireForce, Tire, tireFrame, differential, driveControl, Burnout, DriftController, yawFrictionBoost, wallSteer, steeringRange, steeringRate, SteeringController, springForce, staticCompression, Suspension,
+    return Object.freeze({ torque, shiftPoints, clutch, Clutch, smoothRPM, engineInertia, brakingTorque, engineOutputTorque, Induction, AngularEngine, Gearbox, Nitrous, aerodynamics, tireForce, Tire, tireFrame, differential, driveControl, Burnout, DriftController, yawFrictionBoost, wallSteer, steeringRange, steeringRate, SteeringController, springForce, staticCompression, Suspension,
         createSpec, selected, REFERENCE, LOAD });
 }));
