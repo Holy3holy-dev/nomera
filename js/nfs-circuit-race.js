@@ -2068,7 +2068,7 @@
             if (!this.scene || !this.playerPhysics) return;
             const p = this.playerPhysics.state;
             if(root.NOMERA_AUTHORS_PREVIEW && root.NomeraWheelRig){
-                root.NomeraWheelRig.update({wheels:this.playerWheels||[]},{angles:p.wheelAngles,steer:-p.steerAngleRad,compression:p.suspensionOffsets});
+                root.NomeraWheelRig.update({wheels:this.playerWheels||[]},{angles:p.wheelAngles,steer:-p.steerAngleRad,steerAngles:{fl:-p.steerLeftRad,fr:-p.steerRightRad},compression:p.suspensionOffsets});
             }
             if (this.playerCar) {
                 this.playerCar.position.set(this.toThreeX(p.renderX), p.heave, this.toThreeZ(p.renderZ));
@@ -2095,7 +2095,7 @@
                         rival.bodyGroup.rotation.z = rival.physics.mwKernel ? -rs.roll : rs.roll;
                     }
                     if(root.NOMERA_AUTHORS_PREVIEW && root.NomeraWheelRig){
-                        root.NomeraWheelRig.update({wheels:rival.wheels||[]},{angles:rs.wheelAngles,steer:-rs.steerAngleRad,compression:rs.suspensionOffsets});
+                        root.NomeraWheelRig.update({wheels:rival.wheels||[]},{angles:rs.wheelAngles,steer:-rs.steerAngleRad,steerAngles:{fl:-rs.steerLeftRad,fr:-rs.steerRightRad},compression:rs.suspensionOffsets});
                     }
                 }
             }

@@ -344,3 +344,26 @@ test('GLB stance camber, wheel offset, material role persistence, vinyl mapping,
     showroom.setLoading(false);
     showroom.stop();
 });
+
+test('GLB stance turns offset wheel geometry around its hub and does not accumulate translation', () => {
+    const { THREE, Car3DManager } = setupThreeAnd3DManager();
+    const root = new THREE.Group();root.name='CarModel_priora';
+    const nodes=[];
+    for(const x of [-.8,.8]){
+        const wheel=new THREE.Group();wheel.name=x<0?'Wheel_FL':'Wheel_FR';wheel.position.set(x,.3,1.2);
+        const tire=new THREE.Mesh(new THREE.CylinderGeometry(.3,.3,.2,32).rotateZ(Math.PI/2),new THREE.MeshBasicMaterial({name:'tire'}));
+        tire.position.set(.1,.08,0);wheel.add(tire);root.add(wheel);nodes.push(wheel);
+    }
+    root.updateMatrixWorld(true);const centers=nodes.map(w=>new THREE.Box3().setFromObject(w).getCenter(new THREE.Vector3()));
+    for(const camber of [8,-6,8,0]){
+        Car3DManager.applyStylingToGLTF(THREE,root,{camber,wheelOffset:.04,rideHeight:0},'priora');root.updateMatrixWorld(true);
+        nodes.forEach((w,i)=>{const expected=centers[i].clone();expected.x+=(i===0?-1:1)*.04;
+            assert(new THREE.Box3().setFromObject(w).getCenter(new THREE.Vector3()).distanceTo(expected)<1e-6,'hub position is independent of camber');});
+    }
+    const cloned=root.clone(true);
+    // The GLB loader restores the root Box3 after cloning its scene.
+    cloned.userData.baseBoundingBox=root.userData.baseBoundingBox.clone();
+    Car3DManager.applyStylingToGLTF(THREE,cloned,{camber:-8,wheelOffset:.04,rideHeight:0},'priora');cloned.updateMatrixWorld(true);
+    for(const[i,w]of nodes.entries()){const expected=centers[i].clone();expected.x+=(i===0?-1:1)*.04;
+        assert(new THREE.Box3().setFromObject(cloned.getObjectByName(w.name)).getCenter(new THREE.Vector3()).distanceTo(expected)<1e-6,'cached GLB clones keep their hub');}
+});

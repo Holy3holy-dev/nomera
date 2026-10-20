@@ -5770,11 +5770,19 @@
             return true;
         });
 
+        modelRoot.updateMatrixWorld(true);
         topWheels.forEach(wNode => {
             if (wNode.userData._basePosX === undefined) {
                 wNode.userData._basePosX = wNode.position.x;
                 wNode.userData._baseRotZ = wNode.rotation.z;
                 wNode.userData._side = wNode.position.x < -0.05 ? -1 : (wNode.position.x > 0.05 ? 1 : 0);
+            }
+            if (!wNode.userData._stanceBasePosition) {
+                wNode.userData._stanceBasePosition = wNode.position.clone();
+                const box = new THREE.Box3().setFromObject(wNode);
+                const center = box.isEmpty() ? wNode.getWorldPosition(new THREE.Vector3()) : box.getCenter(new THREE.Vector3());
+                wNode.userData._stanceLocalHub = center.clone().applyMatrix4(wNode.matrixWorld.clone().invert());
+                wNode.userData._stanceParentHub = center.clone().applyMatrix4(wNode.parent.matrixWorld.clone().invert());
             }
             const side = wNode.userData._side;
             if (side === -1) {
@@ -5783,6 +5791,16 @@
             } else if (side === 1) {
                 wNode.position.x = wNode.userData._basePosX + spacerOffset;
                 wNode.rotation.z = (wNode.userData._baseRotZ || 0) + camberRad;
+            }
+            if (side) {
+                // GLBs often store the wheel vertices away from the node's
+                // origin. Apply camber around its hub, not the body origin.
+                wNode.position.copy(wNode.userData._stanceBasePosition);
+                if (camberRad) {
+                    const rotatedHub = new THREE.Vector3().copy(wNode.userData._stanceLocalHub).multiply(wNode.scale).applyQuaternion(wNode.quaternion);
+                    wNode.position.copy(wNode.userData._stanceParentHub).sub(rotatedHub);
+                }
+                wNode.position.x += side * spacerOffset;
             }
             wNode.userData.camber = camberDeg;
             wNode.userData.wheelOffset = spacerOffset;
@@ -15392,7 +15410,9 @@
 
                 // Rotate dedicated procedural wheel spinners around local hub axis
                 if (this.authorsWheelRig) {
-                    window.NomeraWheelRig.update(this.authorsWheelRig,{dt,speedMps:forwardSpeedMps,steer:steerAngleRad,angles:this.mwLongitudinal?.state.wheelAngles,handbrake:isHandbrake,compression:this.mwLongitudinal?.state.suspensionOffsets});
+                    const physical=this.mwLongitudinal?.state;
+                    window.NomeraWheelRig.update(this.authorsWheelRig,{dt,speedMps:forwardSpeedMps,steer:steerAngleRad,angles:physical?.wheelAngles,
+                        steerAngles:physical?{fl:physical.steerLeftRad,fr:physical.steerRightRad}:null,swapSides:!!physical,handbrake:isHandbrake,compression:physical?.suspensionOffsets});
                 } else if (this.playerWheels && this.playerWheels.length > 0) {
                     const wheelRotSpeed = (forwardSpeedMps / 0.33) * dt;
                     this.playerWheels.forEach(spinner => {

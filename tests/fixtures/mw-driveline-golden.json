@@ -1,0 +1,1858 @@
+{
+  "differential": [
+    {
+      "name": "equal",
+      "input": {
+        "omega": [
+          100,
+          100
+        ],
+        "contact": [
+          true,
+          true
+        ],
+        "bias": 0.5,
+        "factor": 0.8000000119,
+        "locked": false
+      },
+      "expected": [
+        0.5,
+        0.5
+      ]
+    },
+    {
+      "name": "front_spinning",
+      "input": {
+        "omega": [
+          200,
+          80
+        ],
+        "contact": [
+          true,
+          true
+        ],
+        "bias": 0.5,
+        "factor": 0.8000000119,
+        "locked": false
+      },
+      "expected": [
+        0.3285714388,
+        0.6714285612
+      ]
+    },
+    {
+      "name": "rear_spinning",
+      "input": {
+        "omega": [
+          80,
+          200
+        ],
+        "contact": [
+          true,
+          true
+        ],
+        "bias": 0.5,
+        "factor": 0.8000000119,
+        "locked": false
+      },
+      "expected": [
+        0.6714285612,
+        0.3285714388
+      ]
+    },
+    {
+      "name": "front_biased",
+      "input": {
+        "omega": [
+          200,
+          80
+        ],
+        "contact": [
+          true,
+          true
+        ],
+        "bias": 0.6499999762,
+        "factor": 0.8000000119,
+        "locked": false
+      },
+      "expected": [
+        0.4709835649,
+        0.5290164351
+      ]
+    },
+    {
+      "name": "rear_biased",
+      "input": {
+        "omega": [
+          200,
+          80
+        ],
+        "contact": [
+          true,
+          true
+        ],
+        "bias": 0.3000000119,
+        "factor": 0.8000000119,
+        "locked": false
+      },
+      "expected": [
+        0.1770731807,
+        0.8229268193
+      ]
+    },
+    {
+      "name": "source_subaru",
+      "input": {
+        "omega": [
+          200,
+          80
+        ],
+        "contact": [
+          true,
+          true
+        ],
+        "bias": 0.5,
+        "factor": 0.75,
+        "locked": false
+      },
+      "expected": [
+        0.3392857313,
+        0.6607142687
+      ]
+    },
+    {
+      "name": "source_evo",
+      "input": {
+        "omega": [
+          200,
+          80
+        ],
+        "contact": [
+          true,
+          true
+        ],
+        "bias": 0.5,
+        "factor": 0.6999999881,
+        "locked": false
+      },
+      "expected": [
+        0.3500000238,
+        0.6499999762
+      ]
+    },
+    {
+      "name": "source_gallardo_top",
+      "input": {
+        "omega": [
+          200,
+          80
+        ],
+        "contact": [
+          true,
+          true
+        ],
+        "bias": 0.474999994,
+        "factor": 0.8000000119,
+        "locked": false
+      },
+      "expected": [
+        0.307587415,
+        0.6924124956
+      ]
+    },
+    {
+      "name": "rwd_center_nonzero",
+      "input": {
+        "omega": [
+          200,
+          80
+        ],
+        "contact": [
+          true,
+          true
+        ],
+        "bias": 0,
+        "factor": 0.8000000119,
+        "locked": false
+      },
+      "expected": [
+        0,
+        1
+      ]
+    },
+    {
+      "name": "fwd_center_nonzero",
+      "input": {
+        "omega": [
+          200,
+          80
+        ],
+        "contact": [
+          true,
+          true
+        ],
+        "bias": 1,
+        "factor": 0.8000000119,
+        "locked": false
+      },
+      "expected": [
+        1,
+        0
+      ]
+    },
+    {
+      "name": "zero_angular",
+      "input": {
+        "omega": [
+          0,
+          0
+        ],
+        "contact": [
+          true,
+          true
+        ],
+        "bias": 0.3000000119,
+        "factor": 0.8000000119,
+        "locked": false
+      },
+      "expected": [
+        0.3000000119,
+        0.6999999881
+      ]
+    },
+    {
+      "name": "negative_both",
+      "input": {
+        "omega": [
+          -200,
+          -80
+        ],
+        "contact": [
+          true,
+          true
+        ],
+        "bias": 0.3000000119,
+        "factor": 0.8000000119,
+        "locked": false
+      },
+      "expected": [
+        0.1770731807,
+        0.8229268193
+      ]
+    },
+    {
+      "name": "left_lifted",
+      "input": {
+        "omega": [
+          200,
+          80
+        ],
+        "contact": [
+          false,
+          true
+        ],
+        "bias": 0.3000000119,
+        "factor": 0.8000000119,
+        "locked": false
+      },
+      "expected": [
+        0.3000000119,
+        0.6999999881
+      ]
+    },
+    {
+      "name": "right_lifted",
+      "input": {
+        "omega": [
+          200,
+          80
+        ],
+        "contact": [
+          true,
+          false
+        ],
+        "bias": 0.3000000119,
+        "factor": 0.8000000119,
+        "locked": false
+      },
+      "expected": [
+        0.3000000119,
+        0.6999999881
+      ]
+    },
+    {
+      "name": "both_air",
+      "input": {
+        "omega": [
+          200,
+          80
+        ],
+        "contact": [
+          false,
+          false
+        ],
+        "bias": 0.3000000119,
+        "factor": 0.8000000119,
+        "locked": false
+      },
+      "expected": [
+        0.3000000119,
+        0.6999999881
+      ]
+    },
+    {
+      "name": "locked",
+      "input": {
+        "omega": [
+          200,
+          80
+        ],
+        "contact": [
+          true,
+          true
+        ],
+        "bias": 0.3000000119,
+        "factor": 0.8000000119,
+        "locked": true
+      },
+      "expected": [
+        0.3000000119,
+        0.6999999881
+      ]
+    },
+    {
+      "name": "factor_zero",
+      "input": {
+        "omega": [
+          200,
+          80
+        ],
+        "contact": [
+          true,
+          true
+        ],
+        "bias": 0.3000000119,
+        "factor": 0,
+        "locked": false
+      },
+      "expected": [
+        0.3000000119,
+        0.6999999881
+      ]
+    },
+    {
+      "name": "factor_negative",
+      "input": {
+        "omega": [
+          200,
+          80
+        ],
+        "contact": [
+          true,
+          true
+        ],
+        "bias": 0.3000000119,
+        "factor": -0.5,
+        "locked": false
+      },
+      "expected": [
+        0.3000000119,
+        0.6999999881
+      ]
+    },
+    {
+      "name": "factor_one",
+      "input": {
+        "omega": [
+          200,
+          80
+        ],
+        "contact": [
+          true,
+          true
+        ],
+        "bias": 0.3000000119,
+        "factor": 1,
+        "locked": false
+      },
+      "expected": [
+        0.146341458,
+        0.8536585569
+      ]
+    },
+    {
+      "name": "opposed_exact_cancel",
+      "input": {
+        "omega": [
+          100,
+          -100
+        ],
+        "contact": [
+          true,
+          true
+        ],
+        "bias": 0.5,
+        "factor": 0.8000000119,
+        "locked": false
+      },
+      "expected": [
+        0.5,
+        0.5
+      ]
+    },
+    {
+      "name": "opposed_partial",
+      "input": {
+        "omega": [
+          100,
+          -80
+        ],
+        "contact": [
+          true,
+          true
+        ],
+        "bias": 0.5,
+        "factor": 0.8000000119,
+        "locked": false
+      },
+      "expected": [
+        1,
+        1
+      ]
+    },
+    {
+      "name": "opposed_bias",
+      "input": {
+        "omega": [
+          100,
+          -80
+        ],
+        "contact": [
+          true,
+          true
+        ],
+        "bias": 0.3000000119,
+        "factor": 0.8000000119,
+        "locked": false
+      },
+      "expected": [
+        0.4773913324,
+        1
+      ]
+    },
+    {
+      "name": "epsilon_below",
+      "input": {
+        "omega": [
+          1.000000012e-07,
+          1.000000012e-07
+        ],
+        "contact": [
+          true,
+          true
+        ],
+        "bias": 0.5,
+        "factor": 0.8000000119,
+        "locked": false
+      },
+      "expected": [
+        0.5,
+        0.5
+      ]
+    },
+    {
+      "name": "epsilon_above",
+      "input": {
+        "omega": [
+          1.999999995e-06,
+          1.999999995e-06
+        ],
+        "contact": [
+          true,
+          true
+        ],
+        "bias": 0.5,
+        "factor": 0.8000000119,
+        "locked": false
+      },
+      "expected": [
+        0.5,
+        0.5
+      ]
+    }
+  ],
+  "drive": [
+    {
+      "name": "stock_bmw_rwd",
+      "input": {
+        "frontShare": 0,
+        "factor": [
+          0.8000000119,
+          0.8000000119,
+          0
+        ],
+        "omega": [
+          80,
+          80,
+          80,
+          80
+        ],
+        "contactMask": 15,
+        "torque": 1000,
+        "slip": 0,
+        "lateral": 0,
+        "steer": 0,
+        "forward": 20,
+        "bodyLateral": 0,
+        "burnoutState": 0,
+        "burnoutTraction": 1,
+        "lockedMask": 0,
+        "transmission": true
+      },
+      "expected": {
+        "torques": [
+          0,
+          0,
+          500,
+          500
+        ],
+        "boost": [
+          1,
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "name": "stock_golf_fwd",
+      "input": {
+        "frontShare": 1,
+        "factor": [
+          0.8000000119,
+          0.8000000119,
+          0
+        ],
+        "omega": [
+          80,
+          80,
+          80,
+          80
+        ],
+        "contactMask": 15,
+        "torque": 1000,
+        "slip": 0,
+        "lateral": 0,
+        "steer": 0,
+        "forward": 20,
+        "bodyLateral": 0,
+        "burnoutState": 0,
+        "burnoutTraction": 1,
+        "lockedMask": 0,
+        "transmission": true
+      },
+      "expected": {
+        "torques": [
+          500,
+          500,
+          0,
+          0
+        ],
+        "boost": [
+          1,
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "name": "stock_subaru_awd",
+      "input": {
+        "frontShare": 0.5,
+        "factor": [
+          0.6999999881,
+          0.75,
+          0.75
+        ],
+        "omega": [
+          80,
+          80,
+          80,
+          80
+        ],
+        "contactMask": 15,
+        "torque": 1000,
+        "slip": 0,
+        "lateral": 0,
+        "steer": 0,
+        "forward": 20,
+        "bodyLateral": 0,
+        "burnoutState": 0,
+        "burnoutTraction": 1,
+        "lockedMask": 0,
+        "transmission": true
+      },
+      "expected": {
+        "torques": [
+          250,
+          250,
+          250,
+          250
+        ],
+        "boost": [
+          1,
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "name": "stock_evo_awd",
+      "input": {
+        "frontShare": 0.5,
+        "factor": [
+          0.6999999881,
+          0.6999999881,
+          0.6999999881
+        ],
+        "omega": [
+          80,
+          80,
+          80,
+          80
+        ],
+        "contactMask": 15,
+        "torque": 1000,
+        "slip": 0,
+        "lateral": 0,
+        "steer": 0,
+        "forward": 20,
+        "bodyLateral": 0,
+        "burnoutState": 0,
+        "burnoutTraction": 1,
+        "lockedMask": 0,
+        "transmission": true
+      },
+      "expected": {
+        "torques": [
+          250,
+          250,
+          250,
+          250
+        ],
+        "boost": [
+          1,
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "name": "stock_gallardo_awd",
+      "input": {
+        "frontShare": 0.5,
+        "factor": [
+          0.8000000119,
+          0.8000000119,
+          0.8000000119
+        ],
+        "omega": [
+          80,
+          80,
+          80,
+          80
+        ],
+        "contactMask": 15,
+        "torque": 1000,
+        "slip": 0,
+        "lateral": 0,
+        "steer": 0,
+        "forward": 20,
+        "bodyLateral": 0,
+        "burnoutState": 0,
+        "burnoutTraction": 1,
+        "lockedMask": 0,
+        "transmission": true
+      },
+      "expected": {
+        "torques": [
+          250,
+          250,
+          250,
+          250
+        ],
+        "boost": [
+          1,
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "name": "top_gallardo_awd",
+      "input": {
+        "frontShare": 0.474999994,
+        "factor": [
+          0.6499999762,
+          0.6499999762,
+          0.8000000119
+        ],
+        "omega": [
+          200,
+          190,
+          80,
+          75
+        ],
+        "contactMask": 15,
+        "torque": 1000,
+        "slip": 0,
+        "lateral": 0,
+        "steer": 0,
+        "forward": 20,
+        "bodyLateral": 0,
+        "burnoutState": 0,
+        "burnoutTraction": 1,
+        "lockedMask": 0,
+        "transmission": true
+      },
+      "expected": {
+        "torques": [
+          150.7376709,
+          155.8474274,
+          339.4377441,
+          353.9770508
+        ],
+        "boost": [
+          1,
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "name": "awd_front_slip",
+      "input": {
+        "frontShare": 0.5,
+        "factor": [
+          0.6999999881,
+          0.75,
+          0.75
+        ],
+        "omega": [
+          200,
+          200,
+          80,
+          80
+        ],
+        "contactMask": 15,
+        "torque": 1000,
+        "slip": 0,
+        "lateral": 0,
+        "steer": 0,
+        "forward": 20,
+        "bodyLateral": 0,
+        "burnoutState": 0,
+        "burnoutTraction": 1,
+        "lockedMask": 0,
+        "transmission": true
+      },
+      "expected": {
+        "torques": [
+          169.642868,
+          169.642868,
+          330.3571472,
+          330.3571472
+        ],
+        "boost": [
+          1,
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "name": "awd_rear_slip",
+      "input": {
+        "frontShare": 0.5,
+        "factor": [
+          0.6999999881,
+          0.75,
+          0.75
+        ],
+        "omega": [
+          80,
+          80,
+          200,
+          200
+        ],
+        "contactMask": 15,
+        "torque": 1000,
+        "slip": 0,
+        "lateral": 0,
+        "steer": 0,
+        "forward": 20,
+        "bodyLateral": 0,
+        "burnoutState": 0,
+        "burnoutTraction": 1,
+        "lockedMask": 0,
+        "transmission": true
+      },
+      "expected": {
+        "torques": [
+          330.3571472,
+          330.3571472,
+          169.642868,
+          169.642868
+        ],
+        "boost": [
+          1,
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "name": "awd_inside_front_slip",
+      "input": {
+        "frontShare": 0.4099999964,
+        "factor": [
+          0.6999999881,
+          0.75,
+          0.75
+        ],
+        "omega": [
+          200,
+          80,
+          80,
+          80
+        ],
+        "contactMask": 15,
+        "torque": 1000,
+        "slip": 0,
+        "lateral": 0,
+        "steer": 0,
+        "forward": 20,
+        "bodyLateral": 0,
+        "burnoutState": 0,
+        "burnoutTraction": 1,
+        "lockedMask": 0,
+        "transmission": true
+      },
+      "expected": {
+        "torques": [
+          110.4850464,
+          205.1864929,
+          342.1642151,
+          342.1642151
+        ],
+        "boost": [
+          1,
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "name": "awd_inside_rear_slip",
+      "input": {
+        "frontShare": 0.4099999964,
+        "factor": [
+          0.6999999881,
+          0.75,
+          0.75
+        ],
+        "omega": [
+          80,
+          80,
+          200,
+          80
+        ],
+        "contactMask": 15,
+        "torque": 1000,
+        "slip": 0,
+        "lateral": 0,
+        "steer": 0,
+        "forward": 20,
+        "bodyLateral": 0,
+        "burnoutState": 0,
+        "burnoutTraction": 1,
+        "lockedMask": 0,
+        "transmission": true
+      },
+      "expected": {
+        "torques": [
+          257.033905,
+          257.033905,
+          164.8698273,
+          321.0622559
+        ],
+        "boost": [
+          1,
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "name": "awd_center_disabled",
+      "input": {
+        "frontShare": 0.4099999964,
+        "factor": [
+          0.6999999881,
+          0.75,
+          0
+        ],
+        "omega": [
+          200,
+          80,
+          80,
+          80
+        ],
+        "contactMask": 15,
+        "torque": 1000,
+        "slip": 0,
+        "lateral": 0,
+        "steer": 0,
+        "forward": 20,
+        "bodyLateral": 0,
+        "burnoutState": 0,
+        "burnoutTraction": 1,
+        "lockedMask": 0,
+        "transmission": true
+      },
+      "expected": {
+        "torques": [
+          143.5000153,
+          266.5,
+          295.0000305,
+          295.0000305
+        ],
+        "boost": [
+          1,
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "name": "awd_axles_disabled",
+      "input": {
+        "frontShare": 0.4099999964,
+        "factor": [
+          0,
+          0,
+          0.75
+        ],
+        "omega": [
+          200,
+          80,
+          80,
+          80
+        ],
+        "contactMask": 15,
+        "torque": 1000,
+        "slip": 0,
+        "lateral": 0,
+        "steer": 0,
+        "forward": 20,
+        "bodyLateral": 0,
+        "burnoutState": 0,
+        "burnoutTraction": 1,
+        "lockedMask": 0,
+        "transmission": true
+      },
+      "expected": {
+        "torques": [
+          157.8357697,
+          157.8357697,
+          342.1642151,
+          342.1642151
+        ],
+        "boost": [
+          1,
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "name": "awd_front_axle_air",
+      "input": {
+        "frontShare": 0.4099999964,
+        "factor": [
+          0.6999999881,
+          0.75,
+          0.75
+        ],
+        "omega": [
+          200,
+          80,
+          80,
+          80
+        ],
+        "contactMask": 12,
+        "torque": 1000,
+        "slip": 0,
+        "lateral": 0,
+        "steer": 0,
+        "forward": 20,
+        "bodyLateral": 0,
+        "burnoutState": 0,
+        "burnoutTraction": 1,
+        "lockedMask": 0,
+        "transmission": true
+      },
+      "expected": {
+        "torques": [
+          0,
+          0,
+          295.0000305,
+          295.0000305
+        ],
+        "boost": [
+          1,
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "name": "awd_rear_axle_air",
+      "input": {
+        "frontShare": 0.4099999964,
+        "factor": [
+          0.6999999881,
+          0.75,
+          0.75
+        ],
+        "omega": [
+          80,
+          80,
+          200,
+          80
+        ],
+        "contactMask": 3,
+        "torque": 1000,
+        "slip": 0,
+        "lateral": 0,
+        "steer": 0,
+        "forward": 20,
+        "bodyLateral": 0,
+        "burnoutState": 0,
+        "burnoutTraction": 1,
+        "lockedMask": 0,
+        "transmission": true
+      },
+      "expected": {
+        "torques": [
+          205,
+          205,
+          0,
+          0
+        ],
+        "boost": [
+          1,
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "name": "awd_one_front_contact",
+      "input": {
+        "frontShare": 0.4099999964,
+        "factor": [
+          0.6999999881,
+          0.75,
+          0.75
+        ],
+        "omega": [
+          200,
+          80,
+          80,
+          80
+        ],
+        "contactMask": 14,
+        "torque": 1000,
+        "slip": 0,
+        "lateral": 0,
+        "steer": 0,
+        "forward": 20,
+        "bodyLateral": 0,
+        "burnoutState": 0,
+        "burnoutTraction": 1,
+        "lockedMask": 0,
+        "transmission": true
+      },
+      "expected": {
+        "torques": [
+          0,
+          157.8357697,
+          342.1642151,
+          342.1642151
+        ],
+        "boost": [
+          1,
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "name": "awd_one_rear_contact",
+      "input": {
+        "frontShare": 0.4099999964,
+        "factor": [
+          0.6999999881,
+          0.75,
+          0.75
+        ],
+        "omega": [
+          80,
+          80,
+          200,
+          80
+        ],
+        "contactMask": 7,
+        "torque": 1000,
+        "slip": 0,
+        "lateral": 0,
+        "steer": 0,
+        "forward": 20,
+        "bodyLateral": 0,
+        "burnoutState": 0,
+        "burnoutTraction": 1,
+        "lockedMask": 0,
+        "transmission": true
+      },
+      "expected": {
+        "torques": [
+          257.033905,
+          257.033905,
+          242.9660492,
+          0
+        ],
+        "boost": [
+          1,
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "name": "awd_all_air",
+      "input": {
+        "frontShare": 0.4099999964,
+        "factor": [
+          0.6999999881,
+          0.75,
+          0.75
+        ],
+        "omega": [
+          200,
+          80,
+          80,
+          80
+        ],
+        "contactMask": 0,
+        "torque": 1000,
+        "slip": 0,
+        "lateral": 0,
+        "steer": 0,
+        "forward": 20,
+        "bodyLateral": 0,
+        "burnoutState": 0,
+        "burnoutTraction": 1,
+        "lockedMask": 0,
+        "transmission": true
+      },
+      "expected": {
+        "torques": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "boost": [
+          1,
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "name": "rwd_nonzero_center",
+      "input": {
+        "frontShare": 0,
+        "factor": [
+          0.8000000119,
+          0.8000000119,
+          0.8000000119
+        ],
+        "omega": [
+          200,
+          80,
+          80,
+          80
+        ],
+        "contactMask": 15,
+        "torque": 1000,
+        "slip": 0,
+        "lateral": 0,
+        "steer": 0,
+        "forward": 20,
+        "bodyLateral": 0,
+        "burnoutState": 0,
+        "burnoutTraction": 1,
+        "lockedMask": 0,
+        "transmission": true
+      },
+      "expected": {
+        "torques": [
+          0,
+          0,
+          500,
+          500
+        ],
+        "boost": [
+          1,
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "name": "fwd_nonzero_center",
+      "input": {
+        "frontShare": 1,
+        "factor": [
+          0.8000000119,
+          0.8000000119,
+          0.8000000119
+        ],
+        "omega": [
+          200,
+          80,
+          80,
+          80
+        ],
+        "contactMask": 15,
+        "torque": 1000,
+        "slip": 0,
+        "lateral": 0,
+        "steer": 0,
+        "forward": 20,
+        "bodyLateral": 0,
+        "burnoutState": 0,
+        "burnoutTraction": 1,
+        "lockedMask": 0,
+        "transmission": true
+      },
+      "expected": {
+        "torques": [
+          328.5714417,
+          671.4285889,
+          0,
+          0
+        ],
+        "boost": [
+          1,
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "name": "awd_reverse",
+      "input": {
+        "frontShare": 0.4099999964,
+        "factor": [
+          0.6999999881,
+          0.75,
+          0.75
+        ],
+        "omega": [
+          -200,
+          -80,
+          -80,
+          -80
+        ],
+        "contactMask": 15,
+        "torque": -1000,
+        "slip": 0,
+        "lateral": 0,
+        "steer": 0,
+        "forward": 20,
+        "bodyLateral": 0,
+        "burnoutState": 0,
+        "burnoutTraction": 1,
+        "lockedMask": 0,
+        "transmission": true
+      },
+      "expected": {
+        "torques": [
+          -110.4850464,
+          -205.1864929,
+          -342.1642151,
+          -342.1642151
+        ],
+        "boost": [
+          1,
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "name": "awd_zero_torque",
+      "input": {
+        "frontShare": 0.4099999964,
+        "factor": [
+          0.6999999881,
+          0.75,
+          0.75
+        ],
+        "omega": [
+          200,
+          80,
+          80,
+          80
+        ],
+        "contactMask": 15,
+        "torque": 0,
+        "slip": 0,
+        "lateral": 0,
+        "steer": 0,
+        "forward": 20,
+        "bodyLateral": 0,
+        "burnoutState": 0,
+        "burnoutTraction": 1,
+        "lockedMask": 0,
+        "transmission": true
+      },
+      "expected": {
+        "torques": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "boost": [
+          1,
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "name": "awd_tc_right",
+      "input": {
+        "frontShare": 0.4099999964,
+        "factor": [
+          0.6999999881,
+          0.75,
+          0.75
+        ],
+        "omega": [
+          200,
+          80,
+          80,
+          80
+        ],
+        "contactMask": 15,
+        "torque": 1000,
+        "slip": 80,
+        "lateral": 40,
+        "steer": 1,
+        "forward": 10,
+        "bodyLateral": 0,
+        "burnoutState": 0,
+        "burnoutTraction": 1,
+        "lockedMask": 0,
+        "transmission": true
+      },
+      "expected": {
+        "torques": [
+          69.04232788,
+          51.25641251,
+          171.0821075,
+          0
+        ],
+        "boost": [
+          1.75019598,
+          1,
+          2,
+          1
+        ]
+      }
+    },
+    {
+      "name": "awd_tc_left",
+      "input": {
+        "frontShare": 0.4099999964,
+        "factor": [
+          0.6999999881,
+          0.75,
+          0.75
+        ],
+        "omega": [
+          80,
+          200,
+          80,
+          80
+        ],
+        "contactMask": 15,
+        "torque": 1000,
+        "slip": 80,
+        "lateral": -40,
+        "steer": -1,
+        "forward": 10,
+        "bodyLateral": 0,
+        "burnoutState": 0,
+        "burnoutTraction": 1,
+        "lockedMask": 0,
+        "transmission": true
+      },
+      "expected": {
+        "torques": [
+          51.25641251,
+          69.04232788,
+          0,
+          171.0821075
+        ],
+        "boost": [
+          1,
+          1.75019598,
+          1,
+          2
+        ]
+      }
+    },
+    {
+      "name": "awd_tc_opposite",
+      "input": {
+        "frontShare": 0.4099999964,
+        "factor": [
+          0.6999999881,
+          0.75,
+          0.75
+        ],
+        "omega": [
+          200,
+          80,
+          80,
+          80
+        ],
+        "contactMask": 15,
+        "torque": 1000,
+        "slip": 80,
+        "lateral": 40,
+        "steer": -1,
+        "forward": 10,
+        "bodyLateral": 0,
+        "burnoutState": 0,
+        "burnoutTraction": 1,
+        "lockedMask": 0,
+        "transmission": true
+      },
+      "expected": {
+        "torques": [
+          110.4850464,
+          205.1864929,
+          342.1642151,
+          342.1642151
+        ],
+        "boost": [
+          1,
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "name": "awd_burnout_bit1",
+      "input": {
+        "frontShare": 0.4099999964,
+        "factor": [
+          0.6999999881,
+          0.75,
+          0.75
+        ],
+        "omega": [
+          200,
+          80,
+          80,
+          80
+        ],
+        "contactMask": 15,
+        "torque": 1000,
+        "slip": 80,
+        "lateral": 40,
+        "steer": 1,
+        "forward": 10,
+        "bodyLateral": 0,
+        "burnoutState": 5,
+        "burnoutTraction": 0.6000000238,
+        "lockedMask": 0,
+        "transmission": true
+      },
+      "expected": {
+        "torques": [
+          94.70146179,
+          220.9700775,
+          205.2985382,
+          479.0299072
+        ],
+        "boost": [
+          1,
+          0.6000000238,
+          1,
+          0.6000000238
+        ]
+      }
+    },
+    {
+      "name": "awd_burnout_bit2",
+      "input": {
+        "frontShare": 0.4099999964,
+        "factor": [
+          0.6999999881,
+          0.75,
+          0.75
+        ],
+        "omega": [
+          200,
+          80,
+          80,
+          80
+        ],
+        "contactMask": 15,
+        "torque": 1000,
+        "slip": 80,
+        "lateral": 40,
+        "steer": 1,
+        "forward": 10,
+        "bodyLateral": 0,
+        "burnoutState": 6,
+        "burnoutTraction": 0.6000000238,
+        "lockedMask": 0,
+        "transmission": true
+      },
+      "expected": {
+        "torques": [
+          220.9700775,
+          94.70146179,
+          479.0299072,
+          205.2985382
+        ],
+        "boost": [
+          0.6000000238,
+          1,
+          0.6000000238,
+          1
+        ]
+      }
+    },
+    {
+      "name": "awd_locked_rear",
+      "input": {
+        "frontShare": 0.4099999964,
+        "factor": [
+          0.6999999881,
+          0.75,
+          0.75
+        ],
+        "omega": [
+          200,
+          80,
+          0,
+          0
+        ],
+        "contactMask": 15,
+        "torque": 1000,
+        "slip": 0,
+        "lateral": 0,
+        "steer": 0,
+        "forward": 20,
+        "bodyLateral": 0,
+        "burnoutState": 0,
+        "burnoutTraction": 1,
+        "lockedMask": 12,
+        "transmission": true
+      },
+      "expected": {
+        "torques": [
+          35.87500381,
+          66.625,
+          0,
+          0
+        ],
+        "boost": [
+          1,
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "name": "awd_opposed_axles",
+      "input": {
+        "frontShare": 0.5,
+        "factor": [
+          0.8000000119,
+          0.8000000119,
+          0.8000000119
+        ],
+        "omega": [
+          100,
+          100,
+          -80,
+          -80
+        ],
+        "contactMask": 15,
+        "torque": 1000,
+        "slip": 0,
+        "lateral": 0,
+        "steer": 0,
+        "forward": 20,
+        "bodyLateral": 0,
+        "burnoutState": 0,
+        "burnoutTraction": 1,
+        "lockedMask": 0,
+        "transmission": true
+      },
+      "expected": {
+        "torques": [
+          500,
+          500,
+          500,
+          500
+        ],
+        "boost": [
+          1,
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "name": "awd_opposed_wheels",
+      "input": {
+        "frontShare": 0.5,
+        "factor": [
+          0.8000000119,
+          0.8000000119,
+          0.8000000119
+        ],
+        "omega": [
+          100,
+          -80,
+          80,
+          80
+        ],
+        "contactMask": 15,
+        "torque": 1000,
+        "slip": 0,
+        "lateral": 0,
+        "steer": 0,
+        "forward": 20,
+        "bodyLateral": 0,
+        "burnoutState": 0,
+        "burnoutTraction": 1,
+        "lockedMask": 0,
+        "transmission": true
+      },
+      "expected": {
+        "torques": [
+          811.111084,
+          811.111084,
+          94.44443512,
+          94.44443512
+        ],
+        "boost": [
+          1,
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "name": "awd_no_transmission",
+      "input": {
+        "frontShare": 0.5,
+        "factor": [
+          0.8000000119,
+          0.8000000119,
+          0.8000000119
+        ],
+        "omega": [
+          100,
+          100,
+          80,
+          80
+        ],
+        "contactMask": 15,
+        "torque": 1000,
+        "slip": 0,
+        "lateral": 0,
+        "steer": 0,
+        "forward": 20,
+        "bodyLateral": 0,
+        "burnoutState": 0,
+        "burnoutTraction": 1,
+        "lockedMask": 0,
+        "transmission": false
+      },
+      "expected": {
+        "torques": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "boost": [
+          1,
+          1,
+          1,
+          1
+        ]
+      }
+    }
+  ],
+  "provenance": {
+    "source": "work\\mw-research\\prostreet-port\\decomp\\behaviors\\SuspensionRacer.cpp",
+    "sourceSha256": "ed051005245538ec0ed7a9bcf83c128b71aa208ac95b57b2e52442a868a18a52",
+    "headerSha256": "7172851c00a988f0cf610b4aba255a37f15910cf49b9d0f062bd5402207e5712",
+    "commit": "9c6e26194b531f68f66fcc94a770ee7f89f2682e",
+    "method": "Unedited actual Differential::CalcSplit and DoDriveForces methods, original Differential struct. ABI environment stubs; actual brake-lock gate and elementary float math.",
+    "compiler": "g++ -std=c++20 -O0 -ffp-contract=off",
+    "precision": "float32",
+    "scope": "isolated upstream port, no assertion of retail executable equivalence"
+  },
+  "originalMWData": {
+    "bmwm3gtr": {
+      "differential": [
+        0.8,
+        0.8,
+        0.0
+      ],
+      "frontShare": 0.0,
+      "source": "work\\mw-research\\prostreet-port\\CarDataDump\\orig_mw_full\\bmwm3gtr.conf",
+      "sha256": "c96869e581971c1dd4206e48bce323e572b9a03dbb14cc0b9717237ea8c13f41"
+    },
+    "bmwm3gtr_top": {
+      "differential": [
+        0.8,
+        0.8,
+        0.0
+      ],
+      "frontShare": 0.0,
+      "source": "work\\mw-research\\prostreet-port\\CarDataDump\\orig_mw_full\\bmwm3gtr_top.conf",
+      "sha256": "c96869e581971c1dd4206e48bce323e572b9a03dbb14cc0b9717237ea8c13f41"
+    },
+    "gti": {
+      "differential": [
+        0.8,
+        0.8,
+        0.0
+      ],
+      "frontShare": 1.0,
+      "source": "work\\mw-research\\prostreet-port\\CarDataDump\\orig_mw_full\\gti.conf",
+      "sha256": "867bca02b5854037c93c75f932ebbcb226ee5854373f3fcbbfbd88e51f417cdd"
+    },
+    "gti_top": {
+      "differential": [
+        0.7,
+        0.7,
+        0.0
+      ],
+      "frontShare": 1.0,
+      "source": "work\\mw-research\\prostreet-port\\CarDataDump\\orig_mw_full\\gti_top.conf",
+      "sha256": "25159e3efb026d9c0ad0092d0d579a08edbb98f21d768ce331425c08c47d7b1e"
+    },
+    "imprezawrx": {
+      "differential": [
+        0.7,
+        0.75,
+        0.75
+      ],
+      "frontShare": 0.5,
+      "source": "work\\mw-research\\prostreet-port\\CarDataDump\\orig_mw_full\\imprezawrx.conf",
+      "sha256": "7bca7161d5bc02931d9dd89431023f3a4514a9a9c83de2953a53965c1e155b7b"
+    },
+    "imprezawrx_top": {
+      "differential": [
+        0.7,
+        0.75,
+        0.75
+      ],
+      "frontShare": 0.5,
+      "source": "work\\mw-research\\prostreet-port\\CarDataDump\\orig_mw_full\\imprezawrx_top.conf",
+      "sha256": "9cc0c568a20efbde89f5f93b108fb379eef956726b68544296a98c5a8cedb1f9"
+    },
+    "lancerevo8": {
+      "differential": [
+        0.7,
+        0.7,
+        0.7
+      ],
+      "frontShare": 0.5,
+      "source": "work\\mw-research\\prostreet-port\\CarDataDump\\orig_mw_full\\lancerevo8.conf",
+      "sha256": "9e7784b19daa2d49900ff7921b2edb7525a393225e650e1b8a06f12475243a44"
+    },
+    "lancerevo8_top": {
+      "differential": [
+        0.75,
+        0.75,
+        0.7
+      ],
+      "frontShare": 0.5,
+      "source": "work\\mw-research\\prostreet-port\\CarDataDump\\orig_mw_full\\lancerevo8_top.conf",
+      "sha256": "591063c96b408bd34ca9684a00ce778498f779a61a4fbc506a2c018fc545bf35"
+    },
+    "gallardo": {
+      "differential": [
+        0.8,
+        0.8,
+        0.8
+      ],
+      "frontShare": 0.5,
+      "source": "work\\mw-research\\prostreet-port\\CarDataDump\\orig_mw_full\\gallardo.conf",
+      "sha256": "64bfe8d9f8bb7286c836e5c6a12ac6416663acd6a96e613f8ed44f4f7011bf2b"
+    },
+    "gallardo_top": {
+      "differential": [
+        0.65,
+        0.65,
+        0.8
+      ],
+      "frontShare": 0.475,
+      "source": "work\\mw-research\\prostreet-port\\CarDataDump\\orig_mw_full\\gallardo_top.conf",
+      "sha256": "b2a50abfa9e74e9b928e6b02043c8ef78b85392ab6d15f69d917914d6710ce8a"
+    }
+  }
+}

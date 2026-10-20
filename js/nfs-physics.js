@@ -675,10 +675,12 @@
 
         const engineTorqueScale = (1 + engineLvl * 0.085) * health * junkmanAccelMult * ((mergedOverrides.accel || base.accelRating) / Math.max(1, base.accelRating));
         const handlingGripScale = (0.85 + (effectiveHandlingRating / 10) * 0.55) + gripBonus;
-        const resolvedDrivetrain = mergedOverrides.drivetrain || base.drivetrain;
-        const resolvedTorqueSplit = mergedOverrides.torqueSplit !== undefined
-            ? clamp(mergedOverrides.torqueSplit, 0, 1)
-            : ((resolvedDrivetrain === 'FWD') ? 1.0 : (resolvedDrivetrain === 'RWD' ? 0.0 : base.torqueSplit));
+        const requestedDrivetrain = String(mergedOverrides.drivetrain || base.drivetrain).toUpperCase();
+        const splitOverride=Number(mergedOverrides.torqueSplit);
+        const resolvedTorqueSplit = mergedOverrides.torqueSplit!==undefined&&Number.isFinite(splitOverride)
+            ? clamp(splitOverride,0,1)
+            : requestedDrivetrain==='FWD'?1:requestedDrivetrain==='RWD'?0:base.torqueSplit>0&&base.torqueSplit<1?base.torqueSplit:.5;
+        const resolvedDrivetrain=resolvedTorqueSplit===1?'FWD':resolvedTorqueSplit===0?'RWD':'AWD';
         const effectiveBaseTorqueNm = base.baseTorqueNm * engineTorqueScale;
         const effectiveFinalDrive = Number((base.finalDrive * (1 - gearRatioBias * 0.045)).toFixed(3));
         const firstGearRatio = Math.abs(base.gearRatios[2] || 3.4);
@@ -1349,8 +1351,9 @@
             // The source drive controller uses the LAST tire update and burnout
             // state, before current suspension/steering/drift tuning.
             const mwDrive=this.mwTires?this.mwKernel.driveControl({torque:totalWheelDriveTorque,frontShare:p.torqueSplit,
-                wheels:Object.values(this.mwTires),burnout:this.mwBurnout,steer:rawSteer,forward:s.vForward,lateral:s.vLateral}):null;
-            if(mwDrive)s.tractionControl=mwDrive;
+                factor:this.mwSpec.differential,conserveTorque:true,wheels:Object.values(this.mwTires),burnout:this.mwBurnout,steer:rawSteer,forward:s.vForward,lateral:s.vLateral}):null;
+            if(mwDrive){s.tractionControl=mwDrive;s.driveline={type:p.drivetrain,nominalFrontShare:p.torqueSplit,frontShare:mwDrive.centerSplit[0],rearShare:mwDrive.centerSplit[1],
+                torques:mwDrive.torques.slice(),factors:this.mwSpec.differential.slice(),normalized:mwDrive.normalized};}
 
             // 8. Dynamic 4-Wheel Weight Transfer & Suspension (SuspensionRacer::DoWheelForces)
             // Aerodynamic downforce increases tire vertical load at high speed

@@ -7,6 +7,7 @@
  * Nitrous, aerodynamics and handbrake integration: docs/MW_NOS_AERO.md.
  * Gear selection, clutch scheduling and RPM smoothing: docs/MW_GEARBOX.md.
  * Angular engine/clutch solver and induction: docs/MW_ENGINE_CLUTCH.md.
+ * Center differential and wheel rendering: docs/MW_DRIVELINE_WHEELS.md.
  * This partial adapter does not claim Xbox retail equivalence.
  */
 (function (root, factory) {
@@ -418,7 +419,7 @@
     function differential({omega=[0,0],contact=[true,true],bias=.5,factor=.8,locked=false}={}){
         if(!contact[0]||!contact[1]||locked||factor<=0)return[bias,1-bias];
         const a=omega[0]*(1-bias),b=omega[1]*bias,sum=Math.abs(a+b);
-        if(sum<1e-7)return[bias,1-bias];
+        if(sum<=1e-6)return[bias,1-bias];
         return[clamp((1-factor)*bias+factor*Math.abs(b)/sum,0,1),clamp((1-factor)*(1-bias)+factor*Math.abs(a)/sum,0,1)];
     }
     function graph(points,x){
@@ -447,10 +448,14 @@
     }
     // DoDriveForces consumes previous-frame tire telemetry and burnout state.
     // It limits the slipping side's torque; it does not filter steering input.
-    function driveControl({torque=0,frontShare=0,wheels=[],burnout={state:0,traction:1},steer=0,forward=0,lateral=0,factor=[.8,.8]}={}){
-        const output={torques:[0,0,0,0],boost:[1,1,1,1],control:[1,1,1,1],splits:[.5,.5,.5,.5],active:false};
+    function driveControl({torque=0,frontShare=0,wheels=[],burnout={state:0,traction:1},steer=0,forward=0,lateral=0,factor=[.8,.8,0],conserveTorque=false}={}){
+        const output={torques:[0,0,0,0],boost:[1,1,1,1],control:[1,1,1,1],splits:[.5,.5,.5,.5],active:false,centerSplit:[frontShare,1-frontShare],normalized:false};
+        const conserve=split=>{const sum=split[0]+split[1];if(conserveTorque&&sum>1+1e-6){output.normalized=true;return split.map(v=>v/sum);}return split;};
+        if(factor[2]>0&&wheels.length===4)output.centerSplit=conserve(differential({bias:frontShare,factor:factor[2],
+            omega:[wheels[0].omega+wheels[1].omega,wheels[2].omega+wheels[3].omega],
+            contact:[wheels[0].load>0||wheels[1].load>0,wheels[2].load>0||wheels[3].load>0]}));
         for(let axle=0;axle<2;axle++){
-            const share=axle===0?frontShare:1-frontShare,axleTorque=torque*share;
+            const share=output.centerSplit[axle],axleTorque=torque*share;
             if(Math.abs(axleTorque)<1e-7)continue;
             const pair=wheels.slice(axle*2,axle*2+2);
             if(pair.length<2)continue;
@@ -476,7 +481,7 @@
                     }
                 }
             }
-            const split=differential({omega:pair.map(t=>t.omega),contact:pair.map(t=>t.load>0),bias,locked,factor:factor[axle]});
+            const split=conserve(differential({omega:pair.map(t=>t.omega),contact:pair.map(t=>t.load>0),bias,locked,factor:factor[axle]}));
             for(let i=0;i<2;i++){
                 const index=axle*2+i;output.splits[index]=split[i];
                 if(pair[i].load>0)output.torques[index]=axleTorque*split[i]*output.control[index];
@@ -607,7 +612,8 @@
         const engine = { idle: profile.idleRpm, redline: profile.redlineRpm, maxRpm: profile.maxRpm,
             torque: REFERENCE.torque.map(value => value / 283 * profile.baseTorqueNm) };
         const inductionBoost=['turbo','supercharger'].includes(profile.inductionType)?profile.inductionBoost:0;
-        return { engine, gears:profile.gearRatios.map(Math.abs),shifts: shiftPoints(engine, profile.gearRatios), shiftTime: .25,shiftSpeed:.25,
+        const differential=profile.id==='wrx'?[.7,.75,.75]:profile.id==='evo8_earl'?[.7,.7,.7]:profile.id==='gallardo_ming'?[.8,.8,.8]:[.8,.8,profile.drivetrain==='AWD'?.75:0];
+        return { engine, differential,gears:profile.gearRatios.map(Math.abs),shifts: shiftPoints(engine, profile.gearRatios), shiftTime: .25,shiftSpeed:.25,
             powertrain:{flywheelMass:10,torqueConverter:.2,frontShare:profile.torqueSplit,clutchSlip:.8,finalDrive:profile.finalDrive,efficiencies:profile.gearRatios.map(()=>.92),braking:[.7,.8,.9]},
             induction:{idle:profile.idleRpm,redline:profile.redlineRpm,spoolRpm:profile.inductionType==='turbo'?(profile.spoolRpmRatio||.34):0,
                 highBoost:inductionBoost,lowBoost:inductionBoost,
