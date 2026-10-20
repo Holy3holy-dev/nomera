@@ -2,7 +2,7 @@
  * MW vector contact/jump algorithms, adapted from pinned ProStreetMWPhysics
  * 9c6e261 (gaycoderprincess/Brawltendo). Terrain and body integration are the
  * NOMERA bridge, not recovered WWorldPos/IRigidBody. See MW_3D_CONTACT.md. */
-(function(root,factory){const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;else root.NomeraMWContact=api;})(typeof globalThis!=='undefined'?globalThis:this,function(){
+(function(root,factory){const api=factory(typeof module==='object'&&module.exports?require('./authors-rigid-body.js'):root.NomeraRigidBody);if(typeof module==='object'&&module.exports)module.exports=api;else root.NomeraMWContact=api;})(typeof globalThis!=='undefined'?globalThis:this,function(R){
  'use strict';
  const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),ramp=(v,a,b)=>clamp((v-a)/(b-a),0,1);
  const add=(a,b)=>a.map((v,i)=>v+b[i]),sub=(a,b)=>a.map((v,i)=>v-b[i]),scale=(a,s)=>a.map(v=>v*s),dot=(a,b)=>a.reduce((s,v,i)=>s+v*b[i],0);
@@ -60,10 +60,10 @@
    body.pitch=Math.atan2(n[0]*Math.sin(h)+n[2]*Math.cos(h),Math.max(.01,n[1]));
    body.roll=-Math.atan2(n[0]*Math.cos(h)-n[2]*Math.sin(h),Math.max(.01,n[1]));
   }else body.y=pose.y||0;
-  body.jumpTime=0;body.jumpAltitude=0;body.grounded=4;body.landings=0;
+  body.jumpTime=0;body.jumpAltitude=0;body.grounded=4;body.landings=0;body.orientation=R.quaternion(pose.heading,body.pitch,body.roll);body.orientationAngles={heading:pose.heading,pitch:body.pitch,roll:body.roll};
  }
  function begin(body,dt,pose,sample,springForce){
-  const p=body.profile,m=basis(pose.heading,body.pitch,body.roll);m.position=[pose.x,body.y,pose.z];
+  const p=body.profile,m=R.syncOrientation(body,pose);m.position=[pose.x,body.y,pose.z];
   body.updateCenterOfGravity(body.grounded);
   const cog=rotate([0,body.cgHeight,body.cgZ],m),angular=rotate([body.pitchRate,pose.yawRate,body.rollRate],m),velocity=[pose.vx,body.vy,pose.vz],previous=body.wheels.map(w=>w.compression);
   let touching=0,bottomDelta=0;
@@ -81,7 +81,7 @@
   const landed=touching>0&&body.grounded===0;
   if(landed){pose.yawRate*=.5;body.rollRate*=.5;body.landings++;}
   body.grounded=touching;
-  return{matrix:m,worldCG:cog,touching,bottomDelta,landed,ground:ground(sample,pose.x,pose.z)};
+  return{matrix:m,worldCG:cog,angularStart:[body.pitchRate,pose.yawRate,body.rollRate],touching,bottomDelta,landed,ground:ground(sample,pose.x,pose.z)};
  }
  function resolve(body,context,wheel,fx,fy,dt){
   const q=wheel.contact3D;
@@ -93,20 +93,21 @@
   const p=body.profile,mass=p.massKg,inertia=body.massProperties.inertia;
   let force=[0,-mass*9.81-downforce,0],torque=cross(rotate([0,0,aeroCenterZ],context.matrix),[0,-downforce,0]);
   for(const w of body.wheels){force=add(force,w.contact3D.force);torque=add(torque,w.contact3D.torque);}
-  const j=jump({dt,mass,speed:pose.speedMps,vy:body.vy,normal:context.ground.normal,altitude:Math.max(0,body.y-context.ground.height),touching:context.touching,
+  const j=jump({dt,mass,speed:pose.speedMps,vy:body.vy,normal:context.ground.normal,altitude:Math.max(0,body.y-context.ground.height),touching:context.touching,groundContact:!!body.chassisContact,
    matrix:context.matrix,angularVelocity:[body.pitchRate,pose.yawRate,body.rollRate],inertia,jumpTime:body.jumpTime,jumpAltitude:body.jumpAltitude});
   body.jumpTime=j.jumpTime;body.jumpAltitude=j.jumpAltitude;force=add(force,j.force);torque=add(torque,j.torque);
   body.vy+=force[1]/mass*dt;body.y+=body.vy*dt;
-  // Body-space Euler coupling, using the same diagonal tensor as yaw/collisions.
-  const omega=[body.pitchRate,pose.yawRate,body.rollRate],moment=[dot(torque,context.matrix.right)+dragPitchMoment,0,dot(torque,context.matrix.forward)+dragRollMoment];
-  const momentum=omega.map((v,i)=>v*inertia[i]),gyro=cross(omega,momentum);
-  body.pitchRate+=(moment[0]-gyro[0])/inertia[0]*dt;
-  body.rollRate+=(moment[2]-gyro[2])/inertia[2]*dt;
-  body.pitch=clamp(body.pitch+body.pitchRate*dt,-1.3,1.3);body.roll=clamp(body.roll+body.rollRate*dt,-1.3,1.3);
-  const newCG=rotate([0,body.cgHeight,body.cgZ],basis(pose.heading,body.pitch,body.roll));
+  // Advance world angular momentum, then integrate a midpoint quaternion.
+  // The host's yaw delta includes its steering/handbrake handling bridge.
+  const yawMoment=(pose.yawRate-context.angularStart[1])*inertia[1]/dt;
+  const moment=[dot(torque,context.matrix.right)+dragPitchMoment,yawMoment,dot(torque,context.matrix.forward)+dragRollMoment];
+  const orientation=R.stepAngular(body,pose,moment,dt,context.angularStart);
+  const newCG=rotate([0,body.cgHeight,body.cgZ],orientation);
   pose.x+=context.worldCG[0]-newCG[0];pose.z+=context.worldCG[2]-newCG[2];body.y+=context.worldCG[1]-newCG[1];
   // MW lifts world Y at bottom-out; velocity is resolved by the spring forces.
   body.y+=context.bottomDelta;
+  const sn=Math.sin(pose.heading),cs=Math.cos(pose.heading);pose.vForward=pose.vx*sn+pose.vz*cs;pose.vLateral=pose.vx*cs-pose.vz*sn;
+  pose.orientation=body.orientation.slice();
   body.telemetry={grounded:context.touching,airborne:!context.touching,landed:context.landed,landings:body.landings,flightTime:body.jumpTime,
    verticalVelocity:body.vy,centerOfGravity:[0,body.cgHeight,body.cgZ],inertia:inertia.slice(),massSource:body.massProperties.source,force,torque,bottomDelta:context.bottomDelta,normal:context.ground.normal,wheels:Object.fromEntries(body.wheels.map(w=>[w.key,{normal:w.contact3D.ground.normal,surface:w.contact3D.ground.surface,point:w.contact3D.point,velocity:w.contact3D.velocity,load:w.load,contact:w.contact,compression:w.compression}]))};
  }

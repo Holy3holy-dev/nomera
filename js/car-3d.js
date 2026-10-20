@@ -11930,6 +11930,7 @@
                 const archBeam = new THREE.Mesh(this.archBeamGeo, this.guardrailMat);
                 archBeam.position.set(0, 8.9, L * 0.3);
                 archGroup.add(archBeam);
+                archBeam.userData.solidBody=true;
                 sceneryGroup.add(archGroup);
             }
 
@@ -14078,6 +14079,7 @@
         }
 
         buildCockpitRig() {
+            if(window.NOMERA_AUTHORS_PREVIEW&&window.NomeraDriverCamera)return window.NomeraDriverCamera.prepare(this,this.playerCar);
             const THREE = this.THREE;
             if (!THREE || !this.playerCar) return;
             if (this.cockpitGroup && this.cockpitGroup.parent) {
@@ -14386,6 +14388,7 @@
         }
 
         syncCockpitCarVisibility(isCockpit) {
+            if(window.NOMERA_AUTHORS_PREVIEW&&window.NomeraDriverCamera)return window.NomeraDriverCamera.sync(this,isCockpit);
             if (!this.playerCar) return;
             if (this.cockpitGroup) {
                 this.cockpitGroup.visible = !!isCockpit;
@@ -14420,6 +14423,7 @@
 
         stop() {
             this.isRunning = false;
+            this.authorsRecoverButton?.remove();this.authorsRecoverButton=null;
             if (this.animFrameId) {
                 cancelAnimationFrame(this.animFrameId);
                 this.animFrameId = null;
@@ -14653,31 +14657,20 @@
             const isHandbrake = !!keys.drift;
             if (this.mwLongitudinal) {
                 const physical = this.mwLongitudinal;
-                // Import collision speed losses and host-owned consumables.
-                // Project road-coordinate velocity into the same four-wheel
-                // chassis used by the circuit. Neutral steering gently aligns
-                // the chassis with the highway; traffic/road curvature stay here.
+                // MW owns its pose and velocity. No road-axis heading magnet,
+                // render-rate reintegration, or legacy lateral-speed governor.
                 const roadInput=(keys.left?1:0)-(keys.right?1:0);
-                // Road-coordinate bridge: allow a deeper body angle during a
-                // physical drift; normal lane steering keeps its existing limit.
-                const headingLimit=(isHandbrake||physical.state.driftValue>.18) ? .65 : .28;
-                physical.state.heading=Math.max(-headingLimit,Math.min(headingLimit,physical.state.heading));
-                if(!roadInput&&!isHandbrake)physical.state.heading*=Math.exp(-8*dt);
-                const roadH=physical.state.heading,roadForward=Math.max(0,state.speed/3.6);
-                physical.state.vForward=roadForward*Math.cos(roadH)+state.vx*Math.sin(roadH);
-                physical.state.vLateral=state.vx*Math.cos(roadH)-roadForward*Math.sin(roadH);
-                physical.state.x=state.x;physical.state.z=state.z;
-                physical.state.vx=state.vx;physical.state.vz=roadForward;
                 physical.state.fuelCurrent = state.fuelCurrent;
                 physical.state.nitroLevel = state.nitroLevel;
                 physical.state.slipstreamFactor = bestSlipstream;
                 physical.setWeather(this.currentActiveWeather || 'night');
                 const oldSpeed = state.speed;
+                physical.collisionPreviousPose={x:physical.x,y:physical.y,z:physical.z};
                 physical.update(dt, { gas: gasActive, brake: keys.brake, steer:roadInput,handbrake: isHandbrake, nitro: keys.nitro });
                 // Highway has no reverse lane traversal; circuit retains reverse.
-                physical.state.vForward = Math.max(0, physical.state.vForward);
+                // Preserve the integrated world velocity through yaw/roll.
                 physical.state.gear = Math.max(1, physical.state.gear);
-                state.speed = Math.max(0,physical.state.vz) * 3.6;
+                state.speed = Math.max(0,physical.state.vz) * 3.6;state.x=physical.state.x;state.z=physical.state.z;
                 state.nitroLevel=physical.state.nitroLevel;
                 state.isNitroActive=physical.state.isNitroActive;
                 state.nitroDepleted=physical.state.nitroDepleted;
@@ -14876,7 +14869,7 @@
             // 3. FORWARD DISPLACEMENT (DISTANCE), BIOME SECTORS & RACE INCOME
             const forwardSpeedMps = state.speed / 3.6;
             const dz = forwardSpeedMps * dt;
-            state.z += dz;
+            if(!this.mwLongitudinal)state.z += dz;
             state.distanceKm = state.z / 1000;
 
             // Dynamic Highway Biome Transitions (Highway -> Lefortovo Tunnel -> Cable-Stayed Bridge)
@@ -15062,7 +15055,7 @@
 
             if (this.mwLongitudinal) {
                 const previousVx=state.vx;
-                state.vx=Math.max(-lateralMax,Math.min(lateralMax,this.mwLongitudinal.state.vx));
+                state.vx=this.mwLongitudinal.state.vx;
                 state.authorsLateralAccel=(state.vx-previousVx)/Math.max(.0001,dt);
             } else if (authorsDriving && !isDriftingNow && !isHandbrake) {
                 state.vx = authorsDriving.lateral(state.vx, steerInput, state.speed, lateralMax, effectiveSteerAuthority, weatherGrip, dt);
@@ -15082,7 +15075,7 @@
             }
 
             // High-speed aerodynamic stabilization: dampens high-speed lateral twitchiness above 200 km/h
-            if (highSpeedDownforceStabilization > 0 && isSteeringNeutral && !isHandbrake) {
+            if (!this.mwLongitudinal && highSpeedDownforceStabilization > 0 && isSteeringNeutral && !isHandbrake) {
                 state.vx *= Math.max(0, 1 - highSpeedDownforceStabilization * 4.2 * dt);
                 if (Math.abs(state.vx) < 0.01) state.vx = 0;
             }
@@ -15128,10 +15121,10 @@
             state.curveTimer = this.curveTimer;
 
             // Apply centrifugal push in drift mode when actively steering or drifting
-            if (isDriftMode && Math.abs(this.roadCurve) > 0.15 && (steerInput !== 0 || isDriftingNow)) {
+            if (!this.mwLongitudinal && isDriftMode && Math.abs(this.roadCurve) > 0.15 && (steerInput !== 0 || isDriftingNow)) {
                 const centrifugal3D = -this.roadCurve * (state.speed / 105) * 8.2 * dt;
                 state.vx += centrifugal3D;
-            } else if (this.isNfsCircuit && Math.abs(this.roadCurve) > 0.25 && state.speed > 90 && !state.isSpeedbreakerActive) {
+            } else if (!this.mwLongitudinal && this.isNfsCircuit && Math.abs(this.roadCurve) > 0.25 && state.speed > 90 && !state.isSpeedbreakerActive) {
                 const circuitCentrifugal = -this.roadCurve * (state.speed / 195) * 2.4 * dt;
                 state.vx += circuitCentrifugal;
             }
@@ -15200,14 +15193,15 @@
             }
 
             // Apply lateral movement
-            state.x += state.vx * dt;
+            if(!this.mwLongitudinal)state.x += state.vx * dt;
+            else state.yawAngle=this.mwLongitudinal.heading;
 
             // 6. GUARDRAIL & COLLISION PHYSICS (Tangential Sliding & Velocity Deflection)
             const roadLimit = 8.2;
-            if (this.mwLongitudinal&&(state.x < -roadLimit || state.x > roadLimit)) {
+            if (this.mwLongitudinal&&(Math.abs(state.x)+this.mwLongitudinal.profile.wheelbase*.85>9.1)) {
                 const physical=this.mwLongitudinal,wallSide=state.x>0?1:-1;
                 physical.state.x=state.x;physical.state.vx=state.vx;physical.state.vz=state.speed/3.6;
-                const contact=physical.resolveWallCollision({normalX:-wallSide,normalZ:0,penetration:Math.abs(state.x)-roadLimit,restitution:.18,friction:.1,duration:dt,wallHeight:.7,groundHeight:window.NomeraRoadSurface?window.NomeraRoadSurface.highway(state.x,state.z).height:0});
+                const contact=physical.resolveWallCollision({normalX:-wallSide,normalZ:0,penetration:Math.max(0,Math.abs(state.x)-9.1),planePoint:[wallSide*9.1,0,state.z],restitution:.18,friction:.18,duration:dt,wallHeight:.7,groundHeight:window.NomeraRoadSurface?window.NomeraRoadSurface.highway(state.x,state.z).height:0});
                 state.x=physical.x;state.vx=physical.state.vx;state.speed=Math.max(0,physical.state.vz*3.6);
                 state.damageTaken=Math.min(100,(state.damageTaken||0)+contact.damageAdded);
                 if(contact.closingSpeedMps>1){
@@ -15401,6 +15395,7 @@
                 }
             }
 
+            if(this.mwLongitudinal?.mwKernel.RigidBody){const p=this.mwLongitudinal;p.mwKernel.RigidBody.meshContacts(this,p);state.x=p.x;state.z=p.z;state.vx=p.state.vx;state.speed=Math.max(0,p.state.vz*3.6);}
             // 6. UPDATE PLAYER CAR 3D MESH & 1ST-PERSON COCKPIT RIG
             if (this.playerCar) {
                 this.playerCar.position.set(state.x, (state.downforceY || 0) + engineTremorY + (state.suspensionY || 0), state.z);
@@ -15409,7 +15404,7 @@
                     const body=this.mwLongitudinal.state;
                     this.playerCar.position.y=body.y+engineTremorY;
                     this.playerCar.rotation.order='YZX';
-                    this.playerCar.rotation.set(body.pitch,state.yawAngle,body.roll+engineTremorRoll);
+                    if(body.orientation)this.playerCar.quaternion.fromArray(body.orientation);else this.playerCar.rotation.set(body.pitch,state.yawAngle,body.roll+engineTremorRoll);
                 }
 
                 // Rotate dedicated procedural wheel spinners around local hub axis
@@ -15753,7 +15748,14 @@
 
             this.trafficCars.forEach((car, idx) => {
                 const u = car.userData;
+                u.collisionPreviousPose={x:car.position.x,y:car.position.y,z:car.position.z};
 
+                if(u.contactBody&&this.mwLongitudinal){
+                    if(Math.abs(car.position.z-u.contactBody.state.z)>30){u.contactBody=null;}
+                    else{const R=this.mwLongitudinal.mwKernel.RigidBody;R.stepFree(u.contactBody,dt,(x,z)=>window.NomeraRoadSurface.highway(x,z));car.position.set(u.contactBody.state.x,u.contactBody.suspension.y,u.contactBody.state.z);car.quaternion.fromArray(u.contactBody.suspension.orientation);u.speed=u.contactBody.state.vz*3.6;
+                        if(u.isWrecked){u.wreckTimer=(u.wreckTimer||2.5)-dt;if(u.wreckTimer<=0){u.contactBody=null;car.position.z=state.z-150;u.isWrecked=false;}return;}
+                    }
+                }
                 // 0. Handle wrecked / spinning police cars (after successful player takedown)
                 if (u.isWrecked) {
                     u.wreckTimer = (u.wreckTimer || 2.5) - dt;
@@ -15870,7 +15872,7 @@
                 // 1. Move traffic car forward along Z and apply lateral deflection impulses
                 const prevDz = (typeof u.prevDz === 'number') ? u.prevDz : (car.position.z - state.z);
                 const tSpeedMps = u.speed / 3.6;
-                car.position.z += tSpeedMps * dt;
+                if(!u.contactBody)car.position.z += tSpeedMps * dt;
                 if (Math.abs(u.deflectVx || 0) > 0.05) {
                     car.position.x += u.deflectVx * dt;
                     u.deflectVx -= u.deflectVx * Math.min(1.0, 5.0 * dt);
@@ -16071,13 +16073,16 @@
                     }
                 }
 
+                if(u.contactBody){car.position.set(u.contactBody.state.x,u.contactBody.suspension.y,u.contactBody.state.z);car.quaternion.fromArray(u.contactBody.suspension.orientation);}
                 // 3. Collision Detection with Player Car, Takedown, and Near-Miss «Шашки впритирку»
                 const speedDiff = state.speed - u.speed;
                 const trafficHalfW = car.userData.halfWidth || 0.95;
                 const trafficHalfL = car.userData.halfLength || 2.2;
                 const lateralClearance = trafficHalfW + 0.55;
                 const longitudinalClearance = trafficHalfL + 1.6;
-                const isColliding = (dx < lateralClearance && Math.abs(dz) < longitudinalClearance&&Math.abs((this.mwLongitudinal?.state.y||0)-car.position.y)<1.25);
+                let contact3D=null,contactOwner=null;
+                if(this.mwLongitudinal?.mwKernel.RigidBody&&dx<7&&Math.abs(dz)<14){const R=this.mwLongitudinal.mwKernel.RigidBody,truck=u.type==='truck'||u.type==='kamaz';contactOwner=u.contactBody||R.createBody({position:car.position.toArray(),velocity:[u.deflectVx||0,0,u.speed/3.6],orientation:car.quaternion.toArray(),half:[trafficHalfW,truck?1.4:.7,trafficHalfL],mass:truck?6500:1500});contactOwner.collisionPreviousPose=u.collisionPreviousPose;contact3D=this.mwLongitudinal.getVehicleContact(contactOwner);}
+                const isColliding = this.mwLongitudinal?.mwKernel.RigidBody?!!contact3D:(dx < lateralClearance && Math.abs(dz) < longitudinalClearance&&Math.abs((this.mwLongitudinal?.state.y||0)-car.position.y)<1.25);
 
                 // 3a. Near-Miss «Шашки впритирку» & Overtake Detection (when NOT colliding)
                 if (!isColliding) {
@@ -16135,11 +16140,13 @@
 
                 // 4. Collision Resolution (Takedown, Rear-End Impact, or Sideswipe)
                 if (isColliding) {
+                    let spatialImpact=null;const impactSpeed=state.speed;
+                    if(contact3D){u.contactBody=contactOwner;spatialImpact=this.mwLongitudinal._resolve3DContact(contactOwner,[contact3D],{restitution:.18,friction:.3});const p=this.mwLongitudinal;state.x=p.x;state.z=p.z;state.vx=p.state.vx;state.speed=Math.max(0,p.state.vz*3.6);car.position.set(contactOwner.state.x,contactOwner.suspension.y,contactOwner.state.z);u.speed=contactOwner.state.vz*3.6;}
                     // 💥 TAKEDOWN MECHANIC FOR POLICE: Player CAN ram & knock out pursuit cars!
                     if (u.type === 'police' && !u.isWrecked) {
                         const isNitroActive = !!(state.isNitroActive || state.nitroActive || (this.keys && this.keys.nitro));
                         const isSpeedbreakerRam = !!state.isSpeedbreakerActive;
-                        const isFastRam = state.speed > 80;
+                        const isFastRam = impactSpeed > 80;
                         const isHardSideHit = Math.abs(state.vx) > 0.35 || (this.keys && (this.keys.left || this.keys.right));
                         const isOvertakeRam = (state.speed - u.speed) > 5;
                         const isDirectRam = dz > -1.0 && state.speed > 60;
@@ -16188,6 +16195,7 @@
                         return;
                     }
 
+                    if(spatialImpact){state.damageTaken=Math.min(100,state.damageTaken+spatialImpact.damageAdded);state.invulnerableTimer=.2;state.shakeAmount=Math.min(.7,spatialImpact.impactSeverity);if(spatialImpact.closingSpeedMps>2){this.spawnSparks(state.x,.6,state.z,12);this.options.onSound?.('crash');}return;}
                     const playerHalfW = 0.95;
                     const playerHalfL = 2.2;
                     const isAlongsideSideswipe = dx > (playerHalfW + trafficHalfW) * 0.55 && Math.abs(dz) < (playerHalfL + trafficHalfL) * 0.80;
@@ -16327,6 +16335,7 @@
                 // 5. Recycle traffic when it falls behind player
                 const recycleBehindZ = (u.type === 'police' && state.wantedStars > 0) ? (state.z - 75) : (state.z - 35);
                 if (car.position.z < recycleBehindZ) {
+                    u.contactBody=null;
                     if (u.type === 'police' && state.wantedStars > 0) {
                         // Outrun police car despawns behind and respawns after cooldown
                         car.position.y = -999;
@@ -16372,38 +16381,8 @@
             // --- Pursuit, Escape & Busted Resolution ---
             state.nearestPoliceDist = minPoliceDist;
 
-            // 5-Star Helicopter spotlight
-            if (state.wantedStars >= 5) {
-                if (!this.helicopterLight && this.THREE) {
-                    try {
-                        this.helicopterLight = new this.THREE.SpotLight(0xffffff, 4.5, 60, Math.PI / 6, 0.45, 1.0);
-                        this.helicopterLight.position.set(state.x, 20, state.z + 4);
-                        const targetObj = new this.THREE.Object3D();
-                        targetObj.position.set(state.x, 0, state.z);
-                        this.scene.add(targetObj);
-                        this.helicopterLight.target = targetObj;
-                        this.scene.add(this.helicopterLight);
-                        if (this.options.onPopup) {
-                            this.options.onPopup('🚁 ВЕРТОЛЕТ ДПС В ВОЗДУХЕ! МАКСИМАЛЬНЫЙ РОЗЫСК!', '#ef4444');
-                        }
-                    } catch (_) {}
-                }
-                if (this.helicopterLight) {
-                    const heliTime = (this.lastTime || 0) * 0.003;
-                    const heliOffsetX = Math.sin(heliTime) * 3.5;
-                    const heliOffsetZ = Math.cos(heliTime * 1.3) * 4.0;
-                    this.helicopterLight.position.set(state.x + heliOffsetX, 20, state.z + heliOffsetZ);
-                    if (this.helicopterLight.target) {
-                        this.helicopterLight.target.position.set(state.x + heliOffsetX * 0.3, 0, state.z + heliOffsetZ * 0.3);
-                    }
-                }
-            } else if (this.helicopterLight && state.wantedStars < 5) {
-                try {
-                    if (this.helicopterLight.target && this.helicopterLight.target.parent) this.helicopterLight.target.parent.remove(this.helicopterLight.target);
-                    if (this.helicopterLight.parent) this.helicopterLight.parent.remove(this.helicopterLight);
-                } catch (_) {}
-                this.helicopterLight = null;
-            }
+            // Five-star pursuit keeps its gameplay, without a helicopter light.
+            if(this.helicopterLight){this.helicopterLight.target?.removeFromParent?.();this.helicopterLight.removeFromParent?.();this.helicopterLight=null;}
 
             if (state.wantedStars > 0) {
                 state.isPursuitActive = true;
@@ -16515,6 +16494,7 @@
         }
 
         updateChaseCamera(dt) {
+            if(window.NOMERA_AUTHORS_PREVIEW&&window.NomeraDriverCamera){window.NomeraDriverCamera.recoveryUI(this,this.mwLongitudinal);if(window.NomeraDriverCamera.update(this,this.cameraMode,dt))return;}
             const state = this.state;
             const isCockpit = this.cameraMode === 4 || this.cameraMode === 'cockpit';
             const isHood = this.cameraMode === 2 || this.cameraMode === 'hood';
@@ -16539,7 +16519,7 @@
             const sinYaw = Math.sin(yaw);
             const targetCamX = isCockpit
                 ? (state.x + mode.offset.x * cosYaw + mode.offset.z * sinYaw)
-                : (isTopDown ? (state.x * 0.65) : (isHood||mwPortraitChase ? state.x : state.x * 0.75));
+                : (isTopDown ? (state.x * 0.65) : (isHood||!!this.mwLongitudinal ? state.x : state.x * 0.75));
             const terrainY=this.mwLongitudinal?.state.y||0;
             const targetCamY = terrainY+(isCockpit
                 ? (mode.offset.y + (state.downforceY || 0) + (state.suspensionY || 0))
@@ -16819,6 +16799,7 @@
         }
 
         destroy() {
+            this.authorsRecoverButton?.remove();this.authorsRecoverButton=null;
             this._destroyed = true;
             if(typeof window!=='undefined'&&window.NOMERA_AUTHORS_PREVIEW)window.NomeraWheelRig?.cancelAll();
             this.stop();

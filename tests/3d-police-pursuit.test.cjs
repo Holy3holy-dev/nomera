@@ -231,7 +231,7 @@ test('3D Police Pursuit: Busted arrest triggers when player stops (<25 km/h) cor
     }
 });
 
-test('3D Police Pursuit: 5-Star wanted level deploys dynamic helicopter spotlight', () => {
+test('3D Police Pursuit: 5-Star pursuit stays active without a helicopter spotlight', () => {
     const { THREE, Car3DManager } = setupTestContext();
     const mockContainer = { clientWidth: 800, clientHeight: 500, style: {}, appendChild: () => {}, removeChild: () => {} };
 
@@ -251,8 +251,8 @@ test('3D Police Pursuit: 5-Star wanted level deploys dynamic helicopter spotligh
         // Update engine
         engine.update(0.1);
 
-        assert.ok(engine.helicopterLight, 'Helicopter SpotLight must be created at 5 stars');
-        assert.ok(engine.helicopterLight.position.y > 15, 'Helicopter light must hover high above the road');
+        assert.strictEqual(engine.helicopterLight,null,'No five-star light or shader change');
+        assert.strictEqual(engine.state.wantedStars,5);assert.ok(engine.state.isPursuitActive,'Pursuit gameplay remains active');
 
         // Clear pursuit
         engine.clearPursuit();

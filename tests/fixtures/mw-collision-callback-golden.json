@@ -1,0 +1,333 @@
+{
+  "provenance": {
+    "repository": "https://github.com/gaycoderprincess/ProStreetMWPhysics",
+    "commit": "9c6e26194b531f68f66fcc94a770ee7f89f2682e",
+    "method": "SuspensionRacerMW::OnCollision",
+    "sourceFile": "decomp/behaviors/SuspensionRacer.cpp",
+    "sha256": "ed051005245538ec0ed7a9bcf83c128b71aa208ac95b57b2e52442a868a18a52",
+    "compiler": "g++ -std=c++20 -O0",
+    "scope": "Unedited callback, harness stubs body queries and collision Info layout at flags offset0x1C. Enum numeric values WORLD1 OBJECT2 GROUND3 are harness-selected because their actual host declarations are absent; only semantic branch behavior is verified. Source callback impulse units are NOT known; these event fields must not be equated to raw SI N*s. No rigidbody impulse solver, restitution, contact manifold or recovery logic is verified. No JavaScript/NOMERA runtime imported."
+  },
+  "cases": [
+    {
+      "name": "world_front_slant",
+      "input": {
+        "type": "WORLD",
+        "impulseA": 20,
+        "impulseB": 30,
+        "objB": 0,
+        "objAImmobile": false,
+        "objBImmobile": false,
+        "normal": [
+          -0.6,
+          0,
+          -0.8
+        ],
+        "closingVel": [
+          1,
+          0,
+          0
+        ],
+        "objAVel": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          2
+        ],
+        "signedVehicleSpeed": 1,
+        "initialTimer": 0,
+        "complexBody": true
+      },
+      "expected": {
+        "collisionTimer": 0.3333333433,
+        "wallNoseTurn": -0.3999999762,
+        "wallSideTurn": 0,
+        "lastGroundCollision": 0
+      }
+    },
+    {
+      "name": "object_owns_B_impulse",
+      "input": {
+        "type": "OBJECT",
+        "impulseA": 40,
+        "impulseB": 25,
+        "objB": 123,
+        "objAImmobile": false,
+        "objBImmobile": false,
+        "normal": [
+          -0.6,
+          0,
+          -0.8
+        ],
+        "closingVel": [
+          1,
+          0,
+          0
+        ],
+        "objAVel": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          2
+        ],
+        "signedVehicleSpeed": 1,
+        "initialTimer": 0,
+        "complexBody": true
+      },
+      "expected": {
+        "collisionTimer": 0.5,
+        "wallNoseTurn": 0,
+        "wallSideTurn": 0,
+        "lastGroundCollision": 0
+      }
+    },
+    {
+      "name": "world_owns_B_immobile",
+      "input": {
+        "type": "WORLD",
+        "impulseA": 20,
+        "impulseB": 30,
+        "objB": 123,
+        "objAImmobile": false,
+        "objBImmobile": true,
+        "normal": [
+          -0.6,
+          0,
+          -0.8
+        ],
+        "closingVel": [
+          1,
+          0,
+          0
+        ],
+        "objAVel": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          2
+        ],
+        "signedVehicleSpeed": 1,
+        "initialTimer": 0.15,
+        "complexBody": true
+      },
+      "expected": {
+        "collisionTimer": 0.150000006,
+        "wallNoseTurn": -0.3999999762,
+        "wallSideTurn": 0,
+        "lastGroundCollision": 0
+      }
+    },
+    {
+      "name": "reverse_rear_side_low_impulse",
+      "input": {
+        "type": "WORLD",
+        "impulseA": 9,
+        "impulseB": 30,
+        "objB": 0,
+        "objAImmobile": false,
+        "objBImmobile": false,
+        "normal": [
+          0.6,
+          0,
+          -0.8
+        ],
+        "closingVel": [
+          1,
+          0,
+          0
+        ],
+        "objAVel": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          -2
+        ],
+        "signedVehicleSpeed": -1,
+        "initialTimer": 0,
+        "complexBody": true
+      },
+      "expected": {
+        "collisionTimer": 0,
+        "wallNoseTurn": 0,
+        "wallSideTurn": 0.6000000238,
+        "lastGroundCollision": 0
+      }
+    },
+    {
+      "name": "ground_records_clock",
+      "input": {
+        "type": "GROUND",
+        "impulseA": 20,
+        "impulseB": 30,
+        "objB": 0,
+        "objAImmobile": false,
+        "objBImmobile": false,
+        "normal": [
+          0,
+          1,
+          0
+        ],
+        "closingVel": [
+          1,
+          0,
+          0
+        ],
+        "objAVel": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          2
+        ],
+        "signedVehicleSpeed": 1,
+        "initialTimer": 0.2,
+        "complexBody": true
+      },
+      "expected": {
+        "collisionTimer": 0.200000003,
+        "wallNoseTurn": 0,
+        "wallSideTurn": 0,
+        "lastGroundCollision": 12.5
+      }
+    },
+    {
+      "name": "normal_vertical_guard_boundary",
+      "input": {
+        "type": "WORLD",
+        "impulseA": 20,
+        "impulseB": 30,
+        "objB": 0,
+        "objAImmobile": false,
+        "objBImmobile": false,
+        "normal": [
+          -0.6,
+          0.1,
+          -0.8
+        ],
+        "closingVel": [
+          1,
+          0,
+          0
+        ],
+        "objAVel": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          2
+        ],
+        "signedVehicleSpeed": 1,
+        "initialTimer": 0,
+        "complexBody": true
+      },
+      "expected": {
+        "collisionTimer": 0.3333333433,
+        "wallNoseTurn": 0,
+        "wallSideTurn": 0,
+        "lastGroundCollision": 0
+      }
+    },
+    {
+      "name": "closing_velocity_guard_boundary",
+      "input": {
+        "type": "WORLD",
+        "impulseA": 20,
+        "impulseB": 30,
+        "objB": 0,
+        "objAImmobile": false,
+        "objBImmobile": false,
+        "normal": [
+          -0.6,
+          0,
+          -0.8
+        ],
+        "closingVel": [
+          7.5,
+          0,
+          0
+        ],
+        "objAVel": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          2
+        ],
+        "signedVehicleSpeed": 1,
+        "initialTimer": 0,
+        "complexBody": true
+      },
+      "expected": {
+        "collisionTimer": 0.3333333433,
+        "wallNoseTurn": 0,
+        "wallSideTurn": 0,
+        "lastGroundCollision": 0
+      }
+    },
+    {
+      "name": "body_speed_blocks_nose_not_reverse_side",
+      "input": {
+        "type": "WORLD",
+        "impulseA": 20,
+        "impulseB": 30,
+        "objB": 0,
+        "objAImmobile": false,
+        "objBImmobile": false,
+        "normal": [
+          0.6,
+          0,
+          -0.8
+        ],
+        "closingVel": [
+          1,
+          0,
+          0
+        ],
+        "objAVel": [
+          2.5,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          2
+        ],
+        "signedVehicleSpeed": -1,
+        "initialTimer": 0,
+        "complexBody": true
+      },
+      "expected": {
+        "collisionTimer": 0.3333333433,
+        "wallNoseTurn": 0,
+        "wallSideTurn": 0.6000000238,
+        "lastGroundCollision": 0
+      }
+    }
+  ]
+}

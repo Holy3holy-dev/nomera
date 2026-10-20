@@ -12,10 +12,10 @@
  * This partial adapter does not claim Xbox retail equivalence.
  */
 (function (root, factory) {
-    const api = factory(typeof module==='object'&&module.exports?require('./authors-mw-contact.js'):root.NomeraMWContact,typeof module==='object'&&module.exports?require('./authors-mw-mass.js'):root.NomeraMWMass);
+    const api = factory(typeof module==='object'&&module.exports?require('./authors-mw-contact.js'):root.NomeraMWContact,typeof module==='object'&&module.exports?require('./authors-mw-mass.js'):root.NomeraMWMass,typeof module==='object'&&module.exports?require('./authors-rigid-body.js'):root.NomeraRigidBody);
     if (typeof module === 'object' && module.exports) module.exports = api;
     else root.NomeraMW = api;
-}(typeof globalThis !== 'undefined' ? globalThis : this, function (Contact3D,Mass) {
+}(typeof globalThis !== 'undefined' ? globalThis : this, function (Contact3D,Mass,RigidBody) {
     'use strict';
     const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
     const mix = (a, b, t) => a + (b - a) * t;
@@ -633,11 +633,22 @@
             // preserve relative car/wing/upgrade differences in NOMERA.
             aero:{dragCoefficient:profile.dragCoeff*.32/.24,aeroCoefficient:profile.downforceCoeff*.24/.76,aeroCG:47} };
     }
+    // Source OnCollision notification; event impulse units belong to the host
+    // ABI. Callers must explicitly map SI impacts before using these thresholds.
+    function collisionResponse({type='WORLD',impulseA=0,impulseB=0,objAImmobile=false,objBImmobile=false,objB=0,ownerHandle=123,normal=[0,1,0],closingVel=[0,0,0],objAVel=[0,0,0],position=[0,0,0],bodyPosition=[0,0,0],forward=[0,0,1],right=[1,0,0],halfLength=2,signedVehicleSpeed=0,initialTimer=0,complexBody=true,time=0,lastGroundCollision=0,wallNoseTurn=0,wallSideTurn=0}={}){
+        const dot=Contact3D.dot,sub=Contact3D.sub;let collisionTimer=initialTimer;
+        if(type==='WORLD'||type==='OBJECT'){const impulse=objB===ownerHandle?(objBImmobile?0:impulseB):(objAImmobile?0:impulseA);if(impulse>10)collisionTimer=Math.max(collisionTimer,clamp((impulse-10)/30,0,1));}
+        if(type==='GROUND')lastGroundCollision=time;
+        if(type==='WORLD'&&Math.abs(normal[1])<.1&&complexBody&&dot(closingVel,closingVel)<56.25){const r=sub(position,bodyPosition),along=dot(r,forward),side=dot(normal,right);
+            if(wallNoseTurn===0&&dot(objAVel,objAVel)<6.25&&dot(normal,forward)<=0&&along>halfLength*.75)wallNoseTurn=(side>0?1:-1)-side;
+            if(wallSideTurn===0&&signedVehicleSpeed<0&&Math.abs(side)>1e-6&&Math.abs(along)>halfLength*.75)wallSideTurn=side;
+        }return{collisionTimer,wallNoseTurn,wallSideTurn,lastGroundCollision};
+    }
     function selected() {
         if (typeof window === 'undefined' || !window.NOMERA_AUTHORS_PREVIEW) return false;
         try { return window.localStorage.getItem('authors_mw_physics_v1') !== 'classic'; }
         catch (_) { return true; }
     }
     return Object.freeze({ torque, shiftPoints, clutch, Clutch, smoothRPM, engineInertia, brakingTorque, engineOutputTorque, Induction, AngularEngine, Gearbox, Nitrous, aerodynamics, tireForce, Tire, tireFrame, differential, driveControl, Burnout, DriftController, yawFrictionBoost, wallSteer, steeringRange, steeringRate, SteeringController, springForce, staticCompression, Suspension,
-        Contact3D, Mass, createSpec, selected, REFERENCE, LOAD });
+        Contact3D, Mass, RigidBody, collisionResponse, createSpec, selected, REFERENCE, LOAD });
 }));

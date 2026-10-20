@@ -599,7 +599,7 @@
                 speedbreaker: false
             };
 
-            this.cameraModes = ['chase', 'far', 'hood', 'bumper'];
+            this.cameraModes = root.NOMERA_AUTHORS_PREVIEW?['chase', 'far', 'hood', 'bumper','cockpit']:['chase', 'far', 'hood', 'bumper'];
             this.cameraModeIndex = 0;
             this.cameraMode = 'chase';
             this.weatherCycleOrder = ['auto', 'day', 'sunset', 'night', 'rain', 'fog', 'snow'];
@@ -950,7 +950,7 @@
             const labels = {
                 chase: '🎥 КАМЕРА: БЛИЖНЯЯ',
                 far: '🎥 КАМЕРА: ДАЛЬНЯЯ (ОБЗОР)',
-                hood: '🎥 КАМЕРА: С КАПОТА',
+                hood: '🎥 КАМЕРА: С КАПОТА',cockpit:'🎥 КАМЕРА: ВОДИТЕЛЬ',
                 bumper: '🎥 КАМЕРА: БАМПЕР (АСФАЛЬТ)'
             };
             if (this.options.onPopup) {
@@ -1011,6 +1011,7 @@
 
         stop() {
             this.isRunning = false;
+            this.authorsRecoverButton?.remove();this.authorsRecoverButton=null;
             if (this.animFrame && typeof root !== 'undefined' && typeof root.cancelAnimationFrame === 'function') {
                 try { root.cancelAnimationFrame(this.animFrame); } catch (_) {}
             }
@@ -1064,6 +1065,7 @@
                 this.state.lapTimeSec += safeDt;
             }
 
+            if(this.playerPhysics.mwKernel)for(const p of [this.playerPhysics,...this.rivals.map(r=>r.physics)])p.collisionPreviousPose={x:p.x,y:p.y,z:p.z};
             // 2. Project Player onto Track Spline to determine current surface & curvature
             const pState = this.playerPhysics.state;
             const pTrack = this.track.projectPointToTrack(pState.x, pState.z, this.playerProgress.lastSegIndex);
@@ -1087,14 +1089,14 @@
 
             // Re-project after movement and resolve track barrier collision
             const pTrackAfter = this.track.projectPointToTrack(pState.x, pState.z, pTrack.segIndex);
-            if (pTrackAfter.wallPenetration > 0) {
+            if (pTrackAfter.wallPenetration > 0 || this.playerPhysics.mwTires&&Math.abs(pTrackAfter.lateralOffset)+this.playerPhysics.profile.wheelbase*.85>pTrackAfter.halfWidth) {
                 // Clamp position inside track wall and apply impulse
                 const clampedLat = Math.sign(pTrackAfter.lateralOffset) * pTrackAfter.halfWidth;
                 if(!this.playerPhysics.mwTires){
                     pState.x = pTrackAfter.centerX + pTrackAfter.nx * clampedLat;
                     pState.z = pTrackAfter.centerZ + pTrackAfter.nz * clampedLat;
                 }
-                const impact = this.playerPhysics.mwTires ? this.playerPhysics.resolveWallCollision({normalX:pTrackAfter.wallNormalX,normalZ:pTrackAfter.wallNormalZ,penetration:pTrackAfter.wallPenetration,restitution:.28,duration:safeDt,wallHeight:1.15,groundHeight:this.roadSurface?this.roadSurface.heightAt(pTrackAfter.s,pTrackAfter.lateralOffset):0}).closingSpeedMps : this.playerPhysics.resolveWallCollision(
+                const impact = this.playerPhysics.mwTires ? this.playerPhysics.resolveWallCollision({normalX:pTrackAfter.wallNormalX,normalZ:pTrackAfter.wallNormalZ,penetration:pTrackAfter.wallPenetration,planePoint:[pTrackAfter.centerX+pTrackAfter.nx*Math.sign(pTrackAfter.lateralOffset)*pTrackAfter.halfWidth,0,pTrackAfter.centerZ+pTrackAfter.nz*Math.sign(pTrackAfter.lateralOffset)*pTrackAfter.halfWidth],restitution:.28,duration:safeDt,wallHeight:1.15,groundHeight:this.roadSurface?this.roadSurface.heightAt(pTrackAfter.s,pTrackAfter.lateralOffset):0}).closingSpeedMps : this.playerPhysics.resolveWallCollision(
                     pTrackAfter.wallNormalX,
                     pTrackAfter.wallNormalZ,
                     pTrackAfter.wallPenetration,
@@ -1421,13 +1423,13 @@
             });
 
             const projAfter = this.track.projectPointToTrack(rState.x, rState.z, proj.segIndex);
-            if (projAfter.wallPenetration > 0) {
+            if (projAfter.wallPenetration > 0 || rPhys.mwTires&&Math.abs(projAfter.lateralOffset)+rPhys.profile.wheelbase*.85>projAfter.halfWidth) {
                 const clampedLat = Math.sign(projAfter.lateralOffset) * projAfter.halfWidth;
                 if(!rPhys.mwTires){
                     rState.x = projAfter.centerX + projAfter.nx * clampedLat;
                     rState.z = projAfter.centerZ + projAfter.nz * clampedLat;
                 }
-                if(rPhys.mwTires)rPhys.resolveWallCollision({normalX:projAfter.wallNormalX,normalZ:projAfter.wallNormalZ,penetration:projAfter.wallPenetration,restitution:.25,duration:dt,wallHeight:1.15,groundHeight:this.roadSurface?this.roadSurface.heightAt(projAfter.s,projAfter.lateralOffset):0});
+                if(rPhys.mwTires)rPhys.resolveWallCollision({normalX:projAfter.wallNormalX,normalZ:projAfter.wallNormalZ,penetration:projAfter.wallPenetration,planePoint:[projAfter.centerX+projAfter.nx*Math.sign(projAfter.lateralOffset)*projAfter.halfWidth,0,projAfter.centerZ+projAfter.nz*Math.sign(projAfter.lateralOffset)*projAfter.halfWidth],restitution:.25,duration:dt,wallHeight:1.15,groundHeight:this.roadSurface?this.roadSurface.heightAt(projAfter.s,projAfter.lateralOffset):0});
                 else rPhys.resolveWallCollision(projAfter.wallNormalX, projAfter.wallNormalZ, projAfter.wallPenetration, 0.25);
             }
 
@@ -2084,12 +2086,12 @@
             }
             if (this.playerCar) {
                 this.playerCar.position.set(this.toThreeX(p.renderX), p.heave, this.toThreeZ(p.renderZ));
-                this.playerCar.rotation.y = this.toThreeYaw(p.renderHeading);
+                if(p.orientation)this.playerCar.quaternion.set(p.orientation[0],-p.orientation[1],-p.orientation[2],p.orientation[3]);else this.playerCar.rotation.y = this.toThreeYaw(p.renderHeading);
             }
             if (this.playerCarBodyGroup) {
                 if(this.playerPhysics.mwKernel)this.playerCarBodyGroup.rotation.order='ZXY';
-                this.playerCarBodyGroup.rotation.x = p.pitch;
-                this.playerCarBodyGroup.rotation.z = this.playerPhysics.mwKernel ? -p.roll : p.roll;
+                this.playerCarBodyGroup.rotation.x = p.orientation?0:p.pitch;
+                this.playerCarBodyGroup.rotation.z = p.orientation?0:(this.playerPhysics.mwKernel ? -p.roll : p.roll);
             }
             if (this.playerTailLight) {
                 this.playerTailLight.intensity = (this.keys && (this.keys.brake || this.keys.drift)) ? 3.2 : 1.1;
@@ -2100,13 +2102,14 @@
 
             for (const rival of this.rivals) {
                 if (rival.mesh) {
+                    if(root.NomeraDriverCamera&&!rival.physics.collisionShape){const cp=root.NomeraCameraProfiles[root.Car3DManager.identifyCarModel(rival.template.carName)];if(cp)rival.physics.collisionShape=root.NomeraDriverCamera.shape(cp);}
                     const rs = rival.physics.state;
                     rival.mesh.position.set(this.toThreeX(rs.renderX), rs.heave, this.toThreeZ(rs.renderZ));
-                    rival.mesh.rotation.y = this.toThreeYaw(rs.renderHeading);
+                    if(rs.orientation)rival.mesh.quaternion.set(rs.orientation[0],-rs.orientation[1],-rs.orientation[2],rs.orientation[3]);else rival.mesh.rotation.y = this.toThreeYaw(rs.renderHeading);
                     if (rival.bodyGroup) {
                     if(this.playerPhysics.mwKernel)rival.bodyGroup.rotation.order='ZXY';
-                        rival.bodyGroup.rotation.x = rs.pitch;
-                        rival.bodyGroup.rotation.z = rival.physics.mwKernel ? -rs.roll : rs.roll;
+                        rival.bodyGroup.rotation.x = rs.orientation?0:rs.pitch;
+                        rival.bodyGroup.rotation.z = rs.orientation?0:(rival.physics.mwKernel ? -rs.roll : rs.roll);
                     }
                     if(root.NOMERA_AUTHORS_PREVIEW && root.NomeraWheelRig){
                         root.NomeraWheelRig.update({wheels:rival.wheels||[]},{angles:rs.wheelAngles,steer:-rs.steerAngleRad,steerAngles:{fl:-rs.steerLeftRad,fr:-rs.steerRightRad},compression:rs.suspensionOffsets});
@@ -2114,6 +2117,7 @@
                 }
             }
 
+            if(root.NOMERA_AUTHORS_PREVIEW&&root.NomeraDriverCamera){root.NomeraDriverCamera.recoveryUI(this,this.playerPhysics);if(root.NomeraDriverCamera.update(this,this.cameraMode,dt))return;}
             if (this.camera) {
                 const threeX = this.toThreeX(p.renderX);
                 const threeZ = this.toThreeZ(p.renderZ);
@@ -2434,6 +2438,7 @@
         }
 
         destroy() {
+            this.authorsRecoverButton?.remove();this.authorsRecoverButton=null;
             if(root.NOMERA_AUTHORS_PREVIEW)root.NomeraWheelRig?.cancelAll();
             this._destroyed = true;
             this.stop();

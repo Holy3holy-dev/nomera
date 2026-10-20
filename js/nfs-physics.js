@@ -981,6 +981,7 @@
         }
 
         reset(init = {}) {
+            this.collisionPreviousPose=null;
             this.accumulator = 0;
             this.stepCount = 0;
             this._speedbreakerLatch = false;
@@ -1721,7 +1722,7 @@
             }
 
             // ×2 is NOMERA's responsive handling bridge, not an original MW multiplier.
-            const gyroscopicYaw=this.massProperties?this.suspension.rollRate*this.suspension.pitchRate*(this.massProperties.inertia[0]-this.massProperties.inertia[2]):0;
+            const gyroscopicYaw=this.massProperties&&!this.mwKernel.RigidBody?this.suspension.rollRate*this.suspension.pitchRate*(this.massProperties.inertia[0]-this.massProperties.inertia[2]):0;
             if(this.mwTires&&s.handbrakeRecovery>0&&this.suspension.wheels.filter(w=>w.contact).length>=2){
                 const limit=1.2+.4*clamp(s.speedMps/30,0,1),predicted=s.yawRate+(yawTorque+baseYawDamping+stabilizerTorque-gyroscopicYaw)/s.yawInertia*dt;
                 const extra=-Math.sign(predicted)*Math.max(0,Math.abs(predicted)-limit)*s.yawInertia/dt;
@@ -1786,6 +1787,8 @@
                 const dragHeight=mwContact.touching>=2?-.1*(1-throttle):0;
                 this.mwKernel.Contact3D.finish(this.suspension,dt,s,mwContact,{downforce:aeroDownforceN,aeroCenterZ:p.wheelbase*(.47-p.frontWeightBias),
                     dragPitchMoment:dragHeight*mwAero.drag[2],dragRollMoment:-dragHeight*mwAero.drag[0]});
+                s.y=this.suspension.y;
+                if(this.mwKernel.RigidBody){this.mwKernel.RigidBody.groundStep(this,dt,(x,z)=>this._sampleMWGround(x,z,controls));}
                 s.roadContact=this.suspension.telemetry;
             }
             if(this.suspension){
@@ -1863,6 +1866,7 @@
          */
         // Oriented rectangles are a NOMERA collision shape, not MW geometry.
         getVehicleContact(other) {
+            if(this.mwKernel?.RigidBody){const R=this.mwKernel.RigidBody,a=R.descriptor(this),b=R.descriptor(other);return R.contact(a,b)||R.sweptContact(a,b,this.collisionPreviousPose,other.collisionPreviousPose);}
             const a=this.state,b=other.state||other,pa=this.profile,pb=other.profile||pa;
             if(Math.abs((a.y||0)-(b.y||0))>1.25)return null;
             const axes=s=>[{x:Math.cos(s.heading),z:-Math.sin(s.heading)},{x:Math.sin(s.heading),z:Math.cos(s.heading)}];
@@ -1878,7 +1882,25 @@
             return {...normal,penetration};
         }
 
+        _resolve3DContact(other,contacts,options={}){
+            if(contacts[0].sweptPositions){for(const[owner,position]of [[this,contacts[0].sweptPositions.a],[other,contacts[0].sweptPositions.b]]){if(!owner)continue;const s=owner.state||owner;[s.x,s.y,s.z]=position;if(owner.suspension)owner.suspension.y=s.y;}}
+            const R=this.mwKernel.RigidBody,before=R.descriptor(this),incoming=R.linear(before),result=R.solve(before,other?R.descriptor(other):null,contacts,options);
+            const severity=clamp((result.closingSpeedMps-1)/24,0,1),damage=severity*(other?6:8.5);
+            for(const owner of [this,other]){if(!owner)continue;const s=owner.state||owner;s.damageTaken=clamp((s.damageTaken||0)+damage,0,100);s.collisionTimer=Math.max(s.collisionTimer||0,.35*severity);}
+            const c=contacts[0],event=this.mwKernel.collisionResponse({type:other?'OBJECT':'WORLD',impulseA:10+30*.35*severity,normal:[c.normalX,c.normalY||0,c.normalZ],closingVel:R.scale([c.normalX,c.normalY||0,c.normalZ],result.closingSpeedMps),objAVel:incoming,position:[c.pointX,c.pointY,c.pointZ],bodyPosition:before.origin,forward:before.m.forward,right:before.m.right,halfLength:before.half[2],signedVehicleSpeed:this.state.vForward,initialTimer:this.state.collisionTimer,time:this.state.time});
+            this.state.collisionTimer=event.collisionTimer;if(!other&&(event.wallNoseTurn||event.wallSideTurn)){this.state.wallEscape=event.wallNoseTurn||event.wallSideTurn;this.state.wallEscapeTime=Math.min(.05,options.duration??1/60);}
+            this.state.bodyCollision={...result,point:[c.pointX,c.pointY,c.pointZ],normal:[contacts[0].normalX,contacts[0].normalY||0,contacts[0].normalZ]};
+            return{...result,impactSeverity:severity,damageAdded:damage};
+        }
+        recoverRollover(){
+            if(!this.state.rollover?.recoverable)return false;
+            const s=this.state,b=this.suspension,g=this._sampleMWGround(s.x,s.z,{});b.pitch=0;b.roll=0;b.pitchRate=0;b.rollRate=0;b.vy=0;b.y=(typeof g==='number'?g:g?.height||0)+.08;b.stuckTime=0;b.grounded=4;
+            b.orientation=this.mwKernel.RigidBody.quaternion(s.heading,0,0);b.orientationAngles={heading:s.heading,pitch:0,roll:0};s.yawRate=0;s.vx=0;s.vz=0;s.y=b.y;s.orientation=b.orientation.slice();s.rollover=null;
+            this.mwKernel.RigidBody.sync(this.mwKernel.RigidBody.descriptor(this));return true;
+        }
+
         _resolveMWContact(other,contact) {
+            if(this.mwKernel?.RigidBody&&Number.isFinite(contact.normalY))return this._resolve3DContact(other,[contact],contact);
             const a=this.state,b=other?.state||other,pa=this.profile,pb=other?.profile||pa;
             const len=Math.hypot(contact.normalX,contact.normalZ);
             if(!(len>1e-7))return {closingSpeedMps:0,impactSeverity:0,damageAdded:0};
@@ -1938,6 +1960,7 @@
 
         resolveWallCollision(contactOrNx = {}, argNz = 0, argPen = 0, argRestitution = 0.20) {
             if(this.mwTires){
+                if(this.mwKernel.RigidBody&&contactOrNx.planePoint){const R=this.mwKernel.RigidBody,rows=R.wallContacts(R.descriptor(this),contactOrNx);return rows.length?this._resolve3DContact(null,rows,contactOrNx):{closingSpeedMps:0,impactSeverity:0,damageAdded:0};}
                 if(typeof contactOrNx==='object'&&Number.isFinite(contactOrNx.wallHeight)){
                     const s=this.state,p=this.profile,lowest=s.y-Math.abs(Math.sin(s.pitch))*p.wheelbase*.65-Math.abs(Math.sin(s.roll))*p.trackWidth*.5-.1;
                     if(lowest>(contactOrNx.groundHeight||0)+contactOrNx.wallHeight)return{closingSpeedMps:0,impactSeverity:0,damageAdded:0};
