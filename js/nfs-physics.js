@@ -1722,6 +1722,11 @@
             }
 
             // ×2 is NOMERA's responsive handling bridge, not an original MW multiplier.
+            // NOMERA stability envelope for ordinary grounded turns, not a pose clamp.
+            if(this.mwTires&&ebrake<.05&&s.handbrakeRecovery<=0&&this.suspension.grounded>=3&&Math.abs(this.suspension.roll)<.65&&s.speedMps>8){
+                const limit=.22+12/Math.max(8,s.speedMps),predicted=s.yawRate+(yawTorque+baseYawDamping+stabilizerTorque)/s.yawInertia*dt,excess=Math.max(0,Math.abs(predicted)-limit);
+                if(excess>0)stabilizerTorque-=Math.sign(predicted)*Math.min(excess/dt,excess*14)*s.yawInertia;
+            }
             const gyroscopicYaw=this.massProperties&&!this.mwKernel.RigidBody?this.suspension.rollRate*this.suspension.pitchRate*(this.massProperties.inertia[0]-this.massProperties.inertia[2]):0;
             if(this.mwTires&&s.handbrakeRecovery>0&&this.suspension.wheels.filter(w=>w.contact).length>=2){
                 const limit=1.2+.4*clamp(s.speedMps/30,0,1),predicted=s.yawRate+(yawTorque+baseYawDamping+stabilizerTorque-gyroscopicYaw)/s.yawInertia*dt;
@@ -1886,6 +1891,7 @@
             if(contacts[0].sweptPositions){for(const[owner,position]of [[this,contacts[0].sweptPositions.a],[other,contacts[0].sweptPositions.b]]){if(!owner)continue;const s=owner.state||owner;[s.x,s.y,s.z]=position;if(owner.suspension)owner.suspension.y=s.y;}}
             const R=this.mwKernel.RigidBody,before=R.descriptor(this),incoming=R.linear(before),result=R.solve(before,other?R.descriptor(other):null,contacts,options);
             const severity=clamp((result.closingSpeedMps-1)/24,0,1),damage=severity*(other?6:8.5);
+            const hit=contacts[0];for(const[owner,sign]of [[this,1],[other,-1]])if(owner)this.mwKernel.BodyDamage?.record(owner.state||owner,[hit.pointX,hit.pointY,hit.pointZ],[hit.normalX*sign,(hit.normalY||0)*sign,hit.normalZ*sign],result);
             for(const owner of [this,other]){if(!owner)continue;const s=owner.state||owner;s.damageTaken=clamp((s.damageTaken||0)+damage,0,100);s.collisionTimer=Math.max(s.collisionTimer||0,.35*severity);}
             const c=contacts[0],event=this.mwKernel.collisionResponse({type:other?'OBJECT':'WORLD',impulseA:10+30*.35*severity,normal:[c.normalX,c.normalY||0,c.normalZ],closingVel:R.scale([c.normalX,c.normalY||0,c.normalZ],result.closingSpeedMps),objAVel:incoming,position:[c.pointX,c.pointY,c.pointZ],bodyPosition:before.origin,forward:before.m.forward,right:before.m.right,halfLength:before.half[2],signedVehicleSpeed:this.state.vForward,initialTimer:this.state.collisionTimer,time:this.state.time});
             this.state.collisionTimer=event.collisionTimer;if(!other&&(event.wallNoseTurn||event.wallSideTurn)){this.state.wallEscape=event.wallNoseTurn||event.wallSideTurn;this.state.wallEscapeTime=Math.min(.05,options.duration??1/60);}

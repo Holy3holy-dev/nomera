@@ -20053,13 +20053,13 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                             if (hud.wantedStars > 0) {
                                 if (prevHudState.wantedStars !== hud.wantedStars) {
                                     els.pursuitBox.classList.remove('hidden');
-                                    if (els.pursuitStars) els.pursuitStars.textContent = '⭐'.repeat(hud.wantedStars);
+                                    if (els.pursuitStars) {if(window.NOMERA_AUTHORS_PREVIEW)els.pursuitStars.innerHTML=Array.from({length:5},(_,i)=>'<span class="'+(i<hud.wantedStars?'active':'')+'">★</span>').join('');else els.pursuitStars.textContent = '⭐'.repeat(hud.wantedStars);}
                                     prevHudState.wantedStars = hud.wantedStars;
                                 }
                                 if (els.pursuitStatus) {
                                     const statusText = hud.escapePercent > 0
                                         ? `⚡ УХОД: ${hud.escapeTimer}с (${hud.escapePercent}%)`
-                                        : (hud.bustedTimer > 0 ? `🚨 ЗАДЕРЖАНИЕ ${(2.8 - hud.bustedTimer).toFixed(1)}с` : `🚨 ПОГОНЯ ДПС (${hud.nearestPoliceDist}м)`);
+                                        : (hud.bustedTimer > 0 ? `🚨 ЗАДЕРЖАНИЕ ${(2.8 - hud.bustedTimer).toFixed(1)}с` : (window.NOMERA_AUTHORS_PREVIEW&&hud.policeIntegrity!==null&&hud.policeIntegrity!==undefined?`🚓 ЭКИПАЖ: ${hud.policeIntegrity}%`:`🚨 ПОГОНЯ ДПС (${hud.nearestPoliceDist}м)`));
                                     if (prevHudState.statusText !== statusText) {
                                         els.pursuitStatus.textContent = statusText;
                                         prevHudState.statusText = statusText;

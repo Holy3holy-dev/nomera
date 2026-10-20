@@ -11209,6 +11209,7 @@
             const state = this.state;
             if (!state) return;
             const forwardSpeedMps = (state.speed || 0) / 3.6;
+            if(window.NOMERA_AUTHORS_PREVIEW)window.NomeraScene?.weather(this);
 
             // 1. Rain streaks & dense dual-wheel water spray
             if (this.rainSystem && this.rainSystem.visible) {
@@ -11262,7 +11263,7 @@
             }
 
             // 3. Thunderstorm lightning flash in rain
-            if (this.currentActiveWeather === 'rain') {
+            if (this.currentActiveWeather === 'rain' && this.currentBiome !== 'tunnel') {
                 const preset = this.getWeatherPreset('rain');
                 this.lightningTimer = (this.lightningTimer !== undefined ? this.lightningTimer : 4.5) - dt;
                 if (this.lightningTimer <= 0) {
@@ -12579,6 +12580,7 @@
                 const carModel = buildDetailedCarModel(THREE, modelName, styling);
                 if (carModel) {
                     group.add(carModel);
+                    if(window.NOMERA_AUTHORS_PREVIEW)window.NomeraScene?.traffic(THREE,group,carModel,type);
 
                     // Collect wheels for live rotation
                     carModel.traverse(c => {
@@ -13122,6 +13124,7 @@
             this.state.countdownText = '3';
 
             // Police pursuit & wanted state reset
+            this.authorsPursuit=null;
             this.state.wantedStars = 0;
             this.state.escapeTimer = 0;
             this.state.isPursuitActive = false;
@@ -14492,6 +14495,7 @@
         addWantedStars(amount, reason = '') {
             const prev = this.state.wantedStars || 0;
             const next = Math.min(5, Math.max(0, prev + amount));
+            if(window.NOMERA_AUTHORS_PREVIEW&&this.authorsPursuit){const a=this.authorsPursuit;if(next===prev||prev===0&&a.time<a.quietUntil||prev>0&&a.time-(a.lastStarAt??-100)<12)return;a.lastStarAt=a.time;}
             this.state.wantedStars = next;
             this.state.wantedLevel = next;
             this.state.escapeTimer = 8.0;
@@ -14659,7 +14663,10 @@
                 const physical = this.mwLongitudinal;
                 // MW owns its pose and velocity. No road-axis heading magnet,
                 // render-rate reintegration, or legacy lateral-speed governor.
-                const roadInput=(keys.left?1:0)-(keys.right?1:0);
+                const rawRoadInput=(keys.left?1:0)-(keys.right?1:0);
+                physical.state.handbrake=isHandbrake;
+                const roadInput=window.NOMERA_AUTHORS_PREVIEW&&window.NomeraTraffic&&this.mode!=='drift'&&!this.isNfsCircuit?window.NomeraTraffic.highwaySteer(rawRoadInput,physical.state):rawRoadInput;
+                state.highwaySteerCommand=roadInput;
                 physical.state.fuelCurrent = state.fuelCurrent;
                 physical.state.nitroLevel = state.nitroLevel;
                 physical.state.slipstreamFactor = bestSlipstream;
@@ -15521,6 +15528,7 @@
 
             // 10. WEATHER PARTICLES & DYNAMIC CYCLE UPDATE
             this.updateWeatherParticles(dt);
+            if(window.NOMERA_AUTHORS_PREVIEW){window.NomeraScene?.update(this);window.NomeraBodyDamage?.update(this);}
 
             // 11. NOTIFY HUD CALLBACK
             this.notifyHUD();
@@ -15744,6 +15752,9 @@
 
         updateTraffic(dt) {
             const state = this.state;
+            const ai=window.NOMERA_AUTHORS_PREVIEW&&window.NomeraTraffic;if(ai)ai.begin(this,dt);
+            this.resetTrafficDamage=car=>window.NomeraBodyDamage?.reset(car);
+            this.authorsTrafficImpact=(car,event)=>{window.NomeraBodyDamage?.record(car.userData.contactBody.state,event.point,event.normal,event);if(car.userData.type==='police'&&ai?.policeHit(this,car,event).disabled){car.userData.isWrecked=true;car.userData.wrecked=true;ai.retire(this,car);}};
             let minPoliceDist = 999;
 
             this.trafficCars.forEach((car, idx) => {
@@ -15753,16 +15764,16 @@
                 if(u.contactBody&&this.mwLongitudinal){
                     if(Math.abs(car.position.z-u.contactBody.state.z)>30){u.contactBody=null;}
                     else{const R=this.mwLongitudinal.mwKernel.RigidBody;R.stepFree(u.contactBody,dt,(x,z)=>window.NomeraRoadSurface.highway(x,z));car.position.set(u.contactBody.state.x,u.contactBody.suspension.y,u.contactBody.state.z);car.quaternion.fromArray(u.contactBody.suspension.orientation);u.speed=u.contactBody.state.vz*3.6;
-                        if(u.isWrecked){u.wreckTimer=(u.wreckTimer||2.5)-dt;if(u.wreckTimer<=0){u.contactBody=null;car.position.z=state.z-150;u.isWrecked=false;}return;}
+                        if(u.isWrecked){u.wreckTimer=(u.wreckTimer||2.5)-dt;if(u.wreckTimer<=0){u.contactBody=null;car.position.y=-999;u.isWrecked=false;u.respawnTimer=ai?35:4.5;}return;}
                     }
                 }
                 // 0. Handle wrecked / spinning police cars (after successful player takedown)
                 if (u.isWrecked) {
                     u.wreckTimer = (u.wreckTimer || 2.5) - dt;
-                    car.position.x += (u.wreckSpinVx || 7.0) * dt;
+                    car.position.x += (ai?u.wreckSpinVx||0:u.wreckSpinVx||7.0) * dt;
                     car.position.z += (u.speed / 3.6) * dt;
                     u.speed = Math.max(0, u.speed - 140 * dt);
-                    car.rotation.y += 12 * dt;
+                    car.rotation.y += (ai?.3:12) * dt;
                     car.rotation.z = Math.sin((u.wreckTimer || 0) * 12) * 0.3;
                     if (u.policeLight) {
                         u.policeLight.intensity = Math.max(0, u.policeLight.intensity - 3 * dt);
@@ -15772,7 +15783,7 @@
                         u.isWrecked = false;
                         u.wrecked = false;
                         u.speed = 0;
-                        u.respawnTimer = 4.5;
+                        u.respawnTimer = ai?35:4.5;
                     }
                     return;
                 }
@@ -15781,7 +15792,7 @@
                     if (u.type === 'police') {
                         if (state.wantedStars > 0) {
                             u.respawnTimer = (u.respawnTimer !== undefined ? u.respawnTimer : 3.0) - dt;
-                            if (u.respawnTimer <= 0) {
+                            if (u.respawnTimer <= 0 && (!ai||ai.dispatch(this,car))) {
                                 const lanes = this.trafficLanes || [-6.375, -2.125, 2.125, 6.375];
                                 const newLane = Math.floor(Math.random() * lanes.length);
                                 u.isWrecked = false;
@@ -15791,7 +15802,7 @@
                                 u.laneIndex = newLane;
                                 u.targetX = lanes[newLane];
                                 car.rotation.set(0, 0, 0);
-                                car.position.set(lanes[newLane], 0, state.z + 55 + idx * 15);
+                                car.position.set(lanes[newLane], 0, ai?state.z-85-idx*9:state.z+55+idx*15);
                                 u.speed = Math.max(120, state.speed * 0.95);
                             } else {
                                 return;
@@ -15871,6 +15882,7 @@
 
                 // 1. Move traffic car forward along Z and apply lateral deflection impulses
                 const prevDz = (typeof u.prevDz === 'number') ? u.prevDz : (car.position.z - state.z);
+                if(ai)ai.cruise(this,car,dt);
                 const tSpeedMps = u.speed / 3.6;
                 if(!u.contactBody)car.position.z += tSpeedMps * dt;
                 if (Math.abs(u.deflectVx || 0) > 0.05) {
@@ -15890,7 +15902,8 @@
                 }
 
                 // Animate traffic wheels rotation
-                if (u.wheels && u.wheels.length > 0) {
+                if(u.trafficVisualRig&&window.NomeraWheelRig){window.NomeraWheelRig.update(u.trafficVisualRig,{dt,speedMps:tSpeedMps,steer:Math.max(-.13,Math.min(.13,(u.targetX-car.position.x)*.08))});}
+                else if (u.wheels && u.wheels.length > 0) {
                     const rotSpeed = (tSpeedMps / 0.32) * dt;
                     u.wheels.forEach(w => {
                         w.rotation.x += rotSpeed;
@@ -15941,7 +15954,8 @@
                     }
 
                     // Speeding violation check (within 18m along Z and 6m along X)
-                    if (Math.abs(dz) < 18 && dx < 6.0) {
+                    if(ai)ai.observe(this,car,dt,dx,dz);
+                    else if (Math.abs(dz) < 18 && dx < 6.0) {
                         if (state.speed > 220 && state.wantedStars < 3) {
                             this.addWantedStars(1, 'Опасное превышение > 220 км/ч');
                         } else if (state.speed > 150 && state.wantedStars === 0) {
@@ -16012,6 +16026,7 @@
                 }
 
                 // Smoothly steer towards target lane with body roll lean
+                if(ai&&!ai.laneClear(this,car,u.targetX)){u.targetX=car.position.x;u.changingLane=false;u.plannedLaneIndex=null;}
                 const steerDist = u.targetX - car.position.x;
                 if (Math.abs(steerDist) > 0.05) {
                     const dir = steerDist > 0 ? 1 : -1;
@@ -16081,7 +16096,7 @@
                 const lateralClearance = trafficHalfW + 0.55;
                 const longitudinalClearance = trafficHalfL + 1.6;
                 let contact3D=null,contactOwner=null;
-                if(this.mwLongitudinal?.mwKernel.RigidBody&&dx<7&&Math.abs(dz)<14){const R=this.mwLongitudinal.mwKernel.RigidBody,truck=u.type==='truck'||u.type==='kamaz';contactOwner=u.contactBody||R.createBody({position:car.position.toArray(),velocity:[u.deflectVx||0,0,u.speed/3.6],orientation:car.quaternion.toArray(),half:[trafficHalfW,truck?1.4:.7,trafficHalfL],mass:truck?6500:1500});contactOwner.collisionPreviousPose=u.collisionPreviousPose;contact3D=this.mwLongitudinal.getVehicleContact(contactOwner);}
+                if(this.mwLongitudinal?.mwKernel.RigidBody&&dx<7&&Math.abs(dz)<14){const R=this.mwLongitudinal.mwKernel.RigidBody,truck=u.type==='truck'||u.type==='kamaz';contactOwner=ai?ai.owner(this,car):u.contactBody||R.createBody({position:car.position.toArray(),velocity:[u.deflectVx||0,0,u.speed/3.6],orientation:car.quaternion.toArray(),half:[trafficHalfW,truck?1.4:.7,trafficHalfL],mass:truck?6500:1500});contactOwner.collisionPreviousPose=u.collisionPreviousPose;contact3D=this.mwLongitudinal.getVehicleContact(contactOwner);}
                 const isColliding = this.mwLongitudinal?.mwKernel.RigidBody?!!contact3D:(dx < lateralClearance && Math.abs(dz) < longitudinalClearance&&Math.abs((this.mwLongitudinal?.state.y||0)-car.position.y)<1.25);
 
                 // 3a. Near-Miss «Шашки впритирку» & Overtake Detection (when NOT colliding)
@@ -16150,19 +16165,20 @@
                         const isHardSideHit = Math.abs(state.vx) > 0.35 || (this.keys && (this.keys.left || this.keys.right));
                         const isOvertakeRam = (state.speed - u.speed) > 5;
                         const isDirectRam = dz > -1.0 && state.speed > 60;
-                        const isTakedown = isSpeedbreakerRam || ((state.wantedStars > 0 || isNitroActive) && (isNitroActive || isFastRam || isHardSideHit || isOvertakeRam || isDirectRam));
+                        const isTakedown = ai?ai.policeHit(this,car,spatialImpact||{closingSpeedMps:Math.abs(speedDiff)/3.6,normalImpulse:Math.abs(speedDiff)/3.6*800}).disabled:isSpeedbreakerRam || ((state.wantedStars > 0 || isNitroActive) && (isNitroActive || isFastRam || isHardSideHit || isOvertakeRam || isDirectRam));
 
                         if (isTakedown) {
                             // TAKEDOWN! СБИТ ЭКИПАЖ ДПС!
                             u.isWrecked = true;
                             u.wrecked = true;
                             u.wreckTimer = 2.8;
-                            u.wreckSpinVx = (car.position.x >= state.x ? 9.5 : -9.5);
-                            u.speed = Math.max(0, u.speed - 120);
+                            u.wreckSpinVx = ai?0:(car.position.x >= state.x ? 9.5 : -9.5);
+                            if(ai)ai.retire(this,car);
+                            if(!ai)u.speed = Math.max(0, u.speed - 120);
 
                             // Player takes minimal impact damage instead of instant crash
-                            state.speed = Math.max(50, state.speed - 10);
-                            state.damageTaken = Math.min(100, (state.damageTaken || 0) + 1.0);
+                            if(!ai)state.speed = Math.max(50, state.speed - 10);
+                            state.damageTaken = Math.min(100, (state.damageTaken || 0) + (ai?spatialImpact?.damageAdded||1:1));
                             state.shakeAmount = 0.65;
                             state.cameraShake = 0.65;
                             this.cameraShake = 0.65;
@@ -16181,12 +16197,12 @@
 
                             if (state.wantedStars === 0) {
                                 this.addWantedStars(1, 'Таран экипажа ДПС');
-                            } else if (state.wantedStars > 1) {
+                            } else if (!ai && state.wantedStars > 1) {
                                 state.wantedStars = Math.max(1, state.wantedStars - 1);
                             }
                             state.escapeTimer = Math.max(1.0, state.escapeTimer - 3.0);
                             return;
-                        } else {
+                        } else if(!ai) {
                             this.addWantedStars(1, 'Таран экипажа ДПС');
                         }
                     }
@@ -16342,7 +16358,7 @@
                         u.isWrecked = false;
                         u.wrecked = false;
                         u.speed = 0;
-                        u.respawnTimer = 2.0;
+                        u.respawnTimer = ai?12:2.0;
                         return;
                     }
                     const newLane = (u.type === 'truck' || u.type === 'kamaz') ? (Math.random() < 0.8 ? 3 : 2) : Math.floor(Math.random() * 4);
@@ -16378,8 +16394,10 @@
                 }
             }
 
+            if(ai)ai.finish(this,dt);
             // --- Pursuit, Escape & Busted Resolution ---
             state.nearestPoliceDist = minPoliceDist;
+            if(ai){const nearest=this.trafficCars.filter(c=>c.userData.type==='police'&&!c.userData.isWrecked&&c.position.y> -500).sort((a,b)=>Math.hypot(a.position.x-state.x,a.position.z-state.z)-Math.hypot(b.position.x-state.x,b.position.z-state.z))[0];state.nearestPoliceIntegrity=nearest?Math.round(nearest.userData.integrity??100):null;}
 
             // Five-star pursuit keeps its gameplay, without a helicopter light.
             if(this.helicopterLight){this.helicopterLight.target?.removeFromParent?.();this.helicopterLight.removeFromParent?.();this.helicopterLight=null;}
@@ -16743,6 +16761,7 @@
                 weatherTitle: curPreset ? curPreset.name : 'Ночь',
                 weatherMode: this.weatherMode,
                 wantedStars: state.wantedStars || 0,
+                policeIntegrity: state.nearestPoliceIntegrity??null,
                 isPursuitActive: !!state.isPursuitActive,
                 escapeTimer: Math.max(0, Number((state.escapeTimer || 0).toFixed(1))),
                 escapePercent: state.wantedStars > 0 ? Math.min(100, Math.max(0, Math.round(((8.0 - (state.escapeTimer || 0)) / 8.0) * 100))) : 0,
@@ -16800,6 +16819,7 @@
 
         destroy() {
             this.authorsRecoverButton?.remove();this.authorsRecoverButton=null;
+            if(window.NOMERA_AUTHORS_PREVIEW)window.NomeraScene?.destroy(this);
             this._destroyed = true;
             if(typeof window!=='undefined'&&window.NOMERA_AUTHORS_PREVIEW)window.NomeraWheelRig?.cancelAll();
             this.stop();

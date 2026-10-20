@@ -1,0 +1,42 @@
+{
+  "provenance": "Original NOMERA procedural textures, generated locally from deterministic noise; no EA texture or image used.",
+  "seed": 460530,
+  "files": [
+    {
+      "file": "asphalt.png",
+      "bytes": 302692,
+      "dimensions": [
+        512,
+        512
+      ],
+      "mode": "RGB",
+      "sha256": "725ab9284704f802138e7e34a57138c8073c8c6fe7a4782c854bcfad5f7b80a6",
+      "oppositeEdgesEqual": true,
+      "generatedName": "nomera-asphalt-albedo.png"
+    },
+    {
+      "file": "asphalt-roughness.png",
+      "bytes": 104418,
+      "dimensions": [
+        512,
+        512
+      ],
+      "mode": "L",
+      "sha256": "237971f2fd3fbc0b6cb053631c8c05ce96075518e6283273fa99a7bb9a6b4c2b",
+      "oppositeEdgesEqual": true,
+      "generatedName": "nomera-asphalt-roughness.png"
+    },
+    {
+      "file": "tunnel-concrete.png",
+      "bytes": 255719,
+      "dimensions": [
+        512,
+        512
+      ],
+      "mode": "RGB",
+      "sha256": "fb860cdd15c25f50d16e7678e71cefb06eb143f3d0e7b7bdbaa751230f59aa52",
+      "oppositeEdgesEqual": true,
+      "generatedName": "nomera-tunnel-concrete.png"
+    }
+  ]
+}

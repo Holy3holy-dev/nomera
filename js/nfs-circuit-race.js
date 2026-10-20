@@ -1756,6 +1756,7 @@
                 ? new THREE.MeshStandardMaterial({ color: this.carConfig.physicsKernel ? 0x0b1018 : 0x263449, roughness: this.carConfig.physicsKernel ? .85 : .55, metalness: this.carConfig.physicsKernel ? .04 : .14, side: THREE.DoubleSide })
                 : new THREE.MeshLambertMaterial({ color: 0x263449 });
             this._trackDisposables(roadGeo, roadMat);
+            this.authorsRoadMaterial=roadMat;
             const roadMesh=new THREE.Mesh(roadGeo, roadMat);roadMesh.userData.mwRoadSurface=!!this.roadSurface;this.scene.add(roadMesh);
 
             if (linePositions.length > 0) {
@@ -2117,6 +2118,7 @@
                 }
             }
 
+            if(root.NOMERA_AUTHORS_PREVIEW){root.NomeraScene?.update(this);root.NomeraBodyDamage?.update(this);}
             if(root.NOMERA_AUTHORS_PREVIEW&&root.NomeraDriverCamera){root.NomeraDriverCamera.recoveryUI(this,this.playerPhysics);if(root.NomeraDriverCamera.update(this,this.cameraMode,dt))return;}
             if (this.camera) {
                 const threeX = this.toThreeX(p.renderX);
@@ -2439,6 +2441,7 @@
 
         destroy() {
             this.authorsRecoverButton?.remove();this.authorsRecoverButton=null;
+            if(root.NOMERA_AUTHORS_PREVIEW)root.NomeraScene?.destroy(this);
             if(root.NOMERA_AUTHORS_PREVIEW)root.NomeraWheelRig?.cancelAll();
             this._destroyed = true;
             this.stop();

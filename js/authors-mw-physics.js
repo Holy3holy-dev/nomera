@@ -12,10 +12,10 @@
  * This partial adapter does not claim Xbox retail equivalence.
  */
 (function (root, factory) {
-    const api = factory(typeof module==='object'&&module.exports?require('./authors-mw-contact.js'):root.NomeraMWContact,typeof module==='object'&&module.exports?require('./authors-mw-mass.js'):root.NomeraMWMass,typeof module==='object'&&module.exports?require('./authors-rigid-body.js'):root.NomeraRigidBody);
+    const api = factory(typeof module==='object'&&module.exports?require('./authors-mw-contact.js'):root.NomeraMWContact,typeof module==='object'&&module.exports?require('./authors-mw-mass.js'):root.NomeraMWMass,typeof module==='object'&&module.exports?require('./authors-rigid-body.js'):root.NomeraRigidBody,typeof module==='object'&&module.exports?require('./authors-body-damage.js'):root.NomeraBodyDamage);
     if (typeof module === 'object' && module.exports) module.exports = api;
     else root.NomeraMW = api;
-}(typeof globalThis !== 'undefined' ? globalThis : this, function (Contact3D,Mass,RigidBody) {
+}(typeof globalThis !== 'undefined' ? globalThis : this, function (Contact3D,Mass,RigidBody,BodyDamage) {
     'use strict';
     const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
     const mix = (a, b, t) => a + (b - a) * t;
@@ -650,5 +650,5 @@
         catch (_) { return true; }
     }
     return Object.freeze({ torque, shiftPoints, clutch, Clutch, smoothRPM, engineInertia, brakingTorque, engineOutputTorque, Induction, AngularEngine, Gearbox, Nitrous, aerodynamics, tireForce, Tire, tireFrame, differential, driveControl, Burnout, DriftController, yawFrictionBoost, wallSteer, steeringRange, steeringRate, SteeringController, springForce, staticCompression, Suspension,
-        Contact3D, Mass, RigidBody, collisionResponse, createSpec, selected, REFERENCE, LOAD });
+        Contact3D, Mass, RigidBody, BodyDamage, collisionResponse, createSpec, selected, REFERENCE, LOAD });
 }));

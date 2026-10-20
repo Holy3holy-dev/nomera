@@ -58,7 +58,8 @@ const out=path.resolve('work/mw-contact-mobile-qa');fs.mkdirSync(out,{recursive:
      if(s.contact.airborne||s.contact.landed)assert(s.screen.x>.1&&s.screen.x<.9&&s.screen.y>.1&&s.screen.y<.9,'camera keeps the airborne/landing car in frame');
     }
     await pointer('left',2,'pointerdown');const turn=await step(6);await pointer('left',2,'pointercancel');await pointer('right',3,'pointerdown');const counter=await step(6);
-    assert(Math.abs(turn.at(-1).steer)>5&&turn.at(-1).steer*counter.at(-1).steer<0,'responsive steering after landing');
+    assert(Math.abs(turn.at(-1).steer)>(mode==='3d'?.25:5)&&turn.at(-1).steer*counter.at(-1).steer<0,'responsive physical steering after landing');
+    if(mode==='3d')assert(turn.at(-1).x>samples.at(-1).x+.01,'highway lane guidance creates immediate lateral movement after landing');
     await pointer('right',3,'pointercancel');await pointer('gas',1,'pointercancel');await step(12);
     await pointer('gas',1,'pointerdown');await page.evaluate(()=>window.dispatchEvent(new Event('blur')));assert(await page.evaluate(()=>Object.values(car3DRacingEngine.keys).every(v=>!v)));
     await page.screenshot({path:path.join(out,`settled-${mode}-${width}.png`)});

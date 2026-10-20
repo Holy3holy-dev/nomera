@@ -253,3 +253,12 @@ body.authors-edition.race-active #race-3d-header-actions>.btn{flex:0 0 auto!impo
 @media(max-width:600px){body.authors-edition.race-active #nfs-circuit-telemetry-bar :is(div,b){font-size:10px!important;line-height:1.4!important}}
 .ae-physics-choice{display:grid;gap:10px;margin:18px 0;padding:18px;background:#11151c;border:1px solid #2b303b;border-radius:14px;color:#e7eaf0}
 .ae-physics-choice label{font-weight:650;font-size:14px}.ae-physics-choice select{width:100%;min-height:48px;padding:10px 12px;background:#191f29;color:#f4f5f8;border:1px solid #3a424f;border-radius:9px;font:inherit;min-width:0}.ae-physics-choice p{font-size:12px;line-height:1.6;color:#a2abba;margin:0}.ae-physics-choice[hidden]{display:none}
+/* Stable pursuit panel: five fixed slots and a countdown that cannot resize it. */
+body.authors-edition.race-active #hud-3d-pursuit-box{width:min(300px,calc(100% - 24px))!important;min-width:0!important;max-width:none!important;top:128px!important;padding:8px 10px!important;border-radius:12px!important;animation:none!important;box-shadow:0 4px 14px #0005!important;background:#101a29ed!important;box-sizing:border-box}
+body.authors-edition.race-active #hud-3d-pursuit-box .race-3d-pursuit-top{display:grid!important;grid-template-columns:98px minmax(0,1fr)!important;gap:8px!important;min-height:19px}
+body.authors-edition.race-active #hud-3d-wanted-stars{display:grid!important;grid-template-columns:repeat(5,1fr)!important;gap:1px!important;font-size:15px!important;letter-spacing:0!important;white-space:nowrap}
+body.authors-edition.race-active #hud-3d-wanted-stars span{color:#53617a;opacity:.65}body.authors-edition.race-active #hud-3d-wanted-stars span.active{color:#ffcf56;opacity:1}
+body.authors-edition.race-active #hud-3d-pursuit-status{font-size:11px!important;line-height:18px!important;min-width:0!important;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:right}
+@media(min-width:601px){body.authors-edition.race-active #hud-3d-pursuit-box{top:82px!important}}
+@media(max-height:500px) and (orientation:landscape){body.authors-edition.race-active #hud-3d-pursuit-box{top:62px!important;left:12px!important;transform:none!important;width:275px!important}}
+body.authors-edition.race-active #hud-3d-pursuit-box{transition:opacity .2s!important}
