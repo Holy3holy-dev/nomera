@@ -6,6 +6,9 @@
     "test": "node --test tests/*.test.cjs",
     "check": "node scripts/check.cjs",
     "assets": "node scripts/release-assets.cjs",
+    "models:stage": "node scripts/optimize-car-models.cjs",
+    "models:apply": "node scripts/optimize-car-models.cjs --apply",
+    "models:verify": "node --test tests/glb-lossless-optimization.test.cjs",
     "test:browser": "node scripts/browser-smoke.cjs",
     "admin:hash": "node scripts/hash-admin-password.cjs",
     "build": "node scripts/build.cjs",
@@ -20,5 +23,9 @@
   },
   "dependencies": {
     "firebase-admin": "^13.4.0"
+  },
+  "devDependencies": {
+    "meshoptimizer": "0.25.0",
+    "sharp": "0.34.5"
   }
 }

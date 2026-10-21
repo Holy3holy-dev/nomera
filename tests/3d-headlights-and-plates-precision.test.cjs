@@ -43,7 +43,7 @@ function setupTestContext() {
         removeEventListener: () => {},
         head: { appendChild: () => {} }
     };
-    global.Image = function() { return makeMockElement(); };
+    global.Image = function() { const image=makeMockElement();Object.defineProperty(image,'src',{set(value){if(String(value).startsWith('data:image/webp;')){image.height=1;queueMicrotask(()=>image.onload?.());}}});return image; };
     global.navigator = { userAgent: 'NodeTest' };
     global.requestAnimationFrame = (cb) => setTimeout(cb, 16);
     global.cancelAnimationFrame = (id) => clearTimeout(id);
@@ -216,7 +216,7 @@ test('detectVehicleLightPositions correctly splits symmetric combined meshes and
     require('../js/vendor/GLTFLoader.js');
 
     const GLTFLoader = THREE.GLTFLoader;
-    const loader = new GLTFLoader();
+    const loader = new GLTFLoader().setMeshoptDecoder(require('../js/vendor/meshopt_decoder'));
     const lamboPath = path.join(__dirname, '..', 'assets', 'models', 'lamborghini.glb');
     if (!fs.existsSync(lamboPath)) return;
 
@@ -316,7 +316,7 @@ test('Audi RS6, Nissan Silvia, and Lada Vesta face forward (+Z) with headlights 
     // 2. Verify authentic GLB models with setupModel normalization (vesta & silvia)
     require('../js/vendor/GLTFLoader.js');
     const GLTFLoader = THREE.GLTFLoader;
-    const loader = new GLTFLoader();
+    const loader = new GLTFLoader().setMeshoptDecoder(require('../js/vendor/meshopt_decoder'));
 
     for (const c of cars.filter(item => item.file !== 'rs3.glb')) {
         const filePath = path.join(__dirname, '..', 'assets', 'models', c.file);
