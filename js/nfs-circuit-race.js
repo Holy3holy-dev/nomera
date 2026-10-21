@@ -2336,6 +2336,7 @@
         render() {
             if (this.renderer && this.scene && this.camera) {
                 root.NomeraScenePerf?.render(this);
+                root.NomeraPlayerRender?.render(this);
                 this.vehicleLodTelemetry=root.NomeraVehicleLOD?.updateScene(root.THREE,this.scene,this.camera,this.renderer);
                 this.renderer.render(this.scene, this.camera);
             }
