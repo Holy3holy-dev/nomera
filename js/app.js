@@ -7121,6 +7121,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 subtitleEl.innerText = `${cfg.flagEmoji} Стандарт номеров: ${shortName} (${cfg.code}) · Коэффициент стоимости и наград x${cfg.priceMult}`;
             }
 
+            window.NomeraRewards?.decorate();
             if (!silent) {
                 playTick();
             }
@@ -7268,6 +7269,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     stage.style['--unseal-glow'] = glow;
                 }
                 stage.classList.remove('hidden');
+                if(window.NomeraRewards?.unifiedDialog){window.NomeraRewards.begin(type,null,Number(document.getElementById('roulette-modal')?.dataset.caseCount)||1);return;}
                 if (durationMs > 0 && typeof setTimeout === 'function') {
                     const tid = setTimeout(() => {
                         stage.classList.add('hidden');
@@ -7850,6 +7852,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             checkAchievements();
             logPlayerActivity('Открыл кейс', `Открыл кейс «${caseLabel}» ×${openCount} за ${totalCost.toLocaleString('ru-RU')} ₽`);
             closeCasePreview();
+            window.NomeraRewards?.begin(activeCaseType,caseCountry,openCount);
             updateRouletteReopenButtons(effectivePrice);
 
             const isCar = !!config.isCar;
@@ -7911,6 +7914,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                             card?.classList.remove('revealing-card'); card?.classList.add('revealed-card');
                         },
                         onComplete: () => {
+                            window.NomeraRewards.complete();
                             isSpinning = false;
                             document.getElementById('roulette-batch-result')?.classList.remove('ae-opening');
                             document.getElementById('btn-skip-batch-anim')?.classList.add('hidden');
@@ -8109,6 +8113,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             const targetX = -(winningIndex * cardWidth + (cardWidth / 2) - (containerWidth / 2) + (Math.random() * 40 - 20));
 
             const finalizeSingleSpin = () => {
+                window.NomeraRewards?.complete();
                 const reward = isCar ? wonCarObj : wonPlateObj;
                 window.NomeraRewards?.celebrate(document.getElementById('roulette-result'), reward?.rarity?.text, reward?.price);
                 isSpinning = false;

@@ -32,6 +32,6 @@
   else if(e.track&&world.circuitIndex<Math.ceil(e.track.totalLength/60))buildCircuit(e,world.circuitIndex++);
   e.authorsWorldTelemetry={loaded:Object.values(world.templates).filter(Boolean).length,highwayChunks:world.chunks.size,circuitSections:world.circuitRoots.length,asphaltGeometry:'host-contact-surface',roadOverlays:0,physicsGeometryChanged:false};
  }
- function destroy(e){const world=e.authorsWorld;if(!world)return;world.disposed=true;for(const state of world.chunks.values())state.group.removeFromParent();for(const group of world.circuitRoots)group.removeFromParent();for(const resource of world.owned)resource.dispose();world.chunks.clear();world.circuitRoots=[];world.templates=null;e.authorsWorld=null;}
+ function destroy(e){const world=e.authorsWorld;if(!world)return;world.disposed=true;for(const state of world.chunks.values())state.group.parent?.remove(state.group);for(const group of world.circuitRoots)group.parent?.remove(group);for(const resource of world.owned)resource.dispose();world.chunks.clear();world.circuitRoots=[];world.templates=null;e.authorsWorld=null;}
  window.NomeraWorld={prepare,update,destroy};
 })();

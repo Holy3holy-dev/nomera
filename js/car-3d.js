@@ -16812,6 +16812,7 @@
 
         render() {
             if (this.renderer && this.scene && this.camera) {
+                window.NomeraScenePerf?.render(this);
                 this.vehicleLodTelemetry=window.NomeraVehicleLOD?.updateScene(window.THREE,this.scene,this.camera,this.renderer);
                 this.renderer.render(this.scene, this.camera);
             }

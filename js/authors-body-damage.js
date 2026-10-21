@@ -1,7 +1,7 @@
 /* Cosmetic NOMERA deformation. No original MW dent mesh/solver is available.
  * Collision shape, steering, tires and drivetrain are deliberately independent. */
 (function(root,factory){const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;else root.NomeraBodyDamage=api;})(typeof globalThis!=='undefined'?globalThis:this,function(){
- 'use strict';const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+ 'use strict';const sharedSources=new WeakMap();const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
  function dent(point,original,hit){const dx=point[0]-hit.point[0],dy=point[1]-hit.point[1],dz=point[2]-hit.point[2],r=hit.radius||.65,d2=dx*dx+dy*dy+dz*dz;if(d2>=r*r)return point.slice();
   const w=(1-d2/(r*r))**2,next=point.map((v,i)=>v+hit.normal[i]*hit.depth*w),distance=Math.hypot(...next.map((v,i)=>v-original[i]));return distance>.24?original.map((v,i)=>v+(next[i]-v)*.24/distance):next;
  }
@@ -15,7 +15,7 @@
  }
  function process(T,root,budget=12000){const d=root?.userData.bodyDeformation;if(!d?.queue.length)return 0;let count=0;const v=new T.Vector3(),o=new T.Vector3(),back=new T.Vector3();
   while(d.queue.length&&count<budget){const task=d.queue[0],job=task.meshes[0];if(!job){d.queue.shift();continue;}const mesh=job.mesh;
-   if(!mesh.userData.dentGeometry){const geometry=mesh.geometry.clone(),position=geometry.attributes.position,original=new Float32Array(position.array);mesh.geometry=geometry;mesh.userData.dentGeometry={geometry,original};d.owned.push(geometry);}
+   if(!mesh.userData.dentGeometry){if(mesh.geometry.userData.sceneSharedTraffic)sharedSources.set(mesh,mesh.geometry);const geometry=mesh.geometry.clone(),position=geometry.attributes.position,original=new Float32Array(position.array);geometry.userData={...geometry.userData,preserveBuffers:false,sceneSharedTraffic:false};mesh.geometry=geometry;mesh.userData.dentGeometry={geometry,original};d.owned.push(geometry);}
    const {geometry,original}=mesh.userData.dentGeometry,pos=geometry.attributes.position;let changed=false;
    while(job.index<pos.count&&count<budget){const i=job.index++;count++;v.fromBufferAttribute(pos,i).applyMatrix4(job.matrix);o.fromArray(original,i*3).applyMatrix4(job.matrix);const next=dent(v.toArray(),o.toArray(),task);if(next[0]!==v.x||next[1]!==v.y||next[2]!==v.z){back.fromArray(next).applyMatrix4(job.back);pos.setXYZ(i,back.x,back.y,back.z);d.changedVertices++;changed=true;}}
    if(changed)pos.needsUpdate=true;if(job.index===pos.count){geometry.computeBoundingBox();geometry.computeBoundingSphere();if(pos.count<12000)geometry.computeVertexNormals();task.meshes.shift();}
@@ -26,6 +26,7 @@
   let budget=12000;budget-=process(T,model,budget);for(const car of e.trafficCars||[]){consume(T,car,car.userData.contactBody?.state||car.userData.damageState);if(budget>0)budget-=process(T,car,budget);}for(const rival of e.rivals||[]){const s=rival.physics.state;consume(T,rival.bodyGroup?.children[0]||rival.mesh,{impactSequence:s.impactSequence,impactEvents:s.impactEvents?.map(ev=>({...ev,point:[-ev.point[0],ev.point[1],ev.point[2]],normal:[-ev.normal[0],ev.normal[1],ev.normal[2]]}))});if(budget>0)budget-=process(T,rival.bodyGroup?.children[0]||rival.mesh,budget);}
   e.bodyDamageTelemetry={impacts:model?.userData.bodyDeformation?.impacts||0,vertices:model?.userData.bodyDeformation?.changedVertices||0,queued:model?.userData.bodyDeformation?.queue.length||0,processedVertices:12000-budget};
  }
- function reset(root){globalThis.NomeraVehicleLOD?.beforeDamage(root);root?.traverse(n=>{const d=n.userData.dentGeometry;if(d){d.geometry.attributes.position.array.set(d.original);d.geometry.attributes.position.needsUpdate=true;d.geometry.computeBoundingBox();d.geometry.computeBoundingSphere();d.geometry.computeVertexNormals();}});const d=root?.userData.bodyDeformation;if(d){d.queue=[];d.seen=0;d.changedVertices=0;d.impacts=0;d.lastImpact=null;}}
+ function reset(root){globalThis.NomeraVehicleLOD?.beforeDamage(root);const released=new Set();root?.traverse(n=>{const d=n.userData.dentGeometry;if(!d)return;const source=sharedSources.get(n);if(source){n.geometry=source;sharedSources.delete(n);released.add(d.geometry);d.geometry.dispose();delete n.userData.dentGeometry;}else{d.geometry.attributes.position.array.set(d.original);d.geometry.attributes.position.needsUpdate=true;d.geometry.computeBoundingBox();d.geometry.computeBoundingSphere();d.geometry.computeVertexNormals();}});const d=root?.userData.bodyDeformation;if(d){d.queue=[];d.seen=0;d.changedVertices=0;d.impacts=0;d.lastImpact=null;d.owned=d.owned.filter(g=>!released.has(g));}}
+
  return{dent,record,hit,process,consume,update,reset};
 });
