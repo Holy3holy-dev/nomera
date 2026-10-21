@@ -201,6 +201,22 @@
         194449
       ],
       "bytes": 1115634
+    },
+    {
+      "file": "g63.glb",
+      "name": "Mercedes-Benz G63 AMG «Гелик»",
+      "triangles": 1298610,
+      "wheels": 4,
+      "candidates": 831,
+      "meshes": 477,
+      "levels": [
+        992354,
+        702600
+      ],
+      "bytes": 5160227,
+      "batchCompatible": true,
+      "pixelErrorLimit": 0.5,
+      "wheelFullDistance": 6.5
     }
   ]
 }

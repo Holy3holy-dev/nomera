@@ -16814,8 +16814,8 @@
         render() {
             if (this.renderer && this.scene && this.camera) {
                 window.NomeraScenePerf?.render(this);
-                window.NomeraPlayerRender?.render(this);
                 this.vehicleLodTelemetry=window.NomeraVehicleLOD?.updateScene(window.THREE,this.scene,this.camera,this.renderer);
+                window.NomeraPlayerRender?.render(this);
                 this.renderer.render(this.scene, this.camera);
             }
         }

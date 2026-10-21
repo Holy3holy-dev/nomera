@@ -23,7 +23,8 @@
     "textures:build": "node scripts/build-mobile-textures.cjs",
     "textures:verify": "node --test tests/mobile-textures-and-response.test.cjs",
     "textures:qa": "node scripts/authors-mobile-texture-qa.cjs",
-    "player:qa": "node scripts/authors-player-render-qa.cjs && node scripts/authors-player-race-qa.cjs"
+    "player:qa": "node scripts/authors-player-render-qa.cjs && node scripts/authors-player-race-qa.cjs",
+    "player:lod:qa": "node scripts/authors-player-lod-qa.cjs && node scripts/authors-player-lod-race-qa.cjs"
   },
   "engines": {
     "node": ">=22"
