@@ -90,7 +90,7 @@
   const model=e.playerCarBodyGroup?.children[0]||e.playerCar;
   if(!mobile()){release(model);delete e.playerRenderTelemetry;return;}
   if(!model||!e.authorsCabin||e.authorsCabin.model!==model)return;
-  if(root.NomeraVehicleLodAssets?.[model.userData.vehicleLodFile]?.batchCompatible)root.NomeraVehicleLOD?.prepare(e.THREE||root.THREE,model);
+  if(root.NomeraVehicleLodAssets?.[model.userData.vehicleLodFile]?.batchCompatible||root.NomeraVehicleLodAssets?.[model.userData.vehicleLodFile]?.playerOnly)root.NomeraVehicleLOD?.prepare(e.THREE||root.THREE,model);
   prepare(e.THREE||root.THREE,model,new Set(e.authorsCabin.windows.map(w=>w.mesh)));const s=update(model);
   e.playerRenderTelemetry=s?{pending:s.pending,active:!!s.active,sourceMeshes:s.sourceMeshes,batches:s.batches.length,extraCpuBytes:s.bytes,buildMs:s.buildMs,maxBuildSliceMs:s.maxBuildSliceMs,maxLodSliceMs:s.maxLodSliceMs||0,lodPending:s.batches.filter(b=>b.job).length,lodIndexBytes:s.batches.reduce((n,b)=>n+[...b.cache.values()].reduce((n,g)=>n+g.index.array.byteLength,0),0),fullTriangles:s.batches.reduce((n,b)=>n+b.geometry.index.count/3,0),renderedTriangles:s.batches.reduce((n,b)=>n+b.proxy.geometry.index.count/3,0)}:null;
  }

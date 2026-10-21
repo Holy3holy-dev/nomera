@@ -12,52 +12,76 @@
       "name": "Aston Martin DB9",
       "triangles": 278452,
       "wheels": 4,
-      "candidates": 16,
-      "meshes": 15,
+      "candidates": 24,
+      "meshes": 16,
       "levels": [
-        157558,
-        110768
+        157490,
+        110686
       ],
-      "bytes": 845706
+      "bytes": 846786,
+      "playerOnly": false,
+      "batchCompatible": false,
+      "smoothSwitch": true,
+      "pixelErrorLimit": 0.75,
+      "pixelEntryFactor": 0.95,
+      "wheelFullDistance": 6.5
     },
     {
       "file": "audi_rs7.glb",
       "name": "Audi RS7 Sportback",
       "triangles": 2488038,
       "wheels": 4,
-      "candidates": 132,
-      "meshes": 130,
+      "candidates": 140,
+      "meshes": 132,
       "levels": [
-        1730674,
-        1095392
+        1730468,
+        1095128
       ],
-      "bytes": 6920600
+      "bytes": 6922640,
+      "playerOnly": false,
+      "batchCompatible": false,
+      "smoothSwitch": true,
+      "pixelErrorLimit": 0.75,
+      "pixelEntryFactor": 0.95,
+      "wheelFullDistance": 6.5
     },
     {
       "file": "bmw_i8.glb",
       "name": "BMW M8 Gran Coupe",
       "triangles": 219035,
       "wheels": 4,
-      "candidates": 13,
-      "meshes": 13,
+      "candidates": 114,
+      "meshes": 57,
       "levels": [
-        164119,
-        137831
+        127729,
+        93455
       ],
-      "bytes": 414429
+      "bytes": 678073,
+      "playerOnly": false,
+      "batchCompatible": false,
+      "smoothSwitch": true,
+      "pixelErrorLimit": 0.75,
+      "pixelEntryFactor": 0.95,
+      "wheelFullDistance": 6.5
     },
     {
       "file": "bmw_m3_sedan.glb",
       "name": "BMW M3 G80 Competition",
       "triangles": 1354583,
       "wheels": 4,
-      "candidates": 163,
-      "meshes": 113,
+      "candidates": 164,
+      "meshes": 102,
       "levels": [
-        774737,
-        497657
+        799767,
+        529827
       ],
-      "bytes": 3630149
+      "bytes": 3426680,
+      "playerOnly": false,
+      "batchCompatible": false,
+      "smoothSwitch": true,
+      "pixelErrorLimit": 0.75,
+      "pixelEntryFactor": 0.95,
+      "wheelFullDistance": 6.5
     },
     {
       "file": "bmw_m4.glb",
@@ -90,13 +114,19 @@
       "name": "Hyundai Elantra N",
       "triangles": 501430,
       "wheels": 4,
-      "candidates": 169,
-      "meshes": 168,
+      "candidates": 176,
+      "meshes": 172,
       "levels": [
-        266570,
-        153932
+        276482,
+        167484
       ],
-      "bytes": 1958718
+      "bytes": 1859247,
+      "playerOnly": false,
+      "batchCompatible": false,
+      "smoothSwitch": true,
+      "pixelErrorLimit": 0.75,
+      "pixelEntryFactor": 0.95,
+      "wheelFullDistance": 6.5
     },
     {
       "file": "gaz24.glb",
@@ -116,91 +146,133 @@
       "name": "Lamborghini Gallardo",
       "triangles": 217706,
       "wheels": 4,
-      "candidates": 53,
-      "meshes": 53,
+      "candidates": 90,
+      "meshes": 79,
       "levels": [
-        151430,
-        97992
+        150730,
+        96838
       ],
-      "bytes": 909425
+      "bytes": 948852,
+      "playerOnly": false,
+      "batchCompatible": false,
+      "smoothSwitch": true,
+      "pixelErrorLimit": 0.75,
+      "pixelEntryFactor": 0.95,
+      "wheelFullDistance": 6.5
     },
     {
       "file": "maserati.glb",
       "name": "Maserati GranTurismo",
       "triangles": 274649,
       "wheels": 4,
-      "candidates": 31,
-      "meshes": 29,
+      "candidates": 38,
+      "meshes": 31,
       "levels": [
-        196707,
-        120705
+        196739,
+        120769
       ],
-      "bytes": 1253225
+      "bytes": 1254400,
+      "playerOnly": false,
+      "batchCompatible": false,
+      "smoothSwitch": true,
+      "pixelErrorLimit": 0.75,
+      "pixelEntryFactor": 0.95,
+      "wheelFullDistance": 6.5
     },
     {
       "file": "mclaren.glb",
       "name": "Mercedes-Benz SLR McLaren",
       "triangles": 204484,
       "wheels": 4,
-      "candidates": 51,
-      "meshes": 49,
+      "candidates": 107,
+      "meshes": 81,
       "levels": [
-        179506,
-        124170
+        179174,
+        123094
       ],
-      "bytes": 1118846
+      "bytes": 1172163,
+      "playerOnly": false,
+      "batchCompatible": false,
+      "smoothSwitch": true,
+      "pixelErrorLimit": 0.75,
+      "pixelEntryFactor": 0.95,
+      "wheelFullDistance": 6.5
     },
     {
       "file": "panamera_wagon.glb",
       "name": "Porsche Panamera Turbo",
       "triangles": 242990,
       "wheels": 4,
-      "candidates": 21,
-      "meshes": 21,
+      "candidates": 136,
+      "meshes": 92,
       "levels": [
-        174342,
-        150340
+        150876,
+        118352
       ],
-      "bytes": 485753
+      "bytes": 696049,
+      "playerOnly": false,
+      "batchCompatible": false,
+      "smoothSwitch": true,
+      "pixelErrorLimit": 0.75,
+      "pixelEntryFactor": 0.95,
+      "wheelFullDistance": 6.5
     },
     {
       "file": "toyota_supra.glb",
       "name": "Toyota Supra MK4",
       "triangles": 856454,
       "wheels": 4,
-      "candidates": 63,
-      "meshes": 60,
+      "candidates": 75,
+      "meshes": 62,
       "levels": [
-        443863,
-        262041
+        453576,
+        274451
       ],
-      "bytes": 2825743
+      "bytes": 2794756,
+      "playerOnly": false,
+      "batchCompatible": false,
+      "smoothSwitch": true,
+      "pixelErrorLimit": 0.75,
+      "pixelEntryFactor": 0.95,
+      "wheelFullDistance": 6.5
     },
     {
       "file": "vaz2107.glb",
       "name": "ВАЗ-2107 «Жигули»",
       "triangles": 1712755,
       "wheels": 4,
-      "candidates": 467,
-      "meshes": 465,
+      "candidates": 656,
+      "meshes": 585,
       "levels": [
-        1160491,
-        743274
+        1098827,
+        652122
       ],
-      "bytes": 6508564
+      "bytes": 7008848,
+      "playerOnly": false,
+      "batchCompatible": false,
+      "smoothSwitch": true,
+      "pixelErrorLimit": 0.75,
+      "pixelEntryFactor": 0.95,
+      "wheelFullDistance": 6.5
     },
     {
       "file": "veloster_n.glb",
       "name": "Mitsubishi Eclipse GT",
       "triangles": 407301,
       "wheels": 4,
-      "candidates": 49,
-      "meshes": 49,
+      "candidates": 90,
+      "meshes": 84,
       "levels": [
-        257749,
-        194449
+        239989,
+        169343
       ],
-      "bytes": 1115634
+      "bytes": 1297406,
+      "playerOnly": false,
+      "batchCompatible": false,
+      "smoothSwitch": true,
+      "pixelErrorLimit": 0.75,
+      "pixelEntryFactor": 0.95,
+      "wheelFullDistance": 6.5
     },
     {
       "file": "g63.glb",
@@ -215,6 +287,168 @@
       ],
       "bytes": 5160227,
       "batchCompatible": true,
+      "pixelErrorLimit": 0.5,
+      "wheelFullDistance": 6.5
+    },
+    {
+      "file": "gtr.glb",
+      "name": "Nissan GT-R R35 Nismo",
+      "triangles": 1368818,
+      "wheels": 4,
+      "candidates": 200,
+      "meshes": 186,
+      "levels": [
+        740672,
+        418876
+      ],
+      "bytes": 4340204,
+      "playerOnly": true,
+      "batchCompatible": true,
+      "smoothSwitch": true,
+      "pixelErrorLimit": 0.5,
+      "wheelFullDistance": 6.5
+    },
+    {
+      "file": "porsche.glb",
+      "name": "Porsche Cayman S",
+      "triangles": 653755,
+      "wheels": 4,
+      "candidates": 35,
+      "meshes": 31,
+      "levels": [
+        426095,
+        326833
+      ],
+      "bytes": 1390915,
+      "playerOnly": true,
+      "batchCompatible": true,
+      "smoothSwitch": true,
+      "pixelErrorLimit": 0.5,
+      "wheelFullDistance": 6.5
+    },
+    {
+      "file": "chiron.glb",
+      "name": "Bugatti Chiron Super Sport",
+      "triangles": 600004,
+      "wheels": 4,
+      "candidates": 48,
+      "meshes": 43,
+      "levels": [
+        549026,
+        363892
+      ],
+      "bytes": 2460895,
+      "playerOnly": true,
+      "batchCompatible": true,
+      "smoothSwitch": true,
+      "pixelErrorLimit": 0.5,
+      "wheelFullDistance": 6.5
+    },
+    {
+      "file": "ferrari.glb",
+      "name": "Ferrari SF90 Stradale",
+      "triangles": 359972,
+      "wheels": 4,
+      "candidates": 39,
+      "meshes": 16,
+      "levels": [
+        344414,
+        338284
+      ],
+      "bytes": 1397033,
+      "playerOnly": true,
+      "batchCompatible": true,
+      "smoothSwitch": true,
+      "pixelErrorLimit": 0.5,
+      "wheelFullDistance": 6.5
+    },
+    {
+      "file": "x5m.glb",
+      "name": "BMW X5M Competition",
+      "triangles": 306296,
+      "wheels": 4,
+      "candidates": 93,
+      "meshes": 75,
+      "levels": [
+        262716,
+        192426
+      ],
+      "bytes": 1594799,
+      "playerOnly": true,
+      "batchCompatible": true,
+      "smoothSwitch": true,
+      "pixelErrorLimit": 0.5,
+      "wheelFullDistance": 6.5
+    },
+    {
+      "file": "arrizo8.glb",
+      "name": "Toyota Camry 3.5",
+      "triangles": 274045,
+      "wheels": 4,
+      "candidates": 99,
+      "meshes": 85,
+      "levels": [
+        202781,
+        158597
+      ],
+      "bytes": 1331666,
+      "playerOnly": true,
+      "batchCompatible": true,
+      "smoothSwitch": true,
+      "pixelErrorLimit": 0.5,
+      "wheelFullDistance": 6.5
+    },
+    {
+      "file": "phantom.glb",
+      "name": "Rolls-Royce Cullinan",
+      "triangles": 205254,
+      "wheels": 4,
+      "candidates": 82,
+      "meshes": 29,
+      "levels": [
+        196049,
+        192075
+      ],
+      "bytes": 119516,
+      "playerOnly": true,
+      "batchCompatible": true,
+      "smoothSwitch": true,
+      "pixelErrorLimit": 0.5,
+      "wheelFullDistance": 6.5
+    },
+    {
+      "file": "vesta.glb",
+      "name": "Lada Vesta Sport",
+      "triangles": 199071,
+      "wheels": 4,
+      "candidates": 39,
+      "meshes": 24,
+      "levels": [
+        152543,
+        107949
+      ],
+      "bytes": 1100239,
+      "playerOnly": true,
+      "batchCompatible": true,
+      "smoothSwitch": true,
+      "pixelErrorLimit": 0.5,
+      "wheelFullDistance": 6.5
+    },
+    {
+      "file": "hypercar.glb",
+      "name": "Koenigsegg Jesko Attack",
+      "triangles": 197666,
+      "wheels": 4,
+      "candidates": 29,
+      "meshes": 17,
+      "levels": [
+        155952,
+        136372
+      ],
+      "bytes": 299777,
+      "playerOnly": true,
+      "batchCompatible": true,
+      "smoothSwitch": true,
       "pixelErrorLimit": 0.5,
       "wheelFullDistance": 6.5
     }

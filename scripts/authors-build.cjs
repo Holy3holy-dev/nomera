@@ -23,6 +23,7 @@ html = html.replace('</head>', '<link rel="stylesheet" href="./authors.css"><lin
 html = html.replace('</head>', '<link rel="stylesheet" href="./authors-rewards.css"><script src="./js/authors-rewards.js"></script></head>');
 html = html.replace('</head>', `<script>window.NomeraVehicleLodWorkerVersion='${lodHash('authors-lod-worker.js')}';</script><script src="./js/vehicle-lod-assets.js?v=${lodHash('vehicle-lod-assets.js')}"></script><script src="./js/authors-vehicle-lod.js?v=${lodHash('authors-vehicle-lod.js')}"></script></head>`);
 html = html.replace('</head>', `<script src="./js/mobile-texture-assets.js?v=${lodHash('mobile-texture-assets.js')}"></script><script src="./js/authors-mobile-textures.js?v=${lodHash('authors-mobile-textures.js')}"></script><link rel="stylesheet" href="./authors-refinement.css?v=${require('node:crypto').createHash('sha256').update(fs.readFileSync(path.join(root,'authors-refinement.css'))).digest('hex').slice(0,12)}"><script src="./js/authors-refinement.js?v=${lodHash('authors-refinement.js')}"></script></head>`);
+html = html.replace('</head>', `<script src="./js/player-lod-profiles.js?v=${lodHash('player-lod-profiles.js')}"></script>`+'</head>');
 html = html.replace('</head>', `<script src="./js/authors-scene-perf.js?v=${lodHash('authors-scene-perf.js')}"></script>`+'</head>');
 html = html.replace('</head>', `<script src="./js/authors-player-render.js?v=${lodHash('authors-player-render.js')}"></script>`+'</head>');
 html = html.replace(/<body([^>]*)>/, '<body$1 class="authors-edition">');
