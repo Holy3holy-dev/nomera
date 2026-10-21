@@ -1489,6 +1489,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 if (typeof stageEl.setAttribute === 'function') stageEl.setAttribute('data-rarity-tier', glowTier);
                 if (stageEl.dataset) stageEl.dataset.rarityTier = glowTier;
             }
+            if(window.NOMERA_AUTHORS_PREVIEW)window.NomeraCollectionFinish?.update(glowTier);
             const pedestalEl = document.getElementById('gen-podium-pedestal');
             if (pedestalEl) {
                 if (typeof pedestalEl.setAttribute === 'function') pedestalEl.setAttribute('data-rarity-tier', glowTier);
@@ -19961,7 +19962,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             const submodeLbl = typeof document !== 'undefined' ? document.getElementById('hud-3d-submode-text') : null;
             if (submodeLbl) {
                 const trackShort = nfsSelectedTrack === 'canyon_pass' ? 'Каньон' : (nfsSelectedTrack === 'bayview_sprint' ? 'Магистраль' : 'Городское');
-                submodeLbl.textContent = isNfsCircuit ? `Трасса: ${trackShort}` : 'В 3D Кольцо';
+                submodeLbl.textContent = isNfsCircuit ? `Трасса: ${trackShort}` : (window.NOMERA_AUTHORS_PREVIEW?(raceCurrentMode==='drift'?'Дрифт':'Шоссе'):'В 3D Кольцо');
             }
 
             racePlayer = {
@@ -20250,6 +20251,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                         car3DRacingEngine.onResize();
                     }
                 }, 80);
+                if(window.NOMERA_AUTHORS_PREVIEW)window.NomeraRaceExperience?.begin(car3DRacingEngine,{trackId:nfsSelectedTrack,carName:selectedRaceCarName,physicsKernel:mwPhysicsKernel,upgrades:raceUpgrades,performance:stats,difficulty:nfsSelectedDifficulty,weather:raceSelectedWeather},nickname);
                 init3DRaceTouchControls();
                 syncMobileTouchControlsVisibility();
                 updateRaceRadioHUD();
@@ -22990,6 +22992,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             const driftBonus = Math.round((racePlayer.driftScore || 0) * 0.8 * (racePlayer.tunedStats?.rewardMult || 1.0));
             const gross = racePlayer.earnedCash + driftBonus;
             const receipt = NomeraRaceEconomy.settle(gross, racePlayer.fuelLiters || 0, balance);
+            if(window.NOMERA_AUTHORS_PREVIEW){document.getElementById('ae-run-analysis')?.remove();if(is3DOrNfsRaceActive()&&car3DRacingEngine)window.NomeraRaceExperience?.finish(car3DRacingEngine,{driving:receipt.gross-driftBonus,drift:driftBonus});}
             const finalXp = Math.max(5, Math.round(racePlayer.distanceKm * 8 + racePlayer.overtakesCount * 3 + (racePlayer.driftScore || 0) * 0.05));
             const wear = Math.min(60, (racePlayer.damageTaken || 0) * 0.8 + racePlayer.distanceKm * 0.1 + (isRealCrash ? 8 + Math.min(7, racePlayer.speed / 50) : 0));
             if (activeRaceCar && myCars.includes(activeRaceCar)) {

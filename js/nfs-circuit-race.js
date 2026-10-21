@@ -712,6 +712,7 @@
                 weather: 'night'
             }, config);
 
+            if(root.NOMERA_AUTHORS_PREVIEW){this.weatherMode=this.carConfig.weather||'night';this.currentActiveWeather=this.weatherMode==='auto'?'night':this.weatherMode;}
             if (config.trackId && TRACK_PRESETS[config.trackId]) {
                 this.track = buildCircuitTrack(config.trackId);
             }
@@ -1189,7 +1190,7 @@
             }
 
             // Spawn tire smoke when drifting
-            if (pState.isDrifting && pState.speedKmh > 35) {
+            if ((pState.isDrifting && pState.speedKmh > 35)||(root.NOMERA_AUTHORS_PREVIEW&&this.currentActiveWeather==='rain'&&pState.speedKmh>60)) {
                 this._spawnTireSmoke(pState.x, pState.z, pState.heading);
             }
             this._updateParticles(safeDt);
@@ -1248,6 +1249,7 @@
                         }
                         progress.currentLapTime = 0;
                         progress.checkpointsPassed++;
+                        if(root.NOMERA_AUTHORS_PREVIEW&&progress.isPlayer)root.NomeraRaceExperience?.checkpoint(this,progress);
 
                         if (progress.lap >= this.totalLaps) {
                             progress.finished = true;
@@ -1276,6 +1278,7 @@
                         }
                     } else {
                         progress.checkpointsPassed++;
+                        if(root.NOMERA_AUTHORS_PREVIEW&&progress.isPlayer)root.NomeraRaceExperience?.checkpoint(this,progress);
                         progress.nextCheckpoint = (progress.nextCheckpoint + 1) % checkpoints.length;
                         if (progress.isPlayer) {
                             const cpBonus = Math.round(2500 * (this.state.rewardMult || 1));
@@ -1310,7 +1313,7 @@
 
             this.stop();
             if (this.options.onGameOver) {
-                this.options.onGameOver(false, this.getState());
+                this.options.onGameOver(root.NOMERA_AUTHORS_PREVIEW ? 'finished' : false, this.getState());
             }
         }
 
@@ -2013,7 +2016,7 @@
             const THREE = this.THREE;
             if (!THREE || !this.scene || !THREE.BoxGeometry) return;
 
-            const smokeGeo = new THREE.BoxGeometry(0.45, 0.45, 0.45);
+            const smokeGeo = root.NOMERA_AUTHORS_PREVIEW ? new THREE.SphereGeometry(.32,8,5) : new THREE.BoxGeometry(0.45, 0.45, 0.45);
             const smokeMat = new THREE.MeshLambertMaterial({ color: 0xe2e8f0, transparent: true, opacity: 0.45 });
             const sparkGeo = new THREE.BoxGeometry(0.14, 0.14, 0.35);
             const sparkMat = new THREE.MeshBasicMaterial({ color: 0xfbbf24 });
@@ -2036,11 +2039,18 @@
 
         _spawnTireSmoke(physX, physZ, heading) {
             if (this.smokePool.length === 0) return;
+            const author=root.NOMERA_AUTHORS_PREVIEW,clock=this.state.raceTimeSec||0;
+            if(author&&clock-(this._lastContactSmoke??-1)<.075)return;
+            const contacts=this.playerPhysics?.suspension?.wheels?.filter(w=>!w.front&&w.contact);
+            if(author&&this.playerPhysics?.suspension&&!contacts?.length)return;
             const slot = this.smokePool.find(p => p.life <= 0);
             if (!slot) return;
             const rx = physX - Math.sin(heading) * 1.6;
             const rz = physZ - Math.cos(heading) * 1.6;
-            slot.mesh.position.set(this.toThreeX(rx), 0.25, this.toThreeZ(rz));
+            const wheel=author&&contacts?.length?contacts[(this._contactSmokeSide=(this._contactSmokeSide||0)+1)%contacts.length]:null,p=wheel?.contact3D?.position,g=wheel?.contact3D?.ground;
+            slot.mesh.position.set(this.toThreeX(p?.[0]??rx),(author?(g?.height??this.roadSurface?.sample(rx,rz)?.height??0):0)+.25,this.toThreeZ(p?.[2]??rz));
+            if(author)this._lastContactSmoke=clock;
+            slot.wet=author&&this.currentActiveWeather==='rain';
             slot.mesh.scale.set(1, 1, 1);
             slot.mesh.visible = true;
             slot.life = 0.45;
@@ -2072,7 +2082,7 @@
                     s.mesh.position.x += s.vx * dt;
                     s.mesh.position.y += s.vy * dt;
                     s.mesh.position.z += s.vz * dt;
-                    const sc = 1 + (0.45 - s.life) * 3.2;
+                    const sc = s.wet?.7+(0.45-s.life):1 + (0.45 - s.life) * 3.2;
                     s.mesh.scale.set(sc, sc, sc);
                     if (s.life <= 0) s.mesh.visible = false;
                 }

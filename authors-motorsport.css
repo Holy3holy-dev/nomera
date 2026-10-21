@@ -1,0 +1,46 @@
+/* Motorsport / collector display: bounded decoration, solid readable labels. */
+.authors-edition .ae-intro{position:relative;border-bottom:1px solid #405166;padding-bottom:24px!important}
+.authors-edition .ae-intro::after{content:'';position:absolute;bottom:-1px;left:0;width:82px;height:3px;background:#d9fb79;box-shadow:0 0 16px #dcff7040}
+.authors-edition .ae-intro h1{background:linear-gradient(100deg,#f3f7f2 30%,#b8c9cf);background-clip:text;color:transparent!important}
+.authors-edition .ae-race-pane-heading>span{color:#c9ec7e!important;letter-spacing:2px}
+.authors-edition .ae-race-modes .race-mode-btn.active{background:linear-gradient(140deg,#324835,#1a2a2d)!important;border-color:#b4d573!important;box-shadow:inset 0 1px #e6ffad40,0 8px 22px #0003!important}
+.authors-edition .ae-race-summary>div{border-bottom:1px solid #35465a;padding-block:8px}.authors-edition .ae-race-summary>div:last-child{border:0}
+.ae-route-coach{position:absolute;left:12px;top:132px;z-index:19;display:flex;gap:10px;align-items:center;width:238px;max-width:calc(100% - 24px);padding:11px 14px;pointer-events:none;border:1px solid #8ca38580;border-left:3px solid #d1ef94;border-radius:8px;background:#101e25f5;color:#edf3e8;box-shadow:0 6px 20px #0004;font-family:Inter,Arial,sans-serif;contain:layout style}
+.ae-route-coach[hidden]{display:none}.ae-route-arrow{font-size:38px;line-height:1;color:#daf9a5;width:36px;flex-shrink:0;text-align:center}.ae-route-coach>div{min-width:0}.ae-route-coach small{display:block;font-size:8px;letter-spacing:1.5px;color:#a7bca5}.ae-route-coach b{display:block;font-size:13px;line-height:1.5;margin:3px 0}.ae-sector-live{font-size:10px;color:#b2c4c9;font-variant-numeric:tabular-nums;display:block;line-height:1.4}.ae-route-coach[data-tone=brake]{border-left-color:#ffb57b}.ae-route-coach[data-tone=brake] .ae-route-arrow{color:#ffc38f}.ae-route-coach[data-tone=best] .ae-sector-live{color:#d0f399}
+.ae-run-analysis{padding:16px;border:1px solid #5c7354;border-radius:10px;margin:12px 0 18px;background:linear-gradient(135deg,#283d33,#14232d);text-align:left}.ae-run-analysis h3{font-size:14px;margin:0 0 12px;color:#e3f5c5}.ae-run-analysis p{display:flex;justify-content:space-between;gap:14px;font-size:12px;margin:8px 0;color:#b8cac7}.ae-run-analysis p b{color:#edf5e3;white-space:nowrap}.ae-run-analysis small{display:block;font-size:10px;line-height:1.65;color:#a9bfbd;margin-top:12px}.ae-run-analysis ol{display:grid;grid-template-columns:1fr 1fr;gap:6px;list-style:none;padding:0;margin:12px 0 0;max-height:160px;overflow:auto}.ae-run-analysis li{font-size:10px;font-variant-numeric:tabular-nums;background:#0c172688;border:1px solid #40554c;border-radius:5px;padding:8px;color:#d6e6cc}
+.authors-edition #gen-plate-stage{background:radial-gradient(ellipse at 50% 35%,var(--ae-rarity-soft) 0,transparent 64%),linear-gradient(135deg,#172837,#09121f 70%)!important}
+.authors-edition #gen-plate-stage::before{background:linear-gradient(90deg,transparent 49.8%,#9fbed61a 50%,transparent 50.2%),linear-gradient(0deg,#263d4740,transparent 45%)!important;background-size:44px 100%,100% 100%!important;opacity:.7!important}
+.authors-edition #gen-plate-stage .podium-rarity-rays::after{background:linear-gradient(110deg,transparent 15%,var(--ae-rarity-soft) 30%,transparent 45%,transparent 62%,var(--ae-rarity-soft) 75%,transparent 90%)!important;inset:5% 0!important;opacity:var(--ae-halo)!important;mask-image:linear-gradient(transparent,#000 60%,transparent)!important}
+.authors-edition #gen-plate-stage .ae-stage-caption{display:none}
+.ae-material-label{position:absolute;left:18px;bottom:15px;z-index:8;display:grid;grid-template-columns:26px auto;column-gap:8px;align-items:center;pointer-events:none;color:var(--ae-rarity,#e4e9ee);text-align:left}.ae-material-label>span{grid-row:1/3;border:1px solid var(--ae-rarity-bright,#657d98);padding:6px 3px;font-size:9px;text-align:center;font-variant-numeric:tabular-nums}.ae-material-label b{font-size:12px;letter-spacing:1px}.ae-material-label small{font-size:6px;letter-spacing:1px;color:#b2c1d0}
+.authors-edition #gen-plate-stage[data-finish=legendary]::after,.authors-edition #gen-plate-stage[data-finish=blatnoy]::after{background:linear-gradient(165deg,#b5a57a,#4b4936 30%,#101d28 75%)!important;box-shadow:inset 0 2px #f2e0a570,0 16px 26px #000a!important}
+.authors-edition #gen-plate-stage[data-finish=epic]::after{background:linear-gradient(165deg,#958eae,#343c56 35%,#101b2a 80%)!important}
+.authors-edition #gen-plate-stage #plate-box{isolation:isolate}
+.authors-edition #gen-plate-stage #plate-box:not(.glow-none)::after{background:linear-gradient(110deg,transparent 33%,#ffffff55 49%,transparent 64%)!important;mix-blend-mode:soft-light;animation:ae-collector-sheen 1.5s ease-out 1!important;opacity:var(--ae-shine)!important}
+.authors-edition .ae-plate-passport{border-top:2px solid #b7d397;background:linear-gradient(145deg,#1c2c3b,#0e1b29)}
+.authors-edition .ae-passport-value{padding:12px;border:1px solid #8c795343;background:#b99a4d12;border-radius:6px;font-variant-numeric:tabular-nums}
+.authors-edition .case-card{box-shadow:inset 0 1px #ffffff15,0 8px 22px #0002!important}.authors-edition .ae-reel-locked .ae-reel-rarity{color:var(--reel-color)!important;border-top:1px solid var(--reel-color)}
+.authors-edition .ae-reward-burst[data-rank="4"] .ae-burst-halo,.authors-edition .ae-reward-burst[data-rank="5"] .ae-burst-halo{background:conic-gradient(from 35deg,transparent,#e8b85e77,transparent,#e0d6ad66,transparent);animation:ae-award-aperture 1.4s ease-out both}
+@keyframes ae-collector-sheen{from{transform:translateX(-120%)}to{transform:translateX(120%)}}
+@keyframes ae-award-aperture{0%{transform:scale(.4) rotate(-20deg);opacity:0}25%{opacity:.65}100%{transform:scale(1.8) rotate(20deg);opacity:0}}
+@media(max-width:600px){.ae-route-coach{top:130px;left:8px;width:calc(100% - 120px);max-width:238px;padding:8px;gap:6px}.ae-route-arrow{font-size:30px;width:28px}.ae-route-coach small{font-size:7px;letter-spacing:.9px}.ae-route-coach b{font-size:11px}.ae-sector-live{font-size:9px}.ae-material-label{left:12px;bottom:10px}.ae-material-label b{font-size:10px}.ae-material-label small{font-size:5px}.ae-run-analysis{padding:13px}.ae-run-analysis ol{grid-template-columns:1fr}}
+@media(max-height:500px) and (orientation:landscape){.ae-route-coach{top:10px;width:196px;padding:6px 9px}.ae-route-arrow{font-size:26px}.ae-route-coach small{font-size:7px}.ae-route-coach b{font-size:11px;margin:1px 0}.ae-sector-live{font-size:8px}}
+@media(prefers-reduced-motion:reduce){.authors-edition #gen-plate-stage #plate-box:not(.glow-none)::after,.authors-edition .ae-reward-burst .ae-burst-halo{animation:none!important;opacity:.08!important;transform:none!important}}
+
+/* Separate landscape telemetry lanes leave the driving view and touch controls clear. */
+@media(max-height:500px) and (orientation:landscape){
+ body.authors-edition.race-active #nfs-circuit-telemetry-bar{top:8px!important;left:224px!important;right:148px!important;transform:none!important;white-space:normal!important;padding:5px 8px!important;font-size:9px!important;border-radius:7px!important}
+ body.authors-edition.race-active #nfs-circuit-telemetry-bar :is(div,b){font-size:9px!important;line-height:1.35!important}
+ body.authors-edition.race-active .nfs-minimap-canvas{top:8px!important;right:10px!important;width:108px!important;height:108px!important}
+ body.authors-edition.race-active:has(.nfs-circuit-hud-overlay) .race-3d-hud-top{top:76px!important}
+ body.authors-edition.race-active:not(:has(.nfs-circuit-hud-overlay)) .race-3d-hud-top{top:8px!important}
+ body.authors-edition.race-active #hud-3d-pursuit-box{top:62px!important;left:224px!important;width:260px!important}
+}
+/* Pursuit already owns a detailed panel; retain the unobstructed driving view. */
+body.authors-edition.race-active:has(#hud-3d-pursuit-box:not(.hidden)) .ae-route-coach{display:none}
+
+.authors-edition #gameover-car-preview{position:relative;overflow:hidden;border-radius:10px}
+
+/* Press feedback keeps the entire touch target available, including landscape. */
+body.authors-edition #race-3d-touch-controls .touch-btn{min-height:44px!important}
+body.authors-edition #race-3d-touch-controls .touch-btn:is(:active,.pressed){transform:none!important;filter:brightness(1.15);box-shadow:inset 0 0 0 1px #e3f6ad88!important}

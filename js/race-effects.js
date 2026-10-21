@@ -833,6 +833,11 @@
                 };
             }
 
+            // The author edition follows the authoritative road contacts.
+            if (typeof window !== 'undefined' && window.NOMERA_AUTHORS_PREVIEW) {
+                const phys=this.engine.playerPhysics||this.engine.mwLongitudinal,wheels=phys?.suspension?.wheels;
+                if(wheels?.length===4){const positions={};for(const w of wheels){const p=w.contact3D?.position,g=w.contact3D?.ground;if(!p||!g)break;const v=new THREE.Vector3(this.engine.toThreeX?this.engine.toThreeX(p[0]):p[0],g.height+.018,this.engine.toThreeZ?this.engine.toThreeZ(p[2]):p[2]);v.contact=!!w.contact;const n=g.normal||[0,1,0];v.roadNormal=new THREE.Vector3(this.engine.toThreeX?this.engine.toThreeX(n[0]):n[0],n[1],n[2]).normalize();positions[w.key]=v;}if(Object.keys(positions).length===4)return positions;}
+            }
             // Keep playerCar synchronized with latest state coordinates
             if (st && (playerCar.position.x !== st.x || playerCar.position.z !== st.z)) {
                 playerCar.position.x = st.x;
@@ -861,7 +866,7 @@
         }
 
         spawnSmokePuff(pos, options = {}) {
-            if (!this.smokePool || this.smokePool.length === 0) return;
+            if (!this.smokePool || this.smokePool.length === 0 || pos.contact===false) return;
             const p = this.smokePool.pop();
             const carSpeed = (this.engine && this.engine.state) ? this.engine.state.speed : 0;
             const forwardMps = carSpeed / 3.6;
@@ -873,7 +878,9 @@
             );
 
             p.life = 0;
-            p.maxLife = options.maxLife || (0.75 + Math.random() * 0.45);
+            const author=typeof window!=='undefined'&&window.NOMERA_AUTHORS_PREVIEW,wet=author&&this.engine.currentActiveWeather==='rain'&&this.engine.currentBiome!=='tunnel'&&!(window.NomeraEnvironment?.tunnelBlend(this.engine)>.5);
+            if(author)p.mesh.material.color?.setHex(wet?0x9fb7bb:0xd9e0e8);
+            p.maxLife = wet?.38:(options.maxLife || (0.75 + Math.random() * 0.45));
             p.startScale = options.startScale || (0.28 + Math.random() * 0.12);
             p.maxScale = options.maxScale || (1.8 + Math.random() * 0.9);
             p.baseOpacity = options.baseOpacity || 0.52;
@@ -888,9 +895,17 @@
             p.rotVy = (Math.random() - 0.5) * 2.2;
             p.rotVz = (Math.random() - 0.5) * 2.2;
 
+            if(wet){p.maxScale=.75;p.startScale=.15;p.baseOpacity=.22;p.vy=.25;}
             p.mesh.scale.setScalar(p.startScale);
             p.mesh.visible = true;
             this.activeSmoke.push(p);
+        }
+
+        getContactTireActivity() {
+            if(typeof window==='undefined'||!window.NOMERA_AUTHORS_PREVIEW)return null;
+            const physics=this.engine.playerPhysics||this.engine.mwLongitudinal;
+            if(!physics?.mwTires||!physics.suspension?.wheels)return null;
+            return physics.suspension.wheels.map(w=>{const tire=physics.mwTires[w.key];return{key:w.key,active:!!w.contact&&!!tire&&(Math.abs(tire.slip)>1.8||Math.abs(tire.slipAngle)>.14&&this.engine.state.speed>18||tire.locked&&this.engine.state.speed>20)};});
         }
 
         updateSmoke(dt, state, keys) {
@@ -911,11 +926,16 @@
             this.isHardDrifting = isDriftSlide || isHandbrakingLock;
 
             // Spawn smoke puffs based on triggers
-            if (this.smokeTimer >= 0.038) {
+            const author=typeof window!=='undefined'&&window.NOMERA_AUTHORS_PREVIEW,wet=author&&this.engine.currentActiveWeather==='rain'&&this.engine.currentBiome!=='tunnel'&&!(window.NomeraEnvironment?.tunnelBlend(this.engine)>.5);
+            const interval=author&&(window.NomeraScenePerf?.mobile()||window.matchMedia?.('(prefers-reduced-motion: reduce)').matches)?.085:.038;
+            if (this.smokeTimer >= interval) {
                 this.smokeTimer = 0;
                 const wheels = this.getWheelWorldPositions();
-
-                if (isHandbrakingLock) {
+                const contacts=this.getContactTireActivity();
+                if(contacts){
+                    let budget=2;
+                    for(const tire of contacts)if(budget>0&&(tire.active||wet&&speed>45)&&wheels[tire.key].contact){this.spawnSmokePuff(wheels[tire.key],{startScale:.14,maxScale:1.05,baseOpacity:.28,maxLife:.65});budget--;}
+                } else if (isHandbrakingLock) {
                     // Intense tire smoke billows from rear wheels while handbraking at speed
                     this.spawnSmokePuff(wheels.rl, { maxScale: 2.2, baseOpacity: 0.60, vy: 0.85 });
                     this.spawnSmokePuff(wheels.rr, { maxScale: 2.2, baseOpacity: 0.60, vy: 0.85 });
@@ -937,6 +957,8 @@
                         baseOpacity: 0.50,
                         vx: outerIsRight ? -0.2 : 0.4
                     });
+                } else if (wet && speed>45) {
+                    this.spawnSmokePuff(wheels.rl);this.spawnSmokePuff(wheels.rr);
                 } else if (isHardBrakingLock) {
                     // Hard braking locked tires: acrid grey puffs
                     this.spawnSmokePuff(wheels.rl, { maxScale: 1.7, baseOpacity: 0.45 });
@@ -1089,6 +1111,8 @@
         // ==========================================
         emitSkidSegment(pos, wheelKey, intensity = 1.0) {
             if (!this.skidPool || this.skidPool.length === 0) return;
+            const author=typeof window!=='undefined'&&window.NOMERA_AUTHORS_PREVIEW;
+            if(author&&pos.contact===false){this.lastSkidPos[wheelKey]=null;return;}
             const lastPos = this.lastSkidPos[wheelKey];
 
             if (!lastPos) {
@@ -1097,18 +1121,20 @@
             }
 
             const dist = pos.distanceTo(lastPos);
+            if(author&&dist>4){this.lastSkidPos[wheelKey]=pos.clone();return;}
             // Minimum distance between skid segment anchors
             if (dist >= 0.50) {
                 const s = this.skidPool.pop();
                 const mid = lastPos.clone().lerp(pos, 0.5);
-                mid.y = 0.012; // Just above road mesh to eliminate z-fighting
+                mid.y = author?(pos.y+lastPos.y)*.5:0.012; // Follow contact height.
 
                 s.mesh.position.copy(mid);
 
                 // Align quad along direction vector
                 const dx = pos.x - lastPos.x;
                 const dz = pos.z - lastPos.z;
-                s.mesh.rotation.y = Math.atan2(dx, dz);
+                s.mesh.rotation.set(0,Math.atan2(dx,dz),0);
+                if(author&&pos.roadNormal){const tilt=new this.THREE.Quaternion().setFromUnitVectors(new this.THREE.Vector3(0,1,0),pos.roadNormal);s.mesh.quaternion.premultiply(tilt);}
                 s.mesh.scale.set(1.0, 1.0, dist);
 
                 s.life = 0;
@@ -1140,12 +1166,17 @@
 
             const shouldSkid = isBurnout || isBrakeLock || isSlide || isHandbrakeLock;
 
-            if (shouldSkid) {
+            const contacts=this.getContactTireActivity();
+            if(contacts){
+                const wheels=this.getWheelWorldPositions(),wet=this.engine.currentActiveWeather==='rain';
+                for(const tire of contacts){if(tire.active)this.emitSkidSegment(wheels[tire.key],tire.key,wet?.4:.85);else this.lastSkidPos[tire.key]=null;}
+            } else if (shouldSkid) {
                 const wheels = this.getWheelWorldPositions();
                 const skidIntensity = (isDrifting ? 1.0 : (isHandbrakeLock ? 0.95 : (isBrakeLock ? 0.9 : 0.85)));
 
-                this.emitSkidSegment(wheels.rl, 'rl', skidIntensity);
-                this.emitSkidSegment(wheels.rr, 'rr', skidIntensity);
+                const wet=typeof window!=='undefined'&&window.NOMERA_AUTHORS_PREVIEW&&this.engine.currentActiveWeather==='rain';
+                this.emitSkidSegment(wheels.rl, 'rl', wet?skidIntensity*.45:skidIntensity);
+                this.emitSkidSegment(wheels.rr, 'rr', wet?skidIntensity*.45:skidIntensity);
 
                 if (isBrakeLock && speed > 70) {
                     this.emitSkidSegment(wheels.fl, 'fl', skidIntensity * 0.7);
@@ -1217,6 +1248,8 @@
         }
 
         spawnDriftSmoke(dt) {
+            // Author smoke is emitted by the fixed-rate updateSmoke pool only.
+            if(typeof window!=='undefined'&&window.NOMERA_AUTHORS_PREVIEW)return;
             // Hook for existing engine callers
             const wheels = this.getWheelWorldPositions();
             this.spawnSmokePuff(wheels.rl);

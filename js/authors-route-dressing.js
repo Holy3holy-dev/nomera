@@ -1,0 +1,27 @@
+/* Reusable signs and district landmarks. Decoration stays outside road contact. */
+(function(root,factory){const api=factory(root);if(typeof module==='object'&&module.exports)module.exports=api;else root.NomeraRouteDressing=api;})(typeof globalThis!=='undefined'?globalThis:this,function(root){
+ 'use strict';
+ function cornerPlan(track){const out=[];for(let s=30;s<track.totalLength-60;s+=30){const q=track.sampleTrackAtS(s);if(Math.abs(q.curvature)<.006||out.length&&s-out.at(-1).s<100)continue;const side=-Math.sign(q.curvature),offset=q.halfWidth+3,x=q.x+q.nx*side*offset,z=q.z+q.nz*side*offset,p=track.projectPointToTrack(x,z);if(Math.abs(p.lateralOffset)<p.halfWidth+1.5)continue;out.push({s,x,z,heading:q.heading,direction:q.curvature>0?'right':'left'});}return out.slice(0,28);}
+ function own(s,r){s.resources.push(r);return r;}
+ function prepare(e){if(e.authorsRoute||!e.THREE||!root.document)return;const T=e.THREE,s=e.authorsRoute={resources:[],groups:[],chunks:new Map(),circuit:false,signs:0};
+  const canvas=root.document.createElement('canvas');canvas.width=512;canvas.height=256;const c=canvas.getContext('2d');
+  for(let i=0;i<4;i++){const x=i%2*256,y=Math.floor(i/2)*128;c.fillStyle=i<2?'#d6d977':'#243d3b';c.fillRect(x,y,256,128);c.strokeStyle=i<2?'#242a28':'#b9cba5';c.lineWidth=4;c.strokeRect(x+5,y+5,246,118);c.fillStyle=i<2?'#202a25':'#ecedcc';c.textAlign='center';
+   if(i<2){c.font='900 108px Arial';c.fillText(i?'››':'‹‹',x+128,y+98);}else{c.font='700 19px Arial';c.fillText('ROCKPORT',x+128,y+37);c.font='700 23px Arial';c.fillText(i===2?'IRONWORKS':'NORTH HEIGHTS',x+128,y+71);c.font='15px Arial';c.fillText(i===2?'INDUSTRIAL DISTRICT':'RIVERSIDE ROUTE',x+128,y+99);}}
+  s.atlas=own(s,new T.CanvasTexture(canvas));s.atlas.encoding=T.sRGBEncoding;s.atlas.anisotropy=2;
+  s.face=own(s,new T.MeshBasicMaterial({map:s.atlas,side:T.DoubleSide,toneMapped:false}));s.steel=own(s,new T.MeshStandardMaterial({color:0x434c45,roughness:.85,metalness:.3}));s.tank=own(s,new T.MeshStandardMaterial({color:0x8d9b8d,roughness:.82}));s.box=own(s,new T.BoxGeometry(1,1,1));s.cylinder=own(s,new T.CylinderGeometry(3.5,3.5,5,12));s.cap=own(s,new T.ConeGeometry(3.7,1.4,12));s.planes=Array.from({length:4},(_,i)=>{const g=own(s,new T.PlaneGeometry(1,1)),uv=g.attributes.uv;for(let j=0;j<uv.count;j++)uv.setXY(j,(uv.getX(j)+i%2)/2,(uv.getY(j)+(i<2?1:0))/2);return g;});
+ }
+ function sign(e,parent,{x,y=0,z,heading=0,tile=2,width=5,height=2.5}){const T=e.THREE,s=e.authorsRoute;if(e.track){const p=e.track.projectPointToTrack(e.toThreeX(x),e.toThreeZ(z));if(Math.abs(p.lateralOffset)<p.halfWidth+1.5)return null;}const g=new T.Group();g.name='RockportRouteSign';g.position.set(x,y,z);g.rotation.y=Math.PI-heading;
+  const face=new T.Mesh(s.planes[tile],s.face);face.position.y=3.8;face.scale.set(width,height,1);g.add(face);for(const side of[-1,1]){const pole=new T.Mesh(s.box,s.steel);pole.position.set(side*width*.35,2,0);pole.scale.set(.12,4,.12);g.add(pole);}parent.add(g);s.signs++;return g;}
+ function tower(e,parent,x,y,z){const T=e.THREE,s=e.authorsRoute,g=new T.Group();g.name='RockportWaterTower';g.position.set(x,y,z);for(const side of[-1,1])for(const end of[-1,1]){const pole=new T.Mesh(s.box,s.steel);pole.position.set(side*2.3,5,end*2.3);pole.scale.set(.28,10,.28);g.add(pole);}const tank=new T.Mesh(s.cylinder,s.tank),cap=new T.Mesh(s.cap,s.steel);tank.position.y=12;cap.position.y=15.2;g.add(tank,cap);parent.add(g);}
+ function circuit(e){const s=e.authorsRoute,g=new e.THREE.Group();g.name='RockportWayfinding';for(const p of cornerPlan(e.track)){const q=e.track.sampleTrackAtS(p.s),y=e.roadSurface?.heightAt(p.s,0)||0;sign(e,g,{x:e.toThreeX(p.x),z:e.toThreeZ(p.z),y,heading:p.heading,tile:p.direction==='right'?1:0,width:3.4,height:1.65});}
+  for(let i=0;i<3;i++){const q=e.track.sampleTrackAtS((i+.25)*e.track.totalLength/3),offset=q.halfWidth+24,x=q.x+q.nx*offset,z=q.z+q.nz*offset,p=e.track.projectPointToTrack(x,z);if(Math.abs(p.lateralOffset)<p.halfWidth+8)continue;const y=e.scene.getObjectByName('CircuitTerrain')?.position.y||0;tower(e,g,e.toThreeX(x),y,e.toThreeZ(z));sign(e,g,{x:e.toThreeX(q.x-q.nx*(q.halfWidth+5)),y:0,z:e.toThreeZ(q.z-q.nz*(q.halfWidth+5)),heading:q.heading,tile:2+i%2});}
+  e.scene.add(g);s.groups.push(g);s.circuit=true;
+ }
+ function update(e){prepare(e);const s=e.authorsRoute;if(!s)return;if(e.track&&!s.circuit)circuit(e);
+  if(e.roadChunks&&e.authorsWorld?.ready){let budget=1;for(const[chunk,world]of e.authorsWorld.chunks){let row=s.chunks.get(chunk);if(!row&&budget-- >0){const g=new e.THREE.Group();g.name='RockportHighwayWayfinding';const board=sign(e,g,{x:13,z:0,tile:2,heading:0});tower(e,g,-52,0,8);world.scenery.add(g);row={group:g,board,z:null};s.chunks.set(chunk,row);s.groups.push(g);}
+   if(row&&row.z!==chunk.position.z){const block=Math.round(chunk.position.z/(e.chunkLength||60));row.group.visible=((block%5)+5)%5===0;row.board.children[0].geometry=s.planes[2+Math.abs(Math.floor(block/5))%2];row.group.position.y=e.mwLongitudinal?(root.NomeraRoadSurface?.highway(13,chunk.position.z)?.height||0):0;row.z=chunk.position.z;}}
+  }e.routeDressingTelemetry={signs:s.signs,atlasBytes:512*256*4,pool:s.chunks.size,physicsChanged:false};
+ }
+ function destroy(e){const s=e.authorsRoute;if(!s)return;for(const g of s.groups)g.parent?.remove(g);for(const r of s.resources)r.dispose();s.chunks.clear();delete e.authorsRoute;delete e.routeDressingTelemetry;}
+ return{cornerPlan,update,destroy};
+});
