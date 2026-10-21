@@ -1,0 +1,206 @@
+{
+  "formatVersion": 1,
+  "rigVersion": 1,
+  "nearFullDistance": 5.2,
+  "nearOutDistance": 6,
+  "farInDistance": 18,
+  "farOutDistance": 22,
+  "pixelErrorLimit": 0.75,
+  "models": [
+    {
+      "file": "aston_martin.glb",
+      "name": "Aston Martin DB9",
+      "triangles": 278452,
+      "wheels": 4,
+      "candidates": 16,
+      "meshes": 15,
+      "levels": [
+        157558,
+        110768
+      ],
+      "bytes": 845706
+    },
+    {
+      "file": "audi_rs7.glb",
+      "name": "Audi RS7 Sportback",
+      "triangles": 2488038,
+      "wheels": 4,
+      "candidates": 132,
+      "meshes": 130,
+      "levels": [
+        1730674,
+        1095392
+      ],
+      "bytes": 6920600
+    },
+    {
+      "file": "bmw_i8.glb",
+      "name": "BMW M8 Gran Coupe",
+      "triangles": 219035,
+      "wheels": 4,
+      "candidates": 13,
+      "meshes": 13,
+      "levels": [
+        164119,
+        137831
+      ],
+      "bytes": 414429
+    },
+    {
+      "file": "bmw_m3_sedan.glb",
+      "name": "BMW M3 G80 Competition",
+      "triangles": 1354583,
+      "wheels": 4,
+      "candidates": 163,
+      "meshes": 113,
+      "levels": [
+        774737,
+        497657
+      ],
+      "bytes": 3630149
+    },
+    {
+      "file": "bmw_m4.glb",
+      "name": "BMW M5 F90 Competition",
+      "triangles": 118362,
+      "wheels": 4,
+      "candidates": 71,
+      "meshes": 64,
+      "levels": [
+        99956,
+        84654
+      ],
+      "bytes": 550378
+    },
+    {
+      "file": "corvette_cross.glb",
+      "name": "Chevrolet Corvette C6.R",
+      "triangles": 91463,
+      "wheels": 4,
+      "candidates": 25,
+      "meshes": 21,
+      "levels": [
+        64833,
+        64833
+      ],
+      "bytes": 417817
+    },
+    {
+      "file": "elantra_n.glb",
+      "name": "Hyundai Elantra N",
+      "triangles": 501430,
+      "wheels": 4,
+      "candidates": 169,
+      "meshes": 168,
+      "levels": [
+        266570,
+        153932
+      ],
+      "bytes": 1958718
+    },
+    {
+      "file": "gaz24.glb",
+      "name": "ГАЗ-24 «Волга»",
+      "triangles": 44189,
+      "wheels": 4,
+      "candidates": 5,
+      "meshes": 5,
+      "levels": [
+        39361,
+        30717
+      ],
+      "bytes": 127896
+    },
+    {
+      "file": "lamborghini.glb",
+      "name": "Lamborghini Gallardo",
+      "triangles": 217706,
+      "wheels": 4,
+      "candidates": 53,
+      "meshes": 53,
+      "levels": [
+        151430,
+        97992
+      ],
+      "bytes": 909425
+    },
+    {
+      "file": "maserati.glb",
+      "name": "Maserati GranTurismo",
+      "triangles": 274649,
+      "wheels": 4,
+      "candidates": 31,
+      "meshes": 29,
+      "levels": [
+        196707,
+        120705
+      ],
+      "bytes": 1253225
+    },
+    {
+      "file": "mclaren.glb",
+      "name": "Mercedes-Benz SLR McLaren",
+      "triangles": 204484,
+      "wheels": 4,
+      "candidates": 51,
+      "meshes": 49,
+      "levels": [
+        179506,
+        124170
+      ],
+      "bytes": 1118846
+    },
+    {
+      "file": "panamera_wagon.glb",
+      "name": "Porsche Panamera Turbo",
+      "triangles": 242990,
+      "wheels": 4,
+      "candidates": 21,
+      "meshes": 21,
+      "levels": [
+        174342,
+        150340
+      ],
+      "bytes": 485753
+    },
+    {
+      "file": "toyota_supra.glb",
+      "name": "Toyota Supra MK4",
+      "triangles": 856454,
+      "wheels": 4,
+      "candidates": 63,
+      "meshes": 60,
+      "levels": [
+        443863,
+        262041
+      ],
+      "bytes": 2825743
+    },
+    {
+      "file": "vaz2107.glb",
+      "name": "ВАЗ-2107 «Жигули»",
+      "triangles": 1712755,
+      "wheels": 4,
+      "candidates": 467,
+      "meshes": 465,
+      "levels": [
+        1160491,
+        743274
+      ],
+      "bytes": 6508564
+    },
+    {
+      "file": "veloster_n.glb",
+      "name": "Mitsubishi Eclipse GT",
+      "triangles": 407301,
+      "wheels": 4,
+      "candidates": 49,
+      "meshes": 49,
+      "levels": [
+        257749,
+        194449
+      ],
+      "bytes": 1115634
+    }
+  ]
+}

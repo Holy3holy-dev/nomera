@@ -8034,6 +8034,8 @@
                 modelGroup.add(clonedScene);
                 modelGroup.updateMatrixWorld(true);
                 modelGroup.userData.baseBoundingBox = computeTightBoundingBox(clonedScene);
+                modelGroup.userData.vehicleLodFile = GLB_MODEL_MAP[carId]?.split('/').pop();
+                modelGroup.userData.vehicleLodId = carId;
                 fitModelToShowroom(THREE, modelGroup, 4.8);
                 applyStylingToGLTF(THREE, modelGroup, styling, carId);
 
@@ -8335,6 +8337,7 @@
     }
 
     function deepDispose(obj) {
+        if(typeof window!=='undefined')window.NomeraVehicleLOD?.release(obj);
         if (!obj) return;
         try {
             if (typeof obj.traverse === 'function') {
@@ -16807,6 +16810,7 @@
 
         render() {
             if (this.renderer && this.scene && this.camera) {
+                this.vehicleLodTelemetry=window.NomeraVehicleLOD?.updateScene(window.THREE,this.scene,this.camera,this.renderer);
                 this.renderer.render(this.scene, this.camera);
             }
         }

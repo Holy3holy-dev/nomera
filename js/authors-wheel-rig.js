@@ -193,7 +193,7 @@
   }
   const rig={wheels,imported:true};rigs.set(model,rig);return rig;
  }
- function prepare(T,model){const iterator=build(T,model);let result;do{result=iterator.next();}while(!result.done);return result.value;}
+ function prepare(T,model){const iterator=build(T,model);let result;do{result=iterator.next();}while(!result.done);globalThis.NomeraVehicleLOD?.afterWheels(T,model);return result.value;}
  function prepareAsync(T,model,target=[]){
   if(pending.has(model))return pending.get(model);
   target.splice(0,target.length);
@@ -201,7 +201,7 @@
   const pump=()=>{
    const start=performance.now();let result;
    do{if(task.cancelled)return;result=iterator.next();}while(!result.done&&performance.now()-start<5);
-   if(result.done){target.splice(0,target.length,...result.value.wheels);task.imported=result.value.imported;task.reason=result.value.reason;task.pending=false;jobs.delete(task);pending.delete(model);}
+   if(result.done){target.splice(0,target.length,...result.value.wheels);task.imported=result.value.imported;task.reason=result.value.reason;task.pending=false;jobs.delete(task);pending.delete(model);globalThis.NomeraVehicleLOD?.afterWheels(T,model);}
    else task.timer=setTimeout(pump,0);
   };
   task.cancel=()=>{task.cancelled=true;clearTimeout(task.timer);iterator.return();jobs.delete(task);pending.delete(model);};

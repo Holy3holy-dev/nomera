@@ -3,6 +3,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const root = path.resolve(__dirname, '..');
+const lodHash=file=>require('node:crypto').createHash('sha256').update(fs.readFileSync(path.join(root,'js',file))).digest('hex').slice(0,12);
 let html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 html = html.replace('<title>H3H Nomera</title>', '<title>NOMERA — Author’s Edition</title>');
 html = html.replace(/, maximum-scale=1\.0, user-scalable=no/, '');
@@ -20,6 +21,7 @@ html = html.replace('</head>', '<script src="./js/authors-preview-pause.js"></sc
 html = html.replace(/\.\/styles\.css\?v=[a-f0-9]+/, './authors-legacy.css');
 html = html.replace('</head>', '<link rel="stylesheet" href="./authors.css"><link rel="stylesheet" href="./authors-expansion.css"><link rel="stylesheet" href="./authors-secondary.css"><link rel="stylesheet" href="./authors-plate-effects.css"></head>');
 html = html.replace('</head>', '<link rel="stylesheet" href="./authors-rewards.css"><script src="./js/authors-rewards.js"></script></head>');
+html = html.replace('</head>', `<script>window.NomeraVehicleLodWorkerVersion='${lodHash('authors-lod-worker.js')}';</script><script src="./js/vehicle-lod-assets.js?v=${lodHash('vehicle-lod-assets.js')}"></script><script src="./js/authors-vehicle-lod.js?v=${lodHash('authors-vehicle-lod.js')}"></script></head>`);
 html = html.replace(/<body([^>]*)>/, '<body$1 class="authors-edition">');
 html = html.replace('</body>', '<script src="./js/plate-presentation.js"></script><script src="./js/authors-plate-passport.js"></script><script src="./js/authors-ui.js"></script><script src="./js/authors-preview-market.js"></script><script src="./js/authors-expansion.js"></script><script src="./js/authors-secondary.js"></script></body>');
 fs.writeFileSync(path.join(root, 'authors.html'), html);

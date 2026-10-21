@@ -17,7 +17,7 @@
   });return altered;
  }
  function prepare(e,model){if(!model)return null;if(e.authorsCabin?.model===model)return e.authorsCabin;if(window.NomeraWheelRig?.isPending(model)){e.authorsCabin=null;return null;}const T=e.THREE||THREE,raw=profile(e);if(!raw)return null;const id=Car3DManager.identifyCarModel(e.carName||e.carConfig?.carName||''),recipe=window.NomeraSteeringProfiles?.[id],p={...raw,eye:raw.eye.slice(),look:raw.look.slice()};
-  const rig=window.NomeraSteeringRig?.build(T,model,recipe);if(rig){p.eye[0]=recipe.center[0];p.eye[1]=Math.min(p.roof-.1,Math.max(recipe.center[1]+.23,Math.min(p.eye[1],recipe.center[1]+.42)));p.eye[2]=recipe.center[2]-.56;p.look=[p.eye[0],p.eye[1]-.035,p.eye[2]+32];}
+  window.NomeraVehicleLOD?.restoreFull(model);const rig=window.NomeraSteeringRig?.build(T,model,recipe);if(rig){p.eye[0]=recipe.center[0];p.eye[1]=Math.min(p.roof-.1,Math.max(recipe.center[1]+.23,Math.min(p.eye[1],recipe.center[1]+.42)));p.eye[2]=recipe.center[2]-.56;p.look=[p.eye[0],p.eye[1]-.035,p.eye[2]+32];}
   const seatOffset=seatClearance(T,model,p),cabin={model,p,seatOffset,windows:openWindscreen(T,model,p),inside:false,fallback:null,wheel:rig?.pivot||null,wheelAxis:rig?.axis||new T.Vector3(0,.3,Math.sqrt(.91)),steeringSource:rig?'native triangles':'fitted wheel'};
   let nativeHits=0;if(!rig&&p.fallback){const start=new T.Vector3().fromArray(p.eye).applyMatrix4(model.matrixWorld),target=new T.Vector3(),local=new T.Vector3(),ray=new T.Raycaster();for(const x of [-.10,0,.10])for(const y of [-.04,0,.04]){target.set(p.eye[0]+x,p.eye[1]-.24+y,p.eye[2]+.43).applyMatrix4(model.matrixWorld);ray.set(start,target.clone().sub(start).normalize());ray.far=.85;const hit=ray.intersectObjects(model.children,true).find(h=>h.object.visible&&(!h.object.material?.transparent||h.object.material.opacity>.8));if(hit){local.copy(hit.point).applyMatrix4(model.matrixWorld.clone().invert());if(local.z>p.eye[2]+.1&&local.z<p.eye[2]+.8&&local.y<p.eye[1]-.1)nativeHits++;}}}
   cabin.nativeHits=nativeHits;
@@ -28,7 +28,7 @@
   const physics=e.playerPhysics||e.mwLongitudinal;if(physics)physics.collisionShape=shape(p);
   e.authorsCabin=cabin;model.userData.driverCamera={eye:p.eye.slice(),type:cabin.fallback?'individual fitted wheel':'imported model interior',id};return cabin;
  }
- function sync(e,inside){const model=e.playerCarBodyGroup?.children[0]||e.playerCar,c=prepare(e,model);if(!c)return;if(c.inside!==inside){for(const w of c.windows)w.mesh.geometry=inside?w.geometry:w.original;c.inside=inside;}
+ function sync(e,inside){const model=e.playerCarBodyGroup?.children[0]||e.playerCar,c=prepare(e,model);if(!c)return;if(c.inside!==inside){window.NomeraVehicleLOD?.restoreFull(model);for(const w of c.windows)w.mesh.geometry=inside?w.geometry:w.original;c.inside=inside;}
   if(c.fallback)c.fallback.visible=inside;
   // Any old generic rig is hidden; real mesh visibility is never replaced.
   if(e.cockpitGroup)e.cockpitGroup.visible=false;

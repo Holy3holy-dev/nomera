@@ -9,6 +9,9 @@
     "models:stage": "node scripts/optimize-car-models.cjs",
     "models:apply": "node scripts/optimize-car-models.cjs --apply",
     "models:verify": "node --test tests/glb-lossless-optimization.test.cjs",
+    "lod:build": "node scripts/build-vehicle-lods.cjs",
+    "lod:verify": "node --test tests/vehicle-lod.test.cjs",
+    "lod:qa": "node scripts/authors-vehicle-lod-qa.cjs",
     "test:browser": "node scripts/browser-smoke.cjs",
     "admin:hash": "node scripts/hash-admin-password.cjs",
     "build": "node scripts/build.cjs",
@@ -26,6 +29,7 @@
   },
   "devDependencies": {
     "meshoptimizer": "0.25.0",
+    "playwright": "1.62.1",
     "sharp": "0.34.5"
   }
 }

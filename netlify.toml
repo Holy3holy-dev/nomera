@@ -28,3 +28,9 @@
   [headers.values]
     Cache-Control = "public, max-age=86400, must-revalidate"
     X-Content-Type-Options = "nosniff"
+
+[[headers]]
+  for = "/assets/models-lod/*"
+  [headers.values]
+    Cache-Control = "public, max-age=86400, must-revalidate"
+    X-Content-Type-Options = "nosniff"
