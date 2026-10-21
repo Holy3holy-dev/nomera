@@ -15,3 +15,7 @@ for(const folder of ['js','icons','assets']) {
   }
 }
 console.log('Clean public dist ready. Private server code stays outside publish directory.');
+if(process.argv.includes('--authors')){
+  for(const name of ['authors.html','authors-legacy.css','authors.css','authors-expansion.css','authors-secondary.css','authors-plate-effects.css','authors-rewards.css'])fs.copyFileSync(path.join(root,name),path.join(dist,name));
+  console.log('Author’s Edition included at /authors.html (local build only).');
+}

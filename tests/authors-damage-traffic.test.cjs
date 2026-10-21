@@ -23,7 +23,7 @@ for(const speed of [90,250])test(`All49 profiles change lanes and settle without
 });
 const car=(x,z,speed)=>{const c=new T.Group();c.position.set(x,0,z);Object.assign(c.userData,{type:'sedan',speed,baseSpeed:speed,targetX:x,halfWidth:.95,halfLength:2.2});return c;};
 test('Predictive following brakes early and adjacent-lane checks reject an occupied destination',()=>{
- const rear=car(0,0,170),front=car(0,14,40),side=car(4.2,1,100),e={trafficCars:[rear,front,side]};A.cruise(e,rear,1/30);assert(rear.userData.speed<100);assert(!A.laneClear(e,rear,4.2));assert(A.laneClear(e,rear,-4.2));
+ const rear=car(0,0,170),front=car(0,14,40),side=car(4.2,1,100),e={trafficCars:[rear,front,side]};A.cruise(e,rear,1/30);assert(rear.userData.speed<170&&rear.userData.speed>168,'bounded braking, no one-frame speed snap');assert(!A.laneClear(e,rear,4.2));assert(A.laneClear(e,rear,-4.2));
 });
 test('Unordered traffic pairs receive actual symmetric 3D contacts instead of interpenetrating',()=>{
  const a=car(0,0,140),b=car(.1,3.8,40),e={trafficCars:[a,b],state:{wantedStars:0},mwLongitudinal:{mwKernel:mw}};A.begin(e,1/60);A.finish(e,1/60);assert.equal(e.trafficContactTelemetry.contacts,1);assert(a.userData.contactBody&&b.userData.contactBody);const c=R.contact(R.descriptor(a.userData.contactBody),R.descriptor(b.userData.contactBody));assert(!c||c.penetration<.002);assert(a.userData.speed<140&&b.userData.speed>40);

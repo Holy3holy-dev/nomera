@@ -120,8 +120,9 @@ test('Bugfix: Shop/Garage authentic GLTF thumbnails and instant 3D race model lo
     // 2. 3D Race engine must load authentic model immediately on frame 1
     assert.ok(car3dJs.includes('syncLoaded = true;'), 'loadPlayerCar must detect synchronous GLB cache hits for 0ms frame-1 spawn');
 
-    // 3. Early preloading hooks in app.js
-    assert.ok(appJs.includes('Car3DManager.preloadCarModel(window.THREE, targetCar);'), 'App must preload active car model on boot');
+    // 3. Only warm models after the user opens a section that actually needs 3D.
+    assert.ok(appJs.includes("['garage','racegame'].some"), 'Preloading must be gated to visible 3D sections');
+    assert.ok(appJs.includes('navigator.connection?.saveData'), 'Optional preloading respects reduced-data connections');
     assert.ok(appJs.includes('Car3DManager.preloadCarModel(window.THREE, selectedRaceCarName);'), 'Race tab must preload selected car model on tab open and car switch');
 });
 

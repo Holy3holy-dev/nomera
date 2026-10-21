@@ -5539,9 +5539,30 @@
         jesko: './assets/models/hypercar.glb'         // Real Koenigsegg Jesko Attack (3.58 MB)
     };
 
+    function resolveModelUrl(carId){const url=GLB_MODEL_MAP[carId];if(!url)return url;const meta=typeof window!=='undefined'&&window.NomeraModelAssets?.[url.split('/').pop()];return meta?url+'?v='+meta.version:url;}
     const rawGLBCache = new Map();
     const inFlightGLBPromises = new Map();
     const NOMERA_MODEL_CACHE_NAME = 'nomera-glb-cache-v4'; // upgraded from nomera-glb-cache-v3
+
+    async function storeModelBuffer(cache, absUrl, response) {
+        await cache.put(absUrl, response);
+        if (typeof cache.keys !== 'function') return;
+        const current=new URL(absUrl),manifest=window.NomeraModelAssets||{};
+        const entries=[];
+        for(const request of await cache.keys()){
+            const url=new URL(request.url);
+            // Remove obsolete variants of this asset, including the unversioned wheel model.
+            if(url.pathname===current.pathname&&url.href!==current.href){await cache.delete(request);continue;}
+            const bytes=manifest[url.pathname.split('/').pop()]?.bytes;
+            if(bytes)entries.push({request,bytes});
+        }
+        let total=entries.reduce((sum,item)=>sum+item.bytes,0),count=entries.length;
+        for(const entry of entries){
+            if(total<=128*1024*1024&&count<=8)break;
+            if(entry.request.url===absUrl)continue;
+            await cache.delete(entry.request);total-=entry.bytes;count--;
+        }
+    }
 
     async function fetchCachedGLBBuffer(modelUrl) {
         if (!modelUrl) return null;
@@ -5561,7 +5582,7 @@
                     const buffer = await response.arrayBuffer();
                     try {
                         if (cacheClone) {
-                            cache.put(absUrl, cacheClone).catch(() => {});
+                            storeModelBuffer(cache, absUrl, cacheClone).catch(() => {});
                         } else {
                             const cacheResponse = new Response(buffer.slice(0), {
                                 headers: {
@@ -5569,7 +5590,7 @@
                                     'Content-Length': String(buffer.byteLength)
                                 }
                             });
-                            cache.put(absUrl, cacheResponse).catch(() => {});
+                            storeModelBuffer(cache, absUrl, cacheResponse).catch(() => {});
                         }
                     } catch (_) {}
                     return buffer;
@@ -7810,7 +7831,7 @@
 
     function loadCarModel(THREE, carName, styling = {}, onLoaded, onProgress) {
         const carId = identifyCarModel(carName);
-        const modelUrl = GLB_MODEL_MAP[carId];
+        const modelUrl = resolveModelUrl(carId);
         const loader = getGLTFLoader(THREE);
 
         // If no external GLB mapped (e.g. VAZ-2107, VAZ-2109, GAZ-24, Priora, Vesta, LC300, Cullinan)
@@ -8155,7 +8176,7 @@
     function preloadCarModel(THREE, carName) {
         if (!THREE) return;
         const carId = identifyCarModel(carName);
-        const modelUrl = GLB_MODEL_MAP[carId];
+        const modelUrl = resolveModelUrl(carId);
         const loader = getGLTFLoader(THREE);
         if (!loader || !modelUrl || rawGLBCache.has(modelUrl) || inFlightGLBPromises.has(modelUrl)) return;
         loadCarModel(THREE, carName, {}, () => {});
@@ -10423,7 +10444,7 @@
 
         try {
             const carId = identifyCarModel(task.carName);
-            const modelUrl = GLB_MODEL_MAP[carId];
+            const modelUrl = resolveModelUrl(carId);
             if (modelUrl && rawGLBCache.has(modelUrl)) {
                 loadCarModel(THREE, task.carName, task.styling, finishWithModel);
             } else {
@@ -15805,7 +15826,7 @@
                                 u.targetX = lanes[newLane];
                                 car.rotation.set(0, 0, 0);
                                 if(ai){if(!ai.spawn(this,car,{lane:newLane}))return;}else car.position.set(lanes[newLane],0,state.z+55+idx*15);
-                                u.speed = Math.max(120, state.speed * 0.95);
+                                u.speed = ai?Math.min(165,Math.max(85,u.baseSpeed)):Math.max(120, state.speed * 0.95);
                             } else {
                                 return;
                             }
@@ -15820,7 +15841,7 @@
                 // 0b. Realistic traffic interaction: vehicles do not pass through each other like ghosts,
                 // and brighten rear brake lights when slowing down behind another vehicle
                 let brakingBehindTraffic = false;
-                for (let j = 0; j < this.trafficCars.length; j++) {
+                for (let j = 0; !ai && j < this.trafficCars.length; j++) {
                     const otherCar = this.trafficCars[j];
                     if (otherCar === car || otherCar.position.y < -500) continue;
                     const ou = otherCar.userData;
@@ -15867,6 +15888,7 @@
                 }
 
                 // Update rear brake light emissive brightness when slowing down behind traffic
+                if(ai){u.isBraking=false;ai.cruise(this,car,dt);brakingBehindTraffic=u.isBraking;}
                 u.isBraking = brakingBehindTraffic;
                 if (u.brakeLightMat) {
                     u.brakeLightMat.emissiveIntensity = brakingBehindTraffic ? 3.2 : 0.65;
@@ -15884,10 +15906,9 @@
 
                 // 1. Move traffic car forward along Z and apply lateral deflection impulses
                 const prevDz = (typeof u.prevDz === 'number') ? u.prevDz : (car.position.z - state.z);
-                if(ai)ai.cruise(this,car,dt);
                 const tSpeedMps = u.speed / 3.6;
                 if(!u.contactBody)car.position.z += tSpeedMps * dt;
-                if (Math.abs(u.deflectVx || 0) > 0.05) {
+                if (!u.contactBody && Math.abs(u.deflectVx || 0) > 0.05) {
                     car.position.x += u.deflectVx * dt;
                     u.deflectVx -= u.deflectVx * Math.min(1.0, 5.0 * dt);
                 }
@@ -15899,8 +15920,9 @@
                     u.speedPacingOffset = (Math.random() - 0.5) * 6;
                 }
                 const targetCruiseSpeed = (u.baseSpeed || 90) + (u.speedPacingOffset || 0);
-                if (u.type !== 'police' || state.wantedStars === 0) {
-                    u.speed += (targetCruiseSpeed - u.speed) * Math.min(1.0, 1.2 * dt);
+                if (!u.contactBody && !u.isBraking && (u.type !== 'police' || state.wantedStars === 0)) {
+                    const pacing=(targetCruiseSpeed-u.speed)*Math.min(1,1.2*dt);
+                    u.speed += ai?Math.max(-3*3.6*dt,Math.min(2.2*3.6*dt,pacing)):pacing;
                 }
 
                 // Animate traffic wheels rotation
@@ -15913,7 +15935,7 @@
                 }
 
                 // Traffic suspension micro-bounce
-                car.position.y = Math.sin(car.position.z * 0.16 + (u.laneIndex || 0)) * 0.005+(this.mwLongitudinal&&window.NomeraRoadSurface?window.NomeraRoadSurface.highway(car.position.x,car.position.z).height:0);
+                if(!u.contactBody)car.position.y = Math.sin(car.position.z * 0.16 + (u.laneIndex || 0)) * 0.005+(this.mwLongitudinal&&window.NomeraRoadSurface?window.NomeraRoadSurface.highway(car.position.x,car.position.z).height:0);
 
                 // Relative distances to player
                 const dx = Math.abs(state.x - car.position.x);
@@ -15968,8 +15990,9 @@
                         }
                     }
 
-                    // Hot pursuit AI: tiered top speeds so high-speed players CAN outrun DPS
-                    if (state.wantedStars > 0) {
+                    // Perception-led Authors pursuit, with the legacy policy retained.
+                    if(ai)ai.policeStep(this,car,dt);
+                    else if (state.wantedStars > 0) {
                         const maxPoliceSpeedByStars = [130, 155, 185, 210, 235, 255];
                         const maxTgtSpeed = maxPoliceSpeedByStars[Math.min(5, state.wantedStars)] || 185;
 
@@ -16028,7 +16051,8 @@
                 }
 
                 // Smoothly steer towards target lane with body roll lean
-                if(ai&&!ai.laneClear(this,car,u.targetX)){u.targetX=car.position.x;u.changingLane=false;u.plannedLaneIndex=null;}
+                if(ai)ai.moveLateral(this,car,dt);
+                else {
                 const steerDist = u.targetX - car.position.x;
                 if (Math.abs(steerDist) > 0.05) {
                     const dir = steerDist > 0 ? 1 : -1;
@@ -16048,6 +16072,7 @@
                     }
                 }
 
+                }
                 // 2b. Amber Turn-Signal Blinkers (blinkerL / blinkerR) & Post-Impact Hazard Flashers
                 const blinkerL = u.blinkerL || car.blinkerL;
                 const blinkerR = u.blinkerR || car.blinkerR;
@@ -16399,6 +16424,8 @@
 
             if(ai)ai.finish(this,dt);
             // --- Pursuit, Escape & Busted Resolution ---
+            const threat=ai?ai.threat(this):null;
+            if(threat){minPoliceDist=threat.nearest;state.policeSight=threat.seen;state.pursuitPhase=threat.seen?'chase':'search';}
             state.nearestPoliceDist = minPoliceDist;
             if(ai){const nearest=this.trafficCars.filter(c=>c.userData.type==='police'&&!c.userData.isWrecked&&c.position.y> -500).sort((a,b)=>Math.hypot(a.position.x-state.x,a.position.z-state.z)-Math.hypot(b.position.x-state.x,b.position.z-state.z))[0];state.nearestPoliceIntegrity=nearest?Math.round(nearest.userData.integrity??100):null;}
 
@@ -16409,7 +16436,7 @@
                 state.isPursuitActive = true;
 
                 // Escape countdown logic: starts when distance >= 38m (allows outrunning DPS at high speeds)
-                if (minPoliceDist >= 38) {
+                if (ai?!threat.seen:minPoliceDist >= 38) {
                     state.escapeTimer = Math.max(0, state.escapeTimer - dt);
                     if (state.escapeTimer <= 0) {
                         const starsWon = state.wantedStars;
@@ -16432,7 +16459,7 @@
                 }
 
                 // Busted logic: if player slowed down < 25 km/h while cornered by DPS (< 12m) for 2.8s
-                if (state.wantedStars > 0 && state.speed < 25 && minPoliceDist < 12) {
+                if (state.wantedStars > 0 && state.speed < 25 && (ai?threat.blocking:minPoliceDist < 12)) {
                     state.bustedTimer += dt;
                     if (state.bustedTimer >= 2.8) {
                         state.isBusted = true;

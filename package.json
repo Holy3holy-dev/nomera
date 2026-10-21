@@ -11,6 +11,7 @@
     "build": "node scripts/build.cjs",
     "serve": "node scripts/serve.cjs",
     "authors:build": "node scripts/authors-build.cjs",
+    "build:authors": "node scripts/release-assets.cjs && node scripts/authors-build.cjs && node scripts/build.cjs --authors",
     "authors:serve": "node scripts/authors-build.cjs && node scripts/authors-serve.cjs",
     "authors:qa": "node scripts/authors-qa.cjs"
   },

@@ -118,6 +118,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             });
         }
         function flashPlateReward(rarityText) {
+            window.NomeraRewards?.celebrate(document.querySelector('.plate-stage'), rarityText, typeof calculatePrice === 'function' ? calculatePrice() : 0);
             const plate = document.getElementById('plate-box');
             const label = document.getElementById('gen-rarity');
             if (!plate || !label) return;
@@ -133,7 +134,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             }, 1200);
 
             const isRare = /Редкий|Супер редкий|Эпический|Легендарный|БЛАТНОЙ|Крутой|Мифический/i.test(rarityText);
-            if (isRare) {
+            if (isRare && !window.NomeraRewards) {
                 const stage = document.querySelector('.plate-stage');
                 if (stage && !window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
                     let sparkColor = '#10b981';
@@ -1396,6 +1397,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         resizeFxCanvas();
 
         function triggerConfetti() {
+            if (window.NomeraRewards && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
             const colors = ['#f59e0b', '#10b981', '#3b82f6', '#ef4444', '#8b5cf6', '#ec4899'];
             for (let i = 0; i < 90; i++) {
                 confettiParticles.push({
@@ -1459,6 +1461,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         }
 
         function triggerScreenShake() {
+            if (window.NomeraRewards && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
             document.body.classList.remove('shake-impact');
             void document.body.offsetWidth;
             document.body.classList.add('shake-impact');
@@ -1730,15 +1733,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             updateExpUI();
             renderInventory();
             renderCars();
-            // Background preload authentic 3D model of active car for instant 3D race and garage start
-            setTimeout(() => {
-                try {
-                    if (typeof Car3DManager !== 'undefined' && Car3DManager.preloadCarModel && window.THREE) {
-                        const targetCar = (Array.isArray(myCars) && myCars[0]) ? myCars[0].name : 'ВАЗ-2107 «Жигули»';
-                        Car3DManager.preloadCarModel(window.THREE, targetCar);
-                    }
-                } catch (_) {}
-            }, 300);
+            // Large 3D files are loaded when the garage or race is requested.
             updatePlateBoxMeta(currentCountry, currentReg);
             checkCanSaveButton();
             renderLeaderboard();
@@ -7199,7 +7194,8 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         }
         window.setCaseAnimMode = setCaseAnimMode;
 
-        function clearCaseAnimationTimers() {
+        function clearCaseAnimationTimers(preserveBatch = false) {
+            if (!preserveBatch) window.NomeraRewards?.cancel();
             if (caseRouletteTimeout) {
                 clearTimeout(caseRouletteTimeout);
                 caseRouletteTimeout = null;
@@ -7255,6 +7251,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             if (iconEl) {
                 iconEl.textContent = emoji;
                 iconEl.innerText = emoji;
+                window.NomeraRewards?.unseal(iconEl, type);
             }
             if (beamEl && beamEl.style) {
                 beamEl.style.background = glow;
@@ -7282,9 +7279,11 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         window.triggerCaseUnsealStage = triggerCaseUnsealStage;
 
         function skipCaseAnimation() {
-            clearCaseAnimationTimers();
+            const customBatch = window.NomeraRewards?.finishBatch();
+            clearCaseAnimationTimers(customBatch);
             document.getElementById('case-unseal-stage')?.classList.add('hidden');
             document.getElementById('btn-skip-roulette')?.classList.add('hidden');
+            if (customBatch) return;
 
             if (typeof activeSingleRevealCallback === 'function') {
                 const cb = activeSingleRevealCallback;
@@ -7826,9 +7825,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         window.claimBatchCaseResults = claimBatchCaseResults;
 
         function buyCase(type = activeCaseType, count = 1) {
+            if (isSpinning) return;
             clearCaseAnimationTimers();
             activeSingleRevealCallback = null;
-            if (isSpinning) return;
             if (type && caseConfigs[type]) {
                 activeCaseType = type;
             }
@@ -7893,6 +7892,38 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     : '#f59e0b';
 
                 const reelsTrack = document.getElementById('batch-reels-track');
+                if (window.NomeraRewards && reelsTrack) {
+                    isSpinning = true;
+                    document.getElementById('roulette-batch-result')?.classList.add('ae-opening');
+                    document.getElementById('batch-roulette-stage')?.classList.remove('hidden');
+                    document.getElementById('btn-skip-batch-anim')?.classList.remove('hidden');
+                    document.getElementById('btn-skip-roulette')?.classList.remove('hidden');
+                    const status = document.getElementById('batch-reveal-status');
+                    if (status) status.textContent = `ОТКРЫВАЕМ СЕРИЮ ×${openCount}`;
+                    const decoys = isCar ? (currentCaseCars.length ? currentCaseCars.map(c => ({...c,isCar:true})) : batchCaseResults) : (currentCaseData?.length ? currentCaseData : batchCaseResults);
+                    window.NomeraRewards.startBatch({
+                        host: reelsTrack, items: batchCaseResults, decoys, mode: caseAnimMode,
+                        renderCard: item => item.isCar
+                            ? `<img src="${getCarSpriteDataUrl(item.name)}" alt=""><span>${escapeHtml(item.name)}</span>`
+                            : `<span class="mini-plate ${getMiniPlateCountryClass(item.text)}">${renderMiniPlateInnerHtml(item.text)}</span>`,
+                        onReveal: i => {
+                            const card = document.getElementById(`batch-drop-card-${i}`);
+                            card?.classList.remove('revealing-card'); card?.classList.add('revealed-card');
+                        },
+                        onComplete: () => {
+                            isSpinning = false;
+                            document.getElementById('roulette-batch-result')?.classList.remove('ae-opening');
+                            document.getElementById('btn-skip-batch-anim')?.classList.add('hidden');
+                            document.getElementById('btn-skip-roulette')?.classList.add('hidden');
+                            document.getElementById('case-unseal-stage')?.classList.add('hidden');
+                            if (status) status.textContent = `СЕРИЯ ×${openCount} ОТКРЫТА`;
+                            playLockSound(1.4);
+                            window.NomeraRewards.celebrate(document.getElementById('roulette-batch-result'), bestR.text, bestBatchItem.price);
+                        }
+                    });
+                    if (isSpinning) triggerCaseUnsealStage(activeCaseType, bestColor, `Распечатываем ×${openCount}`, caseAnimMode === 'fast' ? 350 : 650);
+                    return;
+                }
                 if (reelsTrack) {
                     reelsTrack.innerHTML = batchCaseResults.map((item, i) => {
                         const r = item.rarity || { text: 'Обычный', bg: '#334155', color: '#fff' };
@@ -8078,6 +8109,8 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             const targetX = -(winningIndex * cardWidth + (cardWidth / 2) - (containerWidth / 2) + (Math.random() * 40 - 20));
 
             const finalizeSingleSpin = () => {
+                const reward = isCar ? wonCarObj : wonPlateObj;
+                window.NomeraRewards?.celebrate(document.getElementById('roulette-result'), reward?.rarity?.text, reward?.price);
                 isSpinning = false;
                 activeSingleRevealCallback = null;
                 document.getElementById('btn-skip-roulette')?.classList.add('hidden');
@@ -8123,7 +8156,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                             rCarImg.src = cachedRoulette3D;
                         } else {
                             rCarImg.src = getCarSpriteDataUrl(wonCarObj.name);
-                            if (typeof Car3DManager !== 'undefined' && typeof Car3DManager.renderSideThumbnail === 'function') {
+                            if (!window.NomeraRewards && typeof Car3DManager !== 'undefined' && typeof Car3DManager.renderSideThumbnail === 'function') {
                                 Car3DManager.renderSideThumbnail(wonCarObj.name, {}, (url) => {
                                     if (url && rCarImg) rCarImg.src = url;
                                 });
@@ -8198,7 +8231,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
             activeSingleRevealCallback = finalizeSingleSpin;
 
-            if (caseAnimMode === 'instant') {
+            if (caseAnimMode === 'instant' || (window.NomeraRewards && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches)) {
                 document.getElementById('case-unseal-stage')?.classList.add('hidden');
                 document.getElementById('btn-skip-roulette')?.classList.add('hidden');
                 if (track) {
@@ -20751,38 +20784,17 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         const _preloadedModelsSet = new Set();
 
         function preloadUserGarageModels() {
-            if (typeof Car3DManager === 'undefined' || !Car3DManager.preloadCarModel) return;
-            const THREE = window.THREE;
-            if (!THREE) return;
-            if (typeof isRaceRunning !== 'undefined' && isRaceRunning) return;
-
-            if (_preloadGarageTimer) {
-                clearTimeout(_preloadGarageTimer);
-            }
-
-            _preloadGarageTimer = setTimeout(() => {
-                _preloadGarageTimer = null;
-                const activeCar = (Array.isArray(myCars) && myCars.length > 0)
-                    ? (myCars.find(c => c && c.name === selectedRaceCarName) || myCars[0])
-                    : null;
-                if (activeCar && activeCar.name && !_preloadedModelsSet.has(activeCar.name)) {
-                    _preloadedModelsSet.add(activeCar.name);
-                    Car3DManager.preloadCarModel(THREE, activeCar.name);
-                }
-                if (Array.isArray(myCars)) {
-                    let delay = 1000;
-                    myCars.slice(0, 4).forEach(c => {
-                        if (c && c.name && (!_preloadedModelsSet.has(c.name)) && (!activeCar || c.name !== activeCar.name)) {
-                            setTimeout(() => {
-                                if (typeof isRaceRunning !== 'undefined' && isRaceRunning) return;
-                                _preloadedModelsSet.add(c.name);
-                                Car3DManager.preloadCarModel(THREE, c.name);
-                            }, delay);
-                            delay += 1000;
-                        }
-                    });
-                }
-            }, 500);
+            if (typeof Car3DManager === 'undefined' || !window.THREE || isRaceRunning) return;
+            if (navigator.connection?.saveData) return;
+            if (!['garage','racegame'].some(id=>document.getElementById(id)?.getBoundingClientRect().width>0)) return;
+            clearTimeout(_preloadGarageTimer);
+            _preloadGarageTimer=setTimeout(()=>{
+                const garageVisible=document.getElementById('garage')?.getBoundingClientRect().width>0;
+                const raceVisible=document.getElementById('racegame')?.getBoundingClientRect().width>0;
+                if(!garageVisible&&!raceVisible||isRaceRunning)return;
+                const car=garageVisible?myCars[activeGarageCarIndex]:(myCars.find(c=>c?.name===selectedRaceCarName)||myCars[0]);
+                if(car&&!_preloadedModelsSet.has(car.name)){_preloadedModelsSet.add(car.name);Car3DManager.preloadCarModel(window.THREE,car.name);}
+            },600);
         }
         window.preloadUserGarageModels = preloadUserGarageModels;
 
