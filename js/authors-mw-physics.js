@@ -536,7 +536,7 @@
     }
     const REMAP = [-1,-.736,-.542,-.4,-.292,-.214,-.16,-.123,-.078,-.036,0,.036,.078,.123,.16,.214,.292,.4,.542,.736,1];
     class SteeringController {
-        constructor(){this.time=0;this.inputs=[];this.speeds=[];this.lastInput=0;this.angle=0;this.lastMaximum=0;}
+        constructor({responsive=false}={}){this.responsive=responsive;this.time=0;this.inputs=[];this.speeds=[];this.lastInput=0;this.angle=0;this.lastMaximum=0;}
         get averageInput(){return this.inputs.length?this.inputs.reduce((sum,s)=>sum+s.value,0)/this.inputs.length:0;}
         step(dt,{input=0,speedMps=0,gas=0,brake=0,handbrake=0,rearSlipDeg=0,collisionTimer=0}={}){
             if(!Number.isFinite(dt)||dt<=0)return{angleDeg:this.angle,maxSteerDeg:this.lastMaximum,rateDegPerSec:0};
@@ -551,7 +551,8 @@
             else if(avg>=.5)maximum=Math.max(maximum,this.lastMaximum); // MW HardTurnTightenSpeed=0.
             maximum=clamp(maximum,0,45);this.lastMaximum=maximum;
             record(this.speeds,table([1,1.05,1.1,1.5,2.2,3.1],Math.abs((input-this.lastInput)/dt),0,10),.15);
-            const rate=180*rateScale*average(this.speeds)*table([1,1.05,1.1,1.2,1.3,1.4],avg,0,1);
+            const response=this.responsive?(input===0?1.75:input*this.angle<0?2:1.35):1;
+            const rate=180*rateScale*average(this.speeds)*table([1,1.05,1.1,1.2,1.3,1.4],avg,0,1)*response;
             this.angle=clamp(clamp(input*maximum,-45,45),this.angle-rate*dt,this.angle+rate*dt);
             this.lastInput=table(REMAP,input,-1,1);record(this.inputs,this.lastInput,.55);
             return{angleDeg:this.angle,maxSteerDeg:maximum,rateDegPerSec:rate};

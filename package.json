@@ -19,7 +19,10 @@
     "authors:build": "node scripts/authors-build.cjs",
     "build:authors": "node scripts/release-assets.cjs && node scripts/authors-build.cjs && node scripts/build.cjs --authors",
     "authors:serve": "node scripts/authors-build.cjs && node scripts/authors-serve.cjs",
-    "authors:qa": "node scripts/authors-qa.cjs"
+    "authors:qa": "node scripts/authors-qa.cjs",
+    "textures:build": "node scripts/build-mobile-textures.cjs",
+    "textures:verify": "node --test tests/mobile-textures-and-response.test.cjs",
+    "textures:qa": "node scripts/authors-mobile-texture-qa.cjs"
   },
   "engines": {
     "node": ">=22"

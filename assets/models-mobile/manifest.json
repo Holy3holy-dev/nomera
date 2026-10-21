@@ -1,0 +1,6184 @@
+{
+  "formatVersion": 1,
+  "colorMax": 2048,
+  "dataMax": 1024,
+  "models": [
+    {
+      "file": "aston_martin.glb",
+      "sourceVersion": "0e358b089ec4",
+      "version": "4d983793848d",
+      "bytes": 6195152,
+      "sourceBytes": 6250788,
+      "beforeEstimatedRGBABytes": 17235968,
+      "afterEstimatedRGBABytes": 15837867,
+      "sharedMaterials": 0,
+      "foldedSlots": 0,
+      "images": [
+        {
+          "index": 0,
+          "canonical": 0,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            512,
+            512
+          ],
+          "after": [
+            512,
+            512
+          ],
+          "beforeBytes": 46144,
+          "afterBytes": 46144
+        },
+        {
+          "index": 1,
+          "canonical": 1,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            512,
+            512
+          ],
+          "after": [
+            512,
+            512
+          ],
+          "beforeBytes": 55662,
+          "afterBytes": 55662
+        },
+        {
+          "index": 2,
+          "canonical": 2,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            255,
+            null
+          ],
+          "before": [
+            64,
+            64
+          ],
+          "after": [
+            64,
+            64
+          ],
+          "beforeBytes": 682,
+          "afterBytes": 402
+        },
+        {
+          "index": 3,
+          "canonical": 3,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null
+          ],
+          "before": [
+            128,
+            128
+          ],
+          "after": [
+            128,
+            128
+          ],
+          "beforeBytes": 3244,
+          "afterBytes": 2812
+        },
+        {
+          "index": 4,
+          "canonical": 4,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            512,
+            512
+          ],
+          "after": [
+            512,
+            512
+          ],
+          "beforeBytes": 104348,
+          "afterBytes": 104348
+        },
+        {
+          "index": 5,
+          "canonical": 5,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            255,
+            255,
+            null
+          ],
+          "before": [
+            512,
+            512
+          ],
+          "after": [
+            512,
+            512
+          ],
+          "beforeBytes": 8770,
+          "afterBytes": 8770
+        },
+        {
+          "index": 6,
+          "canonical": 6,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            256,
+            256
+          ],
+          "after": [
+            256,
+            256
+          ],
+          "beforeBytes": 23114,
+          "afterBytes": 23114
+        },
+        {
+          "index": 7,
+          "canonical": 7,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            512,
+            512
+          ],
+          "after": [
+            512,
+            512
+          ],
+          "beforeBytes": 31050,
+          "afterBytes": 31050
+        },
+        {
+          "index": 8,
+          "canonical": 8,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            255,
+            255,
+            null
+          ],
+          "before": [
+            512,
+            512
+          ],
+          "after": [
+            512,
+            512
+          ],
+          "beforeBytes": 38354,
+          "afterBytes": 38354
+        },
+        {
+          "index": 9,
+          "canonical": 9,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            512,
+            512
+          ],
+          "after": [
+            512,
+            512
+          ],
+          "beforeBytes": 21956,
+          "afterBytes": 21956
+        },
+        {
+          "index": 10,
+          "canonical": 10,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            255,
+            null
+          ],
+          "before": [
+            512,
+            512
+          ],
+          "after": [
+            512,
+            512
+          ],
+          "beforeBytes": 54621,
+          "afterBytes": 38078
+        },
+        {
+          "index": 11,
+          "canonical": 11,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            512,
+            512
+          ],
+          "after": [
+            512,
+            512
+          ],
+          "beforeBytes": 29710,
+          "afterBytes": 29710
+        },
+        {
+          "index": 12,
+          "canonical": 12,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            255,
+            null,
+            null
+          ],
+          "before": [
+            512,
+            512
+          ],
+          "after": [
+            512,
+            512
+          ],
+          "beforeBytes": 58618,
+          "afterBytes": 58618
+        },
+        {
+          "index": 13,
+          "canonical": 9,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            512,
+            512
+          ],
+          "after": [
+            512,
+            512
+          ],
+          "beforeBytes": 21956,
+          "afterBytes": 21956
+        },
+        {
+          "index": 14,
+          "canonical": 14,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            255,
+            null
+          ],
+          "before": [
+            512,
+            512
+          ],
+          "after": [
+            512,
+            512
+          ],
+          "beforeBytes": 54591,
+          "afterBytes": 38018
+        }
+      ]
+    },
+    {
+      "file": "nissan_370z.glb",
+      "sourceVersion": "5c7a3dc3dfd4",
+      "version": "462fcc2c3928",
+      "bytes": 2759248,
+      "sourceBytes": 3712280,
+      "beforeEstimatedRGBABytes": 21758037,
+      "afterEstimatedRGBABytes": 18961920,
+      "sharedMaterials": 0,
+      "foldedSlots": 1,
+      "images": [
+        {
+          "index": 0,
+          "canonical": 0,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null,
+            null
+          ],
+          "before": [
+            128,
+            64
+          ],
+          "after": [
+            128,
+            64
+          ],
+          "beforeBytes": 5396,
+          "afterBytes": 3104
+        },
+        {
+          "index": 1,
+          "canonical": 1,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            128,
+            64
+          ],
+          "after": [
+            128,
+            64
+          ],
+          "beforeBytes": 4293,
+          "afterBytes": 2870
+        },
+        {
+          "index": 2,
+          "canonical": 2,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            512,
+            512
+          ],
+          "after": [
+            512,
+            512
+          ],
+          "beforeBytes": 164825,
+          "afterBytes": 91840
+        },
+        {
+          "index": 3,
+          "canonical": 3,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null,
+            255
+          ],
+          "before": [
+            512,
+            512
+          ],
+          "after": [
+            512,
+            512
+          ],
+          "beforeBytes": 300120,
+          "afterBytes": 192172
+        },
+        {
+          "index": 4,
+          "canonical": 3,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            512,
+            512
+          ],
+          "after": [
+            512,
+            512
+          ],
+          "beforeBytes": 277736,
+          "afterBytes": 192172
+        },
+        {
+          "index": 5,
+          "canonical": 5,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            1024,
+            1024
+          ],
+          "after": [
+            1024,
+            1024
+          ],
+          "beforeBytes": 194434,
+          "afterBytes": 123028
+        },
+        {
+          "index": 6,
+          "canonical": 6,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null,
+            null
+          ],
+          "before": [
+            512,
+            512
+          ],
+          "after": [
+            512,
+            512
+          ],
+          "beforeBytes": 4211,
+          "afterBytes": 2222
+        },
+        {
+          "index": 7,
+          "canonical": 7,
+          "role": "data",
+          "flat": true,
+          "constant": [
+            255,
+            255,
+            24
+          ],
+          "before": [
+            4,
+            4
+          ],
+          "after": [
+            4,
+            4
+          ],
+          "beforeBytes": 83,
+          "afterBytes": 38
+        },
+        {
+          "index": 8,
+          "canonical": 8,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            512,
+            512
+          ],
+          "after": [
+            512,
+            512
+          ],
+          "beforeBytes": 2656,
+          "afterBytes": 1360
+        },
+        {
+          "index": 9,
+          "canonical": 9,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            512,
+            512
+          ],
+          "after": [
+            512,
+            512
+          ],
+          "beforeBytes": 118806,
+          "afterBytes": 63782
+        },
+        {
+          "index": 10,
+          "canonical": 10,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null,
+            null
+          ],
+          "before": [
+            256,
+            256
+          ],
+          "after": [
+            256,
+            256
+          ],
+          "beforeBytes": 38505,
+          "afterBytes": 22764
+        },
+        {
+          "index": 11,
+          "canonical": 11,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            256,
+            256
+          ],
+          "after": [
+            256,
+            256
+          ],
+          "beforeBytes": 30633,
+          "afterBytes": 17042
+        },
+        {
+          "index": 12,
+          "canonical": 12,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null,
+            null
+          ],
+          "before": [
+            256,
+            256
+          ],
+          "after": [
+            256,
+            256
+          ],
+          "beforeBytes": 188687,
+          "afterBytes": 113094
+        },
+        {
+          "index": 13,
+          "canonical": 13,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            256,
+            256
+          ],
+          "after": [
+            256,
+            256
+          ],
+          "beforeBytes": 152694,
+          "afterBytes": 92552
+        },
+        {
+          "index": 14,
+          "canonical": 14,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            512,
+            512
+          ],
+          "after": [
+            512,
+            512
+          ],
+          "beforeBytes": 102408,
+          "afterBytes": 52918
+        },
+        {
+          "index": 15,
+          "canonical": 15,
+          "role": "data",
+          "flat": true,
+          "constant": [
+            0,
+            255,
+            255
+          ],
+          "before": [
+            512,
+            512
+          ],
+          "after": [
+            4,
+            4
+          ],
+          "beforeBytes": 126,
+          "afterBytes": 36
+        },
+        {
+          "index": 16,
+          "canonical": 16,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            512,
+            512
+          ],
+          "after": [
+            512,
+            512
+          ],
+          "beforeBytes": 102516,
+          "afterBytes": 60830
+        },
+        {
+          "index": 17,
+          "canonical": 17,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            512,
+            512
+          ],
+          "after": [
+            512,
+            512
+          ],
+          "beforeBytes": 168404,
+          "afterBytes": 72444
+        },
+        {
+          "index": 18,
+          "canonical": 18,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            256,
+            256
+          ],
+          "after": [
+            256,
+            256
+          ],
+          "beforeBytes": 17683,
+          "afterBytes": 13088
+        },
+        {
+          "index": 19,
+          "canonical": 19,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            256,
+            256
+          ],
+          "after": [
+            256,
+            256
+          ],
+          "beforeBytes": 18190,
+          "afterBytes": 13558
+        }
+      ]
+    },
+    {
+      "file": "audi_r8.glb",
+      "sourceVersion": "a8b1d506553c",
+      "version": "4f102e7bcf1a",
+      "bytes": 2775996,
+      "sourceBytes": 3345044,
+      "beforeEstimatedRGBABytes": 14155776,
+      "afterEstimatedRGBABytes": 13456811,
+      "sharedMaterials": 0,
+      "foldedSlots": 0,
+      "images": [
+        {
+          "index": 0,
+          "canonical": 0,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null,
+            null
+          ],
+          "before": [
+            256,
+            256
+          ],
+          "after": [
+            256,
+            256
+          ],
+          "beforeBytes": 58044,
+          "afterBytes": 43966
+        },
+        {
+          "index": 1,
+          "canonical": 1,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            256,
+            256
+          ],
+          "after": [
+            256,
+            256
+          ],
+          "beforeBytes": 46867,
+          "afterBytes": 35884
+        },
+        {
+          "index": 2,
+          "canonical": 2,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null,
+            null
+          ],
+          "before": [
+            128,
+            128
+          ],
+          "after": [
+            128,
+            128
+          ],
+          "beforeBytes": 15656,
+          "afterBytes": 9824
+        },
+        {
+          "index": 3,
+          "canonical": 3,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            128,
+            128
+          ],
+          "after": [
+            128,
+            128
+          ],
+          "beforeBytes": 11022,
+          "afterBytes": 5918
+        },
+        {
+          "index": 4,
+          "canonical": 4,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null,
+            null
+          ],
+          "before": [
+            256,
+            256
+          ],
+          "after": [
+            256,
+            256
+          ],
+          "beforeBytes": 41131,
+          "afterBytes": 20604
+        },
+        {
+          "index": 5,
+          "canonical": 5,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            256,
+            256
+          ],
+          "after": [
+            256,
+            256
+          ],
+          "beforeBytes": 35403,
+          "afterBytes": 19954
+        },
+        {
+          "index": 6,
+          "canonical": 6,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null,
+            null
+          ],
+          "before": [
+            512,
+            512
+          ],
+          "after": [
+            512,
+            512
+          ],
+          "beforeBytes": 62233,
+          "afterBytes": 52418
+        },
+        {
+          "index": 7,
+          "canonical": 7,
+          "role": "data",
+          "flat": true,
+          "constant": [
+            255
+          ],
+          "before": [
+            256,
+            256
+          ],
+          "after": [
+            4,
+            4
+          ],
+          "beforeBytes": 110,
+          "afterBytes": 38
+        },
+        {
+          "index": 8,
+          "canonical": 8,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            512,
+            512
+          ],
+          "after": [
+            512,
+            512
+          ],
+          "beforeBytes": 62895,
+          "afterBytes": 52530
+        },
+        {
+          "index": 9,
+          "canonical": 9,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            255
+          ],
+          "before": [
+            256,
+            256
+          ],
+          "after": [
+            256,
+            256
+          ],
+          "beforeBytes": 14823,
+          "afterBytes": 10128
+        },
+        {
+          "index": 10,
+          "canonical": 10,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            255,
+            null
+          ],
+          "before": [
+            512,
+            512
+          ],
+          "after": [
+            512,
+            512
+          ],
+          "beforeBytes": 50641,
+          "afterBytes": 35362
+        },
+        {
+          "index": 11,
+          "canonical": 11,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null,
+            null
+          ],
+          "before": [
+            512,
+            512
+          ],
+          "after": [
+            512,
+            512
+          ],
+          "beforeBytes": 461516,
+          "afterBytes": 318596
+        },
+        {
+          "index": 12,
+          "canonical": 12,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            512,
+            512
+          ],
+          "after": [
+            512,
+            512
+          ],
+          "beforeBytes": 393588,
+          "afterBytes": 291964
+        },
+        {
+          "index": 13,
+          "canonical": 13,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null,
+            null
+          ],
+          "before": [
+            512,
+            512
+          ],
+          "after": [
+            512,
+            512
+          ],
+          "beforeBytes": 102613,
+          "afterBytes": 51380
+        },
+        {
+          "index": 14,
+          "canonical": 14,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            512,
+            512
+          ],
+          "after": [
+            512,
+            512
+          ],
+          "beforeBytes": 84487,
+          "afterBytes": 47822
+        },
+        {
+          "index": 15,
+          "canonical": 15,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null,
+            255
+          ],
+          "before": [
+            256,
+            256
+          ],
+          "after": [
+            256,
+            256
+          ],
+          "beforeBytes": 54748,
+          "afterBytes": 29498
+        },
+        {
+          "index": 16,
+          "canonical": 15,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            256,
+            256
+          ],
+          "after": [
+            256,
+            256
+          ],
+          "beforeBytes": 50860,
+          "afterBytes": 29498
+        },
+        {
+          "index": 17,
+          "canonical": 17,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null,
+            null
+          ],
+          "before": [
+            256,
+            256
+          ],
+          "after": [
+            256,
+            256
+          ],
+          "beforeBytes": 87329,
+          "afterBytes": 60668
+        },
+        {
+          "index": 18,
+          "canonical": 18,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            256,
+            256
+          ],
+          "after": [
+            256,
+            256
+          ],
+          "beforeBytes": 54668,
+          "afterBytes": 38600
+        },
+        {
+          "index": 19,
+          "canonical": 19,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null,
+            null
+          ],
+          "before": [
+            256,
+            256
+          ],
+          "after": [
+            256,
+            256
+          ],
+          "beforeBytes": 13237,
+          "afterBytes": 10130
+        },
+        {
+          "index": 20,
+          "canonical": 20,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            256,
+            256
+          ],
+          "after": [
+            256,
+            256
+          ],
+          "beforeBytes": 13104,
+          "afterBytes": 9996
+        }
+      ]
+    },
+    {
+      "file": "maserati.glb",
+      "sourceVersion": "4ff5e79dedb7",
+      "version": "53f700ac0ba2",
+      "bytes": 9483192,
+      "sourceBytes": 9602848,
+      "beforeEstimatedRGBABytes": 29491200,
+      "afterEstimatedRGBABytes": 26694997,
+      "sharedMaterials": 0,
+      "foldedSlots": 3,
+      "images": [
+        {
+          "index": 0,
+          "canonical": 0,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            512,
+            512
+          ],
+          "after": [
+            512,
+            512
+          ],
+          "beforeBytes": 19628,
+          "afterBytes": 19628
+        },
+        {
+          "index": 1,
+          "canonical": 1,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            512,
+            512
+          ],
+          "after": [
+            512,
+            512
+          ],
+          "beforeBytes": 34138,
+          "afterBytes": 34138
+        },
+        {
+          "index": 2,
+          "canonical": 2,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            255
+          ],
+          "before": [
+            512,
+            512
+          ],
+          "after": [
+            512,
+            512
+          ],
+          "beforeBytes": 86952,
+          "afterBytes": 86952
+        },
+        {
+          "index": 3,
+          "canonical": 3,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            256,
+            256
+          ],
+          "after": [
+            256,
+            256
+          ],
+          "beforeBytes": 60354,
+          "afterBytes": 60354
+        },
+        {
+          "index": 4,
+          "canonical": 4,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            512,
+            512
+          ],
+          "after": [
+            512,
+            512
+          ],
+          "beforeBytes": 70682,
+          "afterBytes": 70682
+        },
+        {
+          "index": 5,
+          "canonical": 5,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            255
+          ],
+          "before": [
+            512,
+            512
+          ],
+          "after": [
+            512,
+            512
+          ],
+          "beforeBytes": 52722,
+          "afterBytes": 52722
+        },
+        {
+          "index": 6,
+          "canonical": 6,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            512,
+            512
+          ],
+          "after": [
+            512,
+            512
+          ],
+          "beforeBytes": 75912,
+          "afterBytes": 75912
+        },
+        {
+          "index": 7,
+          "canonical": 7,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            255,
+            null,
+            255
+          ],
+          "before": [
+            512,
+            512
+          ],
+          "after": [
+            512,
+            512
+          ],
+          "beforeBytes": 8228,
+          "afterBytes": 8228
+        },
+        {
+          "index": 8,
+          "canonical": 8,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null
+          ],
+          "before": [
+            64,
+            64
+          ],
+          "after": [
+            64,
+            64
+          ],
+          "beforeBytes": 1090,
+          "afterBytes": 784
+        },
+        {
+          "index": 9,
+          "canonical": 9,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            255
+          ],
+          "before": [
+            64,
+            64
+          ],
+          "after": [
+            64,
+            64
+          ],
+          "beforeBytes": 2818,
+          "afterBytes": 1958
+        },
+        {
+          "index": 10,
+          "canonical": 10,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            64,
+            64
+          ],
+          "after": [
+            64,
+            64
+          ],
+          "beforeBytes": 2815,
+          "afterBytes": 1950
+        },
+        {
+          "index": 11,
+          "canonical": 11,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null
+          ],
+          "before": [
+            64,
+            64
+          ],
+          "after": [
+            64,
+            64
+          ],
+          "beforeBytes": 1081,
+          "afterBytes": 706
+        },
+        {
+          "index": 12,
+          "canonical": 12,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            255
+          ],
+          "before": [
+            64,
+            64
+          ],
+          "after": [
+            64,
+            64
+          ],
+          "beforeBytes": 2463,
+          "afterBytes": 1584
+        },
+        {
+          "index": 13,
+          "canonical": 13,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            64,
+            64
+          ],
+          "after": [
+            64,
+            64
+          ],
+          "beforeBytes": 3489,
+          "afterBytes": 2578
+        },
+        {
+          "index": 14,
+          "canonical": 14,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            64,
+            64
+          ],
+          "after": [
+            64,
+            64
+          ],
+          "beforeBytes": 597,
+          "afterBytes": 374
+        },
+        {
+          "index": 15,
+          "canonical": 15,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            255
+          ],
+          "before": [
+            64,
+            64
+          ],
+          "after": [
+            64,
+            64
+          ],
+          "beforeBytes": 1292,
+          "afterBytes": 760
+        },
+        {
+          "index": 16,
+          "canonical": 16,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            64,
+            64
+          ],
+          "after": [
+            64,
+            64
+          ],
+          "beforeBytes": 1207,
+          "afterBytes": 918
+        },
+        {
+          "index": 17,
+          "canonical": 17,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            64,
+            64
+          ],
+          "after": [
+            64,
+            64
+          ],
+          "beforeBytes": 2190,
+          "afterBytes": 1730
+        },
+        {
+          "index": 18,
+          "canonical": 18,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            255
+          ],
+          "before": [
+            64,
+            64
+          ],
+          "after": [
+            64,
+            64
+          ],
+          "beforeBytes": 4007,
+          "afterBytes": 4007
+        },
+        {
+          "index": 19,
+          "canonical": 19,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            64,
+            64
+          ],
+          "after": [
+            64,
+            64
+          ],
+          "beforeBytes": 4417,
+          "afterBytes": 4010
+        },
+        {
+          "index": 20,
+          "canonical": 20,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null
+          ],
+          "before": [
+            64,
+            64
+          ],
+          "after": [
+            64,
+            64
+          ],
+          "beforeBytes": 946,
+          "afterBytes": 648
+        },
+        {
+          "index": 21,
+          "canonical": 21,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            255
+          ],
+          "before": [
+            64,
+            64
+          ],
+          "after": [
+            64,
+            64
+          ],
+          "beforeBytes": 2654,
+          "afterBytes": 1916
+        },
+        {
+          "index": 22,
+          "canonical": 22,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            64,
+            64
+          ],
+          "after": [
+            64,
+            64
+          ],
+          "beforeBytes": 1884,
+          "afterBytes": 1460
+        },
+        {
+          "index": 23,
+          "canonical": 23,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null
+          ],
+          "before": [
+            64,
+            64
+          ],
+          "after": [
+            64,
+            64
+          ],
+          "beforeBytes": 445,
+          "afterBytes": 236
+        },
+        {
+          "index": 24,
+          "canonical": 24,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            205,
+            255
+          ],
+          "before": [
+            64,
+            64
+          ],
+          "after": [
+            64,
+            64
+          ],
+          "beforeBytes": 1893,
+          "afterBytes": 1498
+        },
+        {
+          "index": 25,
+          "canonical": 25,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            64,
+            64
+          ],
+          "after": [
+            64,
+            64
+          ],
+          "beforeBytes": 4072,
+          "afterBytes": 3736
+        },
+        {
+          "index": 26,
+          "canonical": 26,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null
+          ],
+          "before": [
+            64,
+            64
+          ],
+          "after": [
+            64,
+            64
+          ],
+          "beforeBytes": 734,
+          "afterBytes": 478
+        },
+        {
+          "index": 27,
+          "canonical": 27,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            255
+          ],
+          "before": [
+            64,
+            64
+          ],
+          "after": [
+            64,
+            64
+          ],
+          "beforeBytes": 1688,
+          "afterBytes": 1028
+        },
+        {
+          "index": 28,
+          "canonical": 28,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            64,
+            64
+          ],
+          "after": [
+            64,
+            64
+          ],
+          "beforeBytes": 1324,
+          "afterBytes": 980
+        },
+        {
+          "index": 29,
+          "canonical": 29,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            512,
+            512
+          ],
+          "after": [
+            512,
+            512
+          ],
+          "beforeBytes": 55620,
+          "afterBytes": 55620
+        },
+        {
+          "index": 30,
+          "canonical": 30,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            255,
+            null,
+            255
+          ],
+          "before": [
+            512,
+            512
+          ],
+          "after": [
+            512,
+            512
+          ],
+          "beforeBytes": 22682,
+          "afterBytes": 22682
+        },
+        {
+          "index": 31,
+          "canonical": 31,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            512,
+            512
+          ],
+          "after": [
+            512,
+            512
+          ],
+          "beforeBytes": 65816,
+          "afterBytes": 65816
+        },
+        {
+          "index": 32,
+          "canonical": 32,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            512,
+            512
+          ],
+          "after": [
+            512,
+            512
+          ],
+          "beforeBytes": 12404,
+          "afterBytes": 12404
+        },
+        {
+          "index": 33,
+          "canonical": 33,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null
+          ],
+          "before": [
+            64,
+            64
+          ],
+          "after": [
+            64,
+            64
+          ],
+          "beforeBytes": 287,
+          "afterBytes": 220
+        },
+        {
+          "index": 34,
+          "canonical": 34,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            255,
+            255
+          ],
+          "before": [
+            64,
+            64
+          ],
+          "after": [
+            64,
+            64
+          ],
+          "beforeBytes": 263,
+          "afterBytes": 190
+        },
+        {
+          "index": 35,
+          "canonical": 35,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            64,
+            64
+          ],
+          "after": [
+            64,
+            64
+          ],
+          "beforeBytes": 663,
+          "afterBytes": 480
+        },
+        {
+          "index": 36,
+          "canonical": 36,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null
+          ],
+          "before": [
+            64,
+            64
+          ],
+          "after": [
+            64,
+            64
+          ],
+          "beforeBytes": 465,
+          "afterBytes": 300
+        },
+        {
+          "index": 37,
+          "canonical": 37,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            153,
+            255
+          ],
+          "before": [
+            64,
+            64
+          ],
+          "after": [
+            64,
+            64
+          ],
+          "beforeBytes": 263,
+          "afterBytes": 190
+        },
+        {
+          "index": 38,
+          "canonical": 38,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            512,
+            512
+          ],
+          "after": [
+            512,
+            512
+          ],
+          "beforeBytes": 123264,
+          "afterBytes": 123264
+        },
+        {
+          "index": 39,
+          "canonical": 39,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            256,
+            256
+          ],
+          "after": [
+            256,
+            256
+          ],
+          "beforeBytes": 30156,
+          "afterBytes": 30156
+        },
+        {
+          "index": 40,
+          "canonical": 40,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null
+          ],
+          "before": [
+            256,
+            64
+          ],
+          "after": [
+            256,
+            64
+          ],
+          "beforeBytes": 2174,
+          "afterBytes": 2004
+        },
+        {
+          "index": 41,
+          "canonical": 41,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            255,
+            null,
+            255
+          ],
+          "before": [
+            256,
+            64
+          ],
+          "after": [
+            256,
+            64
+          ],
+          "beforeBytes": 2570,
+          "afterBytes": 2020
+        },
+        {
+          "index": 42,
+          "canonical": 42,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            201
+          ],
+          "before": [
+            256,
+            64
+          ],
+          "after": [
+            256,
+            64
+          ],
+          "beforeBytes": 358,
+          "afterBytes": 266
+        },
+        {
+          "index": 43,
+          "canonical": 43,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            512,
+            512
+          ],
+          "after": [
+            512,
+            512
+          ],
+          "beforeBytes": 19604,
+          "afterBytes": 19604
+        },
+        {
+          "index": 44,
+          "canonical": 44,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            255
+          ],
+          "before": [
+            512,
+            512
+          ],
+          "after": [
+            512,
+            512
+          ],
+          "beforeBytes": 57014,
+          "afterBytes": 57014
+        },
+        {
+          "index": 45,
+          "canonical": 45,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            512,
+            512
+          ],
+          "after": [
+            512,
+            512
+          ],
+          "beforeBytes": 54732,
+          "afterBytes": 54732
+        },
+        {
+          "index": 46,
+          "canonical": 46,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            512,
+            512
+          ],
+          "after": [
+            512,
+            512
+          ],
+          "beforeBytes": 21070,
+          "afterBytes": 21070
+        },
+        {
+          "index": 47,
+          "canonical": 47,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            255
+          ],
+          "before": [
+            512,
+            512
+          ],
+          "after": [
+            512,
+            512
+          ],
+          "beforeBytes": 56650,
+          "afterBytes": 56650
+        },
+        {
+          "index": 48,
+          "canonical": 45,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            512,
+            512
+          ],
+          "after": [
+            512,
+            512
+          ],
+          "beforeBytes": 54732,
+          "afterBytes": 54732
+        },
+        {
+          "index": 49,
+          "canonical": 49,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            255
+          ],
+          "before": [
+            512,
+            512
+          ],
+          "after": [
+            512,
+            512
+          ],
+          "beforeBytes": 56044,
+          "afterBytes": 56044
+        },
+        {
+          "index": 50,
+          "canonical": 45,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            512,
+            512
+          ],
+          "after": [
+            512,
+            512
+          ],
+          "beforeBytes": 54732,
+          "afterBytes": 54732
+        }
+      ]
+    },
+    {
+      "file": "bmw_i8.glb",
+      "sourceVersion": "5aa4419222b2",
+      "version": "236f3387cecc",
+      "bytes": 6043464,
+      "sourceBytes": 6184320,
+      "beforeEstimatedRGBABytes": 10300075,
+      "afterEstimatedRGBABytes": 8901973,
+      "sharedMaterials": 0,
+      "foldedSlots": 0,
+      "images": [
+        {
+          "index": 0,
+          "canonical": 0,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            512,
+            512
+          ],
+          "after": [
+            512,
+            512
+          ],
+          "beforeBytes": 29758,
+          "afterBytes": 29758
+        },
+        {
+          "index": 1,
+          "canonical": 1,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null,
+            null
+          ],
+          "before": [
+            128,
+            32
+          ],
+          "after": [
+            128,
+            32
+          ],
+          "beforeBytes": 5240,
+          "afterBytes": 3576
+        },
+        {
+          "index": 2,
+          "canonical": 2,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            512,
+            512
+          ],
+          "after": [
+            512,
+            512
+          ],
+          "beforeBytes": 50370,
+          "afterBytes": 50370
+        },
+        {
+          "index": 3,
+          "canonical": 3,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null
+          ],
+          "before": [
+            64,
+            64
+          ],
+          "after": [
+            64,
+            64
+          ],
+          "beforeBytes": 786,
+          "afterBytes": 698
+        },
+        {
+          "index": 4,
+          "canonical": 4,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            512,
+            512
+          ],
+          "after": [
+            512,
+            512
+          ],
+          "beforeBytes": 44564,
+          "afterBytes": 44564
+        },
+        {
+          "index": 5,
+          "canonical": 5,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            512,
+            512
+          ],
+          "after": [
+            512,
+            512
+          ],
+          "beforeBytes": 109284,
+          "afterBytes": 109284
+        },
+        {
+          "index": 6,
+          "canonical": 5,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            512,
+            512
+          ],
+          "after": [
+            512,
+            512
+          ],
+          "beforeBytes": 109284,
+          "afterBytes": 109284
+        },
+        {
+          "index": 7,
+          "canonical": 7,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null
+          ],
+          "before": [
+            64,
+            32
+          ],
+          "after": [
+            64,
+            32
+          ],
+          "beforeBytes": 1044,
+          "afterBytes": 1044
+        },
+        {
+          "index": 8,
+          "canonical": 8,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            128,
+            128
+          ],
+          "after": [
+            128,
+            128
+          ],
+          "beforeBytes": 757,
+          "afterBytes": 584
+        },
+        {
+          "index": 9,
+          "canonical": 9,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            256,
+            256
+          ],
+          "after": [
+            256,
+            256
+          ],
+          "beforeBytes": 2662,
+          "afterBytes": 2202
+        },
+        {
+          "index": 10,
+          "canonical": 10,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            512,
+            256
+          ],
+          "after": [
+            512,
+            256
+          ],
+          "beforeBytes": 9341,
+          "afterBytes": 4300
+        },
+        {
+          "index": 11,
+          "canonical": 11,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            256,
+            256
+          ],
+          "after": [
+            256,
+            256
+          ],
+          "beforeBytes": 19830,
+          "afterBytes": 19830
+        },
+        {
+          "index": 12,
+          "canonical": 12,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null
+          ],
+          "before": [
+            64,
+            32
+          ],
+          "after": [
+            64,
+            32
+          ],
+          "beforeBytes": 737,
+          "afterBytes": 624
+        },
+        {
+          "index": 13,
+          "canonical": 13,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null,
+            null
+          ],
+          "before": [
+            256,
+            256
+          ],
+          "after": [
+            256,
+            256
+          ],
+          "beforeBytes": 59618,
+          "afterBytes": 35440
+        },
+        {
+          "index": 14,
+          "canonical": 14,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null
+          ],
+          "before": [
+            64,
+            32
+          ],
+          "after": [
+            64,
+            32
+          ],
+          "beforeBytes": 759,
+          "afterBytes": 620
+        },
+        {
+          "index": 15,
+          "canonical": 15,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            512,
+            512
+          ],
+          "after": [
+            512,
+            512
+          ],
+          "beforeBytes": 59762,
+          "afterBytes": 59762
+        }
+      ]
+    },
+    {
+      "file": "bmw_m3_gtr.glb",
+      "sourceVersion": "21e329cb71cd",
+      "version": "5869bf471953",
+      "bytes": 5363956,
+      "sourceBytes": 5911848,
+      "beforeEstimatedRGBABytes": 34603008,
+      "afterEstimatedRGBABytes": 34559403,
+      "sharedMaterials": 0,
+      "foldedSlots": 0,
+      "images": [
+        {
+          "index": 0,
+          "canonical": 0,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            256,
+            128
+          ],
+          "after": [
+            256,
+            128
+          ],
+          "beforeBytes": 1087,
+          "afterBytes": 622
+        },
+        {
+          "index": 1,
+          "canonical": 1,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            255,
+            255,
+            null
+          ],
+          "before": [
+            128,
+            64
+          ],
+          "after": [
+            128,
+            64
+          ],
+          "beforeBytes": 244,
+          "afterBytes": 146
+        },
+        {
+          "index": 2,
+          "canonical": 2,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            512,
+            512
+          ],
+          "after": [
+            512,
+            512
+          ],
+          "beforeBytes": 46930,
+          "afterBytes": 23988
+        },
+        {
+          "index": 3,
+          "canonical": 3,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            255,
+            255,
+            null
+          ],
+          "before": [
+            256,
+            256
+          ],
+          "after": [
+            256,
+            256
+          ],
+          "beforeBytes": 1594,
+          "afterBytes": 992
+        },
+        {
+          "index": 4,
+          "canonical": 4,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            512,
+            512
+          ],
+          "after": [
+            512,
+            512
+          ],
+          "beforeBytes": 94987,
+          "afterBytes": 72050
+        },
+        {
+          "index": 5,
+          "canonical": 5,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            1024,
+            1024
+          ],
+          "after": [
+            1024,
+            1024
+          ],
+          "beforeBytes": 179048,
+          "afterBytes": 108400
+        },
+        {
+          "index": 6,
+          "canonical": 6,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            255,
+            255,
+            null
+          ],
+          "before": [
+            1024,
+            1024
+          ],
+          "after": [
+            1024,
+            1024
+          ],
+          "beforeBytes": 73817,
+          "afterBytes": 65584
+        },
+        {
+          "index": 7,
+          "canonical": 7,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null
+          ],
+          "before": [
+            512,
+            512
+          ],
+          "after": [
+            512,
+            512
+          ],
+          "beforeBytes": 6763,
+          "afterBytes": 3152
+        },
+        {
+          "index": 8,
+          "canonical": 8,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            255,
+            255
+          ],
+          "before": [
+            512,
+            512
+          ],
+          "after": [
+            512,
+            512
+          ],
+          "beforeBytes": 5481,
+          "afterBytes": 3154
+        },
+        {
+          "index": 9,
+          "canonical": 9,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            256,
+            256
+          ],
+          "after": [
+            256,
+            256
+          ],
+          "beforeBytes": 11965,
+          "afterBytes": 8164
+        },
+        {
+          "index": 10,
+          "canonical": 10,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            255,
+            255,
+            null
+          ],
+          "before": [
+            128,
+            128
+          ],
+          "after": [
+            128,
+            128
+          ],
+          "beforeBytes": 329,
+          "afterBytes": 200
+        },
+        {
+          "index": 11,
+          "canonical": 11,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            256,
+            256
+          ],
+          "after": [
+            256,
+            256
+          ],
+          "beforeBytes": 7795,
+          "afterBytes": 6052
+        },
+        {
+          "index": 12,
+          "canonical": 12,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            256,
+            256
+          ],
+          "after": [
+            256,
+            256
+          ],
+          "beforeBytes": 18650,
+          "afterBytes": 14570
+        },
+        {
+          "index": 13,
+          "canonical": 13,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            255,
+            255,
+            null
+          ],
+          "before": [
+            128,
+            128
+          ],
+          "after": [
+            128,
+            128
+          ],
+          "beforeBytes": 1485,
+          "afterBytes": 918
+        },
+        {
+          "index": 14,
+          "canonical": 14,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            256,
+            256
+          ],
+          "after": [
+            256,
+            256
+          ],
+          "beforeBytes": 61751,
+          "afterBytes": 47172
+        },
+        {
+          "index": 15,
+          "canonical": 15,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null
+          ],
+          "before": [
+            256,
+            256
+          ],
+          "after": [
+            256,
+            256
+          ],
+          "beforeBytes": 16329,
+          "afterBytes": 12472
+        },
+        {
+          "index": 16,
+          "canonical": 16,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            255,
+            255,
+            null
+          ],
+          "before": [
+            128,
+            128
+          ],
+          "after": [
+            128,
+            128
+          ],
+          "beforeBytes": 375,
+          "afterBytes": 276
+        },
+        {
+          "index": 17,
+          "canonical": 17,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            256,
+            256
+          ],
+          "after": [
+            256,
+            256
+          ],
+          "beforeBytes": 60834,
+          "afterBytes": 60834
+        },
+        {
+          "index": 18,
+          "canonical": 18,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            256,
+            256
+          ],
+          "after": [
+            256,
+            256
+          ],
+          "beforeBytes": 27517,
+          "afterBytes": 19236
+        },
+        {
+          "index": 19,
+          "canonical": 19,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            255,
+            255,
+            null
+          ],
+          "before": [
+            128,
+            128
+          ],
+          "after": [
+            128,
+            128
+          ],
+          "beforeBytes": 973,
+          "afterBytes": 682
+        },
+        {
+          "index": 20,
+          "canonical": 20,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            256,
+            256
+          ],
+          "after": [
+            256,
+            256
+          ],
+          "beforeBytes": 75354,
+          "afterBytes": 59182
+        },
+        {
+          "index": 21,
+          "canonical": 21,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            256,
+            128
+          ],
+          "after": [
+            256,
+            128
+          ],
+          "beforeBytes": 10919,
+          "afterBytes": 6918
+        },
+        {
+          "index": 22,
+          "canonical": 22,
+          "role": "data",
+          "flat": true,
+          "constant": [
+            255
+          ],
+          "before": [
+            128,
+            64
+          ],
+          "after": [
+            4,
+            4
+          ],
+          "beforeBytes": 82,
+          "afterBytes": 38
+        },
+        {
+          "index": 23,
+          "canonical": 23,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            256,
+            128
+          ],
+          "after": [
+            256,
+            128
+          ],
+          "beforeBytes": 22417,
+          "afterBytes": 18758
+        },
+        {
+          "index": 24,
+          "canonical": 24,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            512,
+            512
+          ],
+          "after": [
+            512,
+            512
+          ],
+          "beforeBytes": 249194,
+          "afterBytes": 182448
+        },
+        {
+          "index": 25,
+          "canonical": 25,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            255,
+            255,
+            null
+          ],
+          "before": [
+            256,
+            256
+          ],
+          "after": [
+            256,
+            256
+          ],
+          "beforeBytes": 1398,
+          "afterBytes": 872
+        },
+        {
+          "index": 26,
+          "canonical": 26,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            512,
+            512
+          ],
+          "after": [
+            512,
+            512
+          ],
+          "beforeBytes": 267541,
+          "afterBytes": 189546
+        },
+        {
+          "index": 27,
+          "canonical": 27,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            512,
+            512
+          ],
+          "after": [
+            512,
+            512
+          ],
+          "beforeBytes": 146544,
+          "afterBytes": 123772
+        },
+        {
+          "index": 28,
+          "canonical": 28,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            128,
+            128
+          ],
+          "after": [
+            128,
+            128
+          ],
+          "beforeBytes": 757,
+          "afterBytes": 584
+        },
+        {
+          "index": 29,
+          "canonical": 29,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            256,
+            256
+          ],
+          "after": [
+            256,
+            256
+          ],
+          "beforeBytes": 15555,
+          "afterBytes": 14776
+        },
+        {
+          "index": 30,
+          "canonical": 30,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            512,
+            512
+          ],
+          "after": [
+            512,
+            512
+          ],
+          "beforeBytes": 99992,
+          "afterBytes": 65552
+        },
+        {
+          "index": 31,
+          "canonical": 31,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            255,
+            255,
+            null
+          ],
+          "before": [
+            256,
+            256
+          ],
+          "after": [
+            256,
+            256
+          ],
+          "beforeBytes": 13069,
+          "afterBytes": 11254
+        },
+        {
+          "index": 32,
+          "canonical": 32,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            512,
+            512
+          ],
+          "after": [
+            512,
+            512
+          ],
+          "beforeBytes": 18173,
+          "afterBytes": 15336
+        },
+        {
+          "index": 33,
+          "canonical": 33,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            1024,
+            1024
+          ],
+          "after": [
+            1024,
+            1024
+          ],
+          "beforeBytes": 358839,
+          "afterBytes": 212480
+        }
+      ]
+    },
+    {
+      "file": "mclaren.glb",
+      "sourceVersion": "e2c6d58eabdb",
+      "version": "9ce65493fae4",
+      "bytes": 7939648,
+      "sourceBytes": 8096476,
+      "beforeEstimatedRGBABytes": 37131605,
+      "afterEstimatedRGBABytes": 37115477,
+      "sharedMaterials": 0,
+      "foldedSlots": 1,
+      "images": [
+        {
+          "index": 0,
+          "canonical": 0,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null,
+            null
+          ],
+          "before": [
+            512,
+            512
+          ],
+          "after": [
+            512,
+            512
+          ],
+          "beforeBytes": 85759,
+          "afterBytes": 50952
+        },
+        {
+          "index": 1,
+          "canonical": 1,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            512,
+            512
+          ],
+          "after": [
+            512,
+            512
+          ],
+          "beforeBytes": 43926,
+          "afterBytes": 43926
+        },
+        {
+          "index": 2,
+          "canonical": 2,
+          "role": "data",
+          "flat": true,
+          "constant": [
+            128,
+            128,
+            255
+          ],
+          "before": [
+            32,
+            32
+          ],
+          "after": [
+            4,
+            4
+          ],
+          "beforeBytes": 84,
+          "afterBytes": 38
+        },
+        {
+          "index": 3,
+          "canonical": 3,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            1024,
+            1024
+          ],
+          "after": [
+            1024,
+            1024
+          ],
+          "beforeBytes": 167926,
+          "afterBytes": 167926
+        },
+        {
+          "index": 4,
+          "canonical": 4,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            1024,
+            1024
+          ],
+          "after": [
+            1024,
+            1024
+          ],
+          "beforeBytes": 325280,
+          "afterBytes": 325280
+        },
+        {
+          "index": 5,
+          "canonical": 5,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            256,
+            256
+          ],
+          "after": [
+            256,
+            256
+          ],
+          "beforeBytes": 27520,
+          "afterBytes": 27520
+        },
+        {
+          "index": 6,
+          "canonical": 6,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            512,
+            512
+          ],
+          "after": [
+            512,
+            512
+          ],
+          "beforeBytes": 45546,
+          "afterBytes": 45546
+        },
+        {
+          "index": 7,
+          "canonical": 7,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            512,
+            512
+          ],
+          "after": [
+            512,
+            512
+          ],
+          "beforeBytes": 36404,
+          "afterBytes": 36404
+        },
+        {
+          "index": 8,
+          "canonical": 8,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            255,
+            null,
+            255
+          ],
+          "before": [
+            512,
+            512
+          ],
+          "after": [
+            512,
+            512
+          ],
+          "beforeBytes": 36436,
+          "afterBytes": 36436
+        },
+        {
+          "index": 9,
+          "canonical": 9,
+          "role": "color",
+          "flat": true,
+          "constant": [
+            19,
+            20,
+            19
+          ],
+          "before": [
+            32,
+            32
+          ],
+          "after": [
+            4,
+            4
+          ],
+          "beforeBytes": 84,
+          "afterBytes": 38
+        },
+        {
+          "index": 10,
+          "canonical": 10,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            64,
+            64
+          ],
+          "after": [
+            64,
+            64
+          ],
+          "beforeBytes": 148,
+          "afterBytes": 94
+        },
+        {
+          "index": 11,
+          "canonical": 11,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            1024,
+            512
+          ],
+          "after": [
+            1024,
+            512
+          ],
+          "beforeBytes": 104198,
+          "afterBytes": 104198
+        },
+        {
+          "index": 12,
+          "canonical": 12,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null,
+            null
+          ],
+          "before": [
+            1024,
+            512
+          ],
+          "after": [
+            1024,
+            512
+          ],
+          "beforeBytes": 252720,
+          "afterBytes": 132710
+        },
+        {
+          "index": 13,
+          "canonical": 13,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            1024,
+            512
+          ],
+          "after": [
+            1024,
+            512
+          ],
+          "beforeBytes": 19322,
+          "afterBytes": 19322
+        },
+        {
+          "index": 14,
+          "canonical": 14,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            512,
+            512
+          ],
+          "after": [
+            512,
+            512
+          ],
+          "beforeBytes": 185096,
+          "afterBytes": 185096
+        },
+        {
+          "index": 15,
+          "canonical": 15,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            64,
+            64
+          ],
+          "after": [
+            64,
+            64
+          ],
+          "beforeBytes": 797,
+          "afterBytes": 596
+        },
+        {
+          "index": 16,
+          "canonical": 16,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            1024,
+            1024
+          ],
+          "after": [
+            1024,
+            1024
+          ],
+          "beforeBytes": 423310,
+          "afterBytes": 423310
+        },
+        {
+          "index": 17,
+          "canonical": 17,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            512,
+            512
+          ],
+          "after": [
+            512,
+            512
+          ],
+          "beforeBytes": 186040,
+          "afterBytes": 186040
+        },
+        {
+          "index": 18,
+          "canonical": 18,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            128,
+            128
+          ],
+          "after": [
+            128,
+            128
+          ],
+          "beforeBytes": 8738,
+          "afterBytes": 7582
+        },
+        {
+          "index": 19,
+          "canonical": 19,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            128,
+            256
+          ],
+          "after": [
+            128,
+            256
+          ],
+          "beforeBytes": 20314,
+          "afterBytes": 20314
+        },
+        {
+          "index": 20,
+          "canonical": 20,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            128,
+            256
+          ],
+          "after": [
+            128,
+            256
+          ],
+          "beforeBytes": 25074,
+          "afterBytes": 25074
+        },
+        {
+          "index": 21,
+          "canonical": 21,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            256,
+            256
+          ],
+          "after": [
+            256,
+            256
+          ],
+          "beforeBytes": 63616,
+          "afterBytes": 63616
+        },
+        {
+          "index": 22,
+          "canonical": 22,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            512,
+            256
+          ],
+          "after": [
+            512,
+            256
+          ],
+          "beforeBytes": 64988,
+          "afterBytes": 64988
+        },
+        {
+          "index": 23,
+          "canonical": 23,
+          "role": "color",
+          "flat": true,
+          "constant": [
+            120
+          ],
+          "before": [
+            32,
+            32
+          ],
+          "after": [
+            4,
+            4
+          ],
+          "beforeBytes": 81,
+          "afterBytes": 38
+        },
+        {
+          "index": 24,
+          "canonical": 24,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            32,
+            512
+          ],
+          "after": [
+            32,
+            512
+          ],
+          "beforeBytes": 1553,
+          "afterBytes": 898
+        },
+        {
+          "index": 25,
+          "canonical": 25,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null,
+            null
+          ],
+          "before": [
+            128,
+            32
+          ],
+          "after": [
+            128,
+            32
+          ],
+          "beforeBytes": 530,
+          "afterBytes": 298
+        },
+        {
+          "index": 26,
+          "canonical": 26,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            256,
+            128
+          ],
+          "after": [
+            256,
+            128
+          ],
+          "beforeBytes": 12804,
+          "afterBytes": 12804
+        }
+      ]
+    },
+    {
+      "file": "porsche.glb",
+      "sourceVersion": "868491166b8d",
+      "version": "fb9d917f0ebe",
+      "bytes": 3115156,
+      "sourceBytes": 3546808,
+      "beforeEstimatedRGBABytes": 27962027,
+      "afterEstimatedRGBABytes": 27962027,
+      "sharedMaterials": 0,
+      "foldedSlots": 0,
+      "images": [
+        {
+          "index": 0,
+          "canonical": 0,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            255,
+            null,
+            255
+          ],
+          "before": [
+            512,
+            512
+          ],
+          "after": [
+            512,
+            512
+          ],
+          "beforeBytes": 164582,
+          "afterBytes": 155532
+        },
+        {
+          "index": 1,
+          "canonical": 1,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            1024,
+            1024
+          ],
+          "after": [
+            1024,
+            1024
+          ],
+          "beforeBytes": 72392,
+          "afterBytes": 54914
+        },
+        {
+          "index": 2,
+          "canonical": 2,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null,
+            null
+          ],
+          "before": [
+            1024,
+            1024
+          ],
+          "after": [
+            1024,
+            1024
+          ],
+          "beforeBytes": 519206,
+          "afterBytes": 366008
+        },
+        {
+          "index": 3,
+          "canonical": 3,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null,
+            null
+          ],
+          "before": [
+            512,
+            512
+          ],
+          "after": [
+            512,
+            512
+          ],
+          "beforeBytes": 201707,
+          "afterBytes": 142990
+        },
+        {
+          "index": 4,
+          "canonical": 4,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            1024,
+            1024
+          ],
+          "after": [
+            1024,
+            1024
+          ],
+          "beforeBytes": 503349,
+          "afterBytes": 413494
+        },
+        {
+          "index": 5,
+          "canonical": 5,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            255,
+            null,
+            255
+          ],
+          "before": [
+            1024,
+            1024
+          ],
+          "after": [
+            1024,
+            1024
+          ],
+          "beforeBytes": 251338,
+          "afterBytes": 232604
+        },
+        {
+          "index": 6,
+          "canonical": 6,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            1024,
+            256
+          ],
+          "after": [
+            1024,
+            256
+          ],
+          "beforeBytes": 46995,
+          "afterBytes": 31464
+        },
+        {
+          "index": 7,
+          "canonical": 7,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null,
+            null
+          ],
+          "before": [
+            1024,
+            256
+          ],
+          "after": [
+            1024,
+            256
+          ],
+          "beforeBytes": 156022,
+          "afterBytes": 86600
+        }
+      ]
+    },
+    {
+      "file": "mazda_rx7.glb",
+      "sourceVersion": "b869f61af3e2",
+      "version": "825e11948061",
+      "bytes": 3798748,
+      "sourceBytes": 4514072,
+      "beforeEstimatedRGBABytes": 23068672,
+      "afterEstimatedRGBABytes": 23068672,
+      "sharedMaterials": 0,
+      "foldedSlots": 1,
+      "images": [
+        {
+          "index": 0,
+          "canonical": 0,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            256,
+            256
+          ],
+          "after": [
+            256,
+            256
+          ],
+          "beforeBytes": 44807,
+          "afterBytes": 44807
+        },
+        {
+          "index": 1,
+          "canonical": 1,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            256,
+            256
+          ],
+          "after": [
+            256,
+            256
+          ],
+          "beforeBytes": 155424,
+          "afterBytes": 155424
+        },
+        {
+          "index": 2,
+          "canonical": 2,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            1024,
+            1024
+          ],
+          "after": [
+            1024,
+            1024
+          ],
+          "beforeBytes": 1012135,
+          "afterBytes": 902914
+        },
+        {
+          "index": 3,
+          "canonical": 3,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            1024,
+            1024
+          ],
+          "after": [
+            1024,
+            1024
+          ],
+          "beforeBytes": 796521,
+          "afterBytes": 575732
+        },
+        {
+          "index": 4,
+          "canonical": 4,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            1024,
+            1024
+          ],
+          "after": [
+            1024,
+            1024
+          ],
+          "beforeBytes": 662389,
+          "afterBytes": 338150
+        },
+        {
+          "index": 5,
+          "canonical": 5,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            255,
+            255
+          ],
+          "before": [
+            1024,
+            1024
+          ],
+          "after": [
+            1024,
+            1024
+          ],
+          "beforeBytes": 410071,
+          "afterBytes": 349218
+        }
+      ]
+    },
+    {
+      "file": "golf7.glb",
+      "sourceVersion": "6755c6aa4926",
+      "version": "b4f585de7fcc",
+      "bytes": 2012056,
+      "sourceBytes": 2402420,
+      "beforeEstimatedRGBABytes": 17192277,
+      "afterEstimatedRGBABytes": 17192277,
+      "sharedMaterials": 0,
+      "foldedSlots": 0,
+      "images": [
+        {
+          "index": 0,
+          "canonical": 0,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            64,
+            64
+          ],
+          "after": [
+            64,
+            64
+          ],
+          "beforeBytes": 234,
+          "afterBytes": 234
+        },
+        {
+          "index": 1,
+          "canonical": 1,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            64,
+            64
+          ],
+          "after": [
+            64,
+            64
+          ],
+          "beforeBytes": 3091,
+          "afterBytes": 2368
+        },
+        {
+          "index": 2,
+          "canonical": 2,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null,
+            null
+          ],
+          "before": [
+            256,
+            256
+          ],
+          "after": [
+            256,
+            256
+          ],
+          "beforeBytes": 25392,
+          "afterBytes": 25392
+        },
+        {
+          "index": 3,
+          "canonical": 3,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            512,
+            512
+          ],
+          "after": [
+            512,
+            512
+          ],
+          "beforeBytes": 98211,
+          "afterBytes": 57866
+        },
+        {
+          "index": 4,
+          "canonical": 4,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            256,
+            256
+          ],
+          "after": [
+            256,
+            256
+          ],
+          "beforeBytes": 1232,
+          "afterBytes": 1232
+        },
+        {
+          "index": 5,
+          "canonical": 5,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            256,
+            256
+          ],
+          "after": [
+            256,
+            256
+          ],
+          "beforeBytes": 760,
+          "afterBytes": 760
+        },
+        {
+          "index": 6,
+          "canonical": 6,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            512,
+            512
+          ],
+          "after": [
+            512,
+            512
+          ],
+          "beforeBytes": 15780,
+          "afterBytes": 15780
+        },
+        {
+          "index": 7,
+          "canonical": 7,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            512,
+            512
+          ],
+          "after": [
+            512,
+            512
+          ],
+          "beforeBytes": 168171,
+          "afterBytes": 119318
+        },
+        {
+          "index": 8,
+          "canonical": 8,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            512,
+            512
+          ],
+          "after": [
+            512,
+            512
+          ],
+          "beforeBytes": 15364,
+          "afterBytes": 15364
+        },
+        {
+          "index": 9,
+          "canonical": 9,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            512,
+            512
+          ],
+          "after": [
+            512,
+            512
+          ],
+          "beforeBytes": 201095,
+          "afterBytes": 153224
+        },
+        {
+          "index": 10,
+          "canonical": 10,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            64,
+            32
+          ],
+          "after": [
+            64,
+            32
+          ],
+          "beforeBytes": 140,
+          "afterBytes": 140
+        },
+        {
+          "index": 11,
+          "canonical": 11,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            64,
+            32
+          ],
+          "after": [
+            64,
+            32
+          ],
+          "beforeBytes": 1235,
+          "afterBytes": 978
+        },
+        {
+          "index": 12,
+          "canonical": 12,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            512,
+            256
+          ],
+          "after": [
+            512,
+            256
+          ],
+          "beforeBytes": 1686,
+          "afterBytes": 1686
+        },
+        {
+          "index": 13,
+          "canonical": 13,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            512,
+            512
+          ],
+          "after": [
+            512,
+            512
+          ],
+          "beforeBytes": 24058,
+          "afterBytes": 24058
+        },
+        {
+          "index": 14,
+          "canonical": 14,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            512,
+            512
+          ],
+          "after": [
+            512,
+            512
+          ],
+          "beforeBytes": 4282,
+          "afterBytes": 4282
+        },
+        {
+          "index": 15,
+          "canonical": 15,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            512,
+            512
+          ],
+          "after": [
+            512,
+            512
+          ],
+          "beforeBytes": 6390,
+          "afterBytes": 6390
+        },
+        {
+          "index": 16,
+          "canonical": 16,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            512,
+            512
+          ],
+          "after": [
+            512,
+            512
+          ],
+          "beforeBytes": 7598,
+          "afterBytes": 7598
+        },
+        {
+          "index": 17,
+          "canonical": 17,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            512,
+            512
+          ],
+          "after": [
+            512,
+            512
+          ],
+          "beforeBytes": 126110,
+          "afterBytes": 88374
+        },
+        {
+          "index": 18,
+          "canonical": 18,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            512,
+            512
+          ],
+          "after": [
+            512,
+            512
+          ],
+          "beforeBytes": 466631,
+          "afterBytes": 251174
+        }
+      ]
+    },
+    {
+      "file": "bmw.glb",
+      "sourceVersion": "4806a9b24954",
+      "version": "aab9cef3b540",
+      "bytes": 2381112,
+      "sourceBytes": 2975260,
+      "beforeEstimatedRGBABytes": 402654549,
+      "afterEstimatedRGBABytes": 218105173,
+      "sharedMaterials": 0,
+      "foldedSlots": 0,
+      "images": [
+        {
+          "index": 0,
+          "canonical": 0,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            2048,
+            2048
+          ],
+          "after": [
+            1024,
+            1024
+          ],
+          "beforeBytes": 64098,
+          "afterBytes": 46188
+        },
+        {
+          "index": 1,
+          "canonical": 1,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            2048,
+            2048
+          ],
+          "after": [
+            2048,
+            2048
+          ],
+          "beforeBytes": 18178,
+          "afterBytes": 18178
+        },
+        {
+          "index": 2,
+          "canonical": 2,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            2048,
+            2048
+          ],
+          "after": [
+            2048,
+            2048
+          ],
+          "beforeBytes": 58918,
+          "afterBytes": 58918
+        },
+        {
+          "index": 3,
+          "canonical": 3,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            2048,
+            2048
+          ],
+          "after": [
+            1024,
+            1024
+          ],
+          "beforeBytes": 59576,
+          "afterBytes": 42582
+        },
+        {
+          "index": 4,
+          "canonical": 4,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            2048,
+            2048
+          ],
+          "after": [
+            2048,
+            2048
+          ],
+          "beforeBytes": 40088,
+          "afterBytes": 40088
+        },
+        {
+          "index": 5,
+          "canonical": 5,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            2048,
+            2048
+          ],
+          "after": [
+            1024,
+            1024
+          ],
+          "beforeBytes": 424882,
+          "afterBytes": 284442
+        },
+        {
+          "index": 6,
+          "canonical": 6,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            2048,
+            2048
+          ],
+          "after": [
+            2048,
+            2048
+          ],
+          "beforeBytes": 50082,
+          "afterBytes": 50082
+        },
+        {
+          "index": 7,
+          "canonical": 7,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            2048,
+            2048
+          ],
+          "after": [
+            1024,
+            1024
+          ],
+          "beforeBytes": 125532,
+          "afterBytes": 93208
+        },
+        {
+          "index": 8,
+          "canonical": 8,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            2048,
+            2048
+          ],
+          "after": [
+            1024,
+            1024
+          ],
+          "beforeBytes": 119388,
+          "afterBytes": 94158
+        },
+        {
+          "index": 9,
+          "canonical": 9,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            2048,
+            2048
+          ],
+          "after": [
+            2048,
+            2048
+          ],
+          "beforeBytes": 37732,
+          "afterBytes": 37732
+        },
+        {
+          "index": 10,
+          "canonical": 10,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            2048,
+            2048
+          ],
+          "after": [
+            1024,
+            1024
+          ],
+          "beforeBytes": 251970,
+          "afterBytes": 162338
+        },
+        {
+          "index": 11,
+          "canonical": 11,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            2048,
+            2048
+          ],
+          "after": [
+            1024,
+            1024
+          ],
+          "beforeBytes": 303048,
+          "afterBytes": 187774
+        },
+        {
+          "index": 12,
+          "canonical": 12,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            2048,
+            2048
+          ],
+          "after": [
+            2048,
+            2048
+          ],
+          "beforeBytes": 37288,
+          "afterBytes": 37288
+        },
+        {
+          "index": 13,
+          "canonical": 13,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            2048,
+            2048
+          ],
+          "after": [
+            1024,
+            1024
+          ],
+          "beforeBytes": 77622,
+          "afterBytes": 58062
+        },
+        {
+          "index": 14,
+          "canonical": 14,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            2048,
+            2048
+          ],
+          "after": [
+            1024,
+            1024
+          ],
+          "beforeBytes": 87706,
+          "afterBytes": 63804
+        },
+        {
+          "index": 15,
+          "canonical": 15,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            2048,
+            2048
+          ],
+          "after": [
+            2048,
+            2048
+          ],
+          "beforeBytes": 73970,
+          "afterBytes": 73970
+        },
+        {
+          "index": 16,
+          "canonical": 16,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            2048,
+            2048
+          ],
+          "after": [
+            1024,
+            1024
+          ],
+          "beforeBytes": 224394,
+          "afterBytes": 161098
+        },
+        {
+          "index": 17,
+          "canonical": 17,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            2048,
+            2048
+          ],
+          "after": [
+            1024,
+            1024
+          ],
+          "beforeBytes": 153306,
+          "afterBytes": 103778
+        },
+        {
+          "index": 18,
+          "canonical": 18,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null,
+            null
+          ],
+          "before": [
+            32,
+            4
+          ],
+          "after": [
+            32,
+            4
+          ],
+          "beforeBytes": 130,
+          "afterBytes": 130
+        },
+        {
+          "index": 19,
+          "canonical": 19,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null,
+            null
+          ],
+          "before": [
+            32,
+            4
+          ],
+          "after": [
+            32,
+            4
+          ],
+          "beforeBytes": 186,
+          "afterBytes": 186
+        }
+      ]
+    },
+    {
+      "file": "arrizo8.glb",
+      "sourceVersion": "42c35363f4a4",
+      "version": "7ae25f3ef298",
+      "bytes": 3527696,
+      "sourceBytes": 3698040,
+      "beforeEstimatedRGBABytes": 201329323,
+      "afterEstimatedRGBABytes": 167774891,
+      "sharedMaterials": 0,
+      "foldedSlots": 0,
+      "images": [
+        {
+          "index": 0,
+          "canonical": 0,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            2048,
+            2048
+          ],
+          "after": [
+            1024,
+            1024
+          ],
+          "beforeBytes": 137444,
+          "afterBytes": 98208
+        },
+        {
+          "index": 1,
+          "canonical": 1,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            2048,
+            2048
+          ],
+          "after": [
+            2048,
+            2048
+          ],
+          "beforeBytes": 63358,
+          "afterBytes": 63358
+        },
+        {
+          "index": 2,
+          "canonical": 2,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            2048,
+            2048
+          ],
+          "after": [
+            2048,
+            2048
+          ],
+          "beforeBytes": 158216,
+          "afterBytes": 158216
+        },
+        {
+          "index": 3,
+          "canonical": 3,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            2048,
+            2048
+          ],
+          "after": [
+            2048,
+            2048
+          ],
+          "beforeBytes": 86720,
+          "afterBytes": 86720
+        },
+        {
+          "index": 4,
+          "canonical": 4,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            2048,
+            2048
+          ],
+          "after": [
+            1024,
+            1024
+          ],
+          "beforeBytes": 265798,
+          "afterBytes": 134708
+        },
+        {
+          "index": 5,
+          "canonical": 5,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            2048,
+            2048
+          ],
+          "after": [
+            2048,
+            2048
+          ],
+          "beforeBytes": 53490,
+          "afterBytes": 53490
+        },
+        {
+          "index": 6,
+          "canonical": 6,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            2048,
+            2048
+          ],
+          "after": [
+            2048,
+            2048
+          ],
+          "beforeBytes": 159120,
+          "afterBytes": 159120
+        },
+        {
+          "index": 7,
+          "canonical": 7,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            2048,
+            2048
+          ],
+          "after": [
+            2048,
+            2048
+          ],
+          "beforeBytes": 106302,
+          "afterBytes": 106302
+        },
+        {
+          "index": 8,
+          "canonical": 8,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            2048,
+            2048
+          ],
+          "after": [
+            2048,
+            2048
+          ],
+          "beforeBytes": 24920,
+          "afterBytes": 24920
+        },
+        {
+          "index": 9,
+          "canonical": 9,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null,
+            null
+          ],
+          "before": [
+            64,
+            4
+          ],
+          "after": [
+            64,
+            4
+          ],
+          "beforeBytes": 194,
+          "afterBytes": 194
+        },
+        {
+          "index": 10,
+          "canonical": 10,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null,
+            null
+          ],
+          "before": [
+            64,
+            4
+          ],
+          "after": [
+            64,
+            4
+          ],
+          "beforeBytes": 230,
+          "afterBytes": 230
+        }
+      ]
+    },
+    {
+      "file": "gtr.glb",
+      "sourceVersion": "6398e9fb3872",
+      "version": "cb25e73c42ca",
+      "bytes": 9456704,
+      "sourceBytes": 10716464,
+      "beforeEstimatedRGBABytes": 714791595,
+      "afterEstimatedRGBABytes": 245029547,
+      "sharedMaterials": 0,
+      "foldedSlots": 0,
+      "images": [
+        {
+          "index": 0,
+          "canonical": 0,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            2048,
+            2048
+          ],
+          "after": [
+            1024,
+            1024
+          ],
+          "beforeBytes": 109452,
+          "afterBytes": 51540
+        },
+        {
+          "index": 1,
+          "canonical": 1,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            2048,
+            2048
+          ],
+          "after": [
+            2048,
+            2048
+          ],
+          "beforeBytes": 402624,
+          "afterBytes": 402624
+        },
+        {
+          "index": 2,
+          "canonical": 2,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            2048,
+            2048
+          ],
+          "after": [
+            1024,
+            1024
+          ],
+          "beforeBytes": 33520,
+          "afterBytes": 32980
+        },
+        {
+          "index": 3,
+          "canonical": 3,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            2048,
+            2048
+          ],
+          "after": [
+            1024,
+            1024
+          ],
+          "beforeBytes": 152202,
+          "afterBytes": 167980
+        },
+        {
+          "index": 4,
+          "canonical": 4,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            2048,
+            2048
+          ],
+          "after": [
+            2048,
+            2048
+          ],
+          "beforeBytes": 446324,
+          "afterBytes": 446324
+        },
+        {
+          "index": 5,
+          "canonical": 5,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            2048,
+            2048
+          ],
+          "after": [
+            1024,
+            1024
+          ],
+          "beforeBytes": 66962,
+          "afterBytes": 73520
+        },
+        {
+          "index": 6,
+          "canonical": 6,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            2048,
+            2048
+          ],
+          "after": [
+            1024,
+            1024
+          ],
+          "beforeBytes": 136998,
+          "afterBytes": 144514
+        },
+        {
+          "index": 7,
+          "canonical": 7,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            2048,
+            2048
+          ],
+          "after": [
+            2048,
+            2048
+          ],
+          "beforeBytes": 373328,
+          "afterBytes": 373328
+        },
+        {
+          "index": 8,
+          "canonical": 8,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            2048,
+            2048
+          ],
+          "after": [
+            1024,
+            1024
+          ],
+          "beforeBytes": 64604,
+          "afterBytes": 69570
+        },
+        {
+          "index": 9,
+          "canonical": 9,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            2048,
+            2048
+          ],
+          "after": [
+            1024,
+            1024
+          ],
+          "beforeBytes": 69892,
+          "afterBytes": 60704
+        },
+        {
+          "index": 10,
+          "canonical": 10,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            2048,
+            2048
+          ],
+          "after": [
+            1024,
+            1024
+          ],
+          "beforeBytes": 193760,
+          "afterBytes": 151684
+        },
+        {
+          "index": 11,
+          "canonical": 11,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            2048,
+            2048
+          ],
+          "after": [
+            1024,
+            1024
+          ],
+          "beforeBytes": 10408,
+          "afterBytes": 6532
+        },
+        {
+          "index": 12,
+          "canonical": 12,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            2048,
+            2048
+          ],
+          "after": [
+            1024,
+            1024
+          ],
+          "beforeBytes": 421488,
+          "afterBytes": 268236
+        },
+        {
+          "index": 13,
+          "canonical": 13,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            2048,
+            2048
+          ],
+          "after": [
+            1024,
+            1024
+          ],
+          "beforeBytes": 137296,
+          "afterBytes": 144028
+        },
+        {
+          "index": 14,
+          "canonical": 14,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            2048,
+            2048
+          ],
+          "after": [
+            2048,
+            2048
+          ],
+          "beforeBytes": 573552,
+          "afterBytes": 573552
+        },
+        {
+          "index": 15,
+          "canonical": 15,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            2048,
+            2048
+          ],
+          "after": [
+            1024,
+            1024
+          ],
+          "beforeBytes": 68178,
+          "afterBytes": 56034
+        },
+        {
+          "index": 16,
+          "canonical": 16,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            2048,
+            2048
+          ],
+          "after": [
+            1024,
+            1024
+          ],
+          "beforeBytes": 52168,
+          "afterBytes": 41924
+        },
+        {
+          "index": 17,
+          "canonical": 17,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            2048,
+            2048
+          ],
+          "after": [
+            2048,
+            2048
+          ],
+          "beforeBytes": 133586,
+          "afterBytes": 133586
+        },
+        {
+          "index": 18,
+          "canonical": 18,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            2048,
+            2048
+          ],
+          "after": [
+            1024,
+            1024
+          ],
+          "beforeBytes": 192250,
+          "afterBytes": 117874
+        },
+        {
+          "index": 19,
+          "canonical": 19,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            2000,
+            2000
+          ],
+          "after": [
+            2000,
+            2000
+          ],
+          "beforeBytes": 12696,
+          "afterBytes": 12696
+        },
+        {
+          "index": 20,
+          "canonical": 20,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            4096,
+            4096
+          ],
+          "after": [
+            1024,
+            1024
+          ],
+          "beforeBytes": 706078,
+          "afterBytes": 165772
+        },
+        {
+          "index": 21,
+          "canonical": 21,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            4096,
+            4096
+          ],
+          "after": [
+            2048,
+            2048
+          ],
+          "beforeBytes": 83182,
+          "afterBytes": 79200
+        },
+        {
+          "index": 22,
+          "canonical": 22,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            4096,
+            4096
+          ],
+          "after": [
+            1024,
+            1024
+          ],
+          "beforeBytes": 563062,
+          "afterBytes": 169470
+        }
+      ]
+    },
+    {
+      "file": "rs3.glb",
+      "sourceVersion": "e60ef47482eb",
+      "version": "31a7bc0042b4",
+      "bytes": 1670916,
+      "sourceBytes": 1882732,
+      "beforeEstimatedRGBABytes": 14854827,
+      "afterEstimatedRGBABytes": 14505387,
+      "sharedMaterials": 0,
+      "foldedSlots": 1,
+      "images": [
+        {
+          "index": 0,
+          "canonical": 0,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            256,
+            128
+          ],
+          "after": [
+            256,
+            128
+          ],
+          "beforeBytes": 274,
+          "afterBytes": 274
+        },
+        {
+          "index": 1,
+          "canonical": 1,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            512,
+            512
+          ],
+          "after": [
+            512,
+            512
+          ],
+          "beforeBytes": 21818,
+          "afterBytes": 21818
+        },
+        {
+          "index": 2,
+          "canonical": 2,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            512,
+            512
+          ],
+          "after": [
+            512,
+            512
+          ],
+          "beforeBytes": 103176,
+          "afterBytes": 75724
+        },
+        {
+          "index": 3,
+          "canonical": 3,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            512,
+            512
+          ],
+          "after": [
+            512,
+            512
+          ],
+          "beforeBytes": 37962,
+          "afterBytes": 37962
+        },
+        {
+          "index": 4,
+          "canonical": 4,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            512,
+            256
+          ],
+          "after": [
+            512,
+            256
+          ],
+          "beforeBytes": 122476,
+          "afterBytes": 107708
+        },
+        {
+          "index": 5,
+          "canonical": 5,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            256,
+            256
+          ],
+          "after": [
+            256,
+            256
+          ],
+          "beforeBytes": 822,
+          "afterBytes": 822
+        },
+        {
+          "index": 6,
+          "canonical": 6,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            512,
+            512
+          ],
+          "after": [
+            512,
+            512
+          ],
+          "beforeBytes": 2922,
+          "afterBytes": 2922
+        },
+        {
+          "index": 7,
+          "canonical": 7,
+          "role": "data",
+          "flat": true,
+          "constant": [
+            255,
+            255,
+            255
+          ],
+          "before": [
+            256,
+            256
+          ],
+          "after": [
+            4,
+            4
+          ],
+          "beforeBytes": 178,
+          "afterBytes": 38
+        },
+        {
+          "index": 8,
+          "canonical": 8,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            512,
+            512
+          ],
+          "after": [
+            512,
+            512
+          ],
+          "beforeBytes": 281800,
+          "afterBytes": 175430
+        },
+        {
+          "index": 9,
+          "canonical": 9,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            255,
+            255,
+            255,
+            null
+          ],
+          "before": [
+            512,
+            512
+          ],
+          "after": [
+            512,
+            512
+          ],
+          "beforeBytes": 57363,
+          "afterBytes": 33704
+        },
+        {
+          "index": 10,
+          "canonical": 10,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            256,
+            256
+          ],
+          "after": [
+            256,
+            256
+          ],
+          "beforeBytes": 5348,
+          "afterBytes": 5348
+        },
+        {
+          "index": 11,
+          "canonical": 11,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            256,
+            256
+          ],
+          "after": [
+            256,
+            256
+          ],
+          "beforeBytes": 73422,
+          "afterBytes": 47800
+        },
+        {
+          "index": 12,
+          "canonical": 12,
+          "role": "color",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            512,
+            512
+          ],
+          "after": [
+            512,
+            512
+          ],
+          "beforeBytes": 7078,
+          "afterBytes": 7078
+        },
+        {
+          "index": 13,
+          "canonical": 13,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            512,
+            512
+          ],
+          "after": [
+            512,
+            512
+          ],
+          "beforeBytes": 7912,
+          "afterBytes": 7912
+        },
+        {
+          "index": 14,
+          "canonical": 14,
+          "role": "data",
+          "flat": false,
+          "constant": [
+            null,
+            null,
+            null
+          ],
+          "before": [
+            512,
+            512
+          ],
+          "after": [
+            512,
+            512
+          ],
+          "beforeBytes": 41944,
+          "afterBytes": 27862
+        }
+      ]
+    }
+  ]
+}

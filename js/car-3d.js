@@ -5539,7 +5539,7 @@
         jesko: './assets/models/hypercar.glb'         // Real Koenigsegg Jesko Attack (3.58 MB)
     };
 
-    function resolveModelUrl(carId){const url=GLB_MODEL_MAP[carId];if(!url)return url;const meta=typeof window!=='undefined'&&window.NomeraModelAssets?.[url.split('/').pop()];return meta?url+'?v='+meta.version:url;}
+    function resolveModelUrl(carId){const url=GLB_MODEL_MAP[carId];if(!url)return url;const meta=typeof window!=='undefined'&&window.NomeraModelAssets?.[url.split('/').pop()];return typeof window!=='undefined'&&window.NomeraMobileTextures?window.NomeraMobileTextures.url(url,meta):meta?url+'?v='+meta.version:url;}
     const rawGLBCache = new Map();
     const inFlightGLBPromises = new Map();
     const NOMERA_MODEL_CACHE_NAME = 'nomera-glb-cache-v4'; // upgraded from nomera-glb-cache-v3
@@ -5553,7 +5553,7 @@
             const url=new URL(request.url);
             // Remove obsolete variants of this asset, including the unversioned wheel model.
             if(url.pathname===current.pathname&&url.href!==current.href){await cache.delete(request);continue;}
-            const bytes=manifest[url.pathname.split('/').pop()]?.bytes;
+            const bytes=window.NomeraMobileTextures?.bytes(url.href)||manifest[url.pathname.split('/').pop()]?.bytes;
             if(bytes)entries.push({request,bytes});
         }
         let total=entries.reduce((sum,item)=>sum+item.bytes,0),count=entries.length;
@@ -8070,10 +8070,11 @@
         }
 
         const loadPromise = new Promise(resolve => {
+            let loadUrl=modelUrl;
             const fallbackLoad = () => {
                 try {
                     loader.load(
-                        modelUrl,
+                        loadUrl,
                         gltf => {
                             if (gltf && gltf.scene) {
                                 rawGLBCache.set(modelUrl, protectSceneBuffers(gltf.scene));
@@ -8089,6 +8090,7 @@
                             }
                         },
                         err => {
+                            if(loadUrl.includes('/models-mobile/')){const source=GLB_MODEL_MAP[carId],meta=window.NomeraModelAssets?.[source.split('/').pop()];loadUrl=source+(meta?'?v='+meta.version:'');fallbackLoad();return;}
                             console.warn('Failed to load GLB model, falling back to procedural:', err);
                             resolve(null);
                         }

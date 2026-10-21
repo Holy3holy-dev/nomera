@@ -5792,7 +5792,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             }
             else if (animStyle === 'wave') {
                 targets.forEach((id, idx) => {
-                    stopDelays[id] = (300 + idx * 160) * speedScale;
+                    stopDelays[id] = (window.NOMERA_AUTHORS_PREVIEW ? 320 + Math.abs(idx - (targets.length - 1) / 2) * 150 + (idx % 2) * 70 : 300 + idx * 160) * speedScale;
                 });
             }
             else {

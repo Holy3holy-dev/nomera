@@ -13,7 +13,7 @@ const MIME_TYPES = {
     '.mjs': 'application/javascript; charset=utf-8',
     '.css': 'text/css; charset=utf-8',
     '.json': 'application/json; charset=utf-8',
-    '.png': 'image/png',
+    '.png': 'image/png', '.webp': 'image/webp',
     '.jpg': 'image/jpeg',
     '.jpeg': 'image/jpeg',
     '.svg': 'image/svg+xml',
@@ -26,7 +26,7 @@ const MIME_TYPES = {
     '.wav': 'audio/wav'
 };
 
-const STATIC_EXTENSIONS = new Set(['.glb', '.gltf', '.bin', '.wasm', '.png', '.jpg', '.jpeg', '.svg', '.ico', '.mp3', '.wav']);
+const STATIC_EXTENSIONS = new Set(['.glb', '.gltf', '.bin', '.wasm', '.png', '.webp', '.jpg', '.jpeg', '.svg', '.ico', '.mp3', '.wav']);
 
 const server = http.createServer((req, res) => {
     // Basic CORS

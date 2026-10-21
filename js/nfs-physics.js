@@ -789,7 +789,7 @@
 
             // Current and previous discrete states for fixed-timestep interpolation
             this.state = this._createInitialState(this.options);
-            this.mwSteering = this.mwKernel ? new this.mwKernel.SteeringController() : null;
+            this.mwSteering = this.mwKernel ? new this.mwKernel.SteeringController({responsive:!!globalThis.NOMERA_AUTHORS_PREVIEW}) : null;
             this.suspension = this.mwKernel ? new this.mwKernel.Suspension(this.profile) : null;
             this._initializeMWContact(this.options);
             this._resetMWTires();
@@ -986,7 +986,7 @@
             this.stepCount = 0;
             this._speedbreakerLatch = false;
             this.state = this._createInitialState(init);
-            if(this.mwKernel){this.mwSteering=new this.mwKernel.SteeringController();this.suspension=new this.mwKernel.Suspension(this.profile);}
+            if(this.mwKernel){this.mwSteering=new this.mwKernel.SteeringController({responsive:!!globalThis.NOMERA_AUTHORS_PREVIEW});this.suspension=new this.mwKernel.Suspension(this.profile);}
             this._initializeMWContact(init);
             this._resetMWTires();
             this.prevState = Object.assign({}, this.state);
