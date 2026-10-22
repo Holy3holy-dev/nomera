@@ -6765,7 +6765,7 @@
     }
 
     function applyStylingToGLTF(THREE, modelRoot, styling = {}, carId = '') {
-        if(typeof window!=='undefined'&&window.NOMERA_AUTHORS_PREVIEW)window.NomeraAeroKit?.release(modelRoot);
+        if(typeof window!=='undefined'&&window.NOMERA_AUTHORS_PREVIEW)window.NomeraAeroKit?.release(modelRoot);if(typeof window!=='undefined'&&window.NOMERA_AUTHORS_PREVIEW)window.NomeraVehicleFinish?.release(modelRoot);
         const baseCarId = (
             carId === 'corvette_webster' ? 'corvette_cross' :
             carId === 'mustang_jewels' ? 'mustang_razor' :
@@ -6798,6 +6798,7 @@
         function isTireMaterial(matName, meshName) {
             const mn = String(matName || '').toLowerCase();
             const ms = String(meshName || '').toLowerCase();
+            if (mn === 'tirerubber') return true;
             if (baseCarId === 'm3gtr') return mn === 'tire' || ms.includes('m_tire_high');
             if (baseCarId === 'corvette_cross') return mn === 'material.027' || (ms.includes('front_tire_a') && mn === '1_car_paint.005');
             if (baseCarId === 'mustang_razor') return mn === 'llantas';
@@ -7811,7 +7812,7 @@
 
         // Interactive Doors, Hood, Engine Bay, Trunk, and Subwoofer Rig for all GLB Models
         ensureGLBInteractiveRig(THREE, modelRoot, styling, carId, mats, styledPaint);
-        if(typeof window!=='undefined'&&window.NOMERA_AUTHORS_PREVIEW)window.NomeraAeroKit?.apply(THREE,modelRoot,styling,{box,carId,baseCarId});
+        if(typeof window!=='undefined'&&window.NOMERA_AUTHORS_PREVIEW)window.NomeraAeroKit?.apply(THREE,modelRoot,styling,{box,carId,baseCarId});if(typeof window!=='undefined'&&window.NOMERA_AUTHORS_PREVIEW)window.NomeraVehicleFinish?.apply(THREE,modelRoot,styling,carId);
 
         // Multi-country License Plates
         const plateVal = (styling && styling.plate !== undefined) ? styling.plate : 'А 777 АА | 77 RUS';
@@ -8346,7 +8347,7 @@
     }
 
     function deepDispose(obj) {
-        if(typeof window!=='undefined')window.NomeraAeroKit?.release(obj);
+        if(typeof window!=='undefined')window.NomeraAeroKit?.release(obj);if(typeof window!=='undefined')window.NomeraVehicleFinish?.release(obj);if(typeof window!=='undefined')obj?.traverse?.(n=>window.NomeraWheelRig?.cancel(n));
         if(typeof window!=='undefined')window.NomeraLivery?.release(obj);
         if(typeof window!=='undefined')window.NomeraPlayerRender?.release(obj);
         if(typeof window!=='undefined')window.NomeraVehicleLOD?.release(obj);
@@ -12425,6 +12426,7 @@
                 group.userData.isTruck = true;
                 group.userData.halfWidth = 1.35;
                 group.userData.halfLength = 4.8;
+                if(window.NOMERA_AUTHORS_PREVIEW)window.NomeraVehicleFinish?.truck(THREE,group);
             } else if (type === 'ambulance') {
                 // High-Roof Ambulance Van / Sprinter («Скорая медицинская помощь» 03 / 112)
                 const ambGroup = new THREE.Group();
@@ -14058,7 +14060,7 @@
 
                 // 4. Underglow Neon (if player has neon tuning)
                 const neonVal = this.styling.neon;
-                if (neonVal && neonVal !== 'none') {
+                if (neonVal && neonVal !== 'none' && !(window.NOMERA_AUTHORS_PREVIEW&&window.NomeraVehicleFinish)) {
                     const col = parseColor(neonVal, 0x00f0ff);
                     let neonTexture = null;
                     try {
@@ -15573,7 +15575,7 @@
 
             // 10. WEATHER PARTICLES & DYNAMIC CYCLE UPDATE
             this.updateWeatherParticles(dt);
-            if(window.NOMERA_AUTHORS_PREVIEW){window.NomeraScene?.update(this);window.NomeraBodyDamage?.update(this);}
+            if(window.NOMERA_AUTHORS_PREVIEW){window.NomeraScene?.update(this,dt);if(this.state.crashed)return;window.NomeraBodyDamage?.update(this);}
 
             // 11. NOTIFY HUD CALLBACK
             this.notifyHUD();

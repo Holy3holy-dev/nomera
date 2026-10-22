@@ -50,8 +50,8 @@
   // Four UI refreshes per second; the driving simulation remains independent.
   if(time-r.lastUI<.25&&r.lastUI>=0)return;r.lastUI=time;
   if(!r.hud)return;
-  r.hud.hidden=!!(st.racePhase&&st.racePhase!=='racing');if(r.hud.hidden)return;
-  let label=e.mode==='drift'?'ДРИФТ / СВОБОДНЫЙ ЗАЕЗД':'ШОССЕ / СВОБОДНЫЙ ЗАЕЗД',title=e.mode==='drift'?'Удерживай скольжение':'Держи свою линию',arrow='↑',detail=e.mode==='drift'?'Угол · скорость · серия':'Обгоны · дистанция · дрифт',tone='straight';
+  r.hud.hidden=!!(st.racePhase&&st.racePhase!=='racing')||(!e.track&&!st.wantedStars&&e.mode!=='drift');if(r.hud.hidden)return;
+  let label=e.mode==='drift'?'ДРИФТ / СВОБОДНЫЙ ЗАЕЗД':'ШОССЕ / СВОБОДНЫЙ ЗАЕЗД',title=e.mode==='drift'?'Удерживай скольжение':'',arrow='↑',detail=e.mode==='drift'?'Угол · скорость · серия':'Обгоны · дистанция · дрифт',tone='straight';
   if(e.track&&e.playerProgress){const p=e.playerProgress,q=corner(e.track,p.lastS,st.speed);label='СЕКТОР '+(p.checkpointsPassed+1);const cp=e.track.checkpoints[p.nextCheckpoint],distance=cp?((cp.s-p.lastS+e.track.totalLength)%e.track.totalLength):0;
    title='До отметки '+Math.round(distance)+' м';detail='Чистых секторов: '+r.timing.clean;
    if(q){arrow=q.direction==='right'?'↱':'↰';title=q.severity+' · '+q.distance+' м';tone=q.hint<st.speed-15?'brake':'turn';}

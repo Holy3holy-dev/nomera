@@ -2140,7 +2140,7 @@
                 }
             }
 
-            if(root.NOMERA_AUTHORS_PREVIEW){root.NomeraScene?.update(this);root.NomeraBodyDamage?.update(this);}
+            if(root.NOMERA_AUTHORS_PREVIEW){root.NomeraScene?.update(this,dt);root.NomeraBodyDamage?.update(this);}
             if(root.NOMERA_AUTHORS_PREVIEW&&root.NomeraDriverCamera){root.NomeraDriverCamera.recoveryUI(this,this.playerPhysics);if(root.NomeraDriverCamera.update(this,this.cameraMode,dt))return;}
             if (this.camera) {
                 const threeX = this.toThreeX(p.renderX);

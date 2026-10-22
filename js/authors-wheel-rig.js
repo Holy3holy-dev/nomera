@@ -187,13 +187,13 @@
     const sliced=compact(T,geometry,tris);sliced.applyMatrix4(matrix);sliced.translate(-wheel.center.x,-wheel.center.y,-wheel.center.z);
     if(matrix.determinant()<0){const index=sliced.index;for(let i=0;i<index.count;i+=3){const b=index.getX(i+1);index.setX(i+1,index.getX(i+2));index.setX(i+2,b);}index.needsUpdate=true;}
     if(part==='spin')sliced.applyMatrix4(new T.Matrix4().makeRotationFromQuaternion(wheel.bindQuaternion.clone().invert()));
-    const mesh=new T.Mesh(sliced,node.material);mesh.name=node.name+'_'+bucket;mesh.castShadow=node.castShadow;mesh.receiveShadow=node.receiveShadow;
+    const mesh=new T.Mesh(sliced,node.material);mesh.name=node.name+'_'+bucket;if(Array.isArray(node.userData._stylingRoles))mesh.userData._stylingRoles=node.userData._stylingRoles.slice();if(Array.isArray(node.userData._origMatNames))mesh.userData._origMatNames=node.userData._origMatNames.slice();mesh.castShadow=node.castShadow;mesh.receiveShadow=node.receiveShadow;
     (part==='spin'?wheel.spin:wheel.steer).add(mesh);
    }
   }
   const rig={wheels,imported:true};rigs.set(model,rig);return rig;
  }
- function prepare(T,model){const iterator=build(T,model);let result;do{result=iterator.next();}while(!result.done);globalThis.NomeraVehicleLOD?.afterWheels(T,model);return result.value;}
+ function prepare(T,model){const iterator=build(T,model);let result;do{result=iterator.next();}while(!result.done);globalThis.NomeraVehicleLOD?.afterWheels(T,model);globalThis.NomeraVehicleFinish?.wheels(T,model,result.value);return result.value;}
  function prepareAsync(T,model,target=[]){
   if(pending.has(model))return pending.get(model);
   target.splice(0,target.length);
@@ -201,7 +201,7 @@
   const pump=()=>{
    const start=performance.now();let result;
    do{if(task.cancelled)return;result=iterator.next();}while(!result.done&&performance.now()-start<5);
-   if(result.done){target.splice(0,target.length,...result.value.wheels);task.imported=result.value.imported;task.reason=result.value.reason;task.pending=false;jobs.delete(task);pending.delete(model);globalThis.NomeraVehicleLOD?.afterWheels(T,model);}
+   if(result.done){target.splice(0,target.length,...result.value.wheels);task.imported=result.value.imported;task.reason=result.value.reason;task.pending=false;jobs.delete(task);pending.delete(model);globalThis.NomeraVehicleLOD?.afterWheels(T,model);globalThis.NomeraVehicleFinish?.wheels(T,model,result.value);}
    else task.timer=setTimeout(pump,0);
   };
   task.cancel=()=>{task.cancelled=true;clearTimeout(task.timer);iterator.return();jobs.delete(task);pending.delete(model);};
@@ -219,5 +219,5 @@
    if(compression)wheel.steer.position.y=wheel.baseY+(compression[key]||0);
   }
  }
- return{prepare,prepareAsync,cancelAll,update,isPending:model=>pending.has(model)};
+ return{prepare,prepareAsync,cancelAll,cancel:model=>pending.get(model)?.cancel(),update,isPending:model=>pending.has(model)};
 });
