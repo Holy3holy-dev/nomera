@@ -23,10 +23,11 @@ const MIME_TYPES = {
     '.bin': 'application/octet-stream',
     '.wasm': 'application/wasm',
     '.mp3': 'audio/mpeg',
-    '.wav': 'audio/wav'
+    '.wav': 'audio/wav',
+    '.woff2': 'font/woff2'
 };
 
-const STATIC_EXTENSIONS = new Set(['.glb', '.gltf', '.bin', '.wasm', '.png', '.webp', '.jpg', '.jpeg', '.svg', '.ico', '.mp3', '.wav']);
+const STATIC_EXTENSIONS = new Set(['.glb', '.gltf', '.bin', '.wasm', '.png', '.webp', '.jpg', '.jpeg', '.svg', '.ico', '.mp3', '.wav', '.woff2']);
 
 const server = http.createServer((req, res) => {
     // Basic CORS
