@@ -74,7 +74,7 @@
    // Generated plate/lighting/interactive helpers do not define the car's
    // ground or wheelbase, and must never become spinning geometry.
    for(let p=node;p&&p!==model;p=p.parent){
-    if(p.userData?.isInteractiveRigNode||p.userData?.isLicensePlate||/^(?:GLB_InteractiveRig|Door_FL_Pivot|Door_FR_Pivot|Door_CavityGroup|Hood_Pivot|EngineBayGroup|Trunk_Pivot|SubwooferGroup|GLB_SpoilerGroup|GLB_Spoiler|SpoilerGroup|GLB_BodykitGroup|GLB_RoofScoopGroup|GLB_HoodGroup|SGUGroup|GLB_NeonTubes|NeonGroup|LicensePlatesGroup|GLB_FrontLicensePlate|GLB_RearLicensePlate|FrontLicensePlate|RearLicensePlate|ChassisUndertray|GLB_Undertray|ShowroomHeadlightCones|ShowroomHeadlightFlares|ShowroomTaillightFlares|HeadlightsGroup)$/i.test(p.name))return;
+    if(p.userData?.authorsAccessory||p.userData?.isInteractiveRigNode||p.userData?.isLicensePlate||/^(?:GLB_InteractiveRig|Door_FL_Pivot|Door_FR_Pivot|Door_CavityGroup|Hood_Pivot|EngineBayGroup|Trunk_Pivot|SubwooferGroup|GLB_SpoilerGroup|GLB_Spoiler|SpoilerGroup|GLB_BodykitGroup|GLB_RoofScoopGroup|GLB_HoodGroup|SGUGroup|GLB_NeonTubes|NeonGroup|LicensePlatesGroup|GLB_FrontLicensePlate|GLB_RearLicensePlate|FrontLicensePlate|RearLicensePlate|ChassisUndertray|GLB_Undertray|ShowroomHeadlightCones|ShowroomHeadlightFlares|ShowroomTaillightFlares|HeadlightsGroup)$/i.test(p.name))return;
    }
    meshList.push({node,matrix:inverse.clone().multiply(node.matrixWorld)});
   });

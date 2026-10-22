@@ -1265,7 +1265,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         let stylingTempSpoiler = 'none';
         let stylingTempVinyl = 'none';
         let stylingTempLivery = null;
-        window.NomeraLiveryEditorBridge={owner:()=>nickname,change:(value,preview=true)=>{stylingTempLivery=window.NomeraLivery.normalize(value);if(preview)updateStylingModalPreview();}};
+        window.NomeraLiveryEditorBridge={owner:()=>nickname,change:(value,preview=true)=>{stylingTempLivery=window.NomeraLivery.normalize(value);if(preview)updateStylingModalPreview();else window.NomeraAtelier?.refresh();}};
         let stylingTempWheels = 'stock';
         let stylingTempSuspension = 'stock';
         let stylingTempSgu = 'none';
@@ -9778,6 +9778,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             racePreviewPause.pause();
         }
         function openStylingModal(carIndex, initialMode) {
+            if(window.NOMERA_AUTHORS_PREVIEW&&!initialMode)initialMode='3d';
             if (garage3DShowroom) {
                 try { garage3DShowroom.stop(); } catch (_) {}
             }
@@ -9892,17 +9893,17 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 btn.classList.toggle('active', btn.dataset.smokecolor === stylingTempSmokeColor);
             });
             document.querySelectorAll('#styling-junkman-chips .styling-chip').forEach(btn => {
-                const part = btn.dataset.junkman;
+                const part = ({junkmanEngine:'engine',junkmanTurbo:'turbo',junkmanTires:'tires',junkmanNitro:'nitro'})[btn.dataset.junkman]||btn.dataset.junkman;
                 btn.classList.toggle('active', Boolean(part && stylingTempJunkman[part]));
             });
             document.querySelectorAll('#styling-pro-gear-chips .styling-chip').forEach(btn => {
-                btn.classList.toggle('active', Number(btn.dataset.progear) === Number(stylingTempProTuning.gearRatioBias));
+                btn.classList.toggle('active', Number(btn.dataset.proGear) === Number(stylingTempProTuning.gearRatioBias));
             });
             document.querySelectorAll('#styling-pro-aero-chips .styling-chip').forEach(btn => {
-                btn.classList.toggle('active', Number(btn.dataset.proaero) === Number(stylingTempProTuning.aeroDownforce));
+                btn.classList.toggle('active', Number(btn.dataset.proAero) === Number(stylingTempProTuning.aeroDownforce));
             });
             document.querySelectorAll('#styling-pro-grip-chips .styling-chip').forEach(btn => {
-                btn.classList.toggle('active', Number(btn.dataset.progrip) === Number(stylingTempProTuning.gripDriftBias));
+                btn.classList.toggle('active', Number(btn.dataset.proGrip) === Number(stylingTempProTuning.gripDriftBias));
             });
 
             document.getElementById('btn-show-doors')?.classList.remove('active');
@@ -9915,12 +9916,14 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             const modal = document.getElementById('styling-modal');
             pauseRaceForCarPreview();
             if (modal) modal.classList.add('show');
+            if(window.NOMERA_AUTHORS_PREVIEW)window.NomeraAtelier?.open();
             setStylingViewMode(stylingViewMode);
             updateStylingModalPreview();
             updateShowroomButtonsState();
         }
 
         function closeStylingModal() {
+            if(window.NOMERA_AUTHORS_PREVIEW)window.NomeraAtelier?.close();
             if(window.NOMERA_AUTHORS_PREVIEW)document.getElementById('styling-modal')?.dispatchEvent(new Event('ae-livery-close'));
             const modal = document.getElementById('styling-modal');
             if (modal) modal.classList.remove('show');
@@ -10082,10 +10085,11 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         window.selectStylingSmokeColor = selectStylingSmokeColor;
 
         function toggleStylingJunkman(part) {
+            part=({junkmanEngine:'engine',junkmanTurbo:'turbo',junkmanTires:'tires',junkmanNitro:'nitro'})[part]||part;
             if (!part || !stylingTempJunkman) return;
             stylingTempJunkman[part] = !stylingTempJunkman[part];
             document.querySelectorAll('#styling-junkman-chips .styling-chip').forEach(btn => {
-                const p = btn.dataset.junkman;
+                const p = ({junkmanEngine:'engine',junkmanTurbo:'turbo',junkmanTires:'tires',junkmanNitro:'nitro'})[btn.dataset.junkman]||btn.dataset.junkman;
                 btn.classList.toggle('active', Boolean(p && stylingTempJunkman[p]));
             });
             playTick();
@@ -10094,21 +10098,22 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         window.toggleStylingJunkman = toggleStylingJunkman;
 
         function selectStylingProTuning(axis, val) {
+            axis=({gearRatioBias:'gear',aeroDownforce:'aero',gripDriftBias:'grip'})[axis]||axis;
             const numVal = Number(val) || 0;
             if (axis === 'gear') {
                 stylingTempProTuning.gearRatioBias = numVal;
                 document.querySelectorAll('#styling-pro-gear-chips .styling-chip').forEach(btn => {
-                    btn.classList.toggle('active', Number(btn.dataset.progear) === numVal);
+                    btn.classList.toggle('active', Number(btn.dataset.proGear) === numVal);
                 });
             } else if (axis === 'aero') {
                 stylingTempProTuning.aeroDownforce = numVal;
                 document.querySelectorAll('#styling-pro-aero-chips .styling-chip').forEach(btn => {
-                    btn.classList.toggle('active', Number(btn.dataset.proaero) === numVal);
+                    btn.classList.toggle('active', Number(btn.dataset.proAero) === numVal);
                 });
             } else if (axis === 'grip') {
                 stylingTempProTuning.gripDriftBias = numVal;
                 document.querySelectorAll('#styling-pro-grip-chips .styling-chip').forEach(btn => {
-                    btn.classList.toggle('active', Number(btn.dataset.progrip) === numVal);
+                    btn.classList.toggle('active', Number(btn.dataset.proGrip) === numVal);
                 });
             }
             playTick();
@@ -10117,6 +10122,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         window.selectStylingProTuning = selectStylingProTuning;
 
         function updateShowroomButtonsState() {
+            if(window.NOMERA_AUTHORS_PREVIEW)window.NomeraAtelier?.refresh();
             if (!car3DShowroom) return;
             const btnDoors = document.getElementById('btn-show-doors');
             const btnHood = document.getElementById('btn-show-hood');
@@ -11152,12 +11158,20 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         }
         window.selectStylingPlate = selectStylingPlate;
 
+        function getStylingDraft() {return {color:stylingTempColor,tint:stylingTempTint,neon:stylingTempNeon,spoiler:stylingTempSpoiler,vinyl:stylingTempVinyl,wheels:stylingTempWheels,suspension:stylingTempSuspension,camber:stylingTempCamber,wheelOffset:stylingTempOffset,neonMode:stylingTempNeonMode,sgu:stylingTempSgu,bodykit:stylingTempBodykit,roofScoop:stylingTempRoofScoop,hood:stylingTempHood,nitroColor:stylingTempNitroColor,smokeColor:stylingTempSmokeColor,plate:stylingTempPlate,livery:stylingTempLivery,junkmanEngine:!!stylingTempJunkman?.engine,junkmanTurbo:!!stylingTempJunkman?.turbo,junkmanTires:!!stylingTempJunkman?.tires,junkmanNitro:!!stylingTempJunkman?.nitro,gearRatioBias:stylingTempProTuning?.gearRatioBias||0,aeroDownforce:stylingTempProTuning?.aeroDownforce||0,gripDriftBias:stylingTempProTuning?.gripDriftBias||0};}
+        window.NomeraAtelierBridge={read:()=>({car:myCars[stylingActiveCarIndex],draft:getStylingDraft(),balance:(onlineProfile&&Number.isFinite(Number(onlineProfile.balance)))?Math.max(balance,Number(onlineProfile.balance)):balance,showroom:car3DShowroom})};
+
         async function confirmApplyStyling() {
             const car = myCars[stylingActiveCarIndex];
             if (!car) return;
             car.styling = car.styling || { color: '#ffffff', tint: 0, neon: 'none', spoiler: 'none', vinyl: 'none', wheels: 'stock', suspension: 'stock', sgu: 'none', camber: 0, wheelOffset: 0, neonMode: 'solid', bodykit: 'stock', roofScoop: 'none', hood: 'stock', nitroColor: 'blue', smokeColor: 'white' };
 
-            let cost = 0;
+            const ownedBeforeStyling=['junkmanEngine','junkmanTurbo','junkmanTires','junkmanNitro'].filter(k=>car.styling[k]||car.upgrades?.[k]);
+            const atelierQuote=window.NOMERA_AUTHORS_PREVIEW&&window.NomeraAtelier?window.NomeraAtelier.quote(car,getStylingDraft()):null;
+            if(atelierQuote&&!atelierQuote.changed)return;
+            let cost=atelierQuote?.total||0;
+            if(!atelierQuote){
+
             if (stylingTempColor !== (car.styling.color||'#ffffff')) cost += 15000;
             if (String(stylingTempTint) !== String(car.styling.tint ?? 0)) {
                 if (Number(stylingTempTint) === 50) cost += 10000;
@@ -11216,6 +11230,8 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 if (stylingTempHood === 'carbon') cost += 30000;
                 else if (stylingTempHood === 'gtr_vents') cost += 55000;
                 else if (stylingTempHood === 'blower') cost += 85000;
+            }
+
             }
 
             if (cost > 0) {
@@ -11288,6 +11304,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 aeroDownforce: Number(stylingTempProTuning?.aeroDownforce || 0),
                 gripDriftBias: Number(stylingTempProTuning?.gripDriftBias || 0)
             };
+            if(atelierQuote)car.ownedProParts=[...new Set([...(car.ownedProParts||[]),...ownedBeforeStyling,...['junkmanEngine','junkmanTurbo','junkmanTires','junkmanNitro'].filter(k=>car.styling[k])])];
             car.upgrades = Object.assign({}, car.upgrades || {}, {
                 junkmanEngine: Boolean(stylingTempJunkman?.engine),
                 junkmanTurbo: Boolean(stylingTempJunkman?.turbo),
@@ -18347,6 +18364,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         }
 
         function updateStylingModalPreview() {
+            if(window.NOMERA_AUTHORS_PREVIEW)window.NomeraAtelier?.refresh();
             const car = (stylingActiveCarIndex >= 0 && myCars[stylingActiveCarIndex]) ? myCars[stylingActiveCarIndex] : null;
             if (!car) return;
 

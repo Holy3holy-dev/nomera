@@ -36,6 +36,13 @@ function synthetic({yaw=0,toe=0,camber=0,mirror=false}={}){
  }
  parent.updateMatrixWorld(true);return root;
 }
+test('Round atelier parts stay attached to the body and never change wheel discovery',()=>{
+ const root=synthetic(),kit=new THREE.Group();kit.userData.authorsAccessory=true;root.add(kit);
+ const material=new THREE.MeshBasicMaterial(),geometry=new THREE.CylinderGeometry(.49,.49,.2,24);geometry.rotateZ(Math.PI/2);
+ const meshes=[];for(const x of[-.96,.96])for(const z of[-1.25,1.25]){const mesh=new THREE.Mesh(geometry,material);mesh.position.set(x,.49,z);kit.add(mesh);meshes.push(mesh);}
+ const rig=rigApi.prepare(THREE,root);assert.equal(rig.wheels.length,4);assert(rig.wheels.every(w=>Math.abs(w.radius-.33)<1e-6));
+ rigApi.update(rig,{dt:.2,speedMps:25,steer:.3});for(const mesh of meshes){assert.equal(mesh.parent,kit);assert.equal(mesh.geometry,geometry);assert.equal(mesh.rotation.x,0);}
+});
 test('Wheel discovery is independent of diagonal world heading',()=>{
  for(const yaw of [Math.PI/8,Math.PI/4,-Math.PI/4]){
   const rig=rigApi.prepare(THREE,synthetic({yaw}));assert.equal(rig.wheels.length,4);

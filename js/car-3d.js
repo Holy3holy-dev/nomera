@@ -1604,7 +1604,7 @@
     function isIgnoredAccessoryOrRigNode(node, rootNode) {
         let p = node;
         while (p && p !== rootNode) {
-            if (p.userData && (p.userData.isInteractiveRigNode || p.userData.isLicensePlate)) {
+            if (p.userData && (p.userData.isInteractiveRigNode || p.userData.isLicensePlate || p.userData.authorsAccessory)) {
                 return true;
             }
             const nm = String(p.name || '');
@@ -5158,13 +5158,13 @@
         const trunkY = 0.34 + 0.55 * 0.94;
         const trunkZ = -spec.bodyLength * 0.502 + 0.30;
 
-        if (styling.spoiler === 'ducktail') {
+        if (!(typeof window!=='undefined'&&window.NOMERA_AUTHORS_PREVIEW&&window.NomeraAeroKit)&&styling.spoiler === 'ducktail') {
             const duckGeo = new THREE.BoxGeometry(spec.bodyWidth * 0.78, 0.08, 0.22);
             duckGeo.rotateX(Math.PI / 8);
             const duck = new THREE.Mesh(duckGeo, mats.trim);
             duck.position.set(0, trunkY + 0.05, trunkZ);
             spoilerGroup.add(duck);
-        } else if (styling.spoiler === 'high') {
+        } else if (!(typeof window!=='undefined'&&window.NOMERA_AUTHORS_PREVIEW&&window.NomeraAeroKit)&&styling.spoiler === 'high') {
             [-1, 1].forEach(side => {
                 const legGeo = new THREE.BoxGeometry(0.035, 0.28, 0.10);
                 legGeo.rotateX(-Math.PI / 18);
@@ -5177,7 +5177,7 @@
             const wing = new THREE.Mesh(wingGeo, mats.carbon);
             wing.position.set(0, trunkY + 0.29, trunkZ - 0.02);
             spoilerGroup.add(wing);
-        } else if (styling.spoiler === 'gt' || styling.spoiler === 'gtr') {
+        } else if (!(typeof window!=='undefined'&&window.NOMERA_AUTHORS_PREVIEW&&window.NomeraAeroKit)&&(styling.spoiler === 'gt' || styling.spoiler === 'gtr')) {
             const wingGeo = new THREE.BoxGeometry(spec.bodyWidth * 0.96, 0.04, 0.32);
             const wing = new THREE.Mesh(wingGeo, mats.carbon);
             wing.position.set(0, trunkY + 0.32, trunkZ);
@@ -5470,6 +5470,7 @@
         wheelsRig.add(wRR);
 
         root.userData.spec = spec;
+        if(typeof window!=='undefined'&&window.NOMERA_AUTHORS_PREVIEW)window.NomeraAeroKit?.apply(THREE,root,styling,{carId});
         return root;
     }
 
@@ -6764,6 +6765,7 @@
     }
 
     function applyStylingToGLTF(THREE, modelRoot, styling = {}, carId = '') {
+        if(typeof window!=='undefined'&&window.NOMERA_AUTHORS_PREVIEW)window.NomeraAeroKit?.release(modelRoot);
         const baseCarId = (
             carId === 'corvette_webster' ? 'corvette_cross' :
             carId === 'mustang_jewels' ? 'mustang_razor' :
@@ -7575,6 +7577,7 @@
         const size = box.getSize(new THREE.Vector3());
         const center = box.getCenter(new THREE.Vector3());
 
+        if(!(typeof window!=='undefined'&&window.NOMERA_AUTHORS_PREVIEW&&window.NomeraAeroKit)){
         // 3D Spoilers on GLB models (skip duplicate procedural wing on BMW M3 GTR unless user selects a different custom spoiler)
         if (styling.spoiler && styling.spoiler !== 'none' && !(carId === 'm3gtr' && styling.spoiler === 'gtr')) {
             const spoilerGroup = new THREE.Group();
@@ -7759,6 +7762,7 @@
             modelRoot.add(hoodGroup);
         }
 
+        }
         // Roof-Mounted Police/Government SGU Flasher Bar removed per user request: "убери все мигалки которые можно ставить на машину, они только мешают"
 
         // Underglow Neon (Soft Ground Light Pool + Deeply Recessed Chassis Emitters)
@@ -7807,6 +7811,7 @@
 
         // Interactive Doors, Hood, Engine Bay, Trunk, and Subwoofer Rig for all GLB Models
         ensureGLBInteractiveRig(THREE, modelRoot, styling, carId, mats, styledPaint);
+        if(typeof window!=='undefined'&&window.NOMERA_AUTHORS_PREVIEW)window.NomeraAeroKit?.apply(THREE,modelRoot,styling,{box,carId,baseCarId});
 
         // Multi-country License Plates
         const plateVal = (styling && styling.plate !== undefined) ? styling.plate : 'А 777 АА | 77 RUS';
@@ -8341,6 +8346,7 @@
     }
 
     function deepDispose(obj) {
+        if(typeof window!=='undefined')window.NomeraAeroKit?.release(obj);
         if(typeof window!=='undefined')window.NomeraLivery?.release(obj);
         if(typeof window!=='undefined')window.NomeraPlayerRender?.release(obj);
         if(typeof window!=='undefined')window.NomeraVehicleLOD?.release(obj);
