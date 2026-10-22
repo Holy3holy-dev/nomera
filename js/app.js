@@ -8902,7 +8902,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
         function filterShopCars(filter) {
             currentShopFilter = filter || 'all';
-            const buttons = ['all', 'budget', 'jdm', 'premium', 'hyper'];
+            const buttons = ['all', 'budget', 'jdm', 'premium', 'hyper', 'mw'];
             buttons.forEach(b => {
                 const btn = document.getElementById('btn-shop-' + b);
                 if (btn) btn.classList.toggle('active', b === currentShopFilter);
@@ -8917,6 +8917,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             list.innerHTML = '';
 
             const filteredCars = carsData.filter(car => {
+                if (currentShopFilter === 'mw') return Object.values(NFS_MW_LEGEND_CARS).some(m=>m.name===car.name);
                 if (currentShopFilter === 'budget') return car.price < 1300000;
                 if (currentShopFilter === 'jdm') return car.price >= 1300000 && car.price < 7000000;
                 if (currentShopFilter === 'premium') return car.price >= 7000000 && car.price < 30000000;
@@ -11170,6 +11171,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             const ownedBeforeStyling=['junkmanEngine','junkmanTurbo','junkmanTires','junkmanNitro'].filter(k=>car.styling[k]||car.upgrades?.[k]);
             const atelierQuote=window.NOMERA_AUTHORS_PREVIEW&&window.NomeraAtelier?window.NomeraAtelier.quote(car,getStylingDraft()):null;
             if(atelierQuote&&!atelierQuote.changed)return;
+            const fitmentErrors=atelierQuote?window.NomeraAtelier.validate(car,getStylingDraft()):[];if(fitmentErrors.length){notifyUser(fitmentErrors[0].reason,'error');return;}
             let cost=atelierQuote?.total||0;
             if(!atelierQuote){
 

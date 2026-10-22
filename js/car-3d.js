@@ -10212,6 +10212,11 @@
     // 📸 OFFLINE 3D SIDE PROFILE THUMBNAIL RENDERER FOR AUTO SALON & GARAGE
     // =========================================================================
     const STATIC_3D_THUMBNAILS = {
+        m3gtr: './assets/thumbnails/mw-m3gtr.webp',
+        mustang_razor: './assets/thumbnails/mw-mustang_razor.webp',
+        mustang_jewels: './assets/thumbnails/mw-mustang_jewels.webp',
+        corvette_cross: './assets/thumbnails/mw-corvette_cross.webp',
+        corvette_webster: './assets/thumbnails/mw-corvette_webster.webp',
         vaz2107: './assets/thumbnails/vaz2107.png',
         vaz2109: './assets/thumbnails/vaz2109.png',
         gaz24: './assets/thumbnails/gaz24.png',
