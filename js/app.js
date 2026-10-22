@@ -118,6 +118,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             });
         }
         function flashPlateReward(rarityText) {
+            if(window.NOMERA_AUTHORS_PREVIEW&&window.NomeraPrestige){window.NomeraPrestige.reveal({rarity:rarityText,price:calculatePrice(),country:currentCountry,letters:[currentL1,currentL2,currentL3],digits:currentNum,region:currentReg,combination:formatPlateText(currentL1,currentL2,currentL3,currentNum,currentReg,currentCountry)});return;}
             window.NomeraRewards?.celebrate(document.querySelector('.plate-stage'), rarityText, typeof calculatePrice === 'function' ? calculatePrice() : 0);
             const plate = document.getElementById('plate-box');
             const label = document.getElementById('gen-rarity');
@@ -5446,6 +5447,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             const code = String(countryCode || 'RUS').toUpperCase();
             const cfg = PLATE_COUNTRIES[code];
             if (!cfg) return;
+            if(window.NOMERA_AUTHORS_PREVIEW)window.NomeraPrestige?.cancel();
             const prevCountry = currentCountry;
             currentCountry = code;
             currentReg = cfg.defaultReg || cfg.defaultRegion;
@@ -5709,6 +5711,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
         function executeCellSpin(targets, finalValues, onFinish) {
             initAudio();
+            if(window.NOMERA_AUTHORS_PREVIEW)window.NomeraPrestige?.cancel();
             isSpinning = true;
 
             if (String(currentCountry || 'RUS').toUpperCase() === 'UAE' && Array.isArray(targets) && finalValues) {
@@ -5848,8 +5851,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                         updatePityUI();
                     }
                     if (r.text === "БЛАТНОЙ" || r.text === "Легендарный" || r.text === "Крутой" || r.text === "Мифический") {
-                        triggerLegendaryEffect();
-                        triggerScreenShake();
+                        if(!(window.NOMERA_AUTHORS_PREVIEW&&window.NomeraPrestige)){triggerLegendaryEffect();triggerScreenShake();}
                         playWinJingle(r.text);
                         if (typeof sound?.haptic === 'function') sound.haptic('win');
                     } else if (r.text === "Эпический") {
@@ -24459,6 +24461,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         window.openChatSection = openChatSection;
 
         function switchTab(tabId, element, raceMode) {
+            if(window.NOMERA_AUTHORS_PREVIEW&&tabId!=='generator')window.NomeraPrestige?.cancel();
             closeNavMoreMenu();
             closeMobileMoreSheet();
 
