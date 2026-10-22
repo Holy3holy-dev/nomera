@@ -1,0 +1,139 @@
+/* The garage and its dialogs share the atelier's surfaces, lime actions and spacing. */
+.authors-edition #garage.ae-garage-suite{--garage-bg:#10212d;--garage-panel:#132a35;--garage-edge:#37545b;--garage-text:#e8efdf;--garage-muted:#a0b9bd;--garage-accent:#d9fb70}
+.authors-edition #garage :is(#garage-showroom-layout,#my-cars,#garage-list,#garage-shop-section,#dealership-filter-bar,#garage-fleet-card).hidden{display:none!important}
+.authors-edition #garage .section-box{padding:0!important;background:none!important;border:0!important;box-shadow:none!important}
+.authors-edition #garage .garage-subview-nav{display:flex!important;gap:6px!important;flex-wrap:nowrap!important;overflow-x:auto;padding:0 0 16px!important;margin:0!important;border-bottom:1px solid var(--garage-edge);scrollbar-width:thin}
+.authors-edition #garage :is(button,input,select){font-family:inherit!important;box-shadow:none!important;min-height:44px!important;max-width:100%;border-radius:6px!important}
+.authors-edition #garage button{transition:background .15s,border-color .15s,color .15s;cursor:pointer}
+.authors-edition #garage button:focus-visible,.authors-edition .ae-garage-modal :is(button,input,select):focus-visible{outline:2px solid #d9fb70!important;outline-offset:3px}
+.authors-edition #garage :is(.garage-subview-btn,.garage-inspector-tab,.styling-view-btn,.showroom-interact-btn,.styling-chip,.dealership-filter-btn){background:#132b38!important;border:1px solid #3b5660!important;color:#bfd1cf!important;font-size:12px!important;padding:10px 14px!important;font-weight:650!important;white-space:nowrap;flex:0 0 auto}
+.authors-edition #garage :is(.garage-subview-btn,.garage-inspector-tab,.styling-view-btn,.showroom-interact-btn,.styling-chip,.dealership-filter-btn).active{background:#304a3c!important;color:#eff8dc!important;border-color:#aecb82!important}
+.authors-edition #garage .garage-subview-btn.active:after,.authors-edition #garage .garage-inspector-tab.active:after{display:none!important}
+.authors-edition #garage-showroom-layout{display:grid!important;grid-template-columns:176px minmax(0,1fr) 340px!important;gap:16px!important;align-items:start!important;margin-top:20px!important;min-width:0}
+.authors-edition #garage :is(.garage-3d-podium-card,.garage-right-inspector,.garage-left-sidebar){background:linear-gradient(140deg,#142b35,#0c1a27)!important;border:1px solid #37545b!important;border-radius:10px!important;box-shadow:none!important;min-width:0!important;overflow:hidden}
+.authors-edition #garage .garage-left-sidebar{padding:14px!important}
+.authors-edition #garage .garage-left-sidebar{grid-column:1!important;grid-row:1!important}
+.authors-edition #garage .garage-3d-podium-card{grid-column:2!important;grid-row:1!important}
+.authors-edition #garage .garage-right-inspector{grid-column:3!important;grid-row:1!important}
+.authors-edition #garage .luxury-panel-eyebrow{font-size:9px!important;line-height:1.5!important;letter-spacing:1.5px!important;color:#abc897!important;display:block}
+.authors-edition #garage .garage-car-sidebar-list{gap:10px!important;padding:0!important;min-width:0}
+.authors-edition #garage .garage-side-car-item{background:#132633!important;border:1px solid #324c57!important;border-radius:7px!important;padding:12px 9px!important;min-width:0!important;box-shadow:none!important;color:#dce8db!important}
+.authors-edition #garage .garage-side-car-item.active{background:#294339!important;border-color:#bdd98d!important}
+.authors-edition #garage .garage-side-car-item{display:flex!important;flex-direction:column!important;align-items:flex-start!important;white-space:normal!important}
+.authors-edition #garage .garage-side-car-meta{width:100%!important;min-width:0!important}
+.authors-edition #garage .garage-side-car-name{white-space:normal!important;overflow:visible!important;text-overflow:clip!important;color:#dfeadd!important;overflow-wrap:anywhere}
+.authors-edition #garage .garage-side-car-item img{height:65px!important;object-fit:contain!important}
+.authors-edition #garage .garage-side-car-item :is(strong,b){font-size:12px!important;line-height:1.4!important}
+.authors-edition #garage .garage-buy-more-btn{width:100%;background:#172e37!important;color:#d9e5d5!important;border:1px solid #3b5660!important;margin-top:10px!important;font-size:11px!important}
+.authors-edition #garage .garage-3d-podium-card{border-top:3px solid #d9fb70!important}
+.authors-edition #garage .garage-3d-podium-header{padding:20px!important;background:none!important;gap:15px!important;display:flex!important;flex-direction:row!important;flex-wrap:wrap!important;align-items:flex-start!important;min-height:0!important}
+.authors-edition #garage .garage-3d-title-group{min-width:0;flex:1 1 240px!important}
+.authors-edition #garage .garage-3d-badge{color:#abc897!important;font-size:9px!important;letter-spacing:2px!important}
+.authors-edition #garage .garage-3d-car-name{font-size:clamp(19px,2vw,26px)!important;font-weight:750!important;color:#edf2e4!important;margin:6px 0!important;overflow-wrap:anywhere}
+.authors-edition #garage .garage-3d-header-actions{position:static!important;display:flex!important;flex-direction:row!important;flex:1 1 100%;gap:8px;justify-content:flex-end;align-items:center!important;min-width:0;width:auto!important;margin:0!important}
+.authors-edition #garage #btn-garage-podium-styling{display:block!important;background:#203a3f!important;border:1px solid #6a8371!important;color:#e9f2d6!important;padding:10px 16px!important;font-size:12px!important}
+.authors-edition #garage .ae-garage-primary-actions{flex-wrap:nowrap!important}
+.authors-edition #garage .ae-garage-primary-actions>button:not([hidden]){width:auto!important;flex:0 1 auto}
+.authors-edition #garage #btn-garage-podium-race{background:#d9fb70!important;color:#1b260e!important;border:1px solid #d9fb70!important;padding:10px 18px!important;font-size:12px!important;min-height:44px!important}
+.authors-edition #garage #garage-preview-stage{height:420px!important;min-height:320px!important;background:radial-gradient(ellipse at 50% 70%,#294451,#0c1a27 74%)!important;border-top:1px solid #243e48!important}
+.authors-edition #garage #garage-3d-hint{color:#9fb5b5!important;font-size:10px!important;text-shadow:0 1px 3px #07151d!important;bottom:10px!important}
+.authors-edition #garage .garage-right-inspector{padding:20px!important;max-height:none!important}
+.ae-garage-section-caption{font-size:11px;color:#a4bdbb;line-height:1.5;margin:7px 0 16px}
+.authors-edition #garage .garage-inspector-tabs{display:flex!important;flex-wrap:wrap!important;gap:6px!important;margin-bottom:18px!important;padding:0!important;border:0!important}
+.authors-edition #garage .garage-inspector-tab{flex:1 1 auto!important;font-size:11px!important;padding:10px!important}
+.authors-edition #garage .inspector-car-header{background:none!important;padding:0 0 16px!important;border-bottom:1px solid #35505a!important;margin-bottom:16px!important}
+.authors-edition #garage .inspector-car-title{font-size:17px!important;color:#ecf2e4!important;margin:0 0 9px!important;line-height:1.35}
+.authors-edition #garage .inspector-car-header>div{gap:8px;flex-wrap:wrap;line-height:1.5}
+.authors-edition #garage .inspector-car-price{font-size:23px!important;font-weight:750!important;color:#e9f3d5!important}
+.authors-edition #garage .inspector-plate-slot{border:1px solid #3a535d!important;background:#142b36!important;border-radius:8px!important;padding:15px!important;text-align:left!important}
+.authors-edition #garage .inspector-plate-slot>.mini-plate{display:inline-flex;margin:6px 0}
+.authors-edition #garage .inspector-telemetry-list{display:grid!important;gap:16px!important;padding-top:16px!important}
+.authors-edition #garage .inspector-stat-head{color:#b7cdca!important;font-size:11px!important}
+.authors-edition #garage .inspector-stat-head b{color:#e8f0de!important}
+.authors-edition #garage .inspector-stat-bar-bg{background:#233c47!important;height:5px!important;border-radius:4px!important;overflow:hidden}
+.authors-edition #garage .inspector-stat-bar-fill{background:linear-gradient(90deg,#699d8f,#d9fb70)!important;border-radius:4px!important}
+.authors-edition #garage :is(.case-open-btn,.btn-blue,.btn-dark,.btn-secondary){background:#18313d!important;color:#d3e2d8!important;border:1px solid #3b5660!important;border-radius:6px!important;font-size:12px!important;font-weight:650!important;padding:11px 12px!important;line-height:1.4!important;white-space:normal}
+.authors-edition #garage :is(.btn-green,.btn-gold,.btn-red-cta){background:#d9fb70!important;border:1px solid #d9fb70!important;color:#1d2b0d!important;font-weight:750!important;font-size:12px!important;padding:12px!important;line-height:1.4!important}
+.authors-edition #garage .btn-close{background:#302b30!important;border:1px solid #6c535c!important;color:#e8d5d8!important;padding:11px!important}
+.authors-edition #garage button:disabled{opacity:.5!important;cursor:default}
+.authors-edition #garage .ae-garage-upgrade{display:grid!important;grid-template-columns:30px minmax(0,1fr)!important;gap:10px!important;text-align:left!important;padding:14px!important;width:100%!important;background:#152e38!important;border:1px solid #44645e!important;white-space:normal!important;margin:0!important;align-items:start!important}
+.authors-edition #garage .ae-garage-upgrade:hover:not(:disabled){border-color:#b7d488!important;background:#1b393e!important}
+.ae-garage-upgrade svg{width:27px;height:27px;fill:none;stroke:#d1ed9f;stroke-width:1.4;stroke-linejoin:round;stroke-linecap:round;margin-top:2px}
+.ae-upgrade-body{display:flex;flex-direction:column;gap:5px;min-width:0}
+.authors-edition #garage .ae-upgrade-body strong{font-size:14px!important;color:#edf3e5!important;font-weight:700!important}
+.authors-edition #garage .ae-upgrade-body small{font-size:10px!important;color:#a8c0bf!important;line-height:1.5}
+.ae-upgrade-level{font-size:10px;color:#c0d9b0;margin-top:4px}
+.ae-upgrade-progress{display:flex;gap:4px;margin-top:1px}.ae-upgrade-progress i{height:4px;flex:1;background:#2e4b50;border-radius:2px}.ae-upgrade-progress i.filled{background:#c9ed85}
+.ae-upgrade-price{grid-column:2;font-size:16px;color:#e4f2cb;line-height:1.35;font-weight:750}.ae-upgrade-price small{display:block;font-size:9px;letter-spacing:.6px;color:#b0c7ad;font-weight:500;margin-bottom:3px}
+.authors-edition #garage #inspector-tuning-box{gap:10px!important}
+.authors-edition #garage .ae-legends{border-top:1px solid #35505a!important;padding-top:12px!important;color:#b2c9c2!important;font-size:11px}
+.authors-edition #garage .ae-legends summary{min-height:44px;display:flex;align-items:center;justify-content:space-between;cursor:pointer}
+.authors-edition #garage #garage-nfsmw-legends-bar{padding:12px!important;background:#142b36!important;border:1px solid #37545b!important;border-radius:7px!important;margin:0!important}
+.authors-edition #garage :is(input,select){background:#102731!important;border:1px solid #4a676a!important;color:#e3ece0!important;font-size:12px!important;padding:10px 12px!important;min-width:0}
+.authors-edition #garage :is(.styling-view-switch,.showroom-interact-toolbar){gap:7px!important;display:flex!important;flex-wrap:wrap!important}
+.authors-edition #garage #garage-showroom-toolbar{background:none!important;border:0!important;padding:0!important}
+.authors-edition #garage :is(.styling-view-btn,.showroom-interact-btn){flex:1 1 90px!important;font-size:11px!important;white-space:normal}
+.authors-edition #garage .garage-fleet-card{border:1px solid #3a585d!important;border-top:3px solid #d9fb70!important;background:linear-gradient(140deg,#163039,#0c1b27)!important;padding:24px!important;border-radius:10px!important;box-shadow:none!important;margin:20px 0!important}
+.authors-edition #garage .garage-fleet-card>div:first-child>div:first-child{flex:1 1 320px;min-width:0}
+.authors-edition #garage .garage-fleet-card p{color:#a9c0bc!important;line-height:1.7!important;max-width:610px}
+.authors-edition #garage .garage-fleet-card>div:first-child>div:first-child>div>span{background:#304a3c!important;color:#e0f0c5!important;border:1px solid #729469!important;border-radius:5px!important;letter-spacing:.7px!important}
+.authors-edition #garage #fleet-breakdown-summary{color:#b3c9be!important;line-height:1.7}
+.authors-edition #garage .car-category-pill{background:#213d3e!important;border:1px solid #4a6860!important;color:#bed3b9!important;border-radius:5px!important;max-width:100%;white-space:normal}
+.authors-edition #garage .garage-fleet-card>div:first-child>div:last-child{flex:1 1 360px;display:flex!important;gap:8px!important}
+.authors-edition #garage .garage-fleet-card>div:first-child>div:last-child>div{flex:1 1 110px;background:#1b353d!important;border:1px solid #486459!important;padding:12px!important;border-radius:7px!important;text-align:left!important;min-width:0}
+.authors-edition #garage #btn-claim-fleet{flex:1 1 100px!important;margin:0!important}
+.authors-edition #garage #fleet-mode-chips{gap:7px!important;display:flex;flex-wrap:wrap!important;min-width:0}
+.authors-edition #garage #fleet-mode-chips button{white-space:normal!important;max-width:100%;text-align:left}
+.authors-edition #garage #my-cars{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;min-width:0}
+.authors-edition #garage .my-car-card{background:linear-gradient(145deg,#162e38,#0e202c)!important;border:1px solid #3c585d!important;border-radius:10px!important;overflow:hidden;box-shadow:none!important;min-width:0!important}
+.authors-edition #garage .my-car-card>div:first-child{padding:18px!important;gap:10px;flex-wrap:wrap;align-items:flex-start!important}
+.authors-edition #garage .my-car-card>div:first-child b{color:#edf2e3!important;font-size:16px!important;line-height:1.4}
+.authors-edition #garage .my-car-card .car-img-wrap{height:175px!important;background:radial-gradient(ellipse at center,#304c52,#112430)!important}
+.authors-edition #garage .my-car-card .garage-tuning{padding:18px!important;background:none!important;border:0!important}
+.authors-edition #garage .garage-condition-heading{font-size:11px!important;gap:8px;flex-wrap:wrap;color:#c1d1c2!important}
+.authors-edition #garage .garage-condition-track{background:#27434a!important;height:5px!important;margin:10px 0!important}
+.authors-edition #garage .garage-tuning-title{color:#b2c991!important;font-size:9px!important;letter-spacing:1.5px!important;margin:20px 0 12px!important}
+.authors-edition #garage .tuning-row{display:block!important;padding:0!important;border:0!important;margin:0 0 10px!important}
+.authors-edition #garage .tuning-row-label[hidden]{display:none!important}
+.authors-edition #garage .my-car-bumper{padding:18px!important;background:#102630!important;border-top:1px solid #37545b!important;display:flex;flex-direction:column;gap:6px}
+.authors-edition #garage .my-car-bumper>div{min-width:0;flex-wrap:wrap;gap:8px!important}
+.authors-edition #garage .my-car-bumper button{flex:1 1 120px!important;font-size:11px!important;width:auto!important}
+.authors-edition #garage #garage-list>.car-shop-card{border:1px solid #3c585d!important;border-radius:10px!important;background:linear-gradient(145deg,#16303a,#10212e)!important;transform:none!important}
+.authors-edition #garage #garage-list .car-img-wrap{background:radial-gradient(ellipse at center,#304c52,#112430)!important;border-color:#37545b!important}
+.authors-edition #garage #garage-list .car-info-body{background:none!important}
+.authors-edition #garage #garage-list .btn-green{background:#d9fb70!important;color:#1d2b0d!important}
+.authors-edition .ae-garage-modal{position:fixed!important;inset:0!important;width:100%!important;height:100dvh!important;padding:16px!important;background:#050d17db!important;backdrop-filter:blur(6px);align-items:center!important;justify-content:center!important;overflow:hidden!important}
+.authors-edition .ae-garage-modal .ae-garage-dialog{margin:0!important;animation:none!important;transform:none!important;align-self:center!important;flex:0 1 auto}
+.authors-edition .ae-garage-modal .ae-garage-dialog:before{display:none!important}
+.authors-edition .ae-garage-modal .ae-garage-dialog{position:relative;display:flex!important;flex-direction:column!important;gap:16px!important;background:linear-gradient(140deg,#142b35,#0c1a27)!important;border:1px solid #4b6763!important;border-top:3px solid #d9fb70!important;border-radius:12px!important;padding:24px!important;width:min(560px,96vw)!important;max-width:560px!important;max-height:calc(100dvh - 32px)!important;overflow:auto!important;text-align:left!important;box-shadow:0 30px 100px #0009!important;color:#e8efdf}
+.ae-garage-eyebrow{color:#b5d193;font-size:8px;letter-spacing:1.8px;line-height:1.6;display:block}
+.authors-edition .ae-garage-dialog h3{font-size:23px!important;font-weight:750!important;line-height:1.25;color:#edf3e4!important;margin:0!important;letter-spacing:-.4px}
+.authors-edition .ae-garage-dialog p{font-size:12px!important;color:#acc3bf!important;line-height:1.7;margin:0!important}
+.authors-edition .ae-garage-dialog button{font-family:inherit!important;min-height:44px!important;background:#1a333e!important;border:1px solid #4a6567!important;color:#d7e6db!important;border-radius:6px!important;padding:10px 14px!important;font-size:12px!important;line-height:1.4!important;box-shadow:none!important;font-weight:650!important;white-space:normal!important}
+.authors-edition .ae-garage-dialog .btn-green{background:#d9fb70!important;border-color:#d9fb70!important;color:#1d2b0d!important}
+.authors-edition .ae-garage-dialog :is(input,select){font-family:inherit!important;width:100%!important;background:#102731!important;border:1px solid #526e70!important;border-radius:6px!important;min-height:44px!important;color:#e6efe3!important;padding:12px!important;font-size:13px!important;box-sizing:border-box}
+.authors-edition #sell-car-modal :is(input,select){background:#102731!important;color:#e6efe3!important;border:1px solid #526e70!important;border-radius:6px!important;font-size:13px!important}
+.authors-edition .ae-garage-dialog label{color:#b9cfc9!important;font-size:11px!important;line-height:1.5}
+.authors-edition #attach-modal .ae-garage-dialog{overflow:hidden!important;gap:14px!important}
+.authors-edition #attach-modal .ae-garage-dialog>div:first-child{margin:0!important;gap:12px;flex-shrink:0;align-items:flex-start!important}
+.authors-edition #attach-modal .ae-garage-eyebrow{margin-bottom:6px}
+.authors-edition #attach-modal .ae-garage-dialog>div:first-child h3{font-size:21px!important}
+.authors-edition #attach-modal .region-btn-close{flex:0 0 44px;width:44px!important;padding:0!important;font-size:20px!important}
+.ae-attach-search{display:flex;flex-direction:column;gap:7px;flex-shrink:0}
+.authors-edition #attach-list{display:flex!important;flex-direction:column;gap:9px!important;overflow:auto!important;overscroll-behavior:contain;min-height:80px;max-height:none!important;flex:1 1 auto;padding:2px!important;margin:0!important}
+.authors-edition #attach-list .ae-attach-row{display:grid!important;grid-template-columns:minmax(0,1fr) auto;align-items:center!important;gap:14px!important;padding:14px!important;background:#18333d!important;border:1px solid #3b5860!important;border-radius:8px!important}
+.authors-edition #attach-list .ae-attach-row>div{min-width:0;overflow-wrap:anywhere}.authors-edition #attach-list .ae-attach-row .mini-plate{max-width:100%}
+.authors-edition #attach-list .ae-attach-row small{color:#b4cbc1!important;font-size:11px!important;line-height:1.6}
+.authors-edition #attach-list .ae-attach-row[hidden],.authors-edition .ae-attach-empty[hidden]{display:none!important}
+.authors-edition #sell-car-modal .car-img-wrap{height:150px!important;min-height:100px;background:radial-gradient(ellipse at center,#304c52,#112430)!important;border:1px solid #37545b;border-radius:8px!important;margin:0!important;flex-shrink:0}
+.authors-edition #sell-car-modal .car-img{height:100%!important;width:100%!important;object-fit:contain!important;transform:none!important;padding:16px!important}
+.authors-edition #sell-car-modal .ae-garage-dialog>div{margin:0!important}
+.authors-edition #sell-car-modal h3{padding-right:35px}
+.authors-edition #sell-car-modal .ae-dialog-dismiss{position:absolute;top:16px;right:16px;width:44px;padding:0!important;font-size:25px!important}
+.ae-garage-dialog-actions{display:flex;gap:8px;padding-top:12px;border-top:1px solid #37545b;flex-wrap:wrap}.ae-garage-dialog-actions button{flex:1 1 160px}
+@media(max-width:1200px){.authors-edition #garage-showroom-layout{grid-template-columns:145px minmax(0,1fr)!important}.authors-edition #garage .garage-right-inspector{grid-column:1/-1}.authors-edition #garage .garage-inspector-tabs{flex-wrap:nowrap!important;overflow:auto!important}.authors-edition #garage .garage-inspector-tab{flex:1 0 auto!important}.authors-edition #garage #inspector-tuning-box{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important}.authors-edition #garage #inspector-tuning-box>.luxury-panel-eyebrow{grid-column:1/-1}.authors-edition #garage #my-cars{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:700px){.authors-edition #garage-showroom-layout{grid-template-columns:minmax(0,1fr)!important;gap:12px!important;margin-top:16px!important}.authors-edition #garage .garage-left-sidebar{padding:12px!important;grid-column:1!important;border-radius:8px!important}.authors-edition #garage .garage-car-sidebar-list{display:flex!important;flex-direction:row!important;overflow:auto!important;gap:8px!important;scroll-snap-type:x proximity}.authors-edition #garage .garage-side-car-item{flex:0 0 142px!important;min-width:142px!important;scroll-snap-align:start}.authors-edition #garage .garage-buy-more-btn{margin-top:8px!important}.authors-edition #garage .garage-3d-podium-header{padding:16px!important;gap:8px!important}.authors-edition #garage .garage-3d-title-group{flex-basis:100%!important}.authors-edition #garage .garage-3d-header-actions{justify-content:stretch}.authors-edition #garage .garage-3d-header-actions>button:not([hidden]){flex:1}.authors-edition #garage .garage-3d-car-name{font-size:20px!important}.authors-edition #garage #garage-preview-stage{height:285px!important;min-height:250px!important}.authors-edition #garage .garage-right-inspector{padding:16px!important;grid-column:1!important}.authors-edition #garage .garage-inspector-tabs{margin:0 -2px 16px!important;padding:2px 2px 6px!important;scrollbar-width:thin}.authors-edition #garage .garage-inspector-tab{flex:0 0 auto!important;padding:10px 14px!important}.authors-edition #garage #inspector-tuning-box{grid-template-columns:minmax(0,1fr)!important}.authors-edition #garage .ae-garage-upgrade{grid-template-columns:30px minmax(0,1fr) auto!important;padding:13px!important;gap:10px!important}.ae-upgrade-price{grid-column:auto;align-self:center;font-size:14px;text-align:right}.ae-upgrade-price small{font-size:8px;max-width:90px;line-height:1.4;white-space:normal}.authors-edition #garage .ae-upgrade-body strong{font-size:12px!important}.authors-edition #garage .ae-upgrade-body small{font-size:9px!important}.authors-edition #garage .garage-fleet-card{padding:16px!important}.authors-edition #garage .garage-fleet-card>div:first-child>div:last-child{flex-wrap:wrap!important;flex-basis:100%}.authors-edition #garage #btn-claim-fleet{flex-basis:100%!important}.authors-edition #garage #my-cars{grid-template-columns:minmax(0,1fr)!important}.authors-edition .ae-garage-modal{padding:8px!important}.authors-edition .ae-garage-modal .ae-garage-dialog{max-height:calc(100dvh - 16px)!important;width:100%!important;padding:18px!important;gap:14px!important}.authors-edition #attach-modal .ae-garage-dialog{height:min(700px,calc(100dvh - 16px))!important}.authors-edition #attach-list .ae-attach-row{grid-template-columns:minmax(0,1fr)!important;gap:10px!important;padding:12px!important}.authors-edition #attach-list .ae-attach-row button{width:100%!important}.authors-edition #sell-car-modal .ae-dialog-dismiss{right:10px;top:10px}.authors-edition .ae-garage-dialog h3{font-size:21px!important}}
+@media(max-width:360px){.authors-edition #garage .ae-garage-upgrade{grid-template-columns:25px minmax(0,1fr)!important}.authors-edition #garage .ae-upgrade-price{grid-column:2;text-align:left}.ae-upgrade-price small{max-width:none}.authors-edition #garage .garage-3d-header-actions{flex-wrap:wrap}.authors-edition #garage .garage-3d-header-actions button{flex-basis:100%!important}}
+@media(prefers-reduced-motion:reduce){.authors-edition #garage button{transition:none!important}}
+@media(max-width:1200px){.authors-edition #garage .garage-right-inspector{grid-column:1/-1!important;grid-row:2!important}}
+@media(max-width:700px){.authors-edition #garage .garage-3d-podium-card{grid-column:1!important;grid-row:2!important}.authors-edition #garage .garage-right-inspector{grid-column:1!important;grid-row:3!important}}

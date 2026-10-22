@@ -89,7 +89,7 @@
         $('#'+id+' > span').innerHTML = icon(name);
     }
     $('#hud-daily-btn').innerHTML = icon('case');
-    const footer = make('footer','ae-footer','<span>H3H NOMERA <b>AUTHOR’S EDITION</b></span><span>Тестовый профиль · сохранение только в этом браузере</span><a href="./antigravity.html" target="_blank" rel="noopener">Сравнить с Antigravity ↗</a>');
+    const footer = make('footer','ae-footer','<span>H3H NOMERA <b>AUTHOR’S EDITION</b></span><span>Тестовый профиль · сохранение только в этом браузере</span><a href="#garage" onclick="switchTab(&quot;garage&quot;);return false">Вернуться в гараж ↗</a>');
     $('.main-container').append(footer);
 
     // Retain the real plate renderer's national layouts, scale the whole object uniformly.

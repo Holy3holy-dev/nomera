@@ -9778,6 +9778,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             racePreviewPause.pause();
         }
         function openStylingModal(carIndex, initialMode) {
+            if(window.NOMERA_AUTHORS_PREVIEW)window.NomeraAtelier?.mount();
             if(window.NOMERA_AUTHORS_PREVIEW&&!initialMode)initialMode='3d';
             if (garage3DShowroom) {
                 try { garage3DShowroom.stop(); } catch (_) {}

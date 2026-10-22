@@ -33,6 +33,7 @@ html=html.replace('</head>',`<link rel="stylesheet" href="./authors-motorsport.c
 html=html.replace('</head>',`<link rel="stylesheet" href="./authors-workshop.css?v=${require('node:crypto').createHash('sha256').update(fs.readFileSync(path.join(root,'authors-workshop.css'))).digest('hex').slice(0,12)}"></head>`);
 html=html.replace('</head>',`<link rel="icon" type="image/svg+xml" href="./assets/authors-brand/favicon.svg"><script src="./js/authors-prestige.js?v=${lodHash('authors-prestige.js')}"></script><link rel="stylesheet" href="./authors-prestige.css?v=${require('node:crypto').createHash('sha256').update(fs.readFileSync(path.join(root,'authors-prestige.css'))).digest('hex').slice(0,12)}"></head>`);
 html=html.replace('</head>',`<script src="./js/authors-aero-kit.js?v=${lodHash('authors-aero-kit.js')}"></script><script src="./js/authors-atelier.js?v=${lodHash('authors-atelier.js')}"></script><link rel="stylesheet" href="./authors-atelier.css?v=${require('node:crypto').createHash('sha256').update(fs.readFileSync(path.join(root,'authors-atelier.css'))).digest('hex').slice(0,12)}"></head>`);
-html=html.replace('</body>','<script>NomeraAtelier.mount();</script></body>');
+html=html.replace('</head>',`<link rel="stylesheet" href="./authors-garage.css?v=${require('node:crypto').createHash('sha256').update(fs.readFileSync(path.join(root,'authors-garage.css'))).digest('hex').slice(0,12)}"></head>`);
+html=html.replace('</body>',`<script>NomeraAtelier.mount();</script><script src="./js/authors-garage-ui.js?v=${lodHash('authors-garage-ui.js')}"></script></body>`);
 fs.writeFileSync(path.join(root, 'authors.html'), html);
 console.log('authors.html: isolated local entry generated from index.html');
