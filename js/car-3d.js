@@ -7488,7 +7488,7 @@
                     if (role === 'body') {
                         const origBodyMat = child.userData._origBodyMats && child.userData._origBodyMats[idx];
                         const isPlaceholderWhiteMap = (baseCarId === 'm3gtr' && matName === 'mmat_details_mat_025');
-                        if ((carId === 'm3gtr' || carId === 'corvette_cross' || carId === 'mustang_razor') && !isPlaceholderWhiteMap && origBodyMat && origBodyMat.map && !styling.customPaintOverride && (!styling.vinyl || styling.vinyl === 'none')) {
+                        if ((carId === 'm3gtr' || carId === 'corvette_cross' || carId === 'mustang_razor') && !isPlaceholderWhiteMap && origBodyMat && origBodyMat.map && !styling.customPaintOverride && (!styling.vinyl || styling.vinyl === 'none')&&!globalThis.NomeraLivery?.active(styling.livery)) {
                             const liveryMat = origBodyMat.clone();
                             liveryMat.roughness = 0.15;
                             liveryMat.metalness = 0.52;
@@ -7827,6 +7827,7 @@
             undertray.position.set(0, Math.max(0.04, box.min.y + 0.05), center.z);
             modelRoot.add(undertray);
         }
+        if(typeof window!=='undefined'&&window.NOMERA_AUTHORS_PREVIEW)window.NomeraLivery?.apply(THREE,modelRoot,styling.livery);
     }
 
     function loadCarModel(THREE, carName, styling = {}, onLoaded, onProgress) {
@@ -7838,6 +7839,7 @@
         // or if loader is not available, render our bespoke procedural 3D model!
         if (!loader || !modelUrl) {
             const fallbackModel = buildDetailedCarModel(THREE, carName, styling);
+            if(typeof window!=='undefined'&&window.NOMERA_AUTHORS_PREVIEW)window.NomeraLivery?.apply(THREE,fallbackModel,styling.livery);
             if (onLoaded) onLoaded(fallbackModel);
             return;
         }
@@ -8339,6 +8341,7 @@
     }
 
     function deepDispose(obj) {
+        if(typeof window!=='undefined')window.NomeraLivery?.release(obj);
         if(typeof window!=='undefined')window.NomeraPlayerRender?.release(obj);
         if(typeof window!=='undefined')window.NomeraVehicleLOD?.release(obj);
         if (!obj) return;
@@ -8757,7 +8760,7 @@
                     this.currentStyling,
                     loadedModel => {
                         this.setLoading(false);
-                        if (this._loadRequestId !== reqId || !loadedModel) return;
+                        if (this._loadRequestId !== reqId || !loadedModel) { if(loadedModel)deepDispose(loadedModel); return; }
 
                         if (this.glbCar) {
                             this.scene.remove(this.glbCar);
@@ -9131,7 +9134,7 @@
             this.needsRender = true;
             if (!this.active) this.start();
             if (this.renderer && this.scene && this.camera) {
-                this.renderer.render(this.scene, this.camera);
+                if(typeof window!=='undefined'&&window.NOMERA_AUTHORS_PREVIEW)window.NomeraLivery?.update(this.scene);this.renderer.render(this.scene, this.camera);
                 this.needsRender = false;
             }
         }
@@ -9633,7 +9636,7 @@
 
         capturePhotoPoster(meta = {}) {
             if (this.renderer && this.scene && this.camera) {
-                try { this.renderer.render(this.scene, this.camera); } catch (_) {}
+                try { if(typeof window!=='undefined'&&window.NOMERA_AUTHORS_PREVIEW)window.NomeraLivery?.update(this.scene);this.renderer.render(this.scene, this.camera); } catch (_) {}
             }
             const carName = String(meta.carName || this.currentCarName || 'Автомобиль');
             const plateText = String(meta.plateText || (this.currentStyling && this.currentStyling.plate) || 'БЕЗ НОМЕРА');
@@ -9775,7 +9778,7 @@
                 this.needsRender = true;
                 if (!this.active) this.start();
                 if (this.renderer && this.scene && this.camera) {
-                    this.renderer.render(this.scene, this.camera);
+                    if(typeof window!=='undefined'&&window.NOMERA_AUTHORS_PREVIEW)window.NomeraLivery?.update(this.scene);this.renderer.render(this.scene, this.camera);
                     this.needsRender = false;
                 }
             };
@@ -9849,7 +9852,7 @@
                         this.needsRender = true;
                         if (!this.active) this.start();
                         if (this.renderer && this.scene && this.camera) {
-                            this.renderer.render(this.scene, this.camera);
+                            if(typeof window!=='undefined'&&window.NOMERA_AUTHORS_PREVIEW)window.NomeraLivery?.update(this.scene);this.renderer.render(this.scene, this.camera);
                             this.needsRender = false;
                         }
                     }
@@ -10104,7 +10107,7 @@
                 }
 
                 if (this.needsRender) {
-                    this.renderer.render(this.scene, this.camera);
+                    if(typeof window!=='undefined'&&window.NOMERA_AUTHORS_PREVIEW)window.NomeraLivery?.update(this.scene);this.renderer.render(this.scene, this.camera);
                     this.needsRender = false;
                 }
 
@@ -10250,7 +10253,7 @@
         const s = styling.suspension || 'stock';
         const n = styling.neon || 'none';
         const sp = styling.spoiler || 'none';
-        const v = styling.vinyl || 'none';
+        const v = (styling.vinyl || 'none')+(styling.livery?JSON.stringify(styling.livery):'');
         const bk = styling.bodykit || 'stock';
         const hd = styling.hood || 'stock';
         const rs = styling.roofScoop || 'none';
@@ -10273,6 +10276,7 @@
         if (styling.wheels && styling.wheels !== 'stock') return true;
         if (styling.spoiler && styling.spoiler !== 'none' && styling.spoiler !== 'stock') return true;
         if (styling.vinyl && styling.vinyl !== 'none') return true;
+        if(typeof window!=='undefined'&&window.NOMERA_AUTHORS_PREVIEW&&window.NomeraLivery?.active(styling.livery))return true;
         if (styling.bodykit && styling.bodykit !== 'stock' && styling.bodykit !== 'none') return true;
         if (styling.hood && styling.hood !== 'stock' && styling.hood !== 'none') return true;
         if (styling.roofScoop && styling.roofScoop !== 'none' && styling.roofScoop !== 'stock') return true;
@@ -10422,6 +10426,7 @@
                     offscreenCamera.position.set(camX, camY, camZ);
                     offscreenCamera.lookAt(0, targetY, 0);
 
+                    if(typeof window!=='undefined'&&window.NOMERA_AUTHORS_PREVIEW)window.NomeraLivery?.update(offscreenScene);
                     offscreenRenderer.render(offscreenScene, offscreenCamera);
                     let dataUrl = null;
                     if (offscreenRenderer.domElement && typeof offscreenRenderer.domElement.toDataURL === 'function') {
@@ -13405,7 +13410,7 @@
                 let syncLoaded = false;
                 try {
                     loadCarModel(THREE, tpl.carName, tpl.styling, (loadedModel) => {
-                        if (this._destroyed || !loadedModel || !this.isNfsCircuit) return;
+                        if (this._destroyed || !loadedModel || !this.isNfsCircuit) { if(loadedModel)deepDispose(loadedModel); return; }
                         syncLoaded = true;
                         while (bodyGroup.children.length > 0) {
                             const old = bodyGroup.children[0];
@@ -13645,7 +13650,7 @@
             let syncLoaded = false;
             try {
                 loadCarModel(THREE, this.carName, this.styling, (model) => {
-                    if (this._destroyed || !model) return;
+                    if (this._destroyed || !model) { if(model)deepDispose(model); return; }
                     syncLoaded = true;
                     if (this.playerCar) {
                         try {
@@ -15516,6 +15521,7 @@
                 }
             }
 
+            if(window.NOMERA_AUTHORS_PREVIEW)window.NomeraRoadEvents?.step(this,dt);
             // 7. TRAFFIC VEHICLES AI, OVERTAKES & COLLISIONS
             this.updateTraffic(dt);
             if (!this.isRunning || state.crashed || state.isBusted) return;
@@ -16816,7 +16822,7 @@
                 window.NomeraScenePerf?.render(this);
                 this.vehicleLodTelemetry=window.NomeraVehicleLOD?.updateScene(window.THREE,this.scene,this.camera,this.renderer);
                 window.NomeraPlayerRender?.render(this);
-                this.renderer.render(this.scene, this.camera);
+                if(typeof window!=='undefined'&&window.NOMERA_AUTHORS_PREVIEW)window.NomeraLivery?.update(this.scene);this.renderer.render(this.scene, this.camera);
             }
         }
 

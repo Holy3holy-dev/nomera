@@ -1263,6 +1263,8 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         let stylingTempNeon = 'none';
         let stylingTempSpoiler = 'none';
         let stylingTempVinyl = 'none';
+        let stylingTempLivery = null;
+        window.NomeraLiveryEditorBridge={owner:()=>nickname,change:(value,preview=true)=>{stylingTempLivery=window.NomeraLivery.normalize(value);if(preview)updateStylingModalPreview();}};
         let stylingTempWheels = 'stock';
         let stylingTempSuspension = 'stock';
         let stylingTempSgu = 'none';
@@ -9671,6 +9673,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 if (!car3DShowroom) {
                     car3DShowroom = new Car3DManager.Car3DShowroom('styling-preview-3d-wrap', {
                         autoRotate: false,
+                        fitModelBounds: Boolean(window.NOMERA_AUTHORS_PREVIEW),
                         autoRotateSpeed: 0.007,
                         showPodium: true
                     });
@@ -9693,6 +9696,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                         neon: stylingTempNeon,
                         spoiler: stylingTempSpoiler,
                         vinyl: stylingTempVinyl,
+                        ...(window.NOMERA_AUTHORS_PREVIEW?{livery:window.NomeraLivery.normalize(stylingTempLivery)}:{}),
                         wheels: stylingTempWheels,
                         suspension: stylingTempSuspension,
                         sgu: stylingTempSgu,
@@ -9803,6 +9807,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             stylingTempNeon = car.styling.neon || 'none';
             stylingTempSpoiler = car.styling.spoiler || 'none';
             stylingTempVinyl = car.styling.vinyl || 'none';
+            if(window.NOMERA_AUTHORS_PREVIEW){stylingTempLivery=window.NomeraLivery.normalize(car.styling.livery);window.NomeraLiveryEditor?.sync(stylingTempLivery);}
             stylingTempWheels = car.styling.wheels || 'stock';
             stylingTempSuspension = car.styling.suspension || 'stock';
             stylingTempSgu = car.styling.sgu || 'none';
@@ -9914,6 +9919,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         }
 
         function closeStylingModal() {
+            if(window.NOMERA_AUTHORS_PREVIEW)document.getElementById('styling-modal')?.dispatchEvent(new Event('ae-livery-close'));
             const modal = document.getElementById('styling-modal');
             if (modal) modal.classList.remove('show');
             stylingActiveCarIndex = -1;
@@ -11150,7 +11156,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             car.styling = car.styling || { color: '#ffffff', tint: 0, neon: 'none', spoiler: 'none', vinyl: 'none', wheels: 'stock', suspension: 'stock', sgu: 'none', camber: 0, wheelOffset: 0, neonMode: 'solid', bodykit: 'stock', roofScoop: 'none', hood: 'stock', nitroColor: 'blue', smokeColor: 'white' };
 
             let cost = 0;
-            if (stylingTempColor !== car.styling.color) cost += 15000;
+            if (stylingTempColor !== (car.styling.color||'#ffffff')) cost += 15000;
             if (String(stylingTempTint) !== String(car.styling.tint ?? 0)) {
                 if (Number(stylingTempTint) === 50) cost += 10000;
                 else if (Number(stylingTempTint) === 95) cost += 25000;
@@ -11259,6 +11265,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 neon: stylingTempNeon,
                 spoiler: stylingTempSpoiler,
                 vinyl: stylingTempVinyl,
+                        ...(window.NOMERA_AUTHORS_PREVIEW?{livery:window.NomeraLivery.normalize(stylingTempLivery)}:{}),
                 wheels: stylingTempWheels,
                 suspension: stylingTempSuspension,
                 sgu: stylingTempSgu,
@@ -13369,6 +13376,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         window.updateDragMenuUI = updateDragMenuUI;
 
         function switchRaceMode(mode) {
+            if(window.NOMERA_AUTHORS_PREVIEW&&mode!=='nfs')window.NomeraPlayground?.select(false);
             if (mode !== 'drag' && isDragRaceRunning) {
                 clearDragRaceTimeouts();
             }
@@ -18347,6 +18355,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     neon: stylingTempNeon,
                     spoiler: stylingTempSpoiler,
                     vinyl: stylingTempVinyl,
+                        ...(window.NOMERA_AUTHORS_PREVIEW?{livery:window.NomeraLivery.normalize(stylingTempLivery)}:{}),
                     wheels: stylingTempWheels,
                     suspension: stylingTempSuspension,
                     sgu: stylingTempSgu,
@@ -18372,6 +18381,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 neon: stylingTempNeon,
                 spoiler: stylingTempSpoiler,
                 vinyl: stylingTempVinyl,
+                        ...(window.NOMERA_AUTHORS_PREVIEW?{livery:window.NomeraLivery.normalize(stylingTempLivery)}:{}),
                 wheels: stylingTempWheels,
                 suspension: stylingTempSuspension,
                 sgu: stylingTempSgu
@@ -19959,10 +19969,11 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             const baseStats = carRaceStats[selectedRaceCarName] || carRaceStats["ВАЗ-2107 «Жигули»"];
             const stats = NomeraRaceEconomy.performance(baseStats, activeRaceCar);
             const isNfsCircuit = (activeRaceMode === 'nfs' || raceCurrentMode === 'nfs_circuit') && typeof NomeraCircuitRace !== 'undefined' && Boolean(NomeraCircuitRace.NomeraCircuitRaceEngine);
+            const authorsPractice=!!(window.NOMERA_AUTHORS_PREVIEW&&isNfsCircuit&&window.NomeraPlayground?.isSelected());
             const submodeLbl = typeof document !== 'undefined' ? document.getElementById('hud-3d-submode-text') : null;
             if (submodeLbl) {
                 const trackShort = nfsSelectedTrack === 'canyon_pass' ? 'Каньон' : (nfsSelectedTrack === 'bayview_sprint' ? 'Магистраль' : 'Городское');
-                submodeLbl.textContent = isNfsCircuit ? `Трасса: ${trackShort}` : (window.NOMERA_AUTHORS_PREVIEW?(raceCurrentMode==='drift'?'Дрифт':'Шоссе'):'В 3D Кольцо');
+                submodeLbl.textContent = authorsPractice?'Полигон':isNfsCircuit ? `Трасса: ${trackShort}` : (window.NOMERA_AUTHORS_PREVIEW?(raceCurrentMode==='drift'?'Дрифт':'Шоссе'):'В 3D Кольцо');
             }
 
             racePlayer = {
@@ -20032,7 +20043,8 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 const prevHudState = {};
 
                 const engineOptions = {
-                    trackId: nfsSelectedTrack,
+                    trackId: authorsPractice?'proving_ground':nfsSelectedTrack,
+                    authorsPractice,
                     difficulty: nfsSelectedDifficulty,
                     totalLaps: 2,
                     rivalCount: 3,
@@ -20215,8 +20227,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     }
                 };
 
+                if(authorsPractice){engineOptions.rivalCount=0;engineOptions.totalLaps=999;engineOptions.skipCountdown=true;}
                 const mwPhysicsKernel = (window.NOMERA_AUTHORS_PREVIEW && window.NomeraMW?.selected()) ? window.NomeraMW : null;
-                if (isNfsCircuit && mwPhysicsKernel && typeof NomeraCircuitRace !== 'undefined' && typeof NomeraCircuitRace.NomeraCircuitRaceEngine === 'function') {
+                if (isNfsCircuit && (mwPhysicsKernel||authorsPractice) && typeof NomeraCircuitRace !== 'undefined' && typeof NomeraCircuitRace.NomeraCircuitRaceEngine === 'function') {
                     car3DRacingEngine = new NomeraCircuitRace.NomeraCircuitRaceEngine(container, engineOptions);
                 } else if (typeof Car3DManager !== 'undefined' && typeof Car3DManager.Car3DRacingEngine === 'function') {
                     car3DRacingEngine = new Car3DManager.Car3DRacingEngine(container, engineOptions);
@@ -20235,7 +20248,8 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     upgrades: raceUpgrades,
                     performance: stats,
                     mode: isNfsCircuit ? 'nfs_circuit' : raceCurrentMode,
-                    trackId: nfsSelectedTrack,
+                    trackId: authorsPractice?'proving_ground':nfsSelectedTrack,
+                    authorsPractice,
                     difficulty: nfsSelectedDifficulty,
                     weather: (typeof raceSelectedWeather !== 'undefined' ? raceSelectedWeather : 'night')
                 });
@@ -20252,6 +20266,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     }
                 }, 80);
                 if(window.NOMERA_AUTHORS_PREVIEW)window.NomeraRaceExperience?.begin(car3DRacingEngine,{trackId:nfsSelectedTrack,carName:selectedRaceCarName,physicsKernel:mwPhysicsKernel,upgrades:raceUpgrades,performance:stats,difficulty:nfsSelectedDifficulty,weather:raceSelectedWeather},nickname);
+                if(authorsPractice)window.NomeraPlayground.begin(car3DRacingEngine,nickname);
                 init3DRaceTouchControls();
                 syncMobileTouchControlsVisibility();
                 updateRaceRadioHUD();
@@ -22989,6 +23004,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             const menuContainer = document.getElementById('race-menu-container');
             if (menuContainer) menuContainer.classList.remove('hidden');
 
+            if(window.NOMERA_AUTHORS_PREVIEW&&window.NomeraPlayground?.isPractice(car3DRacingEngine)){window.NomeraPlayground.finish(car3DRacingEngine);activeRaceCar=null;return;}
             const driftBonus = Math.round((racePlayer.driftScore || 0) * 0.8 * (racePlayer.tunedStats?.rewardMult || 1.0));
             const gross = racePlayer.earnedCash + driftBonus;
             const receipt = NomeraRaceEconomy.settle(gross, racePlayer.fuelLiters || 0, balance);

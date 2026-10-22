@@ -22,6 +22,7 @@
   return{height,normal:normal(dx,dz),valid:true,surface:Math.abs(x)<8.75?'asphalt':'grass'};
  }
  function circuitHeight(s,lateral,total,id){
+  if(id==='proving_ground')return 0;
   const t=((s%total)+total)%total;
   const scale=id==='canyon_pass'?1.35:id==='bayview_sprint'?.8:1;
   const rise=hump(t,115,30,1.35*scale)+hump(t,total*.52,100,2.5*scale)+hump(t,total*.79,16,.10);

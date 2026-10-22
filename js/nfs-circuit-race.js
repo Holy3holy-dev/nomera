@@ -46,6 +46,7 @@
     //   +Z = North (initial start heading = 0)
     //   +X = East  (right of initial start direction, heading = +PI/2)
     const TRACK_PRESETS = {
+        proving_ground:{id:'proving_ground',name:'Испытательный полигон',subtitle:'Ровная площадка · без трафика',defaultLaps:1,halfWidth:10,waypoints:[{x:0,z:0},{x:0,z:400},{x:0,z:800},{x:0,z:1200},{x:80,z:1400},{x:220,z:1400},{x:300,z:1200},{x:300,z:800},{x:300,z:400},{x:300,z:0},{x:220,z:-400},{x:80,z:-500},{x:0,z:-400}]},
         rockport_ring: {
             id: 'rockport_ring',
             name: 'Городское Кольцо',
@@ -1081,8 +1082,8 @@
                 gas: hasFuel ? this.keys.gas : false,
                 brake: this.keys.brake,
                 handbrake: this.keys.drift,
-                nitro: hasFuel ? this.keys.nitro : false,
-                speedbreaker: this.keys.speedbreaker
+                nitro: hasFuel&&!this.carConfig.authorsPractice ? this.keys.nitro : false,
+                speedbreaker: !this.carConfig.authorsPractice&&this.keys.speedbreaker
             };
 
             // 3. Step Player Physics (Fixed-timestep accumulator inside NfsVehiclePhysics)
@@ -1112,7 +1113,8 @@
             }
 
             // Update Player Checkpoint & Lap Progress
-            this._updateRacerProgress(this.playerProgress, pState, pTrackAfter, safeDt);
+            if(root.NOMERA_AUTHORS_PREVIEW&&this.carConfig.authorsPractice)root.NomeraPlayground?.step(this,safeDt);
+            else this._updateRacerProgress(this.playerProgress, pState, pTrackAfter, safeDt);
 
             // Wrong-way check for player
             const headingDiff = Math.abs(normalizeAngleRad(pState.heading - pTrackAfter.headingTrack));
@@ -1913,7 +1915,7 @@
             if (c3d && typeof c3d.loadCarModel === 'function') {
                 try {
                     c3d.loadCarModel(THREE, carName, styling, (loadedModel) => {
-                        if (this._destroyed || !loadedModel) return;
+                        if (this._destroyed || !loadedModel) { if(loadedModel)c3d.deepDispose?.(loadedModel); return; }
                         glbLoadedSync = true;
                         while (bodyGroup.children.length > 0) {
                             const prev = bodyGroup.children[0];
@@ -2345,6 +2347,7 @@
 
         render() {
             if (this.renderer && this.scene && this.camera) {
+                if(root.NOMERA_AUTHORS_PREVIEW)root.NomeraLivery?.update(this.scene);
                 root.NomeraScenePerf?.render(this);
                 this.vehicleLodTelemetry=root.NomeraVehicleLOD?.updateScene(root.THREE,this.scene,this.camera,this.renderer);
                 root.NomeraPlayerRender?.render(this);

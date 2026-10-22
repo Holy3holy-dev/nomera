@@ -15,7 +15,7 @@
   const distance=Math.max(180,ahead,60+Math.max(0,playerSpeed-(u.baseSpeed||80)/3.6)*3.5);
   let chosen=null;for(let row=0;row<64&&!chosen;row++)for(let i=0;i<lanes.length&&!chosen;i++){
    const index=(lane+i)%lanes.length,x=lanes[index],z=e.state.z+distance+row*18;
-   if(e.trafficCars.every(other=>other===car||other.position.y< -500||Math.abs(other.position.x-x)>(u.halfWidth||.95)+(other.userData.halfWidth||.95)+.5||Math.abs(other.position.z-z)>(u.halfLength||2.2)+(other.userData.halfLength||2.2)+12))chosen={index,x,z};
+   if(!globalThis.NomeraRoadEvents?.blocked(e,x,z,u.halfWidth||.95,(u.halfLength||2.2)+15)&&e.trafficCars.every(other=>other===car||other.position.y< -500||Math.abs(other.position.x-x)>(u.halfWidth||.95)+(other.userData.halfWidth||.95)+.5||Math.abs(other.position.z-z)>(u.halfLength||2.2)+(other.userData.halfLength||2.2)+12))chosen={index,x,z};
   }
   if(!chosen)return false;
   const ground=e.trafficGroundAt?.(chosen.x,chosen.z)||{height:0,normal:[0,1,0]};car.position.set(chosen.x,ground.height,chosen.z);car.quaternion.set(0,0,0,1);
@@ -34,7 +34,7 @@
  function cruise(e,car,dt){const u=car.userData;if(u.contactBody||u.isWrecked)return;
   let target=u.speed,minGap=Infinity;for(const other of e.trafficCars){if(other===car||other.position.y< -500)continue;const v=other.userData,gap=other.position.z-car.position.z-(u.halfLength||2.2)-(v.halfLength||2.2),width=(u.halfWidth||.95)+(v.halfWidth||.95)+.3;
    if(gap>=0&&Math.abs(other.position.x-car.position.x)<width){const relative=Math.max(0,(u.speed-v.speed)/3.6),safe=5+u.speed/3.6*.9+relative*relative/(2*7);if(gap<safe){target=Math.min(target,Math.max(0,v.speed+(gap-5)*1.2));minGap=Math.min(minGap,gap);u.isBraking=true;} }
-  }u.speed=Math.max(target,u.speed-(minGap<5?10:7)*dt*3.6);
+  }const incident=globalThis.NomeraRoadEvents?.gap(e,car)??Infinity;if(incident<Math.max(40,u.speed/3.6*2+12)){minGap=Math.min(minGap,incident);target=Math.min(target,Math.sqrt(Math.max(0,2*5*(incident-5)))*3.6);u.isBraking=true;}u.speed=Math.max(target,u.speed-(minGap<5?10:7)*dt*3.6);
   if(Math.abs(u.targetX-car.position.x)>.15&&!laneClear(e,car,u.targetX)){u.targetX=car.position.x;u.changingLane=false;u.plannedLaneIndex=null;}
  }
  function observe(e,car,dt,dx,dz){const a=e.authorsPursuit,u=car.userData;if(!a||u.isWrecked)return;const close=Math.abs(dz)<28&&dx<6;

@@ -118,7 +118,7 @@
   stepper.querySelectorAll('button').forEach((btn,index)=>{btn.classList.toggle('active',index===step);btn.classList.toggle('complete',index<step);btn.setAttribute('aria-current',index===step?'step':'false');});
   $('#ae-race-back').disabled=step===0;$('#ae-race-next').hidden=step===3;$('#ae-race-step-label').textContent=`Шаг ${step+1} из 4`;
   $('#ae-race-summary').replaceChildren();
-  for(const [label,value] of [['Режим',modeCopy[activeRaceMode]?.[1]||'Шоссе'],['Автомобиль',selectedRaceCarName],['Трасса',activeRaceMode==='nfs'?$('#nfs-track-label').textContent:$('#race-mode-label').textContent],['Погода',$('#race-weather-label').textContent]]){const item=make('div','','<span></span><strong></strong>');item.querySelector('span').textContent=label;item.querySelector('strong').textContent=value;$('#ae-race-summary').append(item);}
+  for(const [label,value] of [['Режим',window.NomeraPlayground?.isSelected()?'Полигон':modeCopy[activeRaceMode]?.[1]||'Шоссе'],['Автомобиль',selectedRaceCarName],['Трасса',window.NomeraPlayground?.isSelected()?'Закрытая испытательная площадка':activeRaceMode==='nfs'?$('#nfs-track-label').textContent:$('#race-mode-label').textContent],['Погода',$('#race-weather-label').textContent]]){const item=make('div','','<span></span><strong></strong>');item.querySelector('span').textContent=label;item.querySelector('strong').textContent=value;$('#ae-race-summary').append(item);}
  }
  $('#ae-race-next').addEventListener('click',()=>goStep(step+1));$('#ae-race-back').addEventListener('click',()=>goStep(step-1));
  stepper.addEventListener('click',event=>{const btn=event.target.closest('[data-race-step]');if(btn)goStep(Number(btn.dataset.raceStep));});
