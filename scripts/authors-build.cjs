@@ -44,6 +44,7 @@ html=html.replace('./js/authors-ui.js"','./js/authors-ui.js?v='+lodHash('authors
 for(const file of ['authors-secondary.js','authors-camera-profiles.js','authors-steering-profiles.js','authors-route-dressing.js','authors-race-experience.js','authors-environment.js','authors-scene.js','authors-rival-ai.js','authors-screen-controls.js','authors-circuit-life.js','authors-route-detail.js','authors-road-weather.js','authors-night-lighting.js','authors-npc-signals.js','authors-race-hud.js','authors-body-damage.js','authors-rigid-body.js','authors-vehicle-finish.js'])html=html.replace('./js/'+file+'"','./js/'+file+'?v='+lodHash(file)+'"');
 html=html.replace('</head>',`<link rel="stylesheet" href="./authors-progression.css?v=${require('node:crypto').createHash('sha256').update(fs.readFileSync(path.join(root,'authors-progression.css'))).digest('hex').slice(0,12)}"></head>`);
 html=html.replace('</body>',`<script src="./js/authors-progression-ui.js?v=${lodHash('authors-progression-ui.js')}"></script></body>`);
+html=html.replace('</body>',`<script src="./js/authors-progression-celebration.js?v=${lodHash('authors-progression-celebration.js')}"></script></body>`);
 html=html.replace('./js/authors-livery.js"','./js/authors-livery.js?v='+lodHash('authors-livery.js')+'"');
 fs.writeFileSync(path.join(root, 'authors.html'), html);
 console.log('authors.html: isolated local entry generated from index.html');

@@ -1879,6 +1879,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         }
 
         function loadProgress() {
+            window.NomeraProgressionCelebration?.clear?.();
             raceRecordStore.bind(sanitizeKey(nickname));
             const savedRaw = localStore.get('nomera_player_account');
 
@@ -2300,6 +2301,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         // Only the server issues online money; local game progress is still device-specific.
         let accountActionBusy = false;
         function resetLocalGameFor(nick) {
+            window.NomeraProgressionCelebration?.clear?.();
             nickname = nick;
             playerPin = ''; // Never cache the server PIN in localStorage.
             raceRecordStore.bind(sanitizeKey(nickname));
@@ -2326,6 +2328,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             if (reset) {
                 resetLocalGameFor(profile.nickname);
             } else if (!same) {
+                window.NomeraProgressionCelebration?.clear?.();
                 levelRewardsThrough = 1;
                 playerTitle = 'novice';
                 nickname = profile.nickname;
@@ -2424,6 +2427,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             playerExp = 0;
             playerTitle = 'novice';
             dailyBonus = { lastClaimDate: null, streak: 0 };
+            window.NomeraProgressionCelebration?.clear?.();
             levelRewardsThrough = 1;
             dailyQuests = { date: null, progress: { spins: 0, distance: 0, tune: 0 }, claimed: {} };
             achievements = {};
@@ -4706,7 +4710,8 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 renderLeaderboard();
                 if (window.NOMERA_AUTHORS_PREVIEW && window.NomeraProgression) {
                     saveProgress(false);
-                    notifyUser(`Уровень ${playerLevel}! Награды ждут в профиле.`, 'success');
+                    if(window.NomeraProgressionCelebration)window.NomeraProgressionCelebration.levelUp(oldLevel,playerLevel);
+                    else notifyUser(`Уровень ${playerLevel}! Награды ждут в профиле.`, 'success');
                 }
             }
         }
@@ -9674,6 +9679,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             if (TITLES_CATALOG[newTitle]) {
                 playerTitle = newTitle;
                 saveProgress();
+                if(window.NOMERA_AUTHORS_PREVIEW)window.NomeraProgressionCelebration?.pulseTitle?.();
                 notifyUser(`Титул установлен: ${TITLES_CATALOG[newTitle].label}`);
             }
         }
@@ -11229,7 +11235,8 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     notifyUser('Не удалось сохранить награду. Освободи место в браузере и попробуй снова.','error');return false;
                 }
                 updateBalance();window.NomeraProgressionUI?.refresh();
-                notifyUser(`Награды за ${claim.count} ур. · +${claim.cash.toLocaleString('ru-RU')} ₽`,'success');return true;
+                if(window.NomeraProgressionCelebration)window.NomeraProgressionCelebration.reward(claim);
+                else notifyUser(`Награды за ${claim.count} ур. · +${claim.cash.toLocaleString('ru-RU')} ₽`,'success');return true;
             },
             title:id=>changePlayerTitle(id)
         };
@@ -11468,20 +11475,28 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             if (modal) modal.classList.remove('show');
         }
 
+        function getDailyRewardState(today = getTodayString()) {
+            // streak counts completed claims, not the index of today's card.
+            const streak = Number.isFinite(Number(dailyBonus.streak)) ? Math.max(0, Math.floor(Number(dailyBonus.streak))) : 0;
+            const claimed = dailyBonus.lastClaimDate === today;
+            return {today, streak, claimed, index: (claimed ? Math.max(0,streak-1) : streak) % DAILY_REWARDS.length};
+        }
+
         function renderDailyModal() {
             const grid = document.getElementById('daily-calendar-grid');
             if (!grid) return;
-            const today = getTodayString();
-            const currentStreak = dailyBonus.streak || 0;
-            const isTodayClaimed = dailyBonus.lastClaimDate === today;
-            const activeDayIdx = currentStreak % 7;
+            const daily = getDailyRewardState();
+            const isTodayClaimed = daily.claimed;
+            const activeDayIdx = daily.index;
+            const calendarStatus=document.getElementById('daily-calendar-status');
+            if(calendarStatus)calendarStatus.textContent=isTodayClaimed?`Сегодня получен день ${activeDayIdx+1}. Следующая награда будет доступна завтра.`:`Сегодня доступен день ${activeDayIdx+1} из ${DAILY_REWARDS.length}.`;
 
             grid.innerHTML = DAILY_REWARDS.map((reward, i) => {
                 let statusClass = '';
                 if (i < activeDayIdx || (i === activeDayIdx && isTodayClaimed)) statusClass = 'claimed';
                 else if (i === activeDayIdx && !isTodayClaimed) statusClass = 'today';
                 return `
-                    <div class="daily-day-card ${statusClass}">
+                    <div class="daily-day-card ${statusClass}" data-day="${i+1}" aria-label="День ${i+1}: ${statusClass==='claimed'?'получено':statusClass==='today'?'доступно сегодня':'впереди'}">
                         <div class="daily-day-title">День ${i + 1}</div>
                         <div class="daily-day-icon">${i === 6 ? '👑' : i === 2 ? '📦' : '💰'}</div>
                         <div class="daily-day-reward">${(reward / 1000).toFixed(0)}k ₽</div>
@@ -11534,21 +11549,31 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         }
 
         function claimDailyReward() {
-            const today = getTodayString();
-            if (dailyBonus.lastClaimDate === today) {
+            const daily = getDailyRewardState();
+            if (daily.claimed) {
                 notifyUser('Вы уже забрали сегодняшнюю награду. Возвращайтесь завтра!');
-                return;
+                return false;
             }
-            const activeDayIdx = (dailyBonus.streak || 0) % 7;
+            const activeDayIdx = daily.index;
             const reward = DAILY_REWARDS[activeDayIdx];
-            creditPlayerBalance(reward, 'Ежедневная награда');
-            dailyBonus.streak = (dailyBonus.streak || 0) + 1;
-            dailyBonus.lastClaimDate = today;
+            const previousBonus=dailyBonus,previousBalance=balance;
+            dailyBonus = {lastClaimDate:daily.today,streak:daily.streak+1};
+            if(onlineProfile)creditPlayerBalance(reward,'Ежедневная награда');
+            else {
+                balance+=reward;
+                if(!saveProgress()){
+                    balance=previousBalance;dailyBonus=previousBonus;saveProgress(false);updateBalance();
+                    notifyUser('Не удалось сохранить ежедневную награду. Попробуй снова после восстановления хранилища.','error');return false;
+                }
+                lastSpendTimestamp=Date.now();updateBalance();
+            }
             playCashSound();
-            triggerLegendaryEffect();
+            if(!window.NOMERA_AUTHORS_PREVIEW)triggerLegendaryEffect();
             renderDailyModal();
             updateDailyBadgeDot();
-            notifyUser(`🎁 Награда дня получена: +${reward.toLocaleString('ru-RU')} ₽!`, 'success');
+            if(window.NOMERA_AUTHORS_PREVIEW&&window.NomeraProgressionCelebration)window.NomeraProgressionCelebration.daily(activeDayIdx+1,reward);
+            else notifyUser(`🎁 Награда дня получена: +${reward.toLocaleString('ru-RU')} ₽!`, 'success');
+            return true;
         }
 
         function claimQuestReward(questId) {
