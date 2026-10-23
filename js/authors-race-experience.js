@@ -76,6 +76,7 @@
  }
  function finish(e,receipt){
   const r=runs.get(e);if(!r)return;
+  root.NomeraRaceHud?.destroy(e);
   root.NomeraScreenControls?.destroy(e);
   checkWeather(e,r);
   r.hud?.remove();r.hud=null;r.signal?.remove();r.signal=null;

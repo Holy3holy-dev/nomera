@@ -29,7 +29,7 @@
  function update(e){prepare(e);const s=e.authorsLife;if(!s)return;
   if(e.track&&!s.circuit&&!root.NomeraPlayground?.isPractice(e)){const g=new e.THREE.Group();g.name='SummerCircuit';batch(e,g,sceneryPlan(e.track).map(p=>({...p,x:e.toThreeX(p.x),z:e.toThreeZ(p.z),y:e.roadSurface?.sample(p.x,p.z).height||0})));e.scene.add(g);s.groups.push(g);s.circuit=true;}
   const world=e.authorsWorld;if(world?.ready){for(let i=s.roots;i<world.circuitRoots.length;i++)hideOld(world.circuitRoots[i]);s.roots=world.circuitRoots.length;let budget=1;for(const[chunk,w]of world.chunks){if(!s.hiddenChunks.has(w.scenery)){hideOld(w.scenery);s.hiddenChunks.add(w.scenery);}if(s.chunks.has(chunk)||!budget)continue;budget--;const g=new e.THREE.Group();g.name='SummerHighway';batch(e,g,[-1,1].flatMap(side=>[0,1].map(i=>({x:side*(21+i*12),y:0,z:i*26-15,side,flag:!i,heading:0}))));w.scenery.add(g);s.groups.push(g);s.chunks.set(chunk,g);}}
-  if(e.grassMat)e.grassMat.color.setHex(e.currentActiveWeather==='snow'?0xd8e5cf:0xffffff);
+  if(e.grassMat){const w=e.authorsEnvironment?.weatherWeights?.snow||0;s.snowColor??=new e.THREE.Color(0xd8e5cf);e.grassMat.color.setRGB(1+(s.snowColor.r-1)*w,1+(s.snowColor.g-1)*w,1+(s.snowColor.b-1)*w);}
   shadows(e);e.circuitLifeTelemetry={ready:true,sceneryGroups:s.groups.length,roadTexture:256,addedLights:0,contactGeometryChanged:false};
  }
  function destroy(e){const s=e.authorsLife;if(!s)return;for(const g of s.groups){g.traverse(n=>{if(n.isInstancedMesh)n.dispose();});g.parent?.remove(g);}for(const r of s.resources)r.dispose();delete e.authorsLife;delete e.circuitLifeTelemetry;}
