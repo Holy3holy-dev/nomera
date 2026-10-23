@@ -1890,9 +1890,11 @@
         _resolve3DContact(other,contacts,options={}){
             if(contacts[0].sweptPositions){for(const[owner,position]of [[this,contacts[0].sweptPositions.a],[other,contacts[0].sweptPositions.b]]){if(!owner)continue;const s=owner.state||owner;[s.x,s.y,s.z]=position;if(owner.suspension)owner.suspension.y=s.y;}}
             const R=this.mwKernel.RigidBody,before=R.descriptor(this),incoming=R.linear(before),result=R.solve(before,other?R.descriptor(other):null,contacts,options);
-            const severity=clamp((result.closingSpeedMps-1)/24,0,1),damage=severity*(other?6:8.5);
+            const severity=clamp((result.closingSpeedMps-1)/24,0,1),policy=this.mwKernel.BodyDamage?.applyImpact;
+            const damage=policy?policy(this,result,other?.state||'world',this.state.time):severity*(other?6:8.5);
+            if(policy&&other)policy(other,result,this.state,this.state.time);
             const hit=contacts[0];for(const[owner,sign]of [[this,1],[other,-1]])if(owner)this.mwKernel.BodyDamage?.record(owner.state||owner,[hit.pointX,hit.pointY,hit.pointZ],[hit.normalX*sign,(hit.normalY||0)*sign,hit.normalZ*sign],result);
-            for(const owner of [this,other]){if(!owner)continue;const s=owner.state||owner;s.damageTaken=clamp((s.damageTaken||0)+damage,0,100);s.collisionTimer=Math.max(s.collisionTimer||0,.35*severity);}
+            for(const owner of [this,other]){if(!owner)continue;const s=owner.state||owner;if(!policy)s.damageTaken=clamp((s.damageTaken||0)+damage,0,100);s.collisionTimer=Math.max(s.collisionTimer||0,.35*severity);}
             const c=contacts[0],event=this.mwKernel.collisionResponse({type:other?'OBJECT':'WORLD',impulseA:10+30*.35*severity,normal:[c.normalX,c.normalY||0,c.normalZ],closingVel:R.scale([c.normalX,c.normalY||0,c.normalZ],result.closingSpeedMps),objAVel:incoming,position:[c.pointX,c.pointY,c.pointZ],bodyPosition:before.origin,forward:before.m.forward,right:before.m.right,halfLength:before.half[2],signedVehicleSpeed:this.state.vForward,initialTimer:this.state.collisionTimer,time:this.state.time});
             this.state.collisionTimer=event.collisionTimer;if(!other&&(event.wallNoseTurn||event.wallSideTurn)){this.state.wallEscape=event.wallNoseTurn||event.wallSideTurn;this.state.wallEscapeTime=Math.min(.05,options.duration??1/60);}
             this.state.bodyCollision={...result,point:[c.pointX,c.pointY,c.pointZ],normal:[contacts[0].normalX,contacts[0].normalY||0,contacts[0].normalZ]};

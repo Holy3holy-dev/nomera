@@ -15,8 +15,8 @@ test('Physical collision records deformations on both bodies; low-speed resting 
 test('Highway control commands tires without mutating pose; handbrake, inversion and flight keep direct control',()=>{
  const s={x:4,z:50,heading:.2,yawRate:.3,speedMps:30},before={...s};assert(A.highwaySteer(0,s)<0);assert.deepEqual(s,before);for(const extra of [{handbrake:true},{rollover:{up:-1}},{roadContact:{airborne:true}}])near(A.highwaySteer(1,{...s,...extra}),1);
 });
-test('A hard roof landing records a cosmetic hull impact without silently changing vehicle resources',()=>{
- const p=new P({physicsKernel:mw,y:2});p.suspension.roll=Math.PI;p.suspension.vy=-4;p.state.nitroLevel=37;p.state.damageTaken=11;for(let i=0;i<160;i++)p.update(1/120,{});assert(p.state.impactEvents?.some(e=>e.normal[1]>.9));near(p.state.damageTaken,11);near(p.state.nitroLevel,37);
+test('A hard roof landing records hull damage without spending nitro',()=>{
+ const p=new P({physicsKernel:mw,y:2});p.suspension.roll=Math.PI;p.suspension.vy=-4;p.state.nitroLevel=37;p.state.damageTaken=11;for(let i=0;i<160;i++)p.update(1/120,{});assert(p.state.impactEvents?.some(e=>e.normal[1]>.9));assert(p.state.damageTaken>11);near(p.state.nitroLevel,37);
 });
 for(const speed of [90,250])test(`All49 profiles change lanes and settle without highway spins at ${speed}km/h`,()=>{
  for(const name of Object.keys(profiles)){const p=new P({carName:name,physicsKernel:mw,speedKmh:speed});let maxHeading=0;for(let i=0;i<360;i++){p.update(1/120,{gas:true,steer:A.highwaySteer(i<90?1:0,p.state)});maxHeading=Math.max(maxHeading,Math.abs(p.heading));assert(p.state.rollover.up>.8,name+' upright');}assert(maxHeading<.24,name+' no large heading');assert(p.x>1&&p.x<5,name+' keeps the new lane');assert(Math.abs(p.heading)<.02&&Math.abs(p.yawRate)<.03,name+' settles');}

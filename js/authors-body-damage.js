@@ -1,7 +1,18 @@
 /* Cosmetic NOMERA deformation. No original MW dent mesh/solver is available.
  * Collision shape, steering, tires and drivetrain are deliberately independent. */
 (function(root,factory){const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;else root.NomeraBodyDamage=api;})(typeof globalThis!=='undefined'?globalThis:this,function(){
- 'use strict';const sharedSources=new WeakMap();const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+ 'use strict';const sharedSources=new WeakMap(),impactWindows=new WeakMap();const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+ function impactLoss({closingSpeedMps=0,normalImpulse=0,mass=1500}){
+  // Normal delta-v distinguishes a head-on stop from a glancing scrape and
+  // naturally accounts for the other body's mass through the solved impulse.
+  const delta=Math.min(Math.max(0,closingSpeedMps)*1.25,Math.max(0,normalImpulse)/Math.max(100,mass));
+  return clamp(8*Math.pow(Math.max(0,delta-1.2)/8,1.65),0,95);
+ }
+ function applyImpact(owner,result,contactKey='world',time){
+  if(!owner||owner.immovable||owner.state?.immovable)return 0;const state=owner.state||owner,mass=owner.profile?.massKg||state.massKg||1500,clock=Number.isFinite(time)?time:Number(state.time)||0,loss=impactLoss({...result,mass});if(loss<=.015)return 0;
+  let windows=impactWindows.get(state);if(!windows){windows=new Map();impactWindows.set(state,windows);}const old=windows.get(contactKey),same=old&&clock>=old.time&&clock-old.time<.16,added=Math.max(0,loss-(same?old.peak:0));windows.set(contactKey,{time:same?old.time:clock,peak:same?Math.max(old.peak,loss):loss});if(windows.size>8)windows.delete(windows.keys().next().value);
+  if(added>0){state.damageTaken=clamp((state.damageTaken||0)+added,0,100);state.lastImpactDamage={sequence:(state.lastImpactDamage?.sequence||0)+1,time:clock,loss:added,closingSpeedMps:result.closingSpeedMps,deltaSpeedMps:result.normalImpulse/Math.max(100,mass)};}return added;
+ }
  function dent(point,original,hit){const dx=point[0]-hit.point[0],dy=point[1]-hit.point[1],dz=point[2]-hit.point[2],r=hit.radius||.65,d2=dx*dx+dy*dy+dz*dz;if(d2>=r*r)return point.slice();
   const w=(1-d2/(r*r))**2,next=point.map((v,i)=>v+hit.normal[i]*hit.depth*w),distance=Math.hypot(...next.map((v,i)=>v-original[i]));return distance>.24?original.map((v,i)=>v+(next[i]-v)*.24/distance):next;
  }
@@ -28,5 +39,5 @@
  }
  function reset(root){globalThis.NomeraVehicleLOD?.beforeDamage(root);const released=new Set();root?.traverse(n=>{const d=n.userData.dentGeometry;if(!d)return;const source=sharedSources.get(n);if(source){n.geometry=source;sharedSources.delete(n);released.add(d.geometry);d.geometry.dispose();delete n.userData.dentGeometry;}else{d.geometry.attributes.position.array.set(d.original);d.geometry.attributes.position.needsUpdate=true;d.geometry.computeBoundingBox();d.geometry.computeBoundingSphere();d.geometry.computeVertexNormals();}});const d=root?.userData.bodyDeformation;if(d){d.queue=[];d.seen=0;d.changedVertices=0;d.impacts=0;d.lastImpact=null;d.owned=d.owned.filter(g=>!released.has(g));}}
 
- return{dent,record,hit,process,consume,update,reset};
+ return{dent,record,hit,process,consume,update,reset,impactLoss,applyImpact};
 });

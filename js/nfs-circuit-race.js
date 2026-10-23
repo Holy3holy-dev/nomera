@@ -1106,7 +1106,7 @@
                 );
                 if (impact > 4.5) {
                     const dmg = clamp((impact - 4.0) * 0.55, 0.5, 14);
-                    this.state.damageTaken = clamp(this.state.damageTaken + dmg, 0, 100);
+                    this.state.damageTaken = this.playerPhysics.mwKernel?.BodyDamage?.applyImpact?this.playerPhysics.state.damageTaken:clamp(this.state.damageTaken + dmg, 0, 100);
                     if (this.options.onSound) this.options.onSound(impact > 12 ? 'crash' : 'scrape');
                     this._spawnCollisionSparks(pState.x, pState.z, 6);
                 }
@@ -1462,7 +1462,7 @@
                             const result=a._resolveMWContact(b,{...contact,restitution:authors?.12:.28,friction:authors?.3:contact.friction});
                             if(authors&&result.closingSpeedMps>1.2)for(const rival of this.rivals)if(rival.physics===a||rival.physics===b)RivalAI.contact(rival,this.state.raceTimeSec);
                             if(i===0&&result.closingSpeedMps>5){
-                                this.state.damageTaken=clamp(this.state.damageTaken+result.closingSpeedMps*.35,0,100);
+                                this.state.damageTaken=a.mwKernel?.BodyDamage?.applyImpact?a.state.damageTaken:clamp(this.state.damageTaken+result.closingSpeedMps*.35,0,100);
                                 if(this.options.onSound)this.options.onSound('crash');
                                 this._spawnCollisionSparks((a.x+b.x)*.5,(a.z+b.z)*.5,8);
                             }

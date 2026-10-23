@@ -13975,7 +13975,7 @@
 
                 // 6. Active Aero Spoiler / Air-Brake Flaps (with deployable active wing fallback)
                 this.playerActiveAero = [];
-                this.playerCar.traverse(child => {
+                if(!window.NOMERA_AUTHORS_PREVIEW)this.playerCar.traverse(child => {
                     const n = String(child.name || '').toLowerCase();
                     if (child.isMesh && (n.includes('spoiler') || n.includes('wing') || n.includes('aero_wing'))) {
                         this.playerActiveAero.push({
@@ -13985,7 +13985,7 @@
                         });
                     }
                 });
-                if (this.playerActiveAero.length === 0) {
+                if (!window.NOMERA_AUTHORS_PREVIEW && this.playerActiveAero.length === 0) {
                     const aeroWingGeo = new THREE.BoxGeometry(halfW * 1.45, 0.03, 0.22);
                     const aeroWingMat = new THREE.MeshStandardMaterial({
                         color: 0x111827,
