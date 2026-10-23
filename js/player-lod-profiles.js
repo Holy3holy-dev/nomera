@@ -221,21 +221,6 @@
     "minIndices": 180,
     "pixelEntryFactor": 0.95
   },
-  "arrizo8.glb": {
-    "id": "camry",
-    "name": "Toyota Camry 3.5",
-    "playerOnly": true,
-    "batchCompatible": true,
-    "smoothSwitch": true,
-    "wheelTopologyKey": true,
-    "pixelErrorLimit": 0.5,
-    "wheelFullDistance": 6.5,
-    "errorScales": [
-      0.3,
-      0.2
-    ],
-    "minIndices": 180
-  },
   "panamera_wagon.glb": {
     "id": "panamera",
     "name": "Porsche Panamera Turbo",

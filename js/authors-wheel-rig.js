@@ -63,7 +63,8 @@
   model.updateMatrixWorld(true);
   const existing=[];model.traverse(node=>{if(node.userData?.isWheelSpinner)existing.push(node)});
   if(existing.length){
-   const wheels=existing.map(spin=>{const steer=spin.parent;return{spin,steer,key:(steer.position.z>0?'f':'r')+(steer.position.x>0?'l':'r'),radius:.33,baseY:steer.position.y,angle:spin.rotation.x,procedural:true,side:steer.userData.side||1};});
+   const inverse=model.matrixWorld.clone().invert(),radius=model.userData.spec?.wheelR||.33;
+   const wheels=existing.map(spin=>{const steer=spin.parent,center=steer.getWorldPosition(new T.Vector3()).applyMatrix4(inverse);return{spin,steer,center,key:(center.z>0?'f':'r')+(center.x>0?'l':'r'),radius,baseY:steer.position.y,angle:spin.rotation.x,procedural:true,side:steer.userData.side||1};});
    const rig={wheels,imported:false};rigs.set(model,rig);return rig;
   }
   const inverse=model.matrixWorld.clone().invert(),bounds=new T.Box3();

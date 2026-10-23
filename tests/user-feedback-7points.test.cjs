@@ -144,7 +144,7 @@ test('Mobile UX: 3D showroom podium allows vertical page scrolling without locki
         'touchstart must be passive to allow smooth browser page scrolling');
 });
 
-test('Visuals: All 25 vehicles have authentic 3D thumbnails pre-rendered and exported', () => {
+test('Visuals: All 25 vehicles have current 3D thumbnails pre-rendered and exported', () => {
     const car3dJs = fs.readFileSync(path.join(__dirname, '../js/car-3d.js'), 'utf8');
     const appJs = fs.readFileSync(path.join(__dirname, '../js/app.js'), 'utf8');
     const root = path.join(__dirname, '..');
@@ -158,7 +158,7 @@ test('Visuals: All 25 vehicles have authentic 3D thumbnails pre-rendered and exp
 
     // 1. All 25 thumbnail PNG files must exist on disk and be non-empty (> 20KB)
     for (const carId of expectedCarIds) {
-        const thumbPath = path.join(root, 'assets', 'thumbnails', `${carId}.png`);
+        const thumbPath = path.join(root, 'assets', 'thumbnails', `${carId === 'camry' ? 'camry-xv70' : carId}.png`);
         assert.ok(fs.existsSync(thumbPath), `Missing pre-rendered 3D thumbnail for ${carId}.png`);
         const stat = fs.statSync(thumbPath);
         assert.ok(stat.size > 20000, `Thumbnail for ${carId}.png is unexpectedly small: ${stat.size} bytes`);
@@ -167,7 +167,7 @@ test('Visuals: All 25 vehicles have authentic 3D thumbnails pre-rendered and exp
     // 2. STATIC_3D_THUMBNAILS in car-3d.js must map all 25 car IDs
     assert.ok(car3dJs.includes('const STATIC_3D_THUMBNAILS = {'), 'car-3d.js must define STATIC_3D_THUMBNAILS');
     for (const carId of expectedCarIds) {
-        assert.ok(car3dJs.includes(`${carId}: './assets/thumbnails/${carId}.png'`),
+        assert.ok(car3dJs.includes(`${carId}: './assets/thumbnails/${carId === 'camry' ? 'camry-xv70' : carId}.png'`),
             `STATIC_3D_THUMBNAILS must include mapping for ${carId}`);
     }
 

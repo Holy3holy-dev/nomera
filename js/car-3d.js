@@ -393,7 +393,7 @@
     }
 
     // Detailed 3D Wheel (Tire with tread, rim barrel, styled spokes, center cap, brake rotor & red caliper)
-    function createDetailedWheel(THREE, mats, style = 'stock', scale = 1.0) {
+    function createDetailedWheel(THREE, mats, style = 'stock', scale = 1.0, openTire = false) {
         const group = new THREE.Group();
         group.name = 'WheelAssembly';
 
@@ -407,7 +407,7 @@
         const W = 0.23 * scale;
 
         // 1. Rubber Tire (Main outer donut)
-        const tireGeo = new THREE.CylinderGeometry(R, R, W, 28);
+        const tireGeo = new THREE.CylinderGeometry(R, R, W, 28, 1, openTire);
         tireGeo.rotateZ(Math.PI / 2);
         const tireMat = new THREE.MeshStandardMaterial({
             color: 0x131518,
@@ -416,6 +416,10 @@
         });
         const tire = new THREE.Mesh(tireGeo, tireMat);
         spinner.add(tire);
+        if(openTire)for(const side of [-1,1]){
+            const wallGeo=new THREE.RingGeometry(R*.735,R,28);wallGeo.rotateY(side*Math.PI/2);
+            const wall=new THREE.Mesh(wallGeo,tireMat);wall.position.x=side*W*.5;spinner.add(wall);
+        }
 
         // Tire sidewall bevels (both sides for full 3D volume)
         [-1, 1].forEach(side => {
@@ -3809,94 +3813,74 @@
         // 15. Toyota Camry 3.5 XV70 (Massive wide front bumper grille, triple-slash LED headlights)
         // -------------------------------------------------------------
         if (carId === 'camry') {
-            const L = 4.42, W = 1.84, H = 0.52;
-            const cL = 2.05, cW = 1.50, cH = 0.48;
-            const baseY = 0.30;
-
-            const bodyGeo = new THREE.BoxGeometry(W, H, L);
-            const body = new THREE.Mesh(bodyGeo, mats.paint);
-            body.position.set(0, baseY + H * 0.46, 0);
-            root.add(body);
-
-            const cabinGeo = new THREE.BoxGeometry(cW, cH, cL);
-            const cabin = new THREE.Mesh(cabinGeo, mats.paint);
-            cabin.position.set(0, baseY + H + cH * 0.46, -0.08);
-            root.add(cabin);
-
-            const wsGeo = new THREE.BoxGeometry(cW * 0.92, cH * 0.86, 0.05);
-            wsGeo.rotateX(-Math.PI / 6.4);
-            const ws = new THREE.Mesh(wsGeo, mats.glass);
-            ws.position.set(0, baseY + H + cH * 0.46, -0.08 + cL * 0.505);
-            root.add(ws);
-
-            const rgGeo = new THREE.BoxGeometry(cW * 0.90, cH * 0.82, 0.05);
-            rgGeo.rotateX(Math.PI / 6.0);
-            const rg = new THREE.Mesh(rgGeo, mats.glass);
-            rg.position.set(0, baseY + H + cH * 0.46, -0.08 - cL * 0.505);
-            root.add(rg);
-
-            [-1, 1].forEach(side => {
-                const sgGeo = new THREE.BoxGeometry(0.03, cH * 0.72, cL * 0.86);
-                const sg = new THREE.Mesh(sgGeo, mats.glass);
-                sg.position.set(side * cW * 0.505, baseY + H + cH * 0.46, -0.08);
-                root.add(sg);
-            });
-
-            // MASSIVE CAMRY XV70 LOWER BUMPER GRILLE WITH WIDE HORIZONTAL FINS
-            const grilleGeo = new THREE.BoxGeometry(W * 0.82, H * 0.48, 0.08);
-            const grille = new THREE.Mesh(grilleGeo, mats.darkPlastic);
-            grille.position.set(0, baseY + H * 0.34, L * 0.504);
-            root.add(grille);
-
-            for (let i = -2; i <= 2; i++) {
-                const finGeo = new THREE.BoxGeometry(W * 0.78, 0.015, 0.02);
-                const fin = new THREE.Mesh(finGeo, mats.trim);
-                fin.position.set(0, baseY + H * 0.34 + i * 0.045, L * 0.546);
-                root.add(fin);
+            // Bespoke XV70 silhouette. Never substitute the unrelated Chery Arrizo 8 GLB.
+            const L = 4.885, W = 1.84, axle = 1.412, R = .337;
+            root.name = 'Camry_XV70_Body';
+            root.userData.modelIdentity = 'Toyota Camry XV70';
+            function mesh(name, vertices, indices, material) {
+                const g = new THREE.BufferGeometry();
+                g.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+                for(let i=0;i<indices.length;i+=3){const b=indices[i+1];indices[i+1]=indices[i+2];indices[i+2]=b;}
+                g.setIndex(indices); g.computeVertexNormals();
+                const n = new THREE.Mesh(g, material); n.name = name; root.add(n); return n;
             }
-
-            // Sharp Bi-Beam LED Headlights with triple-slash DRL ribbons
-            [-1, 1].forEach(side => {
-                const hlGeo = new THREE.BoxGeometry(W * 0.22, 0.09, 0.16);
-                hlGeo.rotateY(side * Math.PI / 20);
-                const hl = new THREE.Mesh(hlGeo, mats.headlightLED);
-                hl.position.set(side * W * 0.36, baseY + H * 0.62, L * 0.47);
-                root.add(hl);
-            });
-
-            const beakGeo = new THREE.BoxGeometry(W * 0.32, 0.04, 0.06);
-            const beak = new THREE.Mesh(beakGeo, mats.chrome);
-            beak.position.set(0, baseY + H * 0.64, L * 0.508);
-            root.add(beak);
-
-            [-1, 1].forEach(side => {
-                const tlGeo = new THREE.BoxGeometry(W * 0.26, 0.10, 0.06);
-                const tl = new THREE.Mesh(tlGeo, mats.taillightRed);
-                tl.position.set(side * W * 0.35, baseY + H * 0.56, -L * 0.503);
-                root.add(tl);
-            });
-
-            [-1, 1].forEach(side => {
-                const exGeo = new THREE.CylinderGeometry(0.04, 0.04, 0.12, 14);
-                exGeo.rotateX(Math.PI / 2);
-                const ex = new THREE.Mesh(exGeo, mats.chrome);
-                ex.position.set(side * (W * 0.32), baseY + 0.08, -L * 0.508);
-                root.add(ex);
-            });
-
-            root.add(createCockpitInterior(THREE, mats, cW, cL, cH, baseY));
-            root.add(createSideMirrors(THREE, mats, cW, -0.08, baseY + H + 0.06, 0.70, 'paint'));
-            root.add(createWipers(THREE, mats, cW, baseY + H + 0.02, 0.75));
-
-            const fp = createLicensePlate(THREE, 'К 070 КК | 777 RUS', true);
-            fp.position.set(0, baseY + 0.14, L * 0.51);
-            root.add(fp);
-
-            const rp = createLicensePlate(THREE, 'К 070 КК | 777 RUS', false);
-            rp.position.set(0, baseY + H * 0.36, -L * 0.505);
-            root.add(rp);
-
-            return { root, bodyLength: L, bodyWidth: W, wheelBase: L * 0.34, wheelTrack: W * 0.49, wheelR: 0.33 };
+            function panel(name, points, material) {
+                return mesh(name, points.flat(), [0, 1, 2, 0, 2, 3], material);
+            }
+            function box(name, x, y, z, sx, sy, sz, material) {
+                const n = new THREE.Mesh(new THREE.BoxGeometry(sx, sy, sz), material);
+                n.name = name; n.position.set(x, y, z); root.add(n); return n;
+            }
+            // Longitudinal sections include real wheel openings, rounded shoulders and tapered bumpers.
+            const v = [], idx = [], count = 100, ring = 8;
+            for (let j = 0; j <= count; j++) {
+                const z = -L / 2 + L * j / count, end = Math.abs(z) / (L / 2);
+                const half = W / 2 * (1 - .13 * Math.pow(end, 8));
+                const top = .93 - .17 * Math.pow(end, 5) + .015 * z;
+                const dz = Math.min(Math.abs(z - axle), Math.abs(z + axle));
+                const opening = dz < .385 ? R + Math.sqrt(.385 * .385 - dz * dz) : .29;
+                const side = Math.max(.30, opening);
+                for (const [x, y] of [[-half, side], [-half, .73], [-half * .89, top], [half * .89, top], [half, .73], [half, side], [half * .72, .27], [-half * .72, .27]]) v.push(x, y, z);
+            }
+            for (let j = 0; j < count; j++) for (let k = 0; k < ring; k++) {
+                const a = j * ring + k, b = j * ring + (k + 1) % ring;
+                idx.push(a, b, a + ring, b, b + ring, a + ring);
+            }
+            for (let k = 1; k < ring - 1; k++) idx.push(0, k + 1, k, count * ring, count * ring + k, count * ring + k + 1);
+            mesh('Camry_Painted_Body', v, idx, mats.paint);
+            // Sloping windscreen/C pillars and a gently crowned roof, rather than a box cabin.
+            const rr = [[-1.66, .83, .915], [-.87, .715, 1.43], [.38, .705, 1.45], [1.01, .81, .935]], cv = [], ci = [];
+            for (const [z, hw, y] of rr) for (const [x, yy] of [[-hw, .88], [-hw, y - .045], [-hw * .82, y], [hw * .82, y], [hw, y - .045], [hw, .88]]) cv.push(x, yy, z);
+            for (let j = 0; j < 3; j++) for (let k = 0; k < 5; k++) {const n = j * 6 + k; ci.push(n, n + 1, n + 6, n + 1, n + 7, n + 6);}
+            mesh('Camry_Roof_Pillars', cv, ci, mats.paint);
+            panel('Camry_Windshield', [[-.64, 1.398, .40], [.64, 1.398, .40], [.752, .944, .982], [-.752, .944, .982]], mats.glass);
+            panel('Camry_Rear_Window', [[.65, 1.374, -.91], [-.65, 1.374, -.91], [-.76, .943, -1.60], [.76, .943, -1.60]], mats.glass);
+            for (const side of [-1, 1]) {
+                const p = points => side === 1 ? points : points.slice().reverse();
+                panel('Camry_Front_Side_Window_' + side, p([[side * .811, .963, .91], [side * .711, 1.378, .36], [side * .716, 1.368, -.23], [side * .835, .956, -.23]]), mats.glass);
+                panel('Camry_Rear_Side_Window_' + side, p([[side * .836, .956, -.31], [side * .717, 1.367, -.31], [side * .724, 1.348, -.84], [side * .815, .958, -1.46]]), mats.glass);
+                box('Camry_B_Pillar_' + side, side * .79, 1.16, -.27, .045, .42, .065, mats.trim);
+                for (const z of [.04, -1.02]) box('Camry_Door_Handle_' + side, side * .923, .792, z, .025, .025, .145, mats.chrome);
+                box('Camry_Sill_' + side, side * .88, .315, 0, .095, .06, 2.05, mats.paint);
+                // XV70 narrow lamps and angular DRL, no Arrizo grille or full-width rear light bar.
+                const lamp = box('Camry_LED_Headlight_' + side, side * .666, .778, 2.405, .40, .095, .18, mats.headlightLED);
+                lamp.rotation.y = side * .16;
+                box('Camry_Rear_Lamp_' + side, side * .67, .782, -2.425, .41, .105, .10, mats.taillightRed);
+                box('Camry_Rear_Lamp_Inner_' + side, side * .38, .803, -2.455, .20, .035, .02, mats.taillightRed);
+                const ex = new THREE.Mesh(new THREE.CylinderGeometry(.045, .045, .18, 12), mats.chrome);
+                ex.rotation.x = Math.PI / 2; ex.position.set(side * .64, .34, -2.47); ex.name = 'Camry_Exhaust_' + side; root.add(ex);
+            }
+            // Trapezoidal broad lower grille and the chrome V above it distinguish the XV70 nose.
+            panel('Camry_Lower_Grille', [[-.56, .655, 2.458], [.56, .655, 2.458], [.70, .32, 2.458], [-.70, .32, 2.458]], mats.darkPlastic);
+            for (let j = 0; j < 7; j++) {const y = .35 + j * .042, width = 1.36 - j * .04; box('Camry_Grille_Fin_' + j, 0, y, 2.470, width, .013, .016, mats.trim);}
+            for (const side of [-1, 1]) {const bar = box('Camry_Chrome_V_' + side, side * .32, .738, 2.475, .68, .022, .035, mats.chrome); bar.rotation.z = side * .12;}
+            const badge = new THREE.Mesh(new THREE.TorusGeometry(.053, .009, 6, 24), mats.chrome);
+            badge.name = 'Camry_Oval_Emblem'; badge.scale.y = .64; badge.position.set(0, .74, 2.491); root.add(badge);
+            root.add(createCockpitInterior(THREE, mats, 1.48, 2.15, .45, .38));
+            root.add(createSideMirrors(THREE, mats, 1.63, -.12, 1.02, .73, 'paint'));
+            root.add(createWipers(THREE, mats, 1.48, .97, .82));
+            for (const front of [true, false]) {const plate = createLicensePlate(THREE, 'К 070 КК | 777 RUS', front);plate.position.set(0, front ? .49 : .60, front ? 2.490 : -2.465);root.add(plate);}
+            return { root, bodyLength: L, bodyWidth: W, wheelBase: axle, wheelTrack: .79, wheelR: R, defaultWheels: 'stock' };
         }
 
         // -------------------------------------------------------------
@@ -5426,7 +5410,7 @@
         const trackW = spec.wheelTrack + spacerOffset;
 
         // Front Left
-        const wFL = createDetailedWheel(THREE, mats, wheelStyle, wRadius / 0.33);
+        const wFL = createDetailedWheel(THREE, mats, wheelStyle, wRadius / 0.33, carId === 'camry');
         wFL.name = 'Wheel_FL';
         wFL.position.set(-trackW, wCenterY, spec.wheelBase);
         wFL.rotation.y = Math.PI;
@@ -5438,7 +5422,7 @@
         wheelsRig.add(wFL);
 
         // Front Right
-        const wFR = createDetailedWheel(THREE, mats, wheelStyle, wRadius / 0.33);
+        const wFR = createDetailedWheel(THREE, mats, wheelStyle, wRadius / 0.33, carId === 'camry');
         wFR.name = 'Wheel_FR';
         wFR.position.set(trackW, wCenterY, spec.wheelBase);
         wFR.rotation.z = camberRad;
@@ -5449,7 +5433,7 @@
         wheelsRig.add(wFR);
 
         // Rear Left
-        const wRL = createDetailedWheel(THREE, mats, wheelStyle, wRadius / 0.33);
+        const wRL = createDetailedWheel(THREE, mats, wheelStyle, wRadius / 0.33, carId === 'camry');
         wRL.name = 'Wheel_RL';
         wRL.position.set(-trackW, wCenterY, -spec.wheelBase);
         wRL.rotation.y = Math.PI;
@@ -5460,7 +5444,7 @@
         wheelsRig.add(wRL);
 
         // Rear Right
-        const wRR = createDetailedWheel(THREE, mats, wheelStyle, wRadius / 0.33);
+        const wRR = createDetailedWheel(THREE, mats, wheelStyle, wRadius / 0.33, carId === 'camry');
         wRR.name = 'Wheel_RR';
         wRR.position.set(trackW, wCenterY, -spec.wheelBase);
         wRR.rotation.z = camberRad;
@@ -5520,7 +5504,7 @@
         subaru: './assets/models/subaru_wrx.glb',     // Authentic Subaru Impreza WRX STI sports sedan (3.79 MB)
         m5e60: './assets/models/bmw.glb',            // Real BMW Sport Sedan (2.97 MB, fast load)
         silvia: './assets/models/nissan_370z.glb',    // Real Nissan Z34 JDM Drift Sport Coupe (3.54 MB)
-        camry: './assets/models/arrizo8.glb',         // Real Executive Business Sedan (3.69 MB)
+        // Camry uses the dedicated XV70 procedural body; arrizo8.glb is a Chery.
         lc300: './assets/models/landcruiser.glb',     // Real Toyota Land Cruiser (1.41 MB, fast load)
         gtr: './assets/models/gtr.glb',               // Real Nissan GT-R R35 Nismo (10.22 MB)
 
@@ -10230,7 +10214,7 @@
         subaru: './assets/thumbnails/subaru.png',
         m5e60: './assets/thumbnails/m5e60.png',
         silvia: './assets/thumbnails/silvia.png',
-        camry: './assets/thumbnails/camry.png',
+        camry: './assets/thumbnails/camry-xv70.png',
         lc300: './assets/thumbnails/lc300.png',
         gtr: './assets/thumbnails/gtr.png',
         e63: './assets/thumbnails/e63.png',
@@ -16955,6 +16939,7 @@
         Car3DRacingEngine,
         RaceEffectsManager: RaceEffectsManagerClass,
         buildDetailedCarModel,
+        proceduralModelVersions: Object.freeze({camry: 'xv70-1'}),
         identifyCarModel,
         STATIC_3D_THUMBNAILS,
         getStaticThumbnail,

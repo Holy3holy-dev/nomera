@@ -608,8 +608,8 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             IL: { title: 'ILLINOIS', slogan: 'LAND OF LINCOLN', theme: 'il' },
             WA: { title: 'WASHINGTON', slogan: 'EVERGREEN STATE', theme: 'wa' },
             MI: { title: 'MICHIGAN', slogan: 'WATER-WINTER WONDERLAND', theme: 'mi' },
-            GA: { title: 'GEORGIA', slogan: 'PEACH STATE', theme: 'ga' },
-            NJ: { title: 'NEW JERSEY', slogan: 'GARDEN STATE', theme: 'nj' }
+            GA: { title: 'GEORGIA', slogan: 'IN GOD WE TRUST', theme: 'ga' },
+            NJ: { title: 'New Jersey', slogan: 'Garden State', theme: 'nj' }
         };
 
         const UAE_EMIRATE_PLATE_META = {
@@ -1070,7 +1070,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 }
                 const usMeta = US_STATE_PLATE_META[reg] || { title: reg, slogan: 'USA' };
                 const sep = reg === 'TX' ? '★' : (reg === 'FL' ? '🍊' : (reg === 'NY' ? '-' : '•'));
-                return `<span class="mp-usa-top" data-state="${escapeHtml(reg)}" aria-hidden="true">${escapeHtml(usMeta.title)}</span><span class="mp-main mp-usa-main"><span class="mp-let">${escapeHtml(letters)}</span><span class="mp-usa-sep" aria-hidden="true">${sep}</span><span class="mp-num">${escapeHtml(digits)}</span></span><span class="mp-usa-bot" aria-hidden="true">${escapeHtml(usMeta.slogan)}</span><span class="mp-pipe-sr"> | ${escapeHtml(reg)} USA</span>`;
+                return `<span class="mp-usa-top" data-state="${escapeHtml(reg)}" data-state-art="${US_STATE_PLATE_META[reg]?'true':'false'}">${escapeHtml(usMeta.title)}</span><span class="mp-main mp-usa-main"><span class="mp-let">${escapeHtml(letters)}</span><span class="mp-usa-sep" aria-hidden="true">${sep}</span><span class="mp-num">${escapeHtml(digits)}</span></span><span class="mp-usa-bot" aria-hidden="true">${escapeHtml(usMeta.slogan)}</span><span class="mp-pipe-sr"> | ${escapeHtml(reg)} USA</span>`;
             }
 
             const jpnMatch = raw.match(/^(.*?)\s*\|\s*([A-Z0-9]{1,3})\s+JPN$/i);
