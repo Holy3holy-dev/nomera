@@ -353,7 +353,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 } else if (rawDigits.startsWith('0') && rawDigits !== '000') {
                     formattedDigits = `・・ ${rawDigits[1]}${rawDigits[2]}`;
                 } else {
-                    formattedDigits = `・${rawDigits[0]}-${rawDigits[1]}${rawDigits[2]}`;
+                    formattedDigits = `・${rawDigits}`;
                 }
             }
             return {
@@ -606,7 +606,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
         const US_STATE_PLATE_META = {
             CA: { title: 'California', slogan: 'dmv.ca.gov', theme: 'ca' },
-            NY: { title: 'NEW YORK', slogan: 'THE EMPIRE STATE', theme: 'ny' },
+            NY: { title: 'NEW YORK', slogan: 'EXCELSIOR', theme: 'ny' },
             FL: { title: 'MYFLORIDA.COM', slogan: 'SUNSHINE STATE', theme: 'fl' },
             TX: { title: 'TEXAS', slogan: 'THE LONE STAR STATE', theme: 'tx' },
             NV: { title: 'NEVADA', slogan: 'HOME MEANS NEVADA', theme: 'nv' },

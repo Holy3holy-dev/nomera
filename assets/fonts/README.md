@@ -5,3 +5,11 @@
 Reference: https://byborg.ru/img/gost/GOST_R_50577-2018.pdf (official 2018 edition mirrored by a plate supplier). The reference PDF is not included in the website or source package.
 
 Rebuild using `scripts/build-russian-plate-font.py` with Python fonttools and brotli. Only the resulting 1.9 KB WOFF2 is needed at runtime. No font service is contacted. Coverage includes digits, the twelve allowed Russian plate letters, Latin visual aliases and R/U/S.
+
+## Other national screen families
+
+`nomera-registration-us/kz/jp/ae.woff2` are original compact serial outlines built by `scripts/build-national-plate-fonts.py`. Each family has its own proportions and numeric details, guided by the reference samples linked in `docs/AUTHORS_NATIONAL_REGISTRATION.md`. These are screen approximations, not extracted government font files or certified manufacturing dies.
+
+The Japanese and Arabic label subsets derive from Noto Sans JP and Noto Sans Arabic; the California title derives from Mr Dafoe. They are renamed internally to Nomera Japanese Labels, Nomera Arabic Labels and Nomera California Title. The full copyright/OFL notices are included alongside the fonts. The label fonts ensure Japanese and Arabic text remains available on mobile without a network font service. Mr Dafoe is an approximate script title, not California DMV's exact hand lettering.
+
+Original OFL font sources: [Noto Sans JP](https://github.com/google/fonts/tree/main/ofl/notosansjp), [Noto Sans Arabic](https://github.com/google/fonts/tree/main/ofl/notosansarabic), [Mr Dafoe](https://github.com/google/fonts/tree/main/ofl/mrdafoe). For rebuilding, download their TTF files to `work/rims-national-plates/noto-jp.ttf`, `noto-ar.ttf` and `ca-script.ttf`, then run the script with Python, fonttools and brotli. Only the small WOFF2 subsets and license notices are shipped.

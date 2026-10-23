@@ -37,5 +37,6 @@ html=html.replace('</head>',`<link rel="stylesheet" href="./authors-garage.css?v
 html=html.replace('</body>',`<script>NomeraAtelier.mount();</script><script src="./js/authors-garage-ui.js?v=${lodHash('authors-garage-ui.js')}"></script></body>`);
 html=html.replace('</head>',`<link rel="stylesheet" href="./authors-exchange.css?v=${require('node:crypto').createHash('sha256').update(fs.readFileSync(path.join(root,'authors-exchange.css'))).digest('hex').slice(0,12)}"></head>`);
 html=html.replace('</body>',`<script src="./js/authors-exchange-ui.js?v=${lodHash('authors-exchange-ui.js')}"></script></body>`);
+html=html.replace('</head>',`<script src="./js/authors-registration.js?v=${lodHash('authors-registration.js')}"></script><link rel="stylesheet" href="./authors-registration.css?v=${require('node:crypto').createHash('sha256').update(fs.readFileSync(path.join(root,'authors-registration.css'))).digest('hex').slice(0,12)}"></head>`);
 fs.writeFileSync(path.join(root, 'authors.html'), html);
 console.log('authors.html: isolated local entry generated from index.html');

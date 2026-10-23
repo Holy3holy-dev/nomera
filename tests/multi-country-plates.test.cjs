@@ -564,7 +564,7 @@ describe('3D Vehicle Bumper License Plates (RUS / KZ / USA / UAE)', () => {
     assert.ok(kzDims.w >= 0.47 && kzDims.w <= 0.53, `Expected KZ Euro width ~0.48-0.52m, got ${kzDims.w}`);
     assert.ok(kzDims.h >= 0.105 && kzDims.h <= 0.12, `Expected KZ Euro height ~0.11-0.115m, got ${kzDims.h}`);
 
-    // 3. USA plate ('SPD 777 | CA USA') -> 2:1 North American dimensions (0.36 x 0.18)
+    // 3. USA plate ('SPD 777 | CA USA') -> 2:1 North American dimensions (0.3048 x 0.1524)
     const usaPlate = Car3DManager.createLicensePlate('SPD 777 | CA USA', true, 'chrome', 'classic');
     assert.ok(usaPlate && usaPlate.isGroup, 'USA plate must be a THREE.Group');
     assert.equal(usaPlate.userData.isLicensePlate, true);
@@ -573,8 +573,8 @@ describe('3D Vehicle Bumper License Plates (RUS / KZ / USA / UAE)', () => {
     assert.equal(usaPlate.userData.plateStyle, 'classic');
     const { plateMesh: usaFace } = getPlateFaceAndBack(usaPlate);
     const usaDims = getMeshDims(usaFace);
-    assert.ok(Math.abs(usaDims.w - 0.36) < 0.01, `Expected USA width 0.36m, got ${usaDims.w}`);
-    assert.ok(Math.abs(usaDims.h - 0.18) < 0.01, `Expected USA height 0.18m, got ${usaDims.h}`);
+    assert.ok(Math.abs(usaDims.w - 0.3048) < 0.01, `Expected USA width 0.3048m, got ${usaDims.w}`);
+    assert.ok(Math.abs(usaDims.h - 0.1524) < 0.01, `Expected USA height 0.1524m, got ${usaDims.h}`);
 
     // 4. UAE plates ('DXB A 7', 'AUH 01 88 | UAE', 'FUJ M 555 | UAE', 'UAQ B 123 | UAE')
     const uaeCases = [
@@ -1225,7 +1225,7 @@ describe('Collector Book & Car-Plate Synergy (RUS / KZ / USA / UAE)', () => {
     const jpnMiniHtml = app.run("renderMiniPlateInnerHtml('JDM 777 | TKY JPN')");
     assert.match(jpnMiniHtml, /品川 330/);
     assert.match(jpnMiniHtml, /東/);
-    assert.match(jpnMiniHtml, /・7-77/);
+    assert.match(jpnMiniHtml, /・777/);
     assert.match(jpnMiniHtml, /JDM/);
 
     const jpnMini1Digit = app.run("renderMiniPlateInnerHtml('GTR 001 | YKH JPN')");
@@ -1269,7 +1269,7 @@ describe('Collector Book & Car-Plate Synergy (RUS / KZ / USA / UAE)', () => {
     assert.ok(jpn3D && jpn3D.isGroup);
     assert.ok(drawnTexts.some(d => d.text.includes('品川 330')), '3D JPN plate must draw Tokyo Shinagawa kanji header');
     assert.ok(drawnTexts.some(d => d.text.includes('東')), '3D JPN plate must draw Tokyo Fūin seal kanji 東');
-    assert.ok(drawnTexts.some(d => d.text.includes('・7-77')), '3D JPN plate must draw authentic 4-position MLIT digits ・7-77');
+    assert.ok(drawnTexts.some(d => d.text.includes('・777')), '3D JPN plate must draw authentic 4-position MLIT digits ・777');
 
     drawnTexts.length = 0;
     Car3DManager.createLicensePlate('GTR 001 | YKH JPN');

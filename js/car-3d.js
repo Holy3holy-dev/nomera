@@ -848,8 +848,8 @@
 
         // Authentic physical plate dimensions: North American / Japanese JDM 2:1 (0.36x0.18) vs European/GOST 520x112mm
         const is2x1Plate = (country === 'USA' || country === 'JPN');
-        const plateW = is2x1Plate ? 0.36 : 0.52;
-        const plateH = is2x1Plate ? 0.18 : 0.115;
+        const physicalFormats={RUS:[.520,.112],KZ:[.520,.112],USA:[.3048,.1524],JPN:[.330,.165],UAE:[.520,.110]};
+        const [plateW,plateH]=physicalFormats[country]||physicalFormats.RUS;
 
         // Frame material color matching frameStyle: gold #d4af37, carbon #1e293b, chrome #e2e8f0, neon #00f2fe, or classic #111827
         const fStyle = String(frameStyle || 'none').toLowerCase();
@@ -872,7 +872,8 @@
                     const digits = comp.digits || '777';
                     let customEmissiveIntensity = 0.28;
 
-                    if (country === 'JPN') {
+                    if(window.NOMERA_AUTHORS_PREVIEW&&window.NomeraRegistration&&plateStyle==='classic'&&!(country==='RUS'&&(!/^\d{2,3}$/.test(comp.region)||window.getUltraSpecialPlateMeta?.(text)))){canvas.height=Math.round(512*plateH/plateW);window.NomeraRegistration.paint(ctx,comp,{front:isFront});}
+                    else if (country === 'JPN') {
                         // Authentic 512x256 Japanese MLIT Plate (自動車登録番号標 330x165mm, 2:1 aspect ratio)
                         const JPN_META = {
                             TKY: { kanji: '品川', seal: '東', classCode: '330', hira: 'さ' },
@@ -959,7 +960,7 @@
                         const d3 = String(digits || '777').padStart(3, '0').slice(-3);
                         const formattedJpnDigits = (d3.startsWith('00') && d3 !== '000')
                             ? `・・ ・${d3[2]}`
-                            : ((d3.startsWith('0') && d3 !== '000') ? `・・ ${d3[1]}${d3[2]}` : `・${d3[0]}-${d3.slice(1)}`);
+                            : ((d3.startsWith('0') && d3 !== '000') ? `・・ ${d3[1]}${d3[2]}` : `・${d3}`);
                         ctx.font = '900 100px "Inter", "Arial Black", sans-serif';
                         ctx.fillText(formattedJpnDigits, 294, 168);
                     } else if (country === 'USA') {
@@ -1494,6 +1495,7 @@
                     }
 
                     const tex = new THREE.CanvasTexture(canvas);
+                    if(window.NOMERA_AUTHORS_PREVIEW&&window.NomeraRegistration&&plateStyle==='classic'&&!(country==='RUS'&&(!/^\d{2,3}$/.test(comp.region)||window.getUltraSpecialPlateMeta?.(text)))){let disposed=false;tex.addEventListener('dispose',()=>{disposed=true});window.NomeraRegistration.fonts().then(()=>{if(!disposed){window.NomeraRegistration.paint(ctx,comp,{front:isFront});tex.needsUpdate=true;}});}
                     tex.generateMipmaps = true;
                     tex.minFilter = THREE.LinearMipmapLinearFilter;
                     tex.anisotropy = 8;
@@ -7394,6 +7396,7 @@
 
                     // 2. Wheels / Rims
                     if (role === 'rim') {
+                        if(window.NOMERA_AUTHORS_PREVIEW&&window.NomeraVehicleFinish?.preserveMaterial(baseCarId,origMatName)) return mat;
                         if (!styling.wheels || styling.wheels === 'stock') child.visible = true;
                         if (styling.wheels === 'stamps') {
                             return new THREE.MeshStandardMaterial({ color: 0x141416, roughness: 0.72, metalness: 0.35, name: 'Rim_Stamps' });
