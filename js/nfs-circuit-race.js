@@ -600,7 +600,7 @@
                 speedbreaker: false
             };
 
-            this.cameraModes = root.NOMERA_AUTHORS_PREVIEW?['chase', 'far', 'hood', 'bumper','cockpit']:['chase', 'far', 'hood', 'bumper'];
+            this.cameraModes = root.NOMERA_AUTHORS_PREVIEW?['chase', 'far', 'hood', 'bumper','cockpit','top']:['chase', 'far', 'hood', 'bumper'];
             this.cameraModeIndex = 0;
             this.cameraMode = 'chase';
             this.weatherCycleOrder = ['auto', 'day', 'sunset', 'night', 'rain', 'fog', 'snow'];
@@ -958,7 +958,7 @@
                 chase: '🎥 КАМЕРА: БЛИЖНЯЯ',
                 far: '🎥 КАМЕРА: ДАЛЬНЯЯ (ОБЗОР)',
                 hood: '🎥 КАМЕРА: С КАПОТА',cockpit:'🎥 КАМЕРА: ВОДИТЕЛЬ',
-                bumper: '🎥 КАМЕРА: БАМПЕР (АСФАЛЬТ)'
+                bumper: '🎥 КАМЕРА: БАМПЕР (АСФАЛЬТ)',top:'🎥 КАМЕРА: СВЕРХУ'
             };
             if (this.options.onPopup) {
                 this.options.onPopup(labels[this.cameraMode] || '🎥 КАМЕРА', '#38bdf8');

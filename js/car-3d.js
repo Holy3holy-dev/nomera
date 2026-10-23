@@ -10549,6 +10549,7 @@
                 { name: 'top', offset: new this.THREE.Vector3(0, 30.0, -5.5), lookOffset: new this.THREE.Vector3(0, 0.0, 18.0), fov: 68 }, // zoomed out from 11.5m so full car + traffic are visible
                 { name: 'cockpit', offset: new this.THREE.Vector3(0.32, 1.22, -0.24), lookOffset: new this.THREE.Vector3(0.32, 1.12, 32.0), fov: 68 }
             ];
+            if(window.NOMERA_AUTHORS_PREVIEW)this.cameraModes.push({name:'bumper',fov:72});
             this.camPos = new this.THREE.Vector3(0, 2.05, -5.8);
             this.camLook = new this.THREE.Vector3(0, 1.05, 14.0);
             this.camRoll = 0;
@@ -11270,6 +11271,16 @@
                 if (state.speed > 30 && Math.random() < 0.70) {
                     this.spawnWaterSpray(state.x - 0.75 + (Math.random() - 0.5) * 0.35, 0.16, state.z - 2.1);
                     this.spawnWaterSpray(state.x + 0.75 + (Math.random() - 0.5) * 0.35, 0.16, state.z - 2.1);
+                }
+            }
+
+            if(window.NOMERA_AUTHORS_PREVIEW){
+                const rain=this.authorsEnvironment?.weatherWeights?.rain??Number(this.currentActiveWeather==='rain');
+                this.authorsSprayTimer=(this.authorsSprayTimer||0)+Math.min(.05,dt);
+                if(rain>.2&&this.currentBiome!=='tunnel'&&state.speed>45&&this.authorsSprayTimer>=.09){
+                    this.authorsSprayTimer=0;
+                    this.spawnWaterSpray(state.x-.75,.16,state.z-2.1);
+                    this.spawnWaterSpray(state.x+.75,.16,state.z-2.1);
                 }
             }
 
@@ -14522,9 +14533,10 @@
             const modeNames = [
                 'Вид сзади (Динамический)',
                 'Вид сзади (Спортивный)',
-                'Капот / Бампер',
+                window.NOMERA_AUTHORS_PREVIEW?'Вид с капота':'Капот / Бампер',
                 'Вид сверху',
-                '🕹️ Салон (От 1-го лица)'
+                '🕹️ Салон (От 1-го лица)',
+                'Вид с бампера'
             ];
             if (this.options.onPopup) this.options.onPopup('📷 ' + (modeNames[this.cameraMode] || 'Камера'), '#38bdf8');
             return this.cameraMode;

@@ -13,7 +13,7 @@
   }
   if(e.authorsTunnelRoofMaterial)e.scene.traverse(n=>{if(n.name==='TunnelVaultRoof')n.material=e.authorsTunnelRoofMaterial;});
  }
- function weather(e,dt=1/60){const inside=e.currentBiome==='tunnel';for(const [key,node]of [['rain',e.rainSystem],['snow',e.snowSystem]]){if(!node)continue;const weight=e.authorsEnvironment?.weatherWeights?.[key]??Number(e.currentActiveWeather===key);node.visible=!inside&&weight>.004;if(node.material){node.userData.authorsWeatherOpacity??=node.material.opacity;node.material.opacity=node.userData.authorsWeatherOpacity*weight;}} if(inside&&e.lightningFlash){e.lightningFlash=0;const p=e.getWeatherPreset(e.currentActiveWeather);if(p){if(e.ambientLight)e.ambientLight.intensity=p.ambientIntensity;if(e.sunLight)e.sunLight.intensity=p.sunIntensity;e.scene?.background?.setHex?.(p.bgColor);e.scene?.fog?.color?.setHex?.(p.bgColor);}}
+ function weather(e,dt=1/60){const inside=e.currentBiome==='tunnel';for(const [key,node]of [['rain',e.rainSystem],['snow',e.snowSystem]]){if(!node)continue;const weight=e.authorsEnvironment?.weatherWeights?.[key]??Number(e.currentActiveWeather===key);node.visible=key!=='rain'&&!inside&&weight>.004;if(node.material){node.userData.authorsWeatherOpacity??=node.material.opacity;node.material.opacity=node.userData.authorsWeatherOpacity*weight;}} if(inside&&e.lightningFlash){e.lightningFlash=0;const p=e.getWeatherPreset(e.currentActiveWeather);if(p){if(e.ambientLight)e.ambientLight.intensity=p.ambientIntensity;if(e.sunLight)e.sunLight.intensity=p.sunIntensity;e.scene?.background?.setHex?.(p.bgColor);e.scene?.fog?.color?.setHex?.(p.bgColor);}}
 
   e.authorsRoadMaterial?.color.setHex(0xffffff);
  }
