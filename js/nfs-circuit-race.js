@@ -1035,11 +1035,11 @@
                 else {
                     this.state.countdownText = '🟢 СТАРТ!';
                     this.state.racePhase = 'racing';
-                    if (this.options.onPopup) this.options.onPopup('🟢 СТАРТ ГОНКИ!', '#10b981');
+                    if (this.options.onPopup && !this.authorsRun?.signal) this.options.onPopup('🟢 СТАРТ ГОНКИ!', '#10b981');
                     if (this.options.onSound) this.options.onSound('countdown_go');
                 }
                 if (this.state.countdownText !== prevText && this.state.racePhase === 'countdown') {
-                    if (this.options.onPopup) this.options.onPopup(`🚦 ${this.state.countdownText}...`, '#fbbf24');
+                    if (this.options.onPopup && !this.authorsRun?.signal) this.options.onPopup(`🚦 ${this.state.countdownText}...`, '#fbbf24');
                     if (this.options.onSound) this.options.onSound('countdown_beep');
                 }
                 // Allow engine revving on the grid without moving
@@ -1823,6 +1823,7 @@
                 const isStart = cp.index === 0;
                 const gateGroup = new THREE.Group();
                 gateGroup.userData.authorsCheckpointGate=true;
+                gateGroup.userData.authorsStartFinish=isStart;
                 gateGroup.position.set(this.toThreeX(cp.x), this.roadSurface?this.roadSurface.sample(cp.x,cp.z).height:0, this.toThreeZ(cp.z));
                 gateGroup.rotation.y = this.toThreeYaw(Math.atan2(cp.tx, cp.tz));
 
@@ -2270,7 +2271,7 @@
                 const wrongWayHtml = st.isWrongWay
                     ? `<div style="color:#ef4444;font-weight:900;font-size:12px;margin-top:2px;">⚠️ НЕВЕРНОЕ НАПРАВЛЕНИЕ — РАЗВЕРНИТЕСЬ!</div>`
                     : '';
-                const countdownHtml = st.racePhase === 'countdown'
+                const countdownHtml = st.racePhase === 'countdown' && !this.authorsRun?.signal
                     ? `<div style="color:#fbbf24;font-weight:900;font-size:13px;margin-top:2px;">🚦 СТАРТ ЧЕРЕЗ: ${st.countdownText}</div>`
                     : '';
                 const nextTelemetryHtml =

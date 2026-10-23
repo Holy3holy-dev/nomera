@@ -39,6 +39,6 @@ html=html.replace('</head>',`<link rel="stylesheet" href="./authors-exchange.css
 html=html.replace('</body>',`<script src="./js/authors-exchange-ui.js?v=${lodHash('authors-exchange-ui.js')}"></script></body>`);
 html=html.replace('</head>',`<script src="./js/authors-registration.js?v=${lodHash('authors-registration.js')}"></script><link rel="stylesheet" href="./authors-registration.css?v=${require('node:crypto').createHash('sha256').update(fs.readFileSync(path.join(root,'authors-registration.css'))).digest('hex').slice(0,12)}"></head>`);
 html=html.replace('./js/authors-ui.js"','./js/authors-ui.js?v='+lodHash('authors-ui.js')+'"');
-for(const file of ['authors-camera-profiles.js','authors-steering-profiles.js'])html=html.replace('./js/'+file+'"','./js/'+file+'?v='+lodHash(file)+'"');
+for(const file of ['authors-camera-profiles.js','authors-steering-profiles.js','authors-route-dressing.js','authors-race-experience.js'])html=html.replace('./js/'+file+'"','./js/'+file+'?v='+lodHash(file)+'"');
 fs.writeFileSync(path.join(root, 'authors.html'), html);
 console.log('authors.html: isolated local entry generated from index.html');

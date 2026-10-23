@@ -9,3 +9,22 @@ test('Circuit records the final validated split before its settlement callback',
 test('Circuit start uses selected weather for both physics and the visible route',()=>{const old=global.NOMERA_AUTHORS_PREVIEW;global.NOMERA_AUTHORS_PREVIEW=true;let e;try{e=new N.NomeraCircuitRaceEngine(null,{rivalCount:0});e.start({weather:'rain',skipCountdown:true});e.stop();assert.equal(e.weatherMode,'rain');assert.equal(e.currentActiveWeather,'rain');assert.equal(e.playerPhysics.state.weather,'rain');}finally{e?.stop();global.NOMERA_AUTHORS_PREVIEW=old;}});
 test('A weather change on the finish frame cannot save an incomparable record',()=>{const oldPreview=global.NOMERA_AUTHORS_PREVIEW,oldStore=global.localStorage,store=new Map();global.NOMERA_AUTHORS_PREVIEW=true;global.localStorage={getItem:k=>store.get(k)||null,setItem:(k,v)=>store.set(k,v)};const e={currentActiveWeather:'day',state:{raceTimeSec:12,damageTaken:0}};try{E.begin(e,{carName:'VAZ'},'fixture');E.checkpoint(e,{isPlayer:true,checkpointsPassed:1});e.currentActiveWeather='rain';E.finish(e,{driving:0,drift:0});assert.equal(store.size,0);assert(e.authorsRun.weatherChanged);e.currentActiveWeather='day';E.begin(e,{carName:'VAZ'},'fixture');E.checkpoint(e,{isPlayer:true,checkpointsPassed:1});E.finish(e,{driving:0,drift:0});assert.equal(store.size,1);}finally{E.destroy(e);global.NOMERA_AUTHORS_PREVIEW=oldPreview;global.localStorage=oldStore;}});
 test('A completed Author circuit reports finish rather than a voluntary exit',()=>{const old=global.NOMERA_AUTHORS_PREVIEW;global.NOMERA_AUTHORS_PREVIEW=true;let e,reason;try{e=new N.NomeraCircuitRaceEngine(null,{rivalCount:0,onGameOver:r=>reason=r});e.start({skipCountdown:true});e.stop();e.playerProgress.finished=true;e._onPlayerFinishCircuit();assert.equal(reason,'finished');}finally{e?.stop();global.NOMERA_AUTHORS_PREVIEW=old;}});
+test('Braking markers precede distinct bends and their complete footprint clears every road',()=>{
+ for(const id of Object.keys(N.TRACK_PRESETS))for(const resolution of[20,100]){const t=N.buildCircuitTrack(id,resolution),before=JSON.stringify(t),plan=D.brakingPlan(t);assert(plan.length<=24);if(id!=='bayview_sprint')assert(plan.length>=3,id);
+  for(const p of plan){assert([50,100,150].includes(p.distance));assert(Math.abs((p.turnS-p.s+t.totalLength)%t.totalLength-p.distance)<1e-6);const q=t.sampleTrackAtS(p.s);for(const a of[-1.1,0,1.1]){const near=t.projectPointToTrack(p.x+q.nx*a,p.z+q.nz*a);assert(Math.abs(near.lateralOffset)>=near.halfWidth+1.8,id);}}
+  assert.equal(JSON.stringify(t),before);
+ }assert.deepEqual(D.brakingPlan(null),[]);
+});
+test('Gentle Bayview bends do not get misleading hard-braking boards',()=>{for(const resolution of[20,100])assert.deepEqual(D.brakingPlan(N.buildCircuitTrack('bayview_sprint',resolution)),[]);});
+test('Start lights follow the existing countdown clock even while the racing clock is zero',()=>{
+ for(const [countdownTimer,expected]of[[2.4,1],[1.61,1],[1.6,2],[.81,2],[.8,3],[.01,3]])assert.equal(E.startStage({racePhase:'countdown',countdownTimer,raceTimeSec:0}),expected);
+ assert.equal(E.startStage({racePhase:'racing',raceTimeSec:0},true),4);assert.equal(E.startStage({racePhase:'racing',raceTimeSec:1.19},true),4);assert.equal(E.startStage({racePhase:'racing',raceTimeSec:1.2},true),0);
+ assert.equal(E.startStage({racePhase:'racing',raceTimeSec:0},false),0);assert.equal(E.startStage({racePhase:'finished',raceTimeSec:0},true),0);
+});
+test('Visual start signal cannot change grid movement, sounds or the 2.4 second start time',()=>{
+ const old=global.NOMERA_AUTHORS_PREVIEW;global.NOMERA_AUTHORS_PREVIEW=true;let e;const sounds=[],popups=[];
+ try{e=new N.NomeraCircuitRaceEngine(null,{rivalCount:0,onSound:s=>sounds.push(s),onPopup:s=>popups.push(s)});e.start({});e.stop();e.authorsRun={signal:{}};const x=e.playerPhysics.x,z=e.playerPhysics.z;e.keys.gas=true;
+  for(let i=0;i<9;i++)e.update(.25);assert.equal(e.state.racePhase,'countdown');assert.equal(e.state.raceTimeSec,0);assert.equal(e.playerPhysics.x,x);assert.equal(e.playerPhysics.z,z);
+  e.update(.15);assert.equal(e.state.racePhase,'racing');assert.equal(sounds.filter(s=>s==='countdown_go').length,1);assert.equal(sounds.filter(s=>s==='countdown_beep').length,2);assert.equal(popups.length,0);
+ }finally{e?.stop();global.NOMERA_AUTHORS_PREVIEW=old;}
+});

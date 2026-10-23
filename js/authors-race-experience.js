@@ -2,6 +2,15 @@
 (function(root,factory){const api=factory(root);if(typeof module==='object'&&module.exports)module.exports=api;else root.NomeraRaceExperience=api;})(typeof globalThis!=='undefined'?globalThis:this,function(root){
  'use strict';
  const runs=new WeakMap(),clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
+ function startStage(state,sawCountdown){
+  if(state.racePhase==='countdown')return state.countdownTimer>1.6?1:state.countdownTimer>.8?2:3;
+  return sawCountdown&&state.racePhase==='racing'&&(state.raceTimeSec||0)<1.2?4:0;
+ }
+ function updateStart(e,r,st){
+  if(!r.signal)return;if(st.racePhase==='countdown')r.sawCountdown=true;const stage=startStage(st,r.sawCountdown);if(stage===r.signalStage)return;r.signalStage=stage;
+  r.signal.hidden=!stage;r.signal.dataset.stage=stage;r.signal.querySelector('b').textContent=stage===4?'СТАРТ':stage?'ГОТОВЬСЯ К СТАРТУ':'';
+  r.signal.setAttribute('aria-label',stage===4?'Старт':stage?'До старта: '+(4-stage):'');
+ }
  function corner(track,s,speed=0){
   if(!track?.sampleTrackAtS)return null;
   const horizon=clamp(speed/3.6*2.8,65,180);let best=null;
@@ -34,7 +43,9 @@
   destroy(e);const storageKey=(root.NOMERA_STORAGE_PREFIX||'nomera_authors_v1:')+'sector_records:'+encodeURIComponent(String(owner).toLowerCase()),key=recordKey(config,e.currentActiveWeather||config.weather);
   let book=[];try{book=normalizeBook(JSON.parse(root.localStorage.getItem(storageKey)));}catch(_){}
   const run={key,storageKey,book,weather:e.currentActiveWeather,weatherChanged:false,timing:createTiming(book.find(r=>r.key===key)?.times),lastUI:-1,damage:0,config};runs.set(e,run);e.authorsRun=run;
-  if(e.container&&root.document){const hud=root.document.createElement('div');hud.className='ae-route-coach';hud.setAttribute('aria-label','Навигация по трассе');hud.innerHTML='<span class="ae-route-arrow"></span><div><small></small><b></b><span class="ae-sector-live"></span></div>';e.container.append(hud);run.hud=hud;}
+  if(e.container&&root.document){const hud=root.document.createElement('div');hud.className='ae-route-coach';hud.hidden=true;hud.setAttribute('aria-label','Навигация по трассе');hud.innerHTML='<span class="ae-route-arrow"></span><div><small></small><b></b><span class="ae-sector-live"></span></div>';e.container.append(hud);run.hud=hud;
+   if(e.track){const signal=root.document.createElement('div');signal.className='ae-start-signal';signal.hidden=true;signal.setAttribute('role','status');signal.setAttribute('aria-live','polite');signal.innerHTML='<span class="ae-start-lights" aria-hidden="true"><i></i><i></i><i></i></span><b></b>';e.container.append(signal);run.signal=signal;updateStart(e,run,e.state||{});}
+  }
  }
  function checkpoint(e,progress){
   const r=runs.get(e);if(!r||!progress.isPlayer)return;
@@ -47,14 +58,17 @@
  function update(e){
   const r=runs.get(e);if(!r)return;const st=e.state||{},time=st.raceTimeSec||0;
   checkWeather(e,r);
+  // Countdown uses its own clock; raceTimeSec does not advance on the grid.
+  updateStart(e,r,st);
   // Four UI refreshes per second; the driving simulation remains independent.
-  if(time-r.lastUI<.25&&r.lastUI>=0)return;r.lastUI=time;
+  if(time>=r.lastUI&&time-r.lastUI<.25&&r.lastUI>=0)return;r.lastUI=time;
   if(!r.hud)return;
   r.hud.hidden=!!(st.racePhase&&st.racePhase!=='racing')||(!e.track&&!st.wantedStars&&e.mode!=='drift');if(r.hud.hidden)return;
   let label=e.mode==='drift'?'ДРИФТ / СВОБОДНЫЙ ЗАЕЗД':'ШОССЕ / СВОБОДНЫЙ ЗАЕЗД',title=e.mode==='drift'?'Удерживай скольжение':'',arrow='↑',detail=e.mode==='drift'?'Угол · скорость · серия':'Обгоны · дистанция · дрифт',tone='straight';
-  if(e.track&&e.playerProgress){const p=e.playerProgress,q=corner(e.track,p.lastS,st.speed);label='СЕКТОР '+(p.checkpointsPassed+1);const cp=e.track.checkpoints[p.nextCheckpoint],distance=cp?((cp.s-p.lastS+e.track.totalLength)%e.track.totalLength):0;
-   title='До отметки '+Math.round(distance)+' м';detail='Чистых секторов: '+r.timing.clean;
-   if(q){arrow=q.direction==='right'?'↱':'↰';title=q.severity+' · '+q.distance+' м';tone=q.hint<st.speed-15?'brake':'turn';}
+  if(e.track&&e.playerProgress){const p=e.playerProgress,q=corner(e.track,p.lastS,st.speed),recent=r.timing.last&&time<r.highlightUntil;label='СЕКТОР '+(p.nextCheckpoint||e.track.checkpoints.length);
+   r.hud.hidden=!q&&!recent;
+   if(q){arrow=q.direction==='right'?'↱':'↰';title=q.severity+' · '+q.distance+' м';detail='Ориентир: '+q.hint+' км/ч';tone=q.hint<st.speed-15?'brake':'turn';}
+   else if(recent){arrow='✓';title=r.timing.last.clean?'Чистый сектор':'Сектор пройден';}
    if(r.timing.last&&time<r.highlightUntil){const s=r.timing.last;detail='S'+(s.index+1)+' · '+seconds(s.seconds)+(s.delta===null?' · первый результат':' · '+delta(s.delta));tone=s.delta!==null&&s.delta<=0?'best':tone;}
   }else if(st.wantedStars>0){label='ПРЕСЛЕДОВАНИЕ';title='Оторвись от патруля';detail='Розыск '+st.wantedStars+' / 5';tone='brake';}
   r.hud.dataset.tone=tone;r.hud.querySelector('.ae-route-arrow').textContent=arrow;r.hud.querySelector('small').textContent=label;r.hud.querySelector('b').textContent=title;r.hud.querySelector('.ae-sector-live').textContent=detail;
@@ -63,7 +77,7 @@
  function finish(e,receipt){
   const r=runs.get(e);if(!r)return;
   checkWeather(e,r);
-  r.hud?.remove();r.hud=null;
+  r.hud?.remove();r.hud=null;r.signal?.remove();r.signal=null;
   if(r.timing.times.length&&!r.weatherChanged){const book=r.book.filter(x=>x.key!==r.key);book.push({key:r.key,times:r.timing.best});try{root.localStorage.setItem(r.storageKey,JSON.stringify(book.slice(-48)));}catch(_){} }
   const host=root.document?.querySelector('#race-gameover-modal .gameover-stats-card');if(!host)return;
   root.document.getElementById('ae-run-analysis')?.remove();const panel=root.document.createElement('section');panel.id='ae-run-analysis';panel.className='ae-run-analysis';
@@ -75,6 +89,6 @@
   }else{const note=root.document.createElement('small');note.textContent='Топливо, состояние и фактическое зачисление — ниже. Дрифт уже включён в доход до расходов.';panel.append(note);}
   host.before(panel);
  }
- function destroy(e){const r=runs.get(e);r?.hud?.remove();runs.delete(e);delete e.authorsRun;delete e.raceExperienceTelemetry;}
- return{begin,checkpoint,update,finish,destroy,corner,split,createTiming,normalizeBook,recordKey};
+ function destroy(e){const r=runs.get(e);r?.hud?.remove();r?.signal?.remove();runs.delete(e);delete e.authorsRun;delete e.raceExperienceTelemetry;}
+ return{begin,checkpoint,update,finish,destroy,corner,split,createTiming,normalizeBook,recordKey,startStage};
 });
