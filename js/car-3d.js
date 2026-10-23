@@ -957,10 +957,8 @@
                         ctx.font = '900 58px "Hiragino Kaku Gothic ProN", "Yu Gothic", "Inter", sans-serif';
                         ctx.fillText(jpnHira, 66, 166);
 
-                        const d3 = String(digits || '777').padStart(3, '0').slice(-3);
-                        const formattedJpnDigits = (d3.startsWith('00') && d3 !== '000')
-                            ? `・・ ・${d3[2]}`
-                            : ((d3.startsWith('0') && d3 !== '000') ? `・・ ${d3[1]}${d3[2]}` : `・${d3}`);
+                        const serial = String(digits || '777').replace(/^0+(?=\d)/, '');
+                        const formattedJpnDigits = serial.length === 4 ? serial.slice(0,2)+'-'+serial.slice(2) : serial.length===1 ? '・・ ・'+serial : serial.length===2 ? '・・ '+serial : '・'+serial;
                         ctx.font = '900 100px "Inter", "Arial Black", sans-serif';
                         ctx.fillText(formattedJpnDigits, 294, 168);
                     } else if (country === 'USA') {

@@ -130,7 +130,7 @@ function parsePlate(text, countryOverride = null) {
   const mUsaJpn = /^([A-Z]{3})[\s-]+(\d{3,4})\s*\|\s*([A-Z0-9]{2,3})\s+(USA|JPN)$/i.exec(trimmed);
   if (mUsaJpn) {
     const letters = mUsaJpn[1].toUpperCase();
-    const digits = mUsaJpn[2].slice(-3).padStart(3, '0');
+    const digits = mUsaJpn[2];
     const region = mUsaJpn[3].toUpperCase();
     const country = normCountry || mUsaJpn[4].toUpperCase();
     return {
@@ -378,6 +378,7 @@ function getUltraSpecialPlateMeta(l1, l2, l3, num, reg, country = 'RUS') {
   }
   const cCode = (country && COUNTRIES[String(country).toUpperCase()]) ? String(country).toUpperCase() : 'RUS';
   const letters = `${String(l1 || '').toUpperCase()}${String(l2 || '').toUpperCase()}${String(l3 || '').toUpperCase()}`;
+  if (String(country || '').toUpperCase() === 'JPN' && String(num || '').length > 3) return null;
   const digits = String(num || '000').padStart(3, '0').slice(-3);
   const regUp = String(reg || '').toUpperCase();
   if (cCode === 'RUS') {
@@ -1038,6 +1039,22 @@ function priceOfPlate(l1,l2,l3,num,reg,country='RUS') {
   }
 
   const cCode = (country && COUNTRIES[String(country).toUpperCase()]) ? String(country).toUpperCase() : 'RUS';
+  if (cCode === 'JPN' && /^\d{4}$/.test(String(num))) {
+    if (String(num).startsWith('0')) return priceOfPlate(l1,l2,l3,String(num).slice(-3),reg,cCode);
+    const n = String(num), mult = 1.85;
+    const premium = new Set(n).size === 1 ? (n === '7777' ? 1500000 : 700000)
+    : n.endsWith('000') ? 80000
+    : '123456789'.includes(n) || '987654321'.includes(n) ? 35000
+    : n === [...n].reverse().join('') ? 15000
+    : n.slice(0,2) === n.slice(2) ? 12000 : 0;
+    const series = String(l1||'')+String(l2||'')+String(l3||'');
+    let base = 2200;
+    if (COUNTRIES.JPN.elites.includes(series)) base += Math.round(400000*mult) + Math.round((['VIP','ZZZ','AAA','JDM','GTR','TKY'].includes(series)?1300000:750000)*mult);
+    const triple = l1===l2 && l2===l3;
+    base += Math.round((triple?350000:l1===l3?1800:l1===l2||l2===l3?1200:0)*mult);
+    if (['TKY','YKH','OSK','NGY','SPR'].includes(String(reg||'').toUpperCase())) base += Math.round(500*mult) + (triple?Math.round(60000*mult):0);
+    return base + Math.round(premium * mult);
+  }
   if (cCode === 'UAE') {
     return evaluateUaePlateDetails(l1, l2, l3, num, reg).price;
   }
@@ -1314,7 +1331,7 @@ function secureRoll(mode, pity = 0, country = 'RUS'){
         : LADDER_NUMBERS;
       return choose(rarePool);
     }
-    return cCode === 'UAE' ? pickOrdinaryUaeNumber() : pickOrdinary3DigitNumber();
+    return cCode === 'UAE' ? pickOrdinaryUaeNumber() : cCode === 'JPN' ? String(1000 + crypto.randomInt(9000)) : pickOrdinary3DigitNumber();
   }
 
   function generateLuckyLetters() {
@@ -1418,7 +1435,7 @@ function mutate(state, action, key, data, now=Date.now()) {
       : (data?.roll?.country && COUNTRIES[data.roll.country] ? data.roll.country : 'RUS');
     const cfg = COUNTRIES[country];
     const cost = roll?.mode === 'both' ? cfg.spinCostBoth : cfg.spinCostPart;
-    const numRegex = country === 'UAE' ? /^\d{1,5}$/ : /^\d{3}$/;
+    const numRegex = country === 'UAE' ? /^\d{1,5}$/ : country === 'JPN' ? /^\d{3,4}$/ : /^\d{3}$/;
     if(!roll||!['both','numbers','letters'].includes(roll.mode)
       || (roll.num!==null && !numRegex.test(roll.num))
       || (roll.letters!==null && (!Array.isArray(roll.letters)||roll.letters.length!==3||roll.letters.some(l=>!cfg.letters.includes(l)))))throw Error('Неверный тип спина');
@@ -1484,7 +1501,7 @@ function mutate(state, action, key, data, now=Date.now()) {
     const cfg = COUNTRIES[country];
     if(!draft.hasNumbers||!draft.hasLetters||!draft.changedNumbers||!draft.changedLetters)throw Error('Сначала прокрутите цифры и буквы');
     if((a.inventory||[]).length>=1000)throw Error('Инвентарь заполнен');
-    const claimNumRegex = country === 'UAE' ? /^[0-9]{1,5}$/ : /^[0-9]{3}$/;
+    const claimNumRegex = country === 'UAE' ? /^[0-9]{1,5}$/ : country === 'JPN' ? /^[0-9]{3,4}$/ : /^[0-9]{3}$/;
     if(!claimNumRegex.test(draft.num)||!Array.isArray(draft.letters)||draft.letters.length!==3||draft.letters.some(l=>!cfg.letters.includes(l)))throw Error('Неверный номер');
     const [l1,l2,l3]=draft.letters;
     const reg=(typeof data?.region==='string'&&cfg.regRegex.test(data.region))?data.region.toUpperCase():(draft.reg&&cfg.regRegex.test(draft.reg)?String(draft.reg).toUpperCase():cfg.defaultReg);

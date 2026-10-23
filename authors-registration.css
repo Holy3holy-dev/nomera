@@ -1,5 +1,7 @@
+/* Licensed specialist replicas; attribution and remaining approximations: docs/AUTHORS_REGISTRATION_FONTS.md. */
+@font-face{font-family:'Nomera Registration RU';src:url('./assets/fonts/gost-r-50577-93.woff2') format('woff2');font-display:swap}
 @font-face{font-family:'Nomera Registration KZ';src:url('./assets/fonts/nomera-registration-kz.woff2') format('woff2');font-display:swap}
-@font-face{font-family:'Nomera Registration US';src:url('./assets/fonts/nomera-registration-us.woff2') format('woff2');font-display:swap}
+@font-face{font-family:'Nomera Registration US';src:url('./assets/fonts/hansen-license-plate.woff2') format('woff2');font-display:swap}
 @font-face{font-family:'Nomera Registration JP';src:url('./assets/fonts/nomera-registration-jp.woff2') format('woff2');font-display:swap}
 @font-face{font-family:'Nomera Registration AE';src:url('./assets/fonts/nomera-registration-ae.woff2') format('woff2');font-display:swap}
 @font-face{font-family:'Nomera Japanese Labels';src:url('./assets/fonts/nomera-jp-labels.woff2') format('woff2');font-weight:600;font-display:swap}
@@ -55,3 +57,31 @@
 .authors-edition .r-plate.country-jpn :is(.mp-jpn-hira,.mp-jpn-top b){font-family:'Nomera Japanese Labels',sans-serif!important;font-weight:600!important}.authors-edition .r-plate.country-jpn :is(.mp-jpn-seal,.mp-jpn-top small,.mp-jpn-reg){display:none!important}.authors-edition .r-plate.country-uae .mp-uae-em small{font-family:'Nomera Arabic Labels',sans-serif!important}
 .authors-edition .mini-plate.country-usa .mp-usa-main{position:absolute!important;inset:43% 6% auto 6%!important;font-size:2.65em!important;line-height:1!important;display:flex!important;justify-content:center!important;gap:.05em!important}.authors-edition .mini-plate.country-usa .mp-usa-main :is(.mp-num,.mp-let){font-size:1em!important;line-height:1!important}
 .authors-edition .mini-plate.country-jpn .mp-jpn-main{font-size:10px!important;line-height:1!important}.authors-edition .mini-plate.country-jpn .mp-jpn-main .mp-num{font-size:2.7em!important;line-height:1!important}.authors-edition .mini-plate.country-jpn .mp-jpn-main .mp-jpn-hira{font-size:1.6em!important}.authors-edition .mini-plate.country-jpn .mp-jpn-top b{font-size:1.2em!important}
+
+/* GOST letters have a smaller native die than digits in the same em square. */
+.authors-edition #gen-plate-stage #plate-box[data-country=RUS]:not(.special-plate) .letter-cell{font-size:76px!important;height:76px!important}
+/* Fixed rendered digit artwork, not redistributed Japanese font data. */
+.authors-edition #plate-box[data-country=JPN] .num-cell .char-span[data-glyph]:not([data-glyph=""]),.authors-edition .jp-serial-glyph{
+ display:inline-block!important;color:transparent!important;background-color:#174d39!important;
+ -webkit-mask-image:url('./assets/fonts/jp-registration-digits.png');mask-image:url('./assets/fonts/jp-registration-digits.png');
+ -webkit-mask-size:1000% 100%;mask-size:1000% 100%;-webkit-mask-position:var(--jp-glyph) 50%;mask-position:var(--jp-glyph) 50%;
+ -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;width:.57em!important;height:1em!important;font-style:normal;
+}
+.authors-edition #plate-box[data-country=JPN] .jpn-dot-zero .char-span{visibility:hidden!important}
+.authors-edition #gen-plate-stage #plate-box[data-country=JPN][data-jpn-digits="4"] .plate-cells-main{left:94px!important;right:14px!important;gap:7px!important}
+.authors-edition #gen-plate-stage #plate-box[data-country=JPN][data-jpn-digits="4"] .num-cell{width:42px!important;flex:0 0 42px!important}
+.authors-edition #gen-plate-stage #plate-box[data-country=JPN][data-jpn-digits="4"] #cell-n1::before{display:none!important}
+.authors-edition #gen-plate-stage #plate-box[data-country=JPN][data-jpn-digits="4"] #cell-n3{margin-left:13px!important}
+.authors-edition #gen-plate-stage #plate-box[data-country=JPN][data-jpn-digits="4"] #cell-n3::before{content:'–'!important;position:absolute;left:-15px;top:27px;font:24px/1 Arial;color:#174d39}
+.authors-edition :is(.mini-plate,.r-plate).country-jpn .mp-num{display:inline-flex!important;align-items:center;gap:.07em;white-space:nowrap}
+.authors-edition .jp-serial-mark{display:inline-block;font:inherit;font-style:normal;min-width:.18em}
+/* Explicit digit order: extra cells were originally authored for the UAE layout. */
+.authors-edition #gen-plate-stage #plate-box[data-country=JPN] #cell-n1{order:1!important}
+.authors-edition #gen-plate-stage #plate-box[data-country=JPN] #cell-n2{order:2!important}
+.authors-edition #gen-plate-stage #plate-box[data-country=JPN] #cell-n3{order:3!important}
+.authors-edition #gen-plate-stage #plate-box[data-country=JPN] #cell-n4{order:4!important}
+.authors-edition #gen-plate-stage #plate-box[data-country=JPN][data-jpn-digits="4"] #cell-n3::before{display:block!important;transform:none!important}
+/* Native GOST ascent differs from the former drawn font; align the ink, not the em box. */
+.authors-edition #gen-plate-stage #plate-box[data-country=RUS]:not(.special-plate) .char-span{transform:translateY(10px)!important}
+.authors-edition #gen-plate-stage #plate-box[data-country=RUS]:not(.special-plate) #region{top:17px!important}
+.authors-edition #gen-plate-stage #plate-box[data-country=JPN] .num-cell{overflow:visible!important}

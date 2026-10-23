@@ -307,10 +307,10 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             'РФС': { id: 'federal', cssClass: 'special-federal', title: '🇷🇺 ПРОТОКОЛ ФСО • ФЛАГ РФ', badge: '🇷🇺 РФ', sub: 'ПРОТОКОЛ' }
         };
         const JPN_HIRAGANA_POOL = [
-            'あ','か','さ','す','せ','そ','た','ち','つ','て',
+            'さ','す','せ','そ','た','ち','つ','て',
             'と','な','に','ぬ','ね','の','は','ひ','ふ','ほ',
             'ま','み','む','め','も','や','ゆ','よ','ら','り',
-            'る','れ','ろ','わ'
+            'る','ろ'
         ];
         const JPN_PREFECTURE_META = {
             TKY: { kanji: '品川', seal: '東', en: 'SHINAGAWA • TOKYO', classCode: '330', hira: 'さ' },
@@ -336,26 +336,20 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             const s = `${String(l1 || '-')}${String(l2 || '-')}${String(l3 || '-')}`.toUpperCase();
             let hira = meta.hira;
             if (!s.includes('-') && s.length === 3) {
-                if (s === 'JDM') hira = 'わ';
+                if (s === 'JDM') hira = 'さ';
                 else if (s === 'GTR') hira = 'さ';
-                else if (s === 'TKY') hira = 'あ';
+                else if (s === 'TKY') hira = 'す';
                 else if (s === 'DRF') hira = 'ろ';
                 else {
                     const hash = (s.charCodeAt(0) * 31 + s.charCodeAt(1) * 17 + s.charCodeAt(2) * 7) % JPN_HIRAGANA_POOL.length;
                     hira = JPN_HIRAGANA_POOL[Math.abs(hash)] || meta.hira;
                 }
             }
-            const rawDigits = String(num || '---').padStart(3, '0').slice(-3);
-            let formattedDigits = '・-- -';
-            if (!rawDigits.includes('-')) {
-                if (rawDigits.startsWith('00') && rawDigits !== '000') {
-                    formattedDigits = `・・ ・${rawDigits[2]}`;
-                } else if (rawDigits.startsWith('0') && rawDigits !== '000') {
-                    formattedDigits = `・・ ${rawDigits[1]}${rawDigits[2]}`;
-                } else {
-                    formattedDigits = `・${rawDigits}`;
-                }
-            }
+            const rawDigits = String(num || '---').replace(/[^0-9-]/g, '').slice(-4);
+            const significant = rawDigits.replace(/^0+(?=\d)/, '');
+            const formattedDigits = rawDigits.includes('-') ? '・---' : significant.length === 4
+                ? significant.slice(0, 2) + '-' + significant.slice(2)
+                : significant.length === 1 ? '・・ ・'+significant : significant.length === 2 ? '・・ '+significant : '・'+significant;
             return {
                 kanji: meta.kanji,
                 seal: meta.seal || '東',
@@ -373,7 +367,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             }
             if (typeof l1OrPlate === 'string' && l2 === undefined && (l1OrPlate.includes('|') || l1OrPlate.trim().length > 4)) {
                 const raw = l1OrPlate.trim();
-                const jpnM = raw.match(/^([A-Z]{2,3})\s+(\d{3})\s*\|\s*([A-Z0-9]{2,3})\s+JPN$/i);
+                const jpnM = raw.match(/^([A-Z]{2,3})\s+(\d{3,4})\s*\|\s*([A-Z0-9]{2,3})\s+JPN$/i);
                 if (jpnM) {
                     const series = jpnM[1].toUpperCase();
                     const digits = jpnM[2];
@@ -388,6 +382,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             }
             const c = String(country || currentCountry || 'RUS').toUpperCase();
             const series = `${String(l1OrPlate || '').toUpperCase()}${String(l2 || '').toUpperCase()}${String(l3 || '').toUpperCase()}`;
+            if (String(country || '').toUpperCase() === 'JPN' && String(num || '').length > 3) return null;
             const digits = String(num || '000').padStart(3, '0').slice(-3);
             const rUp = String(reg || '').toUpperCase();
             if (c === 'RUS') {
@@ -674,7 +669,16 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             }
 
             if (cUpper === 'JPN') {
-                const numStr = String(currentNum || '---');
+                const rawNum = String(currentNum || '---');
+                const numStr = rawNum.length === 4 && rawNum.startsWith('0') ? rawNum.slice(-3) : rawNum;
+                if (rawNum !== numStr) [cN1,cN2,cN3].forEach((cell,i) => setCellChar(cell.id,numStr[i]));
+                const four = numStr.length === 4 && !numStr.startsWith('0');
+                if (plateBox) plateBox.setAttribute('data-jpn-digits', four ? '4' : '3');
+                if (cN4) cN4.classList.toggle('uae-cell-hidden', !four);
+                if (four) {
+                    [cN1, cN2, cN3, cN4].forEach(cell => cell?.classList.remove('jpn-dot-zero', 'jpn-no-hyphen'));
+                    return;
+                }
                 if (isSpinning || !boardHasNumbers || numStr.includes('-')) {
                     [cN1, cN2, cN3].forEach(cell => {
                         if (cell && cell.classList) {
@@ -1082,7 +1086,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     if (dMatch) digits = dMatch[0];
                 }
                 const jpnParts = getJpnPlateDisplayParts(letters[0], letters[1], letters[2], digits, reg);
-                return `<span class="mp-jpn-top" aria-hidden="true"><i class="mp-jpn-seal">${escapeHtml(jpnParts.seal)}</i><b>${escapeHtml(jpnParts.header)}</b> <small class="mp-let">${escapeHtml(letters)}</small></span><span class="mp-main mp-jpn-main"><span class="mp-jpn-hira" aria-hidden="true">${escapeHtml(jpnParts.hira)}</span> <span class="mp-num" data-raw-digits="${escapeHtml(digits)}">${escapeHtml(jpnParts.formattedDigits)}</span></span><span class="mp-pipe-sr"> ${escapeHtml(digits)} | </span><span class="mp-reg-box mp-jpn-reg">${escapeHtml(reg)}</span><span class="mp-pipe-sr"> JPN</span>`;
+                return `<span class="mp-jpn-top" aria-hidden="true"><i class="mp-jpn-seal">${escapeHtml(jpnParts.seal)}</i><b>${escapeHtml(jpnParts.header)}</b> <small class="mp-let">${escapeHtml(letters)}</small></span><span class="mp-main mp-jpn-main"><span class="mp-jpn-hira" aria-hidden="true">${escapeHtml(jpnParts.hira)}</span> <span class="mp-num" data-raw-digits="${escapeHtml(digits)}">${window.NOMERA_AUTHORS_PREVIEW && window.NomeraRegistration ? NomeraRegistration.japanMarkup(digits) : escapeHtml(jpnParts.formattedDigits)}</span></span><span class="mp-pipe-sr"> ${escapeHtml(digits)} | </span><span class="mp-reg-box mp-jpn-reg">${escapeHtml(reg)}</span><span class="mp-pipe-sr"> JPN</span>`;
             }
 
             const uaeMatch = raw.match(/^(.*?)\s*\|\s*([A-Z0-9]{1,3})\s+UAE$/i);
@@ -1922,6 +1926,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                             setCellChar('cell-n1', currentNum[0] || '-');
                             setCellChar('cell-n2', currentNum[1] || '-');
                             setCellChar('cell-n3', currentNum[2] || '-');
+                            if (currentCountry === 'JPN') setCellChar('cell-n4', currentNum[3] || '-');
                             setCellChar('cell-l2', currentL2);
                             setCellChar('cell-l3', currentL3);
                         }
@@ -5265,6 +5270,22 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
         function getCalculatedPrice(l1, l2, l3, num, reg, country = currentCountry) {
             const code = String(country || 'RUS').toUpperCase();
+            if (code === 'JPN' && /^\d{4}$/.test(String(num))) {
+                if (String(num).startsWith('0')) return getCalculatedPrice(l1,l2,l3,String(num).slice(-3),reg,code);
+                const n = String(num), mult = 1.85;
+                const premium = new Set(n).size === 1 ? (n === '7777' ? 1500000 : 700000)
+                    : n.endsWith('000') ? 80000
+                    : '123456789'.includes(n) || '987654321'.includes(n) ? 35000
+                    : n === [...n].reverse().join('') ? 15000
+                    : n.slice(0,2) === n.slice(2) ? 12000 : 0;
+                const series = String(l1||'')+String(l2||'')+String(l3||'');
+                let base = 2200;
+                if (PLATE_COUNTRIES.JPN.eliteLetters.includes(series)) base += Math.round(400000*mult) + Math.round((['VIP','ZZZ','AAA','JDM','GTR','TKY'].includes(series)?1300000:750000)*mult);
+                const triple = l1===l2 && l2===l3;
+                base += Math.round((triple?350000:l1===l3?1800:l1===l2||l2===l3?1200:0)*mult);
+                if (['TKY','YKH','OSK','NGY','SPR'].includes(String(reg||'').toUpperCase())) base += Math.round(500*mult) + (triple?Math.round(60000*mult):0);
+                return base + Math.round(premium * mult);
+            }
             if (code === 'UAE') {
                 return evaluateUaePlateDetails(l1, l2, l3, num, reg).price;
             }
@@ -5703,9 +5724,12 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
         function setCellChar(cellId, char) {
             const span = getCellSpan(cellId);
-            if (span && span.textContent !== char) {
-                span.textContent = char;
-                span.innerText = char;
+            if (!span) return;
+            if (span.textContent !== char) { span.textContent = char; span.innerText = char; }
+            const glyph = /^[0-9]$/.test(char) ? char : '';
+            if (span.dataset && span.dataset.glyph !== glyph) {
+                span.dataset.glyph = glyph;
+                if (glyph) span.style?.setProperty?.('--jp-glyph', Number(char) * 100 / 9 + '%');
             }
         }
 
@@ -5713,6 +5737,14 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             initAudio();
             if(window.NOMERA_AUTHORS_PREVIEW)window.NomeraPrestige?.cancel();
             isSpinning = true;
+
+            if (currentCountry === 'JPN' && targets.some(id => id.startsWith('cell-n'))) {
+                targets = targets.filter(id => !id.startsWith('cell-n'));
+                const serial = currentNum.length === 4 && currentNum.startsWith('0') ? currentNum.slice(-3) : currentNum;
+                for (let i = 0; i < serial.length; i++) {
+                    const id = 'cell-n' + (i + 1); targets.push(id); finalValues[id] = serial[i];
+                }
+            }
 
             if (String(currentCountry || 'RUS').toUpperCase() === 'UAE' && Array.isArray(targets) && finalValues) {
                 const fL1 = (finalValues['cell-l1'] ?? finalValues.l1) ?? currentL1;
@@ -5985,10 +6017,11 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 if (draft.hasNumbers || mode === 'both' || mode === 'numbers') {
                     if (draft.num) {
                         currentNum = draft.num;
-                        if (!mode && currentCountry !== 'UAE' && currentNum.length === 3) {
+                        if (!mode && currentCountry !== 'UAE' && (currentNum.length === 3 || currentCountry === 'JPN' && currentNum.length === 4)) {
                             setCellChar('cell-n1', currentNum[0]);
                             setCellChar('cell-n2', currentNum[1]);
                             setCellChar('cell-n3', currentNum[2]);
+                            if (currentCountry === 'JPN') setCellChar('cell-n4', currentNum[3] || '-');
                         }
                     }
                     boardHasNumbers = !!draft.hasNumbers;
@@ -6217,7 +6250,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     : LADDER_NUMBERS_LOCAL;
                 return randomItem(rarePool);
             }
-            return cCode === 'UAE' ? pickOrdinaryUaeNumberLocal() : pickOrdinary3DigitNumberLocal();
+            return cCode === 'UAE' ? pickOrdinaryUaeNumberLocal() : cCode === 'JPN' ? String(1000 + Math.floor(Math.random() * 9000)) : pickOrdinary3DigitNumberLocal();
         }
 
         function generateLuckyLettersLocal(forceTier, pity = 0, country = currentCountry) {
@@ -11946,12 +11979,12 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             const lettersOnly = mainPart.replace(/[^А-ЯЁA-Z]/gi, '').toUpperCase();
             const price = Number(plateObjOrText?.price) || 0;
             const d1 = digits3[0], d2 = digits3[1], d3 = digits3[2];
-            const isMirror = digitsRaw.length >= 2 && (digitsRaw.length === 2 ? false : (d1 === d3 && d1 !== d2));
+            const isMirror = digitsRaw.length >= 3 && digitsRaw === [...digitsRaw].reverse().join('') && new Set(digitsRaw).size > 1;
             const isTriple = digitsRaw.length === 3 && d1 === d2 && d2 === d3;
             const isRoundHundred = /^[1-9]00$/.test(digits3) && digitsRaw.length === 3;
-            const isFirstTen = (digitsRaw.length === 1 && /^[1-9]$/.test(digitsRaw)) || (/^00[1-9]$/.test(digits3));
+            const isFirstTen = (digitsRaw.length === 1 && /^[1-9]$/.test(digitsRaw)) || (digitsRaw.length === 3 && /^00[1-9]$/.test(digits3));
             const isSameLetters = lettersOnly.length >= 2 && lettersOnly.split('').every(ch => ch === lettersOnly[0]);
-            const isLadder = ['123', '234', '345', '456', '567', '678', '789', '987', '876', '765', '654', '543', '432', '321', '012'].includes(digits3);
+            const isLadder = ['123', '234', '345', '456', '567', '678', '789', '987', '876', '765', '654', '543', '432', '321', '012', '1234', '2345', '3456', '4567', '5678', '6789', '9876', '8765', '7654', '6543', '5432', '4321'].includes(digitsRaw);
             return {
                 raw,
                 mainPart,

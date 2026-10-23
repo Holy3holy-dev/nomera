@@ -66,3 +66,15 @@
 .authors-edition .ae-rus-plate{font-family:'Nomera Registration RU',Bahnschrift,sans-serif!important;font-weight:400!important;background:#fafbf8!important;color:#111619!important}
 .authors-edition .ae-rus-plate .ae-mini-main b,.authors-edition .ae-rus-plate .ae-mini-region b{font-family:inherit!important;font-weight:400!important}
 .authors-edition #plate-box[data-country=RUS]:not(.special-plate) .plate-region{transform:none!important;transition:none!important;max-width:none!important;max-height:none!important}
+
+/* Rarity reveals stay behind the registration surface. All motion is finite. */
+.ae-drop-facet{position:absolute;left:50%;top:52%;height:65px;width:18px;margin-left:-9px;transform-origin:50% 100%;opacity:0;background:linear-gradient(transparent,var(--ae-drop-accent));clip-path:polygon(50% 0,100% 74%,50% 100%,0 74%)}
+.ae-drop-satin .ae-drop-ring{border-radius:12px;inset:29% 10%;border-width:1px}
+.ae-drop-twin .ae-drop-ring{border-radius:14px;inset:22% 7%;border-width:2px;outline:1px solid #8bedd247;outline-offset:7px}
+.ae-drop-ruby .ae-drop-ring{border-radius:6px;inset:19% 9%;border-width:2px;box-shadow:0 0 22px #ff77774a,inset 0 0 18px #ff777729}
+.ae-drop-prism .ae-drop-ring{border-radius:24%;border-width:2px;border-color:#d4b3ff #8bdfff #efbcff #a7a2ff;box-shadow:0 0 30px #c4a6ff40}
+.ae-drop-aperture .ae-drop-ring{border-radius:40%;border-width:2px;outline:1px solid #e9cc8a55;outline-offset:9px;box-shadow:0 0 40px #f4d48e47,inset 0 0 24px #f4d48e20}
+.ae-drop-corona .ae-drop-ring{border-radius:32%;border-width:3px;outline:1px solid #ffdd9e88;outline-offset:12px;box-shadow:0 0 50px #ffdb9e66,inset 0 0 32px #ffdb9e30}
+.ae-drop-corona .ae-drop-spark{width:4px;height:4px;border-radius:0;clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)}
+.authors-edition #gen-plate-stage[data-rarity-tier=epic] #gen-rarity{background:#241c38!important}
+.authors-edition #gen-plate-stage[data-rarity-tier=legendary] #gen-rarity,.authors-edition #gen-plate-stage[data-rarity-tier=blatnoy] #gen-rarity{background:#302617!important;color:#ffdfa5!important;border-color:#e9c780!important}

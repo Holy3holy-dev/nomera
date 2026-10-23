@@ -1,0 +1,6 @@
+License Plate — Dave Hansen, 2005.
+Source archive: https://famfonts.com/zips/license-plate.zip
+Source page: https://famfonts.com/license-plate/
+Author statement, 2024-06-05: "It is free. Absolutely free. Personal use, commercial use, it’s all good."
+This specialist replica is based on Washington state plates. It is NOT an exact universal die for every US state.
+Subset converted to WOFF2 for local web loading. The source archive's Famous Fonts.txt is retained in the research record; no separate font EULA was supplied.
