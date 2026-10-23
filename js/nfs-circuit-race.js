@@ -22,11 +22,11 @@
 (function (root, factory) {
     if (typeof module === 'object' && module.exports) {
         const nfsPhysics = require('./nfs-physics.js');
-        module.exports = factory(nfsPhysics, root, require('./authors-road-surface.js'));
+        module.exports = factory(nfsPhysics, root, require('./authors-road-surface.js'), require('./authors-rival-ai.js'));
     } else {
-        root.NomeraCircuitRace = factory(root.NomeraNfsPhysics, root, root.NomeraRoadSurface);
+        root.NomeraCircuitRace = factory(root.NomeraNfsPhysics, root, root.NomeraRoadSurface, root.NomeraRivalAI);
     }
-}(typeof globalThis !== 'undefined' ? globalThis : (typeof window !== 'undefined' ? window : this), function (NomeraNfsPhysics, root, RoadSurface) {
+}(typeof globalThis !== 'undefined' ? globalThis : (typeof window !== 'undefined' ? window : this), function (NomeraNfsPhysics, root, RoadSurface, RivalAI) {
     'use strict';
 
     const clamp = (val, min, max) => Math.max(min, Math.min(max, val));
@@ -1326,6 +1326,7 @@
 
             const proj = this.track.projectPointToTrack(rState.x, rState.z, rProg.lastSegIndex);
             rPhys.setSurface(proj.surface);
+            if(root.NOMERA_AUTHORS_PREVIEW && RivalAI) return this._stepAiRival(rival,dt,RivalAI.drive(this,rival,dt),proj);
 
             // Rubber-banding within realistic physics limits
             const playerDist = this.playerProgress ? this.playerProgress.unwrappedS : 0;
@@ -1419,13 +1420,14 @@
                 }
             }
 
-            rPhys.update(dt, {
-                steer: steerCmd,
-                gas: gasCmd,
-                brake: brakeCmd,
-                handbrake: false,
-                nitro: nitroCmd
-            });
+            return this._stepAiRival(rival,dt,{
+                steer:steerCmd,gas:gasCmd,brake:brakeCmd,handbrake:false,nitro:nitroCmd
+            },proj);
+        }
+
+        _stepAiRival(rival,dt,controls,proj){
+            const rPhys=rival.physics,rState=rPhys.state,rProg=rival.progress;
+            rPhys.update(dt,controls);
 
             const projAfter = this.track.projectPointToTrack(rState.x, rState.z, proj.segIndex);
             if (projAfter.wallPenetration > 0 || rPhys.mwTires&&Math.abs(projAfter.lateralOffset)+rPhys.profile.wheelbase*.85>projAfter.halfWidth) {
@@ -1456,7 +1458,9 @@
                     if(a.mwTires){
                         const contact=a.getVehicleContact(b);
                         if(contact){
-                            const result=a._resolveMWContact(b,{...contact,restitution:.28});
+                            const authors=!!(root.NOMERA_AUTHORS_PREVIEW&&RivalAI);
+                            const result=a._resolveMWContact(b,{...contact,restitution:authors?.12:.28,friction:authors?.3:contact.friction});
+                            if(authors&&result.closingSpeedMps>1.2)for(const rival of this.rivals)if(rival.physics===a||rival.physics===b)RivalAI.contact(rival,this.state.raceTimeSec);
                             if(i===0&&result.closingSpeedMps>5){
                                 this.state.damageTaken=clamp(this.state.damageTaken+result.closingSpeedMps*.35,0,100);
                                 if(this.options.onSound)this.options.onSound('crash');

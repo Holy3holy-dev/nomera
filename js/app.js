@@ -1529,7 +1529,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             if (touch3D && isTouchOrMobileDevice()) {
                 touch3D.classList.add('touch-enabled');
                 const btnText = document.getElementById('btn-toggle-touch-text');
-                if (btnText) btnText.textContent = 'Скрыть руль';
+                if (btnText) { const mode=document.getElementById('race-3d-viewport-wrapper')?.dataset?.screen; btnText.textContent=window.NOMERA_AUTHORS_PREVIEW&&mode!==undefined?(mode==='true'?'Касания':'Кнопки'):'Скрыть руль'; }
             }
         }
         window.syncMobileTouchControlsVisibility = syncMobileTouchControlsVisibility;
@@ -20848,6 +20848,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         window.cycleRaceRadio = cycleRaceRadio;
 
         function toggle3DTouchControls() {
+            if(window.NOMERA_AUTHORS_PREVIEW&&window.NomeraScreenControls?.toggle(car3DRacingEngine))return;
             const touchEl = document.getElementById('race-3d-touch-controls');
             const btnText = document.getElementById('btn-toggle-touch-text');
             if (!touchEl) return;

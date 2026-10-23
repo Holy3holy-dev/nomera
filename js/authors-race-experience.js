@@ -76,6 +76,7 @@
  }
  function finish(e,receipt){
   const r=runs.get(e);if(!r)return;
+  root.NomeraScreenControls?.destroy(e);
   checkWeather(e,r);
   r.hud?.remove();r.hud=null;r.signal?.remove();r.signal=null;
   if(r.timing.times.length&&!r.weatherChanged){const book=r.book.filter(x=>x.key!==r.key);book.push({key:r.key,times:r.timing.best});try{root.localStorage.setItem(r.storageKey,JSON.stringify(book.slice(-48)));}catch(_){} }
