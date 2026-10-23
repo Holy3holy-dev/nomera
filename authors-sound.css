@@ -1,0 +1,15 @@
+body.authors-edition .ae-sound-settings{max-height:calc(100svh - 28px);overflow:auto;overscroll-behavior:contain;width:min(520px,calc(100vw - 24px));padding:22px;box-sizing:border-box}
+.ae-sound-studio{margin:18px 0;padding:16px;background:#0a1722;border:1px solid #304653;border-radius:10px}.ae-sound-studio h4{margin:0 0 13px;color:#e2efb0;font-size:13px;letter-spacing:.04em}.ae-sound-studio h4:not(:first-child){margin-top:20px}
+.ae-audio-range{display:block;margin:12px 0;color:#c4d3de;font:600 12px system-ui}.ae-audio-range>span{display:flex;justify-content:space-between;gap:12px}.ae-audio-range output{color:#d7f889}.ae-audio-range input{display:block;width:100%;min-height:44px;margin:0;accent-color:#d6f780;touch-action:pan-x}
+.ae-audio-preview{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:7px;align-items:end}.ae-audio-preview label,.ae-audio-station{display:flex;flex-direction:column;gap:6px;min-width:0;font:600 12px system-ui;color:#c4d3de}.ae-audio-preview select,.ae-audio-station select{width:100%;min-height:44px;max-width:100%;padding:8px;background:#102633;color:#e8f2f5;border:1px solid #506c7a;border-radius:6px;font:600 12px system-ui}
+.ae-radio-status{font:500 12px/1.45 system-ui;color:#bde6e0;min-height:32px;margin:9px 0}.ae-audio-radio-actions{display:flex;gap:8px}.ae-sound-studio .btn{min-height:44px;font-size:12px;padding:8px 12px}.ae-sound-studio>small{display:block;color:#96acba;font:12px/1.5 system-ui;margin-top:12px}.ae-audio-race{grid-column:1/-1;border-top:1px solid #3c5361;padding-top:10px}.ae-audio-race .ae-audio-range{margin-bottom:0}
+@media(max-width:380px){body.authors-edition .ae-sound-settings{padding:14px}.ae-sound-studio{padding:10px}.ae-audio-preview{grid-template-columns:1fr 1fr}.ae-audio-preview label{grid-column:1/-1}}
+
+.ae-sound-settings #volume-output{color:#d7f889!important}
+.ae-sound-settings input[type=range]::-webkit-slider-thumb,.ae-audio-race input[type=range]::-webkit-slider-thumb{background:#d7f889!important;border:2px solid #10212c!important;box-shadow:0 0 0 1px #89a25c!important;width:20px;height:20px;border-radius:50%}
+.ae-sound-settings input[type=range]::-moz-range-thumb,.ae-audio-race input[type=range]::-moz-range-thumb{background:#d7f889!important;border:2px solid #10212c!important;width:18px;height:18px;border-radius:50%}
+.ae-sound-settings .ae-audio-range input,.ae-audio-race .ae-audio-range input{appearance:none;-webkit-appearance:none;background:transparent!important}
+.ae-audio-range input::-webkit-slider-runnable-track{height:6px;background:#3b5262!important;border-radius:5px}
+.ae-audio-range input::-webkit-slider-thumb{-webkit-appearance:none;margin-top:-7px}
+.ae-audio-range input::-moz-range-track{height:6px;background:#3b5262!important;border-radius:5px}
+.ae-audio-range input::-moz-range-progress{height:6px;background:#d7f889!important;border-radius:5px}

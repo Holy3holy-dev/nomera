@@ -1,0 +1,30 @@
+{
+  "source": "Original deterministic instrumental compositions created for NOMERA with scripts/build-authors-radio.py. No external recordings or game soundtrack samples.",
+  "license": "Project-authored assets; no third-party recording license required.",
+  "tracks": [
+    {
+      "id": "asphalt-pulse",
+      "title": "Asphalt Pulse",
+      "bpm": 136,
+      "seconds": 56.470588235294116,
+      "bytes": 1130679,
+      "sha256": "17aa21ac30f8b5170166b201527bc2f900235e3467141ed0fb706019fed6b23c"
+    },
+    {
+      "id": "neon-district",
+      "title": "Neon District",
+      "bpm": 112,
+      "seconds": 68.57142857142857,
+      "bytes": 1372573,
+      "sha256": "127940521fe0dc395283bf15e73bd0d63740c72624d2d49a2c2558abd17cd0bc"
+    },
+    {
+      "id": "pursuit-line",
+      "title": "Pursuit Line",
+      "bpm": 124,
+      "seconds": 61.935483870967744,
+      "bytes": 1239870,
+      "sha256": "73f92ff0be9186e0bde691e3984a733adb116b4064b2b4c163d3579011407901"
+    }
+  ]
+}

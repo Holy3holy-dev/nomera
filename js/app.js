@@ -1382,6 +1382,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         }
         function toggleSoundMute() { saveSoundOptions({ muted: !sound.preferences().muted }); }
         function previewSound() { initAudio(); sound.cash(); }
+        window.NomeraSoundBridge={preview(kind,rarity='Эпический'){initAudio();if(kind==='car')sound.rewardCar?.(rarity);else if(kind==='reward')sound.win(rarity);else if(kind==='tick')sound.tick();else sound.click();},settings:()=>({running:isRaceRunning,station:raceRadioStation}),selectRadio:id=>setRaceRadioStation(id)};
         function navigateToTab(id) {
             const tab = [...document.querySelectorAll('.nav-tab')].find(button => button.dataset.tab === id);
             switchTab(id, tab);
@@ -5908,6 +5909,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     let finalPrice = calculatePrice();
                     let r = getRarity(finalPrice);
                     flashPlateReward(r.text);
+                    if(window.NOMERA_AUTHORS_PREVIEW&&window.NomeraSoundscape)playWinJingle(r.text);
                     const isHighTier = ['Редкий', 'Супер редкий', 'Эпический', 'Легендарный', 'БЛАТНОЙ', 'Крутой', 'Мифический'].includes(r.text);
                     if (isHighTier) {
                         pityCounterBoth = 0;
@@ -8245,6 +8247,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     document.getElementById('btn-roulette-sell-car').innerText = `💰 Продать за 90% (${sellPrice.toLocaleString('ru-RU')} ₽)`;
                     document.getElementById('roulette-result')?.classList.remove('hidden');
 
+                    if(window.NOMERA_AUTHORS_PREVIEW)sound.rewardCar?.(wonCarObj.rarity.text);
                     if (wonCarObj.rarity.text === "МИФИЧЕСКИЙ" || wonCarObj.rarity.text === "Легендарный") {
                         triggerConfetti();
                         triggerScreenShake();
@@ -8253,6 +8256,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                         playWinJingle(wonCarObj.rarity.text);
                     }
                 } else if (wonPlateObj) {
+                    if(window.NOMERA_AUTHORS_PREVIEW&&window.NomeraSoundscape)playWinJingle(wonPlateObj.rarity.text);
                     let winColor = wonPlateObj.rarity.bg !== "transparent" ? (wonPlateObj.rarity.bg.startsWith('linear') ? '#f59e0b' : wonPlateObj.rarity.bg) : "#10b981";
                     if (winningCard) {
                         winningCard.style.transform = 'scale(1.08)';
@@ -20553,7 +20557,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             { id: 'dps', icon: '🚓', name: 'Волна ДПС', fullTitle: '🚓 Рация Перехват ДПС (148.2)', color: '#38bdf8', bpm: 96 }
         ];
 
-        let raceRadioStation = 'off';
+        let raceRadioStation = window.NOMERA_AUTHORS_PREVIEW?(window.NomeraRadio?.read().selected||'off'):'off';
         let raceRadioTimerId = null;
         let raceRadioStep = 0;
         let raceRadioAudioCtx = null;
@@ -20641,6 +20645,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         window.updateRaceRadioHUD = updateRaceRadioHUD;
 
         function stopRaceRadioAudio() {
+            if(window.NOMERA_AUTHORS_PREVIEW)window.NomeraRadio?.stop();
             if (raceRadioTimerId) {
                 clearInterval(raceRadioTimerId);
                 raceRadioTimerId = null;
@@ -20928,6 +20933,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         }
 
         function startRaceRadioAudio() {
+            if(window.NOMERA_AUTHORS_PREVIEW&&window.NomeraRadio){if(isRaceRunning&&raceRadioStation!=='off')window.NomeraRadio.play(raceRadioStation);else window.NomeraRadio.stop();return;}
             stopRaceRadioAudio();
             if (raceRadioStation === 'off') return;
             ensureRaceRadioAudioContext();
@@ -20946,6 +20952,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         function setRaceRadioStation(stationId) {
             const meta = getRaceRadioStationMeta(stationId);
             raceRadioStation = meta.id;
+            if(window.NOMERA_AUTHORS_PREVIEW)window.NomeraRadio?.remember(meta.id);
             updateRaceRadioHUD();
 
             if (raceRadioStation === 'off' || !isRaceRunning) {

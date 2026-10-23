@@ -633,6 +633,7 @@
                     }
                 }
                 unlocked = true;
+                if(root.NOMERA_AUTHORS_PREVIEW)root.NomeraSoundscape?.bind(context,master);
                 if (context.state !== 'running' && typeof context.resume === 'function') {
                     Promise.resolve(context.resume()).catch(() => {});
                 }
@@ -1030,6 +1031,12 @@
             } catch (_) { stopEngine(); }
         }
 
+        function authorsSound(name,options={}) {
+            if(!root.NOMERA_AUTHORS_PREVIEW||!root.NomeraSoundscape)return false;
+            if(!unlocked||!context||context.state!=='running'||level()<=0)return true;
+            return root.NomeraSoundscape.play(context,master,name,options);
+        }
+
         return {
             unlock,
             configure(next) {
@@ -1038,6 +1045,7 @@
                     muted: typeof next.muted === 'boolean' ? next.muted : prefs.muted,
                     engine: typeof next.engine === 'boolean' ? next.engine : prefs.engine
                 };
+                if(root.NOMERA_AUTHORS_PREVIEW)root.NomeraSoundscape?.configure(prefs);
                 if (master) param(master.gain, level() * 0.65, context.currentTime);
                 if (!prefs.engine || !level()) { stopEngine(); stopSiren(); stopNitro(0.02, false); }
                 return {...prefs};
@@ -1058,18 +1066,18 @@
                     }
                 } catch (_) {}
             },
-            click() { tone(620, 0.035, 0.06, 0, 'sine', 380); },
-            button() { tone(520, 0.025, 0.05, 0, 'sine', 340); },
-            tick() {
+            click() { if(authorsSound('click'))return; tone(620, 0.035, 0.06, 0, 'sine', 380); },
+            button() { if(authorsSound('click'))return; tone(520, 0.025, 0.05, 0, 'sine', 340); },
+            tick() { if(authorsSound('tick'))return;
                 if (!context || context.currentTime - lastTick < 0.035) return;
                 lastTick = context.currentTime;
                 tone(780, 0.035, 0.09, 0, 'triangle', 320);
             },
-            lock(pitch = 1) {
+            lock(pitch = 1) { if(authorsSound('lock'))return;
                 tone(180 * pitch, 0.13, 0.18, 0, 'sine', 45);
                 tone(1150 * pitch, 0.045, 0.06);
             },
-            cash() {
+            cash() { if(authorsSound('cash'))return;
                 // Rewarding casino coin chime
                 [880, 1174.66, 1567.98].forEach((freq, i) => tone(freq, 0.24, 0.10, i * 0.065, 'triangle'));
             },
@@ -1398,7 +1406,7 @@
                 tone(220, 0.12, 0.12, 0, 'triangle', 160);
                 tone(160, 0.18, 0.12, 0.07, 'triangle', 120);
             },
-            win(rarity) {
+            win(rarity) { if(authorsSound('reward',{rarity}))return;
                 const rare = ['БЛАТНОЙ','Легендарный','МИФИЧЕСКИЙ','Крутой'].includes(rarity);
                 (rare ? [329.63, 493.88, 659.25, 987.77] : [392, 493.88, 587.33]).forEach((freq, i) => {
                     tone(freq, rare ? 0.65 : 0.38, 0.10, i * 0.09);
@@ -1422,7 +1430,9 @@
             },
             stopEngine,
             updateEngine,
+            rewardCar(rarity) { return authorsSound('car',{rarity}); },
             suspend() {
+                if(root.NOMERA_AUTHORS_PREVIEW){root.NomeraSoundscape?.stop();root.NomeraRadio?.suspend();}
                 stopNitro(0.02, false);
                 stopEngine();
                 stopSiren();
