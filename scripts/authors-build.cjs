@@ -5,6 +5,7 @@ const path = require('node:path');
 const root = path.resolve(__dirname, '..');
 const lodHash=file=>require('node:crypto').createHash('sha256').update(fs.readFileSync(path.join(root,'js',file))).digest('hex').slice(0,12);
 let html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+html=html.replace('</head>',`<script src="./js/authors-progression.js?v=${lodHash('authors-progression.js')}"></script></head>`);
 html = html.replace('<title>H3H Nomera</title>', '<title>NOMERA — Author’s Edition</title>');
 html = html.replace(/, maximum-scale=1\.0, user-scalable=no/, '');
 html = html.replace(/<link[^>]+(?:fonts\.googleapis|fonts\.gstatic|rel="manifest")[^>]*>/g, '');
@@ -40,6 +41,9 @@ html=html.replace('</head>',`<link rel="stylesheet" href="./authors-exchange.css
 html=html.replace('</body>',`<script src="./js/authors-exchange-ui.js?v=${lodHash('authors-exchange-ui.js')}"></script></body>`);
 html=html.replace('</head>',`<script src="./js/authors-registration.js?v=${lodHash('authors-registration.js')}"></script><link rel="stylesheet" href="./authors-registration.css?v=${require('node:crypto').createHash('sha256').update(fs.readFileSync(path.join(root,'authors-registration.css'))).digest('hex').slice(0,12)}"></head>`);
 html=html.replace('./js/authors-ui.js"','./js/authors-ui.js?v='+lodHash('authors-ui.js')+'"');
-for(const file of ['authors-camera-profiles.js','authors-steering-profiles.js','authors-route-dressing.js','authors-race-experience.js','authors-environment.js','authors-scene.js','authors-rival-ai.js','authors-screen-controls.js','authors-circuit-life.js','authors-route-detail.js','authors-road-weather.js','authors-night-lighting.js','authors-npc-signals.js','authors-race-hud.js','authors-body-damage.js','authors-rigid-body.js','authors-vehicle-finish.js'])html=html.replace('./js/'+file+'"','./js/'+file+'?v='+lodHash(file)+'"');
+for(const file of ['authors-secondary.js','authors-camera-profiles.js','authors-steering-profiles.js','authors-route-dressing.js','authors-race-experience.js','authors-environment.js','authors-scene.js','authors-rival-ai.js','authors-screen-controls.js','authors-circuit-life.js','authors-route-detail.js','authors-road-weather.js','authors-night-lighting.js','authors-npc-signals.js','authors-race-hud.js','authors-body-damage.js','authors-rigid-body.js','authors-vehicle-finish.js'])html=html.replace('./js/'+file+'"','./js/'+file+'?v='+lodHash(file)+'"');
+html=html.replace('</head>',`<link rel="stylesheet" href="./authors-progression.css?v=${require('node:crypto').createHash('sha256').update(fs.readFileSync(path.join(root,'authors-progression.css'))).digest('hex').slice(0,12)}"></head>`);
+html=html.replace('</body>',`<script src="./js/authors-progression-ui.js?v=${lodHash('authors-progression-ui.js')}"></script></body>`);
+html=html.replace('./js/authors-livery.js"','./js/authors-livery.js?v='+lodHash('authors-livery.js')+'"');
 fs.writeFileSync(path.join(root, 'authors.html'), html);
 console.log('authors.html: isolated local entry generated from index.html');

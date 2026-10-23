@@ -1257,6 +1257,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
         // --- V4.5 СИСТЕМЫ: ТИТУЛЫ, ДНЕВНЫЕ НАГРАДЫ, АЧИВКИ, СТАЙЛИНГ, ДРЭГ ---
         let playerTitle = 'novice';
+        let levelRewardsThrough = 1;
         let dailyBonus = { lastClaimDate: null, streak: 0 };
         let dailyQuests = { date: null, progress: { spins: 0, distance: 0, tune: 0 }, claimed: {} };
         let achievements = {};
@@ -1320,6 +1321,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         };
 
         const DAILY_REWARDS = [15000, 25000, 40000, 60000, 85000, 120000, 200000];
+        if (window.NOMERA_AUTHORS_PREVIEW && window.NomeraProgression) Object.assign(TITLES_CATALOG, window.NomeraProgression.titles);
 
         const STYLING_PALETTE = [
             { col: '#ffffff', name: 'Белый лед' },
@@ -1837,6 +1839,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 playerLevel,
                 playerExp,
                 playerTitle: playerTitle || 'novice',
+                ...(window.NOMERA_AUTHORS_PREVIEW ? {levelRewardsThrough} : {}),
                 dailyBonus,
                 dailyQuests,
                 achievements,
@@ -1858,7 +1861,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             };
 
             // Локальный кэш
-            localStore.set('nomera_player_account', JSON.stringify(data));
+            const savedLocally = localStore.set('nomera_player_account', JSON.stringify(data));
             localStore.set('nomera_user_session', JSON.stringify({ nickname }));
 
             showSaveStatus('✓ Игра сохранена на устройстве · онлайн-кошелёк на сервере');
@@ -1872,6 +1875,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 if (typeof syncCloudGarage === 'function') syncCloudGarage();
                 if (onlineProfile && typeof syncMyLeaderboardEntry === 'function') syncMyLeaderboardEntry();
             }
+            return savedLocally;
         }
 
         function loadProgress() {
@@ -1905,6 +1909,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     playerLevel = d.playerLevel || playerLevel;
                     playerExp = d.playerExp || playerExp;
                     playerTitle = d.playerTitle || playerTitle || 'novice';
+                    levelRewardsThrough = window.NomeraProgression?.level(d.levelRewardsThrough) || 1;
                     dailyBonus = d.dailyBonus || { lastClaimDate: null, streak: 0 };
                     dailyQuests = d.dailyQuests || { date: null, progress: { spins: 0, distance: 0, tune: 0 }, claimed: {} };
                     achievements = d.achievements || {};
@@ -1982,6 +1987,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
             const titleSelect = document.getElementById('player-title-select');
             if (titleSelect) titleSelect.value = playerTitle || 'none';
+            window.NomeraProgressionUI?.refresh();
             if (typeof updateDailyBadgeDot === 'function') updateDailyBadgeDot();
         }
 
@@ -2300,6 +2306,8 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             balance = 50000;
             playerLevel = 1;
             playerExp = 0;
+            levelRewardsThrough = 1;
+            playerTitle = 'novice';
             avatarData = AVATAR_PRESETS[0];
             inventory = [];
             myCars = [{name:'ВАЗ-2107 «Жигули»',basePrice:80000,category:'Седан',
@@ -2318,6 +2326,8 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             if (reset) {
                 resetLocalGameFor(profile.nickname);
             } else if (!same) {
+                levelRewardsThrough = 1;
+                playerTitle = 'novice';
                 nickname = profile.nickname;
                 playerPin = '';
                 raceRecordStore.bind(sanitizeKey(nickname));
@@ -2414,6 +2424,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             playerExp = 0;
             playerTitle = 'novice';
             dailyBonus = { lastClaimDate: null, streak: 0 };
+            levelRewardsThrough = 1;
             dailyQuests = { date: null, progress: { spins: 0, distance: 0, tune: 0 }, claimed: {} };
             achievements = {};
             raceRecordStore.bind(sanitizeKey(nickname));
@@ -4693,6 +4704,10 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             if (playerLevel !== oldLevel) {
                 syncMyLeaderboardEntry();
                 renderLeaderboard();
+                if (window.NOMERA_AUTHORS_PREVIEW && window.NomeraProgression) {
+                    saveProgress(false);
+                    notifyUser(`Уровень ${playerLevel}! Награды ждут в профиле.`, 'success');
+                }
             }
         }
 
@@ -4709,6 +4724,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 let percent = (playerExp / needed) * 100;
                 document.getElementById('exp-bar').style.width = `${percent}%`;
             }
+            window.NomeraProgressionUI?.refresh();
         }
 
         // --- ЛОГИКА РАСЧЕТА ЦЕНЫ И РЕДКОСТИ ---
@@ -9654,6 +9670,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
         // --- 1. ТИТУЛЫ И БЕЙДЖИ В ЧАТЕ ---
         function changePlayerTitle(newTitle) {
+            if (window.NOMERA_AUTHORS_PREVIEW && window.NomeraProgression?.titles[newTitle] && !window.NomeraProgression.canUse(newTitle, playerLevel)) return;
             if (TITLES_CATALOG[newTitle]) {
                 playerTitle = newTitle;
                 saveProgress();
@@ -11198,6 +11215,24 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
         function getStylingDraft() {return {color:stylingTempColor,tint:stylingTempTint,neon:stylingTempNeon,spoiler:stylingTempSpoiler,vinyl:stylingTempVinyl,wheels:stylingTempWheels,suspension:stylingTempSuspension,camber:stylingTempCamber,wheelOffset:stylingTempOffset,neonMode:stylingTempNeonMode,sgu:stylingTempSgu,bodykit:stylingTempBodykit,roofScoop:stylingTempRoofScoop,hood:stylingTempHood,nitroColor:stylingTempNitroColor,smokeColor:stylingTempSmokeColor,plate:stylingTempPlate,livery:stylingTempLivery,junkmanEngine:!!stylingTempJunkman?.engine,junkmanTurbo:!!stylingTempJunkman?.turbo,junkmanTires:!!stylingTempJunkman?.tires,junkmanNitro:!!stylingTempJunkman?.nitro,gearRatioBias:stylingTempProTuning?.gearRatioBias||0,aeroDownforce:stylingTempProTuning?.aeroDownforce||0,gripDriftBias:stylingTempProTuning?.gripDriftBias||0};}
         window.NomeraAtelierBridge={read:()=>({car:myCars[stylingActiveCarIndex],draft:getStylingDraft(),balance:(onlineProfile&&Number.isFinite(Number(onlineProfile.balance)))?Math.max(balance,Number(onlineProfile.balance)):balance,showroom:car3DShowroom})};
+        // Rewards share the account snapshot with the wallet: no separate claim flag can be lost.
+        window.NomeraProgressionBridge={
+            read:()=>({level:playerLevel,xp:playerExp,through:levelRewardsThrough,title:playerTitle,online:!!onlineProfile}),
+            claim:()=>{
+                if (!window.NOMERA_AUTHORS_PREVIEW || !window.NomeraProgression || onlineProfile) return false;
+                const claim=window.NomeraProgression.claim(playerLevel,levelRewardsThrough);
+                if (!claim.count) return false;
+                const oldBalance=balance,oldThrough=levelRewardsThrough;
+                balance+=claim.cash;levelRewardsThrough=claim.through;
+                if (!saveProgress(false)) {
+                    balance=oldBalance;levelRewardsThrough=oldThrough;saveProgress(false);updateBalance();
+                    notifyUser('Не удалось сохранить награду. Освободи место в браузере и попробуй снова.','error');return false;
+                }
+                updateBalance();window.NomeraProgressionUI?.refresh();
+                notifyUser(`Награды за ${claim.count} ур. · +${claim.cash.toLocaleString('ru-RU')} ₽`,'success');return true;
+            },
+            title:id=>changePlayerTitle(id)
+        };
 
         async function confirmApplyStyling() {
             const car = myCars[stylingActiveCarIndex];
