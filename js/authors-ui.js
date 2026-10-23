@@ -22,6 +22,7 @@
     regionButton.innerHTML = 'Регион / серия <span>↗</span>';
     toolbar.append(regionButton);
     layout.before(toolbar);
+    window.NomeraRegistration?.decorate($('#plate-box'),$('#plate-box').dataset.country,$('#plate-box').dataset.reg);
     const stage = $('#gen-plate-stage');
     const controls = $('.gen-controls-dock');
     layout.prepend(stage);

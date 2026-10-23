@@ -2,7 +2,7 @@ Japanese serial digit artwork — rendered output of TRM Font JB v1.2 by Mr.T.
 Primary source: https://dc-crafts.main.jp/trm/f/trm-font.php
 Glyph documentation: https://dc-crafts.main.jp/trm/f/trmfont-jb.html
 Source font used locally: https://github.com/ItsNickkk/license-plate-maker/blob/HEAD/resources/font/trm.ttf
-Only the fixed PNG image of the ten digits is included in the website. The TTF is NOT redistributed.
+Only fixed rendered images are included: the ten serial digits PNG and Yokohama lettering embedded as a bitmap in a regional SVG header. The TTF is NOT redistributed.
 The author permits rendered images on one's own website and goods, commercially or otherwise, without contacting them. Modification/copy/redistribution of font data requires permission.
 The source is a specialist replica, not government-issued font data. Its original layout is for large plates; this project places the rendered serial numerals separately within the passenger-plate 330 x 165 mm layout. Header/region/hiragana use Noto Sans JP, an explicitly documented approximation.
 Copyright (C) 2005-2018 Mr.T. All rights reserved.

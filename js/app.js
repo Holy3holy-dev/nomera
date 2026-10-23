@@ -833,6 +833,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 'data-special-badge': specialMeta ? specialMeta.badge : ''
             };
 
+            if (window.NOMERA_AUTHORS_PREVIEW && window.NomeraRegistration) {
+                window.NomeraRegistration.decorate(plateBox, c, rUpper);
+            }
             if (typeof plateBox.setAttribute === 'function') {
                 Object.entries(attrs).forEach(([k, v]) => plateBox.setAttribute(k, v));
             }
@@ -1086,7 +1089,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     if (dMatch) digits = dMatch[0];
                 }
                 const jpnParts = getJpnPlateDisplayParts(letters[0], letters[1], letters[2], digits, reg);
-                return `<span class="mp-jpn-top" aria-hidden="true"><i class="mp-jpn-seal">${escapeHtml(jpnParts.seal)}</i><b>${escapeHtml(jpnParts.header)}</b> <small class="mp-let">${escapeHtml(letters)}</small></span><span class="mp-main mp-jpn-main"><span class="mp-jpn-hira" aria-hidden="true">${escapeHtml(jpnParts.hira)}</span> <span class="mp-num" data-raw-digits="${escapeHtml(digits)}">${window.NOMERA_AUTHORS_PREVIEW && window.NomeraRegistration ? NomeraRegistration.japanMarkup(digits) : escapeHtml(jpnParts.formattedDigits)}</span></span><span class="mp-pipe-sr"> ${escapeHtml(digits)} | </span><span class="mp-reg-box mp-jpn-reg">${escapeHtml(reg)}</span><span class="mp-pipe-sr"> JPN</span>`;
+                return `<span class="mp-jpn-top" aria-hidden="true"><i class="mp-jpn-seal">${escapeHtml(jpnParts.seal)}</i>${window.NOMERA_AUTHORS_PREVIEW && window.NomeraRegistration ? NomeraRegistration.japanHeaderMarkup(reg,escapeHtml(jpnParts.header)) : `<b>${escapeHtml(jpnParts.header)}</b>`} <small class="mp-let">${escapeHtml(letters)}</small></span><span class="mp-main mp-jpn-main"><span class="mp-jpn-hira" aria-hidden="true">${escapeHtml(jpnParts.hira)}</span> <span class="mp-num" data-raw-digits="${escapeHtml(digits)}">${window.NOMERA_AUTHORS_PREVIEW && window.NomeraRegistration ? NomeraRegistration.japanMarkup(digits) : escapeHtml(jpnParts.formattedDigits)}</span></span><span class="mp-pipe-sr"> ${escapeHtml(digits)} | </span><span class="mp-reg-box mp-jpn-reg">${escapeHtml(reg)}</span><span class="mp-pipe-sr"> JPN</span>`;
             }
 
             const uaeMatch = raw.match(/^(.*?)\s*\|\s*([A-Z0-9]{1,3})\s+UAE$/i);
