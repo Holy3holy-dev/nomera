@@ -30,12 +30,12 @@
   const performance=pick(config.performance,['speed','accel','handling','consumption','nitroDrain','nitroRecharge','nitroSpeedBonus']);
   return JSON.stringify([config.trackId,config.carName,weather,config.physicsKernel?'mw':'base',config.transmissionMode||'auto',config.difficulty,config.weather,upgrades,performance]);
  }
- function createTiming(previous=[]){return{times:[],best:previous.slice(),lastTime:0,lastCount:0,lastDamage:0,clean:0,last:null};}
- function split(timing,{count,time,damage=0}){
+ function createTiming(previous=[]){return{times:[],best:previous.slice(),lastTime:0,lastCount:0,lastDamage:0,lastContacts:0,clean:0,last:null};}
+ function split(timing,{count,time,damage=0,contacts=0}){
   if(!Number.isFinite(time)||count!==timing.lastCount+1||time<=timing.lastTime+.2)return null;
   const seconds=time-timing.lastTime,index=timing.times.length,old=timing.best[index];
-  const row={index,seconds,delta:Number.isFinite(old)?seconds-old:null,clean:damage<=timing.lastDamage+.05};
-  timing.times.push(seconds);timing.lastCount=count;timing.lastTime=time;timing.lastDamage=damage;if(row.clean)timing.clean++;
+  const row={index,seconds,delta:Number.isFinite(old)?seconds-old:null,clean:damage<=timing.lastDamage+.05&&contacts<=timing.lastContacts};
+  timing.times.push(seconds);timing.lastCount=count;timing.lastTime=time;timing.lastDamage=damage;timing.lastContacts=contacts;if(row.clean)timing.clean++;
   timing.best[index]=Number.isFinite(old)?Math.min(old,seconds):seconds;timing.last=row;return row;
  }
  function begin(e,config={},owner=''){
@@ -50,7 +50,7 @@
  function checkpoint(e,progress){
   const r=runs.get(e);if(!r||!progress.isPlayer)return;
   checkWeather(e,r);
-  const row=split(r.timing,{count:progress.checkpointsPassed,time:e.state.raceTimeSec,damage:e.state.damageTaken});
+  const row=split(r.timing,{count:progress.checkpointsPassed,time:e.state.raceTimeSec,damage:e.state.damageTaken,contacts:e.damageEnabled===false?(e.playerPhysics?.state.impactSequence||0):0});
   if(row){r.highlightUntil=e.state.raceTimeSec+4;r.lastUI=-1;}
  }
  const seconds=t=>t.toFixed(2)+' с',delta=t=>(t>0?'+':'−')+Math.abs(t).toFixed(2)+' с';
@@ -86,7 +86,7 @@
   const heading=root.document.createElement('h3');heading.textContent='Как прошёл заезд';panel.append(heading);
   const rows=[['За езду и финиш',Math.round(receipt.driving).toLocaleString('ru-RU')+' ₽'],['Бонус дрифта',Math.round(receipt.drift).toLocaleString('ru-RU')+' ₽']];
   for(const[label,value]of rows){const row=root.document.createElement('p'),name=root.document.createElement('span'),amount=root.document.createElement('b');name.textContent=label;amount.textContent=value;row.append(name,amount);panel.append(row);}
-  if(r.timing.times.length){const note=root.document.createElement('small');note.textContent=r.timing.clean+' из '+r.timing.times.length+' секторов без новых повреждений. Сравнение — с этой машиной и настройками в ту же погоду. Чистота — показатель езды, без дополнительной выплаты.';if(r.weatherChanged)note.textContent='Погода изменилась во время заезда: времена показаны без записи личного рекорда. Чистота секторов не даёт дополнительной выплаты.';panel.append(note);
+  if(r.timing.times.length){const note=root.document.createElement('small');note.textContent=r.timing.clean+' из '+r.timing.times.length+(e.damageEnabled===false?' секторов без ударов.':' секторов без новых повреждений.')+' Сравнение — с этой машиной и настройками в ту же погоду. Чистота — показатель езды, без дополнительной выплаты.';if(r.weatherChanged)note.textContent='Погода изменилась во время заезда: времена показаны без записи личного рекорда. Чистота секторов не даёт дополнительной выплаты.';panel.append(note);
    const list=root.document.createElement('ol');for(const [i,t]of r.timing.times.entries()){const item=root.document.createElement('li'),old=r.weatherChanged?null:r.book.find(x=>x.key===r.key)?.times[i];item.textContent='S'+(i+1)+' · '+seconds(t)+(Number.isFinite(old)?' / '+delta(t-old):' / первый результат');list.append(item);}panel.append(list);
   }else{const note=root.document.createElement('small');note.textContent='Топливо, состояние и фактическое зачисление — ниже. Дрифт уже включён в доход до расходов.';panel.append(note);}
   host.before(panel);

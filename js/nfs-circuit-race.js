@@ -712,6 +712,7 @@
                 mode: 'nfs_circuit',
                 weather: 'night'
             }, config);
+            this.damageEnabled=!root.NOMERA_AUTHORS_PREVIEW||!!this.carConfig.authorsPractice;
 
             if(root.NOMERA_AUTHORS_PREVIEW){this.weatherMode=this.carConfig.weather||'night';this.currentActiveWeather=this.weatherMode==='auto'?'night':this.weatherMode;}
             if (config.trackId && TRACK_PRESETS[config.trackId]) {
@@ -752,6 +753,8 @@
             });
 
             this.playerProgress = this._createRacerProgress('player', 'Вы (' + this.carConfig.carName + ')', this.carConfig.carName, true, playerStartS, startSeg.index);
+            this.playerPhysics.state.noGameplayDamage=!this.damageEnabled;
+            this.playerPhysics.noGameplayDamage=!this.damageEnabled;
             this.playerProgress.lap = 1;
             this.playerProgress.unwrappedS = -14;
             this.playerProgress.totalDistanceMeters = 0;
@@ -900,6 +903,8 @@
                     heading: gridSample.heading
                 });
 
+                physics.state.noGameplayDamage=!this.damageEnabled;
+                physics.noGameplayDamage=!this.damageEnabled;
                 const progress = this._createRacerProgress(
                     `rival_${i}`,
                     template.driverName,
@@ -1198,6 +1203,7 @@
             this._updateParticles(safeDt);
 
             // Check fuel exhaustion or total wreck
+            if(!this.damageEnabled){this.state.damageTaken=0;pState.damageTaken=0;pState.lastImpactDamage=null;}
             if (this.state.damageTaken >= 100 && this.state.racePhase === 'racing') {
                 this.state.racePhase = 'finished';
                 this.stop();
@@ -2388,8 +2394,8 @@
                 nearMissCount: st.nearMissCount,
                 shashkiCombo: st.shashkiCombo,
                 isDrafting: false,
-                damageTaken: Math.round(st.damageTaken),
-                hullIntegrity: Math.max(0, 100 - Math.round(st.damageTaken)),
+                damageTaken: this.damageEnabled===false?0:Math.round(st.damageTaken),
+                hullIntegrity: this.damageEnabled===false?100:Math.max(0, 100 - Math.round(st.damageTaken)),
                 cameraMode: this.cameraMode,
                 weather: this.currentActiveWeather,
                 weatherIcon: preset.icon,

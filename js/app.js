@@ -1258,6 +1258,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         // --- V4.5 СИСТЕМЫ: ТИТУЛЫ, ДНЕВНЫЕ НАГРАДЫ, АЧИВКИ, СТАЙЛИНГ, ДРЭГ ---
         let playerTitle = 'novice';
         let levelRewardsThrough = 1;
+        let activityRewards = {repairs:0,extraAchievements:[]};
         let dailyBonus = { lastClaimDate: null, streak: 0 };
         let dailyQuests = { date: null, progress: { spins: 0, distance: 0, tune: 0 }, claimed: {} };
         let achievements = {};
@@ -1840,6 +1841,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 playerExp,
                 playerTitle: playerTitle || 'novice',
                 ...(window.NOMERA_AUTHORS_PREVIEW ? {levelRewardsThrough} : {}),
+                ...(window.NOMERA_AUTHORS_PREVIEW ? {activityRewards} : {}),
                 dailyBonus,
                 dailyQuests,
                 achievements,
@@ -1911,6 +1913,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     playerExp = d.playerExp || playerExp;
                     playerTitle = d.playerTitle || playerTitle || 'novice';
                     levelRewardsThrough = window.NomeraProgression?.level(d.levelRewardsThrough) || 1;
+                    activityRewards = window.NomeraActivities?.normalize(d.activityRewards) || {repairs:0,extraAchievements:[]};
                     dailyBonus = d.dailyBonus || { lastClaimDate: null, streak: 0 };
                     dailyQuests = d.dailyQuests || { date: null, progress: { spins: 0, distance: 0, tune: 0 }, claimed: {} };
                     achievements = d.achievements || {};
@@ -1989,6 +1992,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             const titleSelect = document.getElementById('player-title-select');
             if (titleSelect) titleSelect.value = playerTitle || 'none';
             window.NomeraProgressionUI?.refresh();
+            window.NomeraActivitiesUI?.refresh();
             if (typeof updateDailyBadgeDot === 'function') updateDailyBadgeDot();
         }
 
@@ -2310,6 +2314,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             playerExp = 0;
             levelRewardsThrough = 1;
             playerTitle = 'novice';
+            activityRewards = {repairs:0,extraAchievements:[]};
             avatarData = AVATAR_PRESETS[0];
             inventory = [];
             myCars = [{name:'ВАЗ-2107 «Жигули»',basePrice:80000,category:'Седан',
@@ -2331,6 +2336,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 window.NomeraProgressionCelebration?.clear?.();
                 levelRewardsThrough = 1;
                 playerTitle = 'novice';
+                activityRewards = {repairs:0,extraAchievements:[]};
                 nickname = profile.nickname;
                 playerPin = '';
                 raceRecordStore.bind(sanitizeKey(nickname));
@@ -2430,6 +2436,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             window.NomeraProgressionCelebration?.clear?.();
             levelRewardsThrough = 1;
             dailyQuests = { date: null, progress: { spins: 0, distance: 0, tune: 0 }, claimed: {} };
+            activityRewards = {repairs:0,extraAchievements:[]};
             achievements = {};
             raceRecordStore.bind(sanitizeKey(nickname));
             playerPin = '';
@@ -4690,7 +4697,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             return 100 + (lvl - 1) * 10;
         }
 
-        function addExp(rarityText) {
+        function addExp(rarityText, options = {}) {
             if (playerLevel >= 777) return;
             const amount = typeof rarityText === "number"
                 ? (Number.isFinite(rarityText) ? Math.max(0, Math.floor(rarityText)) : 0)
@@ -4705,7 +4712,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 needed = getExpNeeded(playerLevel);
             }
             updateExpUI();
-            if (playerLevel !== oldLevel) {
+            if (playerLevel !== oldLevel && !options.deferSave) {
                 syncMyLeaderboardEntry();
                 renderLeaderboard();
                 if (window.NOMERA_AUTHORS_PREVIEW && window.NomeraProgression) {
@@ -9349,6 +9356,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                             <div class="garage-condition-heading"><b>🧰 Состояние ${Math.round(state.condition)}%</b><span>${state.condition < 35 ? '🔴 Сильный износ' : state.condition < 75 ? '🟡 Нужен ремонт' : '🟢 Исправен'}</span></div>
                             <div class="garage-condition-track"><i style="width:${state.condition.toFixed(1)}%;background:${state.condition < 35 ? '#ef4444' : state.condition < 75 ? '#f59e0b' : '#c9f267'}"></i></div>
                             <button type="button" class="btn btn-blue tuning-repair" ${costRepair===0 ? 'disabled' : ''} onclick="repairGarageCar(${index})">${costRepair===0 ? '✓ Полностью исправен' : `🔧 Ремонт · ${costRepair.toLocaleString('ru-RU')} ₽`}</button>
+                            ${window.NOMERA_AUTHORS_PREVIEW&&window.NomeraActivities&&!onlineProfile?`<button type="button" class="btn ae-voucher-repair" onclick="repairGarageCarWithVoucher(${index})" ${costRepair<=0||activityRewards.repairs<1?'disabled':''}>Ремонт сертификатом · в запасе ${activityRewards.repairs}</button>`:''}
                             <div class="garage-tuning-title">ТЮНИНГ · 5 УРОВНЕЙ</div>
                             ${upgradesHtml}
                         </div>
@@ -9445,6 +9453,14 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             saveProgress();
             if (typeof syncCloudGarage === 'function') syncCloudGarage(true);
             notifyUser('🔧 Машина отремонтирована! Состояние 100%.', 'success');
+        }
+
+        function repairGarageCarWithVoucher(index) {
+            if(!window.NOMERA_AUTHORS_PREVIEW||onlineProfile||isRaceRunning||activityRewards.repairs<1)return false;
+            const car=myCars[index];if(!car||!Number.isFinite(Number(car.condition))||car.condition>=100)return false;
+            const condition=car.condition;activityRewards.repairs--;car.condition=100;
+            if(!saveProgress(false)){activityRewards.repairs++;car.condition=condition;saveProgress(false);notifyUser('Ремонт не сохранён. Сертификат возвращён.','error');return false;}
+            renderCars();notifyUser('Машина восстановлена до 100% · использован один сертификат','success');return true;
         }
 
         function buyCar(name) {
@@ -10703,6 +10719,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                             <b style="color:#fbbf24;">${ecoCost !== null ? ecoCost.toLocaleString('ru-RU') + ' ₽' : 'MAX'}</b>
                         </button>
                         ${repCost > 0 ? `<button type="button" class="btn btn-gold" style="margin:4px 0 0 0; padding:8px; font-size:11.5px;" onclick="repairGarageCar(${index})">🔧 Отремонтировать (${repCost.toLocaleString('ru-RU')} ₽)</button>` : ''}
+                        ${window.NOMERA_AUTHORS_PREVIEW&&window.NomeraActivities&&!onlineProfile?`<button type="button" id="ae-inspector-voucher" class="btn ae-voucher-repair" onclick="repairGarageCarWithVoucher(${index})" ${repCost<=0||activityRewards.repairs<1?'disabled':''}>Ремонт сертификатом · в запасе ${activityRewards.repairs}</button>`:''}
                     </div>
                 </div>
 
@@ -11440,11 +11457,14 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     claimed: {}
                 };
             }
+            if(!dailyQuests.progress||typeof dailyQuests.progress!=='object')dailyQuests.progress={spins:0,distance:0,tune:0};
+            if(!dailyQuests.claimed||typeof dailyQuests.claimed!=='object')dailyQuests.claimed={};
         }
 
         function recordQuestProgress(type, amount) {
             checkDailyQuests();
-            dailyQuests.progress[type] = (dailyQuests.progress[type] || 0) + amount;
+            if(!['spins','distance','tune'].includes(type)||!Number.isFinite(Number(amount))||Number(amount)<=0)return;
+            dailyQuests.progress[type] = Math.max(0,Number(dailyQuests.progress[type])||0) + Number(amount);
             saveProgress();
             updateDailyBadgeDot();
         }
@@ -11482,6 +11502,43 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             return {today, streak, claimed, index: (claimed ? Math.max(0,streak-1) : streak) % DAILY_REWARDS.length};
         }
 
+        function getDailyQuestDefinitions() {
+            const base=[{id:'spins',title:'Выбить 10 госномеров',target:10,rewardMoney:30000,rewardXp:50},{id:'distance',title:'Проехать 3 км на трассе',target:3,rewardMoney:45000,rewardXp:80},{id:'tune',title:'Тюнинг или стайлинг авто',target:1,rewardMoney:40000,rewardXp:60}];
+            return window.NOMERA_AUTHORS_PREVIEW&&window.NomeraActivities&&!onlineProfile?base.map(window.NomeraActivities.quest):base;
+        }
+
+        // One account snapshot commits XP, money, vouchers and claim markers together.
+        function grantActivityReward(reward, mutate) {
+            if(!window.NOMERA_AUTHORS_PREVIEW||!window.NomeraActivities||onlineProfile)return false;
+            const previous={balance,playerLevel,playerExp,dailyQuests:JSON.parse(JSON.stringify(dailyQuests)),achievements:JSON.parse(JSON.stringify(achievements)),activityRewards:JSON.parse(JSON.stringify(activityRewards))};
+            mutate();balance+=reward.cash||0;activityRewards.repairs=Math.min(9999,activityRewards.repairs+(reward.repairs||0));
+            const appliedXp=Math.min(reward.xp||0,window.NomeraProgression.xpTo(playerLevel,playerExp,777));
+            addExp(appliedXp,{deferSave:true});
+            if(!saveProgress(false)){
+                balance=previous.balance;playerLevel=previous.playerLevel;playerExp=previous.playerExp;dailyQuests=previous.dailyQuests;achievements=previous.achievements;activityRewards=previous.activityRewards;
+                saveProgress(false);updateBalance();updateExpUI();renderDailyModal();renderAchievements();
+                notifyUser('Не удалось сохранить награду. Выплата отменена, попробуй снова после восстановления хранилища.','error');return false;
+            }
+            updateBalance();updateExpUI();renderDailyModal();renderAchievements();updateDailyBadgeDot();
+            if(playerLevel!==previous.playerLevel){syncMyLeaderboardEntry();renderLeaderboard();window.NomeraProgressionCelebration?.levelUp(previous.playerLevel,playerLevel);}
+            window.NomeraProgressionCelebration?.activity({...reward,xp:appliedXp});
+            return true;
+        }
+
+        function claimDailySetReward() {
+            checkDailyQuests();const policy=window.NomeraActivities;
+            if(!policy||!policy.setReady(dailyQuests.claimed))return false;
+            return grantActivityReward({...policy.setReward,kind:'daily_set',label:'Все задания дня выполнены'},()=>{dailyQuests.claimed.all=true;});
+        }
+
+        function claimAchievementExtras() {
+            const policy=window.NomeraActivities;if(!policy)return false;
+            const list=policy.pending(ACHIEVEMENTS_CATALOG,achievements,activityRewards);if(!list.length)return false;
+            const xp=list.reduce((n,a)=>n+policy.achievement(a).xp,0),repairs=list.reduce((n,a)=>n+policy.achievement(a).repairs,0);
+            return grantActivityReward({kind:'achievement',label:'Бонусы открытых достижений',cash:0,xp,repairs,items:list.map(a=>({name:a.name,title:TITLES_CATALOG[a.titleReward]?.label||''}))},()=>{activityRewards.extraAchievements.push(...list.map(a=>a.id));});
+        }
+        window.NomeraActivitiesBridge={read:()=>({repairs:activityRewards.repairs}),useRepair:index=>repairGarageCarWithVoucher(index)};
+
         function renderDailyModal() {
             const grid = document.getElementById('daily-calendar-grid');
             if (!grid) return;
@@ -11518,21 +11575,17 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
             const questsList = document.getElementById('daily-quests-list');
             if (questsList) {
-                const questDefs = [
-                    { id: 'spins', title: '🎰 Выбить 10 госномеров', target: 10, rewardMoney: 30000, rewardXp: 50 },
-                    { id: 'distance', title: '🛣️ Проехать 3 км на трассе', target: 3, rewardMoney: 45000, rewardXp: 80 },
-                    { id: 'tune', title: '🔧 Тюнинг или стайлинг авто', target: 1, rewardMoney: 40000, rewardXp: 60 }
-                ];
+                const questDefs = getDailyQuestDefinitions();
 
                 questsList.innerHTML = questDefs.map(q => {
                     const prog = Math.min(q.target, dailyQuests.progress?.[q.id] || 0);
                     const pct = Math.round((prog / q.target) * 100);
                     const claimed = !!dailyQuests.claimed?.[q.id];
-                    const ready = prog >= q.target && !claimed;
+                    const ready = prog+1e-8 >= q.target && !claimed;
                     return `
                         <div class="quest-item">
                             <div class="quest-body">
-                                <div class="quest-title">${escapeHtml(q.title)} (${prog}/${q.target})</div>
+                            <div class="quest-title">${escapeHtml(q.title)} (${Number(prog.toFixed(2)).toLocaleString('ru-RU')}/${q.target})</div>
                                 <div class="quest-reward">+${q.rewardMoney.toLocaleString('ru-RU')} ₽ · +${q.rewardXp} XP</div>
                                 <div class="quest-track"><div class="quest-track-bar" style="width:${pct}%;"></div></div>
                             </div>
@@ -11545,6 +11598,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                         </div>
                     `;
                 }).join('');
+                if(window.NOMERA_AUTHORS_PREVIEW&&window.NomeraActivities&&!onlineProfile){const count=window.NomeraActivities.ids.filter(id=>dailyQuests.claimed[id]).length,done=!!dailyQuests.claimed.all;questsList.innerHTML+=`<section class="ae-daily-set"><div class="ae-eyebrow">НАБОР ДНЯ · ${count}/3</div><h4>Закрой весь маршрут дня</h4><p>+50 000 ₽ · +150 XP · 1 бесплатный полный ремонт</p><button class="btn btn-green" id="ae-claim-daily-set" onclick="claimDailySetReward()" ${count<3||done?'disabled':''}>${done?'Набор получен':count<3?'Забери награды трёх заданий':'Получить бонус набора'}</button></section>`;}
             }
         }
 
@@ -11578,13 +11632,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
         function claimQuestReward(questId) {
             checkDailyQuests();
-            const questDefs = {
-                spins: { rewardMoney: 30000, rewardXp: 50 },
-                distance: { rewardMoney: 45000, rewardXp: 80 },
-                tune: { rewardMoney: 40000, rewardXp: 60 }
-            };
-            const def = questDefs[questId];
-            if (!def || dailyQuests.claimed?.[questId]) return;
+            const def = getDailyQuestDefinitions().find(q=>q.id===questId);
+            if (!def || dailyQuests.claimed?.[questId] || (Number(dailyQuests.progress[questId])||0)+1e-8<def.target) return false;
+            if(window.NOMERA_AUTHORS_PREVIEW&&window.NomeraActivities&&!onlineProfile)return grantActivityReward({kind:'quest',label:def.title,cash:def.rewardMoney,xp:def.rewardXp,repairs:0},()=>{dailyQuests.claimed[questId]=true;});
             dailyQuests.claimed[questId] = true;
             creditPlayerBalance(def.rewardMoney, 'Ежедневный квест');
             addExp(def.rewardXp);
@@ -11955,6 +12005,15 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         window.openCollectorBook = openCollectorBook;
 
         function checkAchievements() {
+            if(window.NOMERA_AUTHORS_PREVIEW&&window.NomeraActivities&&!onlineProfile){
+                const list=[],oldBalance=balance;
+                for(const ach of ACHIEVEMENTS_CATALOG)if(!achievements[ach.id]&&ach.check()){list.push(ach);balance+=ach.reward;}
+                balance=oldBalance;
+                if(list.length){const policy=window.NomeraActivities,cash=list.reduce((n,a)=>n+a.reward,0),xp=list.reduce((n,a)=>n+policy.achievement(a).xp,0),repairs=list.reduce((n,a)=>n+policy.achievement(a).repairs,0);
+                    grantActivityReward({kind:'achievement',label:list.length===1?list[0].name:`Достижения · ${list.length}`,cash,xp,repairs,items:list.map(a=>({name:a.name,title:TITLES_CATALOG[a.titleReward]?.label||''}))},()=>{for(const a of list){achievements[a.id]=Date.now();if(!activityRewards.extraAchievements.includes(a.id))activityRewards.extraAchievements.push(a.id);}});
+                }
+                renderAchievements();if(typeof renderCollectorBook==='function')renderCollectorBook();return;
+            }
             ACHIEVEMENTS_CATALOG.forEach(ach => {
                 if (!achievements[ach.id] && ach.check()) {
                     achievements[ach.id] = Date.now();
@@ -11972,6 +12031,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             if (!list) return;
             list.innerHTML = ACHIEVEMENTS_CATALOG.map(ach => {
                 const unlocked = !!achievements[ach.id];
+                const bonus=window.NOMERA_AUTHORS_PREVIEW&&window.NomeraActivities&&!onlineProfile?window.NomeraActivities.achievement(ach):null;
                 return `
                     <div class="achievement-card ${unlocked ? 'unlocked' : ''}">
                         <div class="achievement-icon">${ach.icon}</div>
@@ -11981,10 +12041,13 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                             <div style="font-size:11px; color:#c9f267; font-weight:800;">
                                 ${unlocked ? '✓ Разблокировано' : `Награда: +${ach.reward.toLocaleString('ru-RU')} ₽`}
                             </div>
+                            ${bonus?`<div class="ae-achievement-loot">${unlocked?'Выплата '+ach.reward.toLocaleString('ru-RU')+' ₽ · ':''}+${bonus.xp} XP${bonus.repairs?' · 1 бесплатный ремонт':''}</div>`:''}
+                            ${bonus&&ach.titleReward?`<button class="ae-achievement-title" onclick="changePlayerTitle('${ach.titleReward}')" ${!unlocked?'disabled':''}>${unlocked?'Выбрать титул':'Титул за достижение'} · ${escapeHtml(TITLES_CATALOG[ach.titleReward]?.label||'')}</button>`:''}
                         </div>
                     </div>
                 `;
             }).join('');
+            if(window.NOMERA_AUTHORS_PREVIEW&&window.NomeraActivities&&!onlineProfile){const pending=window.NomeraActivities.pending(ACHIEVEMENTS_CATALOG,achievements,activityRewards);list.insertAdjacentHTML('afterbegin',`<section class="ae-activity-summary"><div><span class="ae-eyebrow">СЕРВИСНЫЙ ЗАПАС</span><h4>${activityRewards.repairs} сертификатов ремонта</h4><p>Один сертификат полностью восстанавливает любую машину в гараже. Денежные награды достижений выдаются автоматически.</p></div>${pending.length?`<button class="btn btn-green" id="ae-claim-achievement-extras" onclick="claimAchievementExtras()">Получить дополнительные бонусы · ${pending.length} достижений</button>`:'<small>Дополнительные награды получены вместе с достижениями.</small>'}</section>`);}
         }
 
         function switchCollectionTab(tab) {
@@ -19714,6 +19777,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         function is3DOrNfsRaceActive() {
             return activeRaceMode === '3d' || activeRaceMode === 'nfs' || raceCurrentMode === 'nfs_circuit';
         }
+        function isCircuitWearDisabled() {
+            return !!(window.NOMERA_AUTHORS_PREVIEW&&activeRaceMode==='nfs'&&car3DRacingEngine?.damageEnabled===false);
+        }
 
         function setRaceKey(key, state) {
             if (state && racePreviewPause?.allowsViewer()) return;
@@ -23130,7 +23196,8 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             const receipt = NomeraRaceEconomy.settle(gross, racePlayer.fuelLiters || 0, balance);
             if(window.NOMERA_AUTHORS_PREVIEW){document.getElementById('ae-run-analysis')?.remove();if(is3DOrNfsRaceActive()&&car3DRacingEngine)window.NomeraRaceExperience?.finish(car3DRacingEngine,{driving:receipt.gross-driftBonus,drift:driftBonus});}
             const finalXp = Math.max(5, Math.round(racePlayer.distanceKm * 8 + racePlayer.overtakesCount * 3 + (racePlayer.driftScore || 0) * 0.05));
-            const wear = Math.min(60, (racePlayer.damageTaken || 0) * 0.8 + racePlayer.distanceKm * 0.1 + (isRealCrash ? 8 + Math.min(7, racePlayer.speed / 50) : 0));
+            const circuitNoWear=isCircuitWearDisabled();
+            const wear = circuitNoWear?0:Math.min(60, (racePlayer.damageTaken || 0) * 0.8 + racePlayer.distanceKm * 0.1 + (isRealCrash ? 8 + Math.min(7, racePlayer.speed / 50) : 0));
             if (activeRaceCar && myCars.includes(activeRaceCar)) {
                 NomeraRaceEconomy.ensureCar(activeRaceCar);
                 activeRaceCar.condition = Math.max(0, Number((activeRaceCar.condition - wear).toFixed(2)));
@@ -23153,7 +23220,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             logPlayerActivity('Гонка', `Заезд ${isFinished ? 'финиш' : (crashed === 'fuel' ? 'закончился бензин' : (crashed === 'busted' ? 'задержание ДПС' : (crashed ? 'авария' : 'выход')))}: ${racePlayer.distanceKm.toFixed(2)} км, дрифт: ${Math.round(racePlayer.driftScore || 0)} pts, до расходов ${receipt.gross} ₽, бензин -${receipt.fuelCost} ₽, итог ${receipt.credited} ₽`);
             // Race records track received net winnings, never fuel-free gross income.
             saveRaceRecords(NomeraRaceRecords.finishRecords(getRaceRecords(), racePlayer, Math.max(0, receipt.credited)));
-            recordQuestProgress('distance', Math.round(racePlayer.distanceKm || 0));
+            recordQuestProgress('distance', window.NOMERA_AUTHORS_PREVIEW?Math.max(0,Number(racePlayer.distanceKm)||0):Math.round(racePlayer.distanceKm || 0));
             achievements.driftBestScore = Math.max(Number(achievements.driftBestScore || 0), Math.round(racePlayer.driftScore || 0));
             achievements.driftTotalScore = Number(achievements.driftTotalScore || 0) + Math.round(racePlayer.driftScore || 0);
             achievements.driftMaxCombo = Math.max(Number(achievements.driftMaxCombo || 0), racePlayer.maxDriftCombo || 1);
@@ -23176,7 +23243,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             document.getElementById('go-stat-xp').innerText = `+${finalXp} XP`;
             document.getElementById('go-stat-gross').innerText = `+${receipt.gross.toLocaleString('ru-RU')} ₽`;
             document.getElementById('go-stat-fuel').innerText = `${receipt.liters.toFixed(2)} л × ${NomeraRaceEconomy.FUEL_PRICE} ₽ = −${receipt.fuelCost.toLocaleString('ru-RU')} ₽`;
-            document.getElementById('go-stat-condition').innerText = activeRaceCar ? `${Math.round(activeRaceCar.condition)}% (−${wear.toFixed(1)}%)` : '—';
+            document.getElementById('go-stat-condition').innerText = activeRaceCar ? circuitNoWear?`${Math.round(activeRaceCar.condition)}% · кольцо без износа`:`${Math.round(activeRaceCar.condition)}% (−${wear.toFixed(1)}%)` : '—';
             const total = document.getElementById('go-stat-cash');
             total.innerText = `${receipt.credited >= 0 ? '+' : '−'}${Math.abs(receipt.credited).toLocaleString('ru-RU')} ₽`;
             total.style.color = receipt.credited >= 0 ? 'var(--accent-green)' : '#fb7185';

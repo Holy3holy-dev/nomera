@@ -6,6 +6,7 @@ const root = path.resolve(__dirname, '..');
 const lodHash=file=>require('node:crypto').createHash('sha256').update(fs.readFileSync(path.join(root,'js',file))).digest('hex').slice(0,12);
 let html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 html=html.replace('</head>',`<script src="./js/authors-progression.js?v=${lodHash('authors-progression.js')}"></script></head>`);
+html=html.replace('</head>',`<script src="./js/authors-activities.js?v=${lodHash('authors-activities.js')}"></script></head>`);
 html = html.replace('<title>H3H Nomera</title>', '<title>NOMERA — Author’s Edition</title>');
 html = html.replace(/, maximum-scale=1\.0, user-scalable=no/, '');
 html = html.replace(/<link[^>]+(?:fonts\.googleapis|fonts\.gstatic|rel="manifest")[^>]*>/g, '');
@@ -45,6 +46,7 @@ for(const file of ['authors-secondary.js','authors-camera-profiles.js','authors-
 html=html.replace('</head>',`<link rel="stylesheet" href="./authors-progression.css?v=${require('node:crypto').createHash('sha256').update(fs.readFileSync(path.join(root,'authors-progression.css'))).digest('hex').slice(0,12)}"></head>`);
 html=html.replace('</body>',`<script src="./js/authors-progression-ui.js?v=${lodHash('authors-progression-ui.js')}"></script></body>`);
 html=html.replace('</body>',`<script src="./js/authors-progression-celebration.js?v=${lodHash('authors-progression-celebration.js')}"></script></body>`);
+html=html.replace('</body>',`<script src="./js/authors-activities-ui.js?v=${lodHash('authors-activities-ui.js')}"></script></body>`);
 html=html.replace('./js/authors-livery.js"','./js/authors-livery.js?v='+lodHash('authors-livery.js')+'"');
 fs.writeFileSync(path.join(root, 'authors.html'), html);
 console.log('authors.html: isolated local entry generated from index.html');

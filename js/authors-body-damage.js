@@ -9,6 +9,7 @@
   return clamp(8*Math.pow(Math.max(0,delta-1.2)/8,1.65),0,95);
  }
  function applyImpact(owner,result,contactKey='world',time){
+  if(owner?.noGameplayDamage||(owner?.state||owner)?.noGameplayDamage)return 0;
   if(!owner||owner.immovable||owner.state?.immovable)return 0;const state=owner.state||owner,mass=owner.profile?.massKg||state.massKg||1500,clock=Number.isFinite(time)?time:Number(state.time)||0,loss=impactLoss({...result,mass});if(loss<=.015)return 0;
   let windows=impactWindows.get(state);if(!windows){windows=new Map();impactWindows.set(state,windows);}const old=windows.get(contactKey),same=old&&clock>=old.time&&clock-old.time<.16,added=Math.max(0,loss-(same?old.peak:0));windows.set(contactKey,{time:same?old.time:clock,peak:same?Math.max(old.peak,loss):loss});if(windows.size>8)windows.delete(windows.keys().next().value);
   if(added>0){state.damageTaken=clamp((state.damageTaken||0)+added,0,100);state.lastImpactDamage={sequence:(state.lastImpactDamage?.sequence||0)+1,time:clock,loss:added,closingSpeedMps:result.closingSpeedMps,deltaSpeedMps:result.normalImpulse/Math.max(100,mass)};}return added;
