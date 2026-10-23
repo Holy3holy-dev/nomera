@@ -56,7 +56,7 @@ const server = http.createServer((req, res) => {
             try {
                 const { carId, dataUrl } = JSON.parse(body);
                 const base64Data = dataUrl.replace(/^data:image\/png;base64,/, '');
-                const filePath = path.join(THUMB_DIR, `${carId === 'camry' ? 'camry-xv70' : carId}.png`);
+                const filePath = path.join(THUMB_DIR, `${carId === 'camry' ? 'camry-xv40' : carId}.png`);
                 fs.writeFileSync(filePath, Buffer.from(base64Data, 'base64'));
                 savedCount++;
                 console.log(`[${savedCount}/${CARS.length}] Saved thumbnail: ${carId}.png (${Math.round(base64Data.length * 0.75 / 1024)} KB)`);

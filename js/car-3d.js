@@ -5504,7 +5504,7 @@
         subaru: './assets/models/subaru_wrx.glb',     // Authentic Subaru Impreza WRX STI sports sedan (3.79 MB)
         m5e60: './assets/models/bmw.glb',            // Real BMW Sport Sedan (2.97 MB, fast load)
         silvia: './assets/models/nissan_370z.glb',    // Real Nissan Z34 JDM Drift Sport Coupe (3.54 MB)
-        // Camry uses the dedicated XV70 procedural body; arrizo8.glb is a Chery.
+        camry: './assets/models/camry-xv40.glb', // CC BY 4.0: Ford mondeo / tnikita; see model credits.
         lc300: './assets/models/landcruiser.glb',     // Real Toyota Land Cruiser (1.41 MB, fast load)
         gtr: './assets/models/gtr.glb',               // Real Nissan GT-R R35 Nismo (10.22 MB)
 
@@ -6808,7 +6808,6 @@
             if (baseCarId === 'mark2' && (mn === 'rezina' || (mn === 'black' && (ms.includes('wheel') || ms.includes('tire'))))) return true;
             if (baseCarId === 'm5e60' && (mn === 'tire' || ms.includes('tire'))) return true;
             if (baseCarId === 'silvia' && (mn === 'tire1mtl' || ms.includes('tire'))) return true;
-            if (baseCarId === 'camry' && (mn === 'tire' || ms.includes('tire') || mn.includes('b_tire') || ms.includes('hub_tire'))) return true;
             if (baseCarId === 'lc300' && (ms.includes('tire') || ms.includes('rubber'))) return true;
             if (baseCarId === 'gtr' && (ms.includes('tire') || ms.includes('rubber') || mn.includes('tire') || mn.includes('rubber'))) return true;
             if (baseCarId === 'e63' && (mn === 'tyre' || ms.includes('tyre') || ms.includes('tire') || ms.includes('wheel1_tyre') || ms.includes('wheel2_tyre'))) return true;
@@ -6850,7 +6849,6 @@
             if (baseCarId === 'polo' && mn.includes('callipergloss')) return true;
             if (baseCarId === 'm5e60' && mn === 'etriers') return true;
             if (baseCarId === 'silvia' && (mn === 'caliper1mtl' || mn === 'rotor1mtl')) return true;
-            if (baseCarId === 'camry' && (mn === 'breaks' || ms.includes('hub_brake_disc'))) return true;
             if (baseCarId === 'lc300' && mn.includes('tmi_change_brake')) return true;
             if (baseCarId === 'gtr' && mn.includes('brakerotor')) return true;
             if (baseCarId === 'e63' && (ms.includes('wheel1_red_0') || ms.includes('wheel2_red_0'))) return true;
@@ -6905,7 +6903,6 @@
             if (baseCarId === 'mark2' && (mn === 'red1' || mn === 'red2' || mn === 'orange')) return true;
             if (baseCarId === 'm5e60' && (mn.includes('wire_060110190') || mn.includes('wire_087225143') || mn.includes('wire_135110008') || mn.includes('taillight_reflector') || mn === 'r_glass' || mn.includes('bmw_e30_m3_lens'))) return true;
             if (baseCarId === 'silvia' && mn.includes('lights1mtl')) return true;
-            if (baseCarId === 'camry' && (ms.includes('weideng_red_plastic') || ms.includes('weideng_map_c'))) return true;
             if (baseCarId === 'lc300' && (mn.includes('tmi_glass_light') || mn.includes('tmi_light') || mn.includes('chromered_squarepattern'))) return true;
             if (baseCarId === 'e63' && (mn === 'bulb' || mn === 'rear_bulb' || mn === 'bulb_red' || ms.includes('bulb'))) return true;
             if (baseCarId === 'rs6' && mn.includes('mat_lights.001')) return true;
@@ -6991,7 +6988,6 @@
             if (baseCarId === 'mark2' && mn === 'inrteer') return true;
             if (baseCarId === 'm5e60' && (mn.includes('interior') || mn === 'sieges')) return true;
             if (baseCarId === 'silvia' && mn.includes('lodainterior')) return true;
-            if (baseCarId === 'camry' && (mn.includes('interior_map') || mn.includes('seats_map') || mn.includes('trunk_map'))) return true;
             if (baseCarId === 'lc300' && (mn.includes('tmi_cabin') || mn.includes('tmi_dashboard'))) return true;
             if (baseCarId === 'e63' && mn === 'interior_plastic') return true;
             if (baseCarId === 'rs6' && mn.includes('mat_details_int')) return true;
@@ -7032,7 +7028,6 @@
             if (baseCarId === 'subaru' && (ms === 'object_10' || ms === 'object_22' || mn === 'material_7' || mn === 'material_19')) return true;
             if (baseCarId === 'vaz2107' && (ms.includes('grille') || ms.includes('radiator'))) return true;
             if (baseCarId === 'polo' && (mn.includes('grille1a') || mn.includes('grille2a'))) return true;
-            if (baseCarId === 'camry' && ms.includes('qianzhongwang')) return true;
             if (baseCarId === 'lc300' && mn.includes('cabin_grid')) return true;
             if (baseCarId === 'rs6' && mn === 'mat_details_grid01') return true;
             if (baseCarId === 'm8' && mn.includes('i8elite_2017grille')) return true;
@@ -7083,7 +7078,6 @@
             if (baseCarId === 'mark2' && (mn === 'glass' || mn.includes('window') || mn.includes('glass'))) return true;
             if (baseCarId === 'm5e60' && (mn === 'glass' || mn === 'glass_toit')) return true;
             if (baseCarId === 'silvia' && mn.includes('windows1mtl')) return true;
-            if (baseCarId === 'camry' && (ms.includes('d_glass') || ms.includes('weideng_glass_light'))) return true;
             if (baseCarId === 'lc300' && mn === 'tmi_glass_011') return true;
             if (baseCarId === 'gtr' && mn === 'マテリアル.653') return true;
             if (baseCarId === 'e63' && (mn === 'glass' || ms.includes('body_glass'))) return true;
@@ -7152,7 +7146,6 @@
             if (baseCarId === 'mark2' && (mn === 'chrome' || mn === 'chrome2') && (ms.includes('wheel') || ms.includes('rim') || ms === 'object_3' || ms === 'object_4' || ms === 'object_5')) return true;
             if (baseCarId === 'm5e60' && (mn === 'alum' || mn.includes('bmw_e30_m3_rim'))) return true;
             if (baseCarId === 'silvia' && mn === 'rim1mtl') return true;
-            if (baseCarId === 'camry' && (mn.includes('metal_r') || ms.includes('hub_metal') || (mn === 'metal' && ms.includes('hub')))) return true;
             if (baseCarId === 'lc300' && (mn.includes('rimmi_changea_rim') || mn.includes('aluminiumbrushed_wheel'))) return true;
             if (baseCarId === 'e63' && (mn === 'metallic_rim' || ms.includes('metallic rim'))) return true;
             if (baseCarId === 'rs6' && mn.includes('audi_rs3sedanrewardrecycled_2023_wheel1a')) return true;
@@ -7217,7 +7210,7 @@
             if (baseCarId === 'mark2') return mn === 'metall' || mn.includes('paint');
             if (baseCarId === 'm5e60') return mn === 'body' || ms.includes('body_body') || mn.includes('paint');
             if (baseCarId === 'silvia') return mn === 'meshpart1mtl' || mn.includes('lodarearbumpermmext1');
-            if (baseCarId === 'camry') return mn === 'carpaint' || ms.includes('carpaint');
+            if (baseCarId === 'camry') return mn === 'camry';
             if (baseCarId === 'lc300') return mn === 'phong1' || mn.includes('1350010001') || mn === 'palettematerial001' || (mn.includes('plasticdiffuse') && ms.includes('primitive0'));
             if (baseCarId === 'gtr') return mn === 'bodycolor';
             if (baseCarId === 'e63') return mn === 'body' || ms === 'body_body_0';
@@ -7328,6 +7321,15 @@
                         }
                         if (matName.includes('badge') || matName.includes('emblem') || matName.includes('logo') || mName.includes('emblem') || mName.includes('badge')) {
                             return mat.map ? 'stock' : 'chrome';
+                        }
+                        if(baseCarId==='camry'){
+                            if(matName==='camry')return 'body';
+                            if(matName==='camry_rin')return 'rim';
+                            if(matName==='vidrios')return 'glass';
+                            if(matName==='camry_int')return 'interior';
+                            if(matName==='cromo')return 'chrome';
+                            if(matName==='camry_plast'||matName==='bajo')return 'trim';
+                            return 'stock';
                         }
                         if (isTireMaterial(matName, mName)) return 'tire';
                         if (isRimMaterial(matName, mName)) return 'rim';
@@ -7486,6 +7488,10 @@
                             liveryMat.userData = Object.assign({}, liveryMat.userData, { preserveLiveryMap: true });
                             liveryMat.needsUpdate = true;
                             return liveryMat;
+                        }
+                        if(baseCarId==='camry'&&origBodyMat?.map){
+                            const paint=styledPaint.clone();paint.map=origBodyMat.map;paint.needsUpdate=true;
+                            return paint;
                         }
                         return styledPaint;
                     }
@@ -8029,6 +8035,7 @@
                 modelGroup.userData.baseBoundingBox = computeTightBoundingBox(clonedScene);
                 modelGroup.userData.vehicleLodFile = GLB_MODEL_MAP[carId]?.split('/').pop();
                 modelGroup.userData.vehicleLodId = carId;
+                if(carId==='camry')modelGroup.userData.modelIdentity='Toyota Camry XV40';
                 fitModelToShowroom(THREE, modelGroup, 4.8);
                 applyStylingToGLTF(THREE, modelGroup, styling, carId);
 
@@ -10214,7 +10221,7 @@
         subaru: './assets/thumbnails/subaru.png',
         m5e60: './assets/thumbnails/m5e60.png',
         silvia: './assets/thumbnails/silvia.png',
-        camry: './assets/thumbnails/camry-xv70.png',
+        camry: './assets/thumbnails/camry-xv40.png',
         lc300: './assets/thumbnails/lc300.png',
         gtr: './assets/thumbnails/gtr.png',
         e63: './assets/thumbnails/e63.png',
