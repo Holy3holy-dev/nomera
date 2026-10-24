@@ -1346,9 +1346,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
         // Audio is lazy, user-activated and independent of gameplay failures.
         function initAudio() { sound.unlock(); }
-        function playTick() { sound.tick(); }
-        function playLockSound(pitchMultiplier = 1) { sound.lock(pitchMultiplier); }
-        function playWinJingle(rarityText) { sound.win(rarityText); }
+        function playTick(scene) { sound.tick({scene}); }
+        function playLockSound(pitchMultiplier = 1,scene) { sound.lock(pitchMultiplier,{scene}); }
+        function playWinJingle(rarityText,scene) { sound.win(rarityText,{scene}); }
         function playCashSound() { sound.cash(); }
         function refreshSoundUI() {
             const preferences = sound.preferences();
@@ -1382,7 +1382,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         }
         function toggleSoundMute() { saveSoundOptions({ muted: !sound.preferences().muted }); }
         function previewSound() { initAudio(); sound.cash(); }
-        window.NomeraSoundBridge={preview(kind,rarity='Эпический'){initAudio();if(kind==='car')sound.rewardCar?.(rarity);else if(kind==='reward')sound.win(rarity);else if(kind==='tick')sound.tick();else sound.click();},settings:()=>({running:isRaceRunning,station:raceRadioStation}),selectRadio:id=>setRaceRadioStation(id)};
+        window.NomeraSoundBridge={preview(kind,rarity='Эпический'){window.NomeraSoundscape?.stop();initAudio();if(kind==='car')sound.rewardCar?.(rarity,{scene:'cases'});else if(kind==='case')sound.win(rarity,{scene:'cases'});else if(kind==='reward')sound.win(rarity,{scene:'generator'});else if(kind==='tick')sound.tick();else sound.click();},settings:()=>({running:isRaceRunning,station:raceRadioStation}),selectRadio:id=>setRaceRadioStation(id)};
         function navigateToTab(id) {
             const tab = [...document.querySelectorAll('.nav-tab')].find(button => button.dataset.tab === id);
             switchTab(id, tab);
@@ -5767,7 +5767,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
         function executeCellSpin(targets, finalValues, onFinish) {
             initAudio();
-            if(window.NOMERA_AUTHORS_PREVIEW){window.NomeraPrestige?.cancel();window.NomeraSoundscape?.cue('spin');}
+            if(window.NOMERA_AUTHORS_PREVIEW){window.NomeraPrestige?.cancel();window.NomeraSoundscape?.cue('spin',{scene:'generator'});}
             isSpinning = true;
 
             if (currentCountry === 'JPN' && targets.some(id => id.startsWith('cell-n'))) {
@@ -5909,7 +5909,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     let finalPrice = calculatePrice();
                     let r = getRarity(finalPrice);
                     flashPlateReward(r.text);
-                    if(window.NOMERA_AUTHORS_PREVIEW&&window.NomeraSoundscape)playWinJingle(r.text);
+                    if(window.NOMERA_AUTHORS_PREVIEW&&window.NomeraSoundscape)playWinJingle(r.text,'generator');
                     const isHighTier = ['Редкий', 'Супер редкий', 'Эпический', 'Легендарный', 'БЛАТНОЙ', 'Крутой', 'Мифический'].includes(r.text);
                     if (isHighTier) {
                         pityCounterBoth = 0;
@@ -5917,15 +5917,15 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     }
                     if (r.text === "БЛАТНОЙ" || r.text === "Легендарный" || r.text === "Крутой" || r.text === "Мифический") {
                         if(!(window.NOMERA_AUTHORS_PREVIEW&&window.NomeraPrestige)){triggerLegendaryEffect();triggerScreenShake();}
-                        playWinJingle(r.text);
+                        playWinJingle(r.text,'generator');
                         if (typeof sound?.haptic === 'function') sound.haptic('win');
                     } else if (r.text === "Эпический") {
-                        playWinJingle(r.text);
+                        playWinJingle(r.text,'generator');
                         if (typeof sound?.haptic === 'function') sound.haptic('win');
                     } else if (r.text === "Редкий") {
                         if (typeof sound?.haptic === 'function') sound.haptic('medium');
                     } else if (r.text === "Супер редкий") {
-                        playWinJingle(r.text);
+                        playWinJingle(r.text,'generator');
                         if (typeof sound?.haptic === 'function') sound.haptic('win');
                     }
                     const curPlateText = formatPlateText(currentL1, currentL2, currentL3, currentNum, currentReg, currentCountry);
@@ -5967,7 +5967,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
                 if (now - lastTickTime >= 48) {
                     lastTickTime = now;
-                    playTick();
+                    playTick('generator');
                     const activeLettersPool = (PLATE_COUNTRIES[currentCountry] && PLATE_COUNTRIES[currentCountry].letters) || lettersArr;
                     const isUaeSpin = String(currentCountry || 'RUS').toUpperCase() === 'UAE';
                     activeCells.forEach(id => {
@@ -5988,7 +5988,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                         setCellChar(id, finalValues[id]);
 
                         let pitch = 0.9 + (targets.indexOf(id) * 0.1);
-                        playLockSound(pitch);
+                        playLockSound(pitch,'generator');
                         if (typeof sound?.haptic === 'function') sound.haptic('medium');
                     }
                 });
@@ -7398,7 +7398,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     }
                 }
                 document.getElementById('btn-skip-batch-anim')?.classList.add('hidden');
-                playLockSound(1.35);
+                playLockSound(1.35,'cases');
                 isSpinning = false;
             }
         }
@@ -7581,6 +7581,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         }
 
         function closeRouletteModal() {
+            if(window.NOMERA_AUTHORS_PREVIEW)window.NomeraNumberAudio?.stop('cases');
             clearCaseAnimationTimers();
             activeSingleRevealCallback = null;
             isSpinning = false;
@@ -7992,7 +7993,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                             document.getElementById('btn-skip-roulette')?.classList.add('hidden');
                             document.getElementById('case-unseal-stage')?.classList.add('hidden');
                             if (status) status.textContent = `СЕРИЯ ×${openCount} ОТКРЫТА`;
-                            playLockSound(1.4);
+                            playLockSound(1.4,'cases');
                             window.NomeraRewards.celebrate(document.getElementById('roulette-batch-result'), bestR.text, bestBatchItem.price);
                         }
                     });
@@ -8044,7 +8045,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                         statusEl.textContent = `✓ ВСЕ НАГРАДЫ ОТКРЫТЫ`;
                         statusEl.innerText = `✓ ВСЕ НАГРАДЫ ОТКРЫТЫ`;
                     }
-                    playLockSound(1.3);
+                    playLockSound(1.3,'cases');
                 } else {
                     const stepMs = caseAnimMode === 'fast' ? 75 : 150;
                     document.getElementById('btn-skip-roulette')?.classList.remove('hidden');
@@ -8078,9 +8079,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                                     allCards[i].classList.add('revealed-card');
                                 }
                             }
-                            playTick();
+                            playTick('cases');
                             if (i === openCount - 1) {
-                                playLockSound(1.4);
+                                playLockSound(1.4,'cases');
                                 document.getElementById('btn-skip-roulette')?.classList.add('hidden');
                                 document.getElementById('btn-skip-batch-anim')?.classList.add('hidden');
                                 const stEl = document.getElementById('batch-reveal-status');
@@ -8094,7 +8095,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                                 });
                                 if (hasHighTier) {
                                     triggerConfetti();
-                                    playWinJingle('Легендарный');
+                                    playWinJingle('Легендарный','cases');
                                 }
                             }
                         }, (i + 1) * stepMs);
@@ -8195,7 +8196,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     track.style.transition = 'none';
                     track.style.transform = `translateX(${targetX}px)`;
                 }
-                playLockSound(1.4);
+                playLockSound(1.4,'cases');
 
                 const winningCard = document.getElementById(`rcard-${winningIndex}`);
 
@@ -8247,16 +8248,16 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     document.getElementById('btn-roulette-sell-car').innerText = `💰 Продать за 90% (${sellPrice.toLocaleString('ru-RU')} ₽)`;
                     document.getElementById('roulette-result')?.classList.remove('hidden');
 
-                    if(window.NOMERA_AUTHORS_PREVIEW)sound.rewardCar?.(wonCarObj.rarity.text);
+                    if(window.NOMERA_AUTHORS_PREVIEW)sound.rewardCar?.(wonCarObj.rarity.text,{scene:'cases'});
                     if (wonCarObj.rarity.text === "МИФИЧЕСКИЙ" || wonCarObj.rarity.text === "Легендарный") {
                         triggerConfetti();
                         triggerScreenShake();
-                        playWinJingle("Легендарный");
+                        playWinJingle("Легендарный",'cases');
                     } else if (wonCarObj.rarity.text === "Эпический" || wonCarObj.rarity.text === "Супер редкий") {
-                        playWinJingle(wonCarObj.rarity.text);
+                        playWinJingle(wonCarObj.rarity.text,'cases');
                     }
                 } else if (wonPlateObj) {
-                    if(window.NOMERA_AUTHORS_PREVIEW&&window.NomeraSoundscape)playWinJingle(wonPlateObj.rarity.text);
+                    if(window.NOMERA_AUTHORS_PREVIEW&&window.NomeraSoundscape)playWinJingle(wonPlateObj.rarity.text,'cases');
                     let winColor = wonPlateObj.rarity.bg !== "transparent" ? (wonPlateObj.rarity.bg.startsWith('linear') ? '#f59e0b' : wonPlateObj.rarity.bg) : "#10b981";
                     if (winningCard) {
                         winningCard.style.transform = 'scale(1.08)';
@@ -8300,9 +8301,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     ) {
                         triggerConfetti();
                         triggerScreenShake();
-                        playWinJingle("Легендарный");
+                        playWinJingle("Легендарный",'cases');
                     } else if (wonPlateObj.rarity.text === "Эпический" || wonPlateObj.rarity.text === "Супер редкий") {
-                        playWinJingle(wonPlateObj.rarity.text);
+                        playWinJingle(wonPlateObj.rarity.text,'cases');
                     }
                 }
             };
@@ -8329,7 +8330,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             let tickDelay = caseAnimMode === 'fast' ? 45 : 70;
             const maxTickDelay = caseAnimMode === 'fast' ? 240 : 480;
             function playCaseReelTicks() {
-                playTick();
+                playTick('cases');
                 tickDelay *= 1.15;
                 if (tickDelay < maxTickDelay) {
                     const tid = setTimeout(playCaseReelTicks, tickDelay);

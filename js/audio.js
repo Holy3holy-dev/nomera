@@ -1075,12 +1075,12 @@
             },
             click() { if(authorsSound('click'))return; tone(620, 0.035, 0.06, 0, 'sine', 380); },
             button() { if(authorsSound('click'))return; tone(520, 0.025, 0.05, 0, 'sine', 340); },
-            tick() { if(authorsSound('tick'))return;
+            tick(options={}) { if(authorsSound('tick',options))return;
                 if (!context || context.currentTime - lastTick < 0.035) return;
                 lastTick = context.currentTime;
                 tone(780, 0.035, 0.09, 0, 'triangle', 320);
             },
-            lock(pitch = 1) { if(authorsSound('lock',{pitch}))return;
+            lock(pitch = 1,options={}) { if(authorsSound('lock',{...options,pitch}))return;
                 tone(180 * pitch, 0.13, 0.18, 0, 'sine', 45);
                 tone(1150 * pitch, 0.045, 0.06);
             },
@@ -1414,7 +1414,7 @@
                 tone(220, 0.12, 0.12, 0, 'triangle', 160);
                 tone(160, 0.18, 0.12, 0.07, 'triangle', 120);
             },
-            win(rarity) { if(authorsSound('reward',{rarity}))return;
+            win(rarity,options={}) { if(authorsSound('reward',{...options,rarity}))return;
                 const rare = ['БЛАТНОЙ','Легендарный','МИФИЧЕСКИЙ','Крутой'].includes(rarity);
                 (rare ? [329.63, 493.88, 659.25, 987.77] : [392, 493.88, 587.33]).forEach((freq, i) => {
                     tone(freq, rare ? 0.65 : 0.38, 0.10, i * 0.09);
@@ -1441,7 +1441,7 @@
             updateEnvironment(input={}) {if(!root.NOMERA_AUTHORS_PREVIEW||!root.NomeraRoadSound)return;if(!unlocked||!context||context.state!=='running'||level()<=0){root.NomeraRoadSound.quiet(input);root.NomeraRoadSound.stop();return;}root.NomeraRoadSound.update({context,master,input});},
             stopEngine,
             updateEngine,
-            rewardCar(rarity) { return authorsSound('car',{rarity}); },
+            rewardCar(rarity,options={}) { return authorsSound('car',{...options,rarity}); },
             suspend() {
                 if(root.NOMERA_AUTHORS_PREVIEW){root.NomeraSoundscape?.stop();root.NomeraRadio?.suspend();root.NomeraRoadSound?.stop();}
                 stopNitro(0.02, false);
