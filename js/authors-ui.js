@@ -57,7 +57,8 @@
     $('#inv-search-input').setAttribute('aria-label','Поиск по номеру или региону');
     $('#inventory .section-title').hidden = true;
     $('#col-plates-summary').classList.add('ae-collection-total');
-    // Native details: keyboard-accessible and identical on mobile and desktop.
+    // The collection module owns these controls when the library browser is present.
+    if (!window.NomeraCollection) {
     const filterDetails = make('details','ae-collection-filters','<summary>Фильтры и сортировка <span>＋</span></summary>');
     filterDetails.append($('.col-filters-group'));
     $('#col-actions-bar').append(filterDetails);
@@ -65,6 +66,7 @@
     const bulk = make('details','ae-bulk','<summary>Продажа коллекции <span>＋</span></summary>');
     const bulkButtons = $('#btn-sell-all-plates').parentElement;
     bulkButtons.before(bulk);bulk.append(bulkButtons);
+    }
 
     const garage = $('#garage');
     garage.prepend(intro('03','АВТОМОБИЛИ','Мой гараж','Выбери автомобиль. Настрой под себя. Выезжай на трассу.'));

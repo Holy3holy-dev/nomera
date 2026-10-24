@@ -67,7 +67,7 @@ function safePlate(raw,id){
   );
   if (!isValidFormat) throw Error('Неверный формат номера');
   const price=Number.isSafeInteger(raw.price) && raw.price>=0 && raw.price<=MAX_MONEY ? raw.price : 1000;
-  return {id, text, price, rarity:{text:typeof raw.rarity?.text==='string'?raw.rarity.text.slice(0,30):'Обычный'}};
+  return {id, text, price, rarity:{text:typeof raw.rarity?.text==='string'?raw.rarity.text.slice(0,30):'Обычный'}, ...(raw.favorite === true ? {favorite:true} : {})};
 }
 function parsePlate(text, countryOverride = null) {
   if (typeof text !== 'string') return null;
@@ -225,6 +225,7 @@ function safeCar(raw){
     }
   }
   const result={name,basePrice,condition,category,img,plate,upgrades};
+  if (raw.saleProtected === true) result.saleProtected = true;
   if (typeof raw.tuningStage==='number' && Number.isFinite(raw.tuningStage)) {
     result.tuningStage=Math.max(0,Math.min(20,Math.floor(raw.tuningStage)));
   }
@@ -1526,6 +1527,7 @@ function mutate(state, action, key, data, now=Date.now()) {
       const lotId = data.lotId;
       if (!/^[a-zA-Z0-9_-]{12,80}$/.test(lotId) || market[lotId]) throw Error('Неверный идентификатор лота');
       const car = safeCar(cars[pos]);
+      if (car.saleProtected || car.plate?.favorite) throw Error('Сначала снимите защиту с автомобиля и его номера');
       accounts[key] = {...a, myCars: cars.filter((_, i) => i !== pos), updatedAt: now};
       market[lotId] = {lotId, type: 'car', sellerKey: key, sellerName: a.nickname, car, price, createdAt: now};
     } else {
@@ -1535,6 +1537,7 @@ function mutate(state, action, key, data, now=Date.now()) {
       const lotId=data.lotId;
       if (!/^[a-zA-Z0-9_-]{12,80}$/.test(lotId) || market[lotId]) throw Error('Неверный идентификатор лота');
       const plate=a.inventory[pos];
+      if (plate.favorite) throw Error('Сначала снимите защиту с номера');
       accounts[key]={...a,inventory:a.inventory.filter((_,i)=>i!==pos),updatedAt:now};
       market[lotId]={lotId,sellerKey:key,sellerName:a.nickname,plate,price,createdAt:now};
     }

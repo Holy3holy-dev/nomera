@@ -39,6 +39,7 @@
   const index=inventory.findIndex(p=>p?.id===id);
   if(index<0||!Number.isSafeInteger(price)||price<1000||price>1000000000000)return notifyUser('Проверьте предмет и цену от 1 000 ₽.');
   const plate=inventory[index];
+  if(plate.favorite)return notifyUser('Сначала снимите защиту с номера в коллекции.');
   if(myCars.some(car=>car.plate?.text===plate.text))return notifyUser('Сначала снимите этот номер с автомобиля.');
   busy=true;
   try{

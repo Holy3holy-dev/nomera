@@ -276,8 +276,9 @@ test('sellCar handles cars with missing basePrice and never yields NaN', () => {
     assert.equal(app.run('myCars[0].basePrice'), undefined);
 
     // Selling car must calculate profit via template fallback and must NOT yield NaN
-    app.run('sellCar(0, false)');
-    assert.equal(app.run('myCars.length'), 0);
+    app.run("myCars.push({name:'Toyota Camry 3.5',basePrice:80000}); sellCar(0, false)");
+    assert.equal(app.run('myCars.length'), 1);
+    assert.equal(app.run('myCars[0].name'), 'Toyota Camry 3.5');
     const bal = app.run('balance');
     assert.ok(Number.isFinite(bal), 'Balance must be finite');
     assert.ok(bal > 50000, 'Balance must have received sale profit');
@@ -304,8 +305,9 @@ test('sellCar without plate preserves the plate in inventory', () => {
     assert.equal(app.run('myCars.length'), 1);
 
     // Sell only car (hasPlate = false)
-    app.run('sellCar(0, false)');
-    assert.equal(app.run('myCars.length'), 0);
+    app.run("myCars.push({name:'Toyota Camry 3.5',basePrice:80000}); sellCar(0, false)");
+    assert.equal(app.run('myCars.length'), 1);
+    assert.equal(app.run('myCars[0].name'), 'Toyota Camry 3.5');
     // The plate must be returned to inventory!
     assert.equal(app.run('inventory.length'), 1);
     assert.equal(app.run('inventory[0].text'), 'А 777 АА | 77 RUS');
@@ -328,10 +330,23 @@ test('sellCar with plate sells both car and plate', () => {
     });
     app.run('loadProgress()');
     // Expected profit: Math.floor(120000 * 0.9 + 100000 * 0.95) = 108000 + 95000 = 203000
-    app.run('sellCar(0, true)');
-    assert.equal(app.run('myCars.length'), 0);
+    app.run("myCars.push({name:'Toyota Camry 3.5',basePrice:80000}); sellCar(0, true)");
+    assert.equal(app.run('myCars.length'), 1);
+    assert.equal(app.run('myCars[0].name'), 'Toyota Camry 3.5');
     assert.equal(app.run('inventory.length'), 0);
     assert.equal(app.run('balance'), 50000 + 203000);
+});
+
+test('garage protection blocks direct sales of the last car, protected car and protected plate bundle',()=>{
+    const app=createApp();
+    app.run("myCars=[{name:'Only',basePrice:80000}]; balance=50000; sellCar(0,false)");
+    assert.equal(app.run('myCars.length'),1);assert.equal(app.run('balance'),50000);
+    app.run("myCars.push({name:'Protected',basePrice:80000,saleProtected:true}); sellCar(1,false)");
+    assert.equal(app.run('myCars.length'),2);assert.equal(app.run('balance'),50000);
+    app.run("myCars[1].saleProtected=false; myCars[1].plate={text:'А 123 АА | 77 RUS',price:1000,favorite:true}; sellCar(1,true)");
+    assert.equal(app.run('myCars.length'),2);assert.equal(app.run('balance'),50000);
+    app.run("inventory=[{text:'А 123 АА | 77 RUS',price:1000,favorite:true}]; sellPlate(0)");
+    assert.equal(app.run('inventory.length'),1);assert.equal(app.run('balance'),50000);
 });
 
 test('leaderboard renders visible player avatars and safeImageUrl accepts SVG data URIs', () => {

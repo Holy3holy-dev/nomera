@@ -7682,7 +7682,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             recordRecentRareDrop(reward);
         }
 
-        function syncInventoryAndGarageToCloud() {
+        function syncInventoryAndGarageToCloud(includeBalance = false) {
             if (!onlineProfile) return;
             onlineProfile.inventory = [...inventory];
             onlineProfile.myCars = JSON.parse(JSON.stringify(myCars));
@@ -7692,13 +7692,16 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 db.ref('onlineV4/accounts/' + key).update({
                     inventory: onlineProfile.inventory,
                     myCars: onlineProfile.myCars,
+                    ...(includeBalance ? {balance: onlineProfile.balance} : {}),
                     updatedAt: now
                 }).catch(() => {});
                 db.ref('users/' + key).update({
                     inventory: onlineProfile.inventory,
                     myCars: onlineProfile.myCars,
+                    ...(includeBalance ? {balance: onlineProfile.balance} : {}),
                     updatedAt: now
                 }).catch(() => {});
+                if (includeBalance) db.ref('leaderboard/' + key).update({balance: onlineProfile.balance, updatedAt: now}).catch(() => {});
             }
         }
 
@@ -7831,6 +7834,8 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             const item = batchCaseResults[idx];
             if (isSpinning || !item || item._sold || (window.NomeraCaseResults && !window.NomeraCaseResults.canSell(item))) return;
             if (!(item.isCar ? myCars : inventory).some(i => i && i._openingId === item._openingId)) return;
+            const owned = (item.isCar ? myCars : inventory).find(i => i && i._openingId === item._openingId);
+            if (item.isCar ? owned?.saleProtected : owned?.favorite) return;
             if (item.isCar && myCars.length <= 1) {
                 notifyUser('В гараже должен остаться хотя бы один автомобиль!', 'warn');
                 return;
@@ -7868,6 +7873,8 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 if (selected && !selected.has(index)) return;
                 if (window.NomeraCaseResults && !window.NomeraCaseResults.canSell(item)) return;
                 if (!(item.isCar ? myCars : inventory).some(i => i && i._openingId === item._openingId)) return;
+                const owned = (item.isCar ? myCars : inventory).find(i => i && i._openingId === item._openingId);
+                if (item.isCar ? owned?.saleProtected : owned?.favorite) return;
                 if (onlyDuplicates && !item._isDuplicate) return;
                 if (item.isCar && myCars.length <= 1) {
                     skippedLastCar = true;
@@ -8378,6 +8385,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
         function rouletteSell() {
             if (!wonPlateObj || wonPlateObj._sold) return;
+            if (wonPlateObj.favorite || inventory.find(p=>p._openingId===wonPlateObj._openingId)?.favorite) return;
             const reward = wonPlateObj;
             reward._sold = true;
             wonPlateObj = null;
@@ -8411,6 +8419,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
         function rouletteSellCar() {
             if (!wonCarObj || wonCarObj._sold) return;
+            if (myCars.find(c=>c._openingId===wonCarObj._openingId)?.saleProtected) return;
             const reward = wonCarObj;
             reward._sold = true;
             wonCarObj = null;
@@ -8657,6 +8666,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
         function renderInventory() {
             let list = document.getElementById('inventory-list');
+            window.NomeraCollection?.plateControls({items: inventory, state: collectionFilterState, entries: []});
             updateBulkSellButtons();
             if (!list) {
                 updateBadge();
@@ -8694,7 +8704,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 });
             }
 
-            const q = String(collectionFilterState.query || '').trim().toLowerCase();
+            const q = String(collectionFilterState.query || '').replace(/\s+/g, '').toLowerCase();
             const countryFilter = collectionFilterState.country || 'all';
             const rarityFilter = collectionFilterState.rarity || 'all';
             const catFilter = collectionFilterState.category || 'all';
@@ -8727,7 +8737,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
             entries = entries.filter(({ item, fromGarageCarIdx }) => {
                 if (!item) return false;
-                if (q && !String(item.text || '').toLowerCase().includes(q)) return false;
+                if (q && !String(item.text || '').replace(/\s+/g, '').toLowerCase().includes(q)) return false;
                 if (countryFilter !== 'all' && detectPlateCountryBucket(item) !== countryFilter) return false;
                 const bucket = detectPlateRarityBucket(item);
                 if (rarityFilter !== 'all' && bucket !== rarityFilter) return false;
@@ -8807,7 +8817,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                         : `<span class="plate-status-badge status-garage">🚗 На авто</span>`);
 
                 html += `
-                    <div class="inv-card inv-item luxury-plate-card inv-plate-card ${tierClass}" ${clickAttr}>
+                    <div class="inv-card inv-item luxury-plate-card inv-plate-card ${tierClass}" ${index >= 0 ? `data-vault-index="${index}"` : ''} ${clickAttr}>
                         <div class="inv-card-aura" aria-hidden="true"></div>
                         <div class="inv-card-top plate-card-top-bar">
                             <span class="plate-card-rarity-pill" style="background:${r.bg}; color:${r.color};">${tierIcon} ${escapeHtml(r.text)}</span>
@@ -8823,6 +8833,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     </div>`;
             });
             list.innerHTML = html;
+            window.NomeraCollection?.platesRendered({items: inventory, entries, state: collectionFilterState});
             updateBadge();
             if (typeof renderCollectorBook === 'function') renderCollectorBook();
             if (typeof updateVipOrdersBadge === 'function') updateVipOrdersBadge();
@@ -8895,6 +8906,10 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         function sellPlate(index, silent = false) {
             const item = inventory[index];
             if (!item || !Number.isFinite(item.price) || item.price < 0) return;
+            if (item.favorite || window.NomeraCollection?.reserved('plates', item, collectionSnapshot('plates'))) {
+                if (!silent) notifyUser('Сначала снимите защиту с номера. Установленные и выставленные номера не продаются из инвентаря.', 'info');
+                return;
+            }
             const price = item.price;
             inventory.splice(index, 1);
             creditPlayerBalance(price, `Продажа госномера «${item.text}»`);
@@ -8921,6 +8936,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         }
 
         async function sellAllPlates(filter = 'all') {
+            if (window.NomeraCollection) return sellCollectionItems('plates', filter === 'common' ? 'common' : 'all');
             if (!Array.isArray(inventory) || inventory.length === 0) {
                 notifyUser('Инвентарь пуст!', 'info');
                 return false;
@@ -8984,6 +9000,74 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             return true;
         }
         window.sellAllPlates = sellAllPlates;
+
+        let collectionSaleBusy = false;
+        function collectionSnapshot(kind) {
+            return {items: kind === 'cars' ? myCars : inventory, cars: myCars,
+                listings: typeof activeMarketListings !== 'undefined' ? activeMarketListings : [],
+                activeCar: myCars[activeGarageCarIndex], raceCar: myCars[getSelectedRaceCarIndex()],
+                running: isRaceRunning, templates: carsData, busy: collectionSaleBusy};
+        }
+        window.NomeraCollectionBridge = {snapshot: collectionSnapshot};
+        function toggleCollectionProtection(kind, index) {
+            const item = (kind === 'cars' ? myCars : inventory)[index];
+            if (!item || !['cars','plates'].includes(kind)) return;
+            const field = kind === 'cars' ? 'saleProtected' : 'favorite', previous = item[field];
+            item[field] = !item[field];
+            if (saveProgress(false) === false) {
+                if (previous === undefined) delete item[field]; else item[field] = previous;
+                notifyUser('Не удалось сохранить защиту. Попробуйте ещё раз.', 'error'); return;
+            }
+            syncInventoryAndGarageToCloud();
+            if (kind === 'cars') renderGarageCarSidebarList(); else renderInventory();
+        }
+        window.toggleCollectionProtection = toggleCollectionProtection;
+        async function sellCollectionItems(kind, mode = 'duplicates', selected = null) {
+            const collection = window.NomeraCollection;
+            if (!collection || collectionSaleBusy || !['plates','cars'].includes(kind)) return false;
+            const snapshot = collectionSnapshot(kind);
+            const common = mode === 'common' ? snapshot.items.filter(isCommonInventoryPlate) : selected;
+            const preview = collection.plan(kind, snapshot.items, {...snapshot, mode, selected: common});
+            if (!preview.items.length) { notifyUser('Нет подходящих предметов для продажи. Защищённые и используемые предметы остаются.', 'info'); return false; }
+            collectionSaleBusy = true; collection.busy();
+            try {
+                const message = `Продать ${kind === 'cars' ? 'автомобили' : 'номера'}: ${preview.items.length} шт. за +${preview.total.toLocaleString('ru-RU')} ₽?` +
+                    (kind === 'cars' ? ' Установленные номера выбранных машин вернутся в инвентарь бесплатно.' : '') + ' Защищённое остаётся. Отменить продажу нельзя.';
+                if (!(await confirmAction(message))) return false;
+                const latest = collectionSnapshot(kind);
+                const current = collection.plan(kind, latest.items, {...latest, mode, selected: preview.items});
+                if (current.total !== preview.total || current.items.length !== preview.items.length || current.items.some((item,i)=>item!==preview.items[i])) {
+                    notifyUser('Коллекция изменилась. Проверьте состав и подтвердите продажу заново.', 'info'); return false;
+                }
+                const rollback = {inventory: inventory.slice(), cars: myCars.slice(), balance, wallet: onlineProfile?.balance,
+                    active: activeGarageCarIndex, race: selectedRaceCarIndex, lastSpendTimestamp};
+                const sold = new Set(current.items), active = myCars[activeGarageCarIndex], race = myCars[getSelectedRaceCarIndex()];
+                if (kind === 'cars') {
+                    current.items.forEach(car => { if (car.plate || car.attachedPlate) {
+                        const plate = car.plate || car.attachedPlate;
+                        inventory.unshift(typeof plate === 'object' ? plate : {text:String(plate),price:0});
+                    }});
+                    myCars = myCars.filter(car => !sold.has(car));
+                    activeGarageCarIndex = Math.max(0, myCars.indexOf(active));
+                    selectedRaceCarIndex = myCars.indexOf(race);
+                } else inventory = inventory.filter(item => !sold.has(item));
+                balance += current.total; lastSpendTimestamp = Date.now();
+                if (onlineProfile) onlineProfile.balance = Math.max(balance, (Number(rollback.wallet)||rollback.balance) + current.total);
+                if (saveProgress(false) === false) {
+                    inventory = rollback.inventory; myCars = rollback.cars; balance = rollback.balance;
+                    activeGarageCarIndex = rollback.active; selectedRaceCarIndex = rollback.race; lastSpendTimestamp = rollback.lastSpendTimestamp;
+                    if (onlineProfile) onlineProfile.balance = rollback.wallet;
+                    updateBalance(); updateBadge();
+                    notifyUser('Продажа отменена: не удалось сохранить изменения.', 'error'); return false;
+                }
+                updateBalance(); syncInventoryAndGarageToCloud(true);
+                if (kind === 'cars' && typeof syncCloudGarage === 'function') syncCloudGarage(true);
+                playCashSound(); renderInventory(); if (kind === 'cars') renderCars();
+                notifyUser(`Продано: ${current.items.length} шт. · +${current.total.toLocaleString('ru-RU')} ₽`, 'success');
+                return true;
+            } finally { collectionSaleBusy = false; collection.busy(); }
+        }
+        window.sellCollectionItems = sellCollectionItems;
 
 
         // --- ГАРАЖ ---
@@ -9260,6 +9344,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             let myCarsDiv = document.getElementById('my-cars');
 
             if (myCars.length === 0) {
+                if (window.NomeraCollection) renderGarageCarSidebarList();
                 const podiumCard = document.getElementById('garage-3d-podium-card');
                 if (podiumCard) podiumCard.style.display = 'none';
                 if (garage3DShowroom) garage3DShowroom.stop();
@@ -9534,6 +9619,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         function sellCar(index, hasPlate) {
             let car = myCars[index];
             if (!car) return;
+            if (isRaceRunning || myCars.length <= 1 || car.saleProtected || (hasPlate && car.plate?.favorite)) {
+                notifyUser('Автомобиль защищён, участвует в заезде или остался последним в гараже. Снимите защиту перед продажей.', 'info'); return;
+            }
             const template = (typeof carsData !== 'undefined' && Array.isArray(carsData))
                 ? (carsData.find(c => c && c.name === car.name) || {})
                 : {};
@@ -10519,6 +10607,10 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             if (typeof document === 'undefined') return;
             const listEl = document.getElementById('garage-car-sidebar-list');
             if (!listEl) return;
+            if (window.NomeraCollection) {
+                window.NomeraCollection.carsRendered({items: myCars, sprite: getCarSpriteDataUrl});
+                return;
+            }
             if (!Array.isArray(myCars) || myCars.length === 0) {
                 listEl.innerHTML = `<div style="font-size:12px; color:var(--text-muted); padding:12px; text-align:center;">В гараже пока нет машин</div>`;
                 return;
@@ -12414,7 +12506,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             if (!tpl || typeof tpl.matchesPlate !== 'function' || !Array.isArray(inventory)) return [];
             const matches = [];
             inventory.forEach((plate, idx) => {
-                if (plate && tpl.matchesPlate(plate)) {
+                if (plate && !plate.favorite && tpl.matchesPlate(plate)) {
                     matches.push({
                         index: idx,
                         plate,
@@ -12479,6 +12571,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             }
 
             const plate = inventory[targetIdx];
+            if (plate?.favorite) { notifyUser('Сначала снимите защиту с номера для передачи по спецзаказу.', 'info'); return false; }
             const payout = calculateVipOrderPayout(order, plate);
             const xp = Number(order.xpReward || tpl.xpReward || 75);
 
@@ -14453,6 +14546,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             const sel = document.getElementById('sell-car-select');
             const idx = Number(sel?.value || 0);
             const car = myCars[idx];
+            if (isRaceRunning || car?.saleProtected || car?.plate?.favorite) { notifyUser('Сначала снимите защиту с автомобиля и его номера.', 'info'); return; }
             const price = Number(document.getElementById('sell-car-price')?.value);
 
             if (!car || !Number.isSafeInteger(price) || price < 10000 || price > 1000000000000) {
