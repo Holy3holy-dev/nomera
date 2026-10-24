@@ -7,18 +7,23 @@ const root = path.join(__dirname, '..');
 require('./model-assets.cjs').generate();
 const files = ['styles.css', 'js/security.js', 'js/storage.js', 'js/race-records.js', 'js/race-economy.js', 'js/audio.js', 'js/race-effects.js', 'js/nfs-physics.js', 'js/nfs-circuit-race.js', 'js/model-assets.js', 'js/car-3d.js', 'js/app.js'];
 const hash = value => createHash('sha256').update(value).digest('hex').slice(0,12);
-let html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+
+const legacyPath = path.join(root, 'legacy.html');
+if (!fs.existsSync(legacyPath)) {
+    fs.copyFileSync(path.join(root, 'index.html'), legacyPath);
+}
+let legacyHtml = fs.readFileSync(legacyPath, 'utf8');
 for (const file of files) {
     const url = './' + file + '?v=' + hash(fs.readFileSync(path.join(root, file)));
     const escaped = file.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    html = html.replace(new RegExp('\\./' + escaped + '(?:\\?v=[a-z0-9]+)?', 'g'), url);
+    legacyHtml = legacyHtml.replace(new RegExp('\\./' + escaped + '(?:\\?v=[a-z0-9]+)?', 'g'), url);
 }
-fs.writeFileSync(path.join(root, 'index.html'), html);
+fs.writeFileSync(legacyPath, legacyHtml);
 
-// Regenerate Author's Edition sandbox (authors.html) and production release (authors-release.html)
+// Regenerate Author's Edition sandbox (authors.html) and production release (index.html & authors-release.html)
 require('./authors-build.cjs');
 
-const releaseHtml = fs.readFileSync(path.join(root, 'authors-release.html'), 'utf8');
+const releaseHtml = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 const stylesVersionUrl = './styles.css?v=' + hash(fs.readFileSync(path.join(root, 'styles.css')));
 const versionedReleaseUrls = [];
 const seenUrls = new Set();
@@ -33,12 +38,12 @@ for (const url of [
 }
 
 const staticAssets = ['./assets/authors-brand/favicon.svg', './icons/car-placeholder.svg', './icons/icon-192.png', './icons/icon-512.png'];
-const swAssets = ['./', './index.html', './authors-release.html', './manifest.json', ...versionedReleaseUrls, ...staticAssets];
+const swAssets = ['./', './index.html', './manifest.json', ...versionedReleaseUrls, ...staticAssets];
 
 const manifest = fs.readFileSync(path.join(root, 'manifest.json'));
 const release = hash(
     releaseHtml +
-    html +
+    legacyHtml +
     manifest +
     versionedReleaseUrls.concat(staticAssets).map(u => fs.readFileSync(path.join(root, u.split('?')[0].slice(2)))).join('')
 );

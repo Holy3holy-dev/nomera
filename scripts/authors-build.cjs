@@ -1,6 +1,6 @@
 'use strict';
 // Build both the isolated local preview entry (authors.html) and the production
-// Author's Edition release entry (authors-release.html) from index.html.
+// Author's Edition release entry (index.html and authors-release.html) from legacy.html.
 const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
@@ -10,6 +10,13 @@ const fileHash = relPath => crypto.createHash('sha256').update(fs.readFileSync(p
 const jsHash = file => fileHash(path.join('js', file));
 const cssHash = file => fileHash(file);
 
+// Ensure legacy.html exists as the clean base template.
+const legacyPath = path.join(root, 'legacy.html');
+const indexPath = path.join(root, 'index.html');
+if (!fs.existsSync(legacyPath)) {
+    fs.copyFileSync(indexPath, legacyPath);
+}
+
 // Legacy CSS has accumulated thousands of !important declarations. Demote them
 // in the Author's Edition entries so the Midnight 02 design system controls layout.
 fs.writeFileSync(
@@ -18,10 +25,9 @@ fs.writeFileSync(
 );
 
 const SANDBOX_CSP = "default-src 'self' data: blob:; script-src 'self' 'unsafe-inline' 'unsafe-eval'; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; connect-src 'self' blob: data:; img-src 'self' data: blob:; font-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'none'";
-const RELEASE_CSP = "default-src 'self' data: blob:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.gstatic.com https://*.firebaseio.com https://*.firebasedatabase.app; worker-src 'self' blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; connect-src 'self' blob: data: https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://*.firebasedatabase.app wss://*.firebasedatabase.app https://www.gstatic.com; img-src 'self' data: blob: https:; font-src 'self' data: https://fonts.gstatic.com; object-src 'none'; base-uri 'self'; form-action 'self'";
 
 function buildAuthorsEntry({ release = false } = {}) {
-    let html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+    let html = fs.readFileSync(legacyPath, 'utf8');
     html = html.replace('</head>', `<script src="./js/authors-progression.js?v=${jsHash('authors-progression.js')}"></script></head>`);
     html = html.replace('</head>', `<script src="./js/authors-activities.js?v=${jsHash('authors-activities.js')}"></script></head>`);
     html = html.replace('<title>H3H Nomera</title>', '<title>NOMERA — Author’s Edition</title>');
@@ -33,7 +39,6 @@ function buildAuthorsEntry({ release = false } = {}) {
             "if ((!window.NOMERA_AUTHORS_PREVIEW || window.NOMERA_AUTHORS_RELEASE) && 'serviceWorker' in navigator)"
         );
         html = html.replace('<meta charset="UTF-8">', `<meta charset="UTF-8">
-    <meta http-equiv="Content-Security-Policy" content="${RELEASE_CSP}">
     <script>window.NOMERA_AUTHORS_PREVIEW=true;window.NOMERA_AUTHORS_RELEASE=true;window.NOMERA_STORAGE_PREFIX='';</script>`);
     } else {
         html = html.replace(/<link[^>]+(?:fonts\.googleapis|fonts\.gstatic|rel="manifest")[^>]*>/g, '');
@@ -93,6 +98,9 @@ function buildAuthorsEntry({ release = false } = {}) {
     return html;
 }
 
-fs.writeFileSync(path.join(root, 'authors.html'), buildAuthorsEntry({ release: false }));
-fs.writeFileSync(path.join(root, 'authors-release.html'), buildAuthorsEntry({ release: true }));
-console.log('authors.html (sandbox) and authors-release.html (production release) generated from index.html');
+const sandboxHtml = buildAuthorsEntry({ release: false });
+const releaseHtml = buildAuthorsEntry({ release: true });
+fs.writeFileSync(path.join(root, 'authors.html'), sandboxHtml);
+fs.writeFileSync(path.join(root, 'authors-release.html'), releaseHtml);
+fs.writeFileSync(path.join(root, 'index.html'), releaseHtml);
+console.log('index.html (Author’s Edition release), authors-release.html, and authors.html (sandbox) generated from legacy.html');

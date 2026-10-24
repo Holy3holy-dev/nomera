@@ -13,10 +13,10 @@ fs.rmSync(dist, { recursive: true, force: true });
 fs.mkdirSync(dist, { recursive: true });
 
 // Keep the pre-Author's-Edition entry available as legacy.html for instant rollback.
-fs.copyFileSync(path.join(root, 'index.html'), path.join(dist, 'legacy.html'));
+fs.copyFileSync(path.join(root, 'legacy.html'), path.join(dist, 'legacy.html'));
 
 // Publish the production Author's Edition release as both dist/index.html and dist/authors-release.html.
-fs.copyFileSync(path.join(root, 'authors-release.html'), path.join(dist, 'index.html'));
+fs.copyFileSync(path.join(root, 'index.html'), path.join(dist, 'index.html'));
 fs.copyFileSync(path.join(root, 'authors-release.html'), path.join(dist, 'authors-release.html'));
 
 // Keep the isolated offline sandbox preview at /authors.html and /antigravity.html.
@@ -58,4 +58,4 @@ for (const folder of ['js', 'icons', 'assets']) {
   }
 }
 
-console.log('Clean public dist ready: Author’s Edition published at dist/index.html (rollback at dist/legacy.html, sandbox at dist/authors.html).');
+console.log('Clean public dist ready: Author’s Edition published at index.html and dist/index.html (rollback at legacy.html, sandbox at authors.html).');
