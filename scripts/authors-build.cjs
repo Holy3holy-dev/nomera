@@ -52,5 +52,6 @@ html=html.replace('</head>',`<link rel="stylesheet" href="./authors-sound.css?v=
 html=html.replace('</body>',`<script src="./js/authors-sound-ui.js?v=${lodHash('authors-sound-ui.js')}"></script></body>`);
 html=html.replace('</head>',`<script>window.NomeraEngineWorkletVersion='${lodHash('authors-engine-worklet.js')}';</script></head>`);
 html=html.replace('</head>',`<link rel="stylesheet" href="./authors-reel-motion.css?v=${require('node:crypto').createHash('sha256').update(fs.readFileSync(path.join(root,'authors-reel-motion.css'))).digest('hex').slice(0,12)}"></head>`);
+html=html.replace('</head>',`<script src="./js/authors-case-results.js?v=${lodHash('authors-case-results.js')}"></script><link rel="stylesheet" href="./authors-case-results.css?v=${require('node:crypto').createHash('sha256').update(fs.readFileSync(path.join(root,'authors-case-results.css'))).digest('hex').slice(0,12)}"></head>`);
 fs.writeFileSync(path.join(root, 'authors.html'), html);
 console.log('authors.html: isolated local entry generated from index.html');

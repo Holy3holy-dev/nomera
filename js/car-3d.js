@@ -1889,13 +1889,26 @@
             }
         });
 
+        // Registration plates must never be inferred from friction plates in a wheel.
+        const nativePlateSide = child => {
+            const n = String(child.name || '').toLowerCase();
+            if (/wheel|friction|brake|caliper|centre|center|seam/.test(n)) return null;
+            if (/^floating_numberplate_carrier\d*$/.test(n)) return 'front';
+            if (/^rear_plate_mount\d*$/.test(n)) return 'rear';
+            if (isIgnoredPlateRaycastNode(child, modelRoot)) return null;
+            if (/plate_01|reg plate \(front\)|plate_f|licenseplate_front/.test(n)) return 'front';
+            if (!n.includes('tail_led') && /plate_02|reg plate \(back\)|plate_r|licenseplate_rear/.test(n)) return 'rear';
+            return null;
+        };
+        const isRegistrationLettering = child => /^(g63_atelier_plate|rear_registration_lettering)\d*$/i.test(child.name || '');
+
         if (isNone) {
             frontPlates.forEach(p => { p.visible = false; });
             rearPlates.forEach(p => { p.visible = false; });
             modelRoot.traverse(c => {
                 if (!c.name) return;
                 const n = c.name.toLowerCase();
-                if (n.includes('plate_01') || n.includes('plate_02') || n.includes('reg plate') || n.includes('tail_led_plate')) {
+                if (nativePlateSide(c) || isRegistrationLettering(c) || n.includes('tail_led_plate')) {
                     c.visible = false;
                 }
             });
@@ -1930,12 +1943,12 @@
         // Check if model contains built-in plate nodes (e.g. vaz2107, bmw_m4, etc.)
         let existingFP = null, existingRP = null;
         modelRoot.traverse(child => {
-            if (!child.name || isIgnoredPlateRaycastNode(child, modelRoot)) return;
-            const n = child.name.toLowerCase();
-            if ((n.includes('plate_01') || n.includes('reg plate (front)') || n.includes('plate_f') || n.includes('licenseplate_front')) && !existingFP) {
+            if (isRegistrationLettering(child)) child.visible = false;
+            const side = nativePlateSide(child);
+            if (side === 'front' && !existingFP) {
                 existingFP = child;
             }
-            if ((n.includes('plate_02') || n.includes('reg plate (back)') || n.includes('plate_r') || n.includes('licenseplate_rear')) && !n.includes('tail_led') && !existingRP) {
+            if (side === 'rear' && !existingRP) {
                 existingRP = child;
             }
         });
@@ -2057,6 +2070,24 @@
 
         const worldFront = new THREE.Vector3(center.x, frontY, frontZ);
         const worldRear = new THREE.Vector3(center.x, rearY, rearZ);
+        // These authored G63 mounts are measured in chassis space, so applying
+        // styling while the showroom is rotated cannot slide a plate sideways.
+        const fittedMountPosition = (mount, front) => {
+            if (!mount || !/^(floating_numberplate_carrier|rear_plate_mount)\d*$/i.test(mount.name)) return null;
+            const inverse = modelRoot.matrixWorld.clone().invert(), fitted = new THREE.Box3();
+            mount.traverse(node => {
+                if (!node.geometry) return;
+                if (!node.geometry.boundingBox) node.geometry.computeBoundingBox();
+                fitted.union(node.geometry.boundingBox.clone().applyMatrix4(inverse.clone().multiply(node.matrixWorld)));
+            });
+            if (fitted.isEmpty()) return null;
+            const point = fitted.getCenter(new THREE.Vector3());
+            point.z = front ? fitted.max.z + .006 : fitted.min.z - .006;
+            return modelRoot.localToWorld(point);
+        };
+        const fittedFront = fittedMountPosition(existingFP, true), fittedRear = fittedMountPosition(existingRP, false);
+        if (fittedFront) worldFront.copy(fittedFront);
+        if (fittedRear) worldRear.copy(fittedRear);
 
         // 2. If plates already exist, update them with new text and recalibrate position
         if (frontPlates.length > 0 || rearPlates.length > 0) {

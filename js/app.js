@@ -7734,6 +7734,15 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         }
 
         function renderBatchCaseResultsUI(caseLabel, count, totalSpent, singlePrice) {
+            if (window.NomeraCaseResults) {
+                const title = document.getElementById('roulette-modal-title');
+                if (title) title.textContent = `${caseLabel} · ×${count}`;
+                window.NomeraCaseResults.render({items: batchCaseResults, totalSpent,
+                    carSprite: getCarSpriteDataUrl, plateClass: getMiniPlateCountryClass,
+                    plateHtml: renderMiniPlateInnerHtml, tierClass: getRarityTierClass});
+                updateRouletteReopenButtons(singlePrice);
+                return;
+            }
             const grid = document.getElementById('roulette-batch-grid');
             const summary = document.getElementById('roulette-batch-summary');
             const modalTitle = document.getElementById('roulette-modal-title');
@@ -7820,7 +7829,8 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
         function sellSingleBatchDrop(idx) {
             const item = batchCaseResults[idx];
-            if (!item || item._sold) return;
+            if (isSpinning || !item || item._sold || (window.NomeraCaseResults && !window.NomeraCaseResults.canSell(item))) return;
+            if (!(item.isCar ? myCars : inventory).some(i => i && i._openingId === item._openingId)) return;
             if (item.isCar && myCars.length <= 1) {
                 notifyUser('В гараже должен остаться хотя бы один автомобиль!', 'warn');
                 return;
@@ -7847,13 +7857,17 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         }
         window.sellSingleBatchDrop = sellSingleBatchDrop;
 
-        function sellBatchCaseResults(onlyDuplicates = true) {
-            if (!Array.isArray(batchCaseResults) || batchCaseResults.length === 0) return;
+        function sellBatchCaseResults(onlyDuplicates = true, selectedIndices = null) {
+            if (isSpinning || !Array.isArray(batchCaseResults) || batchCaseResults.length === 0) return;
+            const selected = Array.isArray(selectedIndices) ? new Set(selectedIndices) : null;
             let totalCredited = 0;
             let soldItemsCount = 0;
             let skippedLastCar = false;
-            batchCaseResults.forEach(item => {
+            batchCaseResults.forEach((item, index) => {
                 if (!item || item._sold) return;
+                if (selected && !selected.has(index)) return;
+                if (window.NomeraCaseResults && !window.NomeraCaseResults.canSell(item)) return;
+                if (!(item.isCar ? myCars : inventory).some(i => i && i._openingId === item._openingId)) return;
                 if (onlyDuplicates && !item._isDuplicate) return;
                 if (item.isCar && myCars.length <= 1) {
                     skippedLastCar = true;

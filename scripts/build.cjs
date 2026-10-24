@@ -16,6 +16,6 @@ for(const folder of ['js','icons','assets']) {
 }
 console.log('Clean public dist ready. Private server code stays outside publish directory.');
 if(process.argv.includes('--authors')){
-  for(const name of ['authors.html','authors-legacy.css','authors.css','authors-expansion.css','authors-secondary.css','authors-plate-effects.css','authors-rewards.css','authors-refinement.css','authors-motorsport.css','authors-driving.css','authors-workshop.css','authors-prestige.css','authors-atelier.css','authors-garage.css','authors-exchange.css','authors-registration.css','authors-progression.css','authors-sound.css','authors-reel-motion.css'])fs.copyFileSync(path.join(root,name),path.join(dist,name));
+  for(const name of ['authors.html','authors-legacy.css','authors.css','authors-expansion.css','authors-secondary.css','authors-plate-effects.css','authors-rewards.css','authors-refinement.css','authors-motorsport.css','authors-driving.css','authors-workshop.css','authors-prestige.css','authors-atelier.css','authors-garage.css','authors-exchange.css','authors-registration.css','authors-progression.css','authors-sound.css','authors-reel-motion.css','authors-case-results.css'])fs.copyFileSync(path.join(root,name),path.join(dist,name));
   console.log('Author’s Edition included at /authors.html (local build only).');
 }

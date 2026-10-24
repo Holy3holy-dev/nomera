@@ -70,6 +70,35 @@ function setupTestContext() {
     return { THREE, Car3DManager };
 }
 
+test('G63 registration mounts stay separate from wheel friction plates on apply, update and removal', () => {
+    const {THREE:T,Car3DManager:manager} = setupTestContext();
+    const model = new T.Group();
+    const mesh = (name,size,pos) => { const n=new T.Mesh(new T.BoxGeometry(...size),new T.MeshBasicMaterial());n.name=name;n.position.set(...pos);model.add(n);return n; };
+    mesh('Body',[2,1.8,4.5],[0,.9,0]);
+    const brake=mesh('Accuracy_perforated_friction_plate_FRONT_002',[.1,.5,.5],[.8,.4,1.6]);
+    const rearBrake=mesh('Accuracy_perforated_friction_plate_REAR_002',[.1,.5,.5],[-.8,.4,-1.6]);
+    mesh('Floating_numberplate_carrier002',[.528,.127,.026],[0,.832,2.363]);
+    mesh('Rear_plate_mount002',[.516,.111,.024],[0,.581,-2.148]);
+    const frontText=mesh('G63_atelier_plate002',[.30,.04,.001],[0,.832,2.379]);
+    const rearText=mesh('Rear_registration_lettering002',[.29,.04,.001],[0,.581,-2.166]);
+    manager.applyLicensePlateToModel(T,model,'А 123 ВС | 777 RUS');
+    const f=model.getObjectByName('GLB_FrontLicensePlate'),r=model.getObjectByName('GLB_RearLicensePlate');
+    assert.ok(Math.abs(f.position.y-.832)<.001 && f.position.z>2.37);
+    assert.ok(Math.abs(r.position.y-.581)<.001 && r.position.z< -2.16);
+    assert.ok(brake.visible && rearBrake.visible);
+    assert.ok(!frontText.visible && !rearText.visible);
+    const originalFront=f.position.clone(),originalRear=r.position.clone();
+    model.position.set(4,2,-7); model.rotation.y=.8; model.scale.setScalar(1.2);
+    manager.applyLicensePlateToModel(T,model,'123 ABC | 02 KZ');
+    assert.ok(f.position.distanceTo(originalFront)<1e-5 && r.position.distanceTo(originalRear)<1e-5);
+    assert.equal(model.children.filter(n=>n.name==='GLB_FrontLicensePlate').length,1);
+    assert.equal(model.children.filter(n=>n.name==='GLB_RearLicensePlate').length,1);
+    manager.applyLicensePlateToModel(T,model,null);
+    assert.ok(!f.visible && !r.visible && brake.visible && rearBrake.visible);
+    manager.applyLicensePlateToModel(T,model,'А 777 АА | 77 RUS');
+    assert.ok(f.visible && r.visible && brake.visible && rearBrake.visible);
+});
+
 test('detectVehicleLightPositions calculates physically calibrated headlight and taillight coordinates', () => {
     const { THREE, Car3DManager } = setupTestContext();
 
