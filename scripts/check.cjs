@@ -17,20 +17,29 @@ for (const file of files) {
         assert(!/\b(?:alert|confirm|prompt)\s*\(/.test(source), 'Blocking native dialogs must not be used');
     }
 }
-for (const file of ['index.html', 'test.html']) {
+for (const file of ['index.html', 'test.html', 'authors.html', 'authors-release.html'].filter(f => fs.existsSync(path.join(root, f)))) {
     const html = fs.readFileSync(path.join(root, file), 'utf8');
     for (const match of html.matchAll(/(?:src|href)="(\.\/[^"?#]+)(?:\?[^"#]*)?"/g)) {
-        assert(fs.existsSync(path.join(root, match[1])), 'Missing local asset: ' + match[1]);
+        assert(fs.existsSync(path.join(root, match[1])), 'Missing local asset in ' + file + ': ' + match[1]);
     }
 }
 const app = fs.readFileSync(path.join(root, 'js/app.js'), 'utf8');
 const functions = [...app.matchAll(/^\s*function (\w+)\(/gm)].map(match => match[1]);
 assert.equal(new Set(functions).size, functions.length, 'Duplicate function declarations');
 const {createHash} = require('node:crypto');
-const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
-for (const match of html.matchAll(/(?:src|href)="(\.\/(?:js\/[^"]+\.js|styles\.css))\?v=([a-f0-9]+)"/g)) {
-    const digest = createHash('sha256').update(fs.readFileSync(path.join(root, match[1]))).digest('hex').slice(0,12);
-    assert.equal(match[2], digest, 'Run npm run assets after changing client code');
+for (const entryFile of ['index.html', 'authors.html', 'authors-release.html'].filter(f => fs.existsSync(path.join(root, f)))) {
+    const html = fs.readFileSync(path.join(root, entryFile), 'utf8');
+    for (const match of html.matchAll(/(?:src|href)="(\.\/(?:js\/[^"?#]+\.js|[^"/?#]+\.css))\?v=([a-f0-9]+)"/g)) {
+        const digest = createHash('sha256').update(fs.readFileSync(path.join(root, match[1]))).digest('hex').slice(0,12);
+        assert.equal(match[2], digest, 'Run npm run assets after changing client code (' + entryFile + ' -> ' + match[1] + ')');
+    }
+}
+if (fs.existsSync(path.join(root, 'authors-release.html'))) {
+    const releaseHtml = fs.readFileSync(path.join(root, 'authors-release.html'), 'utf8');
+    assert(!/authors-preview\.js/.test(releaseHtml), 'Production release entry must not load sandbox fixture authors-preview.js');
+    assert(!/authors-preview-market\.js/.test(releaseHtml), 'Production release entry must not load sandbox market authors-preview-market.js');
+    assert(/window\.NOMERA_AUTHORS_RELEASE=true/.test(releaseHtml), 'Production release entry must enable NOMERA_AUTHORS_RELEASE');
+    assert(/\/\.netlify\/functions\/firebase-web-config/.test(releaseHtml), 'Production release entry must load runtime Firebase web config');
 }
 const manifest = JSON.parse(fs.readFileSync(path.join(root, 'manifest.json')));
 for (const icon of manifest.icons) assert(fs.existsSync(path.join(root, icon.src)), 'Missing icon');

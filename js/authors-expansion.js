@@ -14,11 +14,12 @@
  const marketHeader=$('#multiplayer .section-header');
  marketHeader.classList.add('ae-market-server-bar');
  marketHeader.firstElementChild.hidden=true;
- marketHeader.insertAdjacentHTML('afterbegin','<div class="ae-market-local-note"><i></i><span>Учебный рынок · локальные лоты и операции</span></div>');
- $('#multi-firebase-status').hidden=true;
+ const isRelease=Boolean(window.NOMERA_AUTHORS_RELEASE);
+ marketHeader.insertAdjacentHTML('afterbegin',`<div class="ae-market-local-note"><i></i><span>${isRelease?'Биржа игроков · серверные лоты и безопасные сделки':'Учебный рынок · локальные лоты и операции'}</span></div>`);
+ if(!isRelease){$('#multi-firebase-status').hidden=true;
  $('#multi-online-count').hidden=true;
  $('.h3h-firebase-diagnose').hidden=true;
- $('#multiplayer .online-v44-bar').hidden=true;
+ $('#multiplayer .online-v44-bar').hidden=true;}
  const marketFilters=make('details','ae-market-filters','<summary>Фильтры и сортировка <span>＋</span></summary>');
  marketFilters.append($('#market-filter-toolbar .col-filters-group'));
  $('#market-filter-toolbar').append(marketFilters);

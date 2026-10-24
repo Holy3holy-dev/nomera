@@ -1,21 +1,61 @@
 'use strict';
 // Public web directory contains only client assets. Never publish source, functions or secrets.
-const fs=require('node:fs');
-const path=require('node:path');
-const root=path.resolve(__dirname,'..');
-const dist=path.join(root,'dist');
-fs.rmSync(dist,{recursive:true,force:true});
-fs.mkdirSync(dist,{recursive:true});
-for(const name of ['index.html','test.html','styles.css','manifest.json','sw.js']){
-  fs.copyFileSync(path.join(root,name),path.join(dist,name));
-}
-for(const folder of ['js','icons','assets']) {
-  if (fs.existsSync(path.join(root, folder))) {
-    fs.cpSync(path.join(root,folder),path.join(dist,folder),{recursive:true});
+// By default, npm run build publishes the Author's Edition release as dist/index.html while
+// preserving dist/legacy.html (pre-Author's-Edition rollback) and dist/authors.html (sandbox).
+const fs = require('node:fs');
+const path = require('node:path');
+const root = path.resolve(__dirname, '..');
+const dist = path.join(root, 'dist');
+
+require('./authors-build.cjs');
+
+fs.rmSync(dist, { recursive: true, force: true });
+fs.mkdirSync(dist, { recursive: true });
+
+// Keep the pre-Author's-Edition entry available as legacy.html for instant rollback.
+fs.copyFileSync(path.join(root, 'index.html'), path.join(dist, 'legacy.html'));
+
+// Publish the production Author's Edition release as both dist/index.html and dist/authors-release.html.
+fs.copyFileSync(path.join(root, 'authors-release.html'), path.join(dist, 'index.html'));
+fs.copyFileSync(path.join(root, 'authors-release.html'), path.join(dist, 'authors-release.html'));
+
+// Keep the isolated offline sandbox preview at /authors.html and /antigravity.html.
+for (const name of ['authors.html', 'antigravity.html', 'test.html', 'styles.css', 'manifest.json', 'sw.js']) {
+  if (fs.existsSync(path.join(root, name))) {
+    fs.copyFileSync(path.join(root, name), path.join(dist, name));
   }
 }
-console.log('Clean public dist ready. Private server code stays outside publish directory.');
-if(process.argv.includes('--authors')){
-  for(const name of ['authors.html','authors-legacy.css','authors.css','authors-expansion.css','authors-secondary.css','authors-plate-effects.css','authors-rewards.css','authors-refinement.css','authors-motorsport.css','authors-driving.css','authors-workshop.css','authors-prestige.css','authors-atelier.css','authors-garage.css','authors-exchange.css','authors-registration.css','authors-progression.css','authors-sound.css','authors-reel-motion.css','authors-case-results.css','authors-collection.css'])fs.copyFileSync(path.join(root,name),path.join(dist,name));
-  console.log('Author’s Edition included at /authors.html (local build only).');
+
+const authorsCssFiles = [
+  'authors-legacy.css',
+  'authors.css',
+  'authors-expansion.css',
+  'authors-secondary.css',
+  'authors-plate-effects.css',
+  'authors-rewards.css',
+  'authors-refinement.css',
+  'authors-motorsport.css',
+  'authors-driving.css',
+  'authors-workshop.css',
+  'authors-prestige.css',
+  'authors-atelier.css',
+  'authors-garage.css',
+  'authors-exchange.css',
+  'authors-registration.css',
+  'authors-progression.css',
+  'authors-sound.css',
+  'authors-reel-motion.css',
+  'authors-case-results.css',
+  'authors-collection.css'
+];
+for (const name of authorsCssFiles) {
+  fs.copyFileSync(path.join(root, name), path.join(dist, name));
 }
+
+for (const folder of ['js', 'icons', 'assets']) {
+  if (fs.existsSync(path.join(root, folder))) {
+    fs.cpSync(path.join(root, folder), path.join(dist, folder), { recursive: true });
+  }
+}
+
+console.log('Clean public dist ready: Author’s Edition published at dist/index.html (rollback at dist/legacy.html, sandbox at dist/authors.html).');
