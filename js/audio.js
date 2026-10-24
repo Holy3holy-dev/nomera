@@ -1031,6 +1031,12 @@
             } catch (_) { stopEngine(); }
         }
 
+        function roadEffect(kind,input={}) {
+            if(!root.NOMERA_AUTHORS_PREVIEW||!root.NomeraRoadSound)return false;
+            if(!unlocked||!context||context.state!=='running'||level()<=0){root.NomeraRoadSound.quiet({owner:input.owner,impact:input});return true;}
+            return root.NomeraRoadSound.effect({context,master,kind,input});
+        }
+
         function authorsSound(name,options={}) {
             if(!root.NOMERA_AUTHORS_PREVIEW||!root.NomeraSoundscape)return false;
             if(!unlocked||!context||context.state!=='running'||level()<=0)return true;
@@ -1047,6 +1053,7 @@
                 };
                 if(root.NOMERA_AUTHORS_PREVIEW)root.NomeraSoundscape?.configure(prefs);
                 if (master) param(master.gain, level() * 0.65, context.currentTime);
+                if(!level()&&root.NOMERA_AUTHORS_PREVIEW)root.NomeraRoadSound?.stop();
                 if (!prefs.engine || !level()) { stopEngine(); stopSiren(); stopNitro(0.02, false); }
                 return {...prefs};
             },
@@ -1236,7 +1243,8 @@
                 tone(1380, 0.22, 0.07 * oscScale, delay + 0.012, 'triangle', 1120);
                 tone(460, 0.30, 0.10 * oscScale, delay, 'triangle', 280);
             },
-            scrape() {
+            scrape(input={}) {
+                if(roadEffect('scrape',input))return;
                 if(mwEffect('scrape',.55))return;
                 // Textured guardrail / asphalt scrape (satisfies >= 2 created nodes in tests)
                 noiseBurst({ duration: 0.18, gain: 0.09, filterType: 'bandpass', filterFreq: 980, filterEndFreq: 520, filterQ: 2.0 });
@@ -1414,7 +1422,8 @@
                 });
             },
             start() { [220, 330, 440].forEach((freq, i) => tone(freq, 0.12, 0.11, i * 0.10)); },
-            crash() {
+            crash(input={}) {
+                if(roadEffect('collision',input))return;
                 stopEngine();
                 stopSiren();
                 if(mwEffect('collision'))return;
@@ -1428,11 +1437,13 @@
                 // 4. Low crumple friction noise in browser
                 noiseBurst({ duration: 0.28, gain: 0.14, filterType: 'lowpass', filterFreq: 680, filterEndFreq: 180, filterQ: 1.2 });
             },
+            stopEnvironment() { if(root.NOMERA_AUTHORS_PREVIEW)root.NomeraRoadSound?.stop(); },
+            updateEnvironment(input={}) {if(!root.NOMERA_AUTHORS_PREVIEW||!root.NomeraRoadSound)return;if(!unlocked||!context||context.state!=='running'||level()<=0){root.NomeraRoadSound.quiet(input);root.NomeraRoadSound.stop();return;}root.NomeraRoadSound.update({context,master,input});},
             stopEngine,
             updateEngine,
             rewardCar(rarity) { return authorsSound('car',{rarity}); },
             suspend() {
-                if(root.NOMERA_AUTHORS_PREVIEW){root.NomeraSoundscape?.stop();root.NomeraRadio?.suspend();}
+                if(root.NOMERA_AUTHORS_PREVIEW){root.NomeraSoundscape?.stop();root.NomeraRadio?.suspend();root.NomeraRoadSound?.stop();}
                 stopNitro(0.02, false);
                 stopEngine();
                 stopSiren();

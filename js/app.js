@@ -9849,7 +9849,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     modal: () => document.getElementById('styling-modal')?.classList.contains('show'),
                     hidden: () => document.hidden, now: () => performance.now(), raf: fn => requestAnimationFrame(fn),
                     reset: () => resetRaceKeys(),
-                    quiet: () => { sound.stopEngine(); stopRaceRadioAudio(); },
+                    quiet: () => { sound.stopEngine(); sound.stopEnvironment?.(); stopRaceRadioAudio(); },
                     audio: () => { if (raceRadioStation !== 'off') startRaceRadioAudio(); }
                 });
                 window.nomeraRacePreviewAllowsViewer = () => racePreviewPause.allowsViewer();
@@ -20371,6 +20371,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                             running: isRaceRunning,
                             carClass: audioProfile
                         });
+                        if(window.NOMERA_AUTHORS_PREVIEW)sound.updateEnvironment?.({...window.NomeraRoadSound?.sample(car3DRacingEngine),running:isRaceRunning});
                     },
                     onPopup: (text, color) => {
                         show3DRacePopup(text, color);
@@ -20391,6 +20392,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                         settleRaceRun(crashed);
                     },
                     onSound: (name) => {
+                        if(window.NOMERA_AUTHORS_PREVIEW&&window.NomeraRoadSound&&['crash','scrape'].includes(name)){const contact=window.NomeraRoadSound.readContact(car3DRacingEngine);if(name==='crash')sound.crash(contact);else sound.scrape(contact);return;}
                         if (name === 'drift' && typeof sound?.drift === 'function') sound.drift();
                         if (name === 'handbrake' && typeof sound?.handbrake === 'function') sound.handbrake();
                         if (name === 'nitro' && typeof sound?.nitro === 'function') sound.nitro();
@@ -21273,7 +21275,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 settleRaceRun(false); // Leaving early still settles fuel and wear.
                 return;
             }
-            sound.stopEngine();
+            sound.stopEngine(); sound.stopEnvironment?.();
             if (typeof sound?.setSiren === 'function') sound.setSiren(false);
             if (document.body && document.body.classList) document.body.classList.remove("race-active");
             resetRaceKeys();
@@ -21313,6 +21315,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             const activeCar = myCars[selectedRaceCarIndex] || myCars.find(c => c.name === selectedRaceCarName) || activeRaceCar;
             const audioProfile = getCarAudioProfile(activeCar);
             sound.updateEngine({ speed: racePlayer.speed, gas: raceKeys.gas, nitro: racePlayer.isNitroActive, running: isRaceRunning, carClass: audioProfile, carName: selectedRaceCarName });
+            if(window.NOMERA_AUTHORS_PREVIEW)sound.updateEnvironment?.(window.NomeraRoadSound?.sample(null,{...racePlayer,running:isRaceRunning})||{});
             renderRaceFrame();
 
             if (isRaceRunning) raceAnimFrame = requestAnimationFrame(raceGameLoop);
@@ -23174,7 +23177,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             isRaceRunning = false;
             window.isRaceRunning = false;
             resetRaceKeys();
-            sound.stopEngine();
+            sound.stopEngine(); sound.stopEnvironment?.();
             if (typeof sound?.setSiren === 'function') sound.setSiren(false);
             const isFinished = crashed === 'finished';
             const isRealCrash = Boolean(crashed) && !isFinished && crashed !== 'fuel';

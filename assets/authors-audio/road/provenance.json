@@ -1,0 +1,37 @@
+{
+  "source": "Original deterministic DSP textures from scripts/build-authors-road-audio.py; no external recordings.",
+  "tracks": [
+    {
+      "id": "rain-surface",
+      "seconds": 8,
+      "sampleRate": 32000,
+      "channels": 2,
+      "bytes": 97286,
+      "sha256": "8b846e6d64dbd71f5747c61541961abbf8a9679aef2f4093af9f04852889970c"
+    },
+    {
+      "id": "wet-tyres",
+      "seconds": 5,
+      "sampleRate": 32000,
+      "channels": 1,
+      "bytes": 40694,
+      "sha256": "28bec3afd3652dd0f6b8baf6dbb54dd35a29f683f5cd35b863dfb544432eb539"
+    },
+    {
+      "id": "loose-surface",
+      "seconds": 5,
+      "sampleRate": 32000,
+      "channels": 1,
+      "bytes": 40694,
+      "sha256": "27237c4a427ffedbd108e593ec16e2948ebab1cec40a7d3a333416b4d4ec9696"
+    },
+    {
+      "id": "distant-thunder",
+      "seconds": 3,
+      "sampleRate": 32000,
+      "channels": 1,
+      "bytes": 24854,
+      "sha256": "961cf007c04849964c6ba26b4f42c452852a528739846ce9a2b9e9779a24e10a"
+    }
+  ]
+}
