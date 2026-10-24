@@ -7,32 +7,44 @@
   {id:'industrial',name:'ПРОМЗОНА',subtitle:'ПОРТ / ТЕРМИНАЛЫ',tunnel:'ПОРТОВЫЙ ТУННЕЛЬ',accent:0xd79b4e,portal:0x8c979d},
   {id:'rural',name:'ЗАГОРОДНОЕ ШОССЕ',subtitle:'СЕВЕРНЫЕ ХОЛМЫ',tunnel:'ГОРНЫЙ ТУННЕЛЬ',accent:0x8db779,portal:0xc2bea9}
  ];
- const span=1800,period=span*profiles.length,mod=(v,n)=>(v%n+n)%n;
- function districtAt(z){return profiles[Math.floor(mod(Number(z)||0,period)/span)];}
+ const span=1800,period=span*profiles.length,transitionLength=360,mod=(v,n)=>(v%n+n)%n;
+ const coordinate=z=>Number.isFinite(Number(z))?Number(z):0;
+ function districtAt(z){return profiles[Math.floor(mod(coordinate(z),period)/span)];}
+ function transitionAt(z){const at=mod(coordinate(z),period),index=Math.floor(at/span),local=at-index*span,to=profiles[index];
+  if(local>=transitionLength)return{from:to,to,weight:1,mixed:false};
+  const t=local/transitionLength;return{from:profiles[mod(index-1,profiles.length)],to,weight:t*t*(3-2*t),mixed:true};
+ }
  function circuitDistrict(track,s){return districtAt(mod(s,track.totalLength)/track.totalLength*period);}
- function blockPlan(profile,seed=0,length=60){
+ function blockPlan(profile,seed=0,length=60,options={}){
   const id=typeof profile==='string'?profile:profile.id,index=profiles.findIndex(p=>p.id===id),p=profiles[Math.max(0,index)],n=mod(seed,13);
   const rows={buildings:[],boxes:[],cylinders:[],crowns:[],hills:[],roofs:[],signs:[]};
-  const add=(bucket,x,y,z,w,h,d,color=0xffffff)=>rows[bucket].push({x,y,z,w,h,d,color,profile:p.id});
-  const tree=(x,z,h=6)=>{add('cylinders',x,h*.25,z,.3,h*.5,.3,0x746550);add('crowns',x,h*.78,z,3.3,h*.67,3.2,0x507c49);add('crowns',x+.7,h*.99,z+.5,2.2,h*.42,2.4,0x6d9454);};
+  const add=(bucket,x,y,z,w,h,d,color=0xffffff)=>{const item={x,y,z,w,h,d,color,profile:p.id};rows[bucket].push(item);return item;};
+  const tree=(x,z,h=6)=>{h*=options.treeScale||1;add('cylinders',x,h*.25,z,.3,h*.5,.3,0x746550);add('crowns',x,h*.78,z,3.3,h*.67,3.2,0x507c49);add('crowns',x+.7,h*.99,z+.5,2.2,h*.42,2.4,0x6d9454);};
   for(const side of[-1,1]){
    if(id==='city'){
     // Offices and low street fronts leave a generous clear strip by the road.
     for(const [i,z]of [-16,15].entries()){
-     const h=16+(n+i*7+Number(side>0)*3)%5*4,x=side*(31+(i%2)*4),w=14+(i%2)*3,d=19;
+     const h=(16+(n+i*7+Number(side>0)*3)%5*4)*(options.cityScale||1),x=side*(31+(i%2)*4),w=14+(i%2)*3,d=19;
      add('buildings',x,h/2,z,w,h,d,i?0xf2eee5:0xdce9ed);
      add('boxes',x,h+.6,z,w+1,1.2,d+1,0xc5d3d8);
      add('boxes',x+side*2,h+1.8,z+2,4,1.8,3,0x657e8d);
      add('boxes',x-side*(w/2+.5),3.1,z,1.5,.25,12,side<0?0x438a91:0xa76a4f);
      add('boxes',x-side*(w/2+.22),1.5,z,.16,2.5,11,0x29485e);
+     for(const dz of [-4,0,4])add('boxes',x-side*(w/2+.34),1.5,z+dz,.12,2.5,.12,0xb6c8c9);
     }
-    for(let z=-length/2+6;z<length/2;z+=12)add('boxes',side*16,.12,z,7,.24,11.8,0xb9c5c3);
+    for(let z=-length/2+6;z<length/2;z+=12)add('boxes',side*16,.12,z,7,.24,11.8,0xb9c5c3).role='paving';
     tree(side*20,-6,5.2);tree(side*22,24,6.3);
     // A compact bus shelter: opaque glazing avoids transparent fill cost.
     add('boxes',side*16.5,2.7,11,3.5,.18,5.4,0x3b6375);
     add('boxes',side*18,1.45,11,.15,2.6,5,0x83a9b9);
     for(const z of [8.7,13.3])add('boxes',side*15.3,1.4,z,.12,2.6,.12,0x456375);
     add('boxes',side*16,.65,11,1.5,.14,3.5,0x6d797b);
+    add('boxes',side*16.7,1.02,11,.16,.65,3.5,0x697f82);
+    for(const z of [9.6,12.4])add('boxes',side*16,.32,z,.75,.6,.14,0x3c555c);
+    add('cylinders',side*15.9,.55,18,.65,1.1,.65,0x3f787c);
+    add('cylinders',side*15.9,1.08,18,.72,.12,.72,0x789894);
+    for(const z of [-6,24]){const x=side*(z===24?22:20);add('boxes',x,.32,z,3,.64,3,0x9caeab);add('boxes',x,.66,z,2.7,.04,2.7,0x454e3d);}
+    for(let z=-length/2+4;z<length/2;z+=15){add('cylinders',side*12.8,.4,z,.18,.8,.18,0x526a73);add('boxes',side*12.8,.64,z,.21,.09,.21,0xc3d4c9);}
    }else if(id==='industrial'){
     const h=8+(n%3),x=side*38;
     add('buildings',x,h/2,-7,30,h,31,0xd5d1c2);
@@ -40,6 +52,8 @@
     for(const z of [-16,-3,10]){
      add('boxes',x-side*15.1,2.6,z,.25,5,7,0x385361);
      add('boxes',side*20,1.35,z,5,2.7,8,z===-3?0x9b6351:0x527e80);
+     for(const dz of [-2.7,-.9,.9,2.7])add('boxes',side*17.46,1.35,z+dz,.1,2.4,.13,z===-3?0xb68069:0x759d9d);
+     for(const dx of [-1.2,1.2])add('boxes',side*20+dx,1.35,z+4.03,.12,2.4,.1,0xb3bbb2);
     }
     add('cylinders',side*57,12,8,1.8,24,1.8,0x9b9c97);
     add('cylinders',side*57,22.5,8,1.88,.8,1.88,0xad6657);
@@ -48,24 +62,60 @@
     add('boxes',side*29.5,6.5,23,14,.5,.5,0x627e82);
     for(const xOffset of [-4,4])add('boxes',side*44+xOffset,8.5,22,.5,17,.5,0xb98c53);
     add('boxes',side*44,16.8,22,18,.65,1.2,0xc49b59);
-    add('boxes',side*17,.1,0,8,.2,length,0x999f98);
+    add('boxes',side*17,.1,0,8,.2,length,0x999f98).role='paving';
+    for(const z of [15,18]){add('cylinders',side*25,.6,z,.82,1.2,.82,z===15?0x738580:0xa47c58);for(const y of [.24,.94])add('cylinders',side*25,y,z,.87,.09,.87,0xb9bdab);}
+    add('boxes',side*25,.15,-24,3,.3,3,0x998464);add('boxes',side*25,1,-24,2.6,1.4,2.6,0xb29a73);
+    for(const z of [-22,-10,2,22]){add('boxes',side*13.2,.48,z,.28,.96,.28,0xd0ad52);add('boxes',side*13.2,.7,z,.3,.15,.3,0x3f494b);}
    }else{
     if(n%3!==0){const x=side*(39+n%3*7),h=5.4;add('buildings',x,h/2,8,12,h,10,side<0?0xefe1c7:0xd6e2d8);add('roofs',x,h,8,13,3.4,11,side<0?0x8e6253:0x4b6c6b);}
     for(const [i,z]of [-22,-3,21].entries())tree(side*(21+i*8+(n%3)),z,6.5+(i+n)%3);
     for(let z=-length/2+5;z<length/2;z+=10){add('boxes',side*16,1,z,.16,2,.16,0x9b977d);add('boxes',side*16,.95,z+4.9,.12,.16,9.9,0xb4b498);}
     add('hills',side*(100+n%3*13),4,-4,50,12+n%4*3,57,side<0?0x628557:0x779264);
     add('hills',side*138,7,24,62,20,56,0x6b835d);
+    for(const z of [-15,12]){add('crowns',side*19,.55,z,2.8,1.2,2.4,0x6b8952);add('crowns',side*20.2,.45,z+1.2,2.1,1,2.2,0x8b9e62);}
+    for(let z=-length/2+3;z<length/2;z+=12){add('boxes',side*12.7,.46,z,.2,.92,.24,0xd5d9c8);add('boxes',side*12.7,.7,z,.22,.18,.27,0x45555b);}
+    add('boxes',side*60,.015,-8,19,.03,34,0x7f8c53);
+    for(let i=0;i<6;i++)add('boxes',side*(52.5+i*2.8),.05,-8,1.45,.07,32,i%2?0x728b4b:0x9b9c65);
+    add('boxes',side*28,.92,18,2.8,.14,1.2,0x927c58);
+    for(const z of [17.1,18.9])add('boxes',side*28,.48,z,2.9,.14,.32,0xaaa077);
+    for(const dx of [-.9,.9])add('boxes',side*28+dx,.45,18,.2,.9,1,0x6e7159);
    }
   }
   // Same district identity is used by the roadside sign and tunnel portal.
-  if(mod(seed,4)===0){add('signs',17.5,4,-12,6,2.8,1,p.accent);add('boxes',17.5,2,-12,.18,4,.18,0x64777d);}
+  if(mod(seed,4)===0){add('signs',17.5,4,-12,6,2.8,1,p.accent);add('boxes',17.5,2,-12,.18,4,.18,0x64777d).role='districtPost';}
   return rows;
  }
+ function mixColor(a,b,t){const channel=shift=>Math.round((a>>shift&255)*(1-t)+(b>>shift&255)*t);return channel(16)<<16|channel(8)<<8|channel(0);}
+ function planAt(z,length=60,seedOverride){
+  const transition=transitionAt(z),seed=Number.isFinite(seedOverride)?seedOverride:Math.round(coordinate(z)/length),{from,to,weight:t}=transition;
+  if(!transition.mixed)return blockPlan(to,seed,length);
+  const options=profile=>({cityScale:profile.id==='city'?(from.id==='city'?1-.4*t:.6+.4*t):1,treeScale:profile.id==='rural'?1-.18*(from.id==='rural'?t:1-t):1});
+  const a=blockPlan(from,seed,length,options(from)),b=blockPlan(to,seed,length,options(to)),combined=Object.fromEntries(Object.keys(a).map(k=>[k,[]]));
+  // Parcels change identity at staggered points along the route. They are fixed
+  // in world space, never blended or moved as the player's camera approaches.
+  for(const side of [-1,1]){const jitter=mod(seed*17+(side<0?31:67),11)/10*.08,threshold=(side<0?.28:.64)+jitter,source=t>=threshold?b:a;
+   for(const [bucket,rows]of Object.entries(source)){
+    if(bucket==='signs'||bucket==='hills')continue;
+    for(const item of rows){if(Math.sign(item.x)!==side||item.role==='districtPost')continue;let row=item;
+     if(item.role==='paving'){
+      const city=from.id==='city'?1-t:to.id==='city'?t:0,industry=from.id==='industrial'?1-t:to.id==='industrial'?t:0,rural=1-city-industry;
+      row={...item,x:side*(16*city+17*industry+17.5*rural),w:7*city+8*industry+4*rural,h:.24*city+.2*industry+.07*rural,y:(.24*city+.2*industry+.07*rural)/2,color:mixColor(mixColor(0xb9c5c3,0x999f98,industry/(city+industry||1)),0x80975e,rural)};
+     }combined[bucket].push(row);
+    }
+   }
+  }
+  // Low hills appear/disappear across several parcels, rather than ending at
+  // a hard district line. The road and its contact grid remain untouched.
+  const hills=from.id==='rural'?a.hills:to.id==='rural'?b.hills:[],hillWeight=from.id==='rural'?1-t:t;
+  if(hillWeight>.06)combined.hills=hills.map(p=>({...p,h:p.h*hillWeight,y:p.y*hillWeight}));
+  const label=to===from?a:b;combined.signs=label.signs;combined.boxes.push(...label.boxes.filter(p=>p.role==='districtPost'));
+  return combined;
+ }
  function clearFootprint(track,x,z,w,d,margin=2.1){const p=track.projectPointToTrack(x,z);return Math.abs(p.lateralOffset)>p.halfWidth+Math.hypot(w,d)*.5+margin;}
- function circuitPlan(track,step=120){
+ function circuitPlan(track,step=90){
   const combined={buildings:[],boxes:[],cylinders:[],crowns:[],hills:[],roofs:[],signs:[]};
   for(let s=step/2,seed=0;s<track.totalLength;s+=step,seed++){
-   const q=track.sampleTrackAtS(s),p=circuitDistrict(track,s),plan=blockPlan(p,seed,60),tx=Math.sin(q.heading),tz=Math.cos(q.heading);
+   const q=track.sampleTrackAtS(s),plan=planAt(mod(s,track.totalLength)/track.totalLength*period,60,seed),tx=Math.sin(q.heading),tz=Math.cos(q.heading);
    for(const [bucket,rows]of Object.entries(plan))for(const item of rows){
     const lateral=item.x+(item.x<0?-1:1)*Math.max(0,q.halfWidth-10),x=q.x+q.nx*lateral+tx*item.z,z=q.z+q.nz*lateral+tz*item.z;
     if(clearFootprint(track,x,z,item.w,item.d))combined[bucket].push({...item,x,z,heading:q.heading,s});
@@ -154,18 +204,18 @@
   }
   if(e.roadChunks&&e.authorsWorld?.ready){let budget=1;
    for(const [chunk,world]of e.authorsWorld.chunks){let row=s.chunks.get(chunk);
-    if(!row&&budget-- >0){const group=new e.THREE.Group();group.name='NomeraHighwayDistrict';world.scenery.add(group);row={group,batch:batches(e,group,{buildings:8,boxes:64,cylinders:24,crowns:24,hills:8,roofs:8,signs:4}),z:null,profile:null};s.chunks.set(chunk,row);s.groups.push(group);s.builds++;}
+    if(!row&&budget-- >0){const group=new e.THREE.Group();group.name='NomeraHighwayDistrict';world.scenery.add(group);row={group,batch:batches(e,group,{buildings:8,boxes:112,cylinders:24,crowns:24,hills:8,roofs:8,signs:4}),z:null,profile:null};s.chunks.set(chunk,row);s.groups.push(group);s.builds++;}
     if(!row)continue;hideOldHighway(e,chunk);
-    if(row.z!==chunk.position.z){const profile=districtAt(chunk.position.z),plan=blockPlan(profile,Math.round(chunk.position.z/(e.chunkLength||60)),e.chunkLength||60);paint(e,row.batch,plan,false,chunk.position.z);if(row.z!==null)s.recycles++;row.z=chunk.position.z;row.profile=profile;row.portalZ=null;}
+    if(row.z!==chunk.position.z){const profile=districtAt(chunk.position.z),plan=planAt(chunk.position.z,e.chunkLength||60);paint(e,row.batch,plan,false,chunk.position.z);if(row.z!==null)s.recycles++;row.z=chunk.position.z;row.profile=profile;row.portalZ=null;}
     if(row.portalZ!==chunk.position.z&&stylePortal(e,chunk,row.profile))row.portalZ=chunk.position.z;
     const distance=chunk.position.z-(e.state?.z||0);row.group.visible=distance> -100&&distance<Math.min(340,e.camera?.far||340);
    }
   }
-  const district=e.track?circuitDistrict(e.track,e.playerProgress?.lastS||0):districtAt(e.state?.z||0);
-  e.districtTelemetry={district:district.id,name:district.name,pool:s.chunks.size,circuit:s.circuit,builds:s.builds,recycles:s.recycles,atlasBytes:1024*512*4,resources:s.resources.length,additionalLights:0,physicsChanged:false};
+  const position=e.track?mod(e.playerProgress?.lastS||0,e.track.totalLength)/e.track.totalLength*period:e.state?.z||0,district=districtAt(position),transition=transitionAt(position);
+  e.districtTelemetry={district:district.id,name:district.name,transition:{from:transition.from.id,to:transition.to.id,weight:transition.weight,mixed:transition.mixed},pool:s.chunks.size,circuit:s.circuit,builds:s.builds,recycles:s.recycles,atlasBytes:1024*512*4,resources:s.resources.length,additionalLights:0,physicsChanged:false};
  }
  function destroy(e){const s=e.authorsDistricts;if(!s)return;for(const [node,visible]of s.hidden)node.visible=visible;for(const [node,material]of s.materials)node.material=material;for(const [node,geometry]of s.geometries)node.geometry=geometry;
   for(const group of s.groups){group.traverse(n=>{if(n.isInstancedMesh)n.dispose?.();});group.parent?.remove(group);}for(const resource of s.resources)resource.dispose();s.chunks.clear();delete e.authorsDistricts;delete e.districtTelemetry;
  }
- return{profiles,span,period,districtAt,circuitDistrict,blockPlan,clearFootprint,circuitPlan,prepare,update,destroy};
+ return{profiles,span,period,transitionLength,districtAt,transitionAt,circuitDistrict,blockPlan,planAt,clearFootprint,circuitPlan,prepare,update,destroy};
 });
