@@ -55,5 +55,6 @@ html=html.replace('</head>',`<link rel="stylesheet" href="./authors-reel-motion.
 html=html.replace('</head>',`<script src="./js/authors-case-results.js?v=${lodHash('authors-case-results.js')}"></script><link rel="stylesheet" href="./authors-case-results.css?v=${require('node:crypto').createHash('sha256').update(fs.readFileSync(path.join(root,'authors-case-results.css'))).digest('hex').slice(0,12)}"></head>`);
 html=html.replace('</head>',`<script src="./js/authors-collection.js?v=${lodHash('authors-collection.js')}"></script><link rel="stylesheet" href="./authors-collection.css?v=${require('node:crypto').createHash('sha256').update(fs.readFileSync(path.join(root,'authors-collection.css'))).digest('hex').slice(0,12)}"></head>`);
 html=html.replace('./js/authors-preview-market.js"','./js/authors-preview-market.js?v='+lodHash('authors-preview-market.js')+'"');
+html=html.replace('</head>',`<script src="./js/authors-districts.js?v=${lodHash('authors-districts.js')}"></script></head>`);
 fs.writeFileSync(path.join(root, 'authors.html'), html);
 console.log('authors.html: isolated local entry generated from index.html');
