@@ -15,5 +15,6 @@ scratch/
 work/
 # Reproducible local review entries (node scripts/authors-build.cjs).
 authors.html
+authors-release.html
 authors-legacy.css
 antigravity.html

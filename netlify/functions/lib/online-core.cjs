@@ -226,6 +226,11 @@ function safeCar(raw){
   }
   const result={name,basePrice,condition,category,img,plate,upgrades};
   if (raw.saleProtected === true) result.saleProtected = true;
+  if (Array.isArray(raw.ownedProParts)) {
+    const validProParts=['junkmanEngine','junkmanTurbo','junkmanTires','junkmanTransmission','junkmanSuspension','junkmanNitro','junkmanBrakes'];
+    const ownedProParts=[...new Set(raw.ownedProParts.filter(k=>typeof k==='string' && validProParts.includes(k)))];
+    if (ownedProParts.length>0) result.ownedProParts=ownedProParts;
+  }
   if (typeof raw.tuningStage==='number' && Number.isFinite(raw.tuningStage)) {
     result.tuningStage=Math.max(0,Math.min(20,Math.floor(raw.tuningStage)));
   }
@@ -235,7 +240,7 @@ function safeCar(raw){
   if (typeof raw.totalKm==='number' && Number.isFinite(raw.totalKm)) {
     result.totalKm=Math.max(0,raw.totalKm);
   }
-  if (typeof raw.spoiler==='string' && ['none','ducktail','gt','gtr'].includes(raw.spoiler)) {
+  if (typeof raw.spoiler==='string' && ['none','ducktail','high','gt','gtr'].includes(raw.spoiler)) {
     result.spoiler=raw.spoiler;
   }
   if (typeof raw.vinyl==='string' && ['none','stripes','drift','mw_m3gtr','mw_razor','mw_cross','mw_blacklist'].includes(raw.vinyl)) {
@@ -275,7 +280,7 @@ function safeCar(raw){
       const tint=Number(raw.styling.tint);
       if (Number.isSafeInteger(tint) && tint>=0 && tint<=100) styling.tint=tint;
     }
-    if (typeof raw.styling.spoiler==='string' && ['none','ducktail','gt','gtr'].includes(raw.styling.spoiler)) {
+    if (typeof raw.styling.spoiler==='string' && ['none','ducktail','high','gt','gtr'].includes(raw.styling.spoiler)) {
       styling.spoiler=raw.styling.spoiler;
     }
     if (typeof raw.styling.vinyl==='string' && ['none','stripes','drift','mw_m3gtr','mw_razor','mw_cross','mw_blacklist'].includes(raw.styling.vinyl)) {
@@ -331,6 +336,24 @@ function safeCar(raw){
     for (const pk of ['gearRatioBias','aeroDownforce','gripDriftBias']) {
       if (typeof raw.styling[pk]==='number' && Number.isFinite(raw.styling[pk])) {
         styling[pk]=Math.max(-5,Math.min(5,raw.styling[pk]));
+      }
+    }
+    if (typeof raw.styling.stanceMode==='string' && ['stock','sport','bpan'].includes(raw.styling.stanceMode)) {
+      styling.stanceMode=raw.styling.stanceMode;
+    }
+    if (typeof raw.styling.fsoStrobes==='boolean') {
+      styling.fsoStrobes=raw.styling.fsoStrobes;
+    }
+    if (raw.styling.livery && typeof raw.styling.livery==='object' && !Array.isArray(raw.styling.livery)) {
+      const liv=raw.styling.livery;
+      const pattern=['none','twin','slash','belt','chevron','circuit'].includes(liv.pattern)?liv.pattern:'none';
+      const color=typeof liv.color==='string' && /^#[0-9a-fA-F]{6}$/.test(liv.color)?liv.color:'#d9fb70';
+      const width=typeof liv.width==='number' && Number.isFinite(liv.width)?Math.max(0.03,Math.min(0.25,liv.width)):0.1;
+      const offset=typeof liv.offset==='number' && Number.isFinite(liv.offset)?Math.max(-0.25,Math.min(0.25,liv.offset)):0;
+      const number=String(liv.number??'').replace(/\D/g,'').slice(0,2);
+      const team=String(liv.team||'').replace(/[^\p{L}\p{N} ._-]/gu,'').slice(0,12);
+      if (pattern!=='none' || number || team) {
+        styling.livery={pattern,color,width,offset,number,team};
       }
     }
     if (Object.keys(styling).length>0) result.styling=styling;

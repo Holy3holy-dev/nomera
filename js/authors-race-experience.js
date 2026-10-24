@@ -40,7 +40,7 @@
  }
  function begin(e,config={},owner=''){
   if(!root.NOMERA_AUTHORS_PREVIEW||!e)return;
-  destroy(e);const storageKey=(root.NOMERA_STORAGE_PREFIX||'nomera_authors_v1:')+'sector_records:'+encodeURIComponent(String(owner).toLowerCase()),key=recordKey(config,e.currentActiveWeather||config.weather);
+  destroy(e);const storagePrefix=root.NOMERA_STORAGE_PREFIX!==undefined?root.NOMERA_STORAGE_PREFIX:(root.NOMERA_AUTHORS_RELEASE?'':'nomera_authors_v1:');const storageKey=storagePrefix+'sector_records:'+encodeURIComponent(String(owner).toLowerCase()),key=recordKey(config,e.currentActiveWeather||config.weather);
   let book=[];try{book=normalizeBook(JSON.parse(root.localStorage.getItem(storageKey)));}catch(_){}
   const run={key,storageKey,book,weather:e.currentActiveWeather,weatherChanged:false,timing:createTiming(book.find(r=>r.key===key)?.times),lastUI:-1,damage:0,config};runs.set(e,run);e.authorsRun=run;
   if(e.container&&root.document){const hud=root.document.createElement('div');hud.className='ae-route-coach';hud.hidden=true;hud.setAttribute('aria-label','Навигация по трассе');hud.innerHTML='<span class="ae-route-arrow"></span><div><small></small><b></b><span class="ae-sector-live"></span></div>';e.container.append(hud);run.hud=hud;

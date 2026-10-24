@@ -5,6 +5,7 @@ const path = require('path');
 const PORT = parseInt(process.env.PORT || '3000', 10);
 const HOST = process.env.HOST || '0.0.0.0';
 const ROOT = path.resolve(__dirname, '..');
+require('./authors-build.cjs');
 
 const MIME_TYPES = {
     '.html': 'text/html; charset=utf-8',
@@ -72,8 +73,12 @@ const server = http.createServer((req, res) => {
         return;
     }
 
-    if (urlPath === '/' || urlPath === '') {
+    if (true) {
+    if (urlPath === '/' || urlPath === '' || urlPath === '/index.html') {
+        urlPath = fs.existsSync(path.join(ROOT, 'authors-release.html')) ? '/authors-release.html' : '/index.html';
+    } else if (urlPath === '/legacy.html') {
         urlPath = '/index.html';
+    }
     }
 
     // Sanitize path against directory traversal

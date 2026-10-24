@@ -172,7 +172,8 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         // --- FIREBASE REALTIME DATABASE CONFIGURATION ---
         // Served at runtime by Netlify Functions from public-only Firebase Web App config.
         // Never fall back to the legacy bazanomerann project: it risks splitting player data.
-        const firebaseConfig = window.NOMERA_AUTHORS_PREVIEW ? null : (window.NOMERA_FIREBASE_WEB_CONFIG || null);
+        function isAuthorsSandbox() { return Boolean(window.NOMERA_AUTHORS_PREVIEW && !window.NOMERA_AUTHORS_RELEASE); }
+        const firebaseConfig = isAuthorsSandbox() ? null : (window.NOMERA_FIREBASE_WEB_CONFIG || null);
         const firebaseSetupError = window.NOMERA_FIREBASE_CONFIG_ERROR || '';
         const firebaseConfigValid = Boolean(firebaseConfig
             && firebaseConfig.projectId === 'h3h-nomera-server'
@@ -2499,7 +2500,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         // --- VERIFIED SERVER ADMIN: no passwords or authorization in client code ---
         const ADMIN_ENDPOINT = '/.netlify/functions/admin';
         async function adminRequest(action, params = {}, method = 'POST') {
-            if (window.NOMERA_AUTHORS_PREVIEW) throw new Error('Локальный предпросмотр: сервер отключён.');
+            if (isAuthorsSandbox()) throw new Error('Локальный предпросмотр: сервер отключён.');
             if (action !== 'login' && action !== 'session' && action !== 'logout') {
                 if (!isAdmin) throw Error('Требуется авторизация администратора');
             }
@@ -3364,7 +3365,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         let onlineProfile=null;
         let netlifyAvailable = !(typeof window !== 'undefined' && window.location && typeof window.location.hostname === 'string' && (window.location.hostname.endsWith('github.io') || window.location.hostname.endsWith('github.dev') || window.location.hostname.endsWith('pages.dev')));
         async function onlineRequest(action,params={},method='POST') {
-            if (window.NOMERA_AUTHORS_PREVIEW) throw new Error('Локальный предпросмотр: онлайн-функции отключены.');
+            if (isAuthorsSandbox()) throw new Error('Локальный предпросмотр: онлайн-функции отключены.');
             if (action === 'claim' && (!params || params.region === undefined)) {
                 params = { ...params, region: currentReg, country: currentCountry };
             } else if (action === 'claim' && params && params.country === undefined) {
@@ -4093,7 +4094,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                                 ...(c.styling || {})
                             };
                             if (localCar && localCar.styling) {
-                                for (const k of ['wheels', 'suspension', 'spoiler', 'vinyl', 'sgu', 'tint', 'neon', 'color']) {
+                                for (const k of ['wheels', 'suspension', 'spoiler', 'vinyl', 'sgu', 'tint', 'neon', 'color', 'stanceMode', 'fsoStrobes', 'livery']) {
                                     const locSt = localCar.styling[k];
                                     const srvSt = c.styling ? c.styling[k] : undefined;
                                     if (locSt !== undefined && locSt !== 'none' && locSt !== 'stock' && locSt !== 0) {
@@ -4112,6 +4113,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                             basePrice: Number(c.basePrice || template.price || 80000),
                             condition,
                             upgrades,
+                            ...(Array.isArray(c.ownedProParts) || Array.isArray(localCar?.ownedProParts) ? { ownedProParts: [...new Set([...(Array.isArray(localCar?.ownedProParts) ? localCar.ownedProParts : []), ...(Array.isArray(c.ownedProParts) ? c.ownedProParts : [])])] } : {}),
                             ...(styling ? { styling } : {})
                         };
                     }).filter(Boolean);
@@ -4225,7 +4227,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         window.setMarketFilterState = setMarketFilterState;
 
         function openSellPlateModal() {
-            if (!window.NOMERA_AUTHORS_PREVIEW && !ensureOnlineAccess()) return;
+            if (!isAuthorsSandbox() && !ensureOnlineAccess()) return;
             const plates = (onlineProfile && Array.isArray(onlineProfile.inventory) && onlineProfile.inventory.length > 0)
                 ? onlineProfile.inventory
                 : inventory;
@@ -4256,7 +4258,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         }
 
         async function confirmSellPlate() {
-            if (window.NOMERA_AUTHORS_PREVIEW && window.NomeraPreviewMarket) return window.NomeraPreviewMarket.sellPlate();
+            if (isAuthorsSandbox() && window.NomeraPreviewMarket) return window.NomeraPreviewMarket.sellPlate();
             if(sellPlateBusy||!ensureOnlineAccess())return;
             const plateId=document.getElementById('sell-plate-select').value;
             const price=Number(document.getElementById('sell-plate-price').value);
@@ -4274,7 +4276,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         }
         let marketActionBusy = false;
         async function buyMarketLot(lotId) {
-            if (window.NOMERA_AUTHORS_PREVIEW && window.NomeraPreviewMarket) return window.NomeraPreviewMarket.buy(lotId);
+            if (isAuthorsSandbox() && window.NomeraPreviewMarket) return window.NomeraPreviewMarket.buy(lotId);
             if (marketActionBusy) return;
             const lot = marketLots[lotId];
             if (!lot) return notifyUser('Лот недоступен', 'error');
@@ -4354,7 +4356,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             }
         }
         async function cancelMarketLot(lotId) {
-            if (window.NOMERA_AUTHORS_PREVIEW && window.NomeraPreviewMarket) return window.NomeraPreviewMarket.cancel(lotId);
+            if (isAuthorsSandbox() && window.NomeraPreviewMarket) return window.NomeraPreviewMarket.cancel(lotId);
             if (marketActionBusy) return;
             const lot = marketLots[lotId];
             marketActionBusy = true;
@@ -4413,7 +4415,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             }
         }
         async function fetchMarketListings() {
-            if (window.NOMERA_AUTHORS_PREVIEW && window.NomeraPreviewMarket) return window.NomeraPreviewMarket.refresh();
+            if (isAuthorsSandbox() && window.NomeraPreviewMarket) return window.NomeraPreviewMarket.refresh();
             try { await refreshOnlinePublic(); notifyUser('Рынок обновлён'); }
             catch (e) { notifyUser('Ошибка загрузки рынка: ' + e.message, 'error'); }
         }

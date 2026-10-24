@@ -30,7 +30,7 @@ vec4 aeBadge=texture2D(aeLiveryBadge,clamp(aeUV,0.0,1.0));diffuseColor.rgb=mix(d
   const fields=['pattern','color','width','offset','number','team'];let timer=null;
   function edit(){clearTimeout(timer);const v={};for(const k of fields)v[k]=panel.querySelector('#ae-livery-'+k).value;const value=normalize(v);root.NomeraLiveryEditorBridge?.change(value,false);timer=setTimeout(()=>root.NomeraLiveryEditorBridge?.change(value),100);}
   for(const k of fields)panel.querySelector('#ae-livery-'+k).addEventListener('input',edit);
-  function key(){return(root.NOMERA_STORAGE_PREFIX||'nomera_authors_v1:')+'liveries:'+encodeURIComponent(root.NomeraLiveryEditorBridge?.owner()||'');}
+  function key(){const p=root.NOMERA_STORAGE_PREFIX!==undefined?root.NOMERA_STORAGE_PREFIX:(root.NOMERA_AUTHORS_RELEASE?'':'nomera_authors_v1:');return p+'liveries:'+encodeURIComponent(root.NomeraLiveryEditorBridge?.owner()||'');}
   function presets(){try{const a=JSON.parse(root.localStorage.getItem(key())||'[]');return Array.isArray(a)?a.slice(0,8).map(normalize):[];}catch(_){return[];}}
   function refresh(){const select=panel.querySelector('#ae-livery-presets');select.replaceChildren();const blank=root.document.createElement('option');blank.value='';blank.textContent='Выбрать вариант…';select.append(blank);presets().forEach((v,i)=>{const o=root.document.createElement('option');o.value=i;o.textContent=(i+1)+' · '+(v.team||v.pattern)+(v.number?' / '+v.number:'');select.append(o);});}
   function sync(v){v=normalize(v);for(const k of fields)panel.querySelector('#ae-livery-'+k).value=v[k];refresh();}

@@ -5,9 +5,10 @@
     const make = (tag, cls, html = '') => { const el = document.createElement(tag); el.className = cls; el.innerHTML = html; return el; };
     const icon = name => `<svg viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-${name}"/></svg>`;
     const intro = (n, tag, title, desc) => make('div', 'ae-intro', `<div><div class="ae-eyebrow">H3H / ${tag} <span>VOL. 01</span></div><h1>${title}<span class="ae-title-dot">.</span></h1><p>${desc}</p></div><span class="ae-section-number">${n}</span>`);
-    const edition = make('div', 'ae-edition-bar', '<span>AUTHOR’S EDITION <i> / </i> MIDNIGHT 02</span><span class="ae-preview-label">Тестовый профиль <span class="ae-status-dot"></span></span>');
+    const isRelease = Boolean(window.NOMERA_AUTHORS_RELEASE);
+    const edition = make('div', 'ae-edition-bar', `<span>AUTHOR’S EDITION <i> / </i> MIDNIGHT 02</span><span class="ae-preview-label">${isRelease ? 'Официальное издание' : 'Тестовый профиль'} <span class="ae-status-dot"></span></span>`);
     $('.brand-bar').after(edition);
-    $('.brand-lockup').href = './authors.html';
+    $('.brand-lockup').href = isRelease ? './index.html' : './authors.html';
     $('.brand-lockup').insertAdjacentHTML('beforeend','<small class="ae-brand-edition">COLLECT / DRIVE / TRADE</small>');
     $('.brand-word').textContent = 'NOMERA';
 
@@ -47,7 +48,7 @@
     $('.spin-cta-main').textContent = 'Сгенерировать';
     $('#btn-spin-both').insertAdjacentHTML('beforeend','<span class="ae-cta-arrow" aria-hidden="true">↗</span>');
     $('.gen-plate-desc-drawer summary').textContent = 'Паспорт номера и описание серии';
-    $('#generator-online-wallet').hidden = true;
+    if (!isRelease) $('#generator-online-wallet').hidden = true;
 
     const inv = $('#inventory');
     inv.prepend(intro('02','ЛИЧНЫЙ ИНВЕНТАРЬ','Твоя коллекция','Редкие серии. Знаковые сочетания. Номера с характером.'));
@@ -92,7 +93,7 @@
         $('#'+id+' > span').innerHTML = icon(name);
     }
     $('#hud-daily-btn').innerHTML = icon('case');
-    const footer = make('footer','ae-footer','<span>H3H NOMERA <b>AUTHOR’S EDITION</b></span><span>Тестовый профиль · сохранение только в этом браузере</span><a href="#garage" onclick="switchTab(&quot;garage&quot;);return false">Вернуться в гараж ↗</a>');
+    const footer = make('footer','ae-footer',`<span>H3H NOMERA <b>AUTHOR’S EDITION</b></span><span>${isRelease ? 'Официальное издание · облачное и локальное сохранение профиля' : 'Тестовый профиль · сохранение только в этом браузере'}</span><a href="#garage" onclick="switchTab(&quot;garage&quot;);return false">Вернуться в гараж ↗</a>`);
     $('.main-container').append(footer);
 
     // Retain the real plate renderer's national layouts, scale the whole object uniformly.
