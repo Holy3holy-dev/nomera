@@ -13,3 +13,5 @@ body.authors-edition .ae-sound-settings{max-height:calc(100svh - 28px);overflow:
 .ae-audio-range input::-webkit-slider-thumb{-webkit-appearance:none;margin-top:-7px}
 .ae-audio-range input::-moz-range-track{height:6px;background:#3b5262!important;border-radius:5px}
 .ae-audio-range input::-moz-range-progress{height:6px;background:#d7f889!important;border-radius:5px}
+
+.ae-radio-priority{display:block;color:#a6bbc7;font:11px/1.4 system-ui;margin-top:7px}

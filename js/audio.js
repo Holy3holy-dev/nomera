@@ -857,7 +857,7 @@
             } catch (_) { stopSiren(); }
         }
 
-        function updateEngine({speed = 0, gas = false, nitro = false, running = false, carClass = 'standard',carName='', rpm = null,gear=null,drifting=false,braking=false} = {}) {
+        function updateEngine({speed = 0, gas = false, nitro = false, running = false, carClass = 'standard',carName='', rpm = null,gear=null,drifting=false,braking=false,view='chase',shifting=false} = {}) {
             if (!running || !prefs.engine || level() <= 0 || !unlocked || !context || context.state === 'suspended') {
                 stopEngine();
                 return;
@@ -869,7 +869,7 @@
                 }
                 lastEngineNitroState = !!nitro;
 
-                if (root.NOMERA_AUTHORS_PREVIEW && root.NomeraAuthorsSamples?.update({ context, master, speed, gas, nitro, rpm, carClass,carName,gear,drifting,braking })) {
+                if (root.NOMERA_AUTHORS_PREVIEW && root.NomeraAuthorsSamples?.update({ context, master, speed, gas, nitro, rpm, carClass,carName,gear,drifting,braking,view,shifting })) {
                     if (engine) stopEngine(true);
                     return;
                 }
@@ -1073,7 +1073,7 @@
                 lastTick = context.currentTime;
                 tone(780, 0.035, 0.09, 0, 'triangle', 320);
             },
-            lock(pitch = 1) { if(authorsSound('lock'))return;
+            lock(pitch = 1) { if(authorsSound('lock',{pitch}))return;
                 tone(180 * pitch, 0.13, 0.18, 0, 'sine', 45);
                 tone(1150 * pitch, 0.045, 0.06);
             },

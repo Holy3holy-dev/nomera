@@ -1,7 +1,9 @@
 /* NOMERA mapping of catalogue engines to recovered MW recordings. Modern
  * cars use a related engine type; these are not recordings of those cars. */
-(function(root,factory){const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;else root.NomeraEngineVoices=api;})(typeof globalThis!=='undefined'?globalThis:this,function(){
+(function(root,factory){const api=factory(root);if(typeof module==='object'&&module.exports)module.exports=api;else root.NomeraEngineVoices=api;})(typeof globalThis!=='undefined'?globalThis:this,function(root){
  'use strict';
+ const tone=root.NomeraEngineTone||(typeof module==='object'&&module.exports?require('./authors-engine-tone.js'):null);
+ const character={g63:{pitch:.98,cutoff:5000,overrun:.2},camry:{cutoff:4300,overrun:0},wrx:{pitch:.985,overrun:.28},chiron:{cutoff:4700,overrun:.12},jesko:{pitch:1.015,overrun:.55},vaz2109:{pitch:1.025},vaz2107:{cutoff:4300},cullinan:{cutoff:4200,overrun:0},m3gtr:{cutoff:6400,overrun:.8},m5e60:{cutoff:6100}};
  const TYPES={
   i4:['standard','I4',1,5600],i4turbo:['gti','I4 turbo',1,6200],boxer4:['sport','boxer 4 turbo',1,6000],
   i6:['inline6','I6',1,6500],i6turbo:['inline6','I6 turbo',1.04,6700],v6:['inline6','V6',.92,5100],v6turbo:['inline6','V6 turbo',.96,5900],
@@ -17,8 +19,8 @@
    const match=[[/m3.*gtr|m3 e46/,'m3gtr'],[/m5 e60/,'m5'],[/m3.*g80/,'i6turbo'],[/slr/,'slr'],[/clk/,'clk'],[/viper/,'viper'],[/rx.?[78]/,'rotary'],[/911|cayman/,'flat6turbo'],[/gallardo|huracan|le mans|r8/,'v10'],[/db9|aston/,'v12'],[/cullinan/,'v12turbo'],[/chiron|bugatti/,'w16'],[/land cruiser/,'v6turbo'],[/camry|eclipse/,'v6'],[/supra|mark ii/,'i6turbo'],[/is300/,'i6'],[/impreza|wrx/,'boxer4'],[/gt.r|skyline/,'v6turbo'],[/amg|m5|m8|x5|rs6|rs7|sf90|jesko|panamera/,'v8turbo'],[/corvette/,'v8race'],[/mustang|maserati/,'v8'],[/golf|elantra|silvia|evo|polo/,'i4turbo'],[/камаз|truck/,'truck']].find(([r])=>r.test(n));type=match?.[1];
   }
   // Stable legacy six-family API for callers without a named catalogue car.
-  if(!type){const key=/kamaz|truck|diesel/.test(c)?'truck':/m3gtr|nfs_gtr|whine/.test(c)?'whine':/v8|muscle|luxury|supercharger/.test(c)?'v8':/hyper|supercar/.test(c)?'supercar':/sport|turbo/.test(c)?'sport':'standard';return{id:id||name||c,key,type:c,pitch:1,cutoff:7000,turbo:/turbo|sport/.test(c),gain:1};}
-  const[key,label,pitch,cutoff]=TYPES[type];return{id:id||name||type,key,type:label,pitch,cutoff,turbo:/turbo/.test(type),gain:1};
+  if(!type){const key=/kamaz|truck|diesel/.test(c)?'truck':/m3gtr|nfs_gtr|whine/.test(c)?'whine':/v8|muscle|luxury|supercharger/.test(c)?'v8':/hyper|supercar/.test(c)?'supercar':/sport|turbo/.test(c)?'sport':'standard';const label={standard:'I4',sport:'boxer 4 turbo',v8:'V8',supercar:'V10',truck:'diesel truck',whine:'M3 GTR V8 race'}[key];return{id:id||name||c,key,type:label,pitch:1,cutoff:key==='truck'?3500:5600,turbo:/turbo/.test(label),...(tone?.settings(label,id,name)||{}),gain:.9};}
+  const[key,label,pitch,cutoff]=TYPES[type];const voice={id:id||name||type,key,type:label,pitch,cutoff:Math.min(cutoff,/V10|race|GTR/.test(label)?6400:5700),turbo:/turbo/.test(type),...(tone?.settings(label,id,name)||{})};const custom=character[id]||{};return{...voice,...custom,pitch:voice.pitch*(custom.pitch||1)};
  }
  return{profile,models:MODELS,types:TYPES};
 });

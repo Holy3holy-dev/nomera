@@ -5767,7 +5767,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
         function executeCellSpin(targets, finalValues, onFinish) {
             initAudio();
-            if(window.NOMERA_AUTHORS_PREVIEW)window.NomeraPrestige?.cancel();
+            if(window.NOMERA_AUTHORS_PREVIEW){window.NomeraPrestige?.cancel();window.NomeraSoundscape?.cue('spin');}
             isSpinning = true;
 
             if (currentCountry === 'JPN' && targets.some(id => id.startsWith('cell-n'))) {
@@ -20362,6 +20362,8 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                             rpm: hud.rpm,
                             gear:hud.gear,
                             carName:selectedRaceCarName,
+                            view:car3DRacingEngine?.cameraMode,
+                            shifting:!!((car3DRacingEngine?.playerPhysics||car3DRacingEngine?.mwLongitudinal)?.state.shiftTimer>0),
                             drifting:!!hud.isDrifting,
                             braking:!!car3DRacingEngine?.keys.brake,
                             gas: car3DRacingEngine ? car3DRacingEngine.keys.gas : false,
