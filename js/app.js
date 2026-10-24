@@ -5986,6 +5986,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                             cellEl.classList.add('stopped');
                         }
                         setCellChar(id, finalValues[id]);
+                        if(window.NOMERA_AUTHORS_PREVIEW)window.NomeraReelMotion?.cell(cellEl);
 
                         let pitch = 0.9 + (targets.indexOf(id) * 0.1);
                         playLockSound(pitch,'generator');
@@ -7267,6 +7268,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         window.setCaseAnimMode = setCaseAnimMode;
 
         function clearCaseAnimationTimers(preserveBatch = false) {
+            if(window.NOMERA_AUTHORS_PREVIEW)window.NomeraReelMotion?.cancelRolls('cases');
             if (!preserveBatch) window.NomeraRewards?.cancel();
             if (caseRouletteTimeout) {
                 clearTimeout(caseRouletteTimeout);
@@ -7340,7 +7342,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     stage.style['--unseal-glow'] = glow;
                 }
                 stage.classList.remove('hidden');
-                if(window.NomeraRewards?.unifiedDialog){window.NomeraRewards.begin(type,null,Number(document.getElementById('roulette-modal')?.dataset.caseCount)||1);return;}
+                if(window.NomeraRewards?.unifiedDialog){window.NomeraRewards.begin(type,null,Number(document.getElementById('roulette-modal')?.dataset.caseCount)||1,{continuation:true});return;}
                 if (durationMs > 0 && typeof setTimeout === 'function') {
                     const tid = setTimeout(() => {
                         stage.classList.add('hidden');
@@ -7581,7 +7583,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         }
 
         function closeRouletteModal() {
-            if(window.NOMERA_AUTHORS_PREVIEW)window.NomeraNumberAudio?.stop('cases');
+            if(window.NOMERA_AUTHORS_PREVIEW){window.NomeraNumberAudio?.stop('cases');window.NomeraReelMotion?.cancel('cases');}
             clearCaseAnimationTimers();
             activeSingleRevealCallback = null;
             isSpinning = false;
@@ -8094,7 +8096,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                                     return rt === 'Легендарный' || rt === 'МИФИЧЕСКИЙ' || rt === 'Мифический' || rt === 'БЛАТНОЙ';
                                 });
                                 if (hasHighTier) {
-                                    triggerConfetti();
+                                    if(!(window.NOMERA_AUTHORS_PREVIEW&&window.NomeraReelMotion))triggerConfetti();
                                     playWinJingle('Легендарный','cases');
                                 }
                             }
@@ -8250,8 +8252,8 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
                     if(window.NOMERA_AUTHORS_PREVIEW)sound.rewardCar?.(wonCarObj.rarity.text,{scene:'cases'});
                     if (wonCarObj.rarity.text === "МИФИЧЕСКИЙ" || wonCarObj.rarity.text === "Легендарный") {
-                        triggerConfetti();
-                        triggerScreenShake();
+                        if(!(window.NOMERA_AUTHORS_PREVIEW&&window.NomeraReelMotion))triggerConfetti();
+                        if(!(window.NOMERA_AUTHORS_PREVIEW&&window.NomeraReelMotion))triggerScreenShake();
                         playWinJingle("Легендарный",'cases');
                     } else if (wonCarObj.rarity.text === "Эпический" || wonCarObj.rarity.text === "Супер редкий") {
                         playWinJingle(wonCarObj.rarity.text,'cases');
@@ -8299,8 +8301,8 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                         wonPlateObj.rarity.text === "Легендарный" ||
                         wonPlateObj.rarity.text === "Крутой"
                     ) {
-                        triggerConfetti();
-                        triggerScreenShake();
+                        if(!(window.NOMERA_AUTHORS_PREVIEW&&window.NomeraReelMotion))triggerConfetti();
+                        if(!(window.NOMERA_AUTHORS_PREVIEW&&window.NomeraReelMotion))triggerScreenShake();
                         playWinJingle("Легендарный",'cases');
                     } else if (wonPlateObj.rarity.text === "Эпический" || wonPlateObj.rarity.text === "Супер редкий") {
                         playWinJingle(wonPlateObj.rarity.text,'cases');
@@ -8326,6 +8328,10 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
             document.getElementById('btn-skip-roulette')?.classList.remove('hidden');
             triggerCaseUnsealStage(activeCaseType, singleWinColor, '🎲 Открываем кейс...', caseAnimMode === 'fast' ? 320 : 650);
+
+            if(window.NOMERA_AUTHORS_PREVIEW&&window.NomeraReelMotion?.roll({track,targetX,duration:caseAnimMode==='fast'?1600:4000,step:cardWidth})){
+                caseRouletteTimeout=setTimeout(finalizeSingleSpin,caseAnimMode==='fast'?1680:4100);return;
+            }
 
             let tickDelay = caseAnimMode === 'fast' ? 45 : 70;
             const maxTickDelay = caseAnimMode === 'fast' ? 240 : 480;

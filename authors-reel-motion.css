@@ -1,0 +1,25 @@
+/* Static paint, compositor transforms and opacity. Registration geometry is untouched. */
+.authors-edition #gen-plate-stage .plate-cell.spinning,.authors-edition #gen-plate-stage .plate-cell.stopped{animation:none!important;transform:none!important;will-change:auto!important}
+.authors-edition #gen-plate-stage .plate-cell.spinning .char-span{opacity:.72}
+.authors-edition #gen-plate-stage .plate-cell.spinning::before{background:linear-gradient(180deg,#0000000e,transparent 28%,transparent 75%,#00000009)!important}
+.ae-motion-meter{position:absolute;top:118px;left:24px;right:24px;height:1px;background:linear-gradient(90deg,transparent,#b6d4ce,transparent);opacity:0;pointer-events:none;z-index:3;transform-origin:center}
+#gen-plate-stage[data-motion-phase=spinning] .ae-motion-meter{opacity:.42}
+#gen-plate-stage[data-motion-phase=reward] .ae-motion-meter{background:linear-gradient(90deg,transparent,var(--motion-accent),transparent);opacity:.75}
+.ae-motion-reward{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:3;border-radius:inherit;contain:layout paint style}
+.ae-motion-generator{inset:72px 0 94px;z-index:2}
+.ae-motion-aura{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 45%,var(--motion-accent),transparent 68%);opacity:0}
+.ae-motion-corner{position:absolute;width:34px;height:24px;border:solid var(--motion-accent);border-width:1px 0 0 1px;opacity:0;filter:none}
+.ae-motion-corner-0{top:12%;left:5%}.ae-motion-corner-1{top:12%;right:5%;border-width:1px 1px 0 0}.ae-motion-corner-2{bottom:12%;left:5%;border-width:0 0 1px 1px}.ae-motion-corner-3{bottom:12%;right:5%;border-width:0 1px 1px 0}
+.ae-motion-sweep{position:absolute;inset:0;background:linear-gradient(110deg,transparent 36%,#ffffff55 49%,transparent 62%);opacity:0}
+.ae-motion-generator .ae-motion-sweep{top:9%;bottom:12%;background:linear-gradient(110deg,transparent 43%,#ffffff38 49%,transparent 55%)}
+.ae-motion-spark{position:absolute;left:var(--spark-x);top:var(--spark-y);width:3px;height:3px;background:var(--motion-accent);border-radius:1px;opacity:0}
+.ae-motion-reward[data-rank="5"] .ae-motion-corner,.ae-motion-reward[data-rank="6"] .ae-motion-corner{border-width:2px 0 0 2px;width:44px;height:28px}
+.ae-motion-reward[data-rank="5"] .ae-motion-corner-1,.ae-motion-reward[data-rank="6"] .ae-motion-corner-1{border-width:2px 2px 0 0}.ae-motion-reward[data-rank="5"] .ae-motion-corner-2,.ae-motion-reward[data-rank="6"] .ae-motion-corner-2{border-width:0 0 2px 2px}.ae-motion-reward[data-rank="5"] .ae-motion-corner-3,.ae-motion-reward[data-rank="6"] .ae-motion-corner-3{border-width:0 2px 2px 0}
+.authors-edition #ae-case-dialog .roulette-center-line{will-change:auto}
+.authors-edition #ae-case-dialog .case-roulette-track{transition:none}
+.authors-edition #ae-case-dialog .ae-reel-locked .ae-reel-window:before{border-top-color:var(--reel-color)}
+.authors-edition #ae-case-dialog #roulette-result:not(.hidden){isolation:isolate}
+.authors-edition #ae-case-dialog #roulette-result>:not(.ae-motion-reward){position:relative;z-index:4}
+.authors-edition #ae-case-dialog #roulette-batch-result>.ae-motion-reward{z-index:2}
+@media(max-width:620px){.ae-motion-meter{top:80px;left:16px;right:16px}.ae-motion-generator{inset:68px 0 91px}.ae-motion-corner{width:22px;height:17px}.ae-motion-reward[data-rank="5"] .ae-motion-corner,.ae-motion-reward[data-rank="6"] .ae-motion-corner{width:28px;height:19px}.ae-motion-spark{width:2px;height:2px}}
+@media(prefers-reduced-motion:reduce){.ae-motion-reward,.ae-motion-meter{display:none!important}.authors-edition #gen-plate-stage .plate-cell.spinning .char-span{opacity:1}.authors-edition #ae-case-dialog .case-roulette-track,.authors-edition #ae-case-dialog .ae-reel-strip{will-change:auto!important;transition:none!important}}

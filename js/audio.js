@@ -1039,6 +1039,7 @@
 
         function authorsSound(name,options={}) {
             if(!root.NOMERA_AUTHORS_PREVIEW||!root.NomeraSoundscape)return false;
+            root.NomeraReelMotion?.signal(name,options);
             if(!unlocked||!context||context.state!=='running'||level()<=0)return true;
             return root.NomeraSoundscape.play(context,master,name,options);
         }

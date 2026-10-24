@@ -7,7 +7,7 @@
  const stage=()=>root.document?.getElementById('gen-plate-stage');
  function summary(){return stage()?.querySelector('.ae-reveal-panel');}
  function focusBack(){const b=stage()?.querySelector('.ae-reveal-skip');if(b&&root.document.activeElement===b)root.document.getElementById('btn-spin-both')?.focus({preventScroll:true});}
- function stop(){if(!live)return;const run=live;live=null;run.timers.forEach(root.clearTimeout);run.animations.forEach(a=>a.cancel());run.node?.remove();}
+ function stop(){if(!live)return;const run=live;live=null;if(run.motion)root.NomeraReelMotion?.cancel('generator');run.timers.forEach(root.clearTimeout);run.animations.forEach(a=>a.cancel());run.node?.remove();}
  function cancel(){focusBack();stop();const s=stage();if(!s)return;delete s.dataset.revealPhase;s.querySelector('.ae-reveal-skip')?.setAttribute('hidden','');idle(s.dataset.rarityTier||'none');}
  function idle(tier){const s=stage(),p=summary();if(!s||!p)return;const f=finishes[{none:0,uncommon:1,rare:2,super:3,epic:4,legendary:5,blatnoy:6}[tier]||0];p.querySelector('small').textContent=f[0].toUpperCase()+' / КОЛЛЕКЦИОННЫЙ ВЫПУСК';p.querySelector('b').textContent='Характер — в деталях';p.querySelector('span').textContent='Тиснение символов · отражающая эмаль · металлическая грань';p.removeAttribute('aria-live');}
  function update(tier){if(live&&tier==='none')cancel();if(!live)idle(tier);}
@@ -19,6 +19,12 @@
   const skip=s.querySelector('.ae-reveal-skip');if(skip)skip.hidden=!plan.duration||plan.rank<2;
   function phase(name){if(live!==run)return;s.dataset.revealPhase=name;}
   run.finish=()=>{if(live!==run)return;focusBack();stop();s.dataset.revealPhase='settled';if(skip)skip.hidden=true;};
+  if(root.NomeraReelMotion){
+   const next=root.NomeraReelMotion.plan(value.rarity,reduced,Number(root.innerWidth||1000)<=620);run.motion=true;
+   const fx=root.NomeraReelMotion.reveal(s,value.rarity,'generator');run.animations=fx?.animations||[];
+   if(!next.duration){run.finish();return;}
+   run.timers.push(root.setTimeout(()=>phase('value'),80),root.setTimeout(()=>phase('detail'),180),root.setTimeout(run.finish,next.duration+130));return;
+  }
   if(!plan.duration||!s.animate||!root.document.getElementById('plate-box')?.animate){run.finish();return;}
   const node=root.document.createElement('div');node.className='ae-drop-scene ae-drop-'+plan.motif;node.setAttribute('aria-hidden','true');node.innerHTML='<i class="ae-drop-ring"></i><i class="ae-drop-rail ae-drop-rail-left"></i><i class="ae-drop-rail ae-drop-rail-right"></i>'+Array.from({length:plan.particles},(_,i)=>'<i class="ae-drop-spark" style="--spark-x:'+(8+(i*37)%84)+'%;--spark-y:'+(18+(i*29)%64)+'%"></i>').join('');for(let i=0;i<plan.facets;i++){const f=root.document.createElement('i');f.className='ae-drop-facet';f.style.setProperty('--facet-angle',(i*360/plan.facets)+'deg');node.append(f);}s.append(node);run.node=node;
   const animate=(el,frames,options)=>{if(!el?.animate)return;const a=el.animate(frames,{fill:'none',easing:'cubic-bezier(.16,.7,.2,1)',...options});run.animations.push(a);};
