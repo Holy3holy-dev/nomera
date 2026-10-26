@@ -1445,7 +1445,7 @@ function migrateLegacyPin(account, pin) {
   delete account.password;
   return { pinHash: hashed, pin: null, password: null };
 }
-function sanitizedProfile(a){return {nickname:a.nickname, balance:a.balance, inventory:a.inventory||[], myCars:a.myCars||[], playerLevel:a.playerLevel||1, playerExp:a.playerExp||0, updatedAt:a.updatedAt||0, draft:a.draft||null, avatarData:typeof a.avatarData==='string'?a.avatarData:''};}
+function sanitizedProfile(a){return {nickname:a.nickname, balance:a.balance, inventory:a.inventory||[], myCars:a.myCars||[], playerLevel:a.playerLevel||1, playerExp:a.playerExp||0, ...(typeof a.playerTitle==='string'&&a.playerTitle?{playerTitle:a.playerTitle.slice(0,30)}:{}), ...(Number.isSafeInteger(a.levelRewardsThrough)&&a.levelRewardsThrough>=1&&a.levelRewardsThrough<=777?{levelRewardsThrough:a.levelRewardsThrough}:{}), ...(a.activityRewards&&typeof a.activityRewards==='object'?{activityRewards:{repairs:Math.max(0,Math.min(9999,Math.floor(Number(a.activityRewards.repairs)||0))),extraAchievements:Array.isArray(a.activityRewards.extraAchievements)?a.activityRewards.extraAchievements.filter(x=>typeof x==='string'&&x.length<=40).slice(0,100):[]}}:{}), updatedAt:a.updatedAt||0, draft:a.draft||null, avatarData:typeof a.avatarData==='string'?a.avatarData:''};}
 function mutate(state, action, key, data, now=Date.now()) {
   if (!state || typeof state!=='object') state={};
   const accounts={...(state.accounts||{})};

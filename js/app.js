@@ -2336,9 +2336,12 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 resetLocalGameFor(profile.nickname);
             } else if (!same) {
                 window.NomeraProgressionCelebration?.clear?.();
-                levelRewardsThrough = 1;
-                playerTitle = 'novice';
-                activityRewards = {repairs:0,extraAchievements:[]};
+                levelRewardsThrough = window.NomeraProgression?.level(profile.levelRewardsThrough) || 1;
+                playerTitle = profile.playerTitle || 'novice';
+                activityRewards = window.NomeraActivities?.normalize(profile.activityRewards) || {repairs:0,extraAchievements:[]};
+                if (profile.dailyBonus && typeof profile.dailyBonus === 'object') dailyBonus = profile.dailyBonus;
+                if (profile.dailyQuests && typeof profile.dailyQuests === 'object') dailyQuests = profile.dailyQuests;
+                if (profile.achievements && typeof profile.achievements === 'object') achievements = profile.achievements;
                 nickname = profile.nickname;
                 playerPin = '';
                 raceRecordStore.bind(sanitizeKey(nickname));
@@ -2365,6 +2368,19 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 // loadProgress() has already loaded the matching device-specific game state.
                 nickname = saved.nickname;
                 playerPin = '';
+                if (profile.levelRewardsThrough !== undefined) {
+                    levelRewardsThrough = Math.max(levelRewardsThrough, window.NomeraProgression?.level(profile.levelRewardsThrough) || 1);
+                }
+                if (profile.playerTitle && (!playerTitle || playerTitle === 'novice')) {
+                    playerTitle = profile.playerTitle;
+                }
+                if (profile.activityRewards && window.NomeraActivities) {
+                    const srvAct = window.NomeraActivities.normalize(profile.activityRewards);
+                    activityRewards = {
+                        repairs: Math.max(activityRewards.repairs || 0, srvAct.repairs || 0),
+                        extraAchievements: [...new Set([...(activityRewards.extraAchievements || []), ...(srvAct.extraAchievements || [])])]
+                    };
+                }
                 localStore.set('nomera_user_session', JSON.stringify({nickname}));
             }
             setOnlineProfile(profile, true);
@@ -3510,7 +3526,13 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     inventory: Array.isArray(account.inventory) ? account.inventory : Object.values(account.inventory || {}),
                     myCars: Array.isArray(account.myCars) ? account.myCars : Object.values(account.myCars || {}),
                     playerLevel: Number(account.playerLevel || 1),
-                    playerExp: Number(account.playerExp || 0)
+                    playerExp: Number(account.playerExp || 0),
+                    ...(account.playerTitle ? { playerTitle: account.playerTitle } : {}),
+                    ...(account.levelRewardsThrough !== undefined ? { levelRewardsThrough: account.levelRewardsThrough } : {}),
+                    ...(account.activityRewards ? { activityRewards: account.activityRewards } : {}),
+                    ...(account.dailyBonus ? { dailyBonus: account.dailyBonus } : {}),
+                    ...(account.dailyQuests ? { dailyQuests: account.dailyQuests } : {}),
+                    ...(account.achievements ? { achievements: account.achievements } : {})
                 };
 
                 localStore.set('nomera_user_session', JSON.stringify({ key, nickname: profile.nickname }));
@@ -9470,7 +9492,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                             <div class="garage-condition-heading"><b>🧰 Состояние ${Math.round(state.condition)}%</b><span>${state.condition < 35 ? '🔴 Сильный износ' : state.condition < 75 ? '🟡 Нужен ремонт' : '🟢 Исправен'}</span></div>
                             <div class="garage-condition-track"><i style="width:${state.condition.toFixed(1)}%;background:${state.condition < 35 ? '#ef4444' : state.condition < 75 ? '#f59e0b' : '#c9f267'}"></i></div>
                             <button type="button" class="btn btn-blue tuning-repair" ${costRepair===0 ? 'disabled' : ''} onclick="repairGarageCar(${index})">${costRepair===0 ? '✓ Полностью исправен' : `🔧 Ремонт · ${costRepair.toLocaleString('ru-RU')} ₽`}</button>
-                            ${window.NOMERA_AUTHORS_PREVIEW&&window.NomeraActivities&&!onlineProfile?`<button type="button" class="btn ae-voucher-repair" onclick="repairGarageCarWithVoucher(${index})" ${costRepair<=0||activityRewards.repairs<1?'disabled':''}>Ремонт сертификатом · в запасе ${activityRewards.repairs}</button>`:''}
+                            ${window.NOMERA_AUTHORS_PREVIEW&&window.NomeraActivities&&!isBlockedOnlineWallet()?`<button type="button" class="btn ae-voucher-repair" onclick="repairGarageCarWithVoucher(${index})" ${costRepair<=0||activityRewards.repairs<1?'disabled':''}>Ремонт сертификатом · в запасе ${activityRewards.repairs}</button>`:''}
                             <div class="garage-tuning-title">ТЮНИНГ · 5 УРОВНЕЙ</div>
                             ${upgradesHtml}
                         </div>
@@ -9569,11 +9591,57 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             notifyUser('🔧 Машина отремонтирована! Состояние 100%.', 'success');
         }
 
+        function isBlockedOnlineWallet() {
+            return Boolean(onlineProfile && (typeof onlineProfile.nickname !== 'string' || !onlineProfile.nickname.trim()));
+        }
+
+        function syncOnlineProgressionState() {
+            if (!onlineProfile || isBlockedOnlineWallet()) return;
+            onlineProfile.playerLevel = playerLevel;
+            onlineProfile.playerExp = playerExp;
+            onlineProfile.playerTitle = playerTitle || 'novice';
+            onlineProfile.levelRewardsThrough = levelRewardsThrough;
+            onlineProfile.activityRewards = JSON.parse(JSON.stringify(activityRewards));
+            onlineProfile.dailyBonus = JSON.parse(JSON.stringify(dailyBonus));
+            onlineProfile.dailyQuests = JSON.parse(JSON.stringify(dailyQuests));
+            onlineProfile.achievements = JSON.parse(JSON.stringify(achievements));
+            if (db && typeof db.ref === 'function') {
+                const key = sanitizeKey(onlineProfile.nickname);
+                const now = Date.now();
+                const patch = {
+                    balance: Number.isFinite(Number(onlineProfile.balance)) ? Number(onlineProfile.balance) : balance,
+                    playerLevel,
+                    playerExp,
+                    playerTitle: playerTitle || 'novice',
+                    levelRewardsThrough,
+                    activityRewards: onlineProfile.activityRewards,
+                    dailyBonus: onlineProfile.dailyBonus,
+                    dailyQuests: onlineProfile.dailyQuests,
+                    achievements: onlineProfile.achievements,
+                    updatedAt: now
+                };
+                db.ref('onlineV4/accounts/' + key).update(patch).catch(() => {});
+                db.ref('users/' + key).update(patch).catch(() => {});
+                db.ref('leaderboard/' + key).update({
+                    balance: patch.balance,
+                    playerLevel,
+                    playerExp,
+                    avatarData: avatarData || '',
+                    updatedAt: now
+                }).catch(() => {});
+            }
+        }
+
         function repairGarageCarWithVoucher(index) {
-            if(!window.NOMERA_AUTHORS_PREVIEW||onlineProfile||isRaceRunning||activityRewards.repairs<1)return false;
+            if(!window.NOMERA_AUTHORS_PREVIEW||isBlockedOnlineWallet()||isRaceRunning||activityRewards.repairs<1)return false;
             const car=myCars[index];if(!car||!Number.isFinite(Number(car.condition))||car.condition>=100)return false;
             const condition=car.condition;activityRewards.repairs--;car.condition=100;
             if(!saveProgress(false)){activityRewards.repairs++;car.condition=condition;saveProgress(false);notifyUser('Ремонт не сохранён. Сертификат возвращён.','error');return false;}
+            if (onlineProfile) {
+                onlineProfile.myCars = JSON.parse(JSON.stringify(myCars));
+                if (typeof syncCloudGarage === 'function') syncCloudGarage(true);
+                syncOnlineProgressionState();
+            }
             renderCars();notifyUser('Машина восстановлена до 100% · использован один сертификат','success');return true;
         }
 
@@ -9812,6 +9880,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             if (TITLES_CATALOG[newTitle]) {
                 playerTitle = newTitle;
                 saveProgress();
+                if (onlineProfile) syncOnlineProgressionState();
                 if(window.NOMERA_AUTHORS_PREVIEW)window.NomeraProgressionCelebration?.pulseTitle?.();
                 notifyUser(`Титул установлен: ${TITLES_CATALOG[newTitle].label}`);
             }
@@ -10840,7 +10909,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                             <b style="color:#fbbf24;">${ecoCost !== null ? ecoCost.toLocaleString('ru-RU') + ' ₽' : 'MAX'}</b>
                         </button>
                         ${repCost > 0 ? `<button type="button" class="btn btn-gold" style="margin:4px 0 0 0; padding:8px; font-size:11.5px;" onclick="repairGarageCar(${index})">🔧 Отремонтировать (${repCost.toLocaleString('ru-RU')} ₽)</button>` : ''}
-                        ${window.NOMERA_AUTHORS_PREVIEW&&window.NomeraActivities&&!onlineProfile?`<button type="button" id="ae-inspector-voucher" class="btn ae-voucher-repair" onclick="repairGarageCarWithVoucher(${index})" ${repCost<=0||activityRewards.repairs<1?'disabled':''}>Ремонт сертификатом · в запасе ${activityRewards.repairs}</button>`:''}
+                        ${window.NOMERA_AUTHORS_PREVIEW&&window.NomeraActivities&&!isBlockedOnlineWallet()?`<button type="button" id="ae-inspector-voucher" class="btn ae-voucher-repair" onclick="repairGarageCarWithVoucher(${index})" ${repCost<=0||activityRewards.repairs<1?'disabled':''}>Ремонт сертификатом · в запасе ${activityRewards.repairs}</button>`:''}
                     </div>
                 </div>
 
@@ -11361,16 +11430,30 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         window.NomeraAtelierBridge={read:()=>({car:myCars[stylingActiveCarIndex],draft:getStylingDraft(),balance:(onlineProfile&&Number.isFinite(Number(onlineProfile.balance)))?Math.max(balance,Number(onlineProfile.balance)):balance,showroom:car3DShowroom})};
         // Rewards share the account snapshot with the wallet: no separate claim flag can be lost.
         window.NomeraProgressionBridge={
-            read:()=>({level:playerLevel,xp:playerExp,through:levelRewardsThrough,title:playerTitle,online:!!onlineProfile}),
+            read:()=>({level:playerLevel,xp:playerExp,through:levelRewardsThrough,title:playerTitle,online:isBlockedOnlineWallet()}),
             claim:()=>{
-                if (!window.NOMERA_AUTHORS_PREVIEW || !window.NomeraProgression || onlineProfile) return false;
+                if (!window.NOMERA_AUTHORS_PREVIEW || !window.NomeraProgression || isBlockedOnlineWallet()) return false;
                 const claim=window.NomeraProgression.claim(playerLevel,levelRewardsThrough);
                 if (!claim.count) return false;
-                const oldBalance=balance,oldThrough=levelRewardsThrough;
+                const oldBalance=balance,oldThrough=levelRewardsThrough,oldOnlineBalance=onlineProfile?onlineProfile.balance:undefined;
                 balance+=claim.cash;levelRewardsThrough=claim.through;
+                if (onlineProfile) {
+                    const baseOnline = Number.isFinite(Number(oldOnlineBalance)) ? Number(oldOnlineBalance) : oldBalance;
+                    onlineProfile.balance = Math.max(balance, baseOnline + claim.cash);
+                    onlineProfile.levelRewardsThrough = claim.through;
+                }
                 if (!saveProgress(false)) {
-                    balance=oldBalance;levelRewardsThrough=oldThrough;saveProgress(false);updateBalance();
+                    balance=oldBalance;levelRewardsThrough=oldThrough;
+                    if (onlineProfile) {
+                        onlineProfile.balance = oldOnlineBalance;
+                        onlineProfile.levelRewardsThrough = oldThrough;
+                    }
+                    saveProgress(false);updateBalance();
                     notifyUser('Не удалось сохранить награду. Освободи место в браузере и попробуй снова.','error');return false;
+                }
+                if (onlineProfile) {
+                    renderOnlineAccount();
+                    syncOnlineProgressionState();
                 }
                 updateBalance();window.NomeraProgressionUI?.refresh();
                 if(window.NomeraProgressionCelebration)window.NomeraProgressionCelebration.reward(claim);
@@ -11625,20 +11708,30 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
         function getDailyQuestDefinitions() {
             const base=[{id:'spins',title:'Выбить 10 госномеров',target:10,rewardMoney:30000,rewardXp:50},{id:'distance',title:'Проехать 3 км на трассе',target:3,rewardMoney:45000,rewardXp:80},{id:'tune',title:'Тюнинг или стайлинг авто',target:1,rewardMoney:40000,rewardXp:60}];
-            return window.NOMERA_AUTHORS_PREVIEW&&window.NomeraActivities&&!onlineProfile?base.map(window.NomeraActivities.quest):base;
+            return window.NOMERA_AUTHORS_PREVIEW&&window.NomeraActivities&&!isBlockedOnlineWallet()?base.map(window.NomeraActivities.quest):base;
         }
 
         // One account snapshot commits XP, money, vouchers and claim markers together.
         function grantActivityReward(reward, mutate) {
-            if(!window.NOMERA_AUTHORS_PREVIEW||!window.NomeraActivities||onlineProfile)return false;
-            const previous={balance,playerLevel,playerExp,dailyQuests:JSON.parse(JSON.stringify(dailyQuests)),achievements:JSON.parse(JSON.stringify(achievements)),activityRewards:JSON.parse(JSON.stringify(activityRewards))};
-            mutate();balance+=reward.cash||0;activityRewards.repairs=Math.min(9999,activityRewards.repairs+(reward.repairs||0));
+            if(!window.NOMERA_AUTHORS_PREVIEW||!window.NomeraActivities||isBlockedOnlineWallet())return false;
+            const previous={balance,onlineBalance:onlineProfile?onlineProfile.balance:undefined,playerLevel,playerExp,dailyQuests:JSON.parse(JSON.stringify(dailyQuests)),achievements:JSON.parse(JSON.stringify(achievements)),activityRewards:JSON.parse(JSON.stringify(activityRewards))};
+            const cashGain=reward.cash||0;
+            mutate();balance+=cashGain;activityRewards.repairs=Math.min(9999,activityRewards.repairs+(reward.repairs||0));
+            if (onlineProfile && cashGain > 0) {
+                const baseOnline = Number.isFinite(Number(previous.onlineBalance)) ? Number(previous.onlineBalance) : previous.balance;
+                onlineProfile.balance = Math.max(balance, baseOnline + cashGain);
+            }
             const appliedXp=Math.min(reward.xp||0,window.NomeraProgression.xpTo(playerLevel,playerExp,777));
             addExp(appliedXp,{deferSave:true});
             if(!saveProgress(false)){
                 balance=previous.balance;playerLevel=previous.playerLevel;playerExp=previous.playerExp;dailyQuests=previous.dailyQuests;achievements=previous.achievements;activityRewards=previous.activityRewards;
+                if (onlineProfile) onlineProfile.balance = previous.onlineBalance;
                 saveProgress(false);updateBalance();updateExpUI();renderDailyModal();renderAchievements();
                 notifyUser('Не удалось сохранить награду. Выплата отменена, попробуй снова после восстановления хранилища.','error');return false;
+            }
+            if (onlineProfile) {
+                renderOnlineAccount();
+                syncOnlineProgressionState();
             }
             updateBalance();updateExpUI();renderDailyModal();renderAchievements();updateDailyBadgeDot();
             if(playerLevel!==previous.playerLevel){syncMyLeaderboardEntry();renderLeaderboard();window.NomeraProgressionCelebration?.levelUp(previous.playerLevel,playerLevel);}
@@ -11719,7 +11812,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                         </div>
                     `;
                 }).join('');
-                if(window.NOMERA_AUTHORS_PREVIEW&&window.NomeraActivities&&!onlineProfile){const count=window.NomeraActivities.ids.filter(id=>dailyQuests.claimed[id]).length,done=!!dailyQuests.claimed.all;questsList.innerHTML+=`<section class="ae-daily-set"><div class="ae-eyebrow">НАБОР ДНЯ · ${count}/3</div><h4>Закрой весь маршрут дня</h4><p>+50 000 ₽ · +150 XP · 1 бесплатный полный ремонт</p><button class="btn btn-green" id="ae-claim-daily-set" onclick="claimDailySetReward()" ${count<3||done?'disabled':''}>${done?'Набор получен':count<3?'Забери награды трёх заданий':'Получить бонус набора'}</button></section>`;}
+                if(window.NOMERA_AUTHORS_PREVIEW&&window.NomeraActivities&&!isBlockedOnlineWallet()){const count=window.NomeraActivities.ids.filter(id=>dailyQuests.claimed[id]).length,done=!!dailyQuests.claimed.all;questsList.innerHTML+=`<section class="ae-daily-set"><div class="ae-eyebrow">НАБОР ДНЯ · ${count}/3</div><h4>Закрой весь маршрут дня</h4><p>+50 000 ₽ · +150 XP · 1 бесплатный полный ремонт</p><button class="btn btn-green" id="ae-claim-daily-set" onclick="claimDailySetReward()" ${count<3||done?'disabled':''}>${done?'Набор получен':count<3?'Забери награды трёх заданий':'Получить бонус набора'}</button></section>`;}
             }
         }
 
@@ -11755,7 +11848,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             checkDailyQuests();
             const def = getDailyQuestDefinitions().find(q=>q.id===questId);
             if (!def || dailyQuests.claimed?.[questId] || (Number(dailyQuests.progress[questId])||0)+1e-8<def.target) return false;
-            if(window.NOMERA_AUTHORS_PREVIEW&&window.NomeraActivities&&!onlineProfile)return grantActivityReward({kind:'quest',label:def.title,cash:def.rewardMoney,xp:def.rewardXp,repairs:0},()=>{dailyQuests.claimed[questId]=true;});
+            if(window.NOMERA_AUTHORS_PREVIEW&&window.NomeraActivities&&!isBlockedOnlineWallet())return grantActivityReward({kind:'quest',label:def.title,cash:def.rewardMoney,xp:def.rewardXp,repairs:0},()=>{dailyQuests.claimed[questId]=true;});
             dailyQuests.claimed[questId] = true;
             creditPlayerBalance(def.rewardMoney, 'Ежедневный квест');
             addExp(def.rewardXp);
@@ -12126,7 +12219,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         window.openCollectorBook = openCollectorBook;
 
         function checkAchievements() {
-            if(window.NOMERA_AUTHORS_PREVIEW&&window.NomeraActivities&&!onlineProfile){
+            if(window.NOMERA_AUTHORS_PREVIEW&&window.NomeraActivities&&!isBlockedOnlineWallet()){
                 const list=[],oldBalance=balance;
                 for(const ach of ACHIEVEMENTS_CATALOG)if(!achievements[ach.id]&&ach.check()){list.push(ach);balance+=ach.reward;}
                 balance=oldBalance;
@@ -12152,7 +12245,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             if (!list) return;
             list.innerHTML = ACHIEVEMENTS_CATALOG.map(ach => {
                 const unlocked = !!achievements[ach.id];
-                const bonus=window.NOMERA_AUTHORS_PREVIEW&&window.NomeraActivities&&!onlineProfile?window.NomeraActivities.achievement(ach):null;
+                const bonus=window.NOMERA_AUTHORS_PREVIEW&&window.NomeraActivities&&!isBlockedOnlineWallet()?window.NomeraActivities.achievement(ach):null;
                 return `
                     <div class="achievement-card ${unlocked ? 'unlocked' : ''}">
                         <div class="achievement-icon">${ach.icon}</div>
@@ -12168,7 +12261,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     </div>
                 `;
             }).join('');
-            if(window.NOMERA_AUTHORS_PREVIEW&&window.NomeraActivities&&!onlineProfile){const pending=window.NomeraActivities.pending(ACHIEVEMENTS_CATALOG,achievements,activityRewards);list.insertAdjacentHTML('afterbegin',`<section class="ae-activity-summary"><div><span class="ae-eyebrow">СЕРВИСНЫЙ ЗАПАС</span><h4>${activityRewards.repairs} сертификатов ремонта</h4><p>Один сертификат полностью восстанавливает любую машину в гараже. Денежные награды достижений выдаются автоматически.</p></div>${pending.length?`<button class="btn btn-green" id="ae-claim-achievement-extras" onclick="claimAchievementExtras()">Получить дополнительные бонусы · ${pending.length} достижений</button>`:'<small>Дополнительные награды получены вместе с достижениями.</small>'}</section>`);}
+            if(window.NOMERA_AUTHORS_PREVIEW&&window.NomeraActivities&&!isBlockedOnlineWallet()){const pending=window.NomeraActivities.pending(ACHIEVEMENTS_CATALOG,achievements,activityRewards);list.insertAdjacentHTML('afterbegin',`<section class="ae-activity-summary"><div><span class="ae-eyebrow">СЕРВИСНЫЙ ЗАПАС</span><h4>${activityRewards.repairs} сертификатов ремонта</h4><p>Один сертификат полностью восстанавливает любую машину в гараже. Денежные награды достижений выдаются автоматически.</p></div>${pending.length?`<button class="btn btn-green" id="ae-claim-achievement-extras" onclick="claimAchievementExtras()">Получить дополнительные бонусы · ${pending.length} достижений</button>`:'<small>Дополнительные награды получены вместе с достижениями.</small>'}</section>`);}
         }
 
         function switchCollectionTab(tab) {
