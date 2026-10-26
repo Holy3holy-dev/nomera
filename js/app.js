@@ -1757,7 +1757,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             setupOnlinePresence();
             const onlineBoot = setupMultiplayerListeners();
             // Check the server cookie BEFORE prompting a returning player to register.
-            if (typeof fetch === 'function') {
+            if (typeof fetch === 'function' && sessionStore.get('nomera_admin_session') === '1') {
                 restoreAdminSession().catch(() => {});
             }
             Promise.resolve(onlineBoot).finally(() => {
@@ -2936,6 +2936,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         async function adminSignIn(login, password) {
             try {
                 await adminRequest('login', {login, password});
+                sessionStore.set('nomera_admin_session', '1');
                 isAdmin = true;
                 const pin = document.getElementById('login-pin-input');
                 if (pin) pin.value = '';
@@ -2966,6 +2967,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         }
         async function adminSignOut() {
             try { await adminRequest('logout'); } catch (_) {}
+            sessionStore.remove('nomera_admin_session');
             isAdmin = false; closeAdminModal(); updateProfileUI();
             notifyUser('Вы вышли из режима администратора');
         }
@@ -13710,16 +13712,16 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 if (menuTitle) menuTitle.textContent = '3D Кольцевая гонка';
                 if (menuSub) menuSub.textContent = 'Полноценная физика: свободное управление на 360°, апексы, чекпоинты и борьба с соперниками.';
             } else if (mode === '3d') {
-                if (raceCurrentMode === 'nfs_circuit' && typeof setRaceMode === 'function') {
-                    setRaceMode('highway');
+                if (typeof setRaceMode === 'function') {
+                    setRaceMode(raceCurrentMode === 'nfs_circuit' ? 'highway' : raceCurrentMode);
                 }
                 if (nfsCard) nfsCard.classList.toggle('hidden', raceCurrentMode !== 'nfs_circuit');
                 if (btnStart) btnStart.textContent = '🚀 Начать 3D заезд (Вид сзади)';
                 if (menuTitle) menuTitle.textContent = '3D Скоростное шоссе (Вид сзади)';
                 if (menuSub) menuSub.textContent = 'Реалистичный 3D заезд от третьего лица: обгоны, плотный поток, нитро и дрифт.';
             } else if (mode === 'circuit') {
-                if (raceCurrentMode === 'nfs_circuit' && typeof setRaceMode === 'function') {
-                    setRaceMode('highway');
+                if (typeof setRaceMode === 'function') {
+                    setRaceMode(raceCurrentMode === 'nfs_circuit' ? 'highway' : raceCurrentMode);
                 }
                 if (nfsCard) nfsCard.classList.add('hidden');
                 if (btnStart) btnStart.textContent = 'Начать заезд';
@@ -13768,6 +13770,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 updateDragMenuUI();
                 if (typeof renderDragBosses === 'function') renderDragBosses();
             }
+            window.NomeraAuthorsExpansion?.sync?.();
         }
 
         function selectDragBet(amount) {
@@ -20208,6 +20211,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     ? (document.getElementById('nav-tab-3d-race') || document.getElementById('nav-tab-racegame'))
                     : (document.getElementById('nav-tab-racegame') || document.getElementById('nav-tab-3d-race')));
             if (raceTab) switchTab('racegame', raceTab, activeRaceMode);
+            window.NomeraAuthorsExpansion?.goStep?.(3);
 
             const isOwned = myCars.some(c => c.name === name);
             if (isOwned) {
@@ -21404,6 +21408,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             if (play3D) play3D.classList.add('hidden');
             document.getElementById('race-play-container').classList.add('hidden');
             document.getElementById('race-menu-container').classList.remove('hidden');
+            window.NomeraAuthorsExpansion?.sync?.();
             updateRaceRecordsUI();
         }
 

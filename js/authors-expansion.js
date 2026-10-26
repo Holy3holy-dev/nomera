@@ -119,7 +119,7 @@
   stepper.querySelectorAll('button').forEach((btn,index)=>{btn.classList.toggle('active',index===step);btn.classList.toggle('complete',index<step);btn.setAttribute('aria-current',index===step?'step':'false');});
   $('#ae-race-back').disabled=step===0;$('#ae-race-next').hidden=step===3;$('#ae-race-step-label').textContent=`Шаг ${step+1} из 4`;
   $('#ae-race-summary').replaceChildren();
-  for(const [label,value] of [['Режим',window.NomeraPlayground?.isSelected()?'Полигон':modeCopy[activeRaceMode]?.[1]||'Шоссе'],['Автомобиль',selectedRaceCarName],['Трасса',window.NomeraPlayground?.isSelected()?'Закрытая испытательная площадка':activeRaceMode==='nfs'?$('#nfs-track-label').textContent:$('#race-mode-label').textContent],['Погода',$('#race-weather-label').textContent]]){const item=make('div','','<span></span><strong></strong>');item.querySelector('span').textContent=label;item.querySelector('strong').textContent=value;$('#ae-race-summary').append(item);}
+  for(const [label,value] of [['Режим',window.NomeraPlayground?.isSelected()?'Полигон':modeCopy[activeRaceMode]?.[1]||'Шоссе'],['Автомобиль',selectedRaceCarName],['Трасса',window.NomeraPlayground?.isSelected()?'Закрытая испытательная площадка':isDrag?'Прямая 402 м':activeRaceMode==='nfs'?$('#nfs-track-label').textContent:$('#race-mode-label').textContent],['Погода',isDrag?'Сухой асфальт · четверть мили':$('#race-weather-label').textContent]]){const item=make('div','','<span></span><strong></strong>');item.querySelector('span').textContent=label;item.querySelector('strong').textContent=value;$('#ae-race-summary').append(item);}
  }
  $('#ae-race-next').addEventListener('click',()=>goStep(step+1));$('#ae-race-back').addEventListener('click',()=>goStep(step-1));
  stepper.addEventListener('click',event=>{const btn=event.target.closest('[data-race-step]');if(btn)goStep(Number(btn.dataset.raceStep));});
@@ -161,6 +161,6 @@
  function watch(){for(const root of roots)observer.observe(root,{childList:true,subtree:true,characterData:true});}
  $('#garage-list').addEventListener('click',()=>requestAnimationFrame(()=>{if(activeGarageSubView==='shop')filterDealer();}));
  document.addEventListener('click',event=>{if(event.target.closest('.dealership-filter-btn'))requestAnimationFrame(filterDealer);});
- window.NomeraAuthorsExpansion={goStep,filterDealer,decorate};
+ window.NomeraAuthorsExpansion={goStep,sync:()=>goStep(step),filterDealer,decorate};
  window.addEventListener('load',()=>{goStep(0);decorate();watch();});
 })();
