@@ -47,7 +47,6 @@ function buildAuthorsEntry({ release = false } = {}) {
         html = html.replace('<meta charset="UTF-8">', `<meta charset="UTF-8">
     <meta http-equiv="Content-Security-Policy" content="${SANDBOX_CSP}">
     <script src="./js/authors-preview.js?v=${jsHash('authors-preview.js')}"></script>`);
-        fs.writeFileSync(path.join(root, 'antigravity.html'), html);
     }
 
     html = html.replace('</head>', '<script src="./js/authors-reel-motion.js"></script><script src="./js/authors-number-banks.js"></script><script src="./js/authors-number-audio.js"></script><script src="./js/authors-soundscape.js"></script><script src="./js/authors-radio.js"></script><script src="./js/authors-playground.js"></script><script src="./js/authors-road-events.js"></script><script src="./js/authors-livery.js"></script><script src="./js/authors-preview-pause.js"></script><script src="./js/authors-rigid-body.js"></script><script src="./js/authors-body-damage.js"></script><script src="./js/authors-traffic.js"></script><script src="./js/authors-environment.js"></script><script src="./js/authors-circuit-life.js"></script><script src="./js/authors-route-detail.js"></script><script src="./js/authors-road-weather.js"></script><script src="./js/authors-night-lighting.js"></script><script src="./js/authors-npc-signals.js"></script><script src="./js/authors-race-hud.js"></script><script src="./js/authors-route-dressing.js"></script><script src="./js/authors-race-experience.js"></script><script src="./js/authors-world.js"></script><script src="./js/authors-rival-ai.js"></script><script src="./js/authors-screen-controls.js"></script><script src="./js/authors-scene.js"></script><script src="./js/authors-mw-mass.js"></script><script src="./js/authors-mw-contact.js"></script><script src="./js/authors-road-surface.js"></script><script src="./js/authors-mw-physics.js"></script><script src="./js/authors-camera-profiles.js"></script><script src="./js/authors-steering-profiles.js"></script><script src="./js/authors-steering-rig.js"></script><script src="./js/authors-driver-camera.js"></script><script src="./js/authors-wheel-rig.js"></script><script src="./js/authors-driving.js"></script><script src="./js/authors-engine-tone.js"></script><script src="./js/authors-engine-voices.js"></script><script src="./js/authors-race-audio.js"></script><script src="./js/authors-road-sound.js"></script></head>');
@@ -94,6 +93,10 @@ function buildAuthorsEntry({ release = false } = {}) {
         const cleanRel = relUrl.slice(2);
         return `${attr}="${relUrl}?v=${fileHash(cleanRel)}"`;
     });
+
+    if (!release) {
+        fs.writeFileSync(path.join(root, 'antigravity.html'), html);
+    }
 
     return html;
 }

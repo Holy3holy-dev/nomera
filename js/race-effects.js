@@ -805,14 +805,14 @@
                         if (p) {
                             p.rotation.x = -pitch;
                             p.rotation.z = -roll;
-                            p.position.y = 0.012 - carY;
+                            p.position.y = 0.012 - carY + (p.position.z || 0) * Math.sin(pitch);
                         }
                     }
                 }
                 if (this.brakeGroundDecal) {
                     this.brakeGroundDecal.rotation.x = -pitch;
                     this.brakeGroundDecal.rotation.z = -roll;
-                    this.brakeGroundDecal.position.y = 0.010 - carY;
+                    this.brakeGroundDecal.position.y = 0.010 - carY + (this.brakeGroundDecal.position.z || 0) * Math.sin(pitch);
                 }
             }
 
@@ -1095,7 +1095,7 @@
 
             // Underbody bottom-out & lowered/BPAN stance sparks on suspension compression or expansion joints
             const styling = (this.engine && (this.engine.styling || (this.engine.carConfig && this.engine.carConfig.styling))) || {};
-            const isLowStance = styling.suspension === 'bpan' || styling.suspension === 'lowered' || styling.stanceMode === 'low';
+            const isLowStance = styling.suspension === 'bpan' || styling.suspension === 'lowered' || styling.suspension === 'airride' || styling.stanceMode === 'low' || styling.stanceMode === 'bpan' || styling.stanceMode === 'airride';
             const suspY = state.suspensionY || 0;
             const pitchVel = Math.abs(state.pitchVelocity || 0);
             const pitchSq = Math.abs(state.pitchSquat || 0);

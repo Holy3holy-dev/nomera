@@ -62,7 +62,7 @@
     <!-- Подключение Firebase SDK для базы данных, аккаунтов и мультиплеера -->
     
     
-    <link rel="stylesheet" href="./authors-legacy.css?v=d1c9afa89365">
+    <link rel="stylesheet" href="./authors-legacy.css?v=7ba79b583665">
     <style>
         /* Collector's Book («Книга коллекционера») & Car-Plate Synergy UI */
         .collector-book-summary {
@@ -2405,7 +2405,7 @@
         <div class="mobile-more-grid">
             <button type="button" class="mobile-more-btn" onclick="closeMobileMoreSheet(); switchTab('leaderboard')">🏆 Рейтинг лидеров</button>
             <button type="button" class="mobile-more-btn" onclick="closeMobileMoreSheet(); openChatSection()">💬 Онлайн-чат</button>
-            <button type="button" class="mobile-more-btn" onclick="closeMobileMoreSheet(); openCollectorBookFromNav()">📘 Книга коллекционера</button>
+            <button type="button" class="mobile-more-btn" onclick="closeMobileMoreSheet(); openCollectorBook()">📘 Книга коллекционера</button>
             <button type="button" class="mobile-more-btn" onclick="closeMobileMoreSheet(); openVipAuction()">🔨 VIP-Аукцион</button>
             <button type="button" class="mobile-more-btn" onclick="closeMobileMoreSheet(); openDailyModal()">🎁 Бонус дня и квесты</button>
             <button type="button" class="mobile-more-btn" onclick="closeMobileMoreSheet(); openProfileModal()">👤 Профиль и уровень</button>
@@ -2535,11 +2535,11 @@
                     </div>
 
                     <div style="background: rgba(255,255,255,0.03); padding: 14px; border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
-                        <h4 style="margin: 0 0 8px 0; color: #fff;">🏎️ Автопарк (25 авто)</h4>
-                        <p style="font-size: 12px; color: var(--text-dim); margin-bottom: 10px;">Выбрать модель из каталога или выдать сразу все 25 автомобилей в гараж:</p>
+                        <h4 style="margin: 0 0 8px 0; color: #fff;">🏎️ Автопарк (49 авто)</h4>
+                        <p style="font-size: 12px; color: var(--text-dim); margin-bottom: 10px;">Выбрать модель из каталога или выдать сразу все 49 автомобилей в гараж:</p>
                         <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                            <button class="btn btn-blue" onclick="adminGiveAllCars()">🏎️ Выдать все 25 авто</button>
-                            <button class="btn btn-dark" onclick="openAdminCarPicker()" style="border: 1px solid rgba(255,255,255,0.2);">🚗 Каталог 25 авто</button>
+                            <button class="btn btn-blue" onclick="adminGiveAllCars()">🏎️ Выдать все 49 авто</button>
+                            <button class="btn btn-dark" onclick="openAdminCarPicker()" style="border: 1px solid rgba(255,255,255,0.2);">🚗 Каталог 49 авто</button>
                         </div>
                     </div>
 
@@ -3444,7 +3444,7 @@
         </div>
     </div>
 
-    <!-- МОДАЛЬНОЕ ОКНО: АДМИН-ВЫБОР АВТОМОБИЛЯ (25 АВТО) -->
+    <!-- МОДАЛЬНОЕ ОКНО: АДМИН-ВЫБОР АВТОМОБИЛЯ (49 АВТО) -->
     <div id="admin-car-picker-modal" class="modal-overlay">
         <div class="modal-box" style="max-width: 680px; max-height: 85vh; display: flex; flex-direction: column;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid var(--border-subtle); padding-bottom: 10px;">
@@ -3457,7 +3457,7 @@
 
             <div style="margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
                 <div style="font-size: 13px; color: var(--text-dim);">Получатель: <b id="admin-car-target-name" style="color: #fbbf24;">—</b></div>
-                <button class="btn btn-blue" style="font-size: 11px; padding: 5px 12px;" onclick="adminExecuteGiveAllCarsFromPicker()">🏎️ Выдать все 25 авто сразу</button>
+                <button class="btn btn-blue" style="font-size: 11px; padding: 5px 12px;" onclick="adminExecuteGiveAllCarsFromPicker()">🏎️ Выдать все 49 авто сразу</button>
             </div>
 
             <div style="margin-bottom: 12px;">
@@ -3497,7 +3497,7 @@
     <script src="./js/storage.js?v=327dc7592b84"></script>
     <script src="./js/race-records.js?v=eaeaf8e59fc2"></script>
     <script src="./js/race-economy.js?v=01624c3a5b09"></script>
-    <script src="./js/audio.js?v=405d855b89b2"></script>
+    <script src="./js/audio.js?v=6b60b0de49f2"></script>
     <script src="./js/vendor/three.min.js?v=9274bbcec8d9"></script>
     <script>
         if (typeof THREE === 'undefined') {
@@ -3512,12 +3512,12 @@
             document.write('<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"><\/script>');
         }
     </script>
-    <script src="./js/race-effects.js?v=b0329f66cf8e"></script>
+    <script src="./js/race-effects.js?v=b29e7208bbac"></script>
     <script src="./js/nfs-physics.js?v=51a929ab5434"></script>
-    <script src="./js/nfs-circuit-race.js?v=09e24e955c32"></script>
+    <script src="./js/nfs-circuit-race.js?v=477fb40ba0a7"></script>
     <script src="./js/model-assets.js?v=c65675fe24bf"></script>
-    <script src="./js/car-3d.js?v=ab29ab9a8fe5"></script>
-    <script src="./js/app.js?v=9da4960eb5b4"></script>
+    <script src="./js/car-3d.js?v=cc73d3627934"></script>
+    <script src="./js/app.js?v=58afd87c9ce4"></script>
 <footer id="model-credits" style="margin:24px auto;padding:12px 16px;max-width:1120px;font:12px/1.6 system-ui;color:#a8bbc5"><a href="./assets/models/credits/camry-xv40.html" target="_blank" rel="noopener" style="display:inline-block;min-height:44px;padding:12px 0;color:#bdd2db">3D Camry XV40: Ford mondeo · CC BY 4.0 · Авторы модели</a></footer>
 <script src="./js/plate-presentation.js?v=cc6592782275"></script><script src="./js/authors-plate-passport.js?v=44bf6f87bbc8"></script><script src="./js/authors-ui.js?v=90a948c5fad1"></script><script src="./js/authors-preview-market.js?v=c5387b9b42de"></script><script src="./js/authors-expansion.js?v=256c25c0994c"></script><script src="./js/authors-secondary.js?v=ece739ad1daf"></script><script src="./js/authors-workshop-ui.js?v=d58c511f3bcd"></script><script>NomeraAtelier.mount();</script><script src="./js/authors-garage-ui.js?v=6a3ba6d13987"></script><script src="./js/authors-exchange-ui.js?v=832b9e96702d"></script><script src="./js/authors-progression-ui.js?v=81f40491fcf4"></script><script src="./js/authors-progression-celebration.js?v=5e99e908d7d9"></script><script src="./js/authors-activities-ui.js?v=5ce5a6c8e0f8"></script><script src="./js/authors-sound-ui.js?v=58ceeee384ed"></script></body>
 </html>

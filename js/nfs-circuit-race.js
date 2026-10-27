@@ -1602,17 +1602,6 @@
             this.scene = new THREE.Scene();
             this.camera = new THREE.PerspectiveCamera(60, this.width / this.height, 0.3, 650);
 
-            const c3d = (typeof root !== 'undefined' && root.Car3DManager) ? root.Car3DManager : null;
-            if (c3d && typeof c3d.createStudioEnvironment === 'function') {
-                try {
-                    const envTex = c3d.createStudioEnvironment(THREE);
-                    if (envTex) {
-                        this.scene.environment = envTex;
-                        this._trackDisposables(null, null, envTex);
-                    }
-                } catch (_) {}
-            }
-
             try {
                 this.renderer = new THREE.WebGLRenderer({
                     antialias: true,
@@ -1641,6 +1630,16 @@
                 }
             } catch (_) {
                 this.renderer = null;
+            }
+
+            const c3d = (typeof root !== 'undefined' && root.Car3DManager) ? root.Car3DManager : null;
+            if (c3d && typeof c3d.createStudioEnvironment === 'function') {
+                try {
+                    const envTex = c3d.createStudioEnvironment(THREE, this.renderer);
+                    if (envTex) {
+                        this.scene.environment = envTex;
+                    }
+                } catch (_) {}
             }
 
             // Lighting (Ambient + Hemisphere + Sun + Fill Directional)
@@ -2045,9 +2044,13 @@
             this.playerWheels = pBuilt.wheels;
 
             // Attach forward headlight beam + rear brake/nitro glow lights to player car
+            const c3d = (typeof root !== 'undefined' && root.Car3DManager) ? root.Car3DManager : null;
+            const hlColorHex = (c3d && typeof c3d.resolveHeadlightColorSpec === 'function')
+                ? c3d.resolveHeadlightColorSpec(this.carConfig && this.carConfig.styling && this.carConfig.styling.headlightColor).hex
+                : 0xfffbeb;
             if (THREE.SpotLight) {
                 try {
-                    const hl = new THREE.SpotLight(0xfffbeb, 2.8, 95, Math.PI / 3.5, 0.45, 1.1);
+                    const hl = new THREE.SpotLight(hlColorHex, 2.8, 95, Math.PI / 3.5, 0.45, 1.1);
                     hl.position.set(0, 1.05, 1.8);
                     if (hl.target) {
                         hl.target.position.set(0, 0.35, 28);
@@ -2058,7 +2061,7 @@
                 } catch (_) {}
             } else if (THREE.PointLight) {
                 try {
-                    const pl = new THREE.PointLight(0xfffbeb, 2.2, 45);
+                    const pl = new THREE.PointLight(hlColorHex, 2.2, 45);
                     pl.position.set(0, 1.2, 3.0);
                     this.playerCar.add(pl);
                     this.playerHeadlight = pl;

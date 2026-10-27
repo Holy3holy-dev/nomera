@@ -5417,21 +5417,23 @@
         const mats = createCarMaterials(THREE, styling, carName, carId);
 
         // Suspension ride height offset & Stance tuning
+        const suspMode = styling.suspension || (styling.stanceMode === 'sport' ? 'lowered' : styling.stanceMode);
         let suspensionOffsetY = 0;
         if (typeof styling.rideHeight === 'number') {
             suspensionOffsetY = styling.rideHeight;
-        } else if (styling.suspension === 'airride') {
+        } else if (suspMode === 'airride') {
             suspensionOffsetY = -0.105; // Air Ride slammed stance
-        } else if (styling.suspension === 'bpan') {
+        } else if (suspMode === 'bpan') {
             suspensionOffsetY = -0.095; // Slammed БПАН
-        } else if (styling.suspension === 'lowered') {
+        } else if (suspMode === 'lowered') {
             suspensionOffsetY = -0.048; // -30mm sport drop
-        } else if (styling.suspension === 'lift') {
+        } else if (suspMode === 'lift') {
             suspensionOffsetY = 0.085; // Offroad lift +50mm
         }
 
         // Suspended Chassis Group (moves up/down with suspension)
         const chassisGroup = new THREE.Group();
+        chassisGroup.name = 'ChassisGroup';
         chassisGroup.position.y = suspensionOffsetY;
         chassisGroup.name = 'ChassisGroup';
         root.add(chassisGroup);
@@ -5766,6 +5768,7 @@
         wheelsRig.add(wRR);
 
         root.userData.spec = spec;
+        root.userData._appliedSuspensionOffsetY = suspensionOffsetY;
         if(typeof window!=='undefined'&&window.NOMERA_AUTHORS_PREVIEW)window.NomeraAeroKit?.apply(THREE,root,styling,{carId});
         return root;
     }
@@ -7083,16 +7086,18 @@
         const bodyColorHex = parseColor(styling.color || defColor, defColor);
         const mats = createCarMaterials(THREE, styling, '', carId);
 
+        const suspMode = styling.suspension || (styling.stanceMode === 'sport' ? 'lowered' : styling.stanceMode);
         let suspensionOffsetY = 0;
         if (typeof styling.rideHeight === 'number') suspensionOffsetY = styling.rideHeight;
-        else if (styling.suspension === 'airride') suspensionOffsetY = -0.072;
-        else if (styling.suspension === 'bpan' || (!styling.suspension && carId === 'priora')) suspensionOffsetY = -0.06;
-        else if (styling.suspension === 'lowered') suspensionOffsetY = -0.03;
-        else if (styling.suspension === 'lift') suspensionOffsetY = 0.06;
+        else if (suspMode === 'airride') suspensionOffsetY = -0.072;
+        else if (suspMode === 'bpan' || (!suspMode && carId === 'priora')) suspensionOffsetY = -0.06;
+        else if (suspMode === 'lowered') suspensionOffsetY = -0.03;
+        else if (suspMode === 'lift') suspensionOffsetY = 0.06;
 
         if (modelRoot.userData._basePosY === undefined) {
             modelRoot.userData._basePosY = modelRoot.position.y;
         }
+        modelRoot.userData._appliedSuspensionOffsetY = suspensionOffsetY;
         modelRoot.position.y = modelRoot.userData._basePosY + suspensionOffsetY;
         applyStanceToWheelNodes(THREE, modelRoot, styling);
 
@@ -9114,6 +9119,16 @@
             const reqId = this._loadRequestId;
 
             if (hasGlb && loader) {
+                if (this.glbCar && (!this.glbCar.userData || this.glbCar.userData.carId !== carId)) {
+                    this.scene.remove(this.glbCar);
+                    deepDispose(this.glbCar);
+                    this.glbCar = null;
+                }
+                if (this.proceduralCar) {
+                    this.scene.remove(this.proceduralCar);
+                    deepDispose(this.proceduralCar);
+                    this.proceduralCar = null;
+                }
                 // Instant procedural preview on podium so user never stares into an empty void!
                 if (!this.glbCar && !this.proceduralCar) {
                     try {
@@ -9126,6 +9141,9 @@
                             this.updateActiveCarVisibility();
                             this.updateCapabilities();
                             this.fitCameraToCar();
+                            if (this.caseRevealState && this.caseRevealState.active) {
+                                this.applyCaseRevealToActiveCar();
+                            }
                         }
                     } catch (_) {}
                 }
@@ -9173,6 +9191,9 @@
                         this.updateLightsRigPositions();
                         this.updateHeadlightsState();
                         this.fitCameraToCar();
+                        if (this.caseRevealState && this.caseRevealState.active) {
+                            this.applyCaseRevealToActiveCar();
+                        }
                         this.needsRender = true;
                     },
                     pct => {
@@ -9245,8 +9266,12 @@
                 this.proceduralCar.visible = true;
                 this.carGroup = this.proceduralCar;
             }
-            if (this.currentStyling && this.currentStyling.stanceMode && this.currentStyling.stanceMode !== this.stanceMode) {
-                this.setPneumoStance(this.currentStyling.stanceMode);
+            const desiredStance = (this.currentStyling && (
+                this.currentStyling.stanceMode ||
+                (this.currentStyling.suspension === 'lowered' ? 'sport' : (['bpan', 'airride'].includes(this.currentStyling.suspension) ? this.currentStyling.suspension : null))
+            )) || this.stanceMode || 'stock';
+            if (desiredStance !== this.stanceMode) {
+                this.setPneumoStance(desiredStance);
             } else {
                 this.applyStanceToActiveCar();
             }
@@ -9952,8 +9977,12 @@
         applyStanceToActiveCar() {
             const applyToModel = (model) => {
                 if (!model) return;
+                const chassis = typeof model.getObjectByName === 'function' ? model.getObjectByName('ChassisGroup') : null;
+                if (chassis && chassis.position.y !== 0) {
+                    chassis.position.y = 0;
+                }
                 if (model.userData._baseStanceY === undefined) {
-                    model.userData._baseStanceY = model.position.y || 0;
+                    model.userData._baseStanceY = (model.position.y || 0) - (!chassis ? (model.userData._appliedSuspensionOffsetY || 0) : 0);
                 }
                 model.position.y = model.userData._baseStanceY + (this.stanceOffsetY || 0);
                 model.userData.stanceMode = this.stanceMode;
@@ -9981,9 +10010,6 @@
             if (this.glbCar) applyToModel(this.glbCar);
             if (this.proceduralCar && this.proceduralCar !== this.glbCar) applyToModel(this.proceduralCar);
             if (this.carGroup && this.carGroup !== this.glbCar && this.carGroup !== this.proceduralCar) applyToModel(this.carGroup);
-            if (this.caseRevealState && this.caseRevealState.active) {
-                this.applyCaseRevealToActiveCar();
-            }
         }
 
         playCaseRevealAnimation(options = {}) {
@@ -10071,6 +10097,7 @@
                 st.active = false;
                 st.currentZ = 0;
                 st.pitchAngle = 0;
+                st.wheelSpinRad = 0;
             }
 
             this.applyCaseRevealToActiveCar();
@@ -16406,7 +16433,8 @@
             if(this.mwLongitudinal?.mwKernel.RigidBody){const p=this.mwLongitudinal;p.mwKernel.RigidBody.meshContacts(this,p);state.x=p.x;state.z=p.z;state.vx=p.state.vx;state.speed=Math.max(0,p.state.vz*3.6);}
             // 6. UPDATE PLAYER CAR 3D MESH & 1ST-PERSON COCKPIT RIG
             if (this.playerCar) {
-                this.playerCar.position.set(state.x, (state.downforceY || 0) + engineTremorY + (state.suspensionY || 0), state.z);
+                const baseSuspY = (this.playerCar.userData && this.playerCar.userData._appliedSuspensionOffsetY) || 0;
+                this.playerCar.position.set(state.x, baseSuspY + (state.downforceY || 0) + engineTremorY + (state.suspensionY || 0), state.z);
                 this.playerCar.rotation.set(state.pitchSquat, state.yawAngle, state.bodyRoll + engineTremorRoll);
                 if(this.mwLongitudinal?.suspension){
                     const body=this.mwLongitudinal.state;

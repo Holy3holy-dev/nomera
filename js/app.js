@@ -4341,7 +4341,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         let marketFilterState = {
             query: '',
             country: 'all',
-            sort: 'recent_desc'
+            sort: 'newest'
         };
 
         function switchMultiSubTab(tab) {
@@ -4360,7 +4360,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             } else {
                 switchMultiSubTab('market');
                 filterMarketListings(section);
-                const dealerBanner = document.getElementById('market-dealership-banner');
+                const dealerBanner = document.getElementById('market-dealership-promo') || document.getElementById('market-dealership-banner');
                 if (dealerBanner) {
                     dealerBanner.classList.toggle('hidden', section === 'plates');
                 }
@@ -9412,6 +9412,10 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
         function rouletteSellCar() {
             if (!wonCarObj || wonCarObj._sold) return;
+            if (myCars.length <= 1) {
+                notifyUser('Нельзя продать последний автомобиль в гараже!', 'warning');
+                return;
+            }
             if (myCars.find(c=>c._openingId===wonCarObj._openingId)?.saleProtected) return;
             const reward = wonCarObj;
             reward._sold = true;
@@ -9420,6 +9424,8 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 const idx = myCars.findIndex(c => c && c._openingId === reward._openingId);
                 if (idx !== -1) myCars.splice(idx, 1);
             }
+            if (activeGarageCarIndex >= myCars.length) activeGarageCarIndex = Math.max(0, myCars.length - 1);
+            if (selectedRaceCarIndex >= myCars.length) selectedRaceCarIndex = Math.max(0, myCars.length - 1);
             let sellPrice = Math.floor(reward.price * 0.9);
             creditPlayerBalance(sellPrice, 'Продажа авто из рулетки');
             syncInventoryAndGarageToCloud();
@@ -9851,7 +9857,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
             if (titleEl) titleEl.textContent = item.text;
 
-            const activeCarIdx = (typeof activeGaragePodiumCarIdx === 'number' && myCars[activeGaragePodiumCarIdx]) ? activeGaragePodiumCarIdx : 0;
+            const activeCarIdx = (typeof activeGarageCarIndex === 'number' && myCars[activeGarageCarIndex]) ? activeGarageCarIndex : 0;
             const activeCar = myCars[activeCarIdx] || null;
 
             body.innerHTML = `
@@ -9882,7 +9888,8 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         function attachPlateFromDetailModal(plateIdx, carIdx) {
             closePlateDetailModal();
             if (typeof attachPlate === 'function' && myCars[carIdx] && inventory[plateIdx]) {
-                selectedCarIndex = carIdx;
+                currentCarIndexForAttach = carIdx;
+                activeGarageCarIndex = carIdx;
                 attachPlate(plateIdx);
                 notifyUser(`Номер установлен на ${myCars[carIdx].name}!`, 'success');
             }
@@ -9891,10 +9898,19 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
         function listPlateFromDetailModal(plateIdx) {
             closePlateDetailModal();
-            if (typeof openSellPlateModal === 'function') {
+            const plate = inventory[plateIdx];
+            if (typeof openSellPlateModal === 'function' && plate) {
+                if (!plate.id) plate.id = 'plate_' + Date.now() + '_' + plateIdx;
+                if (onlineProfile && Array.isArray(onlineProfile.inventory)) {
+                    onlineProfile.inventory = inventory;
+                }
                 openSellPlateModal();
                 const sel = document.getElementById('sell-plate-select');
-                if (sel) sel.value = String(plateIdx);
+                if (sel) sel.value = String(plate.id);
+                const priceInput = document.getElementById('sell-plate-price');
+                if (priceInput && Number.isFinite(Number(plate.price))) {
+                    priceInput.value = plate.price;
+                }
             }
         }
         window.listPlateFromDetailModal = listPlateFromDetailModal;
@@ -10685,6 +10701,8 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             }
 
             myCars.splice(index, 1);
+            activeGarageCarIndex = Math.max(0, Math.min(activeGarageCarIndex, myCars.length - 1));
+            selectedRaceCarIndex = Math.max(0, Math.min(selectedRaceCarIndex, myCars.length - 1));
             creditPlayerBalance(profit, `Продажа авто «${car.name}»`);
             playCashSound();
 
@@ -11632,8 +11650,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         window.toggleShowroomAirRide = toggleShowroomAirRide;
 
         function triggerShowroomHorn() {
-            const car = myCars[currentStylingCarIndex];
-            const hasSgu = !!(car && car.styling && car.styling.sgu && car.styling.sgu !== 'none');
+            const car = myCars[stylingActiveCarIndex];
+            const sguVal = (typeof stylingTempSgu === 'string' && stylingTempSgu) ? stylingTempSgu : (car && car.styling && car.styling.sgu);
+            const hasSgu = !!(sguVal && sguVal !== 'none');
             if (sound) {
                 if (hasSgu && typeof sound.sgu === 'function') {
                     sound.sgu();
@@ -12699,6 +12718,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             }
 
             const finalPlateStr = (car.plate && (car.plate.text || car.plate)) || (car.attachedPlate && (car.attachedPlate.text || car.attachedPlate)) || 'none';
+            const resolvedStanceMode = (car.styling && car.styling.stanceMode && stylingTempSuspension === (car.styling.suspension || 'stock'))
+                ? car.styling.stanceMode
+                : (stylingTempSuspension === 'airride' ? 'airride' : (stylingTempSuspension === 'bpan' ? 'bpan' : (stylingTempSuspension === 'lowered' ? 'sport' : 'stock')));
             car.styling = {
                 color: stylingTempColor,
                 tint: stylingTempTint,
@@ -12711,6 +12733,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 caliperColor: stylingTempCaliperColor,
                 headlightColor: stylingTempHeadlightColor,
                 suspension: stylingTempSuspension,
+                stanceMode: resolvedStanceMode,
                 sgu: stylingTempSgu,
                 plate: finalPlateStr,
                 frameStyle: stylingTempFrameStyle,
@@ -13360,6 +13383,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             switchCollectionTab('album');
         }
         window.openCollectorBook = openCollectorBook;
+        window.openCollectorBookFromNav = openCollectorBook;
 
         function checkAchievements() {
             if(window.NOMERA_AUTHORS_PREVIEW&&window.NomeraActivities&&!isBlockedOnlineWallet()){
@@ -13686,7 +13710,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         window.getVipOrdersQuotaState = getVipOrdersQuotaState;
 
         function initVipOrders(forceNew = false) {
-            if (!forceNew && Array.isArray(vipActiveOrders) && vipActiveOrders.length === 4) {
+            if (!forceNew && Array.isArray(vipActiveOrders) && vipActiveOrders.length > 0) {
                 return vipActiveOrders;
             }
             const accessibleIds = ['order_rare_any', 'order_mirror', 'order_round_hundred', 'order_ladder'];
@@ -13794,7 +13818,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 return false;
             }
 
-            const ordIdx = vipActiveOrders.findIndex(o => o.slotId === templateOrSlotId || o.templateId === templateOrSlotId);
+            const ordIdx = vipActiveOrders.findIndex(o => o.slotId === templateOrSlotId || o.templateId === templateOrSlotId || o.id === templateOrSlotId);
             if (ordIdx === -1) return false;
             const order = vipActiveOrders[ordIdx];
             const tpl = getVipOrderTemplate(order);
@@ -13816,6 +13840,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             const xp = Number(order.xpReward || tpl.xpReward || 75);
 
             inventory.splice(targetIdx, 1);
+            if (onlineProfile) {
+                onlineProfile.inventory = [...inventory];
+            }
             creditPlayerBalance(payout, `Спецзаказ VIP («${order.client}»): ${plate.text}`);
             if (typeof addExp === 'function') addExp(xp);
             achievements.vipOrdersCompleted = (Number(achievements.vipOrdersCompleted) || 0) + 1;
@@ -13857,6 +13884,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
             if (typeof checkAchievements === 'function') checkAchievements();
             if (typeof saveProgress === 'function') saveProgress();
+            if (typeof syncInventoryAndGarageToCloud === 'function') syncInventoryAndGarageToCloud();
             renderInventory();
             renderVipOrders();
             return { payout, xp, plateText: plate.text, client: order.client, quotaRemaining: nextQuota.remaining };
@@ -14162,12 +14190,16 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         function mintAuctionPlateToInventory(lotState, paidAmount) {
             const rarityObj = typeof getRarity === 'function' ? getRarity(lotState.marketValue) : { text: lotState.rarityText, bg: '#f59e0b', color: '#000' };
             const plateObj = {
+                id: 'plate_auc_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
                 text: lotState.plateText,
                 price: lotState.marketValue,
                 rarity: rarityObj,
                 country: lotState.country
             };
             inventory.unshift(plateObj);
+            if (onlineProfile) {
+                onlineProfile.inventory = [...inventory];
+            }
             achievements.vipAuctionsWon = (Number(achievements.vipAuctionsWon) || 0) + 1;
             if (typeof addExp === 'function') addExp(120);
             if (typeof playCashSound === 'function') playCashSound();
@@ -14177,6 +14209,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             }
             if (typeof checkAchievements === 'function') checkAchievements();
             if (typeof saveProgress === 'function') saveProgress();
+            if (typeof syncInventoryAndGarageToCloud === 'function') syncInventoryAndGarageToCloud();
             renderInventory();
             return plateObj;
         }
@@ -15243,9 +15276,11 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                         fromBoss: boss.id
                     };
                     inventory.unshift(wonPlate);
+                    if (typeof ensurePlateId === 'function') ensurePlateId(wonPlate, 0);
                     if (onlineProfile && Array.isArray(onlineProfile.inventory)) {
                         onlineProfile.inventory = [...inventory];
                     }
+                    if (typeof syncInventoryAndGarageToCloud === 'function') syncInventoryAndGarageToCloud();
                     plateAwarded = wonPlate.text;
                     if (typeof renderInventory === 'function') renderInventory();
                     if (typeof renderCollectorBook === 'function') renderCollectorBook();
@@ -15804,6 +15839,8 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                         if (res.profile) setOnlineProfile(res.profile, true);
                         else {
                             myCars.splice(idx, 1);
+                            activeGarageCarIndex = Math.max(0, Math.min(activeGarageCarIndex, myCars.length - 1));
+                            selectedRaceCarIndex = Math.max(0, Math.min(selectedRaceCarIndex, myCars.length - 1));
                             onlineProfile.myCars = JSON.parse(JSON.stringify(myCars));
                             saveProgress();
                             renderCars();
@@ -15833,6 +15870,8 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 };
 
                 myCars.splice(idx, 1);
+                activeGarageCarIndex = Math.max(0, Math.min(activeGarageCarIndex, myCars.length - 1));
+                selectedRaceCarIndex = Math.max(0, Math.min(selectedRaceCarIndex, myCars.length - 1));
                 if (onlineProfile) {
                     onlineProfile.myCars = JSON.parse(JSON.stringify(myCars));
                 }
@@ -16613,8 +16652,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             if (plateBox) {
                 if (pText && pText !== 'none') {
                     const syn = getCarPlateSynergy(car.name, car.plate);
+                    const synTitle = syn ? (syn.title || syn.name || 'Особая синергия') : '';
                     const synHtml = syn
-                        ? `<div class="ae-m3d-synergy">✨ Синергия «${escapeHtml(syn.name)}»: +${Math.round((Number(syn.bonusMultiplier) || 0) * 100)}% к выплатам</div>`
+                        ? `<div class="ae-m3d-synergy">✨ Синергия «${escapeHtml(synTitle)}»: +${Math.round((Number(syn.bonusMultiplier) || 0) * 100)}% к выплатам</div>`
                         : `<div style="font-size:11px; color:var(--text-dim); margin-top:4px;">Госномер продаётся вместе с автомобилем</div>`;
                     plateBox.innerHTML = `
                         <div class="mini-plate ${getMiniPlateCountryClass(pText)}" style="font-size:16px; padding:5px 12px; display:inline-block;">${renderMiniPlateInnerHtml(pText)}</div>
@@ -16792,6 +16832,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
         function getTradeUpEligibility(item, idx) {
             if (!item || !item.text) return { eligible: false, reason: 'Некорректный номер' };
+            if (item.favorite) return { eligible: false, reason: 'В избранном' };
             const usage = getPlateUsageMeta(item.text);
             if (usage.status === 'equipped') return { eligible: false, reason: 'Установлен на авто' };
             if (usage.status === 'market') return { eligible: false, reason: 'Выставлен на рынок' };
@@ -17164,7 +17205,11 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             });
 
             // Добавляем созданный номер в начало инвентаря
+            if (!craftedPlate.id) craftedPlate.id = 'plate_tu_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
             inventory.unshift(craftedPlate);
+            if (onlineProfile) {
+                onlineProfile.inventory = [...inventory];
+            }
             tradeUpLastResult = craftedPlate;
 
             // Начисляем опыт и сохраняем прогресс
@@ -25682,6 +25727,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             if (activeRaceCar && myCars.includes(activeRaceCar)) {
                 NomeraRaceEconomy.ensureCar(activeRaceCar);
                 activeRaceCar.condition = Math.max(0, Number((activeRaceCar.condition - wear).toFixed(2)));
+                if (onlineProfile) {
+                    onlineProfile.myCars = JSON.parse(JSON.stringify(myCars));
+                }
             }
             balance = receipt.walletAfter;
             if (onlineProfile) {

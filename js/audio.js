@@ -511,12 +511,19 @@
                                 env.gain.setValueAtTime(0.0001, now + fadeTime);
                             }
                         }
+                        const stopAt = fadeTime <= 0.02 ? now : now + fadeTime + 0.02;
                         if (voice.osc && typeof voice.osc.stop === 'function') {
-                            try { voice.osc.stop(now + fadeTime + 0.02); } catch (_) {}
+                            try { voice.osc.stop(stopAt); } catch (_) {}
+                            if (fadeTime <= 0.02 && typeof voice.osc.disconnect === 'function') {
+                                try { voice.osc.disconnect(); } catch (_) {}
+                            }
                             voices.delete(voice.osc);
                         }
                         if (voice.source && typeof voice.source.stop === 'function') {
-                            try { voice.source.stop(now + fadeTime + 0.02); } catch (_) {}
+                            try { voice.source.stop(stopAt); } catch (_) {}
+                            if (fadeTime <= 0.02 && typeof voice.source.disconnect === 'function') {
+                                try { voice.source.disconnect(); } catch (_) {}
+                            }
                             voices.delete(voice.source);
                         }
                     } catch (_) {}
