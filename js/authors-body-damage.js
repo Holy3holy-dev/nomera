@@ -10,8 +10,8 @@
  }
  function applyImpact(owner,result,contactKey='world',time){
   if(owner?.noGameplayDamage||(owner?.state||owner)?.noGameplayDamage)return 0;
-  if(!owner||owner.immovable||owner.state?.immovable)return 0;const state=owner.state||owner,mass=owner.profile?.massKg||state.massKg||1500,clock=Number.isFinite(time)?time:Number(state.time)||0,loss=impactLoss({...result,mass});if(loss<=.015)return 0;
-  let windows=impactWindows.get(state);if(!windows){windows=new Map();impactWindows.set(state,windows);}const old=windows.get(contactKey),same=old&&clock>=old.time&&clock-old.time<.16,added=Math.max(0,loss-(same?old.peak:0));windows.set(contactKey,{time:same?old.time:clock,peak:same?Math.max(old.peak,loss):loss});if(windows.size>8)windows.delete(windows.keys().next().value);
+  if(!owner||owner.immovable||owner.state?.immovable)return 0;const state=owner.state||owner,mass=owner.profile?.massKg||state.massKg||1500,clock=Number.isFinite(time)?time:Number(state.time)||0,scale=Number.isFinite(owner.damageScale)?owner.damageScale:(Number.isFinite(state.damageScale)?state.damageScale:1),loss=impactLoss({...result,mass})*scale;if(loss<=.015)return 0;
+  let windows=impactWindows.get(state);if(!windows){windows=new Map();impactWindows.set(state,windows);}const windowSec=scale<1?.45:.16,old=windows.get(contactKey),same=old&&clock>=old.time&&clock-old.time<windowSec,added=Math.max(0,loss-(same?old.peak:0));windows.set(contactKey,{time:same?old.time:clock,peak:same?Math.max(old.peak,loss):loss});if(windows.size>8)windows.delete(windows.keys().next().value);
   if(added>0){state.damageTaken=clamp((state.damageTaken||0)+added,0,100);state.lastImpactDamage={sequence:(state.lastImpactDamage?.sequence||0)+1,time:clock,loss:added,closingSpeedMps:result.closingSpeedMps,deltaSpeedMps:result.normalImpulse/Math.max(100,mass)};}return added;
  }
  function dent(point,original,hit){const dx=point[0]-hit.point[0],dy=point[1]-hit.point[1],dz=point[2]-hit.point[2],r=hit.radius||.65,d2=dx*dx+dy*dy+dz*dz;if(d2>=r*r)return point.slice();

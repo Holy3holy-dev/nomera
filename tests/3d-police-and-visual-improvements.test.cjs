@@ -166,7 +166,7 @@ test('Visual & Physics improvements: High-speed collision provides damage buffer
         // Player must NOT immediately get Game Over! Damage buffer absorbs the impact
         assert.strictEqual(gameOverCalled, false, 'First high-speed collision should not cause instant Game Over');
         assert.strictEqual(engine.isRunning, true, 'Car should continue racing');
-        assert.ok(engine.state.damageTaken >= 20, 'Damage buffer must record impact damage');
+        assert.ok(engine.state.damageTaken >= 5 && engine.state.damageTaken <= 14, `Damage buffer must record reduced impact damage (got ${engine.state.damageTaken})`);
         assert.ok(engine.state.speed < 180, 'Speed must be significantly reduced');
         assert.ok(popups.some(p => p.includes('ПРОЧНОСТЬ') || p.includes('УДАР')), 'HUD should show crash durability warning');
     } finally {

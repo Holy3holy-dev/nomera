@@ -755,6 +755,8 @@
             this.playerProgress = this._createRacerProgress('player', 'Вы (' + this.carConfig.carName + ')', this.carConfig.carName, true, playerStartS, startSeg.index);
             this.playerPhysics.state.noGameplayDamage=!this.damageEnabled;
             this.playerPhysics.noGameplayDamage=!this.damageEnabled;
+            this.playerPhysics.damageScale=0.35;
+            this.playerPhysics.state.damageScale=0.35;
             this.playerProgress.lap = 1;
             this.playerProgress.unwrappedS = -14;
             this.playerProgress.totalDistanceMeters = 0;
@@ -1110,7 +1112,7 @@
                     0.28
                 );
                 if (impact > 4.5) {
-                    const dmg = clamp((impact - 4.0) * 0.55, 0.5, 14);
+                    const dmg = clamp((impact - 4.0) * 0.22, 0.2, 5.5);
                     this.state.damageTaken = this.playerPhysics.mwKernel?.BodyDamage?.applyImpact?this.playerPhysics.state.damageTaken:clamp(this.state.damageTaken + dmg, 0, 100);
                     if (this.options.onSound) this.options.onSound(impact > 12 ? 'crash' : 'scrape');
                     this._spawnCollisionSparks(pState.x, pState.z, 6);
@@ -1468,7 +1470,7 @@
                             const result=a._resolveMWContact(b,{...contact,restitution:authors?.12:.28,friction:authors?.3:contact.friction});
                             if(authors&&result.closingSpeedMps>1.2)for(const rival of this.rivals)if(rival.physics===a||rival.physics===b)RivalAI.contact(rival,this.state.raceTimeSec);
                             if(i===0&&result.closingSpeedMps>5){
-                                this.state.damageTaken=a.mwKernel?.BodyDamage?.applyImpact?a.state.damageTaken:clamp(this.state.damageTaken+result.closingSpeedMps*.35,0,100);
+                                this.state.damageTaken=a.mwKernel?.BodyDamage?.applyImpact?a.state.damageTaken:clamp(this.state.damageTaken+result.closingSpeedMps*.14,0,100);
                                 if(this.options.onSound)this.options.onSound('crash');
                                 this._spawnCollisionSparks((a.x+b.x)*.5,(a.z+b.z)*.5,8);
                             }
@@ -1484,7 +1486,7 @@
                         const overlap = minSep - dist;
                         const impact = a.resolveVehicleCollision(b, nx, nz, overlap, 0.38);
                         if (i === 0 && impact > 5.0) {
-                            this.state.damageTaken = clamp(this.state.damageTaken + impact * 0.35, 0, 100);
+                            this.state.damageTaken = clamp(this.state.damageTaken + impact * 0.14, 0, 100);
                             if (this.options.onSound) this.options.onSound('crash');
                             this._spawnCollisionSparks((a.state.x + b.state.x) * 0.5, (a.state.z + b.state.z) * 0.5, 8);
                         }

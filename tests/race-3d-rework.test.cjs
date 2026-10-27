@@ -411,7 +411,7 @@ test('5. 3D Collisions & Near-Miss «Шашки»: sideswipe vs rear-end impact 
 
         engine.updateTraffic(0.02);
         const rearEndDamage = engine.state.damageTaken;
-        assert.ok(rearEndDamage >= 20, `Rear-end heavy impact must inflict higher damage than sideswipe (got ${rearEndDamage})`);
+        assert.ok(rearEndDamage > sideswipeDamage && rearEndDamage >= 5 && rearEndDamage <= 12, `Rear-end heavy impact must inflict higher damage than sideswipe (got ${rearEndDamage})`);
         assert.ok(rearCar.userData.speed > 95, 'Struck traffic car must receive forward momentum transfer and accelerate away');
         assert.ok(rearCar.userData.hazardTimer > 0, 'Struck traffic car must activate flashing hazard lights');
         assert.equal(rearCar.userData.changingLane, true, 'Struck traffic car must swerve into an adjacent lane');

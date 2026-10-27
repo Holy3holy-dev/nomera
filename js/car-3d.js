@@ -13189,6 +13189,10 @@
                 sampleGroundContact: window.NomeraRoadSurface ? window.NomeraRoadSurface.highway : null,
                 weather: config.weather === 'auto' ? 'night' : (config.weather || 'night')
             }) : null;
+            if (this.mwLongitudinal) {
+                this.mwLongitudinal.damageScale = 0.35;
+                this.mwLongitudinal.state.damageScale = 0.35;
+            }
             this.mwRoadSteering = config.physicsKernel ? new config.physicsKernel.SteeringController() : null;
             this.state.distanceKm = 0;
             this.state.peakSpeed = this.isNfsCircuit ? 0 : 40;
@@ -15341,10 +15345,10 @@
             const roadLimit = 8.2;
             if (this.mwLongitudinal&&(Math.abs(state.x)+this.mwLongitudinal.profile.wheelbase*.85>9.1)) {
                 const physical=this.mwLongitudinal,wallSide=state.x>0?1:-1;
-                physical.state.x=state.x;physical.state.vx=state.vx;physical.state.vz=state.speed/3.6;
+                physical.state.x=state.x;physical.state.vx=state.vx;physical.state.vz=state.speed/3.6;physical.state.damageTaken=state.damageTaken||0;
                 const contact=physical.resolveWallCollision({normalX:-wallSide,normalZ:0,penetration:Math.max(0,Math.abs(state.x)-9.1),planePoint:[wallSide*9.1,0,state.z],restitution:.18,friction:.18,duration:dt,wallHeight:.7,groundHeight:window.NomeraRoadSurface?window.NomeraRoadSurface.highway(state.x,state.z).height:0});
                 state.x=physical.x;state.vx=physical.state.vx;state.speed=Math.max(0,physical.state.vz*3.6);
-                state.damageTaken=Math.min(100,(state.damageTaken||0)+contact.damageAdded);
+                state.damageTaken=Math.min(100,physical.state.damageTaken||0);
                 if(contact.closingSpeedMps>1){
                     state.shakeAmount=Math.min(.55,(state.shakeAmount||0)+contact.impactSeverity*.2);
                     this.spawnSparks(state.x,.45,state.z-.6,Math.min(10,Math.ceil(contact.closingSpeedMps)));
@@ -15389,7 +15393,7 @@
                 state.suspensionVelocityY = (state.suspensionVelocityY || 0) + 0.08;
 
                 // Progressive scrape damage and tactile screen shake
-                state.damageTaken = Math.min(100, (state.damageTaken || 0) + 1.8 * dt * 10);
+                state.damageTaken = Math.min(100, (state.damageTaken || 0) + 0.5 * dt * 10);
                 state.shakeAmount = Math.min(0.55, (state.shakeAmount || 0) + 0.12);
                 state.cameraShake = state.shakeAmount;
                 this.cameraShake = state.shakeAmount;
@@ -16309,8 +16313,8 @@
 
                 // 4. Collision Resolution (Takedown, Rear-End Impact, or Sideswipe)
                 if (isColliding) {
-                    let spatialImpact=null;const impactSpeed=state.speed;
-                    if(contact3D && ((state.invulnerableTimer || 0) <= 0 || u.type === 'police')){u.contactBody=contactOwner;spatialImpact=this.mwLongitudinal._resolve3DContact(contactOwner,[contact3D],{restitution:.18,friction:.3});const p=this.mwLongitudinal;state.x=p.x;state.z=p.z;state.vx=p.state.vx;state.speed=Math.max(0,p.state.vz*3.6);car.position.set(contactOwner.state.x,contactOwner.suspension.y,contactOwner.state.z);u.speed=contactOwner.state.vz*3.6;}
+                    let spatialImpact=null;const impactSpeed=state.speed,prevDamage=state.damageTaken||0;
+                    if(contact3D && ((state.invulnerableTimer || 0) <= 0 || u.type === 'police')){u.contactBody=contactOwner;if(this.mwLongitudinal?.state)this.mwLongitudinal.state.damageTaken=prevDamage;spatialImpact=this.mwLongitudinal._resolve3DContact(contactOwner,[contact3D],{restitution:.18,friction:.3});const p=this.mwLongitudinal;state.x=p.x;state.z=p.z;state.vx=p.state.vx;state.speed=Math.max(0,p.state.vz*3.6);car.position.set(contactOwner.state.x,contactOwner.suspension.y,contactOwner.state.z);u.speed=contactOwner.state.vz*3.6;}
                     // 💥 TAKEDOWN MECHANIC FOR POLICE: Player CAN ram & knock out pursuit cars!
                     if (u.type === 'police' && !u.isWrecked) {
                         const isNitroActive = !!(state.isNitroActive || state.nitroActive || (this.keys && this.keys.nitro));
@@ -16332,7 +16336,8 @@
 
                             // Player takes minimal impact damage instead of instant crash
                             if(!ai)state.speed = Math.max(50, state.speed - 10);
-                            state.damageTaken = Math.min(100, (state.damageTaken || 0) + (ai?spatialImpact?.damageAdded||1:1));
+                            state.damageTaken = Math.min(100, prevDamage + (state.isSpeedbreakerActive ? 0.5 : 1));
+                            if (this.mwLongitudinal?.state) this.mwLongitudinal.state.damageTaken = state.damageTaken;
                             state.shakeAmount = 0.65;
                             state.cameraShake = 0.65;
                             this.cameraShake = 0.65;
@@ -16366,8 +16371,10 @@
                     }
 
                     if(spatialImpact){
-                        state.damageTaken=Math.min(100,state.damageTaken+spatialImpact.damageAdded);
-                        state.invulnerableTimer=spatialImpact.damageAdded>=5?0.85:0.35;
+                        const added=(spatialImpact.damageAdded||0)*(state.isSpeedbreakerActive?0.35:1);
+                        state.damageTaken=Math.min(100,prevDamage+added);
+                        if(this.mwLongitudinal?.state)this.mwLongitudinal.state.damageTaken=state.damageTaken;
+                        state.invulnerableTimer=added>=3?0.95:0.45;
                         state.shakeAmount=Math.min(.7,spatialImpact.impactSeverity);
                         if(spatialImpact.closingSpeedMps>2){
                             this.spawnSparks(state.x,.6,state.z,12);
@@ -16385,7 +16392,7 @@
                             this.options.onPopup?.('💥 АВТОМОБИЛЬ РАЗБИТ В ТОТАЛ!','#ef4444');
                             if(typeof this.onGameOver==='function')this.onGameOver(true,this.getState());
                             else this.options.onGameOver?.(true,this.getState());
-                        } else if(spatialImpact.damageAdded>=4){
+                        } else if(added>=2.5){
                             this.options.onPopup?.(`💥 УДАР! ПРОЧНОСТЬ ${Math.max(0,100-Math.round(state.damageTaken))}%`,'#ef4444');
                         }
                         return;
@@ -16428,10 +16435,11 @@
                         car.position.x += ramPushDir * 0.35;
 
                         // 3. Player progressive deceleration, pitch jolt & camera shake (Speedbreaker heavy mass reduces damage & speed loss)
-                        const scaledDmg = Math.round(Math.max(12, Math.min(25, 8 + speedDiff * 0.22)));
-                        const baseDmg = (u.type === 'truck' || u.type === 'kamaz') ? Math.round(scaledDmg * 1.28) : scaledDmg;
+                        const scaledDmg = Math.round(Math.max(5, Math.min(11, 3 + speedDiff * 0.07)));
+                        const baseDmg = (u.type === 'truck' || u.type === 'kamaz') ? Math.round(scaledDmg * 1.2) : scaledDmg;
                         const dmg = state.isSpeedbreakerActive ? Math.round(baseDmg * 0.35) : baseDmg;
                         state.damageTaken = Math.min(100, (state.damageTaken || 0) + dmg);
+                        if (this.mwLongitudinal?.state) this.mwLongitudinal.state.damageTaken = state.damageTaken;
                         state.shakeAmount = 1.0;
                         state.cameraShake = 1.0;
                         this.cameraShake = 1.0;
@@ -16497,7 +16505,8 @@
                         // 4. Progressive deceleration & moderate sideswipe damage
                         const speedLoss = Math.min(20, 5 + Math.abs(speedDiff) * 0.10) * (state.isSpeedbreakerActive ? 0.35 : 1.0);
                         state.speed = state.speed > 0 ? Math.max(18, state.speed - speedLoss) : 0;
-                        state.damageTaken = Math.min(100, (state.damageTaken || 0) + (state.isSpeedbreakerActive ? 2.0 : 6.0));
+                        state.damageTaken = Math.min(100, (state.damageTaken || 0) + (state.isSpeedbreakerActive ? 0.7 : 2.0));
+                        if (this.mwLongitudinal?.state) this.mwLongitudinal.state.damageTaken = state.damageTaken;
 
                         // 5. Tactical screen shake scaled to impact momentum
                         state.shakeAmount = Math.min(0.75, 0.35 + Math.abs(state.vx || 0) * 0.05);
