@@ -1348,6 +1348,20 @@
                     tone(145, 0.24, 0.07, 0.02, 'sine', 340);
                 }
             },
+            caseGateReveal(tier = 'legendary') {
+                const isHigh = tier === 'mythic' || tier === 'legendary';
+                // 1. Pneumatic container gate unseal hiss
+                noiseBurst({ duration: 0.38, gain: 0.11, filterType: 'bandpass', filterFreq: 1650, filterEndFreq: 360, filterQ: 1.5 });
+                // 2. Deep sub-bass container door thud
+                tone(64, 0.34, 0.20, 0, 'triangle', 28);
+                // 3. Warm V8/Twin-Turbo startup rev as car rolls out onto the podium
+                tone(86, 0.42, 0.15, 0.08, 'sawtooth', 168);
+                tone(172, 0.38, 0.10, 0.10, 'triangle', 336);
+                if (isHigh) {
+                    tone(523.25, 0.34, 0.085, 0.16, 'sine', 783.99);
+                    tone(659.25, 0.32, 0.07, 0.22, 'triangle', 987.77);
+                }
+            },
             trafficHorn() {
                 // Civilian traffic dual-note warning honk with Doppler pitch drop
                 tone(370, 0.18, 0.11, 0, 'triangle', 345);

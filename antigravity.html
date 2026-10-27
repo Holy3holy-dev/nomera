@@ -62,7 +62,7 @@
     <!-- Подключение Firebase SDK для базы данных, аккаунтов и мультиплеера -->
     
     
-    <link rel="stylesheet" href="./styles.css?v=063f23d7dfa5">
+    <link rel="stylesheet" href="./styles.css?v=36e966c26d8f">
     <style>
         /* Collector's Book («Книга коллекционера») & Car-Plate Synergy UI */
         .collector-book-summary {
@@ -2837,15 +2837,37 @@
                     <!-- Приз: Госномер -->
                     <div id="roulette-plate-prize-box" style="margin: 10px 0;">
                         <div class="mini-plate" id="roulette-plate-card" style="font-size: 22px; padding: 8px 18px; border-width: 3px;">А 000 АА | 77 RUS</div>
+                        <div style="margin-top: 8px;">
+                            <button type="button" id="btn-roulette-plate-3d-tryon" class="loot-3d-tryon-btn" onclick="toggleRoulette3DPlateStage()">🚗 3D-презентация на авто</button>
+                        </div>
                     </div>
 
                     <!-- Приз: Автомобиль -->
                     <div id="roulette-car-prize-box" class="hidden" style="margin: 10px 0;">
-                        <div style="position: relative; border-radius: var(--radius-md); overflow: hidden; border: 2px solid var(--border-subtle); max-width: 340px; margin: 0 auto; box-shadow: 0 8px 24px rgba(0,0,0,0.5);">
+                        <div id="roulette-car-sprite-wrap" style="position: relative; border-radius: var(--radius-md); overflow: hidden; border: 2px solid var(--border-subtle); max-width: 340px; margin: 0 auto; box-shadow: 0 8px 24px rgba(0,0,0,0.5);">
                             <img id="roulette-car-img" src="" style="width: 100%; height: 165px; object-fit: cover; display: block;" onerror="this.onerror=null; this.src='./icons/car-placeholder.svg';">
                             <div id="roulette-car-category" style="position: absolute; top: 8px; left: 8px; background: rgba(0,0,0,0.8); backdrop-filter: blur(4px); padding: 4px 10px; border-radius: var(--radius-sm); font-size: 11px; font-weight: 800; color: #fff; border: 1px solid rgba(255,255,255,0.15);">Категория</div>
                         </div>
                         <div id="roulette-car-name" style="font-size: 18px; font-weight: 800; color: #fff; margin-top: 10px; letter-spacing: -0.3px;">Модель автомобиля</div>
+                    </div>
+
+                    <!-- 🎰 Интерактивная 3D-сцена подиума выезда из бокса -->
+                    <div id="roulette-3d-podium-stage" class="loot-3d-podium-stage hidden" data-reveal-mode="car">
+                        <div id="roulette-3d-gate-overlay" class="loot-3d-gate-overlay" aria-hidden="true">
+                            <div class="loot-3d-gate-shutter"></div>
+                            <div class="loot-3d-gate-smoke"></div>
+                        </div>
+                        <div id="roulette-3d-loader" class="loot-3d-loader" style="display: none;">
+                            <span id="roulette-3d-loader-text">Загрузка 3D подиума...</span>
+                        </div>
+                        <div id="roulette-3d-podium-canvas" class="loot-3d-podium-canvas"></div>
+                        <div id="roulette-3d-toolbar" class="loot-3d-toolbar">
+                            <button type="button" class="loot-3d-tool-btn" id="btn-roulette-3d-cam" onclick="cycleRoulette3DCamera()" title="Сменить ракурс камеры">🎥 Ракурс</button>
+                            <button type="button" class="loot-3d-tool-btn" id="btn-roulette-3d-lights" onclick="toggleRoulette3DHeadlights()" title="Включить/выключить фары">💡 Фары</button>
+                            <button type="button" class="loot-3d-tool-btn" id="btn-roulette-3d-doors" onclick="toggleRoulette3DDoors()" title="Открыть/закрыть двери">🚪 Двери</button>
+                            <button type="button" class="loot-3d-tool-btn" id="btn-roulette-3d-airride" onclick="toggleRoulette3DAirRide()" title="Пневмоподвеска (Air Ride)">💨 Пневма</button>
+                            <button type="button" class="loot-3d-tool-btn" id="btn-roulette-3d-replay" onclick="replayRoulette3DReveal()" title="Повторить выезд из бокса">🎬 Выезд</button>
+                        </div>
                     </div>
                 </div>
 
@@ -3475,7 +3497,7 @@
     <script src="./js/storage.js?v=327dc7592b84"></script>
     <script src="./js/race-records.js?v=eaeaf8e59fc2"></script>
     <script src="./js/race-economy.js?v=01624c3a5b09"></script>
-    <script src="./js/audio.js?v=09bee0e54869"></script>
+    <script src="./js/audio.js?v=405d855b89b2"></script>
     <script src="./js/vendor/three.min.js"></script>
     <script>
         if (typeof THREE === 'undefined') {
@@ -3494,8 +3516,8 @@
     <script src="./js/nfs-physics.js?v=51a929ab5434"></script>
     <script src="./js/nfs-circuit-race.js?v=09e24e955c32"></script>
     <script src="./js/model-assets.js?v=c65675fe24bf"></script>
-    <script src="./js/car-3d.js?v=ca251a5d8992"></script>
-    <script src="./js/app.js?v=749e29121956"></script>
+    <script src="./js/car-3d.js?v=ab29ab9a8fe5"></script>
+    <script src="./js/app.js?v=9da4960eb5b4"></script>
 <footer id="model-credits" style="margin:24px auto;padding:12px 16px;max-width:1120px;font:12px/1.6 system-ui;color:#a8bbc5"><a href="./assets/models/credits/camry-xv40.html" target="_blank" rel="noopener" style="display:inline-block;min-height:44px;padding:12px 0;color:#bdd2db">3D Camry XV40: Ford mondeo · CC BY 4.0 · Авторы модели</a></footer>
 </body>
 </html>

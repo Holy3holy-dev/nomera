@@ -9981,6 +9981,136 @@
             if (this.glbCar) applyToModel(this.glbCar);
             if (this.proceduralCar && this.proceduralCar !== this.glbCar) applyToModel(this.proceduralCar);
             if (this.carGroup && this.carGroup !== this.glbCar && this.carGroup !== this.proceduralCar) applyToModel(this.carGroup);
+            if (this.caseRevealState && this.caseRevealState.active) {
+                this.applyCaseRevealToActiveCar();
+            }
+        }
+
+        playCaseRevealAnimation(options = {}) {
+            const tier = String(options.tier || 'legendary').toLowerCase();
+            const mode = options.mode === 'plate' ? 'plate' : 'car';
+            const duration = Math.max(0.4, Number(options.duration) || 1.35);
+
+            if (options.plateText) {
+                this.updatePlate(
+                    options.plateText,
+                    options.frameStyle || (tier === 'mythic' || tier === 'legendary' ? 'gold' : 'carbon'),
+                    options.plateStyle || 'classic'
+                );
+            }
+
+            const tierAccentHex = tier === 'mythic'
+                ? 0xfbbf24
+                : (tier === 'legendary'
+                    ? 0xf59e0b
+                    : (tier === 'epic' ? 0xec4899 : 0x38bdf8));
+
+            if (this.podiumRingMat && this.podiumRingMat.color && typeof this.podiumRingMat.color.setHex === 'function') {
+                this.podiumRingMat.color.setHex(tierAccentHex);
+            }
+            if (this.neonLight) {
+                if (this.neonLight.color && typeof this.neonLight.color.setHex === 'function') {
+                    this.neonLight.color.setHex(tierAccentHex);
+                }
+                this.neonLight.intensity = tier === 'mythic' ? 2.2 : (tier === 'legendary' ? 1.9 : 1.5);
+            }
+
+            this.caseRevealState = {
+                active: true,
+                elapsed: 0,
+                duration,
+                progress: 0,
+                mode,
+                tier,
+                startZ: -2.4,
+                currentZ: -2.4,
+                pitchAngle: 0,
+                wheelSpinRad: 0,
+                headlightsFlashed: false
+            };
+
+            if (mode === 'plate') {
+                this.cameraAngleY = 0.24;
+                this.cameraAngleX = 0.14;
+                this.cameraDistance = 3.6;
+                this.setViewPreset('plate_front', false);
+            } else {
+                this.cameraAngleY = 0.16;
+                this.cameraAngleX = 0.10;
+                this.cameraDistance = 3.5;
+                this.setViewPreset('isometric', false);
+            }
+            this.updateCameraPosition();
+            this.applyCaseRevealToActiveCar();
+            this.needsRender = true;
+            if (!this.active) this.start();
+            return this.caseRevealState;
+        }
+
+        stepCaseRevealAnimation(dt = 0.016) {
+            const st = this.caseRevealState;
+            if (!st || !st.active) return false;
+            const stepDt = Math.max(0.004, Number(dt) || 0.016);
+            st.elapsed += stepDt;
+            const t = Math.min(1, st.elapsed / Math.max(0.1, st.duration));
+            const ease = 1 - Math.pow(1 - t, 3);
+            st.progress = t;
+            st.currentZ = st.startZ * (1 - ease);
+            st.wheelSpinRad += stepDt * (1 - t) * 14.0;
+            // Subtle braking nose-dip suspension pitch around t = 0.5..0.95
+            st.pitchAngle = t < 1 ? Math.sin(t * Math.PI) * (1 - t) * 0.034 : 0;
+
+            if (t >= 0.52 && !st.headlightsFlashed) {
+                st.headlightsFlashed = true;
+                if (!this.headlightsOn) {
+                    this.toggleHeadlights();
+                }
+            }
+
+            if (t >= 1) {
+                st.active = false;
+                st.currentZ = 0;
+                st.pitchAngle = 0;
+            }
+
+            this.applyCaseRevealToActiveCar();
+            this.updateLightsRigPositions();
+            this.needsRender = true;
+            return st.active;
+        }
+
+        applyCaseRevealToActiveCar() {
+            const st = this.caseRevealState;
+            if (!st) return;
+            const applyModelRoll = (model) => {
+                if (!model) return;
+                if (model.userData._baseRevealZ === undefined) {
+                    model.userData._baseRevealZ = model.position.z || 0;
+                }
+                if (model.userData._baseRevealRotX === undefined) {
+                    model.userData._baseRevealRotX = model.rotation.x || 0;
+                }
+                model.position.z = model.userData._baseRevealZ + (st.currentZ || 0);
+                model.rotation.x = model.userData._baseRevealRotX + (st.pitchAngle || 0);
+                model.userData.caseRevealZ = st.currentZ || 0;
+                model.userData.caseRevealPitch = st.pitchAngle || 0;
+
+                if (typeof model.traverse === 'function') {
+                    model.traverse(node => {
+                        if (!node || node === model) return;
+                        const nm = String(node.name || '').toLowerCase();
+                        const isWheel = (node.userData && (node.userData.isWheel || node.userData.isWheelSpinner)) ||
+                            /^(wheel|tire|rim)_/i.test(nm) ||
+                            /wheel_fl|wheel_fr|wheel_rl|wheel_rr/i.test(nm);
+                        if (isWheel) {
+                            node.rotation.x = st.wheelSpinRad || 0;
+                        }
+                    });
+                }
+            };
+            if (this.glbCar) applyModelRoll(this.glbCar);
+            if (this.proceduralCar && this.proceduralCar !== this.glbCar) applyModelRoll(this.proceduralCar);
+            if (this.carGroup && this.carGroup !== this.glbCar && this.carGroup !== this.proceduralCar) applyModelRoll(this.carGroup);
         }
 
         ensureRainRig() {
@@ -10485,7 +10615,10 @@
                     this.needsRender = true;
                 }
 
-                // Live Air Ride Suspension, FSO Strobes, Roof Beacon & Rain Animation
+                // Live Air Ride Suspension, Case Reveal Roll-Out, FSO Strobes, Roof Beacon & Rain Animation
+                if (this.caseRevealState && this.caseRevealState.active) {
+                    this.stepCaseRevealAnimation(0.016);
+                }
                 if (this.airRideAnimating) {
                     this.stepAirRideAnimation(0.016);
                 }

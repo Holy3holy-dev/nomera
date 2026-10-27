@@ -8215,16 +8215,212 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             document.getElementById('case-preview-modal')?.classList.remove('show');
         }
 
+        let roulette3DShowroom = null;
+        let lastRoulette3DReward = null;
+        let lastRoulette3DTierKey = 'common';
+        let roulette3DPlateStageOpen = false;
+        let roulette3DCameraOrderIdx = 0;
+
         function closeRouletteModal() {
             if(window.NOMERA_AUTHORS_PREVIEW){window.NomeraNumberAudio?.stop('cases');window.NomeraReelMotion?.cancel('cases');}
             clearCaseAnimationTimers();
             activeSingleRevealCallback = null;
             isSpinning = false;
+            if (roulette3DShowroom && typeof roulette3DShowroom.pause === 'function') {
+                roulette3DShowroom.pause();
+            }
             document.getElementById('case-unseal-stage')?.classList.add('hidden');
             document.getElementById('btn-skip-roulette')?.classList.add('hidden');
             document.getElementById('roulette-modal')?.classList.remove('show');
         }
         window.closeRouletteModal = closeRouletteModal;
+
+        function mountRoulette3DPodium(reward, tierKey = 'common', forceShow = false) {
+            if (typeof document === 'undefined' || !reward) return false;
+            lastRoulette3DReward = reward;
+            lastRoulette3DTierKey = tierKey || 'common';
+
+            const podiumStage = document.getElementById('roulette-3d-podium-stage');
+            const tiltStage = document.getElementById('roulette-3d-tilt-stage');
+            const tryonBtn = document.getElementById('btn-roulette-plate-3d-tryon');
+            const gateOverlay = document.getElementById('roulette-3d-gate-overlay');
+            const canvasContainer = document.getElementById('roulette-3d-podium-canvas');
+
+            const isAutoPlate3D = !reward.isCar && (tierKey === 'mythic' || tierKey === 'legendary' || tierKey === 'epic');
+            const shouldShow = Boolean(reward.isCar || forceShow || isAutoPlate3D);
+            roulette3DPlateStageOpen = !reward.isCar && shouldShow;
+
+            if (tryonBtn) {
+                if (tryonBtn.classList) tryonBtn.classList.toggle('active', roulette3DPlateStageOpen);
+                const btnText = roulette3DPlateStageOpen ? '✕ Скрыть 3D-подиум' : '🚗 3D-презентация на авто';
+                tryonBtn.textContent = btnText;
+                tryonBtn.innerText = btnText;
+            }
+
+            if (!podiumStage) return false;
+
+            if (!shouldShow) {
+                podiumStage.classList?.add('hidden');
+                tiltStage?.classList?.remove('has-3d-car-podium');
+                if (roulette3DShowroom && typeof roulette3DShowroom.pause === 'function') {
+                    roulette3DShowroom.pause();
+                }
+                return false;
+            }
+
+            podiumStage.classList?.remove('hidden');
+            if (podiumStage.dataset) {
+                podiumStage.dataset.revealMode = reward.isCar ? 'car' : 'plate';
+                podiumStage.dataset.lootTier = tierKey;
+            }
+            if (typeof podiumStage.setAttribute === 'function') {
+                podiumStage.setAttribute('data-reveal-mode', reward.isCar ? 'car' : 'plate');
+                podiumStage.setAttribute('data-loot-tier', tierKey);
+            }
+            if (tiltStage && tiltStage.classList) {
+                tiltStage.classList.toggle('has-3d-car-podium', Boolean(reward.isCar));
+            }
+
+            if (gateOverlay && gateOverlay.classList) {
+                gateOverlay.classList.remove('gate-opening');
+                void gateOverlay.offsetWidth;
+                gateOverlay.classList.add('gate-opening');
+            }
+
+            if (typeof sound !== 'undefined' && sound && typeof sound.caseGateReveal === 'function') {
+                sound.caseGateReveal(tierKey);
+            }
+
+            if (canvasContainer && typeof Car3DManager !== 'undefined' && typeof Car3DManager.createShowroom === 'function') {
+                if (!roulette3DShowroom) {
+                    roulette3DShowroom = Car3DManager.createShowroom(canvasContainer, {
+                        width: 360,
+                        height: 196,
+                        autoRotate: true,
+                        autoRotateSpeed: 0.0045,
+                        showPodium: true,
+                        loaderId: 'roulette-3d-loader',
+                        loaderTextId: 'roulette-3d-loader-text',
+                        onSound: (type) => {
+                            if (typeof sound !== 'undefined' && sound && typeof sound.airRide === 'function') {
+                                sound.airRide(type === 'airRideDown');
+                            }
+                        }
+                    });
+                    window.roulette3DShowroom = roulette3DShowroom;
+                } else if (typeof roulette3DShowroom.resume === 'function') {
+                    roulette3DShowroom.resume();
+                }
+
+                if (roulette3DShowroom) {
+                    const frameStyle = (tierKey === 'mythic' || tierKey === 'legendary') ? 'gold' : 'carbon';
+                    const neonColor = tierKey === 'mythic' ? '#fbbf24' : (tierKey === 'legendary' ? '#f59e0b' : (tierKey === 'epic' ? '#ec4899' : 'none'));
+                    if (reward.isCar) {
+                        roulette3DCameraOrderIdx = 0;
+                        roulette3DShowroom.setCar(reward.name, {
+                            neon: neonColor
+                        });
+                        if (typeof roulette3DShowroom.playCaseRevealAnimation === 'function') {
+                            roulette3DShowroom.playCaseRevealAnimation({
+                                mode: 'car',
+                                tier: tierKey
+                            });
+                        }
+                    } else {
+                        roulette3DCameraOrderIdx = 1;
+                        const flagshipCarName = (Array.isArray(myCars) && myCars[0] && myCars[0].name) || 'BMW M5 F90 Competition';
+                        roulette3DShowroom.setCar(flagshipCarName, {
+                            plate: reward.text,
+                            frameStyle,
+                            plateStyle: 'classic',
+                            neon: neonColor
+                        });
+                        if (typeof roulette3DShowroom.playCaseRevealAnimation === 'function') {
+                            roulette3DShowroom.playCaseRevealAnimation({
+                                mode: 'plate',
+                                tier: tierKey,
+                                plateText: reward.text,
+                                frameStyle
+                            });
+                        }
+                    }
+                    syncRoulette3DToolbarButtons();
+                }
+            }
+            return true;
+        }
+        window.mountRoulette3DPodium = mountRoulette3DPodium;
+
+        function syncRoulette3DToolbarButtons() {
+            if (typeof document === 'undefined' || !roulette3DShowroom) return;
+            const st = typeof roulette3DShowroom.getInteractiveState === 'function'
+                ? roulette3DShowroom.getInteractiveState()
+                : {};
+            document.getElementById('btn-roulette-3d-lights')?.classList?.toggle('active', Boolean(st.headlightsOn));
+            document.getElementById('btn-roulette-3d-doors')?.classList?.toggle('active', Boolean(st.doorsOpen));
+            document.getElementById('btn-roulette-3d-airride')?.classList?.toggle('active', st.stanceMode === 'airride' || st.stanceMode === 'bpan');
+        }
+
+        function toggleRoulette3DPlateStage() {
+            if (!lastRoulette3DReward || lastRoulette3DReward.isCar) return false;
+            const nextState = !roulette3DPlateStageOpen;
+            if (!nextState) {
+                roulette3DPlateStageOpen = false;
+                document.getElementById('roulette-3d-podium-stage')?.classList?.add('hidden');
+                const tryonBtn = document.getElementById('btn-roulette-plate-3d-tryon');
+                if (tryonBtn) {
+                    tryonBtn.classList?.remove('active');
+                    tryonBtn.textContent = '🚗 3D-презентация на авто';
+                    tryonBtn.innerText = '🚗 3D-презентация на авто';
+                }
+                if (roulette3DShowroom && typeof roulette3DShowroom.pause === 'function') {
+                    roulette3DShowroom.pause();
+                }
+                return false;
+            }
+            return mountRoulette3DPodium(lastRoulette3DReward, lastRoulette3DTierKey, true);
+        }
+        window.toggleRoulette3DPlateStage = toggleRoulette3DPlateStage;
+
+        function cycleRoulette3DCamera() {
+            if (!roulette3DShowroom || typeof roulette3DShowroom.setViewPreset !== 'function') return 'isometric';
+            const presets = ['isometric', 'plate_front', 'side', 'rear'];
+            roulette3DCameraOrderIdx = (roulette3DCameraOrderIdx + 1) % presets.length;
+            const nextPreset = presets[roulette3DCameraOrderIdx];
+            roulette3DShowroom.setViewPreset(nextPreset, false);
+            return nextPreset;
+        }
+        window.cycleRoulette3DCamera = cycleRoulette3DCamera;
+
+        function toggleRoulette3DHeadlights() {
+            if (!roulette3DShowroom || typeof roulette3DShowroom.toggleHeadlights !== 'function') return false;
+            const on = roulette3DShowroom.toggleHeadlights();
+            syncRoulette3DToolbarButtons();
+            return on;
+        }
+        window.toggleRoulette3DHeadlights = toggleRoulette3DHeadlights;
+
+        function toggleRoulette3DDoors() {
+            if (!roulette3DShowroom || typeof roulette3DShowroom.toggleDoors !== 'function') return false;
+            const open = roulette3DShowroom.toggleDoors();
+            syncRoulette3DToolbarButtons();
+            return open;
+        }
+        window.toggleRoulette3DDoors = toggleRoulette3DDoors;
+
+        function toggleRoulette3DAirRide() {
+            if (!roulette3DShowroom || typeof roulette3DShowroom.toggleAirRide !== 'function') return null;
+            const state = roulette3DShowroom.toggleAirRide(false);
+            syncRoulette3DToolbarButtons();
+            return state;
+        }
+        window.toggleRoulette3DAirRide = toggleRoulette3DAirRide;
+
+        function replayRoulette3DReveal() {
+            if (!lastRoulette3DReward) return false;
+            return mountRoulette3DPodium(lastRoulette3DReward, lastRoulette3DTierKey, true);
+        }
+        window.replayRoulette3DReveal = replayRoulette3DReveal;
 
         let loot3DTiltBound = false;
         function bindLoot3DTiltStage() {
@@ -8377,6 +8573,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     tiltStage.classList.add('loot-3d-pop-active');
                 }
             }
+            mountRoulette3DPodium(reward, tierKey, false);
         }
         window.triggerLoot3DShowcase = triggerLoot3DShowcase;
 
@@ -9192,6 +9389,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             saveProgress();
             renderInventory();
             playCashSound();
+            if (roulette3DShowroom && typeof roulette3DShowroom.pause === 'function') roulette3DShowroom.pause();
             document.getElementById('roulette-modal')?.classList.remove('show');
         }
 
@@ -9208,6 +9406,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             renderInventory();
             logPlayerActivity('Рулетка номеров', `Выиграл в рулетке госномер «${reward.text}» (${reward.rarity.text}, ${reward.price.toLocaleString('ru-RU')} ₽)`);
             saveProgress();
+            if (roulette3DShowroom && typeof roulette3DShowroom.pause === 'function') roulette3DShowroom.pause();
             document.getElementById('roulette-modal')?.classList.remove('show');
         }
 
@@ -9229,6 +9428,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             updateBadge();
             playCashSound();
             logPlayerActivity('Продажа авто', `Продал выбитое авто «${reward.name}» за ${sellPrice.toLocaleString('ru-RU')} ₽`);
+            if (roulette3DShowroom && typeof roulette3DShowroom.pause === 'function') roulette3DShowroom.pause();
             document.getElementById('roulette-modal')?.classList.remove('show');
         }
 
@@ -9257,6 +9457,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             logPlayerActivity('Рулетка авто', `Выиграл в рулетке авто «${reward.name}» (${reward.category})`);
             saveProgress();
             if (typeof syncCloudGarage === 'function') syncCloudGarage(true);
+            if (roulette3DShowroom && typeof roulette3DShowroom.pause === 'function') roulette3DShowroom.pause();
             document.getElementById('roulette-modal')?.classList.remove('show');
         }
 
