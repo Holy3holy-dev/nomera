@@ -44,7 +44,8 @@ internal class LocalOtaOverlayDataSource(
             while (keys.hasNext()) {
                 val k = keys.next()
                 val v = json.optString(k, "")
-                if (v.isNotEmpty() && resolveSafeFile(k).exists()) {
+                val safeFile = resolveSafeFile(k)
+                if (v.isNotEmpty() && safeFile != null && safeFile.exists()) {
                     out[k] = v
                 }
             }
@@ -65,13 +66,13 @@ internal class LocalOtaOverlayDataSource(
         val clean = normalizePath(relPath)
         if (isMarkedDeleted(clean)) return null
         val target = resolveSafeFile(clean)
-        if (target.exists() && target.isFile) {
+        if (target != null && target.exists() && target.isFile) {
             return FileInputStream(target)
         }
         if (clean.startsWith("assets/models/") && clean.endsWith(".glb")) {
             val mobileAlias = clean.replaceFirst("assets/models/", "assets/models-mobile/")
             val aliasFile = resolveSafeFile(mobileAlias)
-            if (aliasFile.exists() && aliasFile.isFile) {
+            if (aliasFile != null && aliasFile.exists() && aliasFile.isFile) {
                 return FileInputStream(aliasFile)
             }
         }
@@ -86,7 +87,7 @@ internal class LocalOtaOverlayDataSource(
             return false
         }
 
-        val target = resolveSafeFile(clean)
+        val target = resolveSafeFile(clean) ?: return false
         target.parentFile?.mkdirs()
         val temp = File(target.parentFile, "${target.name}.tmp")
         temp.writeBytes(bytes)
@@ -111,7 +112,7 @@ internal class LocalOtaOverlayDataSource(
     fun deleteOverlayAsset(relPath: String) {
         val clean = normalizePath(relPath)
         val target = resolveSafeFile(clean)
-        if (target.exists()) {
+        if (target != null && target.exists()) {
             target.delete()
             pruneEmptyParents(target.parentFile)
         }
@@ -126,12 +127,20 @@ internal class LocalOtaOverlayDataSource(
         writeDeletedSet(deleted)
     }
 
-    private fun resolveSafeFile(relPath: String): File {
+    private fun resolveSafeFile(relPath: String): File? {
         val clean = normalizePath(relPath)
-        val candidate = File(filesRoot, clean).canonicalFile
-        val rootCanonical = filesRoot.canonicalFile
-        require(candidate.path.startsWith(rootCanonical.path)) { "Invalid overlay path: $relPath" }
-        return candidate
+        if (clean.isEmpty()) return null
+        return try {
+            val candidate = File(filesRoot, clean).canonicalFile
+            val rootCanonical = filesRoot.canonicalFile
+            if (candidate.path.startsWith(rootCanonical.path) && candidate != rootCanonical) {
+                candidate
+            } else {
+                null
+            }
+        } catch (_: Exception) {
+            null
+        }
     }
 
     private fun pruneEmptyParents(dir: File?) {

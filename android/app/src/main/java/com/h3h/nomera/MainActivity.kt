@@ -28,7 +28,6 @@ class MainActivity : Activity() {
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableImmersiveFullscreen()
 
         val repository = AssetOverlayRepositoryImpl(
             bundledDataSource = ApkBundledAssetDataSource(assets),
@@ -64,10 +63,18 @@ class MainActivity : Activity() {
         webView.addJavascriptInterface(jsBridge, "NomeraAndroidBridge")
 
         setContentView(webView)
+        enableImmersiveFullscreen()
         webView.loadUrl(OverlayWebViewClient.ENTRY_URI.toString())
 
         // Trigger non-blocking delta OTA check against live website after launch
         jsBridge.triggerOtaSync(BuildConfig.DEFAULT_OTA_BASE_URL)
+    }
+
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        if (hasFocus) {
+            enableImmersiveFullscreen()
+        }
     }
 
     @Deprecated("Deprecated in Java")
@@ -89,15 +96,16 @@ class MainActivity : Activity() {
 
     @Suppress("DEPRECATION")
     private fun enableImmersiveFullscreen() {
+        val decorView = window.decorView
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             window.setDecorFitsSystemWindows(false)
-            window.insetsController?.let { controller ->
+            decorView.windowInsetsController?.let { controller ->
                 controller.hide(WindowInsets.Type.statusBars() or WindowInsets.Type.navigationBars())
                 controller.systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
             }
         } else {
             @Suppress("DEPRECATION")
-            window.decorView.systemUiVisibility = (
+            decorView.systemUiVisibility = (
                 View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
                     or View.SYSTEM_UI_FLAG_FULLSCREEN
                     or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION

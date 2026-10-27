@@ -264,13 +264,20 @@
     if (root && typeof root.addEventListener === 'function') {
         root.onNomeraAndroidOtaEvent = function (evt) {
             if (!evt || typeof evt !== 'object') return;
-            if (evt.phase === 'complete' && evt.updated && typeof root.notifyUser === 'function') {
+            if (evt.phase === 'complete' && evt.updated) {
                 const dl = Number(evt.downloadedCount) || 0;
                 const rm = Number(evt.deletedCount) || 0;
-                root.notifyUser(
-                    `📲 Автообновление клиента: загружено ${dl} файл(ов)${rm > 0 ? `, удалено ${rm} устаревших текстур` : ''}!`,
-                    'success'
-                );
+                if (typeof root.notifyUser === 'function') {
+                    root.notifyUser(
+                        `📲 Автообновление клиента: загружено ${dl} файл(ов)${rm > 0 ? `, удалено ${rm} устаревших текстур` : ''}!`,
+                        'success'
+                    );
+                }
+                if (!root.isRaceRunning && root.location && typeof root.location.reload === 'function') {
+                    setTimeout(() => {
+                        if (!root.isRaceRunning) root.location.reload();
+                    }, 1500);
+                }
             }
         };
     }

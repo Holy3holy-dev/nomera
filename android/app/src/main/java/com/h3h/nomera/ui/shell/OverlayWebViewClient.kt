@@ -6,6 +6,7 @@ import android.webkit.WebResourceResponse
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import com.h3h.nomera.domain.repository.AssetOverlayRepository
+import java.io.ByteArrayInputStream
 
 internal class OverlayWebViewClient(
     private val repository: AssetOverlayRepository
@@ -20,6 +21,24 @@ internal class OverlayWebViewClient(
             return super.shouldInterceptRequest(view, request)
         }
 
+        val corsHeaders = mapOf(
+            "Access-Control-Allow-Origin" to "*",
+            "Access-Control-Allow-Methods" to "GET, HEAD, OPTIONS",
+            "Access-Control-Allow-Headers" to "*",
+            "Cache-Control" to "no-cache"
+        )
+
+        if (request.method.equals("OPTIONS", ignoreCase = true)) {
+            return WebResourceResponse(
+                "text/plain",
+                "UTF-8",
+                200,
+                "OK",
+                corsHeaders,
+                ByteArrayInputStream(ByteArray(0))
+            )
+        }
+
         val rawPath = url.path?.trimStart('/') ?: "index.html"
         val targetPath = if (rawPath.isEmpty()) "index.html" else rawPath
         val stream = repository.openAssetStream(targetPath) ?: return WebResourceResponse(
@@ -27,18 +46,13 @@ internal class OverlayWebViewClient(
             "UTF-8",
             404,
             "Not Found",
-            mapOf("Access-Control-Allow-Origin" to "*"),
-            null
+            corsHeaders,
+            ByteArrayInputStream(ByteArray(0))
         )
 
         val mimeType = repository.guessMimeType(targetPath)
         val encoding = if (mimeType.startsWith("text/") || mimeType == "application/json") "UTF-8" else null
-        val headers = mapOf(
-            "Access-Control-Allow-Origin" to "*",
-            "Access-Control-Allow-Methods" to "GET, HEAD, OPTIONS",
-            "Cache-Control" to "no-cache"
-        )
-        return WebResourceResponse(mimeType, encoding, 200, "OK", headers, stream)
+        return WebResourceResponse(mimeType, encoding, 200, "OK", corsHeaders, stream)
     }
 
     companion object {

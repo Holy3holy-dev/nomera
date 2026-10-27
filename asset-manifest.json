@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "profile": "mobile",
-  "release": "dd8494584ead",
+  "release": "de7c4d719540",
   "fileCount": 391,
-  "totalBytes": 374852835,
+  "totalBytes": 374853567,
   "files": {
     "assets/audio/authors/README.md": {
       "version": "028cce62fd63",
@@ -1126,8 +1126,8 @@
       "bytes": 39587
     },
     "authors-release.html": {
-      "version": "ec1222253ada",
-      "bytes": 323000
+      "version": "2566163b421d",
+      "bytes": 323103
     },
     "authors-rewards.css": {
       "version": "59f8a52488cf",
@@ -1150,8 +1150,8 @@
       "bytes": 86562
     },
     "authors.html": {
-      "version": "51b7525a40c8",
-      "bytes": 322807
+      "version": "120240074c9a",
+      "bytes": 322910
     },
     "icons/car-placeholder.svg": {
       "version": "19380885c1f6",
@@ -1166,8 +1166,8 @@
       "bytes": 5245
     },
     "index.html": {
-      "version": "ec1222253ada",
-      "bytes": 323000
+      "version": "2566163b421d",
+      "bytes": 323103
     },
     "js/app.js": {
       "version": "58afd87c9ce4",
@@ -1490,8 +1490,8 @@
       "bytes": 144568
     },
     "js/ota-asset-sync.js": {
-      "version": "b0eabe2bbfdc",
-      "bytes": 11813
+      "version": "21897421d0eb",
+      "bytes": 12133
     },
     "js/plate-presentation.js": {
       "version": "cc6592782275",
@@ -1554,8 +1554,8 @@
       "bytes": 603445
     },
     "legacy.html": {
-      "version": "811a67366080",
-      "bytes": 316369
+      "version": "868317105a24",
+      "bytes": 316472
     },
     "manifest.json": {
       "version": "d13f2d041f1f",
@@ -1566,7 +1566,7 @@
       "bytes": 434511
     },
     "sw.js": {
-      "version": "ea25724f71cb",
+      "version": "f970f04ce86a",
       "bytes": 6654
     }
   }

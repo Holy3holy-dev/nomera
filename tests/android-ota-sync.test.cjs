@@ -192,3 +192,40 @@ test('Unit 4: Android Clean Architecture project structure & WebView overlay int
         assert.ok(fs.existsSync(path.join(root, rel)), `Expected Android file ${rel} to exist`);
     }
 });
+
+test('Unit 5: MainActivity initializes DecorView via setContentView before accessing WindowInsetsController and OverlayWebViewClient avoids null stream crashes', () => {
+    const mainActivitySrc = fs.readFileSync(
+        path.join(root, 'android/app/src/main/java/com/h3h/nomera/MainActivity.kt'),
+        'utf8'
+    );
+    const setContentIdx = mainActivitySrc.indexOf('setContentView(');
+    const enableFullscreenCallIdx = mainActivitySrc.indexOf('enableImmersiveFullscreen()');
+    assert.ok(setContentIdx !== -1 && enableFullscreenCallIdx !== -1, 'MainActivity must call setContentView and enableImmersiveFullscreen');
+    assert.ok(
+        setContentIdx < enableFullscreenCallIdx,
+        'setContentView must be called BEFORE enableImmersiveFullscreen() so PhoneWindow.mDecor is initialized before accessing WindowInsetsController'
+    );
+    assert.ok(
+        !mainActivitySrc.includes('window.insetsController'),
+        'MainActivity must use decorView.windowInsetsController after DecorView creation instead of window.insetsController when mDecor may be null'
+    );
+
+    const webClientSrc = fs.readFileSync(
+        path.join(root, 'android/app/src/main/java/com/h3h/nomera/ui/shell/OverlayWebViewClient.kt'),
+        'utf8'
+    );
+    assert.ok(
+        webClientSrc.includes('ByteArrayInputStream'),
+        'OverlayWebViewClient must provide a valid ByteArrayInputStream on 404/OPTIONS instead of null'
+    );
+
+    const overlayDsSrc = fs.readFileSync(
+        path.join(root, 'android/app/src/main/java/com/h3h/nomera/data/datasource/LocalOtaOverlayDataSource.kt'),
+        'utf8'
+    );
+    assert.ok(
+        !overlayDsSrc.includes('require('),
+        'LocalOtaOverlayDataSource.resolveSafeFile must return null on invalid paths instead of throwing on WebViewIoThread'
+    );
+});
+
