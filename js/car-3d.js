@@ -5815,6 +5815,10 @@
         return null;
     }
 
+    if (typeof window !== 'undefined' && window.MeshoptDecoder && window.MeshoptDecoder.ready && typeof window.MeshoptDecoder.ready.catch === 'function') {
+        window.MeshoptDecoder.ready.catch(() => {});
+    }
+
     function getGLTFLoader(THREE) {
         if (!THREE.GLTFLoader) return null;
         if (THREE.Cache) {
@@ -8057,6 +8061,157 @@
         if(typeof window!=='undefined'&&window.NOMERA_AUTHORS_PREVIEW)window.NomeraLivery?.apply(THREE,modelRoot,styling.livery);
     }
 
+    function denormalizeBufferAttribute(THREE, attr) {
+        if (!attr || !attr.normalized || !attr.array || (attr.array instanceof Float32Array)) return attr;
+        const src = attr.array;
+        let divisor = 1;
+        if (src instanceof Int16Array) divisor = 32767.0;
+        else if (src instanceof Uint16Array) divisor = 65535.0;
+        else if (src instanceof Int8Array) divisor = 127.0;
+        else if (src instanceof Uint8Array) divisor = 255.0;
+        else return attr;
+
+        const itemSize = attr.itemSize || 3;
+        const count = attr.count !== undefined ? attr.count : Math.floor(src.length / itemSize);
+        if (attr.isInterleavedBufferAttribute && attr.data) {
+            const out = new Float32Array(count * itemSize);
+            for (let i = 0; i < count; i++) {
+                for (let k = 0; k < itemSize; k++) {
+                    const raw = k === 0 ? attr.getX(i) : (k === 1 ? attr.getY(i) : (k === 2 ? attr.getZ(i) : attr.getW(i)));
+                    out[i * itemSize + k] = Math.max(-1.0, raw / divisor);
+                }
+            }
+            return new THREE.BufferAttribute(out, itemSize, false);
+        }
+
+        const out = new Float32Array(src.length);
+        for (let i = 0; i < src.length; i++) {
+            out[i] = Math.max(-1.0, src[i] / divisor);
+        }
+        return new THREE.BufferAttribute(out, itemSize, false);
+    }
+
+    function denormalizeSceneGeometries(THREE, rootObj) {
+        if (!rootObj || typeof rootObj.traverse !== 'function') return rootObj;
+        rootObj.traverse(child => {
+            if (!child.isMesh || !child.geometry || !child.geometry.attributes) return;
+            const geom = child.geometry;
+            const attrs = geom.attributes;
+            let changedPos = false;
+            ['position', 'normal', 'uv', 'uv2'].forEach(attrName => {
+                const attr = attrs[attrName];
+                if (attr && attr.normalized && attr.array && !(attr.array instanceof Float32Array)) {
+                    const denorm = denormalizeBufferAttribute(THREE, attr);
+                    geom.setAttribute(attrName, denorm);
+                    if (attrName === 'position') changedPos = true;
+                }
+            });
+            if (changedPos) {
+                if (typeof geom.computeBoundingBox === 'function') geom.computeBoundingBox();
+                if (typeof geom.computeBoundingSphere === 'function') geom.computeBoundingSphere();
+            }
+        });
+        return rootObj;
+    }
+
+    function protectSceneBuffers(THREE, scene) {
+        if (!scene || typeof scene.traverse !== 'function') return scene;
+        denormalizeSceneGeometries(THREE, scene);
+        if (!scene.userData) scene.userData = {};
+        scene.userData._nomeraDenormalized = true;
+        scene.traverse(child => {
+            child.userData.preserveBuffers = true;
+            if (child.geometry) child.geometry.userData.preserveBuffers = true;
+            if (child.material) {
+                if (Array.isArray(child.material)) child.material.forEach(m => { m.userData.preserveBuffers = true; });
+                else child.material.userData.preserveBuffers = true;
+            }
+        });
+        return scene;
+    }
+
+    function fetchAndCacheRawGLBScene(THREE, carId, modelUrl, onProgress) {
+        const loader = getGLTFLoader(THREE);
+        if (!loader || !modelUrl) return Promise.resolve(null);
+        if (rawGLBCache.has(modelUrl)) return Promise.resolve(rawGLBCache.get(modelUrl));
+        if (inFlightGLBPromises.has(modelUrl)) return inFlightGLBPromises.get(modelUrl);
+
+        const loadPromise = new Promise(resolve => {
+            let loadUrl = modelUrl;
+            const fallbackLoad = () => {
+                try {
+                    loader.load(
+                        loadUrl,
+                        gltf => {
+                            if (gltf && gltf.scene) {
+                                rawGLBCache.set(modelUrl, protectSceneBuffers(THREE, gltf.scene));
+                                resolve(gltf.scene);
+                            } else {
+                                resolve(null);
+                            }
+                        },
+                        xhr => {
+                            if (xhr && xhr.lengthComputable && xhr.total > 0 && typeof onProgress === 'function') {
+                                const pct = Math.round((xhr.loaded / xhr.total) * 100);
+                                onProgress(pct);
+                            }
+                        },
+                        err => {
+                            if (loadUrl.includes('/models-mobile/')) {
+                                const source = GLB_MODEL_MAP[carId];
+                                const meta = window.NomeraModelAssets?.[source.split('/').pop()];
+                                loadUrl = source + (meta ? '?v=' + meta.version : '');
+                                fallbackLoad();
+                                return;
+                            }
+                            console.warn('Failed to load GLB model, falling back to procedural:', err);
+                            resolve(null);
+                        }
+                    );
+                } catch (_) {
+                    resolve(null);
+                }
+            };
+
+            if (typeof window !== 'undefined' && window.caches && typeof loader.parse === 'function') {
+                fetchCachedGLBBuffer(modelUrl).then(buffer => {
+                    if (buffer) {
+                        try {
+                            const baseUrl = modelUrl.substring(0, modelUrl.lastIndexOf('/') + 1);
+                            loader.parse(
+                                buffer,
+                                baseUrl,
+                                gltf => {
+                                    if (gltf && gltf.scene) {
+                                        rawGLBCache.set(modelUrl, protectSceneBuffers(THREE, gltf.scene));
+                                        resolve(gltf.scene);
+                                    } else {
+                                        fallbackLoad();
+                                    }
+                                },
+                                () => fallbackLoad()
+                            );
+                        } catch (_) {
+                            fallbackLoad();
+                        }
+                    } else {
+                        fallbackLoad();
+                    }
+                }).catch(() => fallbackLoad());
+            } else {
+                fallbackLoad();
+            }
+        });
+
+        inFlightGLBPromises.set(modelUrl, loadPromise);
+        loadPromise.then(() => {
+            inFlightGLBPromises.delete(modelUrl);
+        }).catch(() => {
+            inFlightGLBPromises.delete(modelUrl);
+        });
+        return loadPromise;
+    }
+
     function loadCarModel(THREE, carName, styling = {}, onLoaded, onProgress) {
         const carId = identifyCarModel(carName);
         const modelUrl = resolveModelUrl(carId);
@@ -8069,73 +8224,6 @@
             if(typeof window!=='undefined'&&window.NOMERA_AUTHORS_PREVIEW)window.NomeraLivery?.apply(THREE,fallbackModel,styling.livery);
             if (onLoaded) onLoaded(fallbackModel);
             return;
-        }
-
-        function denormalizeBufferAttribute(attr) {
-            if (!attr || !attr.normalized || !attr.array || (attr.array instanceof Float32Array)) return attr;
-            const src = attr.array;
-            let divisor = 1;
-            if (src instanceof Int16Array) divisor = 32767.0;
-            else if (src instanceof Uint16Array) divisor = 65535.0;
-            else if (src instanceof Int8Array) divisor = 127.0;
-            else if (src instanceof Uint8Array) divisor = 255.0;
-            else return attr;
-
-            const itemSize = attr.itemSize || 3;
-            const count = attr.count !== undefined ? attr.count : Math.floor(src.length / itemSize);
-            if (attr.isInterleavedBufferAttribute && attr.data) {
-                const out = new Float32Array(count * itemSize);
-                for (let i = 0; i < count; i++) {
-                    for (let k = 0; k < itemSize; k++) {
-                        const raw = k === 0 ? attr.getX(i) : (k === 1 ? attr.getY(i) : (k === 2 ? attr.getZ(i) : attr.getW(i)));
-                        out[i * itemSize + k] = Math.max(-1.0, raw / divisor);
-                    }
-                }
-                return new THREE.BufferAttribute(out, itemSize, false);
-            }
-
-            const out = new Float32Array(src.length);
-            for (let i = 0; i < src.length; i++) {
-                out[i] = Math.max(-1.0, src[i] / divisor);
-            }
-            return new THREE.BufferAttribute(out, itemSize, false);
-        }
-
-        function denormalizeSceneGeometries(rootObj) {
-            if (!rootObj || typeof rootObj.traverse !== 'function') return rootObj;
-            rootObj.traverse(child => {
-                if (!child.isMesh || !child.geometry || !child.geometry.attributes) return;
-                const geom = child.geometry;
-                const attrs = geom.attributes;
-                let changedPos = false;
-                ['position', 'normal', 'uv', 'uv2'].forEach(attrName => {
-                    const attr = attrs[attrName];
-                    if (attr && attr.normalized && attr.array && !(attr.array instanceof Float32Array)) {
-                        const denorm = denormalizeBufferAttribute(attr);
-                        geom.setAttribute(attrName, denorm);
-                        if (attrName === 'position') changedPos = true;
-                    }
-                });
-                if (changedPos) {
-                    if (typeof geom.computeBoundingBox === 'function') geom.computeBoundingBox();
-                    if (typeof geom.computeBoundingSphere === 'function') geom.computeBoundingSphere();
-                }
-            });
-            return rootObj;
-        }
-
-        function protectSceneBuffers(scene) {
-            if (!scene || typeof scene.traverse !== 'function') return scene;
-            denormalizeSceneGeometries(scene);
-            scene.traverse(child => {
-                child.userData.preserveBuffers = true;
-                if (child.geometry) child.geometry.userData.preserveBuffers = true;
-                if (child.material) {
-                    if (Array.isArray(child.material)) child.material.forEach(m => { m.userData.preserveBuffers = true; });
-                    else child.material.userData.preserveBuffers = true;
-                }
-            });
-            return scene;
         }
 
         function computeTightBoundingBox(rootObj) {
@@ -8180,7 +8268,9 @@
                     }
                 }
                 const clonedScene = rootToUse.clone(true);
-                denormalizeSceneGeometries(clonedScene);
+                if (!gltfScene.userData || !gltfScene.userData._nomeraDenormalized) {
+                    denormalizeSceneGeometries(THREE, clonedScene);
+                }
                 const toRemove = [];
                 clonedScene.traverse(c => {
                     const nm = String(c.name || '').toLowerCase();
@@ -8196,73 +8286,92 @@
                 toRemove.forEach(c => {
                     if (c.parent) c.parent.remove(c);
                 });
-                clonedScene.updateMatrixWorld(true);
 
-                let box = computeTightBoundingBox(clonedScene);
-                let size = box.getSize(new THREE.Vector3());
-                let center = box.getCenter(new THREE.Vector3());
-
-                // 1. If height is greater than length and width (Z-up coordinate system from Blender/3ds Max)
-                if (size.y > size.z * 1.2 && size.y > size.x * 1.2) {
-                    clonedScene.rotation.x = -Math.PI / 2;
+                const cachedNorm = gltfScene.userData && gltfScene.userData._cachedNormByCarId && gltfScene.userData._cachedNormByCarId[carId];
+                if (cachedNorm) {
+                    clonedScene.rotation.set(cachedNorm.rotX, cachedNorm.rotY, 0);
+                    clonedScene.scale.setScalar(cachedNorm.scaleFactor);
+                    clonedScene.position.set(cachedNorm.posX, cachedNorm.posY, cachedNorm.posZ);
+                    modelGroup.add(clonedScene);
+                    modelGroup.updateMatrixWorld(true);
+                    modelGroup.userData.baseBoundingBox = cachedNorm.baseBox.clone();
+                } else {
                     clonedScene.updateMatrixWorld(true);
-                    box = computeTightBoundingBox(clonedScene);
-                    size = box.getSize(new THREE.Vector3());
-                    center = box.getCenter(new THREE.Vector3());
-                }
 
-                // 2. If length is along X axis, rotate 90 degrees so the car aligns forward along Z
-                if (size.x > size.z * 1.15) {
-                    clonedScene.rotation.y = Math.PI / 2;
+                    let box = computeTightBoundingBox(clonedScene);
+                    let size = box.getSize(new THREE.Vector3());
+
+                    // 1. If height is greater than length and width (Z-up coordinate system from Blender/3ds Max)
+                    if (size.y > size.z * 1.2 && size.y > size.x * 1.2) {
+                        clonedScene.rotation.x = -Math.PI / 2;
+                        clonedScene.updateMatrixWorld(true);
+                        box = computeTightBoundingBox(clonedScene);
+                        size = box.getSize(new THREE.Vector3());
+                    }
+
+                    // 2. If length is along X axis, rotate 90 degrees so the car aligns forward along Z
+                    if (size.x > size.z * 1.15) {
+                        clonedScene.rotation.y = Math.PI / 2;
+                        clonedScene.updateMatrixWorld(true);
+                        box = computeTightBoundingBox(clonedScene);
+                        size = box.getSize(new THREE.Vector3());
+                    }
+
+                    // 3. Align car forward facing along +Z
+                    // VAZ-2107 is natively modeled facing forward (+Z); VAZ-2109, SF90, RS6, Silvia, Vesta, Viper JV (370Z), and M3 G80 require 180° rotation
+                    if (carId === 'vaz2109' || carId === 'sf90' || carId === 'rs6' || carId === 'silvia' || carId === 'viper_jv' || carId === 'm3_g80' || carId === 'vesta') {
+                        clonedScene.rotation.y += Math.PI;
+                        clonedScene.updateMatrixWorld(true);
+                        box = computeTightBoundingBox(clonedScene);
+                        size = box.getSize(new THREE.Vector3());
+                    }
+
+                    // Standardize car dimensions with realistic relative scale (capped at <= 4.80 units to fit comfortably inside the 3.0-radius showroom podium ring)
+                    let targetLength = 4.45;
+                    if (carId === 'vaz2107' || carId === 'vaz2109' || carId === 'polo' || carId === 'golf_sonny') {
+                        targetLength = 4.05;
+                    } else if (carId === 'cullinan') {
+                        targetLength = 4.80;
+                    } else if (carId === 'g63' || carId === 'lc300' || carId === 'x5m' || carId === 'panamera') {
+                        targetLength = 4.78;
+                    } else if (carId === 'camry' || carId === 'e63' || carId === 'clk_kaze' || carId === 'rs6' || carId === 'rs7' || carId === 'm8' || carId === 'gaz24' || carId === 'db9' || carId === 'maserati') {
+                        targetLength = 4.72;
+                    } else if (carId === 'jesko' || carId === 'chiron' || carId === 'sf90' || carId === 'huracan' || carId === 'gallardo_ming' || carId === 'porsche911' || carId === 'cayman_baron' || carId === 'mclaren' || carId === 'audir8' || carId === 'corvette_cross' || carId === 'corvette_webster' || carId === 'mustang_razor' || carId === 'mustang_jewels') {
+                        targetLength = 4.50;
+                    } else if (carId === 'priora' || carId === 'solaris' || carId === 'vesta' || carId === 'eclipse_lou') {
+                        targetLength = 4.35;
+                    } else if (carId === 'mark2' || carId === 'is300_taz' || carId === 'subaru' || carId === 'evo8_earl' || carId === 'm5e60' || carId === 'm3_g80' || carId === 'm5f90' || carId === 'gtr' || carId === 'silvia' || carId === 'viper_jv' || carId === 'rx7' || carId === 'supra' || carId === 'elantra_n') {
+                        targetLength = 4.55;
+                    }
+                    targetLength = Math.min(4.80, targetLength);
+                    const currentLength = size.z || 1;
+                    const scaleFactor = targetLength / currentLength;
+                    clonedScene.scale.setScalar(scaleFactor);
                     clonedScene.updateMatrixWorld(true);
-                    box = computeTightBoundingBox(clonedScene);
-                    size = box.getSize(new THREE.Vector3());
-                    center = box.getCenter(new THREE.Vector3());
+
+                    const scaledBox = computeTightBoundingBox(clonedScene);
+                    const scaledCenter = scaledBox.getCenter(new THREE.Vector3());
+
+                    clonedScene.position.x = -scaledCenter.x;
+                    clonedScene.position.z = -scaledCenter.z;
+                    clonedScene.position.y = -scaledBox.min.y;
+
+                    modelGroup.add(clonedScene);
+                    modelGroup.updateMatrixWorld(true);
+                    const baseBox = scaledBox.clone().translate(clonedScene.position);
+                    modelGroup.userData.baseBoundingBox = baseBox;
+                    if (!gltfScene.userData) gltfScene.userData = {};
+                    if (!gltfScene.userData._cachedNormByCarId) gltfScene.userData._cachedNormByCarId = {};
+                    gltfScene.userData._cachedNormByCarId[carId] = {
+                        rotX: clonedScene.rotation.x,
+                        rotY: clonedScene.rotation.y,
+                        scaleFactor,
+                        posX: clonedScene.position.x,
+                        posY: clonedScene.position.y,
+                        posZ: clonedScene.position.z,
+                        baseBox: baseBox.clone()
+                    };
                 }
-
-                // 3. Align car forward facing along +Z
-                // VAZ-2107 is natively modeled facing forward (+Z); VAZ-2109, SF90, RS6, Silvia, Vesta, Viper JV (370Z), and M3 G80 require 180° rotation
-                if (carId === 'vaz2109' || carId === 'sf90' || carId === 'rs6' || carId === 'silvia' || carId === 'viper_jv' || carId === 'm3_g80' || carId === 'vesta') {
-                    clonedScene.rotation.y += Math.PI;
-                    clonedScene.updateMatrixWorld(true);
-                    box = computeTightBoundingBox(clonedScene);
-                    size = box.getSize(new THREE.Vector3());
-                    center = box.getCenter(new THREE.Vector3());
-                }
-
-                // Standardize car dimensions with realistic relative scale (capped at <= 4.80 units to fit comfortably inside the 3.0-radius showroom podium ring)
-                let targetLength = 4.45;
-                if (carId === 'vaz2107' || carId === 'vaz2109' || carId === 'polo' || carId === 'golf_sonny') {
-                    targetLength = 4.05;
-                } else if (carId === 'cullinan') {
-                    targetLength = 4.80;
-                } else if (carId === 'g63' || carId === 'lc300' || carId === 'x5m' || carId === 'panamera') {
-                    targetLength = 4.78;
-                } else if (carId === 'camry' || carId === 'e63' || carId === 'clk_kaze' || carId === 'rs6' || carId === 'rs7' || carId === 'm8' || carId === 'gaz24' || carId === 'db9' || carId === 'maserati') {
-                    targetLength = 4.72;
-                } else if (carId === 'jesko' || carId === 'chiron' || carId === 'sf90' || carId === 'huracan' || carId === 'gallardo_ming' || carId === 'porsche911' || carId === 'cayman_baron' || carId === 'mclaren' || carId === 'audir8' || carId === 'corvette_cross' || carId === 'corvette_webster' || carId === 'mustang_razor' || carId === 'mustang_jewels') {
-                    targetLength = 4.50;
-                } else if (carId === 'priora' || carId === 'solaris' || carId === 'vesta' || carId === 'eclipse_lou') {
-                    targetLength = 4.35;
-                } else if (carId === 'mark2' || carId === 'is300_taz' || carId === 'subaru' || carId === 'evo8_earl' || carId === 'm5e60' || carId === 'm3_g80' || carId === 'm5f90' || carId === 'gtr' || carId === 'silvia' || carId === 'viper_jv' || carId === 'rx7' || carId === 'supra' || carId === 'elantra_n') {
-                    targetLength = 4.55;
-                }
-                targetLength = Math.min(4.80, targetLength);
-                const currentLength = size.z || 1;
-                const scaleFactor = targetLength / currentLength;
-                clonedScene.scale.setScalar(scaleFactor);
-                clonedScene.updateMatrixWorld(true);
-
-                const scaledBox = computeTightBoundingBox(clonedScene);
-                const scaledCenter = scaledBox.getCenter(new THREE.Vector3());
-
-                clonedScene.position.x = -scaledCenter.x;
-                clonedScene.position.z = -scaledCenter.z;
-                clonedScene.position.y = -scaledBox.min.y;
-
-                modelGroup.add(clonedScene);
-                modelGroup.updateMatrixWorld(true);
-                modelGroup.userData.baseBoundingBox = computeTightBoundingBox(clonedScene);
                 modelGroup.userData.vehicleLodFile = GLB_MODEL_MAP[carId]?.split('/').pop();
                 modelGroup.userData.vehicleLodId = carId;
                 if(carId==='camry')modelGroup.userData.modelIdentity='Toyota Camry XV40';
@@ -8283,87 +8392,7 @@
             return;
         }
 
-        if (inFlightGLBPromises.has(modelUrl)) {
-            inFlightGLBPromises.get(modelUrl).then(scene => {
-                if (scene) {
-                    const finalModel = setupModel(scene);
-                    if (onLoaded) onLoaded(finalModel);
-                } else {
-                    const fallbackModel = buildDetailedCarModel(THREE, carName, styling);
-                    if (onLoaded) onLoaded(fallbackModel);
-                }
-            }).catch(() => {
-                const fallbackModel = buildDetailedCarModel(THREE, carName, styling);
-                if (onLoaded) onLoaded(fallbackModel);
-            });
-            return;
-        }
-
-        const loadPromise = new Promise(resolve => {
-            let loadUrl=modelUrl;
-            const fallbackLoad = () => {
-                try {
-                    loader.load(
-                        loadUrl,
-                        gltf => {
-                            if (gltf && gltf.scene) {
-                                rawGLBCache.set(modelUrl, protectSceneBuffers(gltf.scene));
-                                resolve(gltf.scene);
-                            } else {
-                                resolve(null);
-                            }
-                        },
-                        xhr => {
-                            if (xhr && xhr.lengthComputable && xhr.total > 0 && typeof onProgress === 'function') {
-                                const pct = Math.round((xhr.loaded / xhr.total) * 100);
-                                onProgress(pct);
-                            }
-                        },
-                        err => {
-                            if(loadUrl.includes('/models-mobile/')){const source=GLB_MODEL_MAP[carId],meta=window.NomeraModelAssets?.[source.split('/').pop()];loadUrl=source+(meta?'?v='+meta.version:'');fallbackLoad();return;}
-                            console.warn('Failed to load GLB model, falling back to procedural:', err);
-                            resolve(null);
-                        }
-                    );
-                } catch (err) {
-                    resolve(null);
-                }
-            };
-
-            if (typeof window !== 'undefined' && window.caches && typeof loader.parse === 'function') {
-                fetchCachedGLBBuffer(modelUrl).then(buffer => {
-                    if (buffer) {
-                        try {
-                            const baseUrl = modelUrl.substring(0, modelUrl.lastIndexOf('/') + 1);
-                            loader.parse(
-                                buffer,
-                                baseUrl,
-                                gltf => {
-                                    if (gltf && gltf.scene) {
-                                        rawGLBCache.set(modelUrl, protectSceneBuffers(gltf.scene));
-                                        resolve(gltf.scene);
-                                    } else {
-                                        fallbackLoad();
-                                    }
-                                },
-                                () => fallbackLoad()
-                            );
-                        } catch (_) {
-                            fallbackLoad();
-                        }
-                    } else {
-                        fallbackLoad();
-                    }
-                }).catch(() => fallbackLoad());
-            } else {
-                fallbackLoad();
-            }
-        });
-
-        inFlightGLBPromises.set(modelUrl, loadPromise);
-
-        loadPromise.then(scene => {
-            inFlightGLBPromises.delete(modelUrl);
+        fetchAndCacheRawGLBScene(THREE, carId, modelUrl, onProgress).then(scene => {
             if (scene) {
                 const finalModel = setupModel(scene);
                 if (onLoaded) onLoaded(finalModel);
@@ -8372,7 +8401,6 @@
                 if (onLoaded) onLoaded(fallbackModel);
             }
         }).catch(() => {
-            inFlightGLBPromises.delete(modelUrl);
             const fallbackModel = buildDetailedCarModel(THREE, carName, styling);
             if (onLoaded) onLoaded(fallbackModel);
         });
@@ -8408,12 +8436,16 @@
     }
 
     function preloadCarModel(THREE, carName) {
-        if (!THREE) return;
+        if (typeof THREE === 'string' && !carName) {
+            carName = THREE;
+            THREE = (typeof window !== 'undefined' && window.THREE) ? window.THREE : null;
+        }
+        if (!THREE || !carName) return;
+        if (typeof window !== 'undefined' && window.isRaceRunning) return;
         const carId = identifyCarModel(carName);
         const modelUrl = resolveModelUrl(carId);
-        const loader = getGLTFLoader(THREE);
-        if (!loader || !modelUrl || rawGLBCache.has(modelUrl) || inFlightGLBPromises.has(modelUrl)) return;
-        loadCarModel(THREE, carName, {}, () => {});
+        if (!modelUrl || rawGLBCache.has(modelUrl) || inFlightGLBPromises.has(modelUrl)) return;
+        fetchAndCacheRawGLBScene(THREE, carId, modelUrl).catch(() => {});
     }
 
     // Automotive Studio HDRI Environment Generator
