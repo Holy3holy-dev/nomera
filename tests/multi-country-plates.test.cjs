@@ -1578,6 +1578,84 @@ describe('Collector Book & Car-Plate Synergy (RUS / KZ / USA / UAE)', () => {
     app.run("claimCollectorSet('cis_jdm_standards')");
     assert.equal(app.run('balance'), 100000 + 650000);
   });
+
+  test('Japanese (JDM) glowing plates (Chikoushikiban) and 3D bumper frames work across 2D CSS, 3D bumpers, Atelier, and server', () => {
+    const { Car3DManager } = setup3DPlateTestEnv();
+    const NomeraAtelier = require('../js/authors-atelier.js');
+    const fs = require('node:fs');
+    const path = require('node:path');
+    const getPlateFaceAndBack = (plateGroup) => {
+      const meshes = plateGroup.children.filter(ch => ch && ch.isMesh);
+      const plateMesh = meshes.find(m => m.material && m.material.map) || meshes[0] || null;
+      const backMesh = meshes.length > 1 ? meshes[meshes.length - 1] : null;
+      return { plateMesh, backMesh };
+    };
+
+    // 1. Author's Edition CSS has .special-jdm-glow rules
+    const css = fs.readFileSync(path.join(__dirname, '..', 'authors-registration.css'), 'utf8');
+    assert.match(css, /\.special-jdm-glow/);
+    assert.match(css, /#34d399/);
+
+    // 2. All 3D bumper frames create raised 3D bezel perimeter bars, hex bolts, and preserve plate-to-backing z-separation
+    const frameStyles = ['none', 'carbon', 'chrome', 'jdm_tilt', 'fso', 'neon', 'gold'];
+    for (const style of frameStyles) {
+      const grp = Car3DManager.createLicensePlate('А777АА77', true, style, 'classic');
+      assert.equal(grp.userData.frameStyle, style);
+      const childNames = grp.children.map(ch => ch.name);
+      const expectedBolts = style === 'jdm_tilt'
+        ? ['PlateBolt_0', 'PlateBolt_1']
+        : ['PlateBolt_0', 'PlateBolt_1', 'PlateBolt_2', 'PlateBolt_3'];
+      for (const req of ['PlateBezelTop', 'PlateBezelBottom', 'PlateBezelLeft', 'PlateBezelRight', ...expectedBolts]) {
+        assert.ok(childNames.includes(req), `Frame style "${style}" must include 3D mesh ${req}`);
+      }
+      if (style !== 'none') {
+        assert.ok(childNames.includes('PlateBezelAccent'), `Branded frame style "${style}" must include PlateBezelAccent`);
+      }
+      if (style === 'jdm_tilt') {
+        assert.ok(childNames.includes('PlateJdmTiltBracket'), 'jdm_tilt must include PlateJdmTiltBracket');
+        assert.ok(Math.abs(grp.rotation.x) >= 0.1, 'jdm_tilt must tilt the plate group on X axis');
+      }
+      const { plateMesh, backMesh } = getPlateFaceAndBack(grp);
+      assert.ok(plateMesh && backMesh);
+      assert.ok(Math.abs(plateMesh.position.z - backMesh.position.z) >= 0.014, `z-separation invariant must hold for frame "${style}"`);
+    }
+
+    // 3. JDM Glowing plate works both via special JDM combination and via selectable plateStyle: 'jdm_glow'
+    const jdmSpecial = Car3DManager.createLicensePlate('JDM 777 | TKY JPN', true, 'jdm_tilt', 'classic');
+    assert.equal(jdmSpecial.userData.specialPlateType, 'jdm_glow');
+    assert.equal(jdmSpecial.userData.plateStyle, 'jdm_glow');
+    const { plateMesh: jdmFace } = getPlateFaceAndBack(jdmSpecial);
+    assert.ok(jdmFace.material.emissiveIntensity >= 0.9, 'JDM glowing plate must have high emissiveIntensity');
+    assert.equal(jdmFace.material.emissive.getHex(), 0x6ee7b7);
+
+    const customGlow = Car3DManager.createLicensePlate('А777АА77', false, 'neon', 'jdm_glow');
+    assert.equal(customGlow.userData.plateStyle, 'jdm_glow');
+    const { plateMesh: customFace } = getPlateFaceAndBack(customGlow);
+    assert.ok(customFace.material.emissiveIntensity >= 0.9, 'Custom plateStyle=jdm_glow must have high emissiveIntensity');
+
+    // 4. Atelier quotes frameStyle and plateStyle accurately
+    const quote = NomeraAtelier.quote(
+      { name: 'Nissan Silvia S15 Spec-R', styling: { frameStyle: 'none', plateStyle: 'classic' } },
+      { frameStyle: 'jdm_tilt', plateStyle: 'jdm_glow' }
+    );
+    assert.equal(quote.changed, true);
+    assert.equal(quote.total, 25000 + 35000);
+
+    // 5. Server safeCar preserves frameStyle and plateStyle
+    const cleanedCar = c.safeCar({
+      id: 'c1',
+      name: 'Nissan Silvia S15 Spec-R',
+      price: 2500000,
+      styling: {
+        color: '#ffffff',
+        frameStyle: 'jdm_tilt',
+        plateFrame: 'jdm_tilt',
+        plateStyle: 'jdm_glow'
+      }
+    });
+    assert.equal(cleanedCar.styling.frameStyle, 'jdm_tilt');
+    assert.equal(cleanedCar.styling.plateStyle, 'jdm_glow');
+  });
 });
 
 

@@ -869,14 +869,161 @@
         const physicalFormats={RUS:[.520,.112],KZ:[.520,.112],BY:[.520,.110],USA:[.3048,.1524],JPN:[.330,.165],UAE:[.520,.110]};
         const [plateW,plateH]=physicalFormats[country]||physicalFormats.RUS;
 
-        // Frame material color matching frameStyle: gold #d4af37, carbon #1e293b, chrome #e2e8f0, neon #00f2fe, or classic #111827
+        // 3D Bumper Frame styles: none, carbon, chrome, gold, neon, jdm_tilt, fso
         const fStyle = String(frameStyle || 'none').toLowerCase();
+        const pStyle = String(plateStyle || 'classic').toLowerCase();
+        const isJdmSpecialCombo = (country === 'JPN') &&
+            ['JDM', 'GTR', 'DRF', 'TKY', 'S15', 'RX7', 'SUP', 'AE8', 'NSM', 'TRD', 'STI', 'EVO'].includes(comp.letters || '') &&
+            ['777', '001', '007', '888', '086'].includes(comp.digits || '');
+        const isJdmGlow = (pStyle === 'jdm_glow') || isJdmSpecialCombo;
+        if (isJdmGlow) group.userData.plateStyle = 'jdm_glow';
+
         const frameColorHex = fStyle === 'gold' ? 0xd4af37
             : (fStyle === 'carbon' ? 0x1e293b
                 : (fStyle === 'chrome' ? 0xe2e8f0
-                    : (fStyle === 'neon' ? 0x00f2fe : 0x111827)));
-        const frameRoughness = fStyle === 'chrome' ? 0.12 : (fStyle === 'gold' ? 0.22 : (fStyle === 'carbon' ? 0.38 : 0.65));
-        const frameMetalness = fStyle === 'chrome' ? 0.92 : (fStyle === 'gold' ? 0.85 : (fStyle === 'carbon' ? 0.45 : 0.20));
+                    : (fStyle === 'neon' ? (isJdmGlow ? 0x10b981 : 0x00f2fe)
+                        : (fStyle === 'jdm_tilt' ? 0x1e293b
+                            : (fStyle === 'fso' ? 0x090d16 : 0x111827)))));
+        const frameRoughness = fStyle === 'chrome' ? 0.10
+            : (fStyle === 'gold' ? 0.16
+                : (fStyle === 'carbon' ? 0.28
+                    : (fStyle === 'jdm_tilt' ? 0.26
+                        : (fStyle === 'fso' ? 0.40 : 0.65))));
+        const frameMetalness = fStyle === 'chrome' ? 0.95
+            : (fStyle === 'gold' ? 0.90
+                : (fStyle === 'jdm_tilt' ? 0.78
+                    : (fStyle === 'carbon' ? 0.58
+                        : (fStyle === 'fso' ? 0.38 : 0.20))));
+
+        function attach3DBumperFrame(targetGroup) {
+            const frameRimGeo = new THREE.BoxGeometry(plateW + 0.016, plateH + 0.016, 0.014);
+            const frameRimMat = new THREE.MeshStandardMaterial({
+                color: frameColorHex,
+                roughness: frameRoughness,
+                metalness: frameMetalness,
+                emissive: fStyle === 'neon'
+                    ? new THREE.Color(isJdmGlow ? 0x10b981 : 0x00f2fe)
+                    : (fStyle === 'gold' ? new THREE.Color(0x422006) : new THREE.Color(0x000000)),
+                emissiveIntensity: fStyle === 'neon' ? 0.85 : (fStyle === 'gold' ? 0.15 : 0)
+            });
+            const frameRim = new THREE.Mesh(frameRimGeo, frameRimMat);
+            frameRim.name = 'PlateFrameRim';
+            frameRim.position.z = isFront ? -0.003 : 0.003;
+            frameRim.userData.isLicensePlate = true;
+            frameRim.userData.isPlateFrame = true;
+            targetGroup.add(frameRim);
+
+            // Sculpted 3D perimeter bezel bars sitting flush around the front of the plate
+            const borderW = fStyle === 'fso' ? 0.011 : 0.008;
+            const topBarH = fStyle === 'fso' ? 0.010 : 0.008;
+            const botBarH = fStyle === 'fso' ? 0.020 : (fStyle === 'none' ? 0.010 : 0.015);
+            const bezelDepth = fStyle === 'fso' ? 0.012 : 0.009;
+            const zBezel = isFront ? 0.0105 : -0.0105;
+
+            const topBar = new THREE.Mesh(new THREE.BoxGeometry(plateW + borderW * 2, topBarH, bezelDepth), frameRimMat);
+            topBar.name = 'PlateBezelTop';
+            topBar.position.set(0, plateH * 0.5 + topBarH * 0.5 - 0.002, zBezel);
+            topBar.userData.isLicensePlate = true;
+            topBar.userData.isPlateFrame = true;
+            targetGroup.add(topBar);
+
+            const botBar = new THREE.Mesh(new THREE.BoxGeometry(plateW + borderW * 2, botBarH, bezelDepth), frameRimMat);
+            botBar.name = 'PlateBezelBottom';
+            botBar.position.set(0, -plateH * 0.5 - botBarH * 0.5 + 0.002, zBezel);
+            botBar.userData.isLicensePlate = true;
+            botBar.userData.isPlateFrame = true;
+            targetGroup.add(botBar);
+
+            const sideH = plateH + topBarH + botBarH - 0.004;
+            const sideY = (topBarH - botBarH) * 0.5;
+            [-1, 1].forEach(dir => {
+                const sideBar = new THREE.Mesh(new THREE.BoxGeometry(borderW, sideH, bezelDepth), frameRimMat);
+                sideBar.name = dir < 0 ? 'PlateBezelLeft' : 'PlateBezelRight';
+                sideBar.position.set(dir * (plateW * 0.5 + borderW * 0.5 - 0.002), sideY, zBezel);
+                sideBar.userData.isLicensePlate = true;
+                sideBar.userData.isPlateFrame = true;
+                targetGroup.add(sideBar);
+            });
+
+            // 3D Bottom Caption / Accent Strip for custom frames
+            if (fStyle !== 'none') {
+                const accentHex = fStyle === 'carbon' ? 0xef4444
+                    : (fStyle === 'gold' ? 0xfef08a
+                        : (fStyle === 'neon' ? (isJdmGlow ? 0x34d399 : 0x00f2fe)
+                            : (fStyle === 'jdm_tilt' ? (isJdmGlow ? 0x10b981 : 0xef4444)
+                                : (fStyle === 'fso' ? 0xe2e8f0 : 0x0f172a))));
+                const accentMat = new THREE.MeshStandardMaterial({
+                    color: accentHex,
+                    roughness: 0.22,
+                    metalness: 0.80,
+                    emissive: (fStyle === 'neon' || (fStyle === 'jdm_tilt' && isJdmGlow)) ? new THREE.Color(accentHex) : new THREE.Color(0x000000),
+                    emissiveIntensity: fStyle === 'neon' ? 1.1 : (isJdmGlow ? 0.65 : 0)
+                });
+                const accentStrip = new THREE.Mesh(new THREE.BoxGeometry(plateW * 0.74, 0.0045, 0.003), accentMat);
+                accentStrip.name = 'PlateBezelAccent';
+                accentStrip.position.set(
+                    0,
+                    -plateH * 0.5 - botBarH * 0.5 + 0.002,
+                    isFront ? (zBezel + bezelDepth * 0.5 + 0.001) : (zBezel - bezelDepth * 0.5 - 0.001)
+                );
+                accentStrip.userData.isLicensePlate = true;
+                accentStrip.userData.isPlateFrame = true;
+                targetGroup.add(accentStrip);
+            }
+
+            // JDM Angled Street Bracket + Anodized Top Bar
+            if (fStyle === 'jdm_tilt') {
+                const bracketMat = new THREE.MeshStandardMaterial({
+                    color: isJdmGlow ? 0x10b981 : 0xef4444,
+                    roughness: 0.22,
+                    metalness: 0.88
+                });
+                const bracketBar = new THREE.Mesh(new THREE.BoxGeometry(plateW * 0.82, 0.014, 0.016), bracketMat);
+                bracketBar.name = 'PlateJdmTiltBracket';
+                bracketBar.position.set(0, plateH * 0.5 + 0.007, isFront ? 0.005 : -0.005);
+                bracketBar.userData.isLicensePlate = true;
+                bracketBar.userData.isPlateFrame = true;
+                targetGroup.add(bracketBar);
+                targetGroup.rotation.x = isFront ? 0.15 : -0.15;
+            } else {
+                targetGroup.rotation.x = 0;
+            }
+
+            // 3D Hex Mounting Bolts / Dress-Up Washers
+            if (typeof THREE.CylinderGeometry === 'function') {
+                const boltHex = fStyle === 'gold' ? 0xfde047
+                    : (fStyle === 'jdm_tilt' ? (isJdmGlow ? 0x34d399 : 0xef4444)
+                        : (fStyle === 'fso' ? 0x475569 : 0xe2e8f0));
+                const boltMat = new THREE.MeshStandardMaterial({
+                    color: boltHex,
+                    roughness: 0.18,
+                    metalness: 0.92
+                });
+                const boltX = Math.max(0.08, plateW * 0.5 - 0.026);
+                const boltYTop = plateH * 0.5 - 0.014;
+                const boltCoords = (fStyle === 'jdm_tilt' || country === 'JPN')
+                    ? [[-boltX, boltYTop], [boltX, boltYTop]]
+                    : [[-boltX, boltYTop], [boltX, boltYTop], [-boltX, -boltYTop], [boltX, -boltYTop]];
+                boltCoords.forEach(([bx, by], idx) => {
+                    const boltGeo = new THREE.CylinderGeometry(0.0048, 0.0048, 0.006, 6);
+                    boltGeo.rotateX(Math.PI / 2);
+                    const bolt = new THREE.Mesh(boltGeo, boltMat);
+                    bolt.name = 'PlateBolt_' + idx;
+                    bolt.position.set(bx, by, isFront ? 0.013 : -0.013);
+                    bolt.userData.isLicensePlate = true;
+                    bolt.userData.isPlateFrame = true;
+                    targetGroup.add(bolt);
+                });
+            }
+
+            const backGeo = new THREE.BoxGeometry(plateW + 0.02, plateH + 0.02, 0.012);
+            const backMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.7 });
+            const back = new THREE.Mesh(backGeo, backMat);
+            back.name = 'PlateBacking';
+            back.position.z = isFront ? -0.006 : 0.006;
+            back.userData.isLicensePlate = true;
+            targetGroup.add(back);
+        }
 
         if (typeof document !== 'undefined') {
             try {
@@ -888,9 +1035,10 @@
                     const regCode = comp.region;
                     const letters = comp.letters || 'VIP';
                     const digits = comp.digits || '777';
-                    let customEmissiveIntensity = 0.28;
+                    let customEmissiveIntensity = isJdmGlow ? 0.95 : 0.28;
+                    if (isJdmGlow) group.userData.specialPlateType = 'jdm_glow';
 
-                    if(window.NOMERA_AUTHORS_PREVIEW&&window.NomeraRegistration&&plateStyle==='classic'&&!(country==='RUS'&&(!/^\d{2,3}$/.test(comp.region)||window.getUltraSpecialPlateMeta?.(text)))){canvas.height=Math.round(512*plateH/plateW);window.NomeraRegistration.paint(ctx,comp,{front:isFront});}
+                    if(window.NOMERA_AUTHORS_PREVIEW&&window.NomeraRegistration&&!isJdmGlow&&plateStyle==='classic'&&!(country==='RUS'&&(!/^\d{2,3}$/.test(comp.region)||window.getUltraSpecialPlateMeta?.(text)))){canvas.height=Math.round(512*plateH/plateW);window.NomeraRegistration.paint(ctx,comp,{front:isFront,glow:isJdmGlow});}
                     else if (country === 'JPN') {
                         // Authentic 512x256 Japanese MLIT Plate (自動車登録番号標 330x165mm, 2:1 aspect ratio)
                         const JPN_META = {
@@ -921,12 +1069,19 @@
                             const hIdx = (letters.charCodeAt(0) * 31 + letters.charCodeAt(1) * 17 + letters.charCodeAt(2) * 7) % JPN_HIRA_POOL.length;
                             jpnHira = JPN_HIRA_POOL[Math.abs(hIdx)] || jpnMeta.hira;
                         }
-                        const isJdmGlow = ['JDM', 'GTR', 'DRF', 'TKY', 'S15', 'RX7'].includes(letters) && ['777', '001', '007', '888', '086'].includes(digits);
                         group.userData.specialPlateType = isJdmGlow ? 'jdm_glow' : null;
-                        if (isJdmGlow) customEmissiveIntensity = 0.68;
+                        if (isJdmGlow) customEmissiveIntensity = 0.95;
 
                         if (isJdmGlow) {
-                            ctx.fillStyle = '#041814';
+                            if (typeof ctx.createRadialGradient === 'function') {
+                                const rGrad = ctx.createRadialGradient(256, 136, 18, 256, 136, 260);
+                                rGrad.addColorStop(0, '#063b2d');
+                                rGrad.addColorStop(0.65, '#041f19');
+                                rGrad.addColorStop(1, '#03120e');
+                                ctx.fillStyle = rGrad;
+                            } else {
+                                ctx.fillStyle = '#041814';
+                            }
                         } else if (typeof ctx.createLinearGradient === 'function') {
                             const grad = ctx.createLinearGradient(0, 0, 0, 256);
                             grad.addColorStop(0, '#ffffff');
@@ -938,9 +1093,14 @@
                         ctx.fillRect(0, 0, 512, 256);
 
                         const jpnTextColor = isJdmGlow ? '#34d399' : '#064e3b';
-                        ctx.strokeStyle = jpnTextColor;
+                        ctx.strokeStyle = isJdmGlow ? '#10b981' : jpnTextColor;
                         ctx.lineWidth = 7;
                         ctx.strokeRect(6, 6, 500, 244);
+                        if (isJdmGlow) {
+                            ctx.strokeStyle = '#6ee7b7';
+                            ctx.lineWidth = 2;
+                            ctx.strokeRect(12, 12, 488, 232);
+                        }
 
                         // Top-left silver aluminum 封印 (Fūin) seal cap & top-right mounting bolt
                         ctx.fillStyle = '#cbd5e1';
@@ -966,6 +1126,10 @@
                         ctx.font = '900 18px "Hiragino Kaku Gothic ProN", "Yu Gothic", "Inter", sans-serif';
                         ctx.fillText(jpnMeta.seal || '東', 58, 49);
 
+                        if (isJdmGlow) {
+                            ctx.shadowColor = '#10b981';
+                            ctx.shadowBlur = 16;
+                        }
                         // Top row: Transport Bureau Kanji + 3-digit vehicle class code (e.g. 品川 330)
                         ctx.fillStyle = jpnTextColor;
                         ctx.font = '900 46px "Hiragino Kaku Gothic ProN", "Yu Gothic", "Inter", "Arial Black", sans-serif';
@@ -979,6 +1143,9 @@
                         const formattedJpnDigits = serial.length === 4 ? serial.slice(0,2)+'-'+serial.slice(2) : serial.length===1 ? '・・ ・'+serial : serial.length===2 ? '・・ '+serial : '・'+serial;
                         ctx.font = '900 100px "Inter", "Arial Black", sans-serif';
                         ctx.fillText(formattedJpnDigits, 294, 168);
+                        if (isJdmGlow) {
+                            ctx.shadowBlur = 0;
+                        }
                     } else if (country === 'USA') {
                         // Authentic 512x256 (2:1 aspect ratio) North American State Plates (CA, NY, FL, TX, NV)
                         ctx.textAlign = 'center';
@@ -1549,8 +1716,16 @@
                         }
                     }
 
+                    if (pStyle === 'jdm_glow' && country !== 'JPN') {
+                        ctx.save();
+                        ctx.strokeStyle = '#34d399';
+                        ctx.lineWidth = 5;
+                        ctx.strokeRect(4, 4, canvas.width - 8, canvas.height - 8);
+                        ctx.restore();
+                    }
+
                     const tex = new THREE.CanvasTexture(canvas);
-                    if(window.NOMERA_AUTHORS_PREVIEW&&window.NomeraRegistration&&plateStyle==='classic'&&!(country==='RUS'&&(!/^\d{2,3}$/.test(comp.region)||window.getUltraSpecialPlateMeta?.(text)))){let disposed=false;tex.addEventListener('dispose',()=>{disposed=true});window.NomeraRegistration.fonts().then(()=>{if(!disposed){window.NomeraRegistration.paint(ctx,comp,{front:isFront});tex.needsUpdate=true;}});}
+                    if(window.NOMERA_AUTHORS_PREVIEW&&window.NomeraRegistration&&!isJdmGlow&&plateStyle==='classic'&&!(country==='RUS'&&(!/^\d{2,3}$/.test(comp.region)||window.getUltraSpecialPlateMeta?.(text)))){let disposed=false;tex.addEventListener('dispose',()=>{disposed=true});window.NomeraRegistration.fonts().then(()=>{if(!disposed){window.NomeraRegistration.paint(ctx,comp,{front:isFront,glow:isJdmGlow});tex.needsUpdate=true;}});}
                     tex.generateMipmaps = true;
                     tex.minFilter = THREE.LinearMipmapLinearFilter;
                     tex.anisotropy = 8;
@@ -1559,10 +1734,10 @@
                     if (!isFront) meshGeo.rotateY(Math.PI);
                     const meshMat = new THREE.MeshStandardMaterial({
                         map: tex,
-                        emissive: new THREE.Color(0xffffff),
+                        emissive: new THREE.Color(isJdmGlow ? 0x6ee7b7 : 0xffffff),
                         emissiveMap: tex,
                         emissiveIntensity: customEmissiveIntensity,
-                        roughness: 0.22,
+                        roughness: isJdmGlow ? 0.16 : 0.22,
                         metalness: 0.12,
                         polygonOffset: true,
                         polygonOffsetFactor: -2,
@@ -1573,25 +1748,7 @@
                     plateMesh.userData.isLicensePlate = true;
                     group.add(plateMesh);
 
-                    const frameRimGeo = new THREE.BoxGeometry(plateW + 0.014, plateH + 0.014, 0.014);
-                    const frameRimMat = new THREE.MeshStandardMaterial({
-                        color: frameColorHex,
-                        roughness: frameRoughness,
-                        metalness: frameMetalness,
-                        emissive: fStyle === 'neon' ? new THREE.Color(0x00f2fe) : new THREE.Color(0x000000),
-                        emissiveIntensity: fStyle === 'neon' ? 0.65 : 0
-                    });
-                    const frameRim = new THREE.Mesh(frameRimGeo, frameRimMat);
-                    frameRim.position.z = isFront ? -0.003 : 0.003;
-                    frameRim.userData.isLicensePlate = true;
-                    group.add(frameRim);
-
-                    const backGeo = new THREE.BoxGeometry(plateW + 0.02, plateH + 0.02, 0.012);
-                    const backMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.7 });
-                    const back = new THREE.Mesh(backGeo, backMat);
-                    back.position.z = isFront ? -0.006 : 0.006;
-                    back.userData.isLicensePlate = true;
-                    group.add(back);
+                    attach3DBumperFrame(group);
 
                     group.userData.plateText = text;
                     group.userData.plateCountry = country;
@@ -1602,9 +1759,9 @@
 
         const plateGeo = new THREE.BoxGeometry(plateW, plateH, 0.015);
         const plateMat = new THREE.MeshStandardMaterial({
-            color: 0xfdfdfd,
-            emissive: new THREE.Color(0xffffff),
-            emissiveIntensity: 0.22,
+            color: isJdmGlow ? 0x041814 : 0xfdfdfd,
+            emissive: new THREE.Color(isJdmGlow ? 0x34d399 : 0xffffff),
+            emissiveIntensity: isJdmGlow ? 0.90 : 0.22,
             roughness: 0.22,
             metalness: 0.12,
             polygonOffset: true,
@@ -1616,23 +1773,8 @@
         mesh.userData.isLicensePlate = true;
         group.add(mesh);
 
-        const frameGeo = new THREE.BoxGeometry(plateW + 0.014, plateH + 0.014, 0.014);
-        const frameMat = new THREE.MeshStandardMaterial({
-            color: frameColorHex,
-            roughness: frameRoughness,
-            metalness: frameMetalness
-        });
-        const frame = new THREE.Mesh(frameGeo, frameMat);
-        frame.position.z = isFront ? -0.003 : 0.003;
-        frame.userData.isLicensePlate = true;
-        group.add(frame);
-
-        const backGeo = new THREE.BoxGeometry(plateW + 0.02, plateH + 0.02, 0.012);
-        const backMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.7 });
-        const back = new THREE.Mesh(backGeo, backMat);
-        back.position.z = isFront ? -0.006 : 0.006;
-        back.userData.isLicensePlate = true;
-        group.add(back);
+        if (isJdmGlow) group.userData.specialPlateType = 'jdm_glow';
+        attach3DBumperFrame(group);
 
         group.userData.plateText = text;
         group.userData.plateCountry = country;
@@ -2155,11 +2297,13 @@
                 while (newFP.children.length > 0) {
                     oldFP.add(newFP.children[0]);
                 }
+                if (oldFP.rotation && newFP.rotation) oldFP.rotation.copy(newFP.rotation);
                 oldFP.userData.isLicensePlate = true;
                 oldFP.userData.plateText = text;
                 oldFP.userData.plateCountry = newFP.userData.plateCountry;
                 oldFP.userData.frameStyle = fStyle;
                 oldFP.userData.plateStyle = pStyle;
+                oldFP.userData.specialPlateType = newFP.userData.specialPlateType || null;
                 if (oldFP.parent && (oldFP.name === 'GLB_FrontLicensePlate' || oldFP.name === 'LicensePlate_Front')) {
                     const localF = worldFront.clone();
                     oldFP.parent.worldToLocal(localF);
@@ -2178,11 +2322,13 @@
                 while (newRP.children.length > 0) {
                     oldRP.add(newRP.children[0]);
                 }
+                if (oldRP.rotation && newRP.rotation) oldRP.rotation.copy(newRP.rotation);
                 oldRP.userData.isLicensePlate = true;
                 oldRP.userData.plateText = text;
                 oldRP.userData.plateCountry = newRP.userData.plateCountry;
                 oldRP.userData.frameStyle = fStyle;
                 oldRP.userData.plateStyle = pStyle;
+                oldRP.userData.specialPlateType = newRP.userData.specialPlateType || null;
                 if (oldRP.parent && (oldRP.name === 'GLB_RearLicensePlate' || oldRP.name === 'LicensePlate_Rear')) {
                     const localR = worldRear.clone();
                     oldRP.parent.worldToLocal(localR);
@@ -5214,8 +5360,8 @@
         chassisGroup.add(spec.root);
 
         // Apply license plate if specified in styling (or hide if 'none'/null)
-        if (styling && styling.plate !== undefined) {
-            applyLicensePlateToModel(THREE, spec.root, styling.plate, styling.frameStyle || 'none', styling.plateStyle || 'classic');
+        if (styling && (styling.plate !== undefined || styling.frameStyle !== undefined || styling.plateFrame !== undefined || styling.plateStyle !== undefined)) {
+            applyLicensePlateToModel(THREE, spec.root, styling.plate !== undefined ? styling.plate : 'А 777 АА | 77 RUS', styling.frameStyle || styling.plateFrame || 'none', styling.plateStyle || 'classic');
         }
 
         // Tuning: Spoilers
@@ -7891,7 +8037,7 @@
 
         // Multi-country License Plates
         const plateVal = (styling && styling.plate !== undefined) ? styling.plate : 'А 777 АА | 77 RUS';
-        applyLicensePlateToModel(THREE, modelRoot, plateVal, styling.frameStyle || 'none', styling.plateStyle || 'classic');
+        applyLicensePlateToModel(THREE, modelRoot, plateVal, styling.frameStyle || styling.plateFrame || 'none', styling.plateStyle || 'classic');
 
         // Aerodynamic Undercarriage Undertray (for specific models requiring undercarriage sealing, e.g. SF90)
         if (carId === 'sf90') {
@@ -8980,11 +9126,11 @@
 
         updateStyling(styling = {}) {
             Object.assign(this.currentStyling, styling);
-            if ((styling.plate !== undefined || styling.frameStyle !== undefined || styling.plateStyle !== undefined) && this.THREE) {
+            if ((styling.plate !== undefined || styling.frameStyle !== undefined || styling.plateFrame !== undefined || styling.plateStyle !== undefined) && this.THREE) {
                 this.updatePlate(
                     this.currentStyling.plate !== undefined ? this.currentStyling.plate : 'А 777 АА | 77 RUS',
-                    this.currentStyling.frameStyle,
-                    this.currentStyling.plateStyle
+                    this.currentStyling.frameStyle || this.currentStyling.plateFrame || 'none',
+                    this.currentStyling.plateStyle || 'classic'
                 );
             }
             const carId = identifyCarModel(this.currentCarName);

@@ -3157,6 +3157,27 @@
                         <div class="styling-options-row" id="styling-plate-chips" style="display:flex; flex-wrap:wrap; gap:6px;"></div>
                     </div>
 
+                    <div style="margin-bottom:14px;">
+                        <div style="font-size:12px; color:#fff; font-weight:800; margin-bottom:6px;">🖼️ 3D-рамка госномера на бампере:</div>
+                        <div class="styling-options-row" id="styling-plateframe-chips">
+                            <button type="button" class="styling-chip" data-plateframe="none" onclick="selectStylingPlateFrame('none')">Заводская (Бесплатно)</button>
+                            <button type="button" class="styling-chip" data-plateframe="carbon" onclick="selectStylingPlateFrame('carbon')">Карбон M-Perf (15 000 ₽)</button>
+                            <button type="button" class="styling-chip" data-plateframe="chrome" onclick="selectStylingPlateFrame('chrome')">Хром Люкс (20 000 ₽)</button>
+                            <button type="button" class="styling-chip" data-plateframe="jdm_tilt" onclick="selectStylingPlateFrame('jdm_tilt')">🇯🇵 JDM Наклонная (25 000 ₽)</button>
+                            <button type="button" class="styling-chip" data-plateframe="fso" onclick="selectStylingPlateFrame('fso')">🏛️ Спецрамка ФСО (30 000 ₽)</button>
+                            <button type="button" class="styling-chip" data-plateframe="neon" onclick="selectStylingPlateFrame('neon')">⚡ Кибер Неон LED (40 000 ₽)</button>
+                            <button type="button" class="styling-chip" data-plateframe="gold" onclick="selectStylingPlateFrame('gold')">👑 Золото Дубай 24K (45 000 ₽)</button>
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom:18px;">
+                        <div style="font-size:12px; color:#fff; font-weight:800; margin-bottom:6px;">💡 Подсветка номера (JDM 字光式):</div>
+                        <div class="styling-options-row" id="styling-platestyle-chips">
+                            <button type="button" class="styling-chip" data-platestyle="classic" onclick="selectStylingPlateStyle('classic')">Стандарт ГОСТ / MLIT (Бесплатно)</button>
+                            <button type="button" class="styling-chip" data-platestyle="jdm_glow" onclick="selectStylingPlateStyle('jdm_glow')">🇯🇵 JDM 字光式 Неоновое свечение (35 000 ₽)</button>
+                        </div>
+                    </div>
+
                     <div style="display:flex; gap:8px; margin-top:14px; position:sticky; bottom:0; background:rgba(15,23,42,0.95); backdrop-filter:blur(8px); padding:8px 0; z-index:10;">
                         <button class="btn btn-green" onclick="confirmApplyStyling()">Применить стайлинг</button>
                         <button class="btn btn-close" onclick="closeStylingModal()">Отмена</button>
@@ -3433,8 +3454,8 @@
     <script src="./js/nfs-physics.js?v=51a929ab5434"></script>
     <script src="./js/nfs-circuit-race.js?v=4219347b6cc0"></script>
     <script src="./js/model-assets.js?v=fb5618d170bd"></script>
-    <script src="./js/car-3d.js?v=e5a201d48137"></script>
-    <script src="./js/app.js?v=45c32bfedabe"></script>
+    <script src="./js/car-3d.js?v=8574ec710ca4"></script>
+    <script src="./js/app.js?v=aa40c2e214a4"></script>
 <footer id="model-credits" style="margin:24px auto;padding:12px 16px;max-width:1120px;font:12px/1.6 system-ui;color:#a8bbc5"><a href="./assets/models/credits/camry-xv40.html" target="_blank" rel="noopener" style="display:inline-block;min-height:44px;padding:12px 0;color:#bdd2db">3D Camry XV40: Ford mondeo · CC BY 4.0 · Авторы модели</a></footer>
 </body>
 </html>

@@ -1406,6 +1406,8 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         let stylingTempSuspension = 'stock';
         let stylingTempSgu = 'none';
         let stylingTempPlate = 'none';
+        let stylingTempFrameStyle = 'none';
+        let stylingTempPlateStyle = 'classic';
         let stylingTempCamber = 0;
         let stylingTempOffset = 0;
         let stylingTempNeonMode = 'solid';
@@ -10732,6 +10734,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                         suspension: stylingTempSuspension,
                         sgu: stylingTempSgu,
                         plate: stylingTempPlate,
+                        frameStyle: stylingTempFrameStyle,
+                        plateFrame: stylingTempFrameStyle,
+                        plateStyle: stylingTempPlateStyle,
                         camber: stylingTempCamber,
                         wheelOffset: stylingTempOffset,
                         neonMode: stylingTempNeonMode,
@@ -10845,6 +10850,8 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             stylingTempSuspension = car.styling.suspension || 'stock';
             stylingTempSgu = car.styling.sgu || 'none';
             stylingTempPlate = (car.plate && (car.plate.text || car.plate)) || (car.attachedPlate && (car.attachedPlate.text || car.attachedPlate)) || 'none';
+            stylingTempFrameStyle = car.styling.frameStyle || car.styling.plateFrame || 'none';
+            stylingTempPlateStyle = car.styling.plateStyle || 'classic';
             stylingTempCamber = car.styling.camber ?? 0;
             stylingTempOffset = car.styling.wheelOffset ?? 0;
             stylingTempNeonMode = car.styling.neonMode || 'solid';
@@ -10921,6 +10928,12 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             });
             document.querySelectorAll('#styling-smokecolor-chips .styling-chip').forEach(btn => {
                 btn.classList.toggle('active', btn.dataset.smokecolor === stylingTempSmokeColor);
+            });
+            document.querySelectorAll('#styling-plateframe-chips .styling-chip').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.plateframe === stylingTempFrameStyle);
+            });
+            document.querySelectorAll('#styling-platestyle-chips .styling-chip').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.platestyle === stylingTempPlateStyle);
             });
             document.querySelectorAll('#styling-junkman-chips .styling-chip').forEach(btn => {
                 const part = ({junkmanEngine:'engine',junkmanTurbo:'turbo',junkmanTires:'tires',junkmanNitro:'nitro'})[btn.dataset.junkman]||btn.dataset.junkman;
@@ -11113,6 +11126,38 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             updateStylingModalPreview();
         }
         window.selectStylingSmokeColor = selectStylingSmokeColor;
+
+        function selectStylingPlateFrame(frameStyle) {
+            stylingTempFrameStyle = frameStyle || 'none';
+            document.querySelectorAll('#styling-plateframe-chips .styling-chip').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.plateframe === stylingTempFrameStyle);
+            });
+            if (stylingViewMode !== 'svg' && car3DShowroom && typeof car3DShowroom.updatePlate === 'function') {
+                car3DShowroom.updatePlate(stylingTempPlate, stylingTempFrameStyle, stylingTempPlateStyle);
+                if (stylingViewMode === '3d' && typeof car3DShowroom.setViewPreset === 'function') {
+                    car3DShowroom.setViewPreset('plate_front');
+                }
+            }
+            playTick();
+            updateStylingModalPreview();
+        }
+        window.selectStylingPlateFrame = selectStylingPlateFrame;
+
+        function selectStylingPlateStyle(plateStyle) {
+            stylingTempPlateStyle = plateStyle || 'classic';
+            document.querySelectorAll('#styling-platestyle-chips .styling-chip').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.platestyle === stylingTempPlateStyle);
+            });
+            if (stylingViewMode !== 'svg' && car3DShowroom && typeof car3DShowroom.updatePlate === 'function') {
+                car3DShowroom.updatePlate(stylingTempPlate, stylingTempFrameStyle, stylingTempPlateStyle);
+                if (stylingViewMode === '3d' && typeof car3DShowroom.setViewPreset === 'function') {
+                    car3DShowroom.setViewPreset('plate_front');
+                }
+            }
+            playTick();
+            updateStylingModalPreview();
+        }
+        window.selectStylingPlateStyle = selectStylingPlateStyle;
 
         function toggleStylingJunkman(part) {
             part=({junkmanEngine:'engine',junkmanTurbo:'turbo',junkmanTires:'tires',junkmanNitro:'nitro'})[part]||part;
@@ -12182,9 +12227,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             stylingTempPlate = plateText || 'none';
             renderStylingPlateChips();
             if (stylingViewMode !== 'svg' && car3DShowroom && typeof car3DShowroom.updatePlate === 'function') {
-                const car = (stylingActiveCarIndex >= 0 && myCars[stylingActiveCarIndex]) ? myCars[stylingActiveCarIndex] : null;
-                const st = (car && car.styling) ? car.styling : {};
-                car3DShowroom.updatePlate(stylingTempPlate, st.plateFrame, st.plateStyle);
+                car3DShowroom.updatePlate(stylingTempPlate, stylingTempFrameStyle, stylingTempPlateStyle);
                 if (stylingTempPlate && stylingTempPlate !== 'none' && stylingViewMode === '3d' && typeof car3DShowroom.setViewPreset === 'function') {
                     car3DShowroom.setViewPreset('plate_front');
                 }
@@ -12193,7 +12236,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         }
         window.selectStylingPlate = selectStylingPlate;
 
-        function getStylingDraft() {return {color:stylingTempColor,tint:stylingTempTint,neon:stylingTempNeon,spoiler:stylingTempSpoiler,vinyl:stylingTempVinyl,wheels:stylingTempWheels,suspension:stylingTempSuspension,camber:stylingTempCamber,wheelOffset:stylingTempOffset,neonMode:stylingTempNeonMode,sgu:stylingTempSgu,bodykit:stylingTempBodykit,roofScoop:stylingTempRoofScoop,hood:stylingTempHood,nitroColor:stylingTempNitroColor,smokeColor:stylingTempSmokeColor,plate:stylingTempPlate,livery:stylingTempLivery,junkmanEngine:!!stylingTempJunkman?.engine,junkmanTurbo:!!stylingTempJunkman?.turbo,junkmanTires:!!stylingTempJunkman?.tires,junkmanNitro:!!stylingTempJunkman?.nitro,gearRatioBias:stylingTempProTuning?.gearRatioBias||0,aeroDownforce:stylingTempProTuning?.aeroDownforce||0,gripDriftBias:stylingTempProTuning?.gripDriftBias||0};}
+        function getStylingDraft() {return {color:stylingTempColor,tint:stylingTempTint,neon:stylingTempNeon,spoiler:stylingTempSpoiler,vinyl:stylingTempVinyl,wheels:stylingTempWheels,suspension:stylingTempSuspension,camber:stylingTempCamber,wheelOffset:stylingTempOffset,neonMode:stylingTempNeonMode,sgu:stylingTempSgu,bodykit:stylingTempBodykit,roofScoop:stylingTempRoofScoop,hood:stylingTempHood,nitroColor:stylingTempNitroColor,smokeColor:stylingTempSmokeColor,plate:stylingTempPlate,frameStyle:stylingTempFrameStyle,plateStyle:stylingTempPlateStyle,livery:stylingTempLivery,junkmanEngine:!!stylingTempJunkman?.engine,junkmanTurbo:!!stylingTempJunkman?.turbo,junkmanTires:!!stylingTempJunkman?.tires,junkmanNitro:!!stylingTempJunkman?.nitro,gearRatioBias:stylingTempProTuning?.gearRatioBias||0,aeroDownforce:stylingTempProTuning?.aeroDownforce||0,gripDriftBias:stylingTempProTuning?.gripDriftBias||0};}
         window.NomeraAtelierBridge={read:()=>({car:myCars[stylingActiveCarIndex],draft:getStylingDraft(),balance:(onlineProfile&&Number.isFinite(Number(onlineProfile.balance)))?Math.max(balance,Number(onlineProfile.balance)):balance,showroom:car3DShowroom})};
         // Rewards share the account snapshot with the wallet: no separate claim flag can be lost.
         window.NomeraProgressionBridge={
@@ -12300,6 +12343,17 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 else if (stylingTempHood === 'gtr_vents') cost += 55000;
                 else if (stylingTempHood === 'blower') cost += 85000;
             }
+            if (stylingTempFrameStyle !== (car.styling.frameStyle || car.styling.plateFrame || 'none')) {
+                if (stylingTempFrameStyle === 'carbon') cost += 15000;
+                else if (stylingTempFrameStyle === 'chrome') cost += 20000;
+                else if (stylingTempFrameStyle === 'jdm_tilt') cost += 25000;
+                else if (stylingTempFrameStyle === 'fso') cost += 30000;
+                else if (stylingTempFrameStyle === 'neon') cost += 40000;
+                else if (stylingTempFrameStyle === 'gold') cost += 45000;
+            }
+            if (stylingTempPlateStyle !== (car.styling.plateStyle || 'classic')) {
+                if (stylingTempPlateStyle === 'jdm_glow') cost += 35000;
+            }
 
             }
 
@@ -12357,6 +12411,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 suspension: stylingTempSuspension,
                 sgu: stylingTempSgu,
                 plate: finalPlateStr,
+                frameStyle: stylingTempFrameStyle,
+                plateFrame: stylingTempFrameStyle,
+                plateStyle: stylingTempPlateStyle,
                 camber: stylingTempCamber,
                 wheelOffset: stylingTempOffset,
                 neonMode: stylingTempNeonMode,
@@ -20611,6 +20668,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     suspension: stylingTempSuspension,
                     sgu: stylingTempSgu,
                     plate: stylingTempPlate,
+                    frameStyle: stylingTempFrameStyle,
+                    plateFrame: stylingTempFrameStyle,
+                    plateStyle: stylingTempPlateStyle,
                     camber: stylingTempCamber,
                     wheelOffset: stylingTempOffset,
                     neonMode: stylingTempNeonMode,

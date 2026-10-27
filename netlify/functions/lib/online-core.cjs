@@ -358,7 +358,7 @@ function safeCar(raw){
     if (typeof raw.styling.offset==='number' && Number.isFinite(raw.styling.offset)) {
       styling.offset=Math.max(-1,Math.min(1,raw.styling.offset));
     }
-    for (const sk of ['neonMode','bodykit','roofScoop','hood','nitroColor','smokeColor','CustomPaintFinish','paintFinish']) {
+    for (const sk of ['neonMode','bodykit','roofScoop','hood','nitroColor','smokeColor','CustomPaintFinish','paintFinish','frameStyle','plateFrame','plateStyle']) {
       if (typeof raw.styling[sk]==='string' && raw.styling[sk].length<=30) {
         styling[sk]=raw.styling[sk];
       }
