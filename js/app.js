@@ -15650,6 +15650,457 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         window.cancelMarketLotFrom3D = cancelMarketLotFrom3D;
 
         // ==========================================
+        // 📜 КОНТРАКТЫ ОБМЕНА ГОСНОМЕРОВ (TRADE-UP)
+        // ==========================================
+        let tradeUpSelectedIndices = [];
+        let tradeUpFilterTier = 'all';
+        let tradeUpLastResult = null;
+        let tradeUpSigning = false;
+
+        function getTradeUpEligibility(item, idx) {
+            if (!item || !item.text) return { eligible: false, reason: 'Некорректный номер' };
+            const usage = getPlateUsageMeta(item.text);
+            if (usage.status === 'equipped') return { eligible: false, reason: 'Установлен на авто' };
+            if (usage.status === 'market') return { eligible: false, reason: 'Выставлен на рынок' };
+            const bucket = detectPlateRarityBucket(item);
+            return { eligible: true, bucket };
+        }
+
+        function calculateTradeUpOdds() {
+            const items = tradeUpSelectedIndices
+                .map(i => inventory[i])
+                .filter(Boolean);
+
+            if (items.length === 0) {
+                return {
+                    count: 0,
+                    valid: false,
+                    inputTier: null,
+                    outputTier: null,
+                    critChance: 0,
+                    countries: {},
+                    avgPrice: 0,
+                    minVal: 0,
+                    maxVal: 0
+                };
+            }
+
+            const inputBucket = detectPlateRarityBucket(items[0]);
+            const allSame = items.every(it => detectPlateRarityBucket(it) === inputBucket);
+
+            const countryCounts = {};
+            items.forEach(it => {
+                const c = detectPlateCountryBucket(it);
+                countryCounts[c] = (countryCounts[c] || 0) + 1;
+            });
+
+            const countryOdds = {};
+            Object.entries(countryCounts).forEach(([c, cnt]) => {
+                countryOdds[c] = Math.round((cnt / items.length) * 100);
+            });
+
+            const tierLadder = {
+                common: { base: 'Редкий', crit: 'Эпический', critChance: 15, baseClass: 'rare', critClass: 'epic', mult: [1.4, 2.4] },
+                rare: { base: 'Эпический', crit: 'Легендарный', critChance: 15, baseClass: 'epic', critClass: 'legendary', mult: [1.5, 2.8] },
+                epic: { base: 'Легендарный', crit: 'Мифический', critChance: 12, baseClass: 'legendary', critClass: 'mythic', mult: [1.6, 3.2] },
+                legendary: { base: 'Мифический', crit: 'БЛАТНОЙ', critChance: 25, baseClass: 'mythic', critClass: 'blatnoy', mult: [1.8, 4.0] }
+            };
+
+            const cfg = tierLadder[inputBucket] || tierLadder.common;
+            const avgPrice = Math.round(items.reduce((sum, it) => sum + (Number(it.price) || 0), 0) / items.length);
+            const minVal = Math.round(avgPrice * cfg.mult[0]);
+            const maxVal = Math.round(avgPrice * cfg.mult[1]);
+
+            return {
+                count: items.length,
+                valid: allSame,
+                inputTier: inputBucket,
+                outputTier: cfg.base,
+                outputClass: cfg.baseClass,
+                critTier: cfg.crit,
+                critClass: cfg.critClass,
+                critChance: cfg.critChance,
+                countries: countryOdds,
+                avgPrice,
+                minVal,
+                maxVal
+            };
+        }
+
+        function openTradeUpModal(prefillTier = null) {
+            tradeUpSelectedIndices = [];
+            tradeUpLastResult = null;
+            tradeUpSigning = false;
+            if (prefillTier) tradeUpFilterTier = prefillTier;
+
+            const modal = document.getElementById('trade-up-modal');
+            if (modal) {
+                modal.style.display = 'flex';
+                modal.classList.add('show');
+            }
+            const resStage = document.getElementById('trade-up-result-stage');
+            if (resStage) resStage.style.display = 'none';
+
+            renderTradeUpDesk();
+            renderTradeUpInventory();
+        }
+        window.openTradeUpModal = openTradeUpModal;
+
+        function closeTradeUpModal() {
+            const modal = document.getElementById('trade-up-modal');
+            if (modal) {
+                modal.style.display = 'none';
+                modal.classList.remove('show');
+            }
+            tradeUpSigning = false;
+        }
+        window.closeTradeUpModal = closeTradeUpModal;
+
+        function renderTradeUpDesk() {
+            const row = document.getElementById('trade-up-slots-row');
+            if (!row) return;
+
+            const odds = calculateTradeUpOdds();
+            const tierNamesRu = {
+                common: '⚪ Обычный',
+                rare: '🔵 Редкий',
+                epic: '🟣 Эпический',
+                legendary: '🟡 Легендарный'
+            };
+
+            let slotsHtml = '';
+            for (let i = 0; i < 5; i++) {
+                const invIdx = tradeUpSelectedIndices[i];
+                const item = (invIdx !== undefined && inventory[invIdx]) ? inventory[invIdx] : null;
+
+                if (item) {
+                    const pText = String(item.text || '');
+                    const bucket = detectPlateRarityBucket(item);
+                    slotsHtml += `
+                        <div class="ae-tu-slot filled tier-${bucket}" onclick="removeTradeUpSlot(${i})" title="Нажмите, чтобы убрать номер из контракта">
+                            <button type="button" class="ae-tu-slot-remove" aria-label="Убрать">✕</button>
+                            <div class="mini-plate ${getMiniPlateCountryClass(pText)}" style="font-size:12px; padding:2px 6px;">${renderMiniPlateInnerHtml(pText)}</div>
+                            <div class="ae-tu-slot-price">${(Number(item.price) || 0).toLocaleString('ru-RU')} ₽</div>
+                        </div>
+                    `;
+                } else {
+                    slotsHtml += `
+                        <div class="ae-tu-slot empty" onclick="focusTradeUpInventory(${i})" title="Выберите номер из списка ниже">
+                            <span class="ae-tu-slot-plus">+</span>
+                            <span class="ae-tu-slot-num">Слот ${i + 1}</span>
+                        </div>
+                    `;
+                }
+            }
+            row.innerHTML = slotsHtml;
+
+            const inputTierEl = document.getElementById('tu-input-tier-label');
+            const outputTierEl = document.getElementById('tu-output-tier-label');
+            const critEl = document.getElementById('tu-crit-chance-label');
+            const countrySummaryEl = document.getElementById('tu-countries-summary');
+            const countryProgEl = document.getElementById('tu-countries-progress');
+            const valForecastEl = document.getElementById('tu-value-forecast-val');
+            const signBtn = document.getElementById('btn-tu-sign');
+
+            if (odds.count > 0 && odds.valid) {
+                if (inputTierEl) inputTierEl.textContent = tierNamesRu[odds.inputTier] || odds.inputTier;
+                if (outputTierEl) outputTierEl.textContent = `${odds.outputTier} (или ${odds.critTier})`;
+                if (critEl) critEl.textContent = `⚡ ${odds.critChance}% Крит`;
+
+                const countryEntries = Object.entries(odds.countries);
+                if (countrySummaryEl) {
+                    countrySummaryEl.textContent = countryEntries.map(([c, pct]) => `${c}: ${pct}%`).join(' · ');
+                }
+                if (countryProgEl) {
+                    const countryColors = { RUS: '#38bdf8', KZ: '#06b6d4', USA: '#ef4444', UAE: '#10b981', JPN: '#f59e0b' };
+                    countryProgEl.innerHTML = countryEntries.map(([c, pct]) =>
+                        `<div class="ae-tu-c-slice" style="width:${pct}%; background:${countryColors[c] || '#8b5cf6'};" title="${c} ${pct}%"></div>`
+                    ).join('');
+                }
+                if (valForecastEl) {
+                    valForecastEl.textContent = `~ ${odds.minVal.toLocaleString('ru-RU')} – ${odds.maxVal.toLocaleString('ru-RU')} ₽`;
+                }
+            } else {
+                if (inputTierEl) inputTierEl.textContent = odds.count > 0 ? '⚠️ Смешанные ранги' : '—';
+                if (outputTierEl) outputTierEl.textContent = '—';
+                if (critEl) critEl.textContent = '—';
+                if (countrySummaryEl) countrySummaryEl.textContent = 'Заложите 5 номеров';
+                if (countryProgEl) countryProgEl.innerHTML = '';
+                if (valForecastEl) valForecastEl.textContent = '— ₽';
+            }
+
+            if (signBtn) {
+                const canSign = (tradeUpSelectedIndices.length === 5 && odds.valid && !tradeUpSigning);
+                signBtn.disabled = !canSign;
+                signBtn.classList.toggle('active-ready', canSign);
+            }
+        }
+
+        function renderTradeUpInventory() {
+            const grid = document.getElementById('trade-up-inventory-grid');
+            if (!grid) return;
+
+            const selectedSet = new Set(tradeUpSelectedIndices);
+            const activeInputTier = tradeUpSelectedIndices.length > 0 && inventory[tradeUpSelectedIndices[0]]
+                ? detectPlateRarityBucket(inventory[tradeUpSelectedIndices[0]])
+                : null;
+
+            const list = [];
+            inventory.forEach((item, idx) => {
+                const elg = getTradeUpEligibility(item, idx);
+                if (!elg.eligible) return;
+                if (tradeUpFilterTier !== 'all' && elg.bucket !== tradeUpFilterTier) return;
+                list.push({ item, idx, bucket: elg.bucket, isSelected: selectedSet.has(idx), isCompatible: !activeInputTier || elg.bucket === activeInputTier });
+            });
+
+            if (list.length === 0) {
+                grid.innerHTML = `
+                    <div class="ae-tu-empty-inv" style="grid-column: 1/-1; text-align:center; padding:24px; color:var(--text-dim);">
+                        <div style="font-size: 24px; margin-bottom: 4px;">🎒</div>
+                        <div>Нет доступных свободных номеров по выбранному фильтру.</div>
+                    </div>
+                `;
+                return;
+            }
+
+            grid.innerHTML = list.map(({ item, idx, bucket, isSelected, isCompatible }) => {
+                const pText = String(item.text || '');
+                const dimClass = (!isCompatible && !isSelected) ? 'dimmed' : '';
+                const selClass = isSelected ? 'selected' : '';
+                return `
+                    <div class="ae-tu-inv-card tier-${bucket} ${selClass} ${dimClass}" onclick="toggleTradeUpSlot(${idx})" title="${!isCompatible ? 'Другой ранг (несовместим с уже выбранными)' : (isSelected ? 'Убрать из контракта' : 'Добавить в контракт')}">
+                        <div class="mini-plate ${getMiniPlateCountryClass(pText)}" style="font-size:11px; padding:2px 5px;">${renderMiniPlateInnerHtml(pText)}</div>
+                        <div class="ae-tu-inv-card-footer">
+                            <span class="ae-tu-inv-price">${(Number(item.price) || 0).toLocaleString('ru-RU')} ₽</span>
+                            ${isSelected ? '<span class="ae-tu-inv-check">✓ В слоте</span>' : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function toggleTradeUpSlot(invIndex) {
+            if (tradeUpSigning) return;
+            const existingPos = tradeUpSelectedIndices.indexOf(invIndex);
+            if (existingPos !== -1) {
+                tradeUpSelectedIndices.splice(existingPos, 1);
+                playTick();
+            } else {
+                if (tradeUpSelectedIndices.length >= 5) {
+                    notifyUser('Все 5 слотов контракта уже заполнены', 'info');
+                    return;
+                }
+                const item = inventory[invIndex];
+                if (!item) return;
+                const elg = getTradeUpEligibility(item, invIndex);
+                if (!elg.eligible) {
+                    notifyUser(elg.reason || 'Этот номер нельзя заложить в контракт', 'error');
+                    return;
+                }
+                if (tradeUpSelectedIndices.length > 0) {
+                    const firstBucket = detectPlateRarityBucket(inventory[tradeUpSelectedIndices[0]]);
+                    if (elg.bucket !== firstBucket) {
+                        notifyUser('Все 5 номеров в контракте должны быть одного ранга', 'error');
+                        return;
+                    }
+                }
+                tradeUpSelectedIndices.push(invIndex);
+                playTick();
+            }
+            renderTradeUpDesk();
+            renderTradeUpInventory();
+        }
+        window.toggleTradeUpSlot = toggleTradeUpSlot;
+
+        function removeTradeUpSlot(slotPos) {
+            if (tradeUpSigning) return;
+            if (slotPos >= 0 && slotPos < tradeUpSelectedIndices.length) {
+                tradeUpSelectedIndices.splice(slotPos, 1);
+                playTick();
+                renderTradeUpDesk();
+                renderTradeUpInventory();
+            }
+        }
+        window.removeTradeUpSlot = removeTradeUpSlot;
+
+        function clearTradeUpSlots() {
+            if (tradeUpSigning) return;
+            tradeUpSelectedIndices = [];
+            playTick();
+            renderTradeUpDesk();
+            renderTradeUpInventory();
+        }
+        window.clearTradeUpSlots = clearTradeUpSlots;
+
+        function filterTradeUpInventory(tier) {
+            tradeUpFilterTier = tier;
+            document.querySelectorAll('#trade-up-tier-filter-pills .ae-tu-filter-pill').forEach(btn => {
+                btn.classList.toggle('active', btn.getAttribute('data-tier') === tier);
+            });
+            renderTradeUpInventory();
+        }
+        window.filterTradeUpInventory = filterTradeUpInventory;
+
+        function focusTradeUpInventory() {
+            const grid = document.getElementById('trade-up-inventory-grid');
+            if (grid && typeof grid.scrollIntoView === 'function') grid.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+        window.focusTradeUpInventory = focusTradeUpInventory;
+
+        function autoFillTradeUpContract(preferredTier = null) {
+            if (tradeUpSigning) return;
+            const eligibleByTier = { common: [], rare: [], epic: [], legendary: [] };
+
+            inventory.forEach((item, idx) => {
+                const elg = getTradeUpEligibility(item, idx);
+                if (elg.eligible && eligibleByTier[elg.bucket]) {
+                    eligibleByTier[elg.bucket].push({ idx, price: Number(item.price) || 0 });
+                }
+            });
+
+            const tierOrder = preferredTier ? [preferredTier] : ['common', 'rare', 'epic', 'legendary'];
+            let chosenTier = null;
+            for (const t of tierOrder) {
+                if (eligibleByTier[t] && eligibleByTier[t].length >= 5) {
+                    chosenTier = t;
+                    break;
+                }
+            }
+
+            if (!chosenTier) {
+                notifyUser('В инвентаре нет 5 свободных номеров одного ранга для автозаполнения', 'info');
+                return;
+            }
+
+            eligibleByTier[chosenTier].sort((a, b) => a.price - b.price);
+            tradeUpSelectedIndices = eligibleByTier[chosenTier].slice(0, 5).map(x => x.idx);
+            playTick();
+            renderTradeUpDesk();
+            renderTradeUpInventory();
+            notifyUser(`Заполнено 5 номерами ранга «${chosenTier}»`, 'success');
+        }
+        window.autoFillTradeUpContract = autoFillTradeUpContract;
+
+        async function signTradeUpContract() {
+            if (tradeUpSigning) return;
+            if (tradeUpSelectedIndices.length !== 5) {
+                notifyUser('Для контракта необходимо заложить ровно 5 номеров', 'error');
+                return;
+            }
+
+            const items = tradeUpSelectedIndices.map(i => inventory[i]);
+            if (items.some(it => !it)) {
+                notifyUser('Ошибка валидации номеров в контракте', 'error');
+                return;
+            }
+
+            const odds = calculateTradeUpOdds();
+            if (!odds.valid) {
+                notifyUser('Все 5 номеров должны быть одного ранга', 'error');
+                return;
+            }
+
+            tradeUpSigning = true;
+            renderTradeUpDesk();
+
+            // Взвешенный ролл страны
+            const countryPool = [];
+            items.forEach(it => {
+                const c = detectPlateCountryBucket(it);
+                countryPool.push(c);
+            });
+            const wonCountry = randomItem(countryPool) || 'RUS';
+
+            // Ролл на крит
+            const isCrit = (Math.random() * 100) < odds.critChance;
+            const targetRarity = isCrit ? odds.critTier : odds.outputTier;
+
+            // Генерация нового номера
+            const craftedPlate = forcePlate(targetRarity, wonCountry);
+
+            // Гарантируем достойную цену
+            const minReward = Math.round(odds.avgPrice * (isCrit ? 2.5 : 1.4));
+            if (Number(craftedPlate.price) < minReward) {
+                craftedPlate.price = minReward;
+            }
+
+            // Удаляем 5 заложенных номеров (по убыванию индекса, чтобы не сбить смещение)
+            const sortedIndices = [...tradeUpSelectedIndices].sort((a, b) => b - a);
+            sortedIndices.forEach(idx => {
+                inventory.splice(idx, 1);
+            });
+
+            // Добавляем созданный номер в начало инвентаря
+            inventory.unshift(craftedPlate);
+            tradeUpLastResult = craftedPlate;
+
+            // Начисляем опыт и сохраняем прогресс
+            addExp((craftedPlate.rarity && craftedPlate.rarity.text) || 'Супер редкий');
+            saveProgress();
+            renderInventory();
+            updateBadge();
+            syncInventoryAndGarageToCloud();
+
+            // Логируем действие игрока
+            logPlayerActivity('Контракт обмена', `Скрафтил госномер «${craftedPlate.text}» (${craftedPlate.rarity.text}, ${craftedPlate.price.toLocaleString('ru-RU')} ₽)`);
+
+            // Звуки победы
+            playCashSound();
+            playWinJingle((craftedPlate.rarity && craftedPlate.rarity.text) || 'Легендарный');
+
+            // Анимация штампа и показ карточки результата
+            const resStage = document.getElementById('trade-up-result-stage');
+            const plateBox = document.getElementById('trade-up-result-plate-box');
+            const metaBox = document.getElementById('trade-up-result-meta-box');
+            const stamp = document.getElementById('trade-up-stamp');
+
+            if (resStage && plateBox && metaBox) {
+                const syn = (typeof getCarPlateSynergy === 'function' && myCars[0]) ? getCarPlateSynergy(myCars[0].name, craftedPlate) : null;
+                const synHtml = syn ? `<div class="ae-tu-res-syn">✨ Подходит к вашему авто: +${Math.round((Number(syn.bonusMultiplier) || 0) * 100)}% к выплатам</div>` : '';
+
+                plateBox.innerHTML = `
+                    <div class="mini-plate ${getMiniPlateCountryClass(craftedPlate.text)}" style="font-size:22px; padding:6px 16px; display:inline-block;">
+                        ${renderMiniPlateInnerHtml(craftedPlate.text)}
+                    </div>
+                `;
+
+                metaBox.innerHTML = `
+                    <div class="ae-tu-res-title ${isCrit ? 'is-crit' : ''}">${isCrit ? '⚡ КРИТИЧЕСКИЙ УСПЕХ!' : '✅ КОНТРАКТ ИСПОЛНЕН!'}</div>
+                    <div class="ae-tu-res-rarity">Редкость: <strong>${escapeHtml(craftedPlate.rarity.text)}</strong></div>
+                    <div class="ae-tu-res-price">Оценочная стоимость: <strong>${Number(craftedPlate.price).toLocaleString('ru-RU')} ₽</strong></div>
+                    ${synHtml}
+                `;
+
+                if (stamp) {
+                    stamp.textContent = isCrit ? 'ДЖЕКПОТ' : 'ОДОБРЕНО';
+                    stamp.className = `ae-tu-stamp ${isCrit ? 'crit' : 'approved'}`;
+                }
+
+                resStage.style.display = 'flex';
+            }
+
+            tradeUpSelectedIndices = [];
+            tradeUpSigning = false;
+            renderTradeUpDesk();
+        }
+        window.signTradeUpContract = signTradeUpContract;
+
+        function claimTradeUpResult() {
+            const resStage = document.getElementById('trade-up-result-stage');
+            if (resStage) resStage.style.display = 'none';
+            closeTradeUpModal();
+            notifyUser(`Госномер «${tradeUpLastResult?.text || ''}» добавлен в ваш инвентарь!`, 'success');
+        }
+        window.claimTradeUpResult = claimTradeUpResult;
+
+        function repeatTradeUpContract() {
+            const resStage = document.getElementById('trade-up-result-stage');
+            if (resStage) resStage.style.display = 'none';
+            autoFillTradeUpContract();
+        }
+        window.repeatTradeUpContract = repeatTradeUpContract;
+
+        // ==========================================
         // 🎮 МИНИ-ИГРА: «ТРАССА 777: НОЧНОЙ ФОРСАЖ»
         // ==========================================
 
