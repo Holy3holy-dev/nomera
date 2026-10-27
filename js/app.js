@@ -4514,11 +4514,18 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                         ? Car3DManager.getSideThumbnail(car.name, car.styling)
                         : null;
                     const carThumbSrc = thumb3d || getCarSpriteDataUrl(car.name, car.styling);
+                    const upg = car.upgrades || {};
+                    const totalStage = (Number(upg.engine) || 0) + (Number(upg.handling) || 0) + (Number(upg.nitro) || 0) + (Number(upg.economy) || 0);
+                    const proCount = Array.isArray(car.ownedProParts) ? car.ownedProParts.length : 0;
+                    const tuneSummary = (totalStage > 0 || proCount > 0)
+                        ? ` · Тюнинг ${totalStage}/20${proCount > 0 ? ` + ${proCount} Pro` : ''}`
+                        : '';
+                    const sellerTargetKey = lot.sellerKey || sanitizeKey(lot.sellerName || '');
 
                     html += `
                         <div class="market-card">
                             <div class="market-card-seller">
-                                <div class="market-seller-badge">
+                                <div class="market-seller-badge ae-clickable-player" onclick="openPlayerViewModal(${jsArg(sellerTargetKey)}, { nickname: ${jsArg(lot.sellerName || 'Игрок')}, avatarData: ${jsArg(sellerAvatar)} })" title="Открыть паспорт и гараж продавца">
                                     <img src="${imageSrc(sellerAvatar)}" class="market-seller-avatar" onerror="handleAvatarError(this, 0)">
                                     <span>${escapeHtml(lot.sellerName)}</span>
                                     ${isMine ? '<span style="font-size:10px; background:var(--accent-green); color:#000; padding:1px 6px; border-radius:var(--radius-full); font-weight:800;">ВЫ</span>' : ''}
@@ -4528,11 +4535,11 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
                             <div style="text-align:center; margin:6px 0;">
                                 <div style="font-size:15px; font-weight:800; color:#fff;">🏎️ ${escapeHtml(car.name)} ${stylingBadge}</div>
-                                <div class="car-img-wrap" style="height: 110px; border-radius: var(--radius-sm); margin: 6px 0;">
+                                <div class="car-img-wrap ae-market-car-preview-trigger" style="height: 110px; border-radius: var(--radius-sm); margin: 6px 0; cursor: pointer;" onclick="inspectMarketCar3D(${jsArg(lot.lotId)})" title="Нажмите для интерактивного 3D-осмотра автомобиля">
                                     <img src="${carThumbSrc}" class="car-img car-sprite-img" alt="${escapeHtml(car.name)}">
                                 </div>
                                 ${plateHtml}
-                                <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">Состояние: ${Math.round(car.condition || 100)}%</div>
+                                <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">Состояние: ${Math.round(car.condition || 100)}%${escapeHtml(tuneSummary)}</div>
                             </div>
 
                             <div class="market-price-tag">
@@ -4540,10 +4547,11 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                                 <span>${lot.price.toLocaleString('ru-RU')} ₽</span>
                             </div>
 
-                            <div>
+                            <div class="ae-market-card-actions" style="display:flex; gap:6px; flex-wrap:wrap;">
+                                <button type="button" class="btn btn-blue ae-btn-inspect-3d" style="flex:1 1 110px; padding:8px 10px; font-size:12px; margin:0;" onclick="inspectMarketCar3D(${jsArg(lot.lotId)})">🔍 Осмотреть в 3D</button>
                                 ${isMine
-                                    ? `<button class="btn btn-close" style="width:100%; padding:8px; font-size:12px;" onclick="cancelMarketLot(${jsArg(lot.lotId)})">Снять авто с продажи</button>`
-                                    : `<button class="btn btn-green" style="width:100%; padding:9px; font-size:13px;" onclick="buyMarketLot(${jsArg(lot.lotId)})">🛒 Купить авто</button>`
+                                    ? `<button type="button" class="btn btn-close" style="flex:1 1 130px; padding:8px 10px; font-size:12px; margin:0;" onclick="cancelMarketLot(${jsArg(lot.lotId)})">Снять авто с продажи</button>`
+                                    : `<button type="button" class="btn btn-green" style="flex:1 1 130px; padding:9px 10px; font-size:12px; margin:0;" onclick="buyMarketLot(${jsArg(lot.lotId)})">🛒 Купить авто</button>`
                                 }
                             </div>
                         </div>
@@ -4551,11 +4559,12 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 } else {
                     const plate = lot.plate;
                     const r = getRarity(Number(plate.price) || 0) || { text: 'Обычный', bg: '#fff', color: '#000', border: '1px solid black', glow: 'none' };
+                    const sellerTargetKey = lot.sellerKey || sanitizeKey(lot.sellerName || '');
 
                     html += `
                         <div class="market-card">
                             <div class="market-card-seller">
-                                <div class="market-seller-badge">
+                                <div class="market-seller-badge ae-clickable-player" onclick="openPlayerViewModal(${jsArg(sellerTargetKey)}, { nickname: ${jsArg(lot.sellerName || 'Игрок')}, avatarData: ${jsArg(sellerAvatar)} })" title="Открыть паспорт и гараж продавца">
                                     <img src="${imageSrc(sellerAvatar)}" class="market-seller-avatar" onerror="handleAvatarError(this, 0)">
                                     <span>${escapeHtml(lot.sellerName)}</span>
                                     ${isMine ? '<span style="font-size:10px; background:var(--accent-green); color:#000; padding:1px 6px; border-radius:var(--radius-full); font-weight:800;">ВЫ</span>' : ''}
@@ -4617,12 +4626,13 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     const isMine = (m.senderKey === sanitizeKey(nickname));
                     const timeStr = m.timestamp ? new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
                     const titleBadgeHtml = getPlayerBadgeHtml(m.senderTitle, m.isAdmin || m.senderKey === 'h3h');
+                    const chatSenderKey = m.senderKey || sanitizeKey(m.senderName || '');
                     html += `
                         <div class="chat-bubble ${isMine ? 'mine' : ''}">
-                            <div class="chat-author">
+                            <div class="chat-author ae-clickable-player" onclick="openPlayerViewModal(${jsArg(chatSenderKey)}, { nickname: ${jsArg(m.senderName || 'Игрок')}, avatarData: ${jsArg(m.senderAvatar || '')}, playerTitle: ${jsArg(m.senderTitle || 'none')} })" title="Открыть паспорт и гараж игрока">
                                 <img src="${imageSrc(m.senderAvatar || DEFAULT_AVATAR)}" class="chat-author-avatar" onerror="handleAvatarError(this, 0)">
                                 ${titleBadgeHtml}
-                                <span>${escapeHtml(m.senderName)}</span>
+                                <span class="ae-chat-author-name">${escapeHtml(m.senderName)}</span>
                                 <span style="font-weight:400; opacity:0.6; margin-left:auto;">${timeStr}</span>
                             </div>
                             <div>${escapeHtml(m.text)}</div>
@@ -14960,7 +14970,199 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             }
         }
 
+        let currentInspectedPlayer = null;
+        let currentInspectedPlayerCars = [];
+        let market3DShowroom = null;
+        let market3DActiveViewMode = 'isometric';
+        let market3DCurrentCar = null;
+        let market3DCurrentMeta = null;
+
+        function buildRepresentativePlayerGarage(player, userKey, playerLots) {
+            if (Array.isArray(player?.myCars) && player.myCars.length > 0) {
+                return player.myCars;
+            }
+            if (Array.isArray(player?.garagePreview) && player.garagePreview.length > 0) {
+                return player.garagePreview;
+            }
+            const carLots = (playerLots || []).filter(l => l.type === 'car' && l.car && l.car.name).map(l => l.car);
+            const targetCount = Math.max(carLots.length, Math.min(6, Number(player?.carsCount) || 1));
+            const presetsByKey = {
+                alex_777: [
+                    { name: 'Bugatti Chiron Super Sport', color: '#0f172a', wheels: 'bbs_gtr', spoiler: 'gtr', bodykit: 'widebody', neon: '#00f0ff', plate: player?.bestPlate || 'А 777 АА | 77 RUS', engine: 5, handling: 5, nitro: 5, pro: ['junkmanEngine', 'junkmanTurbo'] },
+                    { name: 'Mercedes-Benz G63 AMG «Гелик»', color: '#111827', wheels: 'forged', spoiler: 'none', suspension: 'bpan', sgu: 'installed', plate: 'А 001 МР | 97 RUS', engine: 4, handling: 4, nitro: 3, pro: ['junkmanEngine'] },
+                    { name: 'BMW M5 F90 Competition', color: '#1e3a8a', wheels: 'bbs', spoiler: 'ducktail', bodykit: 'street', plate: 'Е 777 КХ | 77 RUS', engine: 5, handling: 4, nitro: 4, pro: [] }
+                ],
+                speeddemon: [
+                    { name: 'Koenigsegg Jesko Attack', color: '#dc2626', wheels: 'bbs_gtr', spoiler: 'gtr', bodykit: 'nfsmw_gtr', neon: '#ff0055', plate: player?.bestPlate || 'В 001 ОР | 777 RUS', engine: 5, handling: 5, nitro: 5, pro: ['junkmanEngine', 'junkmanTurbo', 'junkmanTires', 'junkmanNitro'] },
+                    { name: 'BMW M3 E46 GTR', color: '#e2e8f0', wheels: 'bbs_gtr', spoiler: 'gtr', bodykit: 'nfsmw_gtr', vinyl: 'mw_m3gtr', plate: 'М 003 МР | 77 RUS', engine: 5, handling: 5, nitro: 5, pro: ['junkmanEngine', 'junkmanTurbo'] }
+                ],
+                smotra_ru: [
+                    { name: 'Porsche 911 Turbo S', color: '#eab308', wheels: 'forged', spoiler: 'gt', bodykit: 'widebody', plate: player?.bestPlate || 'Е 777 КХ | 99 RUS', engine: 4, handling: 5, nitro: 4, pro: ['junkmanTires'] },
+                    { name: 'BMW M8 Gran Coupe', color: '#064e3b', wheels: 'bbs', spoiler: 'ducktail', plate: 'С 777 СС | 77 RUS', engine: 4, handling: 4, nitro: 3, pro: [] }
+                ],
+                bimmer_m5: [
+                    { name: 'BMW M5 F90 Competition', color: '#172554', wheels: 'bbs_gtr', spoiler: 'ducktail', bodykit: 'street', sgu: 'installed', plate: player?.bestPlate || 'М 555 ММ | 77 RUS', engine: 5, handling: 4, nitro: 4, pro: ['junkmanEngine'] },
+                    { name: 'BMW M5 E60 V10', color: '#09090b', wheels: 'bbs', spoiler: 'none', plate: 'В 555 ВВ | 77 RUS', engine: 4, handling: 3, nitro: 3, pro: [] }
+                ]
+            };
+            const list = [...carLots];
+            const preset = presetsByKey[userKey] || [];
+            for (const p of preset) {
+                if (list.length >= targetCount) break;
+                if (list.some(c => c.name === p.name)) continue;
+                const tmpl = carsData.find(c => c.name === p.name) || carsData[0];
+                list.push({
+                    name: tmpl.name,
+                    category: tmpl.category || 'Спорт',
+                    basePrice: tmpl.price,
+                    condition: 98,
+                    plate: p.plate ? { text: p.plate, price: 250000 } : null,
+                    ownedProParts: p.pro || [],
+                    upgrades: { engine: p.engine || 3, handling: p.handling || 3, economy: 2, nitro: p.nitro || 3 },
+                    styling: {
+                        color: p.color || '#1e293b',
+                        tint: 85,
+                        wheels: p.wheels || 'bbs',
+                        spoiler: p.spoiler || 'none',
+                        bodykit: p.bodykit || 'stock',
+                        vinyl: p.vinyl || 'none',
+                        suspension: p.suspension || 'sport',
+                        sgu: p.sgu || 'none',
+                        neon: p.neon || 'none'
+                    }
+                });
+            }
+            const fallbackPool = ['Toyota Mark II Tourer V', 'BMW M5 F90 Competition', 'Porsche 911 Turbo S', 'Mercedes-Benz G63 AMG «Гелик»', 'Nissan GT-R R35 Nismo', 'ВАЗ-2107 «Жигули»'];
+            let seed = 0;
+            for (let i = 0; i < String(userKey || '').length; i++) seed = (seed * 31 + String(userKey).charCodeAt(i)) >>> 0;
+            while (list.length < targetCount) {
+                const pickName = fallbackPool[(seed + list.length * 2) % fallbackPool.length];
+                const tmpl = carsData.find(c => c.name === pickName) || carsData[0];
+                const isFirst = list.length === 0;
+                list.push({
+                    name: tmpl.name,
+                    category: tmpl.category || 'Спорт',
+                    basePrice: tmpl.price,
+                    condition: 94 + (list.length % 6),
+                    plate: (isFirst && player?.bestPlate && player.bestPlate !== '—') ? { text: player.bestPlate, price: 180000 } : null,
+                    ownedProParts: isFirst && (Number(player?.playerLevel) || 1) >= 30 ? ['junkmanEngine'] : [],
+                    upgrades: { engine: Math.min(5, 1 + (seed % 4)), handling: Math.min(5, 1 + ((seed >> 2) % 4)), economy: 1, nitro: 2 },
+                    styling: {
+                        color: ['#1e293b', '#991b1b', '#065f46', '#1e3a8a', '#f8fafc'][(seed + list.length) % 5],
+                        tint: 50,
+                        wheels: ['bbs', 'forged', 'deepdish', 'stock'][list.length % 4],
+                        spoiler: ['ducktail', 'gt', 'none'][list.length % 3],
+                        bodykit: list.length === 0 ? 'street' : 'stock',
+                        suspension: 'lowered',
+                        neon: 'none'
+                    }
+                });
+            }
+            return list;
+        }
+
         function renderPlayerViewModal(player) {
+            if (!player) return;
+            currentInspectedPlayer = player;
+            const userKey = sanitizeKey(player.nickname || '');
+            const playerLots = Object.entries(marketLots || {})
+                .filter(([_, lot]) => lot && (lot.sellerKey === userKey || sanitizeKey(lot.sellerName || '') === userKey))
+                .map(([id, lot]) => ({ ...lot, lotId: id }));
+            currentInspectedPlayerCars = buildRepresentativePlayerGarage(player, userKey, playerLots);
+
+            const titleBadgeEl = document.getElementById('pv-title-badge');
+            if (titleBadgeEl) {
+                const titleHtml = getPlayerBadgeHtml(player.playerTitle || 'none', player.isAdmin || userKey === 'h3h');
+                if (titleHtml) {
+                    titleBadgeEl.innerHTML = titleHtml;
+                    titleBadgeEl.innerText = titleBadgeEl.textContent = titleHtml.replace(/<[^>]+>/g, '').trim();
+                    titleBadgeEl.style.display = 'inline-flex';
+                } else {
+                    const fallbackTitle = (Number(player.playerLevel) || 1) >= 40 ? '🏆 Легенда дорог' : ((Number(player.playerLevel) || 1) >= 20 ? '🏎️ Стритрейсер' : '🔰 Автолюбитель');
+                    titleBadgeEl.innerHTML = `<span class="chat-title-pill" style="border-color:var(--accent-gold);color:var(--accent-gold);">${fallbackTitle}</span>`;
+                    titleBadgeEl.innerText = titleBadgeEl.textContent = fallbackTitle;
+                    titleBadgeEl.style.display = 'inline-flex';
+                }
+            }
+
+            const garageListEl = document.getElementById('pv-garage-list');
+            if (garageListEl) {
+                if (currentInspectedPlayerCars.length === 0) {
+                    garageListEl.innerHTML = `<div class="ae-pv-empty">В гараже пока нет автомобилей</div>`;
+                } else {
+                    garageListEl.innerHTML = currentInspectedPlayerCars.map((car, idx) => {
+                        const thumb3d = (typeof Car3DManager !== 'undefined' && typeof Car3DManager.getSideThumbnail === 'function')
+                            ? Car3DManager.getSideThumbnail(car.name, car.styling)
+                            : null;
+                        const carThumb = thumb3d || getCarSpriteDataUrl(car.name, car.styling);
+                        const pText = car.plate && (car.plate.text || car.plate);
+                        const plateBadge = pText
+                            ? `<div class="mini-plate ${getMiniPlateCountryClass(pText)}" style="font-size:11px; padding:2px 6px;">${renderMiniPlateInnerHtml(pText)}</div>`
+                            : `<small style="color:var(--text-dim);">Без госномера</small>`;
+                        const upg = car.upgrades || {};
+                        const stageSum = (Number(upg.engine) || 0) + (Number(upg.handling) || 0) + (Number(upg.nitro) || 0) + (Number(upg.economy) || 0);
+                        const proCount = Array.isArray(car.ownedProParts) ? car.ownedProParts.length : 0;
+                        return `
+                            <div class="ae-pv-car-card">
+                                <div class="ae-pv-car-thumb-wrap" onclick="inspectPlayerGarageCar3D(${idx})" title="Осмотреть в 3D">
+                                    <img src="${carThumb}" alt="${escapeHtml(car.name)}" class="ae-pv-car-thumb">
+                                </div>
+                                <div class="ae-pv-car-body">
+                                    <div class="ae-pv-car-title">${escapeHtml(car.name)}</div>
+                                    <div class="ae-pv-car-meta">Сост. ${Math.round(car.condition ?? 100)}% · Тюнинг ${stageSum}/20${proCount > 0 ? ` · Stage+ (${proCount})` : ''}</div>
+                                    <div style="margin:4px 0;">${plateBadge}</div>
+                                    <button type="button" class="btn btn-blue ae-pv-inspect-btn" onclick="inspectPlayerGarageCar3D(${idx})">🔍 Осмотреть в 3D</button>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                }
+            }
+
+            const mktCountEl = document.getElementById('pv-market-count');
+            if (mktCountEl) mktCountEl.textContent = `${playerLots.length} шт.`;
+            const mktListEl = document.getElementById('pv-market-list');
+            if (mktListEl) {
+                if (playerLots.length === 0) {
+                    mktListEl.innerHTML = `<div class="ae-pv-empty">Нет активных объявлений на рынке</div>`;
+                } else {
+                    const isMe = (userKey === sanitizeKey(nickname));
+                    mktListEl.innerHTML = playerLots.map(lot => {
+                        if (lot.type === 'car' && lot.car) {
+                            return `
+                                <div class="ae-pv-lot-row">
+                                    <div>
+                                        <strong>🏎️ ${escapeHtml(lot.car.name)}</strong>
+                                        <small style="display:block; color:var(--text-muted);">${Number(lot.price || 0).toLocaleString('ru-RU')} ₽</small>
+                                    </div>
+                                    <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                                        <button type="button" class="btn btn-blue" style="width:auto; padding:6px 10px; font-size:11px; margin:0;" onclick="inspectMarketCar3D(${jsArg(lot.lotId)})">🔍 3D</button>
+                                        ${isMe
+                                            ? `<button type="button" class="btn btn-close" style="width:auto; padding:6px 10px; font-size:11px; margin:0;" onclick="cancelMarketLotFrom3D(${jsArg(lot.lotId)})">Снять</button>`
+                                            : `<button type="button" class="btn btn-green" style="width:auto; padding:6px 10px; font-size:11px; margin:0;" onclick="buyMarketLotFrom3D(${jsArg(lot.lotId)})">🛒 Купить</button>`
+                                        }
+                                    </div>
+                                </div>
+                            `;
+                        }
+                        const pText = lot.plate?.text || 'Номер';
+                        return `
+                            <div class="ae-pv-lot-row">
+                                <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                                    <span class="mini-plate ${getMiniPlateCountryClass(pText)}" style="font-size:12px; padding:2px 8px;">${renderMiniPlateInnerHtml(pText)}</span>
+                                    <strong style="color:#fbbf24;">${Number(lot.price || 0).toLocaleString('ru-RU')} ₽</strong>
+                                </div>
+                                <div>
+                                    ${isMe
+                                        ? `<button type="button" class="btn btn-close" style="width:auto; padding:6px 10px; font-size:11px; margin:0;" onclick="cancelMarketLotFrom3D(${jsArg(lot.lotId)})">Снять</button>`
+                                        : `<button type="button" class="btn btn-green" style="width:auto; padding:6px 10px; font-size:11px; margin:0;" onclick="buyMarketLotFrom3D(${jsArg(lot.lotId)})">🛒 Купить</button>`
+                                    }
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                }
+            }
             if (!player) return;
             const modalAvatar = document.getElementById('pv-avatar');
             if (modalAvatar) {
@@ -15000,27 +15202,452 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             if (modal) modal.classList.add('show');
         }
 
-        function openPlayerViewModal(userKey) {
+        function openPlayerViewModal(userKey, fallbackMeta) {
+            const cleanKey = sanitizeKey(userKey || (fallbackMeta && fallbackMeta.nickname) || '');
             let baseList = (cloudLeaderboardList && cloudLeaderboardList.length > 0) ? [...cloudLeaderboardList] : [...mockOtherPlayers];
             baseList = baseList.filter(p => sanitizeKey(p && p.nickname) !== sanitizeKey(nickname));
             const mySpeed = (typeof getRaceRecords === 'function' ? getRaceRecords().bestSpeed : 0) || 0;
 
-            const allPlayers = [{
-                nickname: nickname, balance: (onlineProfile && Number.isFinite(Number(onlineProfile.balance))) ? Number(onlineProfile.balance) : balance, playerLevel, avatarData: avatarData || '', bestPlate: getBestPlate(), carsCount: myCars.length, bestSpeed: Math.round(mySpeed), updatedAt: Date.now()
-            }, ...baseList];
-
-            const player = allPlayers.find(p => sanitizeKey(p && p.nickname || '') === userKey);
-            if (player) {
-                renderPlayerViewModal(player);
+            const meEntry = {
+                nickname: nickname,
+                balance: (onlineProfile && Number.isFinite(Number(onlineProfile.balance))) ? Number(onlineProfile.balance) : balance,
+                playerLevel,
+                playerTitle: playerTitle || 'none',
+                avatarData: avatarData || '',
+                bestPlate: getBestPlate(),
+                carsCount: myCars.length,
+                myCars: myCars,
+                bestSpeed: Math.round(mySpeed),
+                updatedAt: Date.now()
+            };
+            if (cleanKey && cleanKey === sanitizeKey(nickname)) {
+                renderPlayerViewModal(meEntry);
                 return;
             }
-            if (db && typeof db.ref === 'function') {
-                db.ref('leaderboard/' + userKey).once('value').then(snap => {
-                    const val = snap.val();
-                    if (val) renderPlayerViewModal(val);
+
+            const allPlayers = [meEntry, ...baseList];
+            let found = allPlayers.find(p => sanitizeKey(p && p.nickname || '') === cleanKey);
+
+            // Also enrich from chat messages and active market lots
+            const chatMsg = (chatMessagesList || []).find(m => m && !m.isSystem && (m.senderKey === cleanKey || sanitizeKey(m.senderName || '') === cleanKey));
+            const mktLots = Object.values(marketLots || {}).filter(l => l && (l.sellerKey === cleanKey || sanitizeKey(l.sellerName || '') === cleanKey));
+            const mktFirst = mktLots[0] || null;
+            const mktPlate = mktLots.find(l => l.type !== 'car' && l.plate?.text)?.plate?.text
+                || mktLots.find(l => l.type === 'car' && l.car?.plate?.text)?.car?.plate?.text
+                || '—';
+            const mktCars = mktLots.filter(l => l.type === 'car' && l.car).map(l => l.car);
+
+            const mergedLocal = {
+                nickname: found?.nickname || fallbackMeta?.nickname || chatMsg?.senderName || mktFirst?.sellerName || userKey || 'Игрок',
+                balance: found?.balance ?? fallbackMeta?.balance ?? 250000,
+                playerLevel: found?.playerLevel ?? fallbackMeta?.playerLevel ?? 5,
+                playerTitle: found?.playerTitle || fallbackMeta?.playerTitle || chatMsg?.senderTitle || 'none',
+                avatarData: found?.avatarData || fallbackMeta?.avatarData || chatMsg?.senderAvatar || mktFirst?.sellerAvatar || '',
+                bestPlate: (found?.bestPlate && found.bestPlate !== '—') ? found.bestPlate : mktPlate,
+                carsCount: Math.max(Number(found?.carsCount) || 0, Array.isArray(found?.myCars) ? found.myCars.length : 0, mktCars.length, 1),
+                myCars: Array.isArray(found?.myCars) && found.myCars.length > 0 ? found.myCars : undefined,
+                bestSpeed: found?.bestSpeed || 0,
+                updatedAt: found?.updatedAt || chatMsg?.timestamp || mktFirst?.createdAt || Date.now()
+            };
+            renderPlayerViewModal(mergedLocal);
+
+            if (db && typeof db.ref === 'function' && !isAuthorsSandbox()) {
+                Promise.allSettled([
+                    db.ref('onlineV4/accounts/' + cleanKey).once('value'),
+                    db.ref('users/' + cleanKey).once('value'),
+                    db.ref('leaderboard/' + cleanKey).once('value')
+                ]).then(results => {
+                    const acc = results[0]?.status === 'fulfilled' && results[0].value ? results[0].value.val() : null;
+                    const usr = results[1]?.status === 'fulfilled' && results[1].value ? results[1].value.val() : null;
+                    const lb = results[2]?.status === 'fulfilled' && results[2].value ? results[2].value.val() : null;
+                    if (!acc && !usr && !lb) return;
+                    const cloudCars = (Array.isArray(acc?.myCars) && acc.myCars.length > 0)
+                        ? acc.myCars
+                        : ((Array.isArray(usr?.myCars) && usr.myCars.length > 0) ? usr.myCars : mergedLocal.myCars);
+                    const cloudInv = Array.isArray(acc?.inventory) ? acc.inventory : (Array.isArray(usr?.inventory) ? usr.inventory : []);
+                    let cloudBestPlate = lb?.bestPlate || mergedLocal.bestPlate || '—';
+                    if ((!cloudBestPlate || cloudBestPlate === '—') && cloudInv.length > 0) {
+                        const sortedP = [...cloudInv].sort((a, b) => (Number(b?.price) || 0) - (Number(a?.price) || 0));
+                        if (sortedP[0]?.text) cloudBestPlate = sortedP[0].text;
+                    }
+                    const enriched = {
+                        ...mergedLocal,
+                        ...(lb || {}),
+                        nickname: acc?.nickname || usr?.nickname || lb?.nickname || mergedLocal.nickname,
+                        balance: Number.isFinite(Number(acc?.balance)) ? Number(acc.balance) : (Number.isFinite(Number(lb?.balance)) ? Number(lb.balance) : mergedLocal.balance),
+                        playerLevel: Number(acc?.playerLevel || usr?.playerLevel || lb?.playerLevel || mergedLocal.playerLevel || 1),
+                        playerTitle: acc?.playerTitle || usr?.playerTitle || lb?.playerTitle || mergedLocal.playerTitle || 'none',
+                        avatarData: acc?.avatarData || usr?.avatarData || lb?.avatarData || mergedLocal.avatarData || '',
+                        bestPlate: cloudBestPlate,
+                        carsCount: Array.isArray(cloudCars) && cloudCars.length > 0 ? cloudCars.length : (Number(lb?.carsCount) || mergedLocal.carsCount),
+                        myCars: cloudCars,
+                        bestSpeed: Number(lb?.bestSpeed || usr?.bestSpeed || mergedLocal.bestSpeed || 0),
+                        updatedAt: Number(acc?.updatedAt || lb?.updatedAt || usr?.updatedAt || mergedLocal.updatedAt)
+                    };
+                    if (currentInspectedPlayer && sanitizeKey(currentInspectedPlayer.nickname || '') === cleanKey) {
+                        renderPlayerViewModal(enriched);
+                    }
                 }).catch(() => {});
             }
         }
+        window.openPlayerViewModal = openPlayerViewModal;
+
+        function normalizeExternalCarStyling(car) {
+            const st = car?.styling || {};
+            const pText = (car?.plate && (car.plate.text || car.plate)) || (car?.attachedPlate && (car.attachedPlate.text || car.attachedPlate)) || st.plate || 'none';
+            return {
+                color: st.color || '#ffffff',
+                tint: st.tint ?? 0,
+                neon: st.neon || car?.neon || 'none',
+                spoiler: st.spoiler || car?.spoiler || 'none',
+                vinyl: st.vinyl || car?.vinyl || 'none',
+                ...(window.NOMERA_AUTHORS_PREVIEW && window.NomeraLivery && st.livery ? { livery: window.NomeraLivery.normalize(st.livery) } : {}),
+                wheels: st.wheels || car?.wheels || 'stock',
+                suspension: st.suspension || 'stock',
+                stanceMode: st.stanceMode || 'stock',
+                sgu: st.sgu || 'none',
+                fsoStrobes: Boolean(st.fsoStrobes),
+                plate: pText,
+                camber: Number(st.camber ?? 0),
+                wheelOffset: Number(st.wheelOffset ?? st.offset ?? 0),
+                neonMode: st.neonMode || 'solid',
+                bodykit: st.bodykit || car?.bodykit || 'stock',
+                roofScoop: st.roofScoop || 'none',
+                hood: st.hood || 'stock',
+                nitroColor: st.nitroColor || 'blue',
+                smokeColor: st.smokeColor || 'white'
+            };
+        }
+
+        function updateMarket3DButtonsState() {
+            if (!market3DShowroom) return;
+            document.getElementById('btn-m3d-doors')?.classList.toggle('active', !!market3DShowroom.doorsOpen);
+            document.getElementById('btn-m3d-hood')?.classList.toggle('active', !!market3DShowroom.hoodOpen);
+            document.getElementById('btn-m3d-trunk')?.classList.toggle('active', !!market3DShowroom.trunkOpen);
+            document.getElementById('btn-m3d-lights')?.classList.toggle('active', !!market3DShowroom.headlightsOn);
+            document.getElementById('btn-m3d-view-autorotate')?.classList.toggle('active', !!(market3DShowroom.options && market3DShowroom.options.autoRotate));
+        }
+
+        function setMarket3DViewMode(mode) {
+            const wrap3D = document.getElementById('market-3d-preview-wrap');
+            const fallbackImg = document.getElementById('market-3d-fallback-img');
+            const toolbar = document.getElementById('market-3d-toolbar');
+            const viewSwitch = document.getElementById('market-3d-view-switch');
+
+            if (mode === '2d') {
+                market3DActiveViewMode = '2d';
+                if (wrap3D) wrap3D.style.display = 'none';
+                if (fallbackImg) fallbackImg.style.display = 'block';
+                if (toolbar) toolbar.style.display = 'none';
+                if (viewSwitch) {
+                    const btns = viewSwitch.querySelectorAll ? viewSwitch.querySelectorAll('button') : [];
+                    for (const b of btns) {
+                        b.classList.toggle('active', b.getAttribute('data-view') === '2d');
+                    }
+                }
+                return;
+            }
+
+            if (fallbackImg) fallbackImg.style.display = 'none';
+            if (wrap3D) wrap3D.style.display = 'block';
+            if (toolbar) toolbar.style.display = 'flex';
+            if (viewSwitch) {
+                const btns = viewSwitch.querySelectorAll ? viewSwitch.querySelectorAll('button') : [];
+                for (const b of btns) {
+                    b.classList.toggle('active', b.getAttribute('data-view') === '3d');
+                }
+            }
+
+            const preset = (!mode || mode === '3d') ? 'isometric' : mode;
+            market3DActiveViewMode = preset;
+            document.getElementById('btn-m3d-view-3d')?.classList.toggle('active', preset === 'isometric');
+            document.getElementById('btn-m3d-view-front')?.classList.toggle('active', preset === 'front');
+            document.getElementById('btn-m3d-view-side')?.classList.toggle('active', preset === 'side');
+            document.getElementById('btn-m3d-view-rear')?.classList.toggle('active', preset === 'rear');
+            document.getElementById('btn-m3d-view-top')?.classList.toggle('active', preset === 'top');
+            const btnPlate = document.getElementById('btn-m3d-view-plate');
+            if (btnPlate) {
+                const isPlate = (preset === 'plate_front' || preset === 'plate_rear');
+                btnPlate.classList.toggle('active', isPlate);
+                btnPlate.textContent = preset === 'plate_rear' ? '🏷️ Номер (Зад)' : (preset === 'plate_front' ? '🏷️ Номер (Перед)' : '🏷️ Номер');
+            }
+            if (market3DShowroom && typeof market3DShowroom.setViewPreset === 'function') {
+                market3DShowroom.setViewPreset(preset);
+            }
+        }
+        window.setMarket3DViewMode = setMarket3DViewMode;
+
+        function toggleMarket3DPlateView() {
+            const next = (market3DActiveViewMode === 'plate_front') ? 'plate_rear' : 'plate_front';
+            setMarket3DViewMode(next);
+            playTick();
+        }
+        window.toggleMarket3DPlateView = toggleMarket3DPlateView;
+
+        function toggleMarket3DAutoRotate() {
+            if (!market3DShowroom || typeof market3DShowroom.toggleAutoRotate !== 'function') return;
+            const on = market3DShowroom.toggleAutoRotate();
+            document.getElementById('btn-m3d-view-autorotate')?.classList.toggle('active', on);
+            playTick();
+        }
+        window.toggleMarket3DAutoRotate = toggleMarket3DAutoRotate;
+
+        function toggleMarket3DDoors() {
+            if (!market3DShowroom) return;
+            if (typeof market3DShowroom.hasCapability === 'function' && !market3DShowroom.hasCapability('doors')) {
+                notifyUser('У данной 3D модели гоночный монолитный кузов (двери зафиксированы)', 'info');
+                return;
+            }
+            const on = market3DShowroom.toggleDoors();
+            document.getElementById('btn-m3d-doors')?.classList.toggle('active', on);
+            playTick();
+        }
+        window.toggleMarket3DDoors = toggleMarket3DDoors;
+
+        function toggleMarket3DHood() {
+            if (!market3DShowroom) return;
+            if (typeof market3DShowroom.hasCapability === 'function' && !market3DShowroom.hasCapability('hood')) {
+                notifyUser('У данной 3D модели гоночный монокок (капот зафиксирован)', 'info');
+                return;
+            }
+            const on = market3DShowroom.toggleHood();
+            document.getElementById('btn-m3d-hood')?.classList.toggle('active', on);
+            playTick();
+        }
+        window.toggleMarket3DHood = toggleMarket3DHood;
+
+        function toggleMarket3DTrunk() {
+            if (!market3DShowroom) return;
+            if (typeof market3DShowroom.hasCapability === 'function' && !market3DShowroom.hasCapability('trunk')) {
+                notifyUser('У данной 3D модели спорт-купе нет отдельного багажного отсека', 'info');
+                return;
+            }
+            const on = market3DShowroom.toggleTrunk();
+            document.getElementById('btn-m3d-trunk')?.classList.toggle('active', on);
+            playTick();
+        }
+        window.toggleMarket3DTrunk = toggleMarket3DTrunk;
+
+        function toggleMarket3DHeadlights() {
+            if (!market3DShowroom) return;
+            const on = market3DShowroom.toggleHeadlights();
+            document.getElementById('btn-m3d-lights')?.classList.toggle('active', on);
+            playTick();
+        }
+        window.toggleMarket3DHeadlights = toggleMarket3DHeadlights;
+
+        function inspectExternalCar3D(car, meta = {}) {
+            if (!car || !car.name) return;
+            market3DCurrentCar = car;
+            market3DCurrentMeta = meta;
+            if (garage3DShowroom) { try { garage3DShowroom.stop(); } catch (_) {} }
+            pauseRaceForCarPreview();
+
+            const eyebrowEl = document.getElementById('market-3d-eyebrow');
+            if (eyebrowEl) eyebrowEl.innerText = eyebrowEl.textContent = meta.source === 'garage' ? 'H3H / 3D ОСМОТР АВТОМОБИЛЯ ИГРОКА' : 'H3H / 3D ОСМОТР АВТОМОБИЛЯ С РЫНКА';
+            const titleEl = document.getElementById('market-3d-car-title');
+            if (titleEl) titleEl.innerText = titleEl.textContent = car.name;
+            const catEl = document.getElementById('market-3d-car-category');
+            if (catEl) catEl.innerText = catEl.textContent = car.category || 'Спорт';
+            const classEl = document.getElementById('market-3d-car-class');
+            if (classEl) {
+                const buildClass = window.NomeraAtelier?.classify?.(car);
+                classEl.innerText = classEl.textContent = buildClass?.title || 'Индивидуальная сборка';
+            }
+
+            const sellerBar = document.getElementById('market-3d-seller-bar');
+            const sellerKey = meta.sellerKey || sanitizeKey(meta.sellerName || '');
+            const sellerName = meta.sellerName || 'Игрок';
+            const sellerAvatar = meta.sellerAvatar || DEFAULT_AVATAR;
+            const priceLabel = meta.source === 'market' && Number(meta.price) > 0
+                ? `<div class="ae-m3d-price">${Number(meta.price).toLocaleString('ru-RU')} ₽</div>`
+                : `<div class="ae-m3d-price">Оценка: ${Number(car.basePrice || car.price || 500000).toLocaleString('ru-RU')} ₽</div>`;
+            if (sellerBar) {
+                sellerBar.innerHTML = `
+                    <div class="market-seller-badge ae-clickable-player" onclick="openPlayerViewModal(${jsArg(sellerKey)}, { nickname: ${jsArg(sellerName)}, avatarData: ${jsArg(sellerAvatar)} })" title="Открыть паспорт владельца">
+                        <img src="${imageSrc(sellerAvatar)}" class="market-seller-avatar" onerror="handleAvatarError(this, 0)">
+                        <div>
+                            <small style="display:block; font-size:10px; color:var(--text-dim);">${meta.source === 'garage' ? 'Владелец' : 'Продавец'}</small>
+                            <strong>${escapeHtml(sellerName)}</strong>
+                        </div>
+                    </div>
+                    ${priceLabel}
+                `;
+            }
+
+            const plateBox = document.getElementById('market-3d-plate-box');
+            const pText = (car.plate && (car.plate.text || car.plate)) || '';
+            if (plateBox) {
+                if (pText && pText !== 'none') {
+                    const syn = getCarPlateSynergy(car.name, car.plate);
+                    const synHtml = syn
+                        ? `<div class="ae-m3d-synergy">✨ Синергия «${escapeHtml(syn.name)}»: +${Math.round((Number(syn.bonusMultiplier) || 0) * 100)}% к выплатам</div>`
+                        : `<div style="font-size:11px; color:var(--text-dim); margin-top:4px;">Госномер продаётся вместе с автомобилем</div>`;
+                    plateBox.innerHTML = `
+                        <div class="mini-plate ${getMiniPlateCountryClass(pText)}" style="font-size:16px; padding:5px 12px; display:inline-block;">${renderMiniPlateInnerHtml(pText)}</div>
+                        ${synHtml}
+                    `;
+                } else {
+                    plateBox.innerHTML = `<div style="font-size:12px; color:var(--text-dim);">🏷️ Госномер не установлен</div>`;
+                }
+            }
+
+            const specsGrid = document.getElementById('market-3d-specs-grid');
+            if (specsGrid) {
+                const base = carRaceStats[car.name] || { speed: 210, accel: 3.2, handling: 6.5 };
+                const upg = car.upgrades || {};
+                const eng = Number(upg.engine) || 0, hnd = Number(upg.handling) || 0, nit = Number(upg.nitro) || 0, eco = Number(upg.economy) || 0;
+                const proList = Array.isArray(car.ownedProParts) ? car.ownedProParts : [];
+                const topSpeed = Math.round(base.speed + eng * 10 + (proList.includes('junkmanEngine') || upg.junkmanEngine ? 18 : 0));
+                const st = normalizeExternalCarStyling(car);
+                const wheelsMap = { stock: 'Заводские', stamps: 'Штампы', deepdish: 'Полка JDM', forged: 'Ковка Vossen', bbs: 'BBS RS', bbs_gtr: 'Центрогайка GTR', oz_racing: 'OZ Racing' };
+                const spoilerMap = { none: 'Без спойлера', ducktail: 'Дактейл', high: 'Высокое антикрыло', gt: 'GT-крыло', gtr: 'Карбон GTR' };
+                const bodykitMap = { stock: 'Заводской кузов', street: 'Стрит-сплиттер', widebody: 'Widebody Арки', nfsmw_gtr: 'GTR ALMS' };
+                specsGrid.innerHTML = `
+                    <div class="ae-m3d-spec"><small>Макс. скорость</small><strong>⚡ ${topSpeed} км/ч</strong></div>
+                    <div class="ae-m3d-spec"><small>Состояние кузова</small><strong>🛠️ ${Math.round(car.condition ?? 100)}%</strong></div>
+                    <div class="ae-m3d-spec"><small>Узлы (Тюнинг)</small><strong>Дв.${eng}/5 · Подв.${hnd}/5 · N2O ${nit}/5 · Топл.${eco}/5</strong></div>
+                    <div class="ae-m3d-spec"><small>Кованые Stage+ детали</small><strong>${proList.length > 0 ? `${proList.length} уст.` : 'Штатные'}</strong></div>
+                    <div class="ae-m3d-spec"><small>Диски и спойлер</small><strong>${escapeHtml(wheelsMap[st.wheels] || st.wheels)} · ${escapeHtml(spoilerMap[st.spoiler] || st.spoiler)}</strong></div>
+                    <div class="ae-m3d-spec"><small>Обвес и цвет</small><strong><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${escapeHtml(st.color)};border:1px solid #fff;vertical-align:middle;margin-right:4px;"></span>${escapeHtml(bodykitMap[st.bodykit] || st.bodykit)}</strong></div>
+                `;
+            }
+
+            const actionsEl = document.getElementById('market-3d-actions');
+            if (actionsEl) {
+                const isMine = (sellerKey === sanitizeKey(nickname));
+                if (meta.source === 'market' && meta.lotId) {
+                    actionsEl.innerHTML = isMine
+                        ? `<button type="button" class="btn btn-close" onclick="cancelMarketLotFrom3D(${jsArg(meta.lotId)})">Снять авто с продажи</button><button type="button" class="btn btn-secondary" onclick="closeMarketCar3DModal()">Закрыть</button>`
+                        : `<button type="button" class="btn btn-green" id="btn-m3d-buy-car" onclick="buyMarketLotFrom3D(${jsArg(meta.lotId)})">🛒 Купить за ${Number(meta.price || 0).toLocaleString('ru-RU')} ₽</button><button type="button" class="btn btn-secondary" onclick="closeMarketCar3DModal()">Закрыть</button>`;
+                } else {
+                    actionsEl.innerHTML = `<button type="button" class="btn btn-secondary" style="width:100%;" onclick="closeMarketCar3DModal()">Закрыть 3D осмотр</button>`;
+                }
+            }
+
+            const modal = document.getElementById('market-car-3d-modal');
+            if (modal) modal.classList.add('show');
+
+            const wrap3D = document.getElementById('market-3d-preview-wrap');
+            const fallbackImg = document.getElementById('market-3d-fallback-img');
+            const toolbar = document.getElementById('market-3d-toolbar');
+            const stObj = normalizeExternalCarStyling(car);
+
+            if (typeof Car3DManager !== 'undefined' && typeof Car3DManager.isWebGLAvailable === 'function' && Car3DManager.isWebGLAvailable()) {
+                if (wrap3D) wrap3D.style.display = 'block';
+                if (fallbackImg) fallbackImg.classList.add('hidden');
+                if (toolbar) toolbar.style.display = 'flex';
+                if (!market3DShowroom) {
+                    market3DShowroom = new Car3DManager.Car3DShowroom('market-3d-preview-wrap', {
+                        autoRotate: true,
+                        fitModelBounds: Boolean(window.NOMERA_AUTHORS_PREVIEW),
+                        autoRotateSpeed: 0.006,
+                        showPodium: true,
+                        loaderId: 'market-3d-loader',
+                        loaderTextId: 'market-3d-loader-text'
+                    });
+                    market3DShowroom.onCapabilitiesChange = () => updateMarket3DButtonsState();
+                } else {
+                    market3DShowroom.resize();
+                    market3DShowroom.start();
+                }
+                if (market3DShowroom) {
+                    market3DShowroom.setCar(car.name, stObj);
+                    setMarket3DViewMode('isometric');
+                    updateMarket3DButtonsState();
+                }
+            } else {
+                if (wrap3D) wrap3D.style.display = 'none';
+                if (toolbar) toolbar.style.display = 'none';
+                if (fallbackImg) {
+                    fallbackImg.src = getCarSpriteDataUrl(car.name, stObj);
+                    fallbackImg.classList.remove('hidden');
+                }
+            }
+        }
+        window.inspectExternalCar3D = inspectExternalCar3D;
+
+        function inspectMarketCar3D(lotId) {
+            const lot = marketLots && marketLots[lotId];
+            if (!lot || lot.type !== 'car' || !lot.car) {
+                notifyUser('Лот с автомобилем не найден или уже продан', 'error');
+                return;
+            }
+            inspectExternalCar3D(lot.car, {
+                source: 'market',
+                lotId: lotId,
+                price: lot.price,
+                sellerName: lot.sellerName || 'Продавец',
+                sellerKey: lot.sellerKey || sanitizeKey(lot.sellerName || ''),
+                sellerAvatar: lot.sellerAvatar || DEFAULT_AVATAR
+            });
+        }
+        window.inspectMarketCar3D = inspectMarketCar3D;
+
+        function inspectPlayerGarageCar3D(carIndex) {
+            const car = currentInspectedPlayerCars && currentInspectedPlayerCars[carIndex];
+            if (!car) return;
+            const pName = currentInspectedPlayer?.nickname || 'Игрок';
+            const pKey = sanitizeKey(pName);
+            const matchingLotEntry = Object.entries(marketLots || {}).find(([_, l]) =>
+                l && l.type === 'car' && (l.sellerKey === pKey || sanitizeKey(l.sellerName || '') === pKey) && l.car && l.car.name === car.name
+            );
+            if (matchingLotEntry) {
+                inspectMarketCar3D(matchingLotEntry[0]);
+                return;
+            }
+            inspectExternalCar3D(car, {
+                source: 'garage',
+                sellerName: pName,
+                sellerKey: pKey,
+                sellerAvatar: getPlayerAvatar(currentInspectedPlayer || {})
+            });
+        }
+        window.inspectPlayerGarageCar3D = inspectPlayerGarageCar3D;
+
+        function closeMarketCar3DModal() {
+            const modal = document.getElementById('market-car-3d-modal');
+            if (modal) modal.classList.remove('show');
+            if (market3DShowroom) {
+                if (typeof market3DShowroom.setLoading === 'function') market3DShowroom.setLoading(false);
+                market3DShowroom.stop();
+            }
+            market3DCurrentCar = null;
+            market3DCurrentMeta = null;
+            racePreviewPause?.resume();
+            const garageTab = document.getElementById('garage');
+            const pvModal = document.getElementById('player-view-modal');
+            if (garageTab && !garageTab.classList.contains('hidden') && (!pvModal || !pvModal.classList.contains('show')) && garage3DShowroom) {
+                try {
+                    garage3DShowroom.resize();
+                    garage3DShowroom.start();
+                    garage3DShowroom.requestRender();
+                } catch (_) {}
+            }
+        }
+        window.closeMarketCar3DModal = closeMarketCar3DModal;
+
+        async function buyMarketLotFrom3D(lotId) {
+            await buyMarketLot(lotId);
+            if (!marketLots || !marketLots[lotId]) {
+                closeMarketCar3DModal();
+                if (currentInspectedPlayer && document.getElementById('player-view-modal')?.classList.contains('show')) {
+                    renderPlayerViewModal(currentInspectedPlayer);
+                }
+            }
+        }
+        window.buyMarketLotFrom3D = buyMarketLotFrom3D;
+
+        async function cancelMarketLotFrom3D(lotId) {
+            await cancelMarketLot(lotId);
+            if (!marketLots || !marketLots[lotId]) {
+                closeMarketCar3DModal();
+                if (currentInspectedPlayer && document.getElementById('player-view-modal')?.classList.contains('show')) {
+                    renderPlayerViewModal(currentInspectedPlayer);
+                }
+            }
+        }
+        window.cancelMarketLotFrom3D = cancelMarketLotFrom3D;
 
         // ==========================================
         // 🎮 МИНИ-ИГРА: «ТРАССА 777: НОЧНОЙ ФОРСАЖ»

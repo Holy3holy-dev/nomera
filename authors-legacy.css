@@ -12397,3 +12397,505 @@ body {
     }
 }
 
+/* ==========================================
+   🌐 3D CAR INSPECTOR & PLAYER PASSPORT
+   ========================================== */
+.ae-clickable-player {
+    cursor: pointer;
+    transition: color 0.15s ease, text-decoration 0.15s ease;
+}
+.ae-clickable-player:hover {
+    text-decoration: underline;
+    color: #38bdf8;
+}
+
+.market-car-inspect-btn {
+    flex: 1 1 auto;
+    background: #1e293b;
+    border: 1px solid #475569;
+    color: #f1f5f9;
+    font-size: 11px;
+    font-weight: 600;
+    min-height: 36px;
+    padding: 6px 10px;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+.market-car-inspect-btn:hover {
+    background: #334155;
+    border-color: #38bdf8;
+    color: #38bdf8;
+}
+
+#market-car-3d-modal .ae-market-3d-modal-box {
+    width: min(1080px, 96vw);
+    max-width: 1080px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    position: relative;
+}
+.ae-market-3d-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 10px;
+}
+.ae-market-3d-title-group h3 {
+    margin: 4px 0 6px 0;
+    font-size: 22px;
+    color: #f8fafc;
+}
+.ae-market-3d-subtags {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+.ae-market-3d-top-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+.ae-m3d-pill-switch {
+    display: inline-flex;
+    background: #090e17;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 20px;
+    padding: 3px;
+    gap: 2px;
+}
+.ae-m3d-view-btn {
+    min-height: 28px;
+    padding: 4px 12px;
+    font-size: 11px;
+    border: none;
+    border-radius: 16px;
+    background: transparent;
+    color: #94a3b8;
+    cursor: pointer;
+}
+.ae-m3d-view-btn.active {
+    background: #1e293b;
+    color: #38bdf8;
+    font-weight: 700;
+}
+.ae-m3d-close-btn {
+    min-height: 36px;
+    width: 36px;
+    padding: 0;
+    font-size: 20px;
+    border-radius: 50%;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+.ae-market-3d-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.35fr) minmax(320px, 1fr);
+    gap: 16px;
+    align-items: start;
+}
+.ae-market-3d-stage {
+    position: relative;
+    width: 100%;
+    height: 410px;
+    background: radial-gradient(circle at center, #1e293b 0%, #090e17 100%);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 10px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.ae-market-3d-viewport {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    inset: 0;
+}
+.ae-market-3d-fallback {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    position: absolute;
+    inset: 0;
+    padding: 20px;
+    box-sizing: border-box;
+}
+.ae-market-3d-spinner {
+    position: absolute;
+    top: 14px;
+    left: 14px;
+    background: rgba(15, 23, 42, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #94a3b8;
+    font-size: 11px;
+    padding: 6px 12px;
+    border-radius: 6px;
+    z-index: 5;
+    pointer-events: none;
+}
+.ae-market-3d-toolbar {
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+    right: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    z-index: 6;
+    pointer-events: auto;
+}
+.ae-m3d-cam-bar, .ae-m3d-controls-bar {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+    background: rgba(15, 23, 42, 0.88);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    backdrop-filter: blur(4px);
+    padding: 5px 8px;
+    border-radius: 8px;
+    align-items: center;
+}
+.ae-m3d-cam-bar button, .ae-m3d-controls-bar button {
+    min-height: 28px;
+    padding: 4px 8px;
+    font-size: 11px;
+    border-radius: 4px;
+    background: #1e293b;
+    border: 1px solid #334155;
+    color: #cbd5e1;
+    flex: 1 1 auto;
+    white-space: nowrap;
+    cursor: pointer;
+}
+.ae-m3d-cam-bar button.active, .ae-m3d-controls-bar button.active {
+    background: #0369a1;
+    border-color: #38bdf8;
+    color: #fff;
+    font-weight: 700;
+}
+.ae-market-3d-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+.ae-m3d-seller-bar {
+    background: #0f172a;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 12px;
+    color: #cbd5e1;
+}
+.ae-m3d-plate-box {
+    background: #090e17;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 10px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.ae-m3d-specs-wrap {
+    background: #0f172a;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 12px;
+}
+.ae-m3d-specs-title {
+    font-size: 11px;
+    letter-spacing: 1px;
+    color: #94a3b8;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    font-weight: 700;
+}
+.ae-m3d-specs-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+}
+.ae-m3d-spec-cell {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.ae-m3d-spec-cell.span-two {
+    grid-column: span 2;
+}
+.ae-m3d-spec-lbl {
+    font-size: 10px;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.ae-m3d-spec-val {
+    font-size: 13px;
+    color: #f8fafc;
+    font-weight: 700;
+}
+.ae-m3d-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 4px;
+}
+.ae-m3d-actions button {
+    flex: 1 1 auto;
+}
+
+#player-view-modal .ae-player-passport-box {
+    width: min(840px, 96vw);
+    max-width: 840px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 20px;
+    position: relative;
+}
+.ae-pv-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 10px;
+}
+.ae-pv-title-wrap h3 {
+    margin: 4px 0 0 0;
+    font-size: 22px;
+    color: #f8fafc;
+}
+.ae-pv-close {
+    min-height: 36px;
+    width: 36px;
+    padding: 0;
+    font-size: 20px;
+    border-radius: 50%;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+.ae-pv-identity-row {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    background: #0f172a;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    padding: 14px;
+}
+.ae-pv-avatar {
+    width: 68px;
+    height: 68px;
+    border-radius: 50%;
+    border: 2px solid #38bdf8;
+    background: #1e293b;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+.ae-pv-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.ae-pv-identity-info {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.ae-pv-badges-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+.ae-pv-last-seen {
+    font-size: 11px;
+    color: #94a3b8;
+}
+.ae-pv-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 8px;
+}
+.ae-pv-stat-item {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 8px 10px;
+}
+.ae-pv-stat-lbl {
+    font-size: 10px;
+    color: #94a3b8;
+    text-transform: uppercase;
+}
+.ae-pv-stat-val {
+    font-size: 13px;
+    font-weight: 700;
+    color: #f8fafc;
+    margin-top: 2px;
+}
+.ae-pv-section {
+    background: #090e17;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.ae-pv-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding-bottom: 6px;
+}
+.ae-pv-section-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #cbd5e1;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+}
+.ae-pv-section-count {
+    font-size: 11px;
+    color: #94a3b8;
+}
+.ae-pv-garage-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+    gap: 10px;
+    max-height: 300px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+.ae-pv-car-card {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    transition: border-color 0.15s ease;
+}
+.ae-pv-car-card:hover {
+    border-color: #38bdf8;
+}
+.ae-pv-car-img-wrap {
+    width: 100%;
+    height: 90px;
+    background: #090e17;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    cursor: pointer;
+}
+.ae-pv-car-img-wrap img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+.ae-pv-car-name {
+    font-size: 12px;
+    font-weight: 700;
+    color: #f8fafc;
+    line-height: 1.3;
+}
+.ae-pv-car-class {
+    font-size: 10px;
+    color: #38bdf8;
+}
+.ae-pv-car-tuning {
+    font-size: 10px;
+    color: #94a3b8;
+}
+.ae-pv-btn-3d {
+    min-height: 32px;
+    padding: 6px 10px;
+    font-size: 11px;
+    border-radius: 5px;
+    width: 100%;
+    margin-top: 4px;
+    background: #0f172a;
+    border: 1px solid #334155;
+    color: #cbd5e1;
+    cursor: pointer;
+}
+.ae-pv-btn-3d:hover {
+    background: #1e293b;
+    border-color: #38bdf8;
+    color: #38bdf8;
+}
+.ae-pv-lot-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    padding: 8px 12px;
+    gap: 8px;
+}
+.ae-pv-lot-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.ae-pv-lot-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #f8fafc;
+}
+.ae-pv-lot-price {
+    font-size: 12px;
+    color: #10b981;
+    font-weight: 700;
+}
+.ae-pv-lot-actions {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+.ae-pv-lot-actions button {
+    min-height: 32px;
+    padding: 6px 12px;
+    font-size: 11px;
+    cursor: pointer;
+}
+
+@media (max-width: 768px) {
+    .ae-market-3d-layout {
+        grid-template-columns: 1fr;
+    }
+    .ae-market-3d-stage {
+        height: 280px;
+    }
+    #market-car-3d-modal .ae-market-3d-modal-box, #player-view-modal .ae-player-passport-box {
+        padding: 14px;
+    }
+}
+
+

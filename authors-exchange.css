@@ -69,13 +69,13 @@
 .authors-edition #ae-case-dialog .ae-reel-head{color:#b8cebd!important}
 .authors-edition #ae-case-dialog .ae-reel-rarity{background:#173039!important}
 .authors-edition #ae-case-dialog .batch-drop-card :is(.case-open-btn,button){background:#19343e!important;border-color:#48645c!important;color:#e0ead5!important}
-.authors-edition :is(#sell-plate-modal,#h3h-confirm,#plate-detail-modal,#player-view-modal){padding:16px!important;background:#050d17db!important;backdrop-filter:blur(6px);height:100dvh!important;align-items:center!important;justify-content:center!important;overflow:hidden!important}
+.authors-edition :is(#sell-plate-modal,#h3h-confirm,#plate-detail-modal,#player-view-modal,#market-car-3d-modal){padding:16px!important;background:#050d17db!important;backdrop-filter:blur(6px);height:100dvh!important;align-items:center!important;justify-content:center!important;overflow:hidden!important}
 .authors-edition #sell-plate-modal{align-items:center!important;justify-content:center!important;overflow:hidden!important;height:100dvh!important}
-.authors-edition :is(#sell-plate-modal,#h3h-confirm,#plate-detail-modal,#player-view-modal) .modal-box{background:linear-gradient(140deg,#142b35,#0b1b28)!important;border:1px solid #4f6a65!important;border-top:3px solid #d9fb70!important;border-radius:12px!important;padding:24px!important;color:#e8efdf!important;max-height:calc(100dvh - 32px)!important;overflow:auto!important;box-shadow:0 30px 100px #0009!important;animation:none!important;transform:none!important;margin:0!important}
-.authors-edition :is(#sell-plate-modal,#h3h-confirm,#plate-detail-modal,#player-view-modal) .modal-box:before{display:none!important}
-.authors-edition :is(#sell-plate-modal,#h3h-confirm,#plate-detail-modal,#player-view-modal) .modal-box :is(h3,h2){color:#edf3e3!important;line-height:1.3!important;font-size:22px!important;letter-spacing:-.4px}
-.authors-edition :is(#sell-plate-modal,#h3h-confirm,#plate-detail-modal,#player-view-modal) .modal-box button{font-family:inherit!important;min-height:44px!important;border-radius:6px!important;background:#19343e!important;border:1px solid #46645e!important;color:#d7e5d6!important;padding:11px 14px!important;font-size:12px!important;line-height:1.4!important;box-shadow:none!important;white-space:normal!important}
-.authors-edition :is(#sell-plate-modal,#h3h-confirm,#plate-detail-modal,#player-view-modal) .modal-box :is(.btn-green,.btn-gold,.btn-red-cta){background:#d9fb70!important;color:#1c290e!important;border-color:#d9fb70!important}
+.authors-edition :is(#sell-plate-modal,#h3h-confirm,#plate-detail-modal,#player-view-modal,#market-car-3d-modal) .modal-box{background:linear-gradient(140deg,#142b35,#0b1b28)!important;border:1px solid #4f6a65!important;border-top:3px solid #d9fb70!important;border-radius:12px!important;padding:24px!important;color:#e8efdf!important;max-height:calc(100dvh - 32px)!important;overflow:auto!important;box-shadow:0 30px 100px #0009!important;animation:none!important;transform:none!important;margin:0!important}
+.authors-edition :is(#sell-plate-modal,#h3h-confirm,#plate-detail-modal,#player-view-modal,#market-car-3d-modal) .modal-box:before{display:none!important}
+.authors-edition :is(#sell-plate-modal,#h3h-confirm,#plate-detail-modal,#player-view-modal,#market-car-3d-modal) .modal-box :is(h3,h2){color:#edf3e3!important;line-height:1.3!important;font-size:22px!important;letter-spacing:-.4px}
+.authors-edition :is(#sell-plate-modal,#h3h-confirm,#plate-detail-modal,#player-view-modal,#market-car-3d-modal) .modal-box button{font-family:inherit!important;min-height:44px!important;border-radius:6px!important;background:#19343e!important;border:1px solid #46645e!important;color:#d7e5d6!important;padding:11px 14px!important;font-size:12px!important;line-height:1.4!important;box-shadow:none!important;white-space:normal!important}
+.authors-edition :is(#sell-plate-modal,#h3h-confirm,#plate-detail-modal,#player-view-modal,#market-car-3d-modal) .modal-box :is(.btn-green,.btn-gold,.btn-red-cta,.ae-m3d-buy-btn,.ae-pv-btn-buy){background:#d9fb70!important;color:#1c290e!important;border-color:#d9fb70!important;font-weight:700!important}
 .authors-edition #h3h-confirm-yes{background:#d9fb70!important;color:#1c290e!important;border-color:#d9fb70!important}
 .authors-edition #h3h-confirm-message{color:#d9e6d4!important;line-height:1.7!important}
 .authors-edition #sell-plate-modal :is(input,select){font-family:inherit!important;background:#102731!important;border:1px solid #536f69!important;color:#e2ecdd!important;border-radius:6px!important;padding:12px!important;min-height:44px!important;width:100%!important;max-width:100%;font-size:13px!important;box-sizing:border-box}
@@ -92,5 +92,81 @@
 .authors-edition #garage #ae-dealer-query:focus{outline:2px solid #d9fb70!important;outline-offset:2px;border-color:#adc987!important;box-shadow:none!important}
 .ae-mw-model-badge{display:block;font-size:8px;letter-spacing:1px;color:#b9d990;border-top:1px solid #38564f;padding-top:8px;margin-top:10px}
 .authors-edition #btn-shop-mw{border-color:#88aa6d!important;color:#d9eabc!important}
-@media(max-width:700px){.authors-edition :is(#multiplayer,#cases) .market-master-switcher{padding:14px!important}.authors-edition #multiplayer .market-master-btn{flex-basis:100px!important}.authors-edition #multiplayer .market-master-actions button{flex-basis:100%!important}.authors-edition #multiplayer .col-filters-group>*{max-width:100%;min-width:0}.authors-edition :is(#sell-plate-modal,#h3h-confirm,#plate-detail-modal,#player-view-modal){padding:8px!important}.authors-edition :is(#sell-plate-modal,#h3h-confirm,#plate-detail-modal,#player-view-modal) .modal-box{padding:18px!important;max-height:calc(100dvh - 16px)!important;width:100%!important}.authors-edition #ae-case-dialog :is(#case-preview-title,#roulette-modal-title){font-size:20px!important}.authors-edition #ae-case-dialog .case-preview-open-bar{bottom:-16px}.authors-edition #ae-case-dialog .case-qty-buttons button{flex-basis:75px!important;font-size:11px!important;padding:10px 8px!important}.authors-edition #cases .case-card-title{font-size:20px!important}}
-@media(prefers-reduced-motion:reduce){.authors-edition :is(#multiplayer,#cases,#sell-plate-modal) button{transition:none!important}}
+.ae-clickable-player{cursor:pointer;transition:color .15s ease,text-decoration .15s ease}
+.ae-clickable-player:hover{text-decoration:underline;color:#d9fb70!important}
+.market-car-inspect-btn{flex:1 1 auto;background:#1a3844!important;border:1px solid #4a6c67!important;color:#e5f2e6!important;font-size:11px!important;min-height:36px!important;padding:6px 10px!important;border-radius:6px!important;display:inline-flex;align-items:center;justify-content:center;gap:4px;cursor:pointer}
+.market-car-inspect-btn:hover{background:#234755!important;border-color:#d9fb70!important;color:#d9fb70!important}
+
+.authors-edition #market-car-3d-modal .ae-market-3d-modal-box{width:min(1080px,96vw)!important;max-width:1080px!important;padding:20px!important;display:flex;flex-direction:column;gap:14px;position:relative}
+.ae-market-3d-header{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;border-bottom:1px solid #2d4c4e;padding-bottom:10px}
+.ae-market-3d-title-group h3{margin:4px 0 6px 0!important;font-size:22px!important;color:#edf3e3!important}
+.ae-market-3d-subtags{display:flex;gap:6px;flex-wrap:wrap}
+.ae-market-3d-top-actions{display:flex;gap:10px;align-items:center}
+.ae-m3d-pill-switch{display:inline-flex;background:#0c1c24;border:1px solid #3c585c;border-radius:20px;padding:3px;gap:2px}
+.ae-m3d-view-btn{min-height:28px!important;padding:4px 12px!important;font-size:11px!important;border:none!important;border-radius:16px!important;background:transparent!important;color:#a4c2b9!important;cursor:pointer}
+.ae-m3d-view-btn.active{background:#1e3f4b!important;color:#d9fb70!important;font-weight:700}
+.ae-m3d-close-btn{min-height:36px!important;width:36px!important;padding:0!important;font-size:20px!important;border-radius:50%!important;line-height:1!important;display:inline-flex;align-items:center;justify-content:center}
+.ae-market-3d-layout{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(320px,1fr);gap:16px;align-items:start}
+.ae-market-3d-stage{position:relative;width:100%;height:410px;background:radial-gradient(circle at center,#1a3440 0%,#08151f 100%);border:1px solid #345155;border-radius:10px;overflow:hidden;display:flex;align-items:center;justify-content:center}
+.ae-market-3d-viewport{width:100%;height:100%;position:absolute;inset:0}
+.ae-market-3d-fallback{width:100%;height:100%;object-fit:contain;position:absolute;inset:0;padding:20px;box-sizing:border-box}
+.ae-market-3d-spinner{position:absolute;top:14px;left:14px;background:#0c1c24d9;border:1px solid #456561;color:#b7cebf;font-size:11px;padding:6px 12px;border-radius:6px;z-index:5;pointer-events:none}
+.ae-market-3d-toolbar{position:absolute;bottom:10px;left:10px;right:10px;display:flex;flex-direction:column;gap:6px;z-index:6;pointer-events:auto}
+.ae-m3d-cam-bar,.ae-m3d-controls-bar{display:flex;gap:4px;flex-wrap:wrap;background:#09151de0;border:1px solid #2f4b4f;backdrop-filter:blur(4px);padding:5px 8px;border-radius:8px;align-items:center}
+.ae-m3d-cam-bar button,.ae-m3d-controls-bar button{min-height:28px!important;padding:4px 8px!important;font-size:11px!important;border-radius:4px!important;background:#132a35!important;border:1px solid #3d585c!important;color:#c4d7cc!important;flex:1 1 auto;white-space:nowrap}
+.ae-m3d-cam-bar button.active,.ae-m3d-controls-bar button.active{background:#264d5c!important;border-color:#d9fb70!important;color:#d9fb70!important;font-weight:700}
+.ae-market-3d-sidebar{display:flex;flex-direction:column;gap:12px}
+.ae-m3d-seller-bar{background:#0e222c;border:1px solid #335054;border-radius:8px;padding:10px 14px;font-size:12px;color:#b7cbbf}
+.ae-m3d-plate-box{background:#0c1a24;border:1px solid #335054;border-radius:8px;padding:10px 14px;display:flex;flex-direction:column;gap:8px}
+.ae-m3d-specs-wrap{background:#0d212a;border:1px solid #314d52;border-radius:8px;padding:12px}
+.ae-m3d-specs-title{font-size:11px;letter-spacing:1px;color:#8bb197;text-transform:uppercase;margin-bottom:8px;font-weight:700}
+.ae-m3d-specs-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.ae-m3d-spec-cell{background:#132c37;border:1px solid #375357;border-radius:6px;padding:8px 10px;display:flex;flex-direction:column;gap:2px}
+.ae-m3d-spec-cell.span-two{grid-column:span 2}
+.ae-m3d-spec-lbl{font-size:10px;color:#8fa89e;text-transform:uppercase;letter-spacing:.5px}
+.ae-m3d-spec-val{font-size:13px;color:#edf5eb;font-weight:700}
+.ae-m3d-actions{display:flex;gap:8px;margin-top:4px}
+.ae-m3d-actions button{flex:1 1 auto}
+
+.authors-edition #player-view-modal .ae-player-passport-box{width:min(840px,96vw)!important;max-width:840px!important;display:flex;flex-direction:column;gap:14px;padding:20px!important;position:relative}
+.ae-pv-header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:1px solid #2d4c4e;padding-bottom:10px}
+.ae-pv-title-wrap h3{margin:4px 0 0 0!important;font-size:22px!important;color:#edf3e3!important}
+.ae-pv-close{min-height:36px!important;width:36px!important;padding:0!important;font-size:20px!important;border-radius:50%!important;line-height:1!important;display:inline-flex;align-items:center;justify-content:center}
+.ae-pv-identity-row{display:flex;gap:16px;align-items:center;background:#0d212b;border:1px solid #345055;border-radius:10px;padding:14px}
+.ae-pv-avatar{width:68px;height:68px;border-radius:50%;border:2px solid #557971;background:#152d37;display:flex;align-items:center;justify-content:center;font-size:32px;overflow:hidden;flex-shrink:0}
+.ae-pv-avatar img{width:100%;height:100%;object-fit:cover}
+.ae-pv-identity-info{flex:1 1 auto;display:flex;flex-direction:column;gap:8px}
+.ae-pv-badges-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.ae-pv-last-seen{font-size:11px;color:#8fa89e}
+.ae-pv-stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px}
+.ae-pv-stat-item{background:#132a35;border:1px solid #385558;border-radius:6px;padding:8px 10px}
+.ae-pv-stat-lbl{font-size:10px;color:#8ea59c;text-transform:uppercase}
+.ae-pv-stat-val{font-size:13px;font-weight:700;color:#edf4ec;margin-top:2px}
+.ae-pv-section{background:#0c1c24;border:1px solid #2f494f;border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:10px}
+.ae-pv-section-header{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #253e43;padding-bottom:6px}
+.ae-pv-section-title{font-size:12px;font-weight:700;color:#d0e4ce;text-transform:uppercase;letter-spacing:.8px}
+.ae-pv-section-count{font-size:11px;color:#8ba59b}
+.ae-pv-garage-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px;max-height:300px;overflow-y:auto;padding-right:4px}
+.ae-pv-car-card{background:#122833;border:1px solid #3a575a;border-radius:8px;padding:10px;display:flex;flex-direction:column;gap:6px;transition:border-color .15s ease}
+.ae-pv-car-card:hover{border-color:#5d8a80}
+.ae-pv-car-img-wrap{width:100%;height:90px;background:#08141c;border-radius:6px;display:flex;align-items:center;justify-content:center;overflow:hidden;cursor:pointer}
+.ae-pv-car-img-wrap img{width:100%;height:100%;object-fit:contain}
+.ae-pv-car-name{font-size:12px;font-weight:700;color:#e9f0e6;line-height:1.3}
+.ae-pv-car-class{font-size:10px;color:#b4d28e}
+.ae-pv-car-tuning{font-size:10px;color:#8ba399}
+.ae-pv-btn-3d{min-height:32px!important;padding:6px 10px!important;font-size:11px!important;border-radius:5px!important;width:100%;margin-top:4px}
+.ae-pv-lot-row{display:flex;justify-content:space-between;align-items:center;background:#122833;border:1px solid #375358;border-radius:8px;padding:8px 12px;gap:8px}
+.ae-pv-lot-info{display:flex;flex-direction:column;gap:2px}
+.ae-pv-lot-title{font-size:12px;font-weight:700;color:#eaf1e7}
+.ae-pv-lot-price{font-size:12px;color:#d9fb70;font-weight:700}
+.ae-pv-lot-actions{display:flex;gap:6px;align-items:center}
+.ae-pv-lot-actions button{min-height:32px!important;padding:6px 12px!important;font-size:11px!important}
+
+@media(max-width:768px){
+    .ae-market-3d-layout{grid-template-columns:1fr}
+    .ae-market-3d-stage{height:280px}
+    .authors-edition #market-car-3d-modal .ae-market-3d-modal-box,.authors-edition #player-view-modal .ae-player-passport-box{padding:14px!important}
+}
+
+@media(max-width:700px){.authors-edition :is(#multiplayer,#cases) .market-master-switcher{padding:14px!important}.authors-edition #multiplayer .market-master-btn{flex-basis:100px!important}.authors-edition #multiplayer .market-master-actions button{flex-basis:100%!important}.authors-edition #multiplayer .col-filters-group>*{max-width:100%;min-width:0}.authors-edition :is(#sell-plate-modal,#h3h-confirm,#plate-detail-modal,#player-view-modal,#market-car-3d-modal){padding:8px!important}.authors-edition :is(#sell-plate-modal,#h3h-confirm,#plate-detail-modal,#player-view-modal,#market-car-3d-modal) .modal-box{padding:18px!important;max-height:calc(100dvh - 16px)!important;width:100%!important}.authors-edition #ae-case-dialog :is(#case-preview-title,#roulette-modal-title){font-size:20px!important}.authors-edition #ae-case-dialog .case-preview-open-bar{bottom:-16px}.authors-edition #ae-case-dialog .case-qty-buttons button{flex-basis:75px!important;font-size:11px!important;padding:10px 8px!important}.authors-edition #cases .case-card-title{font-size:20px!important}}
+@media(prefers-reduced-motion:reduce){.authors-edition :is(#multiplayer,#cases,#sell-plate-modal,#market-car-3d-modal,#player-view-modal) button{transition:none!important}}
