@@ -228,6 +228,10 @@
 .ae-tu-result-actions{display:flex;gap:8px;width:100%;margin-top:6px}
 .ae-tu-result-actions button{flex:1 1 auto}
 @keyframes tuPulseGold{from{box-shadow:0 0 10px #d9fb7066}to{box-shadow:0 0 22px #d9fb70d9}}
+.authors-edition .ae-case-sample[data-country="FEDERAL"]{background:linear-gradient(135deg,#0f172a,#1e3a8a 58%,#7f1d1d);color:#f8fafc;border-color:#60a5fa}
+.authors-edition .ae-case-sample[data-country="ROYAL_UAE"]{background:linear-gradient(135deg,#fffbeb,#fde68a);color:#1c1917;border-color:#f59e0b}
+.authors-edition .ae-case-sample[data-country="USSR_GOST"]{background:linear-gradient(135deg,#111827,#450a0a);color:#fde047;border-color:#ef4444}
+.authors-edition #roulette-result .loot-tier-banner{background:#0b1a24e6;border-color:var(--loot-glow,#d9fb70);color:#f8fafc}
 
 @media(max-width:768px){
     .ae-market-3d-layout{grid-template-columns:1fr}

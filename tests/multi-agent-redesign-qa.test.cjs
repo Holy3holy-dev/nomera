@@ -43,8 +43,8 @@ test('Test 1 — Desktop UI/UX & SVG Cases: Generator arena grid, rarity strip, 
 
     const caseCards = casesGridHtml.match(/<div class="case-card\s+case-/g) || [];
     const iconBoxes = casesGridHtml.match(/<div class="case-icon-box">\s*<svg class="case-art-svg"/g) || [];
-    assert.equal(caseCards.length, 11, 'Must have exactly 11 .case-card elements in .cases-grid');
-    assert.equal(iconBoxes.length, 11, 'All 11 .case-card elements must contain <svg class="case-art-svg"> inside .case-icon-box');
+    assert.equal(caseCards.length, 14, 'Must have exactly 14 .case-card elements in .cases-grid');
+    assert.equal(iconBoxes.length, 14, 'All 14 .case-card elements must contain <svg class="case-art-svg"> inside .case-icon-box');
 });
 
 test('Test 2 — Mobile UX & Z-Index / Touch / 320px Overflow: modal z-index 1400, race-active chrome hiding, 3D pan-y, and modal close UX', () => {

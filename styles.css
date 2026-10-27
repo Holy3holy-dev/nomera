@@ -13318,5 +13318,218 @@ body {
     flex: 1 1 auto;
 }
 
+/* --- СЕКРЕТНЫЕ КЕЙСЫ И 3D-АНИМАЦИЯ ЛУТА --- */
+.case-secret-card {
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45), inset 0 0 22px rgba(251, 191, 36, 0.08);
+}
+.case-secret-card::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(125deg, transparent 30%, rgba(255, 255, 255, 0.08) 50%, transparent 70%);
+    transform: translateX(-120%);
+    transition: transform 0.65s ease;
+    pointer-events: none;
+}
+.case-secret-card:hover::after {
+    transform: translateX(120%);
+}
+
+.loot-3d-stage-fx {
+    --loot-glow: #f59e0b;
+    --loot-secondary: #fde047;
+    position: absolute;
+    inset: -18px -12px;
+    pointer-events: none;
+    overflow: hidden;
+    border-radius: 18px;
+    z-index: 0;
+    opacity: 0;
+    transition: opacity 0.35s ease;
+}
+.loot-3d-stage-fx.loot-fx-active {
+    opacity: 1;
+}
+.loot-3d-stage-fx[data-loot-tier="common"] {
+    opacity: 0.45;
+}
+.loot-god-rays {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 340px;
+    height: 340px;
+    margin-left: -170px;
+    margin-top: -170px;
+    background: repeating-conic-gradient(
+        from 0deg,
+        rgba(255, 255, 255, 0) 0deg 12deg,
+        color-mix(in srgb, var(--loot-glow) 28%, transparent) 12deg 20deg,
+        rgba(255, 255, 255, 0) 20deg 30deg
+    );
+    mask-image: radial-gradient(circle, rgba(0, 0, 0, 0.95) 0%, rgba(0, 0, 0, 0.4) 48%, transparent 72%);
+    -webkit-mask-image: radial-gradient(circle, rgba(0, 0, 0, 0.95) 0%, rgba(0, 0, 0, 0.4) 48%, transparent 72%);
+    animation: lootGodRaysSpin 16s linear infinite;
+}
+.loot-3d-ring {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    border-radius: 50%;
+    border: 2px solid var(--loot-glow);
+    box-shadow: 0 0 22px var(--loot-glow), inset 0 0 14px var(--loot-glow);
+    transform: translate(-50%, -50%) rotateX(68deg) scale(0.4);
+    opacity: 0;
+}
+.loot-3d-ring-outer {
+    width: 250px;
+    height: 250px;
+}
+.loot-3d-ring-inner {
+    width: 175px;
+    height: 175px;
+    border-style: dashed;
+    border-color: var(--loot-secondary);
+}
+.loot-3d-stage-fx.loot-fx-active .loot-3d-ring-outer {
+    animation: loot3DRingWave 1.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+.loot-3d-stage-fx.loot-fx-active .loot-3d-ring-inner {
+    animation: loot3DRingInnerOrbit 6s linear infinite;
+    opacity: 0.72;
+}
+.loot-3d-sparks {
+    position: absolute;
+    inset: 0;
+}
+.loot-3d-spark {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: var(--spark-size, 5px);
+    height: var(--spark-size, 5px);
+    border-radius: 50%;
+    background: var(--loot-secondary);
+    box-shadow: 0 0 10px var(--loot-glow), 0 0 18px var(--loot-secondary);
+    opacity: 0;
+}
+.loot-3d-stage-fx.loot-fx-active .loot-3d-spark {
+    animation: lootSparkBurst 1.35s cubic-bezier(0.16, 1, 0.3, 1) var(--spark-delay, 0ms) forwards;
+}
+.loot-tier-banner {
+    position: relative;
+    z-index: 2;
+    display: inline-block;
+    margin: 0 auto 8px auto;
+    padding: 4px 14px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    background: rgba(15, 23, 42, 0.88);
+    border: 1px solid #f59e0b;
+    color: #fde047;
+    box-shadow: 0 0 18px rgba(245, 158, 11, 0.35);
+    animation: lootBannerPulse 1.6s ease-in-out infinite alternate;
+}
+.loot-3d-tilt-stage {
+    --loot-tilt-x: 0deg;
+    --loot-tilt-y: 0deg;
+    --loot-glare-x: 50%;
+    --loot-glare-y: 50%;
+    --loot-glow: #f59e0b;
+    position: relative;
+    z-index: 2;
+    perspective: 900px;
+    transform-style: preserve-3d;
+    transform: perspective(900px) rotateX(var(--loot-tilt-x)) rotateY(var(--loot-tilt-y));
+    transition: transform 0.14s ease-out;
+    will-change: transform;
+    padding: 6px 10px;
+    border-radius: 16px;
+}
+.loot-3d-tilt-stage.loot-3d-pop-active {
+    animation: loot3DCardPopIn 0.72s cubic-bezier(0.22, 1.35, 0.36, 1);
+}
+.loot-3d-tilt-stage[data-loot-tier="mythic"] #roulette-plate-card,
+.loot-3d-tilt-stage[data-loot-tier="legendary"] #roulette-plate-card {
+    box-shadow: 0 14px 34px rgba(0, 0, 0, 0.65), 0 0 28px var(--loot-glow);
+}
+.loot-holo-sweep {
+    position: absolute;
+    inset: 0;
+    border-radius: 16px;
+    pointer-events: none;
+    z-index: 4;
+    background: radial-gradient(
+        circle at var(--loot-glare-x, 50%) var(--loot-glare-y, 50%),
+        rgba(255, 255, 255, 0.22) 0%,
+        transparent 58%
+    );
+    mix-blend-mode: screen;
+    opacity: 0.75;
+}
+
+@keyframes lootGodRaysSpin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+@keyframes loot3DRingWave {
+    0% {
+        transform: translate(-50%, -50%) rotateX(68deg) scale(0.25);
+        opacity: 0.95;
+    }
+    70% {
+        opacity: 0.65;
+    }
+    100% {
+        transform: translate(-50%, -50%) rotateX(68deg) scale(1.22);
+        opacity: 0;
+    }
+}
+@keyframes loot3DRingInnerOrbit {
+    0% {
+        transform: translate(-50%, -50%) rotateX(66deg) rotateZ(0deg);
+    }
+    100% {
+        transform: translate(-50%, -50%) rotateX(66deg) rotateZ(360deg);
+    }
+}
+@keyframes lootSparkBurst {
+    0% {
+        transform: translate(-50%, -50%) rotate(var(--spark-angle, 0deg)) translateY(0px) scale(0.4);
+        opacity: 1;
+    }
+    75% {
+        opacity: 0.9;
+    }
+    100% {
+        transform: translate(-50%, -50%) rotate(var(--spark-angle, 0deg)) translateY(calc(-1 * var(--spark-dist, 80px))) scale(0);
+        opacity: 0;
+    }
+}
+@keyframes loot3DCardPopIn {
+    0% {
+        transform: perspective(900px) translateZ(-140px) rotateX(28deg) rotateY(-18deg) scale(0.68);
+        opacity: 0;
+    }
+    60% {
+        transform: perspective(900px) translateZ(24px) rotateX(-6deg) rotateY(5deg) scale(1.06);
+        opacity: 1;
+    }
+    100% {
+        transform: perspective(900px) translateZ(0px) rotateX(var(--loot-tilt-x)) rotateY(var(--loot-tilt-y)) scale(1);
+        opacity: 1;
+    }
+}
+@keyframes lootBannerPulse {
+    from { transform: scale(0.98); box-shadow: 0 0 12px rgba(245, 158, 11, 0.28); }
+    to { transform: scale(1.03); box-shadow: 0 0 24px rgba(245, 158, 11, 0.6); }
+}
+
+
 
 

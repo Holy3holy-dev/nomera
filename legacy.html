@@ -60,7 +60,7 @@
     <!-- Подключение Firebase SDK для базы данных, аккаунтов и мультиплеера -->
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
-    <link rel="stylesheet" href="./styles.css?v=c8a2d45002d4">
+    <link rel="stylesheet" href="./styles.css?v=2f1d005811c8">
     <style>
         /* Collector's Book («Книга коллекционера») & Car-Plate Synergy UI */
         .collector-book-summary {
@@ -1996,6 +1996,103 @@
                         </div>
                     </div>
 
+                    <!-- 8a. Федеральный Гараж Box (Секретный кейс) -->
+                    <div class="case-card case-mega case-secret-card" data-case-type="federal_box" style="border-top-color: #2563eb;" onclick="openCasePreview('federal_box')">
+                        <div class="case-tier-badge tier-mythic" style="background: linear-gradient(135deg, #1d4ed8, #dc2626); color: #fff;">КРЕМЛЬ · ФСО</div>
+                        <div class="case-icon-box">
+                            <svg class="case-art-svg" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                                <defs>
+                                    <linearGradient id="cg-fed-body" x1="9" y1="19" x2="71" y2="64" gradientUnits="userSpaceOnUse">
+                                        <stop offset="0%" stop-color="#1e3a8a"/>
+                                        <stop offset="52%" stop-color="#0f172a"/>
+                                        <stop offset="100%" stop-color="#7f1d1d"/>
+                                    </linearGradient>
+                                </defs>
+                                <ellipse cx="40" cy="68" rx="30" ry="6" fill="rgba(37,99,235,0.42)"/>
+                                <path d="M27 18C27 14 30 11 34 11H46C50 11 53 14 53 18V21H27V18Z" stroke="#60a5fa" stroke-width="2.8" fill="#0f172a"/>
+                                <rect x="9" y="19" width="62" height="45" rx="10" fill="url(#cg-fed-body)" stroke="#fbbf24" stroke-width="2.4"/>
+                                <rect x="13" y="23" width="54" height="37" rx="7" stroke="#93c5fd" stroke-width="1" stroke-opacity="0.4"/>
+                                <path d="M31 23H49L46 31H34L31 23Z" fill="#ef4444" stroke="#fca5a5" stroke-width="1"/>
+                                <path d="M34 31H46L44 38H36L34 31Z" fill="#2563eb" stroke="#93c5fd" stroke-width="1"/>
+                                <rect x="18" y="45" width="44" height="13" rx="4" fill="#0f172a" stroke="#fbbf24" stroke-width="1.4"/>
+                                <text x="40" y="54.5" text-anchor="middle" fill="#fde047" font-family="system-ui,sans-serif" font-weight="900" font-size="8.2" letter-spacing="0.8">АМР·ЕКХ·КРМ</text>
+                            </svg>
+                        </div>
+                        <div class="case-card-title" style="color: #93c5fd;">Федеральный Гараж Box</div>
+                        <div class="case-card-sub">АМР97 • ЕКХ • КРМ • ФСО • СКР • МВД</div>
+                        <div class="case-card-price" id="case-price-federal">450 000 ₽</div>
+                        <div class="case-card-actions" onclick="event.stopPropagation()">
+                            <button type="button" class="case-open-btn case-open-primary" onclick="quickOpenCase('federal_box', 1, event)">Открыть ×1</button>
+                            <button type="button" class="case-open-btn" onclick="quickOpenCase('federal_box', 5, event)">×5</button>
+                            <button type="button" class="case-open-btn" onclick="quickOpenCase('federal_box', 10, event)">×10</button>
+                            <button type="button" class="case-open-btn case-info-btn" onclick="openCasePreview('federal_box')" title="Возможные награды">🔍</button>
+                        </div>
+                    </div>
+
+                    <!-- 8b. Шейх Дубая Royal Box (Секретный кейс) -->
+                    <div class="case-card case-mega case-secret-card" data-case-type="sheikh_royal_box" style="border-top-color: #fbbf24;" onclick="openCasePreview('sheikh_royal_box')">
+                        <div class="case-tier-badge tier-legend" style="background: linear-gradient(135deg, #f59e0b, #b45309); color: #fff;">ROYAL 1-DIGIT</div>
+                        <div class="case-icon-box">
+                            <svg class="case-art-svg" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                                <defs>
+                                    <linearGradient id="cg-sheikh-body" x1="9" y1="19" x2="71" y2="64" gradientUnits="userSpaceOnUse">
+                                        <stop offset="0%" stop-color="#78350f"/>
+                                        <stop offset="50%" stop-color="#451a03"/>
+                                        <stop offset="100%" stop-color="#1c1917"/>
+                                    </linearGradient>
+                                </defs>
+                                <ellipse cx="40" cy="68" rx="30" ry="6" fill="rgba(251,191,36,0.45)"/>
+                                <path d="M27 18C27 14 30 11 34 11H46C50 11 53 14 53 18V21H27V18Z" stroke="#fde047" stroke-width="2.8" fill="#451a03"/>
+                                <rect x="9" y="19" width="62" height="45" rx="10" fill="url(#cg-sheikh-body)" stroke="#fde047" stroke-width="2.5"/>
+                                <rect x="13" y="23" width="54" height="37" rx="7" stroke="#fef08a" stroke-width="1" stroke-opacity="0.45"/>
+                                <path d="M27 38L31 26L40 33L49 26L53 38H27Z" fill="#fbbf24" stroke="#fef9c3" stroke-width="1.2"/>
+                                <rect x="19" y="45" width="42" height="13" rx="4" fill="#fffbeb" stroke="#f59e0b" stroke-width="1.5"/>
+                                <text x="40" y="54.5" text-anchor="middle" fill="#1c1917" font-family="system-ui,sans-serif" font-weight="900" font-size="8.6" letter-spacing="0.9">DUBAI · P 7</text>
+                            </svg>
+                        </div>
+                        <div class="case-card-title" style="color: #fde68a;">Шейх Дубая Royal Box</div>
+                        <div class="case-card-sub">Королевские 1–2 цифры • P 7 • D 5 • AA 11</div>
+                        <div class="case-card-price" id="case-price-sheikh-royal">850 000 ₽</div>
+                        <div class="case-card-actions" onclick="event.stopPropagation()">
+                            <button type="button" class="case-open-btn case-open-primary" onclick="quickOpenCase('sheikh_royal_box', 1, event)">Открыть ×1</button>
+                            <button type="button" class="case-open-btn" onclick="quickOpenCase('sheikh_royal_box', 5, event)">×5</button>
+                            <button type="button" class="case-open-btn" onclick="quickOpenCase('sheikh_royal_box', 10, event)">×10</button>
+                            <button type="button" class="case-open-btn case-info-btn" onclick="openCasePreview('sheikh_royal_box')" title="Возможные награды">🔍</button>
+                        </div>
+                    </div>
+
+                    <!-- 8c. Архив СССР ГОСТ Box (Секретный кейс) -->
+                    <div class="case-card case-mega case-secret-card" data-case-type="ussr_gost_box" style="border-top-color: #ef4444;" onclick="openCasePreview('ussr_gost_box')">
+                        <div class="case-tier-badge tier-mythic" style="background: linear-gradient(135deg, #b91c1c, #7f1d1d); color: #fef08a;">ГОСТ СССР ★</div>
+                        <div class="case-icon-box">
+                            <svg class="case-art-svg" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                                <defs>
+                                    <linearGradient id="cg-ussr-body" x1="9" y1="19" x2="71" y2="64" gradientUnits="userSpaceOnUse">
+                                        <stop offset="0%" stop-color="#7f1d1d"/>
+                                        <stop offset="55%" stop-color="#450a0a"/>
+                                        <stop offset="100%" stop-color="#171717"/>
+                                    </linearGradient>
+                                </defs>
+                                <ellipse cx="40" cy="68" rx="30" ry="6" fill="rgba(239,68,68,0.42)"/>
+                                <path d="M27 18C27 14 30 11 34 11H46C50 11 53 14 53 18V21H27V18Z" stroke="#f59e0b" stroke-width="2.8" fill="#171717"/>
+                                <rect x="9" y="19" width="62" height="45" rx="10" fill="url(#cg-ussr-body)" stroke="#ef4444" stroke-width="2.4"/>
+                                <rect x="13" y="23" width="54" height="37" rx="7" stroke="#fca5a5" stroke-width="1" stroke-opacity="0.35"/>
+                                <polygon points="40,22 42.9,28.8 50.2,29.5 44.6,34.3 46.3,41.4 40,37.6 33.7,41.4 35.4,34.3 29.8,29.5 37.1,28.8" fill="#ef4444" stroke="#fde047" stroke-width="1.2"/>
+                                <rect x="18" y="45" width="44" height="13" rx="3" fill="#111827" stroke="#fde047" stroke-width="1.4"/>
+                                <text x="40" y="54.5" text-anchor="middle" fill="#f8fafc" font-family="system-ui,sans-serif" font-weight="900" font-size="8.2" letter-spacing="0.9">00-01 МОС</text>
+                            </svg>
+                        </div>
+                        <div class="case-card-title" style="color: #fca5a5;">Архив СССР ГОСТ Box</div>
+                        <div class="case-card-sub">Чёрный ГОСТ • МОС • СВТ • ВМО • КМН • Политбюро</div>
+                        <div class="case-card-price" id="case-price-ussr-gost">380 000 ₽</div>
+                        <div class="case-card-actions" onclick="event.stopPropagation()">
+                            <button type="button" class="case-open-btn case-open-primary" onclick="quickOpenCase('ussr_gost_box', 1, event)">Открыть ×1</button>
+                            <button type="button" class="case-open-btn" onclick="quickOpenCase('ussr_gost_box', 5, event)">×5</button>
+                            <button type="button" class="case-open-btn" onclick="quickOpenCase('ussr_gost_box', 10, event)">×10</button>
+                            <button type="button" class="case-open-btn case-info-btn" onclick="openCasePreview('ussr_gost_box')" title="Возможные награды">🔍</button>
+                        </div>
+                    </div>
+
                     <!-- 9. Авто-Кейс -->
                     <div class="case-card case-normal" style="border-top-color: #10b981;" onclick="openCasePreview('car_standard')">
                         <div class="case-tier-badge tier-rare">АВТОПАРК</div>
@@ -2707,24 +2804,35 @@
             </div>
 
             <!-- РЕЗУЛЬТАТ ОДИНОЧНОГО ОТКРЫТИЯ (×1) -->
-            <div id="roulette-result" class="hidden" style="margin-top: 14px;">
-                <div style="display:flex; justify-content:center; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:10px;">
+            <div id="roulette-result" class="hidden" style="margin-top: 14px; position: relative;">
+                <div id="roulette-3d-loot-fx" class="loot-3d-stage-fx" data-loot-tier="common" aria-hidden="true">
+                    <div class="loot-god-rays"></div>
+                    <div class="loot-3d-ring loot-3d-ring-outer"></div>
+                    <div class="loot-3d-ring loot-3d-ring-inner"></div>
+                    <div class="loot-3d-sparks" id="roulette-3d-sparks"></div>
+                </div>
+                <div id="roulette-3d-tier-banner" class="loot-tier-banner hidden">★ ЭКСКЛЮЗИВНЫЙ ДРОП ★</div>
+
+                <div style="display:flex; justify-content:center; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:10px; position:relative; z-index:2;">
                     <div id="roulette-rarity" class="rarity-label" style="position:relative; display:inline-block; top:0; left:0; transform:none;">Редкость</div>
                     <span id="roulette-autosave-pill" class="roulette-autosave-pill">✓ Сохранено в инвентарь</span>
                 </div>
 
-                <!-- Приз: Госномер -->
-                <div id="roulette-plate-prize-box" style="margin: 10px 0;">
-                    <div class="mini-plate" id="roulette-plate-card" style="font-size: 22px; padding: 8px 18px; border-width: 3px;">А 000 АА | 77 RUS</div>
-                </div>
-
-                <!-- Приз: Автомобиль -->
-                <div id="roulette-car-prize-box" class="hidden" style="margin: 10px 0;">
-                    <div style="position: relative; border-radius: var(--radius-md); overflow: hidden; border: 2px solid var(--border-subtle); max-width: 340px; margin: 0 auto; box-shadow: 0 8px 24px rgba(0,0,0,0.5);">
-                        <img id="roulette-car-img" src="" style="width: 100%; height: 165px; object-fit: cover; display: block;" onerror="this.onerror=null; this.src='./icons/car-placeholder.svg';">
-                        <div id="roulette-car-category" style="position: absolute; top: 8px; left: 8px; background: rgba(0,0,0,0.8); backdrop-filter: blur(4px); padding: 4px 10px; border-radius: var(--radius-sm); font-size: 11px; font-weight: 800; color: #fff; border: 1px solid rgba(255,255,255,0.15);">Категория</div>
+                <div id="roulette-3d-tilt-stage" class="loot-3d-tilt-stage">
+                    <div class="loot-holo-sweep" aria-hidden="true"></div>
+                    <!-- Приз: Госномер -->
+                    <div id="roulette-plate-prize-box" style="margin: 10px 0;">
+                        <div class="mini-plate" id="roulette-plate-card" style="font-size: 22px; padding: 8px 18px; border-width: 3px;">А 000 АА | 77 RUS</div>
                     </div>
-                    <div id="roulette-car-name" style="font-size: 18px; font-weight: 800; color: #fff; margin-top: 10px; letter-spacing: -0.3px;">Модель автомобиля</div>
+
+                    <!-- Приз: Автомобиль -->
+                    <div id="roulette-car-prize-box" class="hidden" style="margin: 10px 0;">
+                        <div style="position: relative; border-radius: var(--radius-md); overflow: hidden; border: 2px solid var(--border-subtle); max-width: 340px; margin: 0 auto; box-shadow: 0 8px 24px rgba(0,0,0,0.5);">
+                            <img id="roulette-car-img" src="" style="width: 100%; height: 165px; object-fit: cover; display: block;" onerror="this.onerror=null; this.src='./icons/car-placeholder.svg';">
+                            <div id="roulette-car-category" style="position: absolute; top: 8px; left: 8px; background: rgba(0,0,0,0.8); backdrop-filter: blur(4px); padding: 4px 10px; border-radius: var(--radius-sm); font-size: 11px; font-weight: 800; color: #fff; border: 1px solid rgba(255,255,255,0.15);">Категория</div>
+                        </div>
+                        <div id="roulette-car-name" style="font-size: 18px; font-weight: 800; color: #fff; margin-top: 10px; letter-spacing: -0.3px;">Модель автомобиля</div>
+                    </div>
                 </div>
 
                 <div style="font-size: 22px; font-weight:900; margin-bottom: 14px; color:#fbbf24;" id="roulette-price">10 000 ₽</div>
@@ -3314,7 +3422,7 @@
     <script src="./js/nfs-circuit-race.js?v=f0d04581eba0"></script>
     <script src="./js/model-assets.js?v=fb5618d170bd"></script>
     <script src="./js/car-3d.js?v=91b4105c86b2"></script>
-    <script src="./js/app.js?v=a1b9347b6f5a"></script>
+    <script src="./js/app.js?v=ef4e4f58149f"></script>
 <footer id="model-credits" style="margin:24px auto;padding:12px 16px;max-width:1120px;font:12px/1.6 system-ui;color:#a8bbc5"><a href="./assets/models/credits/camry-xv40.html" target="_blank" rel="noopener" style="display:inline-block;min-height:44px;padding:12px 0;color:#bdd2db">3D Camry XV40: Ford mondeo · CC BY 4.0 · Авторы модели</a></footer>
 </body>
 </html>

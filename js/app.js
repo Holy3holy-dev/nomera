@@ -6873,6 +6873,203 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             window.forcePlate = forcePlate;
         }
 
+        function rollSpecialCasePlate(caseType, targetRarity, sampleIndex = -1) {
+            const cfg = caseConfigs[caseType];
+            const mode = (cfg && cfg.specialCaseMode) || caseType;
+            const tier = String(targetRarity || 'Супер редкий').trim();
+            const pickFrom = (arr) => {
+                if (!Array.isArray(arr) || arr.length === 0) return null;
+                if (sampleIndex >= 0) return arr[sampleIndex % arr.length];
+                return randomItem(arr);
+            };
+
+            if (mode === 'federal' || caseType === 'federal_box') {
+                const pools = {
+                    'Ультра-спец': [
+                        { s: 'КРМ', num: '001', reg: '77' },
+                        { s: 'РФС', num: '001', reg: '77' },
+                        { s: 'УМВ', num: '001', reg: '77' },
+                        { s: 'РМВ', num: '777', reg: '77' },
+                        { s: 'ВМО', num: '001', reg: '77' },
+                        { s: 'КРМ', num: '777', reg: '97' }
+                    ],
+                    'Мифический': [
+                        { s: 'АМР', num: '001', reg: '97' },
+                        { s: 'ЕКХ', num: '001', reg: '77' },
+                        { s: 'СКР', num: '001', reg: '97' },
+                        { s: 'ВОР', num: '777', reg: '777' },
+                        { s: 'АМР', num: '777', reg: '97' },
+                        { s: 'ЕКХ', num: '777', reg: '97' }
+                    ],
+                    'Легендарный': [
+                        { s: 'АМР', num: '007', reg: '97' },
+                        { s: 'ЕКХ', num: '077', reg: '77' },
+                        { s: 'СКР', num: '100', reg: '97' },
+                        { s: 'ААА', num: '001', reg: '77' },
+                        { s: 'ООО', num: '001', reg: '77' },
+                        { s: 'МММ', num: '001', reg: '77' },
+                        { s: 'АМР', num: '500', reg: '97' },
+                        { s: 'ЕКХ', num: '100', reg: '99' }
+                    ],
+                    'Эпический': [
+                        { s: 'АМР', num: '101', reg: '77' },
+                        { s: 'ЕКХ', num: '202', reg: '99' },
+                        { s: 'СКР', num: '303', reg: '177' },
+                        { s: 'АМО', num: '001', reg: '77' },
+                        { s: 'КМР', num: '077', reg: '77' },
+                        { s: 'ВМР', num: '100', reg: '77' },
+                        { s: 'РМР', num: '707', reg: '77' }
+                    ],
+                    'Супер редкий': [
+                        { s: 'АМО', num: '177', reg: '77' },
+                        { s: 'КМР', num: '212', reg: '77' },
+                        { s: 'ВМР', num: '303', reg: '97' },
+                        { s: 'ТМР', num: '404', reg: '99' },
+                        { s: 'ООМ', num: '505', reg: '77' },
+                        { s: 'ММР', num: '808', reg: '77' }
+                    ]
+                };
+                const normalizedTier = /Ультра/i.test(tier)
+                    ? 'Ультра-спец'
+                    : (/Мифич|БЛАТНОЙ/i.test(tier) ? 'Мифический' : (pools[tier] ? tier : 'Супер редкий'));
+                const entry = pickFrom(pools[normalizedTier]) || pools['Супер редкий'][0];
+                const [l1, l2, l3] = entry.s.split('');
+                const price = calculatePlatePriceForCountry('RUS', l1, l2, l3, entry.num, entry.reg);
+                return {
+                    text: formatPlateText(l1, l2, l3, entry.num, entry.reg, 'RUS'),
+                    price,
+                    rarity: getRarityObjForTier(normalizedTier, price),
+                    country: 'RUS'
+                };
+            }
+
+            if (mode === 'sheikh_royal' || caseType === 'sheikh_royal_box') {
+                const pools = {
+                    'Мифический': [
+                        { code: 'P', num: '7', reg: 'DXB' },
+                        { code: 'D', num: '5', reg: 'DXB' },
+                        { code: 'AA', num: '9', reg: 'DXB' },
+                        { code: 'DD', num: '1', reg: 'DXB' },
+                        { code: 'O', num: '9', reg: 'DXB' },
+                        { code: 'I', num: '1', reg: 'DXB' },
+                        { code: 'A', num: '1', reg: 'AUH' },
+                        { code: 'S', num: '3', reg: 'DXB' }
+                    ],
+                    'Легендарный': [
+                        { code: 'AA', num: '11', reg: 'DXB' },
+                        { code: 'DD', num: '77', reg: 'DXB' },
+                        { code: 'BB', num: '88', reg: 'DXB' },
+                        { code: 'P', num: '55', reg: 'DXB' },
+                        { code: 'O', num: '99', reg: 'DXB' },
+                        { code: 'D', num: '10', reg: 'DXB' },
+                        { code: 'A', num: '50', reg: 'AUH' },
+                        { code: 'R', num: '70', reg: 'DXB' }
+                    ],
+                    'Эпический': [
+                        { code: 'G', num: '63', reg: 'DXB' },
+                        { code: 'A', num: '71', reg: 'DXB' },
+                        { code: 'F', num: '40', reg: 'DXB' },
+                        { code: 'P', num: '12', reg: 'DXB' },
+                        { code: 'D', num: '777', reg: 'DXB' },
+                        { code: 'AA', num: '111', reg: 'DXB' },
+                        { code: 'BB', num: '888', reg: 'AUH' }
+                    ],
+                    'Супер редкий': [
+                        { code: 'P', num: '911', reg: 'DXB' },
+                        { code: 'F', num: '812', reg: 'DXB' },
+                        { code: 'M', num: '720', reg: 'DXB' },
+                        { code: 'G', num: '500', reg: 'DXB' },
+                        { code: 'AA', num: '707', reg: 'DXB' },
+                        { code: 'D', num: '100', reg: 'AUH' },
+                        { code: 'S', num: '500', reg: 'SHJ' }
+                    ]
+                };
+                const normalizedTier = /Мифич|БЛАТНОЙ|Ультра/i.test(tier)
+                    ? 'Мифический'
+                    : (pools[tier] ? tier : 'Супер редкий');
+                const entry = pickFrom(pools[normalizedTier]) || pools['Супер редкий'][0];
+                const l1 = entry.code[0] || 'A';
+                const l2 = entry.code[1] || l1;
+                const l3 = l1;
+                let price = calculatePlatePriceForCountry('UAE', l1, l2, l3, entry.num, entry.reg);
+                if (entry.code.length === 2 && entry.num.length === 2 && entry.num[0] === entry.num[1]) {
+                    price = Math.max(price, 9500000);
+                }
+                const text = `${entry.code} ${entry.num} | ${entry.reg} UAE`;
+                return {
+                    text,
+                    price,
+                    rarity: getRarityObjForTier(normalizedTier, price),
+                    country: 'UAE'
+                };
+            }
+
+            if (mode === 'ussr_gost' || caseType === 'ussr_gost_box') {
+                const pools = {
+                    'Ультра-спец': [
+                        { s: 'МОС', num: '001', reg: '77' },
+                        { s: 'СВТ', num: '001', reg: '77' },
+                        { s: 'ВМО', num: '001', reg: '77' },
+                        { s: 'КМО', num: '001', reg: '77' },
+                        { s: 'КМН', num: '001', reg: '77' },
+                        { s: 'СМК', num: '001', reg: '77' },
+                        { s: 'МОС', num: '777', reg: '77' }
+                    ],
+                    'Мифический': [
+                        { s: 'МММ', num: '001', reg: '77' },
+                        { s: 'ССС', num: '001', reg: '77' },
+                        { s: 'ААА', num: '001', reg: '77' },
+                        { s: 'ООО', num: '001', reg: '77' },
+                        { s: 'ККК', num: '001', reg: '77' },
+                        { s: 'МММ', num: '777', reg: '77' }
+                    ],
+                    'Легендарный': [
+                        { s: 'МОС', num: '007', reg: '77' },
+                        { s: 'СВТ', num: '077', reg: '77' },
+                        { s: 'ССС', num: '077', reg: '77' },
+                        { s: 'МММ', num: '100', reg: '77' },
+                        { s: 'ККК', num: '007', reg: '77' },
+                        { s: 'ООО', num: '500', reg: '77' },
+                        { s: 'ААА', num: '700', reg: '77' }
+                    ],
+                    'Эпический': [
+                        { s: 'МОС', num: '100', reg: '77' },
+                        { s: 'СВТ', num: '200', reg: '77' },
+                        { s: 'ВМО', num: '300', reg: '77' },
+                        { s: 'ССС', num: '101', reg: '77' },
+                        { s: 'МММ', num: '202', reg: '77' },
+                        { s: 'ККК', num: '303', reg: '77' },
+                        { s: 'ООО', num: '707', reg: '77' }
+                    ],
+                    'Супер редкий': [
+                        { s: 'МОС', num: '101', reg: '77' },
+                        { s: 'СВТ', num: '212', reg: '77' },
+                        { s: 'ВМО', num: '313', reg: '77' },
+                        { s: 'КМО', num: '414', reg: '77' },
+                        { s: 'ССС', num: '515', reg: '77' },
+                        { s: 'МММ', num: '818', reg: '77' }
+                    ]
+                };
+                const normalizedTier = /Ультра/i.test(tier)
+                    ? 'Ультра-спец'
+                    : (/Мифич|БЛАТНОЙ/i.test(tier) ? 'Мифический' : (pools[tier] ? tier : 'Супер редкий'));
+                const entry = pickFrom(pools[normalizedTier]) || pools['Супер редкий'][0];
+                const [l1, l2, l3] = entry.s.split('');
+                const price = calculatePlatePriceForCountry('RUS', l1, l2, l3, entry.num, entry.reg);
+                return {
+                    text: formatPlateText(l1, l2, l3, entry.num, entry.reg, 'RUS'),
+                    price,
+                    rarity: getRarityObjForTier(normalizedTier, price),
+                    country: 'RUS'
+                };
+            }
+
+            return forcePlate(tier, (cfg && cfg.fixedCountry) || 'RUS');
+        }
+        if (typeof window !== 'undefined') {
+            window.rollSpecialCasePlate = rollSpecialCasePlate;
+        }
+
         function getCarRarity(price) {
             if (price >= 50000000) return { text: "МИФИЧЕСКИЙ", bg: "linear-gradient(135deg, #ef4444, #ec4899)", color: "#fff", border: "2px solid #ef4444", glow: "0 0 16px rgba(239, 68, 68, 0.8)" };
             if (price >= 15000000) return { text: "Легендарный", bg: "#f59e0b", color: "#000", border: "2px solid #f59e0b", glow: "0 0 12px rgba(245, 158, 11, 0.6)" };
@@ -6956,6 +7153,73 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     { r: 'Эпический', p: 0.14 },
                     { r: 'Легендарный', p: 0.045 },
                     { r: 'Ультра-спец', p: 0.015 }
+                ]
+            },
+            'federal_box': {
+                title: "🏛️ Федеральный Гараж Box",
+                name: "Федеральный Гараж Box",
+                price: 450000,
+                icon: "🏛️",
+                type: "plate",
+                fixedCountry: "RUS",
+                specialCaseMode: "federal",
+                contents: [
+                    { r: 'Супер редкий', weight: 38, count: 5 },
+                    { r: 'Эпический', weight: 34, count: 5 },
+                    { r: 'Легендарный', weight: 18, count: 4 },
+                    { r: 'Мифический', weight: 7, count: 3 },
+                    { r: 'Ультра-спец', weight: 3, count: 4 }
+                ],
+                probs: [
+                    { r: 'Супер редкий', p: 0.38 },
+                    { r: 'Эпический', p: 0.34 },
+                    { r: 'Легендарный', p: 0.18 },
+                    { r: 'Мифический', p: 0.07 },
+                    { r: 'Ультра-спец', p: 0.03 }
+                ]
+            },
+            'sheikh_royal_box': {
+                title: "👑 Шейх Дубая Royal Box",
+                name: "Шейх Дубая Royal Box",
+                price: 850000,
+                icon: "👑",
+                type: "plate",
+                fixedCountry: "UAE",
+                specialCaseMode: "sheikh_royal",
+                contents: [
+                    { r: 'Супер редкий', weight: 38, count: 5 },
+                    { r: 'Эпический', weight: 34, count: 5 },
+                    { r: 'Легендарный', weight: 20, count: 4 },
+                    { r: 'Мифический', weight: 8, count: 4 }
+                ],
+                probs: [
+                    { r: 'Супер редкий', p: 0.38 },
+                    { r: 'Эпический', p: 0.34 },
+                    { r: 'Легендарный', p: 0.20 },
+                    { r: 'Мифический', p: 0.08 }
+                ]
+            },
+            'ussr_gost_box': {
+                title: "★ Архив СССР ГОСТ Box",
+                name: "Архив СССР ГОСТ Box",
+                price: 380000,
+                icon: "★",
+                type: "plate",
+                fixedCountry: "RUS",
+                specialCaseMode: "ussr_gost",
+                contents: [
+                    { r: 'Супер редкий', weight: 36, count: 5 },
+                    { r: 'Эпический', weight: 34, count: 5 },
+                    { r: 'Легендарный', weight: 18, count: 4 },
+                    { r: 'Мифический', weight: 7.5, count: 3 },
+                    { r: 'Ультра-спец', weight: 4.5, count: 4 }
+                ],
+                probs: [
+                    { r: 'Супер редкий', p: 0.36 },
+                    { r: 'Эпический', p: 0.34 },
+                    { r: 'Легендарный', p: 0.18 },
+                    { r: 'Мифический', p: 0.075 },
+                    { r: 'Ультра-спец', p: 0.045 }
                 ]
             },
             'kz_box': {
@@ -7327,6 +7591,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 jpn_box: '🇯🇵',
                 uae_box: '🇦🇪',
                 special_box: '☭',
+                federal_box: '🏛️',
+                sheikh_royal_box: '👑',
+                ussr_gost_box: '★',
                 car_box: '🏎️',
                 car_standard: '🚗',
                 car_luxury: '🏎️',
@@ -7560,7 +7827,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 config.contents.forEach(ct => {
                     const count = ct.count || Math.max(2, Math.round((ct.weight || 10) / 5));
                     for (let i = 0; i < count; i++) {
-                        if ((ct.r === 'Ультра-спец' || ct.r === 'УЛЬТРА-СПЕЦ') && (caseCountry === 'RUS' || caseCountry === 'JPN')) {
+                        if (config.specialCaseMode) {
+                            currentCaseData.push(rollSpecialCasePlate(type, ct.r, i));
+                        } else if ((ct.r === 'Ультра-спец' || ct.r === 'УЛЬТРА-СПЕЦ') && (caseCountry === 'RUS' || caseCountry === 'JPN')) {
                             const s = caseCountry === 'JPN'
                                 ? distinctSpecialJpn[i % distinctSpecialJpn.length]
                                 : distinctSpecialRus[i % distinctSpecialRus.length];
@@ -7629,6 +7898,160 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         }
         window.closeRouletteModal = closeRouletteModal;
 
+        let loot3DTiltBound = false;
+        function bindLoot3DTiltStage() {
+            if (loot3DTiltBound || typeof document === 'undefined') return;
+            const tiltStage = document.getElementById('roulette-3d-tilt-stage');
+            if (!tiltStage || typeof tiltStage.addEventListener !== 'function') return;
+            loot3DTiltBound = true;
+
+            const updateTilt = (clientX, clientY) => {
+                const rect = typeof tiltStage.getBoundingClientRect === 'function'
+                    ? tiltStage.getBoundingClientRect()
+                    : { left: 0, top: 0, width: 320, height: 140 };
+                const w = Math.max(1, rect.width || 320);
+                const h = Math.max(1, rect.height || 140);
+                const nx = Math.max(-1, Math.min(1, ((clientX - rect.left) / w - 0.5) * 2));
+                const ny = Math.max(-1, Math.min(1, ((clientY - rect.top) / h - 0.5) * 2));
+                const rotY = (nx * 14).toFixed(2) + 'deg';
+                const rotX = (-ny * 12).toFixed(2) + 'deg';
+                const glareX = Math.round((nx * 0.5 + 0.5) * 100) + '%';
+                const glareY = Math.round((ny * 0.5 + 0.5) * 100) + '%';
+                if (tiltStage.style) {
+                    if (typeof tiltStage.style.setProperty === 'function') {
+                        tiltStage.style.setProperty('--loot-tilt-x', rotX);
+                        tiltStage.style.setProperty('--loot-tilt-y', rotY);
+                        tiltStage.style.setProperty('--loot-glare-x', glareX);
+                        tiltStage.style.setProperty('--loot-glare-y', glareY);
+                    }
+                    tiltStage.style['--loot-tilt-x'] = rotX;
+                    tiltStage.style['--loot-tilt-y'] = rotY;
+                }
+            };
+
+            const resetTilt = () => {
+                if (tiltStage.style) {
+                    if (typeof tiltStage.style.setProperty === 'function') {
+                        tiltStage.style.setProperty('--loot-tilt-x', '0deg');
+                        tiltStage.style.setProperty('--loot-tilt-y', '0deg');
+                    }
+                    tiltStage.style['--loot-tilt-x'] = '0deg';
+                    tiltStage.style['--loot-tilt-y'] = '0deg';
+                }
+            };
+
+            tiltStage.addEventListener('pointermove', (e) => {
+                if (e && Number.isFinite(e.clientX) && Number.isFinite(e.clientY)) {
+                    updateTilt(e.clientX, e.clientY);
+                }
+            });
+            tiltStage.addEventListener('pointerleave', resetTilt);
+        }
+
+        function triggerLoot3DShowcase(reward) {
+            if (typeof document === 'undefined' || !reward) return;
+            bindLoot3DTiltStage();
+            const rText = String(reward.rarity?.text || 'Обычный');
+            const price = Number(reward.price) || 0;
+            const spMeta = !reward.isCar && reward.text ? getUltraSpecialPlateMeta(reward.text) : null;
+
+            let tierKey = 'common';
+            let glowColor = '#64748b';
+            let secondaryColor = '#94a3b8';
+            let bannerLabel = '';
+
+            if (spMeta || /Ультра|БЛАТНОЙ|МИФИЧ|Мифич/i.test(rText) || price >= 5000000) {
+                tierKey = 'mythic';
+                glowColor = spMeta ? '#fbbf24' : '#ef4444';
+                secondaryColor = '#fde047';
+                bannerLabel = spMeta
+                    ? `★ ${spMeta.badge} • СЕКРЕТНЫЙ АРХИВ ★`
+                    : (reward.country === 'UAE' ? '👑 КОРОЛЕВСКИЙ ROYAL ДРОП 👑' : '🔥 МИФИЧЕСКИЙ ЭКСКЛЮЗИВ 🔥');
+            } else if (/Легендар|Крутой/i.test(rText) || price >= 1000000) {
+                tierKey = 'legendary';
+                glowColor = '#f59e0b';
+                secondaryColor = '#fef08a';
+                bannerLabel = '👑 ЛЕГЕНДАРНЫЙ ДРОП 👑';
+            } else if (/Эпич/i.test(rText) || price >= 250000) {
+                tierKey = 'epic';
+                glowColor = '#ec4899';
+                secondaryColor = '#c084fc';
+                bannerLabel = '✨ ЭПИЧЕСКАЯ НАХОДКА ✨';
+            } else if (/Супер редк|Редк/i.test(rText) || price >= 45000) {
+                tierKey = 'rare';
+                glowColor = '#3b82f6';
+                secondaryColor = '#38bdf8';
+                bannerLabel = '';
+            }
+
+            const fxEl = document.getElementById('roulette-3d-loot-fx');
+            if (fxEl) {
+                if (fxEl.dataset) fxEl.dataset.lootTier = tierKey;
+                if (typeof fxEl.setAttribute === 'function') fxEl.setAttribute('data-loot-tier', tierKey);
+                if (fxEl.style) {
+                    if (typeof fxEl.style.setProperty === 'function') {
+                        fxEl.style.setProperty('--loot-glow', glowColor);
+                        fxEl.style.setProperty('--loot-secondary', secondaryColor);
+                    }
+                    fxEl.style['--loot-glow'] = glowColor;
+                    fxEl.style['--loot-secondary'] = secondaryColor;
+                }
+                if (fxEl.classList) {
+                    fxEl.classList.remove('loot-fx-active');
+                    void fxEl.offsetWidth;
+                    fxEl.classList.add('loot-fx-active');
+                }
+            }
+
+            const sparksEl = document.getElementById('roulette-3d-sparks');
+            if (sparksEl) {
+                const sparkCount = tierKey === 'mythic' ? 20 : (tierKey === 'legendary' ? 16 : (tierKey === 'epic' ? 12 : 8));
+                let sparksHtml = '';
+                for (let i = 0; i < sparkCount; i++) {
+                    const angle = Math.round((360 / sparkCount) * i);
+                    const dist = 58 + ((i * 19) % 64);
+                    const delay = (i % 5) * 45;
+                    const size = 4 + (i % 4);
+                    sparksHtml += `<span class="loot-3d-spark" style="--spark-angle:${angle}deg; --spark-dist:${dist}px; --spark-delay:${delay}ms; --spark-size:${size}px;"></span>`;
+                }
+                sparksEl.innerHTML = sparksHtml;
+            }
+
+            const bannerEl = document.getElementById('roulette-3d-tier-banner');
+            if (bannerEl) {
+                if (bannerLabel) {
+                    bannerEl.textContent = bannerLabel;
+                    bannerEl.innerText = bannerLabel;
+                    if (bannerEl.style) {
+                        bannerEl.style.borderColor = glowColor;
+                        bannerEl.style.color = secondaryColor;
+                    }
+                    bannerEl.classList.remove('hidden');
+                } else {
+                    bannerEl.classList.add('hidden');
+                }
+            }
+
+            const tiltStage = document.getElementById('roulette-3d-tilt-stage');
+            if (tiltStage) {
+                if (tiltStage.dataset) tiltStage.dataset.lootTier = tierKey;
+                if (tiltStage.style) {
+                    if (typeof tiltStage.style.setProperty === 'function') {
+                        tiltStage.style.setProperty('--loot-glow', glowColor);
+                        tiltStage.style.setProperty('--loot-tilt-x', '0deg');
+                        tiltStage.style.setProperty('--loot-tilt-y', '0deg');
+                    }
+                    tiltStage.style['--loot-glow'] = glowColor;
+                }
+                if (tiltStage.classList) {
+                    tiltStage.classList.remove('loot-3d-pop-active');
+                    void tiltStage.offsetWidth;
+                    tiltStage.classList.add('loot-3d-pop-active');
+                }
+            }
+        }
+        window.triggerLoot3DShowcase = triggerLoot3DShowcase;
+
         let caseRouletteTimeout = null;
 
         function rollSingleCaseItem(config, caseType, caseCountry) {
@@ -7676,7 +8099,11 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     rolledPlate = { ...SUPER_PRIZE };
                 } else {
                     const wonRarity = pickCaseRarity(config);
-                    rolledPlate = { ...forcePlate(wonRarity, caseCountry) };
+                    if (config.specialCaseMode) {
+                        rolledPlate = { ...rollSpecialCasePlate(caseType, wonRarity) };
+                    } else {
+                        rolledPlate = { ...forcePlate(wonRarity, caseCountry) };
+                    }
                 }
                 const duplicateExists = Array.isArray(inventory) && inventory.some(p => p && p.text === rolledPlate.text);
                 rolledPlate._openingId = openingId;
@@ -8215,7 +8642,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     }
                 } else {
                     const chosenRarity = pickCaseRarity(config);
-                    let item = (i === winningIndex) ? wonPlateObj : forcePlate(chosenRarity, caseCountry);
+                    let item = (i === winningIndex)
+                        ? wonPlateObj
+                        : (config.specialCaseMode ? rollSpecialCasePlate(activeCaseType, chosenRarity) : forcePlate(chosenRarity, caseCountry));
                     let rColor = item.rarity.bg !== "transparent" ? (item.rarity.bg.startsWith('linear') ? '#f59e0b' : item.rarity.bg) : "#555";
                     const plateClass = getMiniPlateCountryClass(item.text);
                     if (track) {
@@ -8247,6 +8676,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 window.NomeraRewards?.complete();
                 const reward = isCar ? wonCarObj : wonPlateObj;
                 window.NomeraRewards?.celebrate(document.getElementById('roulette-result'), reward?.rarity?.text, reward?.price);
+                triggerLoot3DShowcase(reward);
                 isSpinning = false;
                 activeSingleRevealCallback = null;
                 document.getElementById('btn-skip-roulette')?.classList.add('hidden');
