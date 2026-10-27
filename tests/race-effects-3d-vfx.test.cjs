@@ -339,3 +339,54 @@ test('6. Clean separation and Car3DManager integration: export, hook into loop, 
     }, 'Engine and VFX destruction must complete without errors');
     assert.equal(raceEngine.vfx, null, 'VFX instance reference must be nullified upon destroy');
 });
+
+test('7. Pop & Bang overrun crackle, Nitro speed streaks/FOV, and lowered/BPAN bottom-out sparks', () => {
+    const { THREE, RaceEffectsManager, Car3DManager } = setupTestContext();
+    const engine = createMockEngine(THREE);
+    engine.styling = { suspension: 'bpan', stanceMode: 'low' };
+    const vfx = new RaceEffectsManager(engine);
+
+    // A. Nitro boost at moderate speed (120 km/h) expands FOV and activates speed streaks
+    const baseFov = 58;
+    const fovNitroMod = vfx.enhanceCameraFOV(baseFov, { speed: 120, isNitroActive: true });
+    assert.ok(fovNitroMod >= baseFov + 4.5, 'Nitro boost at 120 km/h must expand FOV even below 220 km/h');
+
+    engine.state.speed = 120;
+    engine.state.isNitroActive = true;
+    vfx.update(0.02);
+    assert.equal(vfx.speedStreaksMesh.visible, true, 'Speed streaks must activate during Nitro boost above 85 km/h');
+    assert.ok(vfx.speedStreaksMesh.material.opacity >= 0.25, 'Speed streaks must have visible opacity during Nitro boost');
+
+    // B. Underbody bottom-out sparks on lowered/BPAN stance at high speed over compression dip
+    assert.equal(vfx.activeSparks.length, 0, 'No sparks before bottom-out');
+    engine.state.speed = 135;
+    engine.state.suspensionY = -0.008;
+    vfx.updateSparks(0.08, engine.state);
+    assert.ok(vfx.activeSparks.length >= 3, 'Lowered/BPAN stance must emit underbody bottom-out sparks on high-speed suspension compression');
+
+    // C. Car3DRacingEngine dual-layer backfire flames & Pop & Bang lift-off overrun trigger
+    const container = global.document.createElement('div');
+    const raceEngine = new Car3DManager.Car3DRacingEngine(container, {});
+    raceEngine.start({
+        carName: 'BMW M5 F90 Competition',
+        styling: { suspension: 'bpan' },
+        performance: { speed: 260, accel: 4.5 }
+    });
+    assert.equal(raceEngine.playerBackfireFlames.length, 4, 'Each of the 2 exhaust tips must have an outer cone and inner white-hot core cone (4 total)');
+
+    // Simulate holding throttle at high RPM/speed and lifting off (Pop & Bang overrun)
+    raceEngine.state.speed = 140;
+    raceEngine.state.rpm = 6200;
+    raceEngine.state.maxRpm = 7500;
+    raceEngine.state.gasHoldTime = 0.8;
+    raceEngine.state.prevGas = true;
+    raceEngine.keys.gas = false;
+    raceEngine.update(0.016);
+
+    assert.ok(raceEngine.state.backfireTimer > 0, 'Throttle lift-off at high speed/RPM must trigger Pop & Bang backfire timer');
+    assert.ok(raceEngine.state.antiLagBurbleTimer > 0, 'Throttle lift-off must arm anti-lag overrun burble timer');
+    assert.ok(raceEngine.playerBackfireFlames.every(bf => bf.visible), 'All 4 backfire flame cones must become visible during Pop & Bang');
+    assert.ok(raceEngine.playerBackfireLight.intensity > 0, 'Backfire PointLight must illuminate the rear bumper and asphalt during Pop & Bang');
+
+    raceEngine.destroy();
+});

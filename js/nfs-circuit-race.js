@@ -1171,6 +1171,11 @@
                 this.state.earnedCash += (pState.speedKmh * 3.2 * (this.state.rewardMult || 1)) * safeDt;
             }
 
+            const prevGear = this.state.gear || pState.gear || 1;
+            const gasActive = !!(playerInput.gas && !playerInput.handbrake);
+            if (gasActive) {
+                this.state.gasHoldTime = (this.state.gasHoldTime || 0) + safeDt;
+            }
             this.state.x = pState.x;
             this.state.z = pState.z;
             this.state.vx = pState.vx;
@@ -1184,6 +1189,67 @@
             this.state.nitroLevel = pState.nitro;
             this.state.nitroDepleted = pState.nitroDepleted;
             this.state.isNitroActive = pState.isNitroActive;
+
+            // Exhaust Pop & Bang on gear shifts, throttle lift-off overrun, redline & Nitro ignition
+            if (pState.gear !== prevGear && pState.gear > 0 && prevGear > 0) {
+                if (pState.gear > prevGear) {
+                    this.state.shiftShock = 0.12;
+                    this.state.backfireTimer = 0.20;
+                    this.state.backfireColor = pState.isNitroActive ? 'blue' : (Math.random() < 0.65 ? 'blue' : 'orange');
+                } else if (pState.speedKmh > 50) {
+                    this.state.antiLagBurbleTimer = 0.42;
+                    this.state.backfireTimer = 0.16;
+                    this.state.backfireColor = 'orange';
+                }
+                if (this.options.onSound) this.options.onSound('backfire');
+            }
+            if (this.state.prevGas && !gasActive && pState.speedKmh > 65 && ((this.state.gasHoldTime || 0) > 0.45 || (pState.rpm || 0) > (this.state.maxRpm || 7500) * 0.58)) {
+                if ((this.state.backfireTimer || 0) <= 0.05) {
+                    this.state.backfireTimer = 0.18;
+                    this.state.backfireColor = 'orange';
+                    if (this.options.onSound) this.options.onSound('blowOff');
+                }
+                this.state.antiLagBurbleTimer = 0.45;
+            }
+            if (!this.state.prevNitro && pState.isNitroActive) {
+                this.state.backfireTimer = 0.22;
+                this.state.backfireColor = 'blue';
+                this._spawnCollisionSparks(pState.x - Math.sin(pState.heading) * 2.0, pState.z - Math.cos(pState.heading) * 2.0, 4);
+            }
+            if (this.state.antiLagBurbleTimer > 0) {
+                this.state.antiLagBurbleTimer = Math.max(0, this.state.antiLagBurbleTimer - safeDt);
+                if ((this.state.backfireTimer || 0) <= 0.015 && Math.random() < 0.38) {
+                    this.state.backfireTimer = 0.10;
+                    this.state.backfireColor = Math.random() < 0.35 ? 'blue' : 'orange';
+                }
+            }
+            if (gasActive && (pState.rpm || 0) >= (this.state.maxRpm || 7500) * 0.94 && (this.state.backfireTimer || 0) <= 0 && Math.random() < 0.25) {
+                this.state.backfireTimer = 0.12;
+                this.state.backfireColor = 'blue';
+            }
+            if (this.state.backfireTimer > 0) {
+                this.state.backfireTimer = Math.max(0, this.state.backfireTimer - safeDt);
+            }
+            if (this.state.shiftShock > 0) {
+                this.state.shiftShock = Math.max(0, this.state.shiftShock - safeDt);
+            }
+            if (!gasActive) this.state.gasHoldTime = 0;
+            this.state.prevGas = gasActive;
+            this.state.prevNitro = !!pState.isNitroActive;
+
+            // Curb & lowered/BPAN bottom-out sparks at high speed
+            const styling = (this.carConfig && this.carConfig.styling) || {};
+            const isLowStance = styling.suspension === 'bpan' || styling.suspension === 'lowered' || styling.stanceMode === 'low';
+            const ridingCurb = pTrackAfter.surface === 'curb' || Math.abs(pTrackAfter.lateralOffset) > pTrackAfter.halfWidth * 0.84;
+            if (pState.speedKmh > 90 && ((ridingCurb && (isLowStance || pState.speedKmh > 135)) || (isLowStance && Math.abs(pState.heave || 0) > 0.012))) {
+                this._curbSparkTimer = (this._curbSparkTimer || 0) + safeDt;
+                if (this._curbSparkTimer >= 0.08) {
+                    this._curbSparkTimer = 0;
+                    this._spawnCollisionSparks(pState.x, pState.z, 3);
+                }
+            } else {
+                this._curbSparkTimer = 0;
+            }
             this.state.isDrifting = pState.isDrifting;
             this.state.driftAngle = pState.driftAngleRad;
             this.state.driftScore = pState.driftScore;
@@ -2008,6 +2074,69 @@
                     this.playerNitroLight = new THREE.PointLight(0x38bdf8, 0, 11);
                     this.playerNitroLight.position.set(0, 0.55, -2.55);
                     this.playerCar.add(this.playerNitroLight);
+
+                    this.playerBackfireLight = new THREE.PointLight(0xff7700, 0, 5.5);
+                    this.playerBackfireLight.position.set(0, 0.42, -2.35);
+                    this.playerCar.add(this.playerBackfireLight);
+                } catch (_) {}
+            }
+
+            this.playerNitroFlames = [];
+            this.playerBackfireFlames = [];
+            if (THREE.ConeGeometry && THREE.MeshBasicMaterial) {
+                try {
+                    const exhaustSpanX = 0.42;
+                    const exhaustY = 0.28;
+                    const exhaustZ = -2.18;
+                    [-1, 1].forEach(side => {
+                        const nfGeo = new THREE.ConeGeometry(0.055, 0.38, 14);
+                        if (typeof nfGeo.rotateX === 'function') nfGeo.rotateX(-Math.PI / 2);
+                        const nfMat = new THREE.MeshBasicMaterial({
+                            color: 0x38bdf8,
+                            transparent: true,
+                            opacity: 0.72,
+                            blending: THREE.AdditiveBlending,
+                            depthWrite: false
+                        });
+                        this._trackDisposables(nfGeo, nfMat);
+                        const nf = new THREE.Mesh(nfGeo, nfMat);
+                        nf.position.set(side * exhaustSpanX, exhaustY, exhaustZ - 0.14);
+                        nf.visible = false;
+                        this.playerCar.add(nf);
+                        this.playerNitroFlames.push(nf);
+
+                        const bfGeo = new THREE.ConeGeometry(0.048, 0.30, 14);
+                        if (typeof bfGeo.rotateX === 'function') bfGeo.rotateX(-Math.PI / 2);
+                        const bfMat = new THREE.MeshBasicMaterial({
+                            color: 0xff6a00,
+                            transparent: true,
+                            opacity: 0.82,
+                            blending: THREE.AdditiveBlending,
+                            depthWrite: false
+                        });
+                        this._trackDisposables(bfGeo, bfMat);
+                        const bf = new THREE.Mesh(bfGeo, bfMat);
+                        bf.position.set(side * exhaustSpanX, exhaustY, exhaustZ - 0.10);
+                        bf.visible = false;
+                        this.playerCar.add(bf);
+                        this.playerBackfireFlames.push(bf);
+
+                        const bfCoreGeo = new THREE.ConeGeometry(0.024, 0.18, 14);
+                        if (typeof bfCoreGeo.rotateX === 'function') bfCoreGeo.rotateX(-Math.PI / 2);
+                        const bfCoreMat = new THREE.MeshBasicMaterial({
+                            color: 0xffffff,
+                            transparent: true,
+                            opacity: 0.94,
+                            blending: THREE.AdditiveBlending,
+                            depthWrite: false
+                        });
+                        this._trackDisposables(bfCoreGeo, bfCoreMat);
+                        const bfCore = new THREE.Mesh(bfCoreGeo, bfCoreMat);
+                        bfCore.position.set(side * exhaustSpanX, exhaustY, exhaustZ - 0.06);
+                        bfCore.visible = false;
+                        this.playerCar.add(bfCore);
+                        this.playerBackfireFlames.push(bfCore);
+                    });
                 } catch (_) {}
             }
 
@@ -2134,6 +2263,39 @@
             }
             if (this.playerNitroLight) {
                 this.playerNitroLight.intensity = p.isNitroActive ? 3.8 : 0;
+            }
+            if (this.playerNitroFlames && this.playerNitroFlames.length > 0) {
+                const flutterL = 0.88 + Math.random() * 0.28;
+                const flutterW = 0.92 + Math.random() * 0.14;
+                for (const nf of this.playerNitroFlames) {
+                    nf.visible = !!p.isNitroActive;
+                    if (p.isNitroActive) nf.scale.set(flutterW, flutterW, flutterL);
+                }
+            }
+            if (this.playerBackfireFlames && this.playerBackfireFlames.length > 0) {
+                const bfTimer = (this.state && this.state.backfireTimer) || 0;
+                const isBlue = (this.state && this.state.backfireColor) === 'blue';
+                if (bfTimer > 0) {
+                    const prog = Math.max(0, Math.min(1, bfTimer / 0.18));
+                    const bfW = (0.85 + Math.random() * 0.30) * Math.min(1.15, prog * 1.4);
+                    const bfL = (0.90 + Math.random() * 0.42) * (0.48 + prog * 0.6);
+                    this.playerBackfireFlames.forEach((bf, idx) => {
+                        bf.visible = true;
+                        const isCore = (idx % 2 === 1);
+                        bf.scale.set(bfW * (isCore ? 0.9 : 1), bfW * (isCore ? 0.9 : 1), bfL * (isCore ? 0.85 : 1));
+                        if (bf.material && bf.material.color) {
+                            bf.material.color.setHex(isCore ? (isBlue ? 0xe0f2fe : 0xffffff) : (isBlue ? 0x38bdf8 : (Math.random() < 0.5 ? 0xff5500 : 0xff9900)));
+                            bf.material.opacity = Math.min(1, (isCore ? 0.94 : 0.84) * prog);
+                        }
+                    });
+                    if (this.playerBackfireLight) {
+                        if (this.playerBackfireLight.color) this.playerBackfireLight.color.setHex(isBlue ? 0x38bdf8 : 0xff7700);
+                        this.playerBackfireLight.intensity = 2.6 * prog;
+                    }
+                } else {
+                    for (const bf of this.playerBackfireFlames) bf.visible = false;
+                    if (this.playerBackfireLight) this.playerBackfireLight.intensity = 0;
+                }
             }
 
             for (const rival of this.rivals) {

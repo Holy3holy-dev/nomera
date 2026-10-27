@@ -390,15 +390,15 @@
 
         enhanceCameraFOV(baseFov, state) {
             if (!state) return baseFov;
-            // Subtle dynamic FOV expansion approaching 250+ km/h and hypersonic speeds
+            // Dynamic FOV expansion on Nitro boost and approaching 220+ km/h hypersonic speeds
             const speed = state.speed || 0;
-            if (speed < 220) return baseFov;
+            const nitroBonus = (state.isNitroActive && speed >= 60) ? 5.0 : 0.0;
+            if (speed < 220) return baseFov + nitroBonus;
 
             const highSpeedProg = Math.max(0, Math.min(1.0, (speed - 220) / 180));
             // Power curve: smooth entry at 220-250, visceral warp at 300-400+
             const fovBonus = Math.pow(highSpeedProg, 1.25) * 15.0;
-            const nitroBonus = state.isNitroActive ? 5.0 : 0.0;
-            return baseFov + fovBonus + nitroBonus;
+            return baseFov + fovBonus + (state.isNitroActive ? 5.0 : 0.0);
         }
 
         updateSpeedVFX(dt, state) {
@@ -407,10 +407,10 @@
 
             // 1. 3D Speed Streaks update
             if (this.speedStreaksMesh && this.speedStreaksData.length > 0) {
-                if (speed > 215) {
+                if (speed > 185 || (isNitro && speed > 85)) {
                     this.speedStreaksMesh.visible = true;
-                    const speedRatio = Math.min(1.0, (speed - 215) / 165);
-                    const targetOpacity = (speedRatio * 0.75) + (isNitro ? 0.20 : 0);
+                    const speedRatio = Math.min(1.0, Math.max(0, (speed - 185) / 155));
+                    const targetOpacity = Math.min(0.92, (speedRatio * 0.78) + (isNitro ? 0.28 : 0));
                     this.speedStreaksMesh.material.opacity = targetOpacity;
 
                     const geo = this.speedStreaksMesh.geometry;
@@ -450,11 +450,11 @@
 
             // 2. DOM Peripheral Speed Blur Vignette update
             if (this.speedVignetteEl) {
-                if (speed > 220 || isNitro) {
-                    const ratio = Math.min(1.0, (speed - 220) / 160);
-                    const vigOpacity = Math.min(0.85, (ratio * 0.70) + (isNitro ? 0.25 : 0));
+                if (speed > 185 || isNitro) {
+                    const ratio = Math.min(1.0, Math.max(0, (speed - 185) / 165));
+                    const vigOpacity = Math.min(0.85, (ratio * 0.70) + (isNitro ? 0.28 : 0));
                     this.speedVignetteEl.style.opacity = vigOpacity.toFixed(3);
-                    if (speed >= 300 || isNitro) {
+                    if (speed >= 260 || isNitro) {
                         this.speedVignetteEl.classList.add('hypersonic');
                     } else {
                         this.speedVignetteEl.classList.remove('hypersonic');
@@ -905,7 +905,15 @@
             if(typeof window==='undefined'||!window.NOMERA_AUTHORS_PREVIEW)return null;
             const physics=this.engine.playerPhysics||this.engine.mwLongitudinal;
             if(!physics?.mwTires||!physics.suspension?.wheels)return null;
-            return physics.suspension.wheels.map(w=>{const tire=physics.mwTires[w.key];return{key:w.key,active:!!w.contact&&!!tire&&(Math.abs(tire.slip)>1.8||Math.abs(tire.slipAngle)>.14&&this.engine.state.speed>18||tire.locked&&this.engine.state.speed>20)};});
+            const st=this.engine.state||{},keys=this.engine.keys||{},speed=st.speed||0;
+            const rearSlide=!!st.isDrifting||(!!(keys.drift||keys.handbrake)&&speed>18)||(Math.abs(st.vx||0)>2.2&&speed>55);
+            const hardBrake=!!keys.brake&&speed>65;
+            return physics.suspension.wheels.map(w=>{
+                const tire=physics.mwTires[w.key];
+                const isRear=!w.front||w.key==='rl'||w.key==='rr';
+                const tireSlip=!!tire&&(Math.abs(tire.slip)>1.35||Math.abs(tire.slipAngle)>.12&&speed>18||tire.locked&&speed>20);
+                return{key:w.key,active:!!w.contact&&(tireSlip||(isRear&&rearSlide)||hardBrake)};
+            });
         }
 
         updateSmoke(dt, state, keys) {
@@ -1064,6 +1072,35 @@
                         spreadY: 3.5
                     });
                 }
+            }
+
+            // Underbody bottom-out & lowered/BPAN stance sparks on suspension compression or expansion joints
+            const styling = (this.engine && (this.engine.styling || (this.engine.carConfig && this.engine.carConfig.styling))) || {};
+            const isLowStance = styling.suspension === 'bpan' || styling.suspension === 'lowered' || styling.stanceMode === 'low';
+            const suspY = state.suspensionY || 0;
+            const pitchVel = Math.abs(state.pitchVelocity || 0);
+            const pitchSq = Math.abs(state.pitchSquat || 0);
+            const isBottomOut = speed > 95 && (
+                (isLowStance && (suspY < -0.005 || pitchVel > 0.16 || pitchSq > 0.032)) ||
+                suspY < -0.014 ||
+                pitchVel > 0.28
+            );
+            if (isBottomOut) {
+                this.bottomOutTimer = (this.bottomOutTimer || 0) + dt;
+                const interval = isLowStance ? 0.065 : 0.10;
+                if (this.bottomOutTimer >= interval) {
+                    this.bottomOutTimer = 0;
+                    const railSide = Math.random() < 0.5 ? -0.44 : 0.44;
+                    this.spawnSparks(
+                        (state.x || 0) + railSide,
+                        0.08,
+                        (state.z || 0) - 0.85 - Math.random() * 0.75,
+                        isLowStance ? 4 : 3,
+                        { spreadX: 3.2, spreadY: 2.2, maxLife: 0.28 }
+                    );
+                }
+            } else {
+                this.bottomOutTimer = 0;
             }
 
             // Step active sparks

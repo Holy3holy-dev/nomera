@@ -14139,7 +14139,7 @@
                     const bfMat = new THREE.MeshBasicMaterial({
                         color: 0xff6a00,
                         transparent: true,
-                        opacity: 0.75,
+                        opacity: 0.78,
                         blending: THREE.AdditiveBlending,
                         depthWrite: false
                     });
@@ -14148,9 +14148,24 @@
                     bf.visible = false;
                     this.playerCar.add(bf);
                     this.playerBackfireFlames.push(bf);
+
+                    const bfCoreGeo = new THREE.ConeGeometry(0.024, 0.18, 16);
+                    bfCoreGeo.rotateX(-Math.PI / 2);
+                    const bfCoreMat = new THREE.MeshBasicMaterial({
+                        color: 0xffffff,
+                        transparent: true,
+                        opacity: 0.92,
+                        blending: THREE.AdditiveBlending,
+                        depthWrite: false
+                    });
+                    const bfCore = new THREE.Mesh(bfCoreGeo, bfCoreMat);
+                    bfCore.position.set(side * exhaustSpanX, exhaustY, exhaustZ - 0.06);
+                    bfCore.visible = false;
+                    this.playerCar.add(bfCore);
+                    this.playerBackfireFlames.push(bfCore);
                 });
 
-                this.playerBackfireLight = new THREE.PointLight(0xff7700, 0, 4.5, 2.0);
+                this.playerBackfireLight = new THREE.PointLight(0xff7700, 0, 5.2, 2.0);
                 this.playerBackfireLight.position.set(0, exhaustY + 0.08, exhaustZ - 0.16);
                 this.playerCar.add(this.playerBackfireLight);
 
@@ -14956,6 +14971,10 @@
                 physical.state.slipstreamFactor = bestSlipstream;
                 physical.setWeather(this.currentActiveWeather || 'night');
                 const oldSpeed = state.speed;
+                const prevGear = state.gear || 1;
+                if (gasActive && !isHandbrake) {
+                    state.gasHoldTime = (state.gasHoldTime || 0) + dt;
+                }
                 physical.collisionPreviousPose={x:physical.x,y:physical.y,z:physical.z};
                 physical.update(dt, { gas: gasActive, brake: keys.brake, steer:roadInput,handbrake: isHandbrake, nitro: keys.nitro });
                 // Highway has no reverse lane traversal; circuit retains reverse.
@@ -14969,7 +14988,22 @@
                 state.rpm = physical.state.rpm;
                 state.idleRpm = physical.profile.idleRpm;
                 state.maxRpm = physical.profile.redlineRpm;
-                if (state.gear !== physical.state.gear && this.options.onSound) this.options.onSound('backfire');
+                if (physical.state.gear !== prevGear) {
+                    if (physical.state.gear > prevGear) {
+                        state.shiftShock = 0.12;
+                        state.pitchVelocity = (state.pitchVelocity || 0) + 0.36;
+                        state.backfireTimer = 0.20;
+                        state.backfireColor = state.isNitroActive ? 'blue' : (Math.random() < 0.65 ? 'blue' : 'orange');
+                        this.spawnSparks(state.x + (Math.random() - 0.5) * 0.5, 0.22, state.z - 2.15, 4);
+                        if (this.options.onHaptic) this.options.onHaptic('medium');
+                    } else if (state.speed > 50) {
+                        state.antiLagBurbleTimer = 0.42;
+                        state.backfireTimer = 0.16;
+                        state.backfireColor = 'orange';
+                    }
+                    if (this.options.onSound) this.options.onSound('backfire');
+                }
+                if (state.shiftShock > 0) state.shiftShock = Math.max(0, state.shiftShock - dt);
                 state.gear = physical.state.gear;
                 netAccel = (state.speed - oldSpeed) / Math.max(.0001, dt);
                 brakeBite = keys.brake ? Math.max(0, -netAccel) : 0;
@@ -15061,6 +15095,22 @@
                 state.speed = Math.max(0, state.speed - coastingDrag * dt);
             }
             }
+            // Unified Pop & Bang overrun crackle on throttle lift-off & Nitro ignition blast (both mwLongitudinal and legacy)
+            if (state.prevGas && (!gasActive || isHandbrake) && state.speed > 65 && ((state.gasHoldTime || 0) > 0.45 || (state.rpm || 0) > (state.maxRpm || 7500) * 0.58)) {
+                if ((state.backfireTimer || 0) <= 0.05) {
+                    state.backfireTimer = 0.18;
+                    state.backfireColor = 'orange';
+                    if (this.options.onSound) this.options.onSound('blowOff');
+                }
+                state.antiLagBurbleTimer = 0.45;
+            }
+            if (!state.prevNitro && state.isNitroActive) {
+                state.backfireTimer = 0.22;
+                state.backfireColor = 'blue';
+                state.shakeAmount = Math.max(state.shakeAmount || 0, 0.18);
+                this.spawnSparks(state.x + (Math.random() - 0.5) * 0.5, 0.22, state.z - 2.15, 5);
+            }
+            state.prevNitro = !!state.isNitroActive;
             if (!gasActive || isHandbrake) state.gasHoldTime = 0;
             state.prevGas = !!gasActive && !isHandbrake;
             state.wasBraking = !!keys.brake;
@@ -15666,7 +15716,18 @@
                 });
             }
 
-            // Exhaust backfire animation update (short, punchy pops on shifts; boosted reverb in Lefortovo Tunnel)
+            // Exhaust backfire animation update (short, punchy pops on shifts, anti-lag overrun burble, redline limiter & tunnel reverb)
+            if (state.antiLagBurbleTimer > 0) {
+                state.antiLagBurbleTimer = Math.max(0, state.antiLagBurbleTimer - dt);
+                if ((state.backfireTimer || 0) <= 0.015 && Math.random() < 0.38) {
+                    state.backfireTimer = 0.10;
+                    state.backfireColor = Math.random() < 0.35 ? 'blue' : 'orange';
+                }
+            }
+            if (gasActive && (state.rpm || 0) >= (state.maxRpm || 7500) * 0.94 && (state.backfireTimer || 0) <= 0 && Math.random() < 0.25) {
+                state.backfireTimer = 0.12;
+                state.backfireColor = 'blue';
+            }
             if (this.currentBiome === 'tunnel' && gasActive && state.speed > 160 && state.backfireTimer <= 0 && Math.random() < 0.04) {
                 state.backfireTimer = 0.14;
                 state.backfireColor = 'blue';
@@ -15675,22 +15736,30 @@
                 state.backfireTimer -= dt;
                 const tunnelBoost = (this.currentBiome === 'tunnel') ? 1.45 : 1.0;
                 const progress = Math.max(0, Math.min(1.0, state.backfireTimer / 0.18));
-                const bfScaleW = (0.80 + Math.random() * 0.30) * Math.min(1.0, progress * 1.4) * tunnelBoost;
-                const bfScaleL = (0.85 + Math.random() * 0.40) * (0.45 + progress * 0.55) * tunnelBoost;
+                const bfScaleW = (0.85 + Math.random() * 0.32) * Math.min(1.15, progress * 1.45) * tunnelBoost;
+                const bfScaleL = (0.90 + Math.random() * 0.45) * (0.48 + progress * 0.62) * tunnelBoost;
                 const isBlue = state.backfireColor === 'blue';
-                this.playerBackfireFlames.forEach(bf => {
+                this.playerBackfireFlames.forEach((bf, idx) => {
                     bf.visible = true;
-                    bf.scale.set(bfScaleW, bfScaleW, bfScaleL);
+                    const isCore = (idx % 2 === 1);
+                    const wMult = isCore ? 0.90 : 1.0;
+                    const lMult = isCore ? 0.85 : 1.0;
+                    bf.scale.set(bfScaleW * wMult, bfScaleW * wMult, bfScaleL * lMult);
                     if (bf.material) {
-                        bf.material.color.setHex(isBlue ? 0x38bdf8 : (Math.random() < 0.5 ? 0xff5500 : 0xff9900));
-                        bf.material.opacity = Math.min(1.0, 0.80 * progress * tunnelBoost);
+                        if (isCore) {
+                            bf.material.color.setHex(isBlue ? 0xe0f2fe : 0xffffff);
+                            bf.material.opacity = Math.min(1.0, 0.95 * progress * tunnelBoost);
+                        } else {
+                            bf.material.color.setHex(isBlue ? 0x38bdf8 : (Math.random() < 0.5 ? 0xff5500 : 0xff9900));
+                            bf.material.opacity = Math.min(1.0, 0.84 * progress * tunnelBoost);
+                        }
                     }
                 });
                 if (this.playerBackfireLight) {
                     this.playerBackfireLight.color.setHex(isBlue ? 0x38bdf8 : 0xff7700);
-                    this.playerBackfireLight.intensity = 2.4 * progress * tunnelBoost;
+                    this.playerBackfireLight.intensity = 2.8 * progress * tunnelBoost;
                 }
-                if (Math.random() < 0.3) {
+                if (Math.random() < 0.35) {
                     this.spawnSparks(state.x + (Math.random() - 0.5) * 0.5, 0.22, state.z - 2.1, 2);
                 }
             } else {
@@ -16868,7 +16937,11 @@
             // 1. Target camera offset based on camera mode and viewport aspect
             // In portrait aspect, elevate camera slightly so the vehicle sits higher in frame,
             // preventing lower HUD gauges (speedometer & nitro) from covering the bumper and plate.
-            const accelLag = (!isHood && !isTopDown && !isCockpit) ? ((this.keys && this.keys.gas) ? 0.30 : ((this.keys && this.keys.brake) ? -0.25 : 0)) : 0;
+            const shiftKick = (state.shiftShock || 0) * 1.6;
+            const nitroPull = state.isNitroActive ? 0.42 : 0;
+            const accelLag = (!isHood && !isTopDown && !isCockpit)
+                ? (((this.keys && this.keys.gas) ? 0.30 : ((this.keys && this.keys.brake) ? -0.25 : 0)) + nitroPull - shiftKick)
+                : 0;
             const yaw = state.yawAngle || 0;
             const cosYaw = Math.cos(yaw);
             const sinYaw = Math.sin(yaw);
@@ -16905,11 +16978,19 @@
                 shakeY = (Math.random() - 0.5) * state.shakeAmount * shakeScale;
             }
 
-            // High-speed subtle road vibration (>200 km/h)
-            if (state.speed > 200) {
-                const vib = ((state.speed - 200) / 140) * (isCockpit ? 0.006 : 0.012);
+            // High-speed subtle road vibration (>185 km/h), redline RPM buzz, and Nitro turbine tremor
+            if (state.speed > 185 || state.isNitroActive) {
+                const speedVib = Math.max(0, (state.speed - 185) / 140) * (isCockpit ? 0.0065 : 0.013);
+                const nitroVib = state.isNitroActive ? (isCockpit ? 0.0045 : 0.0085) : 0;
+                const vib = speedVib + nitroVib;
                 shakeX += (Math.random() - 0.5) * vib;
                 shakeY += (Math.random() - 0.5) * vib;
+            }
+            const rpmRatio = (state.rpm || 0) / Math.max(1, state.maxRpm || 7500);
+            if (rpmRatio > 0.88 && state.speed > 40) {
+                const redlineBuzz = ((rpmRatio - 0.88) / 0.12) * (isCockpit ? 0.004 : 0.007);
+                shakeX += (Math.random() - 0.5) * redlineBuzz;
+                shakeY += (Math.random() - 0.5) * redlineBuzz;
             }
 
             this.camera.position.set(this.camPos.x + shakeX, this.camPos.y + shakeY, this.camPos.z);
