@@ -1,0 +1,1573 @@
+{
+  "schemaVersion": 1,
+  "profile": "mobile",
+  "release": "dd8494584ead",
+  "fileCount": 391,
+  "totalBytes": 374852835,
+  "files": {
+    "assets/audio/authors/README.md": {
+      "version": "028cce62fd63",
+      "bytes": 686
+    },
+    "assets/audio/authors/kamaz_diesel.mp3": {
+      "version": "868b426adf35",
+      "bytes": 61676
+    },
+    "assets/audio/authors/m3gtr_whine.mp3": {
+      "version": "dab40038a86c",
+      "bytes": 61676
+    },
+    "assets/audio/authors/provenance.json": {
+      "version": "734c48745e40",
+      "bytes": 1039
+    },
+    "assets/audio/authors/sport_turbo_roar.mp3": {
+      "version": "9d888d67e16e",
+      "bytes": 61676
+    },
+    "assets/audio/authors/standard_inline4.mp3": {
+      "version": "bd783ea65a69",
+      "bytes": 61676
+    },
+    "assets/audio/authors/supercar_scream.mp3": {
+      "version": "782cb80eac6f",
+      "bytes": 61676
+    },
+    "assets/audio/authors/v8_deep_rumble.mp3": {
+      "version": "22bcd84589d5",
+      "bytes": 61676
+    },
+    "assets/audio/mw/clk-accel.wav": {
+      "version": "4824282711b1",
+      "bytes": 315456
+    },
+    "assets/audio/mw/clk-decel.wav": {
+      "version": "8c2c0c7d0e22",
+      "bytes": 169130
+    },
+    "assets/audio/mw/collision-0.wav": {
+      "version": "8cb58649c2a0",
+      "bytes": 38256
+    },
+    "assets/audio/mw/collision-1.wav": {
+      "version": "3af6955b1836",
+      "bytes": 29820
+    },
+    "assets/audio/mw/collision-2.wav": {
+      "version": "b1e4959005c6",
+      "bytes": 18516
+    },
+    "assets/audio/mw/collision-3.wav": {
+      "version": "fa0668911f5f",
+      "bytes": 17678
+    },
+    "assets/audio/mw/corvette-accel.wav": {
+      "version": "8dea89ad2364",
+      "bytes": 447556
+    },
+    "assets/audio/mw/corvette-decel.wav": {
+      "version": "d5039343998c",
+      "bytes": 530904
+    },
+    "assets/audio/mw/db9-accel.wav": {
+      "version": "cc591e558b5c",
+      "bytes": 485366
+    },
+    "assets/audio/mw/db9-decel.wav": {
+      "version": "d2fafba4a405",
+      "bytes": 154936
+    },
+    "assets/audio/mw/flat6-accel.wav": {
+      "version": "3724aa7ea75b",
+      "bytes": 157334
+    },
+    "assets/audio/mw/flat6-decel.wav": {
+      "version": "be812bc76e02",
+      "bytes": 212072
+    },
+    "assets/audio/mw/gear-0.wav": {
+      "version": "af44e38872e4",
+      "bytes": 56752
+    },
+    "assets/audio/mw/gear-1.wav": {
+      "version": "05d0936b93d4",
+      "bytes": 50326
+    },
+    "assets/audio/mw/gear-2.wav": {
+      "version": "0ddb16affc93",
+      "bytes": 32208
+    },
+    "assets/audio/mw/gti-accel.wav": {
+      "version": "1a4dd5095284",
+      "bytes": 276760
+    },
+    "assets/audio/mw/gti-decel.wav": {
+      "version": "69fb9d0cee89",
+      "bytes": 82904
+    },
+    "assets/audio/mw/inline6-accel.wav": {
+      "version": "72b58fa716dd",
+      "bytes": 317712
+    },
+    "assets/audio/mw/inline6-decel.wav": {
+      "version": "4eb84b327d46",
+      "bytes": 208586
+    },
+    "assets/audio/mw/m3gtr-accel.wav": {
+      "version": "dd1c5a954259",
+      "bytes": 476592
+    },
+    "assets/audio/mw/m3gtr-decel.wav": {
+      "version": "4eb84b327d46",
+      "bytes": 208586
+    },
+    "assets/audio/mw/m5-accel.wav": {
+      "version": "6b6b0b72f32d",
+      "bytes": 283352
+    },
+    "assets/audio/mw/m5-decel.wav": {
+      "version": "b9d234eb5187",
+      "bytes": 110442
+    },
+    "assets/audio/mw/manifest.json": {
+      "version": "609ed15549d6",
+      "bytes": 66495
+    },
+    "assets/audio/mw/nitroOneShots-0.wav": {
+      "version": "2a1b39d7cbd5",
+      "bytes": 53058
+    },
+    "assets/audio/mw/nitroOneShots-1.wav": {
+      "version": "121a7a61904a",
+      "bytes": 133628
+    },
+    "assets/audio/mw/nitroSustain.wav": {
+      "version": "a097716c052c",
+      "bytes": 226640
+    },
+    "assets/audio/mw/provenance.json": {
+      "version": "607770d6b97a",
+      "bytes": 30148
+    },
+    "assets/audio/mw/road.wav": {
+      "version": "ad76da127b3b",
+      "bytes": 122342
+    },
+    "assets/audio/mw/rotary-accel.wav": {
+      "version": "7a1d35e6d7bd",
+      "bytes": 318520
+    },
+    "assets/audio/mw/rotary-decel.wav": {
+      "version": "1228c6682efd",
+      "bytes": 73508
+    },
+    "assets/audio/mw/skid.wav": {
+      "version": "4ae4eb4df6f0",
+      "bytes": 131796
+    },
+    "assets/audio/mw/slr-accel.wav": {
+      "version": "7124429eb38a",
+      "bytes": 292258
+    },
+    "assets/audio/mw/slr-decel.wav": {
+      "version": "d2fafba4a405",
+      "bytes": 154936
+    },
+    "assets/audio/mw/sport-accel.wav": {
+      "version": "3715da31560f",
+      "bytes": 244006
+    },
+    "assets/audio/mw/sport-decel.wav": {
+      "version": "1f731e151661",
+      "bytes": 132116
+    },
+    "assets/audio/mw/standard-accel.wav": {
+      "version": "c73a85529d7e",
+      "bytes": 218256
+    },
+    "assets/audio/mw/standard-decel.wav": {
+      "version": "16f093eee4e5",
+      "bytes": 132796
+    },
+    "assets/audio/mw/supercar-accel.wav": {
+      "version": "4df2ff90917d",
+      "bytes": 285584
+    },
+    "assets/audio/mw/supercar-decel.wav": {
+      "version": "38d49576e29d",
+      "bytes": 303550
+    },
+    "assets/audio/mw/truck-accel.wav": {
+      "version": "f590aadd0dd4",
+      "bytes": 455800
+    },
+    "assets/audio/mw/truck-decel.wav": {
+      "version": "54f77345d302",
+      "bytes": 588450
+    },
+    "assets/audio/mw/turboOneShots-0.wav": {
+      "version": "e0ab15cfe723",
+      "bytes": 173240
+    },
+    "assets/audio/mw/turboOneShots-1.wav": {
+      "version": "bc6fedba5794",
+      "bytes": 100502
+    },
+    "assets/audio/mw/turboOneShots-2.wav": {
+      "version": "1bb7834e29b7",
+      "bytes": 94400
+    },
+    "assets/audio/mw/turboSustain.wav": {
+      "version": "ef23321baaef",
+      "bytes": 96408
+    },
+    "assets/audio/mw/v8-accel.wav": {
+      "version": "7987221675ae",
+      "bytes": 1217550
+    },
+    "assets/audio/mw/v8-decel.wav": {
+      "version": "682a04400100",
+      "bytes": 831448
+    },
+    "assets/audio/mw/viper-accel.wav": {
+      "version": "88665bb921db",
+      "bytes": 511736
+    },
+    "assets/audio/mw/viper-decel.wav": {
+      "version": "48c0167ae051",
+      "bytes": 511596
+    },
+    "assets/audio/mw/whoosh.wav": {
+      "version": "e2714bb9e449",
+      "bytes": 29970
+    },
+    "assets/audio/mw/wind.wav": {
+      "version": "1dffd1822503",
+      "bytes": 251924
+    },
+    "assets/authors-art/alloy-case.webp": {
+      "version": "9dbba3b4187f",
+      "bytes": 63068
+    },
+    "assets/authors-art/provenance.json": {
+      "version": "4aa284215121",
+      "bytes": 313
+    },
+    "assets/authors-audio/numbers/casino-LICENSE.txt": {
+      "version": "a7d89a9b186a",
+      "bytes": 464
+    },
+    "assets/authors-audio/numbers/interface-LICENSE.txt": {
+      "version": "1a2d0f1e2926",
+      "bytes": 550
+    },
+    "assets/authors-audio/numbers/manifest.json": {
+      "version": "51f4a3ed39a7",
+      "bytes": 4364
+    },
+    "assets/authors-audio/numbers/mechanical.4cf96c6bcae1.mp3": {
+      "version": "4cf96c6bcae1",
+      "bytes": 194876
+    },
+    "assets/authors-audio/numbers/premium.8edbc0cbeec5.mp3": {
+      "version": "8edbc0cbeec5",
+      "bytes": 240236
+    },
+    "assets/authors-audio/radio/asphalt-pulse.mp3": {
+      "version": "17aa21ac30f8",
+      "bytes": 1130679
+    },
+    "assets/authors-audio/radio/neon-district.mp3": {
+      "version": "127940521fe0",
+      "bytes": 1372573
+    },
+    "assets/authors-audio/radio/provenance.json": {
+      "version": "ed6fc40c3ce6",
+      "bytes": 980
+    },
+    "assets/authors-audio/radio/pursuit-line.mp3": {
+      "version": "73f92ff0be91",
+      "bytes": 1239870
+    },
+    "assets/authors-audio/road/distant-thunder.mp3": {
+      "version": "961cf007c048",
+      "bytes": 24854
+    },
+    "assets/authors-audio/road/loose-surface.mp3": {
+      "version": "27237c4a427f",
+      "bytes": 40694
+    },
+    "assets/authors-audio/road/provenance.json": {
+      "version": "b73eee05ba04",
+      "bytes": 994
+    },
+    "assets/authors-audio/road/rain-surface.mp3": {
+      "version": "8b846e6d64db",
+      "bytes": 97286
+    },
+    "assets/authors-audio/road/wet-tyres.mp3": {
+      "version": "28bec3afd365",
+      "bytes": 40694
+    },
+    "assets/authors-brand/apple-touch-icon.png": {
+      "version": "d3943d23006c",
+      "bytes": 3067
+    },
+    "assets/authors-brand/favicon.svg": {
+      "version": "619c208cfbf3",
+      "bytes": 408
+    },
+    "assets/authors-brand/nomera-lockup.png": {
+      "version": "db01bfba6307",
+      "bytes": 13345
+    },
+    "assets/authors-brand/nomera-lockup.svg": {
+      "version": "f17f747ddb44",
+      "bytes": 949
+    },
+    "assets/authors-brand/nomera-symbol.svg": {
+      "version": "9068505323ba",
+      "bytes": 365
+    },
+    "assets/authors-brand/nomera-wordmark.svg": {
+      "version": "dfad08c470ab",
+      "bytes": 532
+    },
+    "assets/authors-mw/environment-provenance.json": {
+      "version": "41b895e6ebb9",
+      "bytes": 6238
+    },
+    "assets/authors-mw/provenance.json": {
+      "version": "c5e12e803a60",
+      "bytes": 69443
+    },
+    "assets/authors-mw/textures/032ea50d_TRN_OLDCONCRETE_SIMPLE.png": {
+      "version": "db7fc6683cd1",
+      "bytes": 563357
+    },
+    "assets/authors-mw/textures/0e14ffbd_ORG_CT_GRASS_MOSS.png": {
+      "version": "8cbcfedfb56a",
+      "bytes": 23248
+    },
+    "assets/authors-mw/textures/0e457817_ARC_FACTORYBRICK_01.png": {
+      "version": "21d2d0ebd6ae",
+      "bytes": 101661
+    },
+    "assets/authors-mw/textures/233ea368_ARC_OLDBRICKE_WINA_LL.png": {
+      "version": "e4f4050324b0",
+      "bytes": 99697
+    },
+    "assets/authors-mw/textures/2580b989_RO_GENFILL_CRK_SPEC.png": {
+      "version": "3d522f092087",
+      "bytes": 376463
+    },
+    "assets/authors-mw/textures/7ce0b047_RO_GENFILL_CRK_NORMAL.png": {
+      "version": "487257f84fe0",
+      "bytes": 270814
+    },
+    "assets/authors-mw/textures/840093e4_ARC_CITYEASTBLD12WINDOW.png": {
+      "version": "561b7c6d8abe",
+      "bytes": 92098
+    },
+    "assets/authors-mw/textures/b64b3f8d_ARC_TUNNEL_WALL_A_NORMA.png": {
+      "version": "6a2caf91a58a",
+      "bytes": 42521
+    },
+    "assets/authors-mw/textures/b7646963_ARC_CITYEASTBLD10ROOF.png": {
+      "version": "03dac4b969b6",
+      "bytes": 90597
+    },
+    "assets/authors-mw/textures/d5a08d5f_RO_GENFILL_CRK.png": {
+      "version": "ec8b06df6efb",
+      "bytes": 643267
+    },
+    "assets/authors-mw/textures/dca86b52_ARC_TUNNEL_WALL_A_MM.png": {
+      "version": "ed9a4698a432",
+      "bytes": 164133
+    },
+    "assets/authors-mw/textures/f7d6b83c_ARC_CONCRETE02_D_JG.png": {
+      "version": "0f85833c4a31",
+      "bytes": 90450
+    },
+    "assets/authors-mw/textures/fbe970b0_ARC_TUNNEL_WALL_A_SPECU.png": {
+      "version": "da88cba022f8",
+      "bytes": 131964
+    },
+    "assets/authors-mw/traffic/copmidsize.glb": {
+      "version": "2889823403c2",
+      "bytes": 805064
+    },
+    "assets/authors-mw/traffic/traf4dsedb.glb": {
+      "version": "c3fc20e07f0c",
+      "bytes": 285108
+    },
+    "assets/authors-mw/traffic/trafsuva.glb": {
+      "version": "e31c20cef0c2",
+      "bytes": 292228
+    },
+    "assets/authors-mw/traffic/traftaxi.glb": {
+      "version": "37b92409d9c4",
+      "bytes": 340240
+    },
+    "assets/authors-mw/world/barrier.glb": {
+      "version": "a3ca90930220",
+      "bytes": 150540
+    },
+    "assets/authors-mw/world/building.glb": {
+      "version": "6650edbab012",
+      "bytes": 59532
+    },
+    "assets/authors-mw/world/gantry.glb": {
+      "version": "51bd059a54e4",
+      "bytes": 61372
+    },
+    "assets/authors-mw/world/geometry-provenance.json": {
+      "version": "f25a727da4e5",
+      "bytes": 40390
+    },
+    "assets/authors-mw/world/lamp.glb": {
+      "version": "61996e173e43",
+      "bytes": 32944
+    },
+    "assets/authors-mw/world/pipe.glb": {
+      "version": "26370c5545fb",
+      "bytes": 16728
+    },
+    "assets/authors-mw/world/road.glb": {
+      "version": "da6db734b7e9",
+      "bytes": 651008
+    },
+    "assets/authors-mw/world/sign.glb": {
+      "version": "c9c2089024fb",
+      "bytes": 25756
+    },
+    "assets/authors-mw/world/tree.glb": {
+      "version": "3ff2d1d95456",
+      "bytes": 91056
+    },
+    "assets/authors-mw/world/tunnel-beam.glb": {
+      "version": "f78678de4afa",
+      "bytes": 208036
+    },
+    "assets/authors-mw/world/tunnel.glb": {
+      "version": "7f7fe95eaad1",
+      "bytes": 314872
+    },
+    "assets/authors-scene/asphalt-roughness.png": {
+      "version": "237971f2fd3f",
+      "bytes": 104418
+    },
+    "assets/authors-scene/asphalt.png": {
+      "version": "725ab9284704",
+      "bytes": 302692
+    },
+    "assets/authors-scene/provenance.json": {
+      "version": "b039aa68f486",
+      "bytes": 1120
+    },
+    "assets/authors-scene/tunnel-concrete.png": {
+      "version": "fb860cdd15c2",
+      "bytes": 255719
+    },
+    "assets/fonts/LICENSE-GOST.txt": {
+      "version": "025a598699f5",
+      "bytes": 889
+    },
+    "assets/fonts/LICENSE-Hansen.txt": {
+      "version": "3fc5fd9a332b",
+      "bytes": 527
+    },
+    "assets/fonts/NOTICE-TRM-rendered-digits.txt": {
+      "version": "cf3565f0eafc",
+      "bytes": 1020
+    },
+    "assets/fonts/OFL-MrDafoe.txt": {
+      "version": "0da6a3e5b24a",
+      "bytes": 4398
+    },
+    "assets/fonts/OFL-NotoSansArabic.txt": {
+      "version": "07fc70bfeb98",
+      "bytes": 4382
+    },
+    "assets/fonts/OFL-NotoSansJP.txt": {
+      "version": "1c05c68c34f9",
+      "bytes": 4388
+    },
+    "assets/fonts/OFL-RoundedMPlus.txt": {
+      "version": "7de73e85e8fd",
+      "bytes": 4351
+    },
+    "assets/fonts/README.md": {
+      "version": "bc2e25aac318",
+      "bytes": 2691
+    },
+    "assets/fonts/gost-r-50577-93.woff2": {
+      "version": "ff5764652725",
+      "bytes": 3976
+    },
+    "assets/fonts/hansen-license-plate.woff2": {
+      "version": "bdf802ad2ce0",
+      "bytes": 3000
+    },
+    "assets/fonts/jp-registration-digits.png": {
+      "version": "511b81954ccc",
+      "bytes": 37099
+    },
+    "assets/fonts/nomera-ar-labels.woff2": {
+      "version": "93227bec9b92",
+      "bytes": 7384
+    },
+    "assets/fonts/nomera-ca-title.woff2": {
+      "version": "6d2cc85a6e77",
+      "bytes": 1544
+    },
+    "assets/fonts/nomera-jp-labels.woff2": {
+      "version": "b717db9d2c99",
+      "bytes": 19508
+    },
+    "assets/fonts/nomera-regional-ae.woff2": {
+      "version": "ee99591f1f36",
+      "bytes": 2048
+    },
+    "assets/fonts/nomera-regional-kz.woff2": {
+      "version": "c94ec2757434",
+      "bytes": 2112
+    },
+    "assets/fonts/nomera-registration-ae.woff2": {
+      "version": "f144ab60d7ee",
+      "bytes": 2152
+    },
+    "assets/fonts/nomera-registration-jp.woff2": {
+      "version": "91aefb96d030",
+      "bytes": 2116
+    },
+    "assets/fonts/nomera-registration-kz.woff2": {
+      "version": "09195c5c0e51",
+      "bytes": 2144
+    },
+    "assets/fonts/nomera-registration-ru.woff2": {
+      "version": "0097be1db959",
+      "bytes": 1852
+    },
+    "assets/fonts/nomera-registration-us.woff2": {
+      "version": "9cd07f058456",
+      "bytes": 2100
+    },
+    "assets/fonts/nomera-us-east.woff2": {
+      "version": "ee9f4cf3fc55",
+      "bytes": 2036
+    },
+    "assets/fonts/nomera-us-south.woff2": {
+      "version": "5f14faab5bca",
+      "bytes": 2092
+    },
+    "assets/fonts/nomera-us-texas.woff2": {
+      "version": "990cb8592b78",
+      "bytes": 1992
+    },
+    "assets/fonts/nomera-us-vintage.woff2": {
+      "version": "64fabfcd5237",
+      "bytes": 2156
+    },
+    "assets/models-lod/arrizo8.json": {
+      "version": "5185dbc0c08a",
+      "bytes": 1331666
+    },
+    "assets/models-lod/aston_martin.json": {
+      "version": "d879b9d3de6d",
+      "bytes": 846786
+    },
+    "assets/models-lod/audi_rs7.json": {
+      "version": "7145fb3e1ade",
+      "bytes": 6922640
+    },
+    "assets/models-lod/bmw_i8.json": {
+      "version": "2f7eca958383",
+      "bytes": 678073
+    },
+    "assets/models-lod/bmw_m3_sedan.json": {
+      "version": "8c7680a3a756",
+      "bytes": 3426680
+    },
+    "assets/models-lod/bmw_m4.json": {
+      "version": "7d686e5c5b81",
+      "bytes": 550378
+    },
+    "assets/models-lod/chiron.json": {
+      "version": "c7c32f1eb3a9",
+      "bytes": 2460895
+    },
+    "assets/models-lod/corvette_cross.json": {
+      "version": "cfa0fc47c7fc",
+      "bytes": 417817
+    },
+    "assets/models-lod/elantra_n.json": {
+      "version": "31224ff00444",
+      "bytes": 1859247
+    },
+    "assets/models-lod/ferrari.json": {
+      "version": "06f22e411a3b",
+      "bytes": 1397033
+    },
+    "assets/models-lod/g63.json": {
+      "version": "088976c514db",
+      "bytes": 5160227
+    },
+    "assets/models-lod/gaz24.json": {
+      "version": "95971fd89fb2",
+      "bytes": 127896
+    },
+    "assets/models-lod/gtr.json": {
+      "version": "e93226f319cf",
+      "bytes": 4340204
+    },
+    "assets/models-lod/hypercar.json": {
+      "version": "f7cc09c4beb1",
+      "bytes": 299777
+    },
+    "assets/models-lod/lamborghini.json": {
+      "version": "13048ad49981",
+      "bytes": 948852
+    },
+    "assets/models-lod/manifest.json": {
+      "version": "ca9b0a6ff7de",
+      "bytes": 10111
+    },
+    "assets/models-lod/maserati.json": {
+      "version": "282afcf5841f",
+      "bytes": 1254400
+    },
+    "assets/models-lod/mclaren.json": {
+      "version": "9f51a40d2146",
+      "bytes": 1172163
+    },
+    "assets/models-lod/panamera_wagon.json": {
+      "version": "19cff50e4540",
+      "bytes": 696049
+    },
+    "assets/models-lod/phantom.json": {
+      "version": "5b1f42b66df5",
+      "bytes": 119516
+    },
+    "assets/models-lod/porsche.json": {
+      "version": "d7a2fb30b178",
+      "bytes": 1390915
+    },
+    "assets/models-lod/toyota_supra.json": {
+      "version": "50326920b3d3",
+      "bytes": 2794756
+    },
+    "assets/models-lod/vaz2107.json": {
+      "version": "62abed5711d0",
+      "bytes": 7008848
+    },
+    "assets/models-lod/veloster_n.json": {
+      "version": "1a759024da31",
+      "bytes": 1297406
+    },
+    "assets/models-lod/vesta.json": {
+      "version": "98de558a70c6",
+      "bytes": 1100239
+    },
+    "assets/models-lod/x5m.json": {
+      "version": "034e6456187d",
+      "bytes": 1594799
+    },
+    "assets/models-mobile/arrizo8.glb": {
+      "version": "7ae25f3ef298",
+      "bytes": 3527696
+    },
+    "assets/models-mobile/aston_martin.glb": {
+      "version": "4d983793848d",
+      "bytes": 6195152
+    },
+    "assets/models-mobile/audi_r8.glb": {
+      "version": "4f102e7bcf1a",
+      "bytes": 2775996
+    },
+    "assets/models-mobile/bmw.glb": {
+      "version": "aab9cef3b540",
+      "bytes": 2381112
+    },
+    "assets/models-mobile/bmw_i8.glb": {
+      "version": "236f3387cecc",
+      "bytes": 6043464
+    },
+    "assets/models-mobile/bmw_m3_gtr.glb": {
+      "version": "5869bf471953",
+      "bytes": 5363956
+    },
+    "assets/models-mobile/golf7.glb": {
+      "version": "b4f585de7fcc",
+      "bytes": 2012056
+    },
+    "assets/models-mobile/gtr.glb": {
+      "version": "cb25e73c42ca",
+      "bytes": 9456704
+    },
+    "assets/models-mobile/manifest.json": {
+      "version": "dc0578264416",
+      "bytes": 121180
+    },
+    "assets/models-mobile/maserati.glb": {
+      "version": "53f700ac0ba2",
+      "bytes": 9483192
+    },
+    "assets/models-mobile/mazda_rx7.glb": {
+      "version": "825e11948061",
+      "bytes": 3798748
+    },
+    "assets/models-mobile/mclaren.glb": {
+      "version": "9ce65493fae4",
+      "bytes": 7939648
+    },
+    "assets/models-mobile/nissan_370z.glb": {
+      "version": "462fcc2c3928",
+      "bytes": 2759248
+    },
+    "assets/models-mobile/porsche.glb": {
+      "version": "fb9d917f0ebe",
+      "bytes": 3115156
+    },
+    "assets/models-mobile/rs3.glb": {
+      "version": "31a7bc0042b4",
+      "bytes": 1670916
+    },
+    "assets/models/audi_rs7.glb": {
+      "version": "a14e46713e41",
+      "bytes": 31993380
+    },
+    "assets/models/bmw_m3_sedan.glb": {
+      "version": "80c2960f9332",
+      "bytes": 24299380
+    },
+    "assets/models/bmw_m4.glb": {
+      "version": "90d937479b13",
+      "bytes": 6361256
+    },
+    "assets/models/camry-xv40.glb": {
+      "version": "1693b0965296",
+      "bytes": 399908
+    },
+    "assets/models/chiron.glb": {
+      "version": "241ee734f36a",
+      "bytes": 1344428
+    },
+    "assets/models/corvette_cross.glb": {
+      "version": "902d06c01c79",
+      "bytes": 5796144
+    },
+    "assets/models/credits/camry-xv40.html": {
+      "version": "f5004a3f84b6",
+      "bytes": 1969
+    },
+    "assets/models/credits/camry-xv40.json": {
+      "version": "d734d3a84c80",
+      "bytes": 1138
+    },
+    "assets/models/elantra_n.glb": {
+      "version": "10300666bf7d",
+      "bytes": 32769880
+    },
+    "assets/models/ferrari.glb": {
+      "version": "cafe3f48da67",
+      "bytes": 1681572
+    },
+    "assets/models/g63.glb": {
+      "version": "a58dea9ae1dc",
+      "bytes": 3881128
+    },
+    "assets/models/gaz24.glb": {
+      "version": "dbbf10b58650",
+      "bytes": 7098500
+    },
+    "assets/models/hypercar.glb": {
+      "version": "e184ea64522e",
+      "bytes": 3759144
+    },
+    "assets/models/hyundai.glb": {
+      "version": "40148f1c605f",
+      "bytes": 688156
+    },
+    "assets/models/lamborghini.glb": {
+      "version": "fa3a841e6fca",
+      "bytes": 8385312
+    },
+    "assets/models/landcruiser.glb": {
+      "version": "03a7a47a3baa",
+      "bytes": 1415992
+    },
+    "assets/models/mark2.glb": {
+      "version": "b568234ef44d",
+      "bytes": 334904
+    },
+    "assets/models/mercedes_v8.glb": {
+      "version": "bb385eb94ec2",
+      "bytes": 3152892
+    },
+    "assets/models/mustang_razor.glb": {
+      "version": "900b29b9ad87",
+      "bytes": 1124760
+    },
+    "assets/models/optimization-manifest.json": {
+      "version": "df2f7dcf2bb6",
+      "bytes": 262766
+    },
+    "assets/models/panamera_wagon.glb": {
+      "version": "27661b72911d",
+      "bytes": 8959136
+    },
+    "assets/models/phantom.glb": {
+      "version": "969ec494cfc3",
+      "bytes": 1228888
+    },
+    "assets/models/priora.glb": {
+      "version": "796f9265ac59",
+      "bytes": 3785340
+    },
+    "assets/models/rally.glb": {
+      "version": "2e149a3d19f5",
+      "bytes": 2906032
+    },
+    "assets/models/subaru_wrx.glb": {
+      "version": "c9b4a6dc5082",
+      "bytes": 2198716
+    },
+    "assets/models/toyota_supra.glb": {
+      "version": "55a44eac4a14",
+      "bytes": 15468804
+    },
+    "assets/models/vaz2107.glb": {
+      "version": "ee5ee0fda2d8",
+      "bytes": 32334808
+    },
+    "assets/models/vaz2109.glb": {
+      "version": "e5458abded65",
+      "bytes": 2389424
+    },
+    "assets/models/veloster_n.glb": {
+      "version": "7252b35c769b",
+      "bytes": 10020568
+    },
+    "assets/models/vesta.glb": {
+      "version": "9c3fce52c461",
+      "bytes": 7155832
+    },
+    "assets/models/x5m.glb": {
+      "version": "ea8e6dd7ba3c",
+      "bytes": 3634508
+    },
+    "assets/registration/jp-chb.svg": {
+      "version": "fa55e3148858",
+      "bytes": 5217
+    },
+    "assets/registration/jp-fko.svg": {
+      "version": "79bbb4502ac3",
+      "bytes": 6019
+    },
+    "assets/registration/jp-kbe.svg": {
+      "version": "cb20d7a8c908",
+      "bytes": 4469
+    },
+    "assets/registration/jp-kyo.svg": {
+      "version": "88f399428be7",
+      "bytes": 5427
+    },
+    "assets/registration/jp-ngy.svg": {
+      "version": "0a3d93b94aba",
+      "bytes": 6082
+    },
+    "assets/registration/jp-osk.svg": {
+      "version": "20c1e6d9582c",
+      "bytes": 5213
+    },
+    "assets/registration/jp-spr.svg": {
+      "version": "306069fbc790",
+      "bytes": 5740
+    },
+    "assets/registration/jp-stm.svg": {
+      "version": "4937eebaea38",
+      "bytes": 3861
+    },
+    "assets/registration/jp-tky.svg": {
+      "version": "5fc457a90da6",
+      "bytes": 3940
+    },
+    "assets/registration/jp-ykh.svg": {
+      "version": "763d51ad658b",
+      "bytes": 16254
+    },
+    "assets/registration/us-ca.svg": {
+      "version": "73c5c4c7e48a",
+      "bytes": 10390
+    },
+    "assets/registration/us-fl.svg": {
+      "version": "cc3ce25e3c6c",
+      "bytes": 5776
+    },
+    "assets/registration/us-ga.svg": {
+      "version": "773ca19c6a8e",
+      "bytes": 6775
+    },
+    "assets/registration/us-il.svg": {
+      "version": "47af0378a1fb",
+      "bytes": 4036
+    },
+    "assets/registration/us-mi.svg": {
+      "version": "cf7a8030f547",
+      "bytes": 5070
+    },
+    "assets/registration/us-nj.svg": {
+      "version": "d2adc18e516b",
+      "bytes": 8829
+    },
+    "assets/registration/us-nv.svg": {
+      "version": "eed0ea4b75eb",
+      "bytes": 11454
+    },
+    "assets/registration/us-ny.svg": {
+      "version": "6369f659e7db",
+      "bytes": 6253
+    },
+    "assets/registration/us-tx.svg": {
+      "version": "a2c736b13f8e",
+      "bytes": 7124
+    },
+    "assets/registration/us-wa.svg": {
+      "version": "22afa90fb477",
+      "bytes": 4994
+    },
+    "assets/thumbnails/camry-xv40.png": {
+      "version": "f9b32c054eef",
+      "bytes": 56531
+    },
+    "assets/thumbnails/camry-xv70.png": {
+      "version": "ba3540b2c4b0",
+      "bytes": 37841
+    },
+    "assets/thumbnails/camry.png": {
+      "version": "7e9a7fdb0152",
+      "bytes": 67753
+    },
+    "assets/thumbnails/chiron.png": {
+      "version": "28b19ac64fc7",
+      "bytes": 64516
+    },
+    "assets/thumbnails/cullinan.png": {
+      "version": "cab11827ef72",
+      "bytes": 60394
+    },
+    "assets/thumbnails/e63.png": {
+      "version": "dcceb8f0d85f",
+      "bytes": 60818
+    },
+    "assets/thumbnails/g63.png": {
+      "version": "1956629aafd7",
+      "bytes": 64667
+    },
+    "assets/thumbnails/gaz24.png": {
+      "version": "7e7842c30cdd",
+      "bytes": 52514
+    },
+    "assets/thumbnails/gtr.png": {
+      "version": "71f01e51d248",
+      "bytes": 59714
+    },
+    "assets/thumbnails/huracan.png": {
+      "version": "ed75d0d5501d",
+      "bytes": 56523
+    },
+    "assets/thumbnails/jesko.png": {
+      "version": "203b5d5e36b8",
+      "bytes": 48841
+    },
+    "assets/thumbnails/lc300.png": {
+      "version": "67945b782101",
+      "bytes": 68063
+    },
+    "assets/thumbnails/m5e60.png": {
+      "version": "be39f1e61fd8",
+      "bytes": 71515
+    },
+    "assets/thumbnails/m5f90.png": {
+      "version": "ff93b8760eaa",
+      "bytes": 60194
+    },
+    "assets/thumbnails/m8.png": {
+      "version": "6741cdb0ab49",
+      "bytes": 60204
+    },
+    "assets/thumbnails/mark2.png": {
+      "version": "0e737a110f66",
+      "bytes": 36609
+    },
+    "assets/thumbnails/mw-corvette_cross.webp": {
+      "version": "da14971b06b1",
+      "bytes": 13436
+    },
+    "assets/thumbnails/mw-corvette_webster.webp": {
+      "version": "0003c71e6a5d",
+      "bytes": 11950
+    },
+    "assets/thumbnails/mw-m3gtr.webp": {
+      "version": "93856d4b2fa9",
+      "bytes": 13276
+    },
+    "assets/thumbnails/mw-mustang_jewels.webp": {
+      "version": "a55239c5e7be",
+      "bytes": 10734
+    },
+    "assets/thumbnails/mw-mustang_razor.webp": {
+      "version": "c57b40431a0d",
+      "bytes": 14278
+    },
+    "assets/thumbnails/polo.png": {
+      "version": "4b052521f200",
+      "bytes": 60619
+    },
+    "assets/thumbnails/porsche911.png": {
+      "version": "67f574b041b0",
+      "bytes": 50573
+    },
+    "assets/thumbnails/priora.png": {
+      "version": "9965e1154d22",
+      "bytes": 61658
+    },
+    "assets/thumbnails/rs6.png": {
+      "version": "68c1af44b9d5",
+      "bytes": 67138
+    },
+    "assets/thumbnails/sf90.png": {
+      "version": "febe3058b19c",
+      "bytes": 56312
+    },
+    "assets/thumbnails/silvia.png": {
+      "version": "19001c1b070e",
+      "bytes": 58974
+    },
+    "assets/thumbnails/solaris.png": {
+      "version": "5d0b409e0f0f",
+      "bytes": 62809
+    },
+    "assets/thumbnails/subaru.png": {
+      "version": "a5bcbcc82b6c",
+      "bytes": 61132
+    },
+    "assets/thumbnails/vaz2107.png": {
+      "version": "e235b874ed83",
+      "bytes": 56618
+    },
+    "assets/thumbnails/vaz2109.png": {
+      "version": "199c1d3d2e34",
+      "bytes": 56242
+    },
+    "assets/thumbnails/vesta.png": {
+      "version": "b23d647469fb",
+      "bytes": 67304
+    },
+    "authors-atelier.css": {
+      "version": "e1c53af2ffbe",
+      "bytes": 14182
+    },
+    "authors-case-results.css": {
+      "version": "b81c2e0f8128",
+      "bytes": 8827
+    },
+    "authors-collection.css": {
+      "version": "60e759b7d2b6",
+      "bytes": 7200
+    },
+    "authors-driving.css": {
+      "version": "12cd8ac6baf6",
+      "bytes": 9511
+    },
+    "authors-exchange.css": {
+      "version": "a805f1f4cc8d",
+      "bytes": 32366
+    },
+    "authors-expansion.css": {
+      "version": "3a78cf886044",
+      "bytes": 53495
+    },
+    "authors-garage.css": {
+      "version": "5cef62b8ad75",
+      "bytes": 25001
+    },
+    "authors-legacy.css": {
+      "version": "7ba79b583665",
+      "bytes": 414941
+    },
+    "authors-motorsport.css": {
+      "version": "fc14a6c4e413",
+      "bytes": 15009
+    },
+    "authors-plate-effects.css": {
+      "version": "78ec13cff879",
+      "bytes": 10612
+    },
+    "authors-prestige.css": {
+      "version": "ff988178746c",
+      "bytes": 16339
+    },
+    "authors-progression.css": {
+      "version": "5eb990b30363",
+      "bytes": 15571
+    },
+    "authors-reel-motion.css": {
+      "version": "324c78b5eb81",
+      "bytes": 3790
+    },
+    "authors-refinement.css": {
+      "version": "ac3c161379d4",
+      "bytes": 18262
+    },
+    "authors-registration.css": {
+      "version": "21d4dd4cf5dd",
+      "bytes": 39587
+    },
+    "authors-release.html": {
+      "version": "ec1222253ada",
+      "bytes": 323000
+    },
+    "authors-rewards.css": {
+      "version": "59f8a52488cf",
+      "bytes": 4579
+    },
+    "authors-secondary.css": {
+      "version": "a7d08b85081e",
+      "bytes": 33598
+    },
+    "authors-sound.css": {
+      "version": "96bbcf2df8b5",
+      "bytes": 2967
+    },
+    "authors-workshop.css": {
+      "version": "cb5cc74c40b2",
+      "bytes": 4170
+    },
+    "authors.css": {
+      "version": "56c7201b4314",
+      "bytes": 86562
+    },
+    "authors.html": {
+      "version": "51b7525a40c8",
+      "bytes": 322807
+    },
+    "icons/car-placeholder.svg": {
+      "version": "19380885c1f6",
+      "bytes": 688
+    },
+    "icons/icon-192.png": {
+      "version": "783eb2942aba",
+      "bytes": 1868
+    },
+    "icons/icon-512.png": {
+      "version": "28a44f10a342",
+      "bytes": 5245
+    },
+    "index.html": {
+      "version": "ec1222253ada",
+      "bytes": 323000
+    },
+    "js/app.js": {
+      "version": "58afd87c9ce4",
+      "bytes": 1547136
+    },
+    "js/audio.js": {
+      "version": "6b60b0de49f2",
+      "bytes": 79353
+    },
+    "js/authors-activities-ui.js": {
+      "version": "5ce5a6c8e0f8",
+      "bytes": 666
+    },
+    "js/authors-activities.js": {
+      "version": "7da88ca6b3e5",
+      "bytes": 1442
+    },
+    "js/authors-aero-fitment.js": {
+      "version": "cf5027e20b49",
+      "bytes": 6637
+    },
+    "js/authors-aero-kit.js": {
+      "version": "b3850c2cb4d0",
+      "bytes": 22209
+    },
+    "js/authors-atelier.js": {
+      "version": "d32afb547175",
+      "bytes": 17923
+    },
+    "js/authors-body-damage.js": {
+      "version": "a1a5b32d0166",
+      "bytes": 8238
+    },
+    "js/authors-camera-profiles.js": {
+      "version": "ee3b08be751b",
+      "bytes": 18643
+    },
+    "js/authors-case-results.js": {
+      "version": "87e7d874efb3",
+      "bytes": 13158
+    },
+    "js/authors-circuit-life.js": {
+      "version": "aae53fec0096",
+      "bytes": 8661
+    },
+    "js/authors-collection-finish.js": {
+      "version": "9054cf5a69e0",
+      "bytes": 1630
+    },
+    "js/authors-collection.js": {
+      "version": "aeccb50078e2",
+      "bytes": 14832
+    },
+    "js/authors-districts.js": {
+      "version": "a682f474489a",
+      "bytes": 21151
+    },
+    "js/authors-driver-camera.js": {
+      "version": "35e2aa715b04",
+      "bytes": 14477
+    },
+    "js/authors-driving.js": {
+      "version": "5acb7f897174",
+      "bytes": 1053
+    },
+    "js/authors-engine-tone.js": {
+      "version": "623d519a6bfe",
+      "bytes": 2524
+    },
+    "js/authors-engine-voices.js": {
+      "version": "c4d682b78f98",
+      "bytes": 4164
+    },
+    "js/authors-engine-worklet.js": {
+      "version": "67231c93f71d",
+      "bytes": 4779
+    },
+    "js/authors-environment.js": {
+      "version": "ef280cf404be",
+      "bytes": 17138
+    },
+    "js/authors-exchange-ui.js": {
+      "version": "832b9e96702d",
+      "bytes": 4063
+    },
+    "js/authors-expansion.js": {
+      "version": "256c25c0994c",
+      "bytes": 19348
+    },
+    "js/authors-fitment-guides.js": {
+      "version": "016376a80243",
+      "bytes": 323546
+    },
+    "js/authors-garage-ui.js": {
+      "version": "6a3ba6d13987",
+      "bytes": 8767
+    },
+    "js/authors-livery.js": {
+      "version": "2513bf1993f2",
+      "bytes": 11775
+    },
+    "js/authors-lod-worker.js": {
+      "version": "db6abe26faf6",
+      "bytes": 1295
+    },
+    "js/authors-mobile-textures.js": {
+      "version": "68d0b4d73592",
+      "bytes": 1060
+    },
+    "js/authors-mw-contact.js": {
+      "version": "b665eac7ffe9",
+      "bytes": 10083
+    },
+    "js/authors-mw-mass.js": {
+      "version": "a8c477aa0e8f",
+      "bytes": 6092
+    },
+    "js/authors-mw-physics.js": {
+      "version": "f8d5328c137f",
+      "bytes": 47002
+    },
+    "js/authors-night-lighting.js": {
+      "version": "7ae35e7f2f5f",
+      "bytes": 11525
+    },
+    "js/authors-npc-signals.js": {
+      "version": "41d508352337",
+      "bytes": 10949
+    },
+    "js/authors-number-audio.js": {
+      "version": "6eec668257df",
+      "bytes": 3874
+    },
+    "js/authors-number-banks.js": {
+      "version": "abe6f75d0562",
+      "bytes": 2855
+    },
+    "js/authors-plate-passport.js": {
+      "version": "44bf6f87bbc8",
+      "bytes": 14975
+    },
+    "js/authors-player-render.js": {
+      "version": "bc9854c23b92",
+      "bytes": 10542
+    },
+    "js/authors-playground.js": {
+      "version": "1f0626de38f8",
+      "bytes": 11575
+    },
+    "js/authors-prestige.js": {
+      "version": "ae29fb0abcee",
+      "bytes": 9404
+    },
+    "js/authors-preview-market.js": {
+      "version": "c5387b9b42de",
+      "bytes": 4659
+    },
+    "js/authors-preview-pause.js": {
+      "version": "5a5842ce8e48",
+      "bytes": 1350
+    },
+    "js/authors-preview.js": {
+      "version": "acfad42fcdec",
+      "bytes": 2134
+    },
+    "js/authors-progression-celebration.js": {
+      "version": "5e99e908d7d9",
+      "bytes": 14365
+    },
+    "js/authors-progression-ui.js": {
+      "version": "81f40491fcf4",
+      "bytes": 8025
+    },
+    "js/authors-progression.js": {
+      "version": "4f350ecb3d96",
+      "bytes": 2490
+    },
+    "js/authors-race-audio.js": {
+      "version": "b4dd687b0e7e",
+      "bytes": 16185
+    },
+    "js/authors-race-experience.js": {
+      "version": "8699312279a4",
+      "bytes": 10737
+    },
+    "js/authors-race-hud.js": {
+      "version": "c17025e08eab",
+      "bytes": 6531
+    },
+    "js/authors-radio.js": {
+      "version": "94a35d5d10d7",
+      "bytes": 6162
+    },
+    "js/authors-reel-motion.js": {
+      "version": "5c5ca62b0b54",
+      "bytes": 9172
+    },
+    "js/authors-refinement.js": {
+      "version": "d3913abbe9b2",
+      "bytes": 2488
+    },
+    "js/authors-registration.js": {
+      "version": "bad30dae1d2c",
+      "bytes": 12393
+    },
+    "js/authors-rewards.js": {
+      "version": "d428353caad8",
+      "bytes": 13613
+    },
+    "js/authors-rigid-body.js": {
+      "version": "a0475de9158a",
+      "bytes": 16400
+    },
+    "js/authors-rival-ai.js": {
+      "version": "5fadcd4bb003",
+      "bytes": 5472
+    },
+    "js/authors-road-events.js": {
+      "version": "bf616387082c",
+      "bytes": 7781
+    },
+    "js/authors-road-sound.js": {
+      "version": "9e6de4e7e7c3",
+      "bytes": 11436
+    },
+    "js/authors-road-surface.js": {
+      "version": "f2c87972724f",
+      "bytes": 4285
+    },
+    "js/authors-road-weather.js": {
+      "version": "3cae3d537bfe",
+      "bytes": 6428
+    },
+    "js/authors-route-detail.js": {
+      "version": "7127223bbf90",
+      "bytes": 6219
+    },
+    "js/authors-route-dressing.js": {
+      "version": "9841b2451cc1",
+      "bytes": 9875
+    },
+    "js/authors-scene-perf.js": {
+      "version": "604c1ff26bab",
+      "bytes": 6134
+    },
+    "js/authors-scene.js": {
+      "version": "8dc032d7d13c",
+      "bytes": 11679
+    },
+    "js/authors-screen-controls.js": {
+      "version": "3c5793cb480c",
+      "bytes": 5158
+    },
+    "js/authors-secondary.js": {
+      "version": "ece739ad1daf",
+      "bytes": 14345
+    },
+    "js/authors-sound-ui.js": {
+      "version": "58ceeee384ed",
+      "bytes": 6698
+    },
+    "js/authors-soundscape.js": {
+      "version": "c1f9ce0de32c",
+      "bytes": 6546
+    },
+    "js/authors-steering-profiles.js": {
+      "version": "6f469762c80f",
+      "bytes": 12932
+    },
+    "js/authors-steering-rig.js": {
+      "version": "38899f008319",
+      "bytes": 4685
+    },
+    "js/authors-traffic.js": {
+      "version": "e8853986e695",
+      "bytes": 12884
+    },
+    "js/authors-ui.js": {
+      "version": "90a948c5fad1",
+      "bytes": 17091
+    },
+    "js/authors-vehicle-finish.js": {
+      "version": "01d125266036",
+      "bytes": 20126
+    },
+    "js/authors-vehicle-lod.js": {
+      "version": "e72c64b605d0",
+      "bytes": 9483
+    },
+    "js/authors-wheel-rig.js": {
+      "version": "c9e1466dcaf3",
+      "bytes": 17631
+    },
+    "js/authors-workshop-ui.js": {
+      "version": "d58c511f3bcd",
+      "bytes": 137
+    },
+    "js/authors-world.js": {
+      "version": "e7664a055d14",
+      "bytes": 8076
+    },
+    "js/car-3d.js": {
+      "version": "cc73d3627934",
+      "bytes": 933073
+    },
+    "js/mobile-texture-assets.js": {
+      "version": "d5be325f5bf0",
+      "bytes": 2059
+    },
+    "js/model-assets.js": {
+      "version": "c65675fe24bf",
+      "bytes": 2643
+    },
+    "js/nfs-circuit-race.js": {
+      "version": "477fb40ba0a7",
+      "bytes": 133098
+    },
+    "js/nfs-physics.js": {
+      "version": "51a929ab5434",
+      "bytes": 144568
+    },
+    "js/ota-asset-sync.js": {
+      "version": "b0eabe2bbfdc",
+      "bytes": 11813
+    },
+    "js/plate-presentation.js": {
+      "version": "cc6592782275",
+      "bytes": 823
+    },
+    "js/player-lod-profiles.js": {
+      "version": "2739183d6f95",
+      "bytes": 7409
+    },
+    "js/race-economy.js": {
+      "version": "01624c3a5b09",
+      "bytes": 13588
+    },
+    "js/race-effects.js": {
+      "version": "b29e7208bbac",
+      "bytes": 68020
+    },
+    "js/race-records.js": {
+      "version": "eaeaf8e59fc2",
+      "bytes": 2246
+    },
+    "js/security.js": {
+      "version": "ed845ef69db6",
+      "bytes": 1940
+    },
+    "js/storage.js": {
+      "version": "327dc7592b84",
+      "bytes": 1544
+    },
+    "js/vehicle-lod-assets.js": {
+      "version": "b0268ec1ce9c",
+      "bytes": 6119
+    },
+    "js/vendor/DRACOLoader.js": {
+      "version": "bbd4a1bb08f0",
+      "bytes": 13453
+    },
+    "js/vendor/GLTFLoader.js": {
+      "version": "5c15967ba830",
+      "bytes": 96550
+    },
+    "js/vendor/draco/draco_decoder.js": {
+      "version": "bafef8965028",
+      "bytes": 548080
+    },
+    "js/vendor/draco/draco_decoder.wasm": {
+      "version": "c55a594e8ffd",
+      "bytes": 285747
+    },
+    "js/vendor/draco/draco_wasm_wrapper.js": {
+      "version": "e8049906ef3f",
+      "bytes": 58763
+    },
+    "js/vendor/meshopt_decoder.js": {
+      "version": "849c1e7c10ee",
+      "bytes": 21761
+    },
+    "js/vendor/three.min.js": {
+      "version": "9274bbcec8d9",
+      "bytes": 603445
+    },
+    "legacy.html": {
+      "version": "811a67366080",
+      "bytes": 316369
+    },
+    "manifest.json": {
+      "version": "d13f2d041f1f",
+      "bytes": 520
+    },
+    "styles.css": {
+      "version": "997ed583ca31",
+      "bytes": 434511
+    },
+    "sw.js": {
+      "version": "ea25724f71cb",
+      "bytes": 6654
+    }
+  }
+}

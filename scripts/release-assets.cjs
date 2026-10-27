@@ -5,7 +5,7 @@ const path = require('node:path');
 const {createHash} = require('node:crypto');
 const root = path.join(__dirname, '..');
 require('./model-assets.cjs').generate();
-const files = ['styles.css', 'js/security.js', 'js/storage.js', 'js/race-records.js', 'js/race-economy.js', 'js/audio.js', 'js/race-effects.js', 'js/nfs-physics.js', 'js/nfs-circuit-race.js', 'js/model-assets.js', 'js/car-3d.js', 'js/app.js'];
+const files = ['styles.css', 'js/security.js', 'js/storage.js', 'js/race-records.js', 'js/race-economy.js', 'js/audio.js', 'js/race-effects.js', 'js/nfs-physics.js', 'js/nfs-circuit-race.js', 'js/model-assets.js', 'js/ota-asset-sync.js', 'js/car-3d.js', 'js/app.js'];
 const hash = value => createHash('sha256').update(value).digest('hex').slice(0,12);
 
 const legacyPath = path.join(root, 'legacy.html');

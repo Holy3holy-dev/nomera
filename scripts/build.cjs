@@ -58,4 +58,6 @@ for (const folder of ['js', 'icons', 'assets']) {
   }
 }
 
+require('./asset-manifest.cjs').generateAssetManifest({ sourceDir: root, profile: 'mobile', writeFiles: true });
+
 console.log('Clean public dist ready: Author’s Edition published at index.html and dist/index.html (rollback at legacy.html, sandbox at authors.html).');
