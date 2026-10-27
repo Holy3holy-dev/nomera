@@ -1438,105 +1438,143 @@ describe('Collector Book & Car-Plate Synergy (RUS / KZ / USA / UAE)', () => {
     }
   });
 
-  test('Belarus (BY СТБ 914-99), USSR (ГОСТ 1958/1977), and expanded JDM Drift Glow plates work across server, client, 3D bumpers, synergies, and collector sets', () => {
+  test('Belarus (BY СТБ 914-99 Type 1: 7777 AA-7), RUS ultra-rare USSR GOST drops, and expanded JDM Drift Glow plates work across server, client, 3D bumpers, synergies, and collector sets', () => {
     const { Car3DManager, drawnTexts } = setup3DPlateTestEnv();
     const { createApp } = require('./helpers/create-app.cjs');
     const app = createApp();
     app.run('playAsGuest()');
 
-    // 1. Belarus (BY) server & client formatting, parsing, and pricing
+    // 1. USSR is NOT a standalone country in the generator; it is an ultra-rare drop inside RUS
+    assert.equal(c.COUNTRIES.USSR, undefined, 'USSR must not be a standalone generator country on server');
+    assert.equal(app.run('Boolean(PLATE_COUNTRIES.USSR)'), false, 'USSR must not be a standalone generator country on client');
+    assert.equal(app.run("Boolean(document.getElementById('btn-country-USSR'))"), false, 'USSR country button must not exist in generator');
+
+    // 2. Belarus (BY СТБ 914-99 Type 1) server & client formatting, 12 allowed letters, 4 digits + 2 letters + -region
     assert.ok(c.COUNTRIES.BY, 'Server COUNTRIES.BY must exist');
     assert.equal(c.COUNTRIES.BY.defaultReg, '7');
-    assert.equal(c.formatPlateText('A', 'A', 'A', '777', '7', 'BY'), '777 AAA | 7 BY');
-    const byParsed = c.parsePlate('777 AAA | 7 BY');
+    assert.deepEqual(
+      c.COUNTRIES.BY.letters,
+      ['A', 'B', 'E', 'I', 'K', 'M', 'H', 'O', 'P', 'C', 'T', 'X'],
+      'BY must only allow the 12 СТБ 914-99 letters shared between Cyrillic and Latin'
+    );
+    assert.equal(c.formatPlateText('A', 'A', 'A', '7777', '7', 'BY'), '7777 AA-7 | 7 BY');
+    assert.equal(app.run("formatPlateText('A', 'A', 'A', '7777', '7', 'BY')"), '7777 AA-7 | 7 BY');
+
+    const byParsed = c.parsePlate('7777 AA-7 | 7 BY');
     assert.ok(byParsed);
     assert.equal(byParsed.country, 'BY');
-    assert.equal(byParsed.digits, '777');
-    assert.equal(byParsed.l1 + byParsed.l2 + byParsed.l3, 'AAA');
+    assert.equal(byParsed.digits, '7777');
+    assert.equal(byParsed.l1 + byParsed.l2, 'AA');
     assert.equal(byParsed.region, '7');
 
-    const byEliteServer = c.priceOfPlate(byParsed);
-    const byEliteClient = app.run("getCalculatedPrice('A', 'A', 'A', '777', '7', 'BY')");
-    assert.ok(byEliteServer >= 10000000, `Expected 777 AAA | 7 BY server price >= 10M, got ${byEliteServer}`);
-    assert.ok(byEliteClient >= 10000000, `Expected 777 AAA | 7 BY client price >= 10M, got ${byEliteClient}`);
+    // Server rolls for BY always produce 4-digit numbers (0001..9999) and allowed СТБ letters
+    for (let i = 0; i < 30; i++) {
+      const byRoll = c.secureRoll('both', 0, 'BY');
+      assert.match(byRoll.num, /^\d{4}$/, `BY roll must have 4 digits, got ${byRoll.num}`);
+      assert.notEqual(byRoll.num, '0000');
+      assert.ok(c.COUNTRIES.BY.letters.includes(byRoll.letters[0]));
+      assert.ok(c.COUNTRIES.BY.letters.includes(byRoll.letters[1]));
+      assert.equal(byRoll.letters[2], byRoll.letters[1]);
+    }
 
-    // 2. USSR (ГОСТ 1958/1977) server & client formatting, parsing, and pricing
-    assert.ok(c.COUNTRIES.USSR, 'Server COUNTRIES.USSR must exist');
-    assert.equal(c.COUNTRIES.USSR.defaultReg, 'МОС');
-    assert.equal(c.formatPlateText('К', 'Г', 'Б', '001', 'МОС', 'USSR'), '001 КГБ | МОС USSR');
-    const ussrParsed = c.parsePlate('001 КГБ | МОС USSR');
+    const byEliteServer = c.priceOfPlate(byParsed);
+    const byEliteClient = app.run("getCalculatedPrice('A', 'A', 'A', '7777', '7', 'BY')");
+    assert.ok(byEliteServer >= 10000000, `Expected 7777 AA-7 | 7 BY server price >= 10M, got ${byEliteServer}`);
+    assert.ok(byEliteClient >= 10000000, `Expected 7777 AA-7 | 7 BY client price >= 10M, got ${byEliteClient}`);
+
+    // 3. USSR (ГОСТ 1958/1977) as ultra-rare special plates inside RUS (МОС, СВТ, КГБ, ГАИ, ЦКП)
+    const ussrParsed = c.parsePlate('К 001 ГБ | СССР');
     assert.ok(ussrParsed);
-    assert.equal(ussrParsed.country, 'USSR');
+    assert.equal(ussrParsed.country, 'RUS');
     assert.equal(ussrParsed.digits, '001');
     assert.equal(ussrParsed.l1 + ussrParsed.l2 + ussrParsed.l3, 'КГБ');
-    assert.equal(ussrParsed.region, 'МОС');
+    assert.equal(ussrParsed.region, 'СССР');
 
-    const ussrMeta = c.getUltraSpecialPlateMeta('К', 'Г', 'Б', '001', 'МОС', 'USSR');
-    assert.ok(ussrMeta && ussrMeta.id === 'ussr_gost');
+    const ussrMeta = c.getUltraSpecialPlateMeta('К', 'Г', 'Б', '001', 'СССР', 'RUS');
+    assert.ok(ussrMeta && ussrMeta.type === 'ussr');
     const ussrPriceSrv = c.priceOfPlate(ussrParsed);
-    const ussrPriceCli = app.run("getCalculatedPrice('К', 'Г', 'Б', '001', 'МОС', 'USSR')");
-    assert.ok(ussrPriceSrv >= 20000000, `Expected 001 КГБ | МОС USSR server price >= 20M, got ${ussrPriceSrv}`);
-    assert.ok(ussrPriceCli >= 20000000, `Expected 001 КГБ | МОС USSR client price >= 20M, got ${ussrPriceCli}`);
+    const ussrPriceCli = app.run("getCalculatedPrice('К', 'Г', 'Б', '001', 'СССР', 'RUS')");
+    assert.ok(ussrPriceSrv >= 20000000, `Expected К 001 ГБ | СССР server price >= 20M, got ${ussrPriceSrv}`);
+    assert.ok(ussrPriceCli >= 20000000, `Expected К 001 ГБ | СССР client price >= 20M, got ${ussrPriceCli}`);
 
-    // 3. Expanded JDM Drift Glow (S15 086 | TKY JPN, DRF 777 | YKH JPN)
+    // 4. Expanded JDM Drift Glow (S15 086 | TKY JPN, DRF 777 | YKH JPN)
     const jdmDriftMeta = c.getUltraSpecialPlateMeta('S', '1', '5', '086', 'TKY', 'JPN');
     assert.ok(jdmDriftMeta && jdmDriftMeta.type === 'jdm_glow');
 
-    // 4. Client country switching & mini-plate HTML for BY and USSR
-    app.run("selectPlateCountry('BY')");
-    assert.equal(app.run('currentCountry'), 'BY');
-    assert.equal(app.run('currentReg'), '7');
-    assert.equal(app.run("document.getElementById('plate-box').classList.contains('country-by')"), true);
-    const byMini = app.run("renderMiniPlateInnerHtml('777 AAA | 7 BY')");
+    // 5. Client country switching, 4-digit + 2-letter cell visibility & mini-plate HTML for BY and RUS USSR GOST
+    const byLayout = app.run(`(() => {
+      selectPlateCountry('BY');
+      currentL1 = 'A'; currentL2 = 'I'; currentL3 = 'I';
+      currentNum = '7777';
+      boardHasLetters = true;
+      boardHasNumbers = true;
+      syncPlateBoxCellsLayout();
+      const visibleDigits = ['cell-n1', 'cell-n2', 'cell-n3', 'cell-n4', 'cell-n5'].filter(
+        id => !document.getElementById(id).classList.contains('uae-cell-hidden')
+      );
+      const visibleLetters = ['cell-l1', 'cell-l2', 'cell-l3'].filter(
+        id => !document.getElementById(id).classList.contains('uae-cell-hidden')
+      );
+      return {
+        country: currentCountry,
+        reg: currentReg,
+        hasByClass: document.getElementById('plate-box').classList.contains('country-by'),
+        visibleDigits,
+        visibleLetters
+      };
+    })()`);
+    assert.equal(byLayout.country, 'BY');
+    assert.equal(byLayout.reg, '7');
+    assert.equal(byLayout.hasByClass, true);
+    assert.deepEqual(Array.from(byLayout.visibleDigits), ['cell-n1', 'cell-n2', 'cell-n3', 'cell-n4']);
+    assert.deepEqual(Array.from(byLayout.visibleLetters), ['cell-l1', 'cell-l2']);
+
+    const byMini = app.run("renderMiniPlateInnerHtml('7777 AA-7 | 7 BY')");
     assert.match(byMini, /mp-by-flag/);
-    assert.match(byMini, /777/);
-    assert.match(byMini, /AAA/);
+    assert.match(byMini, /7777/);
+    assert.match(byMini, /AA-7/);
 
-    app.run("selectPlateCountry('USSR')");
-    assert.equal(app.run('currentCountry'), 'USSR');
-    assert.equal(app.run('currentReg'), 'МОС');
-    assert.equal(app.run("document.getElementById('plate-box').classList.contains('country-ussr')"), true);
-    const ussrMini = app.run("renderMiniPlateInnerHtml('001 КГБ | МОС USSR')");
-    assert.match(ussrMini, /00-01/);
-    assert.match(ussrMini, /СССР/);
+    const ussrMini = app.run("renderMiniPlateInnerHtml('К 001 ГБ | СССР')");
+    assert.match(ussrMini, /★ СССР/);
+    assert.match(app.run("getMiniPlateCountryClass('К 001 ГБ | СССР')"), /special-ussr/);
 
-    // 5. 3D License Plate rendering for BY and USSR
+    // 6. 3D License Plate rendering for BY (7777 AA-7 without divider) and RUS USSR GOST
     drawnTexts.length = 0;
-    const by3D = Car3DManager.createLicensePlate('777 AAA | 7 BY');
+    const by3D = Car3DManager.createLicensePlate('7777 AA-7 | 7 BY');
     assert.equal(by3D.userData.plateCountry, 'BY');
     assert.ok(drawnTexts.some(d => d.text === 'BY'), '3D BY plate must draw BY code');
-    assert.ok(drawnTexts.some(d => d.text === '777 AAA'), '3D BY plate must draw 777 AAA');
+    assert.ok(drawnTexts.some(d => d.text === '7777 AA-7'), '3D BY plate must draw 7777 AA-7');
 
     drawnTexts.length = 0;
-    const ussr3D = Car3DManager.createLicensePlate('001 КГБ | МОС USSR');
-    assert.equal(ussr3D.userData.plateCountry, 'USSR');
-    assert.equal(ussr3D.userData.specialPlateType, 'ussr_gost');
-    assert.ok(drawnTexts.some(d => d.text === '00-01'), '3D USSR plate must draw stencil 00-01');
-    assert.ok(drawnTexts.some(d => d.text === 'СССР'), '3D USSR plate must draw СССР');
+    const ussr3D = Car3DManager.createLicensePlate('К 001 ГБ | СССР');
+    assert.equal(ussr3D.userData.plateCountry, 'RUS');
+    assert.equal(ussr3D.userData.specialPlateType, 'ussr');
+    assert.ok(drawnTexts.some(d => d.text === '00-01'), '3D USSR GOST plate must draw stencil 00-01');
+    assert.ok(drawnTexts.some(d => d.text === 'СССР'), '3D USSR GOST plate must draw СССР');
 
-    // 6. Car + Plate Synergies: jdm_drift_glow (+28%), ussr_gost (+26%), by_kortezh (+22%)
+    // 7. Car + Plate Synergies: jdm_drift_glow (+28%), ussr_gost (+26%), by_kortezh (+22%)
     const NomeraRaceEconomy = require('../js/race-economy.js');
     const synJdmGlow = NomeraRaceEconomy.getCarPlateSynergy('Nissan Silvia S15 Spec-R', 'DRF 086 | TKY JPN');
     assert.ok(synJdmGlow && synJdmGlow.id === 'jdm_drift_glow' && synJdmGlow.bonusPct === 28);
 
-    const synUssr = NomeraRaceEconomy.getCarPlateSynergy('ГАЗ-24 «Волга»', '001 КГБ | МОС USSR');
+    const synUssr = NomeraRaceEconomy.getCarPlateSynergy('ГАЗ-24 «Волга»', 'К 001 ГБ | СССР');
     assert.ok(synUssr && synUssr.id === 'ussr_gost' && synUssr.bonusPct === 26);
 
-    const synBy = NomeraRaceEconomy.getCarPlateSynergy('BMW M5 F90 Competition', '777 AAA | 7 BY');
+    const synBy = NomeraRaceEconomy.getCarPlateSynergy('BMW M5 F90 Competition', '7777 AA-7 | 7 BY');
     assert.ok(synBy && synBy.id === 'by_kortezh' && synBy.bonusPct === 22);
 
-    // 7. Collector set cis_jdm_standards
+    // 8. Collector set cis_jdm_standards
     app.run(`
       balance = 100000;
       inventory = [
-        { id: 'u1', text: '001 КГБ | МОС USSR', price: 30000000, country: 'USSR' },
-        { id: 'b1', text: '777 AAA | 7 BY', price: 8000000, country: 'BY' },
+        { id: 'u1', text: 'К 001 ГБ | СССР', price: 30000000, country: 'RUS' },
+        { id: 'b1', text: '7777 AA-7 | 7 BY', price: 8000000, country: 'BY' },
         { id: 'k1', text: '777 VIP | 01 KZ', price: 12000000, country: 'KZ' },
         { id: 'j1', text: 'JDM 777 | TKY JPN', price: 25000000, country: 'JPN' }
       ];
     `);
     const cisSet = app.run("evaluateCollectorSet(COLLECTOR_SETS.find(s => s.id === 'cis_jdm_standards'))");
-    assert.ok(cisSet && cisSet.completed, 'cis_jdm_standards collector set must complete with USSR, BY, KZ, JPN plates');
+    assert.ok(cisSet && cisSet.completed, 'cis_jdm_standards collector set must complete with USSR GOST, BY, KZ, JPN plates');
     app.run("claimCollectorSet('cis_jdm_standards')");
     assert.equal(app.run('balance'), 100000 + 650000);
   });

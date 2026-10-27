@@ -575,11 +575,11 @@
             line-height: 0.92;
         }
 
-        .plate-container:not(.country-kz):not(.country-usa):not(.country-uae):not(.country-jpn) #cell-l1,
+        .plate-container:not(.country-kz):not(.country-by):not(.country-usa):not(.country-uae):not(.country-jpn) #cell-l1,
         .plate-container.country-rus #cell-l1 {
             margin-right: 4px;
         }
-        .plate-container:not(.country-kz):not(.country-usa):not(.country-uae):not(.country-jpn) #cell-n3,
+        .plate-container:not(.country-kz):not(.country-by):not(.country-usa):not(.country-uae):not(.country-jpn) #cell-n3,
         .plate-container.country-rus #cell-n3 {
             margin-right: 4px;
         }
@@ -7085,142 +7085,134 @@ body.race-active .race-3d-viewport-wrapper {
     letter-spacing: 0.4px;
 }
 
-/* 6. 🇧🇾 Беларусь СТБ 914-99 (country-by) */
+/* 6. 🇧🇾 Беларусь СТБ 914-99 Тип 1 (country-by: слева флаг+BY без линии, справа 7777 AA-7 одной высоты) */
 .plate-container.country-by {
-    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 60%, #e2e8f0 100%);
+    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 58%, #e2e8f0 100%);
+    color: #0b0f19;
     border: 3.5px solid #0b0f19;
-    padding-left: 44px;
+    outline: 3px solid #18181b;
+    min-height: 86px;
+    padding: 0 12px 0 46px;
 }
 .plate-container.country-by::before {
     content: "BY";
     position: absolute;
-    left: 6px;
-    top: 8px;
-    bottom: 8px;
-    width: 28px;
-    border-radius: 4px;
+    left: 8px;
+    top: 10px;
+    bottom: 10px;
+    width: 30px;
     background:
-        linear-gradient(180deg, #c8313e 0%, #c8313e 36%, #4aa657 36%, #4aa657 54%, #f8fafc 54%, #f8fafc 100%);
-    border: 1.5px solid rgba(15, 23, 42, 0.28);
+        linear-gradient(90deg, #ffffff 0%, #ffffff 18%, transparent 18%) 0 0 / 100% 56% no-repeat,
+        linear-gradient(180deg, #c8313e 0%, #c8313e 65%, #4aa657 65%, #4aa657 100%) 0 0 / 100% 56% no-repeat;
     display: flex;
     align-items: flex-end;
     justify-content: center;
-    padding-bottom: 4px;
-    font-size: 11px;
+    padding-bottom: 2px;
+    font-size: 15px;
     font-weight: 900;
     color: #0b0f19;
-    letter-spacing: 0.5px;
+    line-height: 1;
+    letter-spacing: 0.6px;
+    z-index: 2;
+}
+.plate-container.country-by .plate-cells-main {
+    align-items: center;
+    border-right: none;
+    padding: 8px 2px 8px 6px;
+    gap: 3px;
 }
 .plate-container.country-by #cell-n1 { order: 1; }
 .plate-container.country-by #cell-n2 { order: 2; }
-.plate-container.country-by #cell-n3 { order: 3; margin-right: 10px; }
-.plate-container.country-by #cell-l1 { order: 4; margin-right: 0; }
-.plate-container.country-by #cell-l2 { order: 5; }
-.plate-container.country-by #cell-l3 { order: 6; }
-
-/* 7. 🚩 Чёрные номера СССР ГОСТ 1958/1977 (country-ussr) */
-.plate-container.country-ussr {
-    background: linear-gradient(180deg, #141923 0%, #090d14 62%, #04060a 100%) ;
-    color: #f8fafc ;
-    border: 3.5px solid #f8fafc ;
-    outline: 3px solid #090d14 ;
-    box-shadow: 0 0 0 2px #ef4444, 0 0 42px rgba(220, 38, 38, 0.55), inset 0 1px 2px rgba(255, 255, 255, 0.25) ;
-}
-.plate-container.country-ussr::before {
-    content: "★ СССР ГОСТ 1958/77";
-    position: absolute;
-    top: -11px;
-    left: 16px;
-    padding: 2px 10px;
-    border-radius: 999px;
-    background: linear-gradient(135deg, #991b1b, #dc2626);
-    color: #fef08a;
-    border: 1px solid #facc15;
-    font-size: 10px;
+.plate-container.country-by #cell-n3 { order: 3; margin-right: 0; }
+.plate-container.country-by #cell-n4 { order: 4; margin-right: 12px; }
+.plate-container.country-by #cell-l1 { order: 5; margin-right: 0; }
+.plate-container.country-by #cell-l2 { order: 6; margin-right: 0; }
+.plate-container.country-by #cell-l3 { order: 7; display: none ; }
+.plate-container.country-by .plate-cell.letter-cell,
+.plate-container.country-by .plate-cell.num-cell {
+    font-size: 44px;
+    min-width: 30px;
+    height: 52px;
+    line-height: 1;
     font-weight: 900;
-    letter-spacing: 0.8px;
-    z-index: 5;
 }
-.plate-container.country-ussr .plate-cell,
-.plate-container.country-ussr .plate-cell .char-span,
-.plate-container.country-ussr .plate-region,
-.plate-container.country-ussr .plate-region #region,
-.plate-container.country-ussr .plate-region-text {
-    color: #f8fafc ;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.85) ;
+.plate-container.country-by .plate-region {
+    border-left: none;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    min-width: auto;
+    padding: 0 8px 0 2px;
+    margin-left: 0;
 }
-.plate-container.country-ussr .plate-region {
-    border-left-color: rgba(248, 250, 252, 0.65) ;
+.plate-container.country-by .plate-region::before {
+    content: "-";
+    font-size: 42px;
+    font-weight: 900;
+    line-height: 1;
+    color: #0b0f19;
+    margin-right: 3px;
 }
-.plate-container.country-ussr #cell-n1 { order: 1; }
-.plate-container.country-ussr #cell-n2 { order: 2; }
-.plate-container.country-ussr #cell-n3 { order: 3; margin-right: 10px; }
-.plate-container.country-ussr #cell-l1 { order: 4; margin-right: 0; }
-.plate-container.country-ussr #cell-l2 { order: 5; }
-.plate-container.country-ussr #cell-l3 { order: 6; }
+.plate-container.country-by .plate-region #region {
+    font-size: 44px;
+    line-height: 1;
+    font-weight: 900;
+    color: #0b0f19;
+}
+.plate-container.country-by .plate-region-text {
+    display: none;
+}
 
-/* Mini-plates for BY and USSR */
-.mini-plate.country-by .mp-by-left {
+/* Mini-plates for BY (СТБ 914-99: 7777 AA-7) */
+.mini-plate.country-by,
+.r-plate.country-by {
+    background: linear-gradient(180deg, #ffffff 0%, #f1f5f9 100%);
+    border-color: #0b0f19;
+    color: #0b0f19;
+    gap: 4px;
+}
+.mini-plate.country-by.mp-structured,
+.r-plate.country-by.mp-structured {
+    padding: 0;
+    display: inline-flex;
+    align-items: stretch;
+    border: 2px solid #0b0f19;
+    gap: 0;
+}
+.mini-plate.country-by .mp-by-left,
+.r-plate.country-by .mp-by-left {
     display: inline-flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 1px 4px;
-    margin-right: 4px;
-    border-right: 1.5px solid rgba(15, 23, 42, 0.25);
+    padding: 2px 4px;
+    margin-right: 0;
+    border-right: none;
     font-size: 8px;
     font-weight: 900;
     line-height: 1;
     color: #0b0f19;
 }
-.mini-plate.country-by .mp-by-flag {
+.mini-plate.country-by .mp-by-flag,
+.r-plate.country-by .mp-by-flag {
     display: block;
-    width: 12px;
+    width: 13px;
     height: 7px;
     margin-bottom: 1px;
     border-radius: 1px;
-    background: linear-gradient(180deg, #c8313e 0%, #c8313e 65%, #4aa657 65%, #4aa657 100%);
+    background:
+        linear-gradient(90deg, #ffffff 0%, #ffffff 18%, transparent 18%),
+        linear-gradient(180deg, #c8313e 0%, #c8313e 65%, #4aa657 65%, #4aa657 100%);
+    border: 0.5px solid rgba(15, 23, 42, 0.35);
 }
-.mini-plate.country-by .mp-by-reg {
-    border-left: 1.5px solid #0b0f19;
-    padding-left: 5px;
-    margin-left: 5px;
-    font-weight: 900;
-}
-.mini-plate.country-ussr {
-    background: linear-gradient(180deg, #141923 0%, #05070b 100%) ;
-    border-color: #f8fafc ;
-    color: #f8fafc ;
-    box-shadow: 0 0 10px rgba(220, 38, 38, 0.45) ;
-}
-.mini-plate.country-ussr .mp-ussr-left {
+.mini-plate.country-by .mp-by-main,
+.r-plate.country-by .mp-by-main {
+    padding: 3px 6px 3px 2px;
     display: inline-flex;
-    flex-direction: column;
     align-items: center;
-    justify-content: center;
-    padding: 1px 5px;
-    margin-right: 5px;
-    border-right: 1px solid rgba(248, 250, 252, 0.35);
-    font-size: 8px;
-    line-height: 1.05;
-    color: #facc15;
-}
-.mini-plate.country-ussr .mp-ussr-left small {
-    font-size: 6.5px;
-    color: #cbd5e1;
-}
-.mini-plate.country-ussr .mp-ussr-main,
-.mini-plate.country-ussr .mp-ussr-main .mp-num,
-.mini-plate.country-ussr .mp-ussr-main .mp-let,
-.mini-plate.country-ussr .mp-ussr-reg {
-    color: #f8fafc ;
-}
-.mini-plate.country-ussr .mp-ussr-reg {
-    border-left: 1.5px solid rgba(248, 250, 252, 0.55);
-    padding-left: 5px;
-    margin-left: 5px;
-    font-size: 9px;
+    gap: 5px;
     font-weight: 900;
+    color: #0b0f19;
 }
 
 @media (max-width: 480px) {

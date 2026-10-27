@@ -651,7 +651,7 @@
         return group;
     }
 
-    // Multi-country License Plate parser & formatter (RUS, KZ, BY, USSR, USA, UAE, JPN)
+    // Multi-country License Plate parser & formatter (RUS, KZ, BY, USA, UAE, JPN)
     function formatPlateComponents(rawText) {
         if (!rawText || rawText === 'none' || rawText === 'null') {
             return { main: 'А 777 АА', l1: 'А', l2l3: 'АА', letters: 'ААА', digits: '777', region: '77', country: 'RUS', isNone: true };
@@ -660,7 +660,6 @@
         const defaultRegionForCountry = (c) => {
             if (c === 'KZ') return '01';
             if (c === 'BY') return '7';
-            if (c === 'USSR') return 'МОС';
             if (c === 'USA') return 'CA';
             if (c === 'UAE') return 'DXB';
             if (c === 'JPN') return 'TKY';
@@ -668,17 +667,21 @@
         };
         const defaultLettersForCountry = (c) => {
             if (c === 'KZ' || c === 'USA') return 'VIP';
-            if (c === 'BY') return 'AAA';
-            if (c === 'USSR') return 'МОС';
+            if (c === 'BY') return 'AA';
             if (c === 'JPN') return 'JDM';
             if (c === 'UAE') return 'D';
             return 'ААА';
         };
         const buildNormalized = (rawMain, region, country) => {
-            const c = (country || 'RUS').toUpperCase();
+            let c = (country || 'RUS').toUpperCase();
+            if (c === 'USSR') {
+                c = 'RUS';
+                region = 'СССР';
+            }
             let reg = (region || defaultRegionForCountry(c)).toUpperCase();
+            const cleanMainForDigits = c === 'BY' ? String(rawMain || '').replace(/-\s*[0-8]\s*$/, '') : String(rawMain || '');
             const rawLetters = ((rawMain || '').match(/[A-ZА-ЯЁ]/gi) || []).join('').toUpperCase();
-            const rawDigits = ((rawMain || '').match(/\d/g) || []).join('');
+            const rawDigits = (cleanMainForDigits.match(/\d/g) || []).join('');
 
             if (c === 'UAE') {
                 const trimmedMain = String(rawMain || '').trim();
@@ -741,14 +744,11 @@
                 return { main: `${digits} ${letters}`, letters, digits, region: reg, country: 'KZ', isNone: false };
             }
             if (c === 'BY') {
-                letters = letters.padEnd(3, fallbackLetters[0] || 'A');
-                const byReg = /^[0-8]$/.test(reg) ? reg : (reg.replace(/^0+/, '') || '7');
-                return { main: `${digits} ${letters}`, letters, digits, region: byReg, country: 'BY', isNone: false };
-            }
-            if (c === 'USSR') {
-                letters = letters.padEnd(3, fallbackLetters[0] || 'М');
-                const ussrReg = (reg === 'USSR' || reg === '77') ? 'МОС' : reg;
-                return { main: `${digits} ${letters}`, letters, digits, region: ussrReg, country: 'USSR', isNone: false };
+                const byDigits = (rawDigits ? rawDigits.slice(0, 4) : '7777').padStart(4, '0');
+                const byLetters = (rawLetters ? rawLetters.slice(0, 2) : 'AA').padEnd(2, 'A');
+                const dashRegMatch = String(rawMain || '').match(/-\s*([0-8])\s*$/);
+                const byReg = /^[0-8]$/.test(reg) ? reg : (dashRegMatch ? dashRegMatch[1] : (reg.replace(/\D/g, '').slice(0, 1) || '7'));
+                return { main: `${byDigits} ${byLetters}-${byReg}`, letters: byLetters, digits: byDigits, region: byReg, country: 'BY', isNone: false };
             }
             if (c === 'USA') {
                 letters = letters.padEnd(3, fallbackLetters[0] || 'V');
@@ -866,7 +866,7 @@
 
         // Authentic physical plate dimensions: North American / Japanese JDM 2:1 (0.36x0.18) vs European/GOST 520x112mm
         const is2x1Plate = (country === 'USA' || country === 'JPN');
-        const physicalFormats={RUS:[.520,.112],KZ:[.520,.112],BY:[.520,.110],USSR:[.465,.112],USA:[.3048,.1524],JPN:[.330,.165],UAE:[.520,.110]};
+        const physicalFormats={RUS:[.520,.112],KZ:[.520,.112],BY:[.520,.110],USA:[.3048,.1524],JPN:[.330,.165],UAE:[.520,.110]};
         const [plateW,plateH]=physicalFormats[country]||physicalFormats.RUS;
 
         // Frame material color matching frameStyle: gold #d4af37, carbon #1e293b, chrome #e2e8f0, neon #00f2fe, or classic #111827
@@ -1322,80 +1322,49 @@
                         ctx.font = '900 62px "Inter", "Arial Black", sans-serif';
                         ctx.fillText(regCode, 452, 66);
                     } else if (country === 'BY') {
-                        // Authentic 512x128 Belarus СТБ 914-99 Plate
-                        ctx.fillStyle = '#ffffff';
+                        // Authentic 512x128 Belarus СТБ 914-99 Type 1 Plate: [Flag BY] 7777 AA-7 (no vertical divider line)
+                        if (typeof ctx.createLinearGradient === 'function') {
+                            const grad = ctx.createLinearGradient(0, 0, 0, 128);
+                            grad.addColorStop(0, '#f8fafc');
+                            grad.addColorStop(1, '#e2e8f0');
+                            ctx.fillStyle = grad;
+                        } else {
+                            ctx.fillStyle = '#ffffff';
+                        }
                         ctx.fillRect(0, 0, 512, 128);
                         ctx.strokeStyle = '#090d16';
-                        ctx.lineWidth = 6;
+                        ctx.lineWidth = 7;
                         ctx.strokeRect(5, 5, 502, 118);
 
-                        // Belarus Flag Strip on Left (x: 16..68, y: 20..58)
+                        // Belarus Flag Strip on Left (x: 18..70, y: 20..58)
                         ctx.fillStyle = '#c8313e';
-                        ctx.fillRect(16, 20, 52, 24);
+                        ctx.fillRect(18, 20, 52, 24);
                         ctx.fillStyle = '#4aa657';
-                        ctx.fillRect(16, 44, 52, 14);
+                        ctx.fillRect(18, 44, 52, 14);
                         ctx.fillStyle = '#ffffff';
-                        ctx.fillRect(16, 20, 8, 38);
+                        ctx.fillRect(18, 20, 8, 38);
+                        ctx.fillStyle = '#c8313e';
+                        ctx.fillRect(20, 22, 4, 34);
 
                         ctx.fillStyle = '#090d16';
                         ctx.font = '800 28px "Inter", "Arial Black", sans-serif';
                         ctx.textAlign = 'center';
                         ctx.textBaseline = 'middle';
-                        ctx.fillText('BY', 42, 88);
+                        ctx.fillText('BY', 44, 88);
 
-                        const byMain = `${digits} ${letters}`;
+                        // Full СТБ 914-99 string: 4 digits + 2 letters + hyphen + region digit (e.g. 7777 AA-7), NO vertical divider line
+                        const byDigits = String(digits || '7777').replace(/\D/g, '').padStart(4, '0').slice(0, 4);
+                        const byLetters = String(letters || 'AA').slice(0, 2);
+                        const byReg = String(regCode || '7').replace(/\D/g, '').slice(0, 1) || '7';
+                        const byMain = `${byDigits} ${byLetters}-${byReg}`;
                         ctx.fillStyle = '#090d16';
                         ctx.font = '900 66px "Inter", "Arial Black", sans-serif';
-                        ctx.fillText(byMain, 238, 66);
-
-                        ctx.strokeStyle = '#090d16';
-                        ctx.beginPath();
-                        ctx.moveTo(402, 8);
-                        ctx.lineTo(402, 120);
-                        ctx.lineWidth = 5;
-                        ctx.stroke();
-
-                        ctx.fillStyle = '#090d16';
-                        ctx.font = '900 62px "Inter", "Arial Black", sans-serif';
-                        ctx.fillText(regCode, 452, 66);
-                    } else if (country === 'USSR') {
-                        // Authentic 512x128 USSR GOST 3207-58 / 3207-77 Matte Black Plate
-                        const isSpecialUssr = ['КГБ', 'ЦКП', 'МОС', 'СВТ', 'ГАИ', 'КРМ'].includes(letters) && ['001', '777', '007'].includes(digits);
-                        group.userData.specialPlateType = isSpecialUssr ? 'ussr_gost' : 'ussr';
-
-                        ctx.fillStyle = '#0b0f17';
-                        ctx.fillRect(0, 0, 512, 128);
-                        ctx.strokeStyle = '#f8fafc';
-                        ctx.lineWidth = 6;
-                        ctx.strokeRect(6, 6, 500, 116);
-
-                        ctx.beginPath();
-                        ctx.moveTo(382, 8);
-                        ctx.lineTo(382, 120);
-                        ctx.lineWidth = 4;
-                        ctx.stroke();
-
-                        ctx.fillStyle = '#f8fafc';
-                        ctx.textAlign = 'center';
-                        ctx.textBaseline = 'middle';
-                        ctx.font = '900 68px "Inter", "Arial Black", sans-serif';
-                        ctx.fillText(`0${digits[0] || '7'}-${digits.slice(1) || '77'}`, 146, 66);
-                        ctx.font = '900 52px "Inter", "Arial Black", sans-serif';
-                        ctx.fillText(letters, 308, 68);
-
-                        ctx.fillStyle = '#ef4444';
-                        ctx.font = '900 28px "Inter", sans-serif';
-                        ctx.fillText('★', 446, 36);
-                        ctx.fillStyle = '#f8fafc';
-                        ctx.font = '900 28px "Inter", "Arial Black", sans-serif';
-                        ctx.fillText('СССР', 446, 74);
-                        ctx.font = '800 15px "Inter", sans-serif';
-                        ctx.fillText(regCode || 'ГОСТ 77', 446, 102);
+                        ctx.fillText(byMain, 290, 66);
                     } else {
                         // Russian (RUS) Authentic GOST R 50577-93 + Ultra-Rare Special Plates (512x128)
                         const l1 = comp.l1 || (letters[0] || 'А');
                         const l2l3 = comp.l2l3 || (letters.slice(1, 3) || 'АА');
-                        const isUssr = ['МОС', 'СВТ'].includes(letters) || regCode === 'СССР';
+                        const isUssr = ['МОС', 'СВТ', 'КГБ', 'ГАИ', 'ЦКП'].includes(letters) || regCode === 'СССР';
                         const isDiplomat = ['КМН', 'СМК'].includes(letters) || regCode === 'CD';
                         const isMvd = ['УМВ', 'РМВ'].includes(letters);
                         const isMilitary = ['ВМО', 'КМО'].includes(letters);
@@ -1425,7 +1394,7 @@
                             ctx.textAlign = 'center';
                             ctx.textBaseline = 'middle';
                             ctx.font = '900 72px "Inter", "Arial Black", sans-serif';
-                            ctx.fillText(`0${digits[1] || '0'}-${digits.slice(1) || '01'}`, 148, 66);
+                            ctx.fillText(`0${digits[0] || '0'}-${digits.slice(1) || '01'}`, 148, 66);
                             ctx.font = '900 54px "Inter", "Arial Black", sans-serif';
                             ctx.fillText(letters, 312, 68);
 

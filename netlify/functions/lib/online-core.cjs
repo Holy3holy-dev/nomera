@@ -58,11 +58,11 @@ function safePlate(raw,id){
   if (!raw || typeof raw!=='object'||Array.isArray(raw)) throw Error('Неверный номер');
   const text=String(raw.text||'');
   const isValidFormat = text.length<=36 && (
-    /^[АВЕКМНОРСТУХA-Z] \d{3} [АВЕКМНОРСТУХA-Z]{2} \| [A-Z0-9]{1,3} (?:RUS|KZ|BY|USA|UAE|JPN)$/u.test(text) ||
+    /^[АВЕКМНОРСТУХA-ZА-ЯЁ] \d{3} [АВЕКМНОРСТУХA-ZА-ЯЁ]{2} \| (?:[A-Z0-9]{1,3} (?:RUS|KZ|BY|USA|UAE|JPN)|(?:СССР|CD)(?: RUS)?)$/iu.test(text) ||
     /^\d{3} [A-Z]{3} \| [A-Z0-9]{1,3} (?:KZ|BY)$/.test(text) ||
-    /^\d{4} [A-Z]{2}-[1-8] \| [0-8]{1,2} BY$/.test(text) ||
-    /^\d{3} [А-ЯЁA-Z]{3} \| [А-ЯЁA-Z0-9]{2,4} USSR$/iu.test(text) ||
-    /^[A-Z]{3}[ -]\d{3,4} \| [A-Z0-9]{1,3} (?:USA|JPN)$/.test(text) ||
+    /^\d{4} [A-Z]{2}-[0-8] \| [0-8]{1,2} BY$/.test(text) ||
+    /^\d{3} [А-ЯЁA-Z]{3} \| [А-ЯЁA-Z0-9]{2,4} (?:USSR|RUS)$/iu.test(text) ||
+    /^[A-Z0-9]{3}[ -]\d{3,4} \| [A-Z0-9]{1,3} (?:USA|JPN)$/.test(text) ||
     /^(?:[A-Z]{1,3}|\d{1,2}) \d{1,5} \| [A-Z0-9]{1,3} UAE$/.test(text) ||
     /^\d{2}-\d{2} [А-ЯЁA-Z]{3} \| (?:СССР|USSR|[А-ЯЁA-Z0-9]{2,4} USSR|[0-9]{2,3} RUS)$/iu.test(text) ||
     /^\d{3} (?:CD|D) \d{1,3} \| [0-9]{2,3} RUS$/.test(text)
@@ -78,17 +78,16 @@ function parsePlate(text, countryOverride = null) {
     ? String(countryOverride).toUpperCase()
     : null;
 
-  // Authentic USSR GOST standard: "777 МОС | МОС USSR" or "07-77 МОС | МОС USSR"
+  // Authentic USSR GOST standard: "777 МОС | МОС USSR" or "07-77 МОС | МОС USSR" -> mapped to RUS special-ussr
   const mUssrStd = /^(?:(\d{3})|(\d{2})-(\d{2}))\s+([А-ЯЁA-Z]{3})\s*\|\s*([А-ЯЁA-Z0-9]{2,4})\s+USSR$/iu.exec(trimmed);
   if (mUssrStd) {
     const digits = mUssrStd[1] ? mUssrStd[1] : (mUssrStd[2] + mUssrStd[3]).slice(-3).padStart(3, '0');
     const letters = mUssrStd[4].toUpperCase();
-    const region = mUssrStd[5].toUpperCase();
     return {
       l1: letters[0], l2: letters[1], l3: letters[2],
       letters: [letters[0], letters[1], letters[2]],
-      digits, num: digits, region, reg: region,
-      country: normCountry || 'USSR',
+      digits, num: digits, region: 'СССР', reg: 'СССР',
+      country: normCountry || 'RUS',
       specialType: 'ussr'
     };
   }
@@ -99,13 +98,29 @@ function parsePlate(text, countryOverride = null) {
     const raw4 = mUssr[1] + mUssr[2];
     const digits = raw4.slice(-3).padStart(3, '0');
     const letters = mUssr[3].toUpperCase();
-    const region = mUssr[4] ? mUssr[4] : '77';
+    const region = mUssr[4] ? mUssr[4] : 'СССР';
     return {
       l1: letters[0], l2: letters[1], l3: letters[2],
       letters: [letters[0], letters[1], letters[2]],
       digits, num: digits, region, reg: region,
       country: normCountry || 'RUS',
       specialType: 'ussr'
+    };
+  }
+
+  // RUS USSR/CD format without trailing RUS: "М 001 ОС | СССР"
+  const mRusSpecial = /^([А-ЯЁA-Z])\s*(\d{3})\s*([А-ЯЁA-Z]{2})\s*\|\s*(СССР|CD)(?:\s+RUS)?$/iu.exec(trimmed);
+  if (mRusSpecial) {
+    const l1 = mRusSpecial[1].toUpperCase();
+    const digits = mRusSpecial[2];
+    const l23 = mRusSpecial[3].toUpperCase();
+    const region = mRusSpecial[4].toUpperCase();
+    return {
+      l1, l2: l23[0], l3: l23[1],
+      letters: [l1, l23[0], l23[1]],
+      digits, num: digits, region, reg: region,
+      country: normCountry || 'RUS',
+      specialType: region === 'СССР' ? 'ussr' : 'diplomat'
     };
   }
 
@@ -124,11 +139,11 @@ function parsePlate(text, countryOverride = null) {
   }
 
   // Authentic BY 4-digit STB 914-99: "7777 AA-7 | 7 BY"
-  const mBy4 = /^(\d{4})\s+([A-Z]{2})-([1-8])\s*\|\s*([0-8]{1,2})\s+BY$/i.exec(trimmed);
+  const mBy4 = /^(\d{4})\s+([A-Z]{2})-([0-8])\s*\|\s*([0-8]{1,2})\s+BY$/i.exec(trimmed);
   if (mBy4) {
-    const digits = mBy4[1].slice(-3).padStart(3, '0');
+    const digits = mBy4[1];
     const letters = mBy4[2].toUpperCase();
-    const region = mBy4[4].toUpperCase();
+    const region = String(mBy4[4]).replace(/^0+(?=\d)/, '') || '7';
     return {
       l1: letters[0],
       l2: letters[1],
@@ -406,11 +421,14 @@ function money(v){if(!Number.isSafeInteger(v) ||v<0||v>MAX_MONEY) throw Error('�
 // The server is authoritative for generator rolls: the browser sends only a mode and region.
 const LETTERS = ['А','В','Е','К','М','Н','О','Р','С','Т','У','Х'];
 const ELITES = ['ААА','АМР','ВВВ','ВОР','ТТТ','ХХХ','ККК','ЕКХ','АЕО','ООО','ССС','МММ','СКР','УУУ'];
-const ULTRA_SPECIAL_RUS_SERIES = ['МОС','СВТ','КМН','СМК','УМВ','РМВ','ВМО','КМО','КРМ','РФС'];
+const ULTRA_SPECIAL_RUS_SERIES = ['МОС','СВТ','КГБ','ГАИ','ЦКП','КМН','СМК','УМВ','РМВ','ВМО','КМО','КРМ','РФС'];
 
 const ULTRA_SPECIAL_META_BY_SERIES = {
   'МОС': { id: 'ussr', type: 'ussr', label: '🏛️ СССР • РЕТРО ГОСТ 1977', badge: '★ СССР', plateBg: '#0b0f17', textColor: '#f8fafc' },
   'СВТ': { id: 'ussr', type: 'ussr', label: '🏛️ СССР • СОВМИН ГОСТ', badge: '★ СССР', plateBg: '#0b0f17', textColor: '#f8fafc' },
+  'КГБ': { id: 'ussr', type: 'ussr', label: '🏛️ СССР • СПЕЦСЕРИЯ КГБ ГОСТ', badge: '★ СССР', plateBg: '#0b0f17', textColor: '#f8fafc' },
+  'ГАИ': { id: 'ussr', type: 'ussr', label: '🏛️ СССР • СЛУЖБА ГАИ ГОСТ', badge: '★ СССР', plateBg: '#0b0f17', textColor: '#f8fafc' },
+  'ЦКП': { id: 'ussr', type: 'ussr', label: '🏛️ СССР • АВТОБАЗА ЦК ГОСТ', badge: '★ СССР', plateBg: '#0b0f17', textColor: '#f8fafc' },
   'КМН': { id: 'diplomat', type: 'diplomat', label: '📕 ДИПКОРПУС CD • МИД', badge: 'CD • МИД', plateBg: '#b91c1c', textColor: '#ffffff' },
   'СМК': { id: 'diplomat', type: 'diplomat', label: '📕 КОНСУЛЬСКИЙ CD • ДИПЛОМАТ', badge: 'CD • D', plateBg: '#b91c1c', textColor: '#ffffff' },
   'УМВ': { id: 'mvd', type: 'mvd', label: '🚔 СПЕЦСВЯЗЬ МВД • СИНИЙ ГОСТ', badge: 'МВД РФ', plateBg: '#1d4ed8', textColor: '#ffffff' },
@@ -463,17 +481,6 @@ function getUltraSpecialPlateMeta(l1, l2, l3, num, reg, country = 'RUS') {
       series: letters
     };
   }
-  if (cCode === 'USSR' && ['КГБ', 'ЦКП', 'МОС', 'СВТ', 'ГАИ', 'КРМ'].includes(letters) && ['001', '777', '007'].includes(digits)) {
-    return {
-      id: 'ussr_gost',
-      type: 'ussr',
-      label: '🚩 СССР • ЧЁРНЫЙ ГОСТ СПЕЦСЕРИЯ',
-      badge: '★ ГОСТ СССР',
-      plateBg: '#0b0f17',
-      textColor: '#f8fafc',
-      series: letters
-    };
-  }
   return null;
 }
 
@@ -506,17 +513,7 @@ const COUNTRIES = {
     regRegex: /^(?:[0-8]|0[1-8])$/,
     defaultReg: '7',
     letters: ['A','B','E','I','K','M','H','O','P','C','T','X'],
-    elites: ['AAA','VIP','MMM','OOO','XXX','BBB','EEE','KKK','PPP','CCC','TTT','HHH','MIK','MNS']
-  },
-  USSR: {
-    code: 'USSR',
-    spinCostBoth: 3200,
-    spinCostPart: 1800,
-    priceMult: 3.2,
-    regRegex: /^(?:[А-ЯЁA-Z]{2,4}|\d{2,3}|СССР|USSR)$/i,
-    defaultReg: 'МОС',
-    letters: ['А','В','Г','Д','Е','Ж','З','И','К','Л','М','Н','О','П','Р','С','Т','У','Ф','Х','Ц','Ч','Ш','Щ','Э','Ю','Я'],
-    elites: ['МОС','МММ','КГБ','ССС','ААА','ВОР','ГАИ','ЦКП','СВТ','КРМ','ЛЕН','ООО','ХХХ','УУУ']
+    elites: ['AAA','III','OOO','MMM','XXX','BBB','EEE','KKK','PPP','CCC','TTT','HHH','MII','MBB','MHH','ABB','EKK']
   },
   USA: {
     code: 'USA',
@@ -1150,6 +1147,61 @@ function priceOfPlate(l1,l2,l3,num,reg,country='RUS') {
     return evaluateUaePlateDetails(l1, l2, l3, num, reg).price;
   }
 
+  if (cCode === 'BY') {
+    const rawNum = String(num || '0000').replace(/\D/g, '');
+    const byDigits4 = rawNum.length === 3
+      ? (rawNum[0] === rawNum[1] && rawNum[1] === rawNum[2] ? rawNum + rawNum[0] : rawNum.padStart(4, '0'))
+      : rawNum.padStart(4, '0').slice(-4);
+    const c1 = String(l1 || '').toUpperCase();
+    const c2 = String(l2 || '').toUpperCase();
+    const byPair = c1 + c2;
+    const isByDouble = (c1 !== '' && c1 === c2);
+    const isByGov = ['MI','MB','MH','AB','EK'].includes(byPair);
+    const isByQuad = (byDigits4[0] === byDigits4[1] && byDigits4[1] === byDigits4[2] && byDigits4[2] === byDigits4[3]);
+    let price = 450;
+    if (isByDouble || isByGov) {
+      if (byDigits4 === '7777') price += 5000000;
+      else if (isByQuad) price += 2000000;
+      else if (byDigits4 === '0001' || byDigits4 === '0007') price += 1500000;
+      else price += 450000;
+    }
+    if (['AA','II','OO','MM','MI','MB'].includes(byPair)) price += 1400000;
+    else if (['XX','BB','EE','KK','MH','AB','EK'].includes(byPair)) price += 900000;
+    else if (isByDouble) price += 600000;
+
+    if (isByDouble) price += 350000;
+
+    if (isByQuad) {
+      price += (byDigits4 === '7777' ? 750000 : 320000);
+    } else if (byDigits4 === '0001') {
+      price += 350000;
+    } else if (byDigits4 === '0007') {
+      price += 120000;
+    } else if (/^000[2-9]$/.test(byDigits4)) {
+      price += 45000;
+    } else if (/^[1-9]000$/.test(byDigits4)) {
+      price += 35000;
+    } else if (byDigits4.startsWith('00') || byDigits4.endsWith('00')) {
+      price += 25000;
+    } else if (['1234','2345','3456','4567','5678','6789','9876','8765','7654','6543','5432','4321'].includes(byDigits4)) {
+      price += 20000;
+    } else if (byDigits4[0] === byDigits4[3] && byDigits4[1] === byDigits4[2]) {
+      price += 12000;
+    } else if (byDigits4.slice(0, 2) === byDigits4.slice(2)) {
+      price += 8000;
+    }
+
+    const rNorm = String(reg || '').toUpperCase().replace(/^0+(?=\d)/, '') || '7';
+    if (['7','8','0','5'].includes(rNorm)) {
+      price += 450;
+      if (byDigits4 === '7777' || byDigits4 === '0001' || byDigits4 === '0007') price += 450000;
+      if (isByDouble || isByGov) price += 55000;
+    } else {
+      price += 200;
+    }
+    return Math.round(price * COUNTRIES.BY.priceMult);
+  }
+
   const cfg = COUNTRIES[cCode];
   const cElites = cfg.elites;
   let price = 450; // Базовая стоимость простого номера
@@ -1199,17 +1251,6 @@ function priceOfPlate(l1,l2,l3,num,reg,country='RUS') {
       if (letters === 'VIP' || letters === 'AAA') price += 1500000;
       else if (['ZZZ','QQQ','AST','ALA','HAN'].includes(letters)) price += 950000;
       else if (cElites.includes(letters)) price += 650000;
-    } else if (cCode === 'BY') {
-      if (['AAA','VIP','MMM','OOO'].includes(letters)) price += 1400000;
-      else if (['XXX','BBB','EEE','KKK','MIK','MNS'].includes(letters)) price += 900000;
-      else if (cElites.includes(letters)) price += 600000;
-    } else if (cCode === 'USSR') {
-      if (['МОС','КГБ','ЦКП','СВТ','КРМ'].includes(letters)) price += 1700000;
-      else if (['ГАИ','МММ','ССС','ААА','ВОР','ЛЕН'].includes(letters)) price += 1150000;
-      else if (cElites.includes(letters)) price += 750000;
-      if (ultraMeta && ultraMeta.id === 'ussr_gost') {
-        price += 2500000;
-      }
     } else if (cCode === 'USA') {
       if (['USA','VIP','FBI','CIA'].includes(letters)) price += 1600000;
       else if (['NYC','LAX','MIA','GTA','CEO','GOD','WIN'].includes(letters)) price += 1100000;
@@ -1273,22 +1314,6 @@ function priceOfPlate(l1,l2,l3,num,reg,country='RUS') {
     } else {
       price += 200;
     }
-  } else if (cCode === 'BY') {
-    if (['7','07','8','08','5','05'].includes(regUp)) {
-      price += 450;
-      if (digits === '777' || digits === '001' || digits === '007') price += 450000;
-      if (isTripleLetters || cElites.includes(letters)) price += 55000;
-    } else {
-      price += 200;
-    }
-  } else if (cCode === 'USSR') {
-    if (['МОС','МСК','ЛЕН','СССР','USSR','КРМ','ГАИ'].includes(regUp)) {
-      price += 600;
-      if (digits === '777' || digits === '001' || digits === '007') price += 550000;
-      if (isTripleLetters || cElites.includes(letters)) price += 85000;
-    } else {
-      price += 300;
-    }
   } else if (cCode === 'USA') {
     if (['CA','NY','FL','TX','NV'].includes(regUp)) {
       price += 600;
@@ -1322,6 +1347,7 @@ function rarityOfPrice(p){
 }
 
 const LADDER_NUMBERS = ['123','234','345','456','567','678','789','987','876','765','654','543','432','321'];
+const BY_LADDER_4 = ['1234','2345','3456','4567','5678','6789','9876','8765','7654','6543','5432','4321'];
 
 function secureRoll(mode, pity = 0, country = 'RUS'){
   if(!['both','numbers','letters'].includes(mode))throw Error('Неверный тип спина');
@@ -1332,15 +1358,15 @@ function secureRoll(mode, pity = 0, country = 'RUS'){
   const choose=arr=>arr[crypto.randomInt(arr.length)];
   const pityNum = Math.min(120, Math.max(0, Math.floor(Number(pity) || 0)));
   const luckBonus = Math.min(200, Math.floor(pityNum * 3));
-  const isIntl = (cCode === 'USA' || cCode === 'UAE' || cCode === 'JPN' || cCode === 'USSR');
+  const isIntl = (cCode === 'USA' || cCode === 'UAE' || cCode === 'JPN');
 
   let forceTier = null;
   if (mode === 'both') {
     if (pityNum >= 120) forceTier = 'legendary';
     else if (pityNum >= 65) forceTier = 'epic';
     else if (pityNum >= 25) forceTier = 'rare';
-    else if ((cCode === 'RUS' || cCode === 'JPN' || cCode === 'USSR') && crypto.randomInt(1000) < 2) {
-      // 0.2% шанс на ультра-редкий спецномер (СССР ГОСТ, Дипломатический CD, МВД, МО, ФСО или JDM 字光式)
+    else if ((cCode === 'RUS' || cCode === 'JPN') && crypto.randomInt(1000) < 2) {
+      // 0.2% шанс на ультра-редкий спецномер (СССР ГОСТ, Дипломатический CD, МВД, МО, ФСО в РФ или JDM 字光式 в Японии)
       forceTier = 'ultra_special';
     }
   }
@@ -1355,6 +1381,19 @@ function secureRoll(mode, pity = 0, country = 'RUS'){
       return n;
     }
     return '142';
+  }
+
+  function pickOrdinaryByNumber() {
+    for (let attempt = 0; attempt < 60; attempt++) {
+      const n = String(1001 + crypto.randomInt(8998));
+      if (n[0] === n[1] && n[1] === n[2] && n[2] === n[3]) continue;
+      if (n.startsWith('00') || n.endsWith('00')) continue;
+      if (BY_LADDER_4.includes(n)) continue;
+      if (n[0] === n[3] && n[1] === n[2]) continue;
+      if (n.slice(0, 2) === n.slice(2)) continue;
+      return n;
+    }
+    return '4829';
   }
 
   function pickOrdinaryUaeNumber() {
@@ -1385,11 +1424,19 @@ function secureRoll(mode, pity = 0, country = 'RUS'){
       return choose(cCode === 'JPN' ? ['777','001','007'] : ['001','007','777','888','999','100']);
     }
     if (forceTier === 'legendary') {
+      if (cCode === 'BY') return choose(['7777','0001','0007','1111','5555','8888','9999']);
       return choose(cCode === 'UAE'
         ? ['1','7','5','9','2','8','11','77','88','99','777','7777','77777']
         : ['777','001','007','011','111','555','888','999']);
     }
     if (forceTier === 'epic') {
+      if (cCode === 'BY') {
+        return choose([
+          '1111','2222','3333','4444','5555','6666','8888','9999',
+          '1000','2000','3000','5000','7000','8000','9000',
+          '0002','0003','0005','0007','0008','0009','7007'
+        ]);
+      }
       return choose(cCode === 'UAE'
         ? [
             '11','22','55','77','88','99','10','20','50','70','71','63',
@@ -1404,6 +1451,12 @@ function secureRoll(mode, pity = 0, country = 'RUS'){
           ]);
     }
     if (forceTier === 'rare') {
+      if (cCode === 'BY') {
+        return choose([
+          ...BY_LADDER_4,
+          '0100','0500','0700','0010','0077','1001','7007','1122','7788','0707'
+        ]);
+      }
       return choose(cCode === 'UAE'
         ? [
             ...LADDER_NUMBERS,
@@ -1418,10 +1471,18 @@ function secureRoll(mode, pity = 0, country = 'RUS'){
     const roll = crypto.randomInt(1000);
     const jackpotCutoff = Math.min(15, (isIntl ? 1 : 3) + Math.floor(luckBonus * 0.05));
     if (roll < jackpotCutoff) {
+      if (cCode === 'BY') return choose(['7777','0001','0007']);
       return choose(cCode === 'UAE' ? ['1','7','5','9','2','8','77','777'] : ['777','001','007']);
     }
     const epicCutoff = Math.min(35, (isIntl ? 5 : 12) + Math.floor(luckBonus * 0.15));
     if (roll < epicCutoff) {
+      if (cCode === 'BY') {
+        return choose([
+          '1111','2222','3333','4444','5555','6666','8888','9999',
+          '1000','2000','3000','5000','7000','8000','9000',
+          '0002','0003','0005','0007','0008','0009','7007'
+        ]);
+      }
       const epicPool = cCode === 'UAE'
         ? [
             '111','222','333','444','555','666','777','888','999',
@@ -1438,6 +1499,12 @@ function secureRoll(mode, pity = 0, country = 'RUS'){
     }
     const ladderCutoff = Math.min(70, (isIntl ? 16 : 30) + Math.floor(luckBonus * 0.3));
     if (roll < ladderCutoff) {
+      if (cCode === 'BY') {
+        return choose([
+          ...BY_LADDER_4,
+          '0100','0500','0700','0010','0077','1001','7007','1122','7788','0707'
+        ]);
+      }
       const rarePool = cCode === 'UAE'
         ? [
             ...LADDER_NUMBERS,
@@ -1449,7 +1516,13 @@ function secureRoll(mode, pity = 0, country = 'RUS'){
         : LADDER_NUMBERS;
       return choose(rarePool);
     }
-    return cCode === 'UAE' ? pickOrdinaryUaeNumber() : cCode === 'JPN' ? String(1000 + crypto.randomInt(9000)) : pickOrdinary3DigitNumber();
+    return cCode === 'UAE'
+      ? pickOrdinaryUaeNumber()
+      : cCode === 'BY'
+        ? pickOrdinaryByNumber()
+        : cCode === 'JPN'
+          ? String(1000 + crypto.randomInt(9000))
+          : pickOrdinary3DigitNumber();
   }
 
   function generateLuckyLetters() {
@@ -1457,7 +1530,7 @@ function secureRoll(mode, pity = 0, country = 'RUS'){
     if (forceTier === 'ultra_special') {
       const specialPool = cCode === 'JPN'
         ? ['JDM','GTR','DRF','S15','RX7']
-        : (cCode === 'USSR' ? ['КГБ','ЦКП','МОС','СВТ','ГАИ','КРМ'] : ULTRA_SPECIAL_RUS_SERIES);
+        : ULTRA_SPECIAL_RUS_SERIES;
       const s = choose(specialPool);
       return [s[0], s[1], s[2]];
     }
@@ -1477,6 +1550,11 @@ function secureRoll(mode, pity = 0, country = 'RUS'){
       return [l, l, l];
     }
     if (forceTier === 'rare') {
+      if (cCode === 'BY') {
+        const govPairs = ['MII','MBB','MHH','ABB','EKK'];
+        const p = choose(govPairs);
+        return [p[0], p[1], p[2]];
+      }
       const l1 = choose(letterPool);
       let l2 = choose(letterPool);
       if (l2 === l1) l2 = letterPool[(letterPool.indexOf(l1) + 1) % letterPool.length];
@@ -1496,10 +1574,24 @@ function secureRoll(mode, pity = 0, country = 'RUS'){
     }
     const mirrorCutoff = Math.min(70, (isIntl ? 20 : 30) + Math.floor(luckBonus * 0.3));
     if (roll < mirrorCutoff) {
+      if (cCode === 'BY') {
+        const govPairs = ['MII','MBB','MHH','ABB','EKK'];
+        const p = choose(govPairs);
+        return [p[0], p[1], p[2]];
+      }
       const l1 = choose(letterPool);
       let l2 = choose(letterPool);
       if (l2 === l1) l2 = letterPool[(letterPool.indexOf(l1) + 1) % letterPool.length];
       return [l1, l2, l1];
+    }
+    if (cCode === 'BY') {
+      for (let attempt = 0; attempt < 30; attempt++) {
+        const a = choose(letterPool), b = choose(letterPool);
+        if (a === b) continue;
+        if (elitePool.includes(a + b + b)) continue;
+        return [a, b, b];
+      }
+      return ['A', 'B', 'B'];
     }
     for (let attempt = 0; attempt < 30; attempt++) {
       const a = choose(letterPool), b = choose(letterPool), d = choose(letterPool);
@@ -1525,8 +1617,17 @@ function formatPlateText(l1, l2, l3, num, reg, country = 'RUS') {
   const letters = `${l1 || '-'}${l2 || '-'}${l3 || '-'}`;
   const digits = num || '---';
   if (cCode === 'KZ') return `${digits} ${letters} | ${r} KZ`;
-  if (cCode === 'BY') return `${digits} ${letters} | ${r} BY`;
-  if (cCode === 'USSR') return `${digits} ${letters} | ${r} USSR`;
+  if (cCode === 'BY') {
+    const rDigit = String(r).replace(/^0+(?=\d)/, '') || '7';
+    const rawNum = String(num || '');
+    const byDigits = (!rawNum || rawNum.includes('-'))
+      ? '----'
+      : (/^\d{3}$/.test(rawNum) && rawNum[0] === rawNum[1] && rawNum[1] === rawNum[2]
+          ? rawNum + rawNum[0]
+          : rawNum.replace(/\D/g, '').padStart(4, '0').slice(-4));
+    const byLetters = `${l1 || '-'}${l2 || '-'}`.toUpperCase();
+    return `${byDigits} ${byLetters}-${rDigit} | ${rDigit} BY`;
+  }
   if (cCode === 'USA') return `${letters} ${digits} | ${r} USA`;
   if (cCode === 'JPN') return `${letters} ${digits} | ${r} JPN`;
   if (cCode === 'UAE') {
@@ -1557,7 +1658,7 @@ function mutate(state, action, key, data, now=Date.now()) {
       : (data?.roll?.country && COUNTRIES[data.roll.country] ? data.roll.country : 'RUS');
     const cfg = COUNTRIES[country];
     const cost = roll?.mode === 'both' ? cfg.spinCostBoth : cfg.spinCostPart;
-    const numRegex = country === 'UAE' ? /^\d{1,5}$/ : country === 'JPN' ? /^\d{3,4}$/ : /^\d{3}$/;
+    const numRegex = country === 'UAE' ? /^\d{1,5}$/ : (country === 'JPN' || country === 'BY') ? /^\d{3,4}$/ : /^\d{3}$/;
     if(!roll||!['both','numbers','letters'].includes(roll.mode)
       || (roll.num!==null && !numRegex.test(roll.num))
       || (roll.letters!==null && (!Array.isArray(roll.letters)||roll.letters.length!==3||roll.letters.some(l=>!cfg.letters.includes(l)))))throw Error('Неверный тип спина');
@@ -1623,7 +1724,7 @@ function mutate(state, action, key, data, now=Date.now()) {
     const cfg = COUNTRIES[country];
     if(!draft.hasNumbers||!draft.hasLetters||!draft.changedNumbers||!draft.changedLetters)throw Error('Сначала прокрутите цифры и буквы');
     if((a.inventory||[]).length>=1000)throw Error('Инвентарь заполнен');
-    const claimNumRegex = country === 'UAE' ? /^[0-9]{1,5}$/ : country === 'JPN' ? /^[0-9]{3,4}$/ : /^[0-9]{3}$/;
+    const claimNumRegex = country === 'UAE' ? /^[0-9]{1,5}$/ : (country === 'JPN' || country === 'BY') ? /^[0-9]{3,4}$/ : /^[0-9]{3}$/;
     if(!claimNumRegex.test(draft.num)||!Array.isArray(draft.letters)||draft.letters.length!==3||draft.letters.some(l=>!cfg.letters.includes(l)))throw Error('Неверный номер');
     const [l1,l2,l3]=draft.letters;
     const reg=(typeof data?.region==='string'&&cfg.regRegex.test(data.region))?data.region.toUpperCase():(draft.reg&&cfg.regRegex.test(draft.reg)?String(draft.reg).toUpperCase():cfg.defaultReg);
