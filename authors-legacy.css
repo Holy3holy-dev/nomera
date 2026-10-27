@@ -697,6 +697,20 @@
             border-color: #94a3b8;
         }
 
+        .flag.flag-by {
+            background:
+                linear-gradient(90deg, #ffffff 0%, #ffffff 16%, transparent 16%),
+                linear-gradient(180deg, #c8313e 0%, #c8313e 66%, #4aa657 66%, #4aa657 100%);
+            border-color: #991b1b;
+        }
+
+        .flag.flag-ussr {
+            background:
+                radial-gradient(circle at 28% 35%, #facc15 0%, #facc15 22%, transparent 24%),
+                linear-gradient(180deg, #dc2626 0%, #991b1b 100%);
+            border-color: #facc15;
+        }
+
         /* ПАНЕЛЬ ВЫБОРА СТРАНЫ ГОСНОМЕРА */
         .plate-country-selector {
             display: grid;
@@ -7069,6 +7083,144 @@ body.race-active .race-3d-viewport-wrapper {
 .mp-special-badge {
     font-weight: 900;
     letter-spacing: 0.4px;
+}
+
+/* 6. 🇧🇾 Беларусь СТБ 914-99 (country-by) */
+.plate-container.country-by {
+    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 60%, #e2e8f0 100%);
+    border: 3.5px solid #0b0f19;
+    padding-left: 44px;
+}
+.plate-container.country-by::before {
+    content: "BY";
+    position: absolute;
+    left: 6px;
+    top: 8px;
+    bottom: 8px;
+    width: 28px;
+    border-radius: 4px;
+    background:
+        linear-gradient(180deg, #c8313e 0%, #c8313e 36%, #4aa657 36%, #4aa657 54%, #f8fafc 54%, #f8fafc 100%);
+    border: 1.5px solid rgba(15, 23, 42, 0.28);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding-bottom: 4px;
+    font-size: 11px;
+    font-weight: 900;
+    color: #0b0f19;
+    letter-spacing: 0.5px;
+}
+.plate-container.country-by #cell-n1 { order: 1; }
+.plate-container.country-by #cell-n2 { order: 2; }
+.plate-container.country-by #cell-n3 { order: 3; margin-right: 10px; }
+.plate-container.country-by #cell-l1 { order: 4; margin-right: 0; }
+.plate-container.country-by #cell-l2 { order: 5; }
+.plate-container.country-by #cell-l3 { order: 6; }
+
+/* 7. 🚩 Чёрные номера СССР ГОСТ 1958/1977 (country-ussr) */
+.plate-container.country-ussr {
+    background: linear-gradient(180deg, #141923 0%, #090d14 62%, #04060a 100%) ;
+    color: #f8fafc ;
+    border: 3.5px solid #f8fafc ;
+    outline: 3px solid #090d14 ;
+    box-shadow: 0 0 0 2px #ef4444, 0 0 42px rgba(220, 38, 38, 0.55), inset 0 1px 2px rgba(255, 255, 255, 0.25) ;
+}
+.plate-container.country-ussr::before {
+    content: "★ СССР ГОСТ 1958/77";
+    position: absolute;
+    top: -11px;
+    left: 16px;
+    padding: 2px 10px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #991b1b, #dc2626);
+    color: #fef08a;
+    border: 1px solid #facc15;
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: 0.8px;
+    z-index: 5;
+}
+.plate-container.country-ussr .plate-cell,
+.plate-container.country-ussr .plate-cell .char-span,
+.plate-container.country-ussr .plate-region,
+.plate-container.country-ussr .plate-region #region,
+.plate-container.country-ussr .plate-region-text {
+    color: #f8fafc ;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.85) ;
+}
+.plate-container.country-ussr .plate-region {
+    border-left-color: rgba(248, 250, 252, 0.65) ;
+}
+.plate-container.country-ussr #cell-n1 { order: 1; }
+.plate-container.country-ussr #cell-n2 { order: 2; }
+.plate-container.country-ussr #cell-n3 { order: 3; margin-right: 10px; }
+.plate-container.country-ussr #cell-l1 { order: 4; margin-right: 0; }
+.plate-container.country-ussr #cell-l2 { order: 5; }
+.plate-container.country-ussr #cell-l3 { order: 6; }
+
+/* Mini-plates for BY and USSR */
+.mini-plate.country-by .mp-by-left {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 1px 4px;
+    margin-right: 4px;
+    border-right: 1.5px solid rgba(15, 23, 42, 0.25);
+    font-size: 8px;
+    font-weight: 900;
+    line-height: 1;
+    color: #0b0f19;
+}
+.mini-plate.country-by .mp-by-flag {
+    display: block;
+    width: 12px;
+    height: 7px;
+    margin-bottom: 1px;
+    border-radius: 1px;
+    background: linear-gradient(180deg, #c8313e 0%, #c8313e 65%, #4aa657 65%, #4aa657 100%);
+}
+.mini-plate.country-by .mp-by-reg {
+    border-left: 1.5px solid #0b0f19;
+    padding-left: 5px;
+    margin-left: 5px;
+    font-weight: 900;
+}
+.mini-plate.country-ussr {
+    background: linear-gradient(180deg, #141923 0%, #05070b 100%) ;
+    border-color: #f8fafc ;
+    color: #f8fafc ;
+    box-shadow: 0 0 10px rgba(220, 38, 38, 0.45) ;
+}
+.mini-plate.country-ussr .mp-ussr-left {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 1px 5px;
+    margin-right: 5px;
+    border-right: 1px solid rgba(248, 250, 252, 0.35);
+    font-size: 8px;
+    line-height: 1.05;
+    color: #facc15;
+}
+.mini-plate.country-ussr .mp-ussr-left small {
+    font-size: 6.5px;
+    color: #cbd5e1;
+}
+.mini-plate.country-ussr .mp-ussr-main,
+.mini-plate.country-ussr .mp-ussr-main .mp-num,
+.mini-plate.country-ussr .mp-ussr-main .mp-let,
+.mini-plate.country-ussr .mp-ussr-reg {
+    color: #f8fafc ;
+}
+.mini-plate.country-ussr .mp-ussr-reg {
+    border-left: 1.5px solid rgba(248, 250, 252, 0.55);
+    padding-left: 5px;
+    margin-left: 5px;
+    font-size: 9px;
+    font-weight: 900;
 }
 
 @media (max-width: 480px) {

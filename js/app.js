@@ -375,6 +375,13 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     const r = jpnM[3].toUpperCase();
                     return getUltraSpecialPlateMeta(series[0], series[1], series[2], digits, r, 'JPN');
                 }
+                const ussrM = raw.match(/^(?:(\d{3})|(\d{2})-(\d{2}))\s+([А-ЯЁA-Z]{3})\s*\|\s*([А-ЯЁA-Z0-9]{2,4})\s+USSR$/iu);
+                if (ussrM) {
+                    const digits = ussrM[1] || (ussrM[2] + ussrM[3]).slice(-3);
+                    const series = ussrM[4].toUpperCase();
+                    const r = ussrM[5].toUpperCase();
+                    return getUltraSpecialPlateMeta(series[0], series[1], series[2], digits, r, 'USSR');
+                }
                 const rusM = raw.match(/^([A-ZА-ЯЁ])\s*(\d{3})\s*([A-ZА-ЯЁ]{2})\s*\|\s*([A-ZА-ЯЁ0-9]{2,4})(?:\s+RUS)?$/i);
                 if (rusM) {
                     return getUltraSpecialPlateMeta(rusM[1], rusM[3][0], rusM[3][1], rusM[2], rusM[4], 'RUS');
@@ -397,7 +404,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     return { ...ULTRA_SPECIAL_PLATE_MAP['КМН'], series, country: 'RUS' };
                 }
             }
-            if (c === 'JPN' && ['JDM', 'GTR'].includes(series) && ['777', '001', '007'].includes(digits)) {
+            if (c === 'JPN' && ['JDM', 'GTR', 'DRF', 'TKY', 'S15', 'RX7'].includes(series) && ['777', '001', '007', '888', '086'].includes(digits)) {
                 return {
                     id: 'jdm_glow',
                     cssClass: 'special-jdm-glow',
@@ -406,6 +413,17 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     sub: 'NIGHT GLOW',
                     series,
                     country: 'JPN'
+                };
+            }
+            if (c === 'USSR' && ['КГБ', 'ЦКП', 'МОС', 'СВТ', 'ГАИ', 'КРМ'].includes(series) && ['001', '777', '007'].includes(digits)) {
+                return {
+                    id: 'ussr_gost',
+                    cssClass: 'special-ussr',
+                    title: '🚩 СССР • ЧЁРНЫЙ ГОСТ СПЕЦСЕРИЯ',
+                    badge: '★ ГОСТ СССР',
+                    sub: 'ГОСТ 1977',
+                    series,
+                    country: 'USSR'
                 };
             }
             return null;
@@ -464,6 +482,54 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 letters: ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'],
                 eliteSeries: ['AAA', 'VIP', 'ZZZ', 'QQQ', 'GGG', 'NNN', 'MMM', 'SSS', 'XXX', 'LLL', 'KZZ', 'AST', 'ALA', 'HAN'],
                 eliteLetters: ['AAA', 'VIP', 'ZZZ', 'QQQ', 'GGG', 'NNN', 'MMM', 'SSS', 'XXX', 'LLL', 'KZZ', 'AST', 'ALA', 'HAN']
+            },
+            BY: {
+                code: 'BY',
+                name: 'Беларусь',
+                flagEmoji: '🇧🇾',
+                flag: '🇧🇾',
+                defaultReg: '7',
+                defaultRegion: '7',
+                spinCostBoth: 1400,
+                spinCostPart: 800,
+                spinBoth: 1400,
+                spinNumbers: 800,
+                spinLetters: 800,
+                basePrice: 650,
+                priceMult: 1.5,
+                regPattern: /^(?:[0-8]|0[1-8])$/,
+                regionRegex: /^(?:[0-8]|0[1-8])$/,
+                regHint: 'Код области РБ (7 — Минск, 1 — Брест, 2 — Витебск, 3 — Гомель, 4 — Гродно, 5 — Минская обл., 6 — Могилёв)',
+                regionHint: 'Регион Беларуси — цифра от 1 до 7 (или 0 для спецтранспорта)',
+                regMaxLen: 2,
+                popularRegions: ['7', '5', '1', '2', '3', '4', '6', '8', '0'],
+                letters: ['A', 'B', 'E', 'I', 'K', 'M', 'H', 'O', 'P', 'C', 'T', 'X'],
+                eliteSeries: ['AAA', 'VIP', 'MMM', 'OOO', 'XXX', 'BBB', 'EEE', 'KKK', 'PPP', 'CCC', 'TTT', 'HHH', 'MIK', 'MNS'],
+                eliteLetters: ['AAA', 'VIP', 'MMM', 'OOO', 'XXX', 'BBB', 'EEE', 'KKK', 'PPP', 'CCC', 'TTT', 'HHH', 'MIK', 'MNS']
+            },
+            USSR: {
+                code: 'USSR',
+                name: 'СССР ГОСТ',
+                flagEmoji: '🚩',
+                flag: '🚩',
+                defaultReg: 'МОС',
+                defaultRegion: 'МОС',
+                spinCostBoth: 3200,
+                spinCostPart: 1800,
+                spinBoth: 3200,
+                spinNumbers: 1800,
+                spinLetters: 1800,
+                basePrice: 1400,
+                priceMult: 3.2,
+                regPattern: /^(?:[А-ЯЁA-Z]{2,4}|\d{2,3}|СССР|USSR)$/i,
+                regionRegex: /^(?:[А-ЯЁA-Z]{2,4}|\d{2,3}|СССР|USSR)$/i,
+                regHint: 'Серия региона СССР ГОСТ 1958/1977 (МОС — Москва, ЛЕН — Ленинград, КИЕ — Киев, МНС — Минск, АЛМ — Алма-Ата, СССР)',
+                regionHint: 'Укажите серию региона СССР (например МОС, ЛЕН, КИЕ, МНС, АЛМ, СССР)',
+                regMaxLen: 4,
+                popularRegions: ['МОС', 'ЛЕН', 'СССР', 'МСК', 'КИЕ', 'МНС', 'АЛМ', 'ТАШ', 'СВР', 'ГОР'],
+                letters: ['А', 'В', 'Г', 'Д', 'Е', 'Ж', 'З', 'И', 'К', 'Л', 'М', 'Н', 'О', 'П', 'Р', 'С', 'Т', 'У', 'Ф', 'Х', 'Ц', 'Ч', 'Ш', 'Щ', 'Э', 'Ю', 'Я'],
+                eliteSeries: ['МОС', 'МММ', 'КГБ', 'ССС', 'ААА', 'ВОР', 'ГАИ', 'ЦКП', 'СВТ', 'КРМ', 'ЛЕН', 'ООО', 'ХХХ', 'УУУ'],
+                eliteLetters: ['МОС', 'МММ', 'КГБ', 'ССС', 'ААА', 'ВОР', 'ГАИ', 'ЦКП', 'СВТ', 'КРМ', 'ЛЕН', 'ООО', 'ХХХ', 'УУУ']
             },
             USA: {
                 code: 'USA',
@@ -534,8 +600,8 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 regMaxLen: 3,
                 popularRegions: ['TKY', 'YKH', 'OSK', 'NGY', 'SPR', 'FKO', 'KBE', 'KYO', 'CHB', 'STM'],
                 letters: ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'],
-                eliteSeries: ['JDM', 'TKY', 'GTR', 'NSM', 'TRD', 'STI', 'EVO', 'WGN', 'DRF', 'BOS', 'VIP', 'AAA', 'ZZZ', 'XXX'],
-                eliteLetters: ['JDM', 'TKY', 'GTR', 'NSM', 'TRD', 'STI', 'EVO', 'WGN', 'DRF', 'BOS', 'VIP', 'AAA', 'ZZZ', 'XXX']
+                eliteSeries: ['JDM', 'TKY', 'GTR', 'NSM', 'TRD', 'STI', 'EVO', 'WGN', 'DRF', 'BOS', 'VIP', 'AAA', 'ZZZ', 'XXX', 'S15', 'RX7', 'AE8', 'SUP'],
+                eliteLetters: ['JDM', 'TKY', 'GTR', 'NSM', 'TRD', 'STI', 'EVO', 'WGN', 'DRF', 'BOS', 'VIP', 'AAA', 'ZZZ', 'XXX', 'S15', 'RX7', 'AE8', 'SUP']
             }
         };
         const COUNTRY_CONFIGS = PLATE_COUNTRIES;
@@ -585,6 +651,12 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             const digits = String(num || '---');
             if (c === 'KZ') {
                 return `${digits} ${letters} | ${r} KZ`;
+            }
+            if (c === 'BY') {
+                return `${digits} ${letters} | ${r} BY`;
+            }
+            if (c === 'USSR') {
+                return `${digits} ${letters} | ${r} USSR`;
             }
             if (c === 'USA') {
                 return `${letters} ${digits} | ${r} USA`;
@@ -920,6 +992,8 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             const r = String(reg || '').trim().toUpperCase();
             const fb = String(fallbackCountry || 'RUS').trim().toUpperCase();
             if (JPN_PREFECTURE_META[r]) return 'JPN';
+            if (['МОС', 'ЛЕН', 'КИЕ', 'МНС', 'АЛМ', 'ТАШ', 'СВР', 'ГОР', 'КГБ', 'ЦКП'].includes(r) || /^[А-ЯЁ]{3,4}$/i.test(r)) return 'USSR';
+            if (/^[1-8]$/.test(r)) return 'BY';
             if (US_STATE_PLATE_META[r] || /^[A-Z]{2}$/.test(r)) return 'USA';
             if (UAE_EMIRATE_PLATE_META[r] || /^[A-Z]{3}$/.test(r)) return 'UAE';
             if (PLATE_COUNTRIES[fb] && fb !== 'RUS') {
@@ -943,7 +1017,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 const flagEl = document.getElementById('plate-country-flag');
                 if (flagEl) {
                     if (flagEl.classList) {
-                        flagEl.classList.remove('flag-rus', 'flag-kz', 'flag-usa', 'flag-uae', 'flag-jpn');
+                        flagEl.classList.remove('flag-rus', 'flag-kz', 'flag-by', 'flag-ussr', 'flag-usa', 'flag-uae', 'flag-jpn');
                         flagEl.classList.add('flag-' + code.toLowerCase());
                     } else {
                         flagEl.className = 'flag flag-' + code.toLowerCase();
@@ -954,11 +1028,11 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
                 const plateBox = document.getElementById('plate-box');
                 if (plateBox && plateBox.classList) {
-                    plateBox.classList.remove('country-rus', 'country-kz', 'country-usa', 'country-uae', 'country-jpn');
+                    plateBox.classList.remove('country-rus', 'country-kz', 'country-by', 'country-ussr', 'country-usa', 'country-uae', 'country-jpn');
                     plateBox.classList.add('country-' + code.toLowerCase());
                 }
 
-                ['RUS', 'KZ', 'USA', 'UAE', 'JPN'].forEach(k => {
+                ['RUS', 'KZ', 'BY', 'USSR', 'USA', 'UAE', 'JPN'].forEach(k => {
                     const idBtn = document.getElementById('btn-country-' + k);
                     if (idBtn && idBtn.classList) {
                         idBtn.classList.toggle('active', k === code);
@@ -1017,6 +1091,8 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             const raw = String(plateText || '').trim().toUpperCase();
             const specialMeta = getUltraSpecialPlateMeta(raw);
             const specialCls = specialMeta ? ` special-plate ${specialMeta.cssClass}` : '';
+            if (/\bUSSR$/.test(raw)) return 'mini-plate mp-structured country-ussr special-plate special-ussr';
+            if (/\bBY$/.test(raw)) return 'mini-plate mp-structured country-by' + specialCls;
             if (/\bJPN$/.test(raw)) return 'mini-plate mp-structured country-jpn' + specialCls;
             if (/\bUAE$/.test(raw)) return 'mini-plate mp-structured country-uae' + specialCls;
             if (/\bUSA$/.test(raw)) return 'mini-plate mp-structured country-usa' + specialCls;
@@ -1048,6 +1124,51 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     if (lMatch) letters = lMatch.toUpperCase();
                 }
                 return `<span class="mp-kz-left" aria-hidden="true"><i class="mp-kz-flag"></i><b>KZ</b></span><span class="mp-main mp-kz-main"><span class="mp-num">${escapeHtml(digits)}</span> <span class="mp-let">${escapeHtml(letters)}</span></span><span class="mp-pipe-sr"> | </span><span class="mp-reg-box mp-kz-reg">${escapeHtml(reg)}</span><span class="mp-pipe-sr"> KZ</span>`;
+            }
+
+            const byMatch = raw.match(/^(.*?)\s*\|\s*([A-Z0-9]{1,3})\s+BY$/i);
+            if (byMatch) {
+                const mainPart = byMatch[1].trim();
+                const reg = byMatch[2].trim().toUpperCase();
+                let digits = '777', letters = 'AAA';
+                const mStd = mainPart.match(/^(\d{3,4})\s+([A-ZА-ЯЁ]{2,3})(?:-\d)?$/i);
+                const mLeg = mainPart.match(/^([A-ZА-ЯЁ])\s*(\d{3})\s*([A-ZА-ЯЁ]{2})$/i);
+                if (mStd) {
+                    digits = mStd[1];
+                    letters = mStd[2].toUpperCase();
+                } else if (mLeg) {
+                    digits = mLeg[2];
+                    letters = (mLeg[1] + mLeg[3]).toUpperCase();
+                } else {
+                    const dMatch = mainPart.match(/\d+/);
+                    const lMatch = mainPart.replace(/[^A-ZА-ЯЁ]/gi, '');
+                    if (dMatch) digits = dMatch[0];
+                    if (lMatch) letters = lMatch.toUpperCase();
+                }
+                return `<span class="mp-by-left" aria-hidden="true"><i class="mp-by-flag"></i><b>BY</b></span><span class="mp-main mp-by-main"><span class="mp-num">${escapeHtml(digits)}</span> <span class="mp-let">${escapeHtml(letters)}</span></span><span class="mp-pipe-sr"> | </span><span class="mp-reg-box mp-by-reg">${escapeHtml(reg)}</span><span class="mp-pipe-sr"> BY</span>`;
+            }
+
+            const ussrMatch = raw.match(/^(.*?)\s*\|\s*([А-ЯЁA-Z0-9]{2,4})\s+USSR$/iu);
+            if (ussrMatch) {
+                const mainPart = ussrMatch[1].trim();
+                const reg = ussrMatch[2].trim().toUpperCase();
+                let digits = '777', letters = 'МОС';
+                const mStd = mainPart.match(/^(?:(\d{3})|(\d{2})-(\d{2}))\s+([А-ЯЁA-Z]{2,3})$/iu);
+                const mLeg = mainPart.match(/^([A-ZА-ЯЁ])\s*(\d{3})\s*([A-ZА-ЯЁ]{2})$/iu);
+                if (mStd) {
+                    digits = mStd[1] || (mStd[2] + mStd[3]).slice(-3);
+                    letters = mStd[4].toUpperCase();
+                } else if (mLeg) {
+                    digits = mLeg[2];
+                    letters = (mLeg[1] + mLeg[3]).toUpperCase();
+                } else {
+                    const dMatch = mainPart.match(/\d+/g);
+                    const lMatch = mainPart.replace(/[^A-ZА-ЯЁ]/gi, '');
+                    if (dMatch) digits = dMatch.join('').slice(-3);
+                    if (lMatch) letters = lMatch.toUpperCase();
+                }
+                const gostPair = digits.length === 3 ? (`0${digits[0]}-${digits.slice(1)}`) : digits;
+                return `<span class="mp-ussr-left" aria-hidden="true"><b>★ СССР</b><small>ГОСТ</small></span><span class="mp-main mp-ussr-main"><span class="mp-num" data-gost="${escapeHtml(gostPair)}">${escapeHtml(gostPair)}</span> <span class="mp-let">${escapeHtml(letters)}</span></span><span class="mp-pipe-sr"> ${escapeHtml(digits)} | </span><span class="mp-reg-box mp-ussr-reg">${escapeHtml(reg)}</span><span class="mp-pipe-sr"> USSR</span>`;
             }
 
             const usaMatch = raw.match(/^(.*?)\s*\|\s*([A-Z0-9]{1,3})\s+USA$/i);
@@ -5366,29 +5487,31 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             if (code !== 'RUS' && PLATE_COUNTRIES[code]) {
                 const cfg = PLATE_COUNTRIES[code];
                 let price = cfg.basePrice || 600;
-                const mult = code === 'JPN' ? 1.85 : (code === 'USA' ? 1.6 : 1.3);
+                const mult = code === 'JPN' ? 1.85 : (code === 'USSR' ? 1.7 : (code === 'USA' ? 1.6 : (code === 'KZ' ? 1.3 : 1.2)));
                 const cElites = cfg.eliteLetters || [];
 
                 // 1. Престижные серии страны
                 if (cElites.includes(letters)) {
                     if (code === 'JPN' && letters === 'JDM' && num === '777') return 24000000;
                     if (code === 'JPN' && letters === 'GTR' && num === '001') return 22000000;
+                    if (code === 'USSR' && ['МОС', 'КГБ', 'ЦКП', 'СВТ'].includes(letters) && (num === '001' || num === '777')) return 20000000;
                     if (code === 'USA' && letters === 'VIP' && num === '001') return 16000000;
                     if (code === 'USA' && letters === 'USA' && num === '777') return 14000000;
                     if (code === 'KZ' && letters === 'VIP' && num === '777') return 14000000;
                     if (code === 'KZ' && letters === 'ZZZ' && num === '001') return 12000000;
+                    if (code === 'BY' && (letters === 'AAA' || letters === 'VIP') && (num === '777' || num === '001')) return 12000000;
 
                     if (num === '777') price += Math.round(5000000 * mult);
                     else if (num[0] === num[1] && num[1] === num[2]) price += Math.round(2000000 * mult);
                     else if (num === '001') price += Math.round(1200000 * mult);
                     else price += Math.round(400000 * mult);
 
-                    if (['VIP', 'USA', 'FBI', 'ZZZ', 'QQQ', 'AAA', 'JDM', 'GTR', 'TKY'].includes(letters)) {
+                    if (['VIP', 'USA', 'FBI', 'ZZZ', 'QQQ', 'AAA', 'JDM', 'GTR', 'TKY', 'МОС', 'КГБ', 'ЦКП', 'СВТ', 'MMM', 'OOO'].includes(letters)) {
                         price += Math.round(1300000 * mult);
                     } else {
                         price += Math.round(750000 * mult);
                     }
-                    if (specialMeta && specialMeta.id === 'jdm_glow') {
+                    if (specialMeta && (specialMeta.id === 'jdm_glow' || specialMeta.id === 'ussr_gost')) {
                         price += 6500000;
                     }
                 }
@@ -5421,6 +5544,8 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 const regStr = String(reg || '').toUpperCase();
                 if (
                     (code === 'KZ' && ['01', '02', '77'].includes(regStr)) ||
+                    (code === 'BY' && ['7', '07', '8', '08', '5', '05'].includes(regStr)) ||
+                    (code === 'USSR' && ['МОС', 'МСК', 'ЛЕН', 'СССР', 'USSR', 'КРМ', 'ГАИ'].includes(regStr)) ||
                     (code === 'USA' && ['CA', 'NY', 'FL', 'NV', 'TX'].includes(regStr)) ||
                     (code === 'JPN' && ['TKY', 'YKH', 'OSK', 'NGY', 'SPR'].includes(regStr))
                 ) {
@@ -5567,7 +5692,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             const flagEl = document.getElementById('plate-country-flag');
             if (flagEl) {
                 if (flagEl.classList) {
-                    flagEl.classList.remove('flag-rus', 'flag-kz', 'flag-usa', 'flag-uae', 'flag-jpn');
+                    flagEl.classList.remove('flag-rus', 'flag-kz', 'flag-by', 'flag-ussr', 'flag-usa', 'flag-uae', 'flag-jpn');
                     flagEl.classList.add('flag-' + code.toLowerCase());
                 } else {
                     flagEl.className = 'flag flag-' + code.toLowerCase();
@@ -5578,7 +5703,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
             const plateBox = document.getElementById('plate-box');
             if (plateBox) {
-                plateBox.classList.remove('country-rus', 'country-kz', 'country-usa', 'country-uae', 'country-jpn');
+                plateBox.classList.remove('country-rus', 'country-kz', 'country-by', 'country-ussr', 'country-usa', 'country-uae', 'country-jpn');
                 plateBox.classList.add('country-' + code.toLowerCase());
             }
             updatePlateBoxMeta(currentCountry, currentReg);
@@ -6246,7 +6371,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
         function generateLuckyNumberLocal(forceTier, pity = 0, country = currentCountry) {
             const cCode = String(country || currentCountry || 'RUS').toUpperCase();
-            const isIntl = (cCode === 'USA' || cCode === 'UAE' || cCode === 'JPN');
+            const isIntl = (cCode === 'USA' || cCode === 'UAE' || cCode === 'JPN' || cCode === 'USSR');
 
             if (forceTier === 'ultra_special') {
                 return randomItem(cCode === 'JPN' ? ['777', '001', '007'] : ['001', '007', '777', '888', '999', '100']);
@@ -6330,10 +6455,12 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             const elites = cCode === 'UAE'
                 ? ['AAA','DDD','BBB','CCC','OOO','III','PPP','XXX','ZZZ']
                 : (cfg.eliteLetters || eliteLetters);
-            const isIntl = (cCode === 'USA' || cCode === 'UAE' || cCode === 'JPN');
+            const isIntl = (cCode === 'USA' || cCode === 'UAE' || cCode === 'JPN' || cCode === 'USSR');
 
             if (forceTier === 'ultra_special') {
-                const specialPool = cCode === 'JPN' ? ['JDM', 'GTR'] : ULTRA_SPECIAL_RUS_SERIES;
+                const specialPool = cCode === 'JPN'
+                    ? ['JDM', 'GTR', 'DRF', 'S15', 'RX7']
+                    : (cCode === 'USSR' ? ['КГБ', 'ЦКП', 'МОС', 'СВТ', 'ГАИ', 'КРМ'] : ULTRA_SPECIAL_RUS_SERIES);
                 const s = randomItem(specialPool);
                 return [s[0], s[1], s[2]];
             }
@@ -6460,7 +6587,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             if (pityCounterBoth >= 120) forceTier = 'legendary';
             else if (pityCounterBoth >= 65) forceTier = 'epic';
             else if (pityCounterBoth >= 25) forceTier = 'rare';
-            else if ((currentCountry === 'RUS' || currentCountry === 'JPN') && Math.floor(Math.random() * 1000) < 2) {
+            else if ((currentCountry === 'RUS' || currentCountry === 'JPN' || currentCountry === 'USSR') && Math.floor(Math.random() * 1000) < 2) {
                 // 0.2% шанс выбить Ультра-редкий спецномер (СССР ГОСТ, Дипломатический CD, МВД, Военный МО, ФСО или JDM 字光式)
                 forceTier = 'ultra_special';
             }
@@ -6713,6 +6840,8 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             const ordinaryRegionsMap = {
                 RUS: ['50', '23', '16', '78', '777', '77', '99'],
                 KZ: ['05', '07', '09', '13', '01', '02'],
+                BY: ['1', '2', '3', '4', '5', '6', '7'],
+                USSR: ['МОС', 'ЛЕН', 'КИЕ', 'МНС', 'АЛМ', 'СВР', 'ГОР'],
                 USA: ['TX', 'IL', 'WA', 'GA', 'CA', 'NY', 'FL'],
                 UAE: ['SHJ', 'AJM', 'RAK', 'DXB', 'AUH'],
                 JPN: ['FKO', 'KBE', 'KYO', 'CHB', 'TKY', 'YKH', 'OSK']
@@ -6720,6 +6849,8 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             const capitalRegionsMap = {
                 RUS: ['77', '777', '97'],
                 KZ: ['01', '02'],
+                BY: ['7', '5'],
+                USSR: ['МОС', 'ЛЕН', 'СССР'],
                 USA: ['CA', 'NY', 'FL'],
                 UAE: ['DXB', 'AUH'],
                 JPN: ['TKY', 'YKH', 'OSK']
@@ -6727,9 +6858,11 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             const legendarySeriesMap = {
                 RUS: ['ААА', 'МММ', 'ООО', 'ХХХ', 'АМР', 'ЕКХ', 'ВОР'],
                 KZ: ['VIP', 'AAA', 'MMM', 'ZZZ', 'XXX'],
+                BY: ['AAA', 'VIP', 'MMM', 'OOO', 'XXX', 'MIK'],
+                USSR: ['МОС', 'КГБ', 'ЦКП', 'СВТ', 'ГАИ', 'МММ', 'ССС'],
                 USA: ['VIP', 'AAA', 'NYC', 'USA', 'LAX'],
                 UAE: ['AAA', 'DDD', 'BBB', 'OOO', 'III', 'PPP'],
-                JPN: ['JDM', 'TKY', 'GTR', 'NSM', 'TRD', 'STI']
+                JPN: ['JDM', 'TKY', 'GTR', 'NSM', 'TRD', 'STI', 'DRF', 'S15', 'RX7']
             };
             const mythicTemplatesMap = {
                 RUS: [
@@ -6748,6 +6881,16 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     { l: 'VIP', num: '001', reg: '01' },
                     { l: 'AAA', num: '777', reg: '02' }
                 ],
+                BY: [
+                    { l: 'AAA', num: '777', reg: '7' },
+                    { l: 'VIP', num: '001', reg: '7' },
+                    { l: 'MMM', num: '777', reg: '5' }
+                ],
+                USSR: [
+                    { l: 'МОС', num: '001', reg: 'МОС' },
+                    { l: 'КГБ', num: '001', reg: 'МОС' },
+                    { l: 'ЦКП', num: '777', reg: 'СССР' }
+                ],
                 USA: [
                     { l: 'VIP', num: '777', reg: 'CA' },
                     { l: 'USA', num: '001', reg: 'NY' },
@@ -6763,7 +6906,8 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 JPN: [
                     { l: 'JDM', num: '777', reg: 'TKY' },
                     { l: 'GTR', num: '001', reg: 'YKH' },
-                    { l: 'TKY', num: '777', reg: 'TKY' }
+                    { l: 'TKY', num: '777', reg: 'TKY' },
+                    { l: 'DRF', num: '086', reg: 'TKY' }
                 ]
             };
 
@@ -6785,10 +6929,12 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
             const applyDeterministicPattern = (tier) => {
                 if (tier === 'Ультра-спец' || tier === 'УЛЬТРА-СПЕЦ') {
-                    const s = cCode === 'JPN' ? randomItem(['JDM', 'GTR']) : randomItem(ULTRA_SPECIAL_RUS_SERIES);
+                    const s = cCode === 'JPN'
+                        ? randomItem(['JDM', 'GTR', 'DRF'])
+                        : (cCode === 'USSR' ? randomItem(['МОС', 'КГБ', 'ЦКП', 'СВТ', 'ГАИ']) : randomItem(ULTRA_SPECIAL_RUS_SERIES));
                     l1 = s[0]; l2 = s[1]; l3 = s[2];
                     num = randomItem(['001', '777', '007']);
-                    reg = cCode === 'JPN' ? 'TKY' : '77';
+                    reg = cCode === 'JPN' ? 'TKY' : (cCode === 'USSR' ? 'МОС' : '77');
                 } else if (tier === 'Мифический' || tier === 'МИФИЧЕСКИЙ' || tier === 'БЛАТНОЙ') {
                     const tpl = randomItem(mythicTemplatesMap[cCode] || mythicTemplatesMap.RUS);
                     l1 = tpl.l[0]; l2 = tpl.l[1]; l3 = tpl.l[2];
@@ -6839,7 +6985,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 price = calculatePlatePriceForCountry(cCode, l1, l2, l3, num, reg);
                 const baseEquivalentPrice = Math.round(price / (cfg.priceMult || 1));
                 const r = getRarity(baseEquivalentPrice);
-                const bonusMult = cCode === 'UAE' ? 2.2 : (cCode === 'JPN' ? 1.85 : (cCode === 'USA' ? 1.6 : (cCode === 'KZ' ? 1.3 : 1)));
+                const bonusMult = cCode === 'UAE' ? 2.2 : (cCode === 'JPN' ? 1.85 : (cCode === 'USSR' ? 1.7 : (cCode === 'USA' ? 1.6 : (cCode === 'KZ' ? 1.3 : (cCode === 'BY' ? 1.2 : 1)))));
                 const bonusEquivalentPrice = cCode === 'RUS'
                     ? price
                     : Math.max(450, Math.round((price - (cfg.basePrice || 450)) / bonusMult + 450));
@@ -7459,7 +7605,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             if (!cfg) return;
             currentCaseCountry = code;
 
-            ['RUS', 'KZ', 'USA', 'UAE', 'JPN'].forEach(c => {
+            ['RUS', 'KZ', 'BY', 'USSR', 'USA', 'UAE', 'JPN'].forEach(c => {
                 const btn = document.getElementById(`btn-case-country-${c}`);
                 if (btn && btn.classList) {
                     btn.classList.toggle('active', c === code);
@@ -12479,17 +12625,34 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     { id: 'syn_1', label: '1-я активная синергия', hint: 'Хотя бы 1 машина в гараже с активной синергией номера', match: (plateTexts, cars) => (Array.isArray(cars) ? cars : (myCars || [])).filter(c => !!getCarPlateSynergy(c?.name, c?.plate)).length >= 1 },
                     { id: 'syn_2', label: '2 активные синергии', hint: 'Хотя бы 2 машины в гараже с активной синергией номера', match: (plateTexts, cars) => (Array.isArray(cars) ? cars : (myCars || [])).filter(c => !!getCarPlateSynergy(c?.name, c?.plate)).length >= 2 }
                 ]
+            },
+            {
+                id: 'cis_jdm_standards',
+                icon: '🚩',
+                name: 'Стандарты ГОСТ, СНГ и JDM',
+                desc: 'Собрать коллекцию чёрных номеров СССР ГОСТ, Беларуси (BY), Казахстана (KZ) и Японии (JPN)',
+                reward: 650000,
+                xpReward: 320,
+                slots: [
+                    { id: 'ussr_std', label: 'СССР ГОСТ (USSR)', hint: 'Чёрный номер СССР ГОСТ (USSR или серия МОС/СВТ)', match: (plateTexts) => somePlateMatches(plateTexts, (raw) => /\b(USSR|СССР)$/i.test(raw) || /\b(МОС|СВТ)\b/i.test(raw)) },
+                    { id: 'by_std', label: 'Беларусь (BY)', hint: 'Госномер Республики Беларусь (BY)', match: (plateTexts) => somePlateMatches(plateTexts, (raw) => /\bBY$/i.test(raw)) },
+                    { id: 'kz_std', label: 'Казахстан (KZ)', hint: 'Госномер Казахстана (KZ)', match: (plateTexts) => somePlateMatches(plateTexts, (raw) => /\bKZ$/i.test(raw)) },
+                    { id: 'jpn_std', label: 'Япония JDM (JPN)', hint: 'Госномер Японии для дрифта (JPN)', match: (plateTexts) => somePlateMatches(plateTexts, (raw) => /\bJPN$/i.test(raw)) }
+                ]
             }
         ];
         window.COLLECTOR_SETS = COLLECTOR_SETS;
 
         const SYNERGY_GUIDE_RULES = [
             { id: 'uae_royal', icon: '👑', title: 'Королевский Гараж Дубая', bonusPct: 35, carsLabel: 'Bugatti Chiron, Koenigsegg Jesko, Ferrari SF90, Rolls-Royce Cullinan, Lamborghini Huracan', platesLabel: 'Короткие VIP-номера ОАЭ (1–2 цифры, UAE)' },
+            { id: 'jdm_drift_glow', icon: '🇯🇵', title: 'Неон Токио JDM 字光式 (Дрифт)', bonusPct: 28, carsLabel: 'Nissan Silvia S15, Nissan GT-R R35, Toyota Mark II, Supra MK4, Mazda RX-8, Lancer Evo VIII, Impreza WRX STI', platesLabel: 'Спецномера Японии JPN с сериями JDM, GTR, DRF, TKY, S15, RX7 или цифрами 777/001/086' },
+            { id: 'ussr_gost', icon: '🚩', title: 'Легенда СССР ГОСТ (Чёрный номер)', bonusPct: 26, carsLabel: 'ГАЗ-24 «Волга», ВАЗ-2107 «Жигули», ВАЗ-2109 «Девятка», Lada Priora БПАН, G63 AMG «Гелик»', platesLabel: 'Чёрные номера СССР ГОСТ (USSR) или спецсерии МОС, КГБ, ЦКП, СВТ, ГАИ' },
             { id: 'rus_kortezh', icon: '🚨', title: 'Спецсвязь / Кортеж РФ', bonusPct: 25, carsLabel: 'Mercedes-Benz G63 AMG «Гелик», BMW M5 F90, Porsche Cayenne, Cullinan, Land Cruiser 300, Camry 3.5', platesLabel: 'Серии АМР, ЕКХ, ААА, ООО, СКР, ФСБ, КРА или 77/97/99/777/999 RUS' },
             { id: 'uae_sheikh', icon: '🌴', title: 'Кортеж Шейха ОАЭ', bonusPct: 25, carsLabel: 'Гиперкары, Rolls-Royce Cullinan, Huracan, Porsche 911 Turbo S, G63 AMG «Гелик»', platesLabel: 'Любой госномер ОАЭ (UAE)' },
             { id: 'kz_vip', icon: '🦅', title: 'Астана VIP Кортеж', bonusPct: 25, carsLabel: 'Toyota Camry 3.5, Toyota Land Cruiser 300, G63 AMG «Гелик», BMW M5 F90', platesLabel: 'Номера KZ с 001–009, 777, X00 или сериями VIP, ZZZ, AAA, XXX, AST, ALA' },
+            { id: 'by_kortezh', icon: '🇧🇾', title: 'Минский Проспект (BY)', bonusPct: 22, carsLabel: 'BMW M5 F90, BMW M5 E60 V10, Mercedes-Benz E63s AMG, G63 AMG «Гелик», Land Cruiser 300, Camry 3.5', platesLabel: 'Любой госномер Беларуси (BY), особенно регион 7 (Минск) и серии AAA/VIP/MMM' },
             { id: 'usa_highway', icon: '🗽', title: 'Хайвей Перехватчик США', bonusPct: 22, carsLabel: 'Tesla Model S Plaid, Dodge Hellcat, Corvette C8 Z06, Mustang Shelby GT500', platesLabel: 'Любой госномер США (USA)' },
-            { id: 'jdm_legend', icon: '⛩️', title: 'Легенда Токио / JDM', bonusPct: 20, carsLabel: 'Toyota Mark II Tourer V, Nissan GT-R R35 Nismo, Nissan Silvia S15 Spec-R, Subaru Impreza WRX STI', platesLabel: 'Цифры 777/888/999/001/100 или регионы 25/125/27/65/41 RUS' },
+            { id: 'jdm_legend', icon: '⛩️', title: 'Легенда Токио / JDM', bonusPct: 20, carsLabel: 'Toyota Mark II Tourer V, Nissan GT-R R35 Nismo, Nissan Silvia S15 Spec-R, Subaru Impreza WRX STI, Supra MK4, RX-8', platesLabel: 'Любой номер Японии (JPN), цифры 777/888/999/001/100 или регионы 25/125/27/65/41 RUS' },
             { id: 'oper_bpan', icon: '🔊', title: 'Опер-Стиль / БПАН', bonusPct: 18, carsLabel: 'ВАЗ-2107 «Жигули», ВАЗ-2109 «Девятка», Lada Priora БПАН, Lada Vesta Sport, ГАЗ-24 «Волга»', platesLabel: 'Цифры 001/005/007/666/777/999/095/009, серии ВОР/ХХХ/АУЕ/ОМР/КРА или три одинаковые буквы' }
         ];
 

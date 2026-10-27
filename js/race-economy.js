@@ -96,7 +96,31 @@
         'Toyota Mark II Tourer V',
         'Nissan Silvia S15 Spec-R',
         'Subaru Impreza WRX STI',
-        'Nissan GT-R R35 Nismo'
+        'Nissan GT-R R35 Nismo',
+        'Toyota Supra MK4',
+        'Mazda RX-8',
+        'Mitsubishi Lancer Evo VIII',
+        'Mitsubishi Eclipse GT',
+        'Lexus IS300'
+    ]);
+    const BY_KORTEZH_CARS = Object.freeze([
+        'Toyota Camry 3.5',
+        'Toyota Land Cruiser 300',
+        'Mercedes-Benz G63 AMG «Гелик»',
+        'BMW M5 F90 Competition',
+        'BMW M5 E60 V10',
+        'Mercedes-Benz E63s AMG',
+        'Audi RS6 Avant',
+        'Rolls-Royce Cullinan'
+    ]);
+    const USSR_GOST_CARS = Object.freeze([
+        'ГАЗ-24 «Волга»',
+        'ВАЗ-2107 «Жигули»',
+        'ВАЗ-2109 «Девятка»',
+        'Lada Priora БПАН',
+        'Lada Vesta Sport',
+        'Mercedes-Benz G63 AMG «Гелик»',
+        'Toyota Land Cruiser 300'
     ]);
     const OPER_BPAN_CARS = Object.freeze([
         'ВАЗ-2107 «Жигули»',
@@ -140,14 +164,33 @@
         if (UAE_SHEIKH_CARS.includes(carName) && /\bUAE$/i.test(rawPlate)) {
             return makeResult('uae_sheikh', 'Шейх Дубая', '🇦🇪', 0.25);
         }
-        // 3. kz_vip (+25%)
+        // 3. jdm_drift_glow (+28%)
+        if (
+            JDM_LEGEND_CARS.includes(carName) &&
+            /\bJPN$/i.test(rawPlate) &&
+            (/^(JDM|GTR|DRF|TKY|S15|RX7|STI|EVO|SUP|AE8)$/i.test(lettersOnly) || /\b(777|001|007|888|086)\b/.test(mainPart))
+        ) {
+            return makeResult('jdm_drift_glow', 'Токийский Дрифт 字光式', '🇯🇵', 0.28);
+        }
+        // 4. ussr_gost (+26%)
+        if (
+            USSR_GOST_CARS.includes(carName) &&
+            (/\bUSSR$/i.test(rawPlate) || /\bСССР\b/i.test(regionPart) || /^(КГБ|ЦКП|МОС|СВТ|ГАИ)$/i.test(lettersOnly))
+        ) {
+            return makeResult('ussr_gost', 'Спецгараж ГОСТ СССР', '☭', 0.26);
+        }
+        // 5. kz_vip (+25%)
         if (KZ_VIP_CARS.includes(carName) && /\bKZ$/i.test(rawPlate)) {
             return makeResult('kz_vip', 'Астана — Алматы VIP', '🇰🇿', 0.25);
         }
-        // 4. rus_kortezh (+25%)
+        // 6. by_kortezh (+22%)
+        if (BY_KORTEZH_CARS.includes(carName) && /\bBY$/i.test(rawPlate)) {
+            return makeResult('by_kortezh', 'Минский Проспект СТБ', '🇧🇾', 0.22);
+        }
+        // 7. rus_kortezh (+25%)
         if (
             RUS_KORTEZH_CARS.includes(carName) &&
-            (/\bRUS$/i.test(rawPlate) || !/\b(UAE|USA|KZ|JPN)$/i.test(rawPlate)) &&
+            (/\bRUS$/i.test(rawPlate) || !/\b(UAE|USA|KZ|BY|USSR|JPN)$/i.test(rawPlate)) &&
             (
                 /(АМР|ЕКХ|ООО|ААА|СКР|ВОР|ККК|ХХХ|МММ|ССС|ФСБ|КРА|МОС|СВТ|КМН|СМК|УМВ|РМВ|ВМО|КМО|КРМ|РФС)/i.test(mainPart) ||
                 /^(АМР|ЕКХ|ООО|ААА|СКР|ВОР|ККК|ХХХ|МММ|ССС|ФСБ|КРА|МОС|СВТ|КМН|СМК|УМВ|РМВ|ВМО|КМО|КРМ|РФС)$/i.test(lettersOnly) ||
@@ -157,18 +200,18 @@
         ) {
             return makeResult('rus_kortezh', 'Федеральный Спецборт', '🚨', 0.25);
         }
-        // 5. usa_highway (+22%)
+        // 8. usa_highway (+22%)
         if (USA_HIGHWAY_CARS.includes(carName) && /\bUSA$/i.test(rawPlate)) {
             return makeResult('usa_highway', 'Калифорнийский Хайвей', '🇺🇸', 0.22);
         }
-        // 6. jdm_legend (+20%)
+        // 9. jdm_legend (+20%)
         if (
             JDM_LEGEND_CARS.includes(carName) &&
             (/\bJPN$/i.test(rawPlate) || /\b(777|888|001|007|111|222|333|444|555|666|999|101|202|303|707|100)\b/.test(mainPart) || /\b(25|125|27|65|41)\s+RUS$/i.test(rawPlate))
         ) {
             return makeResult('jdm_legend', 'Легенда Токио JDM', '⛩️', 0.20);
         }
-        // 7. oper_bpan (+18%)
+        // 10. oper_bpan (+18%)
         if (
             OPER_BPAN_CARS.includes(carName) &&
             (

@@ -7,6 +7,7 @@
     // One shared scene scale; never enlarge a shorter plate to fill the stage.
     const formats=Object.freeze({
         RUS:Object.freeze({width:520,height:112}),KZ:Object.freeze({width:520,height:112}),
+        BY:Object.freeze({width:520,height:112}),USSR:Object.freeze({width:465,height:112}),
         USA:Object.freeze({width:304.8,height:152.4}),JPN:Object.freeze({width:330,height:165}),
         UAE:Object.freeze({width:520,height:110}) // depicted long, single-line format
     });

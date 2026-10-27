@@ -60,7 +60,7 @@
     <!-- Подключение Firebase SDK для базы данных, аккаунтов и мультиплеера -->
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
-    <link rel="stylesheet" href="./styles.css?v=2f1d005811c8">
+    <link rel="stylesheet" href="./styles.css?v=5f153b8e4198">
     <style>
         /* Collector's Book («Книга коллекционера») & Car-Plate Synergy UI */
         .collector-book-summary {
@@ -412,6 +412,20 @@
                                     </span>
                                     <span class="country-btn-info"><strong>Казахстан</strong><small>VIP • 1 800 ₽</small></span>
                                     <span class="country-mult-pill">x1.8</span>
+                                </button>
+                                <button type="button" class="country-select-btn" id="btn-country-BY" data-country="BY" onclick="selectPlateCountry('BY')">
+                                    <span class="country-btn-flag country-flag-icon" aria-hidden="true">
+                                        <svg viewBox="0 0 28 20" width="24" height="17" style="border-radius:3px;box-shadow:0 1px 3px rgba(0,0,0,0.4);"><rect width="28" height="13.3" fill="#C8313E"/><rect y="13.3" width="28" height="6.7" fill="#4AA657"/><rect width="4.5" height="20" fill="#fff"/><path d="M1.2 2h2.1v16H1.2z" fill="#C8313E" opacity="0.45"/></svg>
+                                    </span>
+                                    <span class="country-btn-info"><strong>Беларусь</strong><small>СТБ • 1 400 ₽</small></span>
+                                    <span class="country-mult-pill">x1.5</span>
+                                </button>
+                                <button type="button" class="country-select-btn" id="btn-country-USSR" data-country="USSR" onclick="selectPlateCountry('USSR')">
+                                    <span class="country-btn-flag country-flag-icon" aria-hidden="true">
+                                        <svg viewBox="0 0 28 20" width="24" height="17" style="border-radius:3px;box-shadow:0 1px 3px rgba(0,0,0,0.4);"><rect width="28" height="20" fill="#b91c1c"/><circle cx="8" cy="7" r="3.2" fill="#facc15"/></svg>
+                                    </span>
+                                    <span class="country-btn-info"><strong>СССР ГОСТ</strong><small>Чёрный • 3 200 ₽</small></span>
+                                    <span class="country-mult-pill">x3.2</span>
                                 </button>
                                 <button type="button" class="country-select-btn" id="btn-country-USA" data-country="USA" onclick="selectPlateCountry('USA')">
                                     <span class="country-btn-flag country-flag-icon" aria-hidden="true">
@@ -1669,6 +1683,16 @@
                                 <span class="country-flag-badge">🇰🇿</span>
                                 <span>Казахстан</span>
                                 <small>x1.8</small>
+                            </button>
+                            <button type="button" class="case-country-btn" id="btn-case-country-BY" data-country="BY" onclick="selectCaseCountry('BY')">
+                                <span class="country-flag-badge">🇧🇾</span>
+                                <span>Беларусь</span>
+                                <small>x1.5</small>
+                            </button>
+                            <button type="button" class="case-country-btn" id="btn-case-country-USSR" data-country="USSR" onclick="selectCaseCountry('USSR')">
+                                <span class="country-flag-badge">🚩</span>
+                                <span>СССР ГОСТ</span>
+                                <small>x3.2</small>
                             </button>
                             <button type="button" class="case-country-btn" id="btn-case-country-USA" data-country="USA" onclick="selectCaseCountry('USA')">
                                 <span class="country-flag-badge">🇺🇸</span>
@@ -3401,7 +3425,7 @@
     <script src="./js/security.js?v=ed845ef69db6"></script>
     <script src="./js/storage.js?v=327dc7592b84"></script>
     <script src="./js/race-records.js?v=eaeaf8e59fc2"></script>
-    <script src="./js/race-economy.js?v=2802923358a3"></script>
+    <script src="./js/race-economy.js?v=01624c3a5b09"></script>
     <script src="./js/audio.js?v=e46bc879fc13"></script>
     <script src="./js/vendor/three.min.js"></script>
     <script>
@@ -3421,8 +3445,8 @@
     <script src="./js/nfs-physics.js?v=51a929ab5434"></script>
     <script src="./js/nfs-circuit-race.js?v=f0d04581eba0"></script>
     <script src="./js/model-assets.js?v=fb5618d170bd"></script>
-    <script src="./js/car-3d.js?v=c261587bcba3"></script>
-    <script src="./js/app.js?v=9c5904793346"></script>
+    <script src="./js/car-3d.js?v=8a23ec82fa68"></script>
+    <script src="./js/app.js?v=2504efedca0a"></script>
 <footer id="model-credits" style="margin:24px auto;padding:12px 16px;max-width:1120px;font:12px/1.6 system-ui;color:#a8bbc5"><a href="./assets/models/credits/camry-xv40.html" target="_blank" rel="noopener" style="display:inline-block;min-height:44px;padding:12px 0;color:#bdd2db">3D Camry XV40: Ford mondeo · CC BY 4.0 · Авторы модели</a></footer>
 </body>
 </html>
