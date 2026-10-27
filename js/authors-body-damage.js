@@ -6,7 +6,7 @@
   // Normal delta-v distinguishes a head-on stop from a glancing scrape and
   // naturally accounts for the other body's mass through the solved impulse.
   const delta=Math.min(Math.max(0,closingSpeedMps)*1.25,Math.max(0,normalImpulse)/Math.max(100,mass));
-  return clamp(8*Math.pow(Math.max(0,delta-1.2)/8,1.65),0,95);
+  return clamp(6*Math.pow(Math.max(0,delta-1.2)/8,1.35),0,32);
  }
  function applyImpact(owner,result,contactKey='world',time){
   if(owner?.noGameplayDamage||(owner?.state||owner)?.noGameplayDamage)return 0;

@@ -23206,8 +23206,8 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             racePlayer.peakSpeed = Math.max(racePlayer.peakSpeed, racePlayer.speed);
 
             // Динамическая адаптивная камера обзора:
-            // На высокой скорости машина плавно смещается к низу экрана, освобождая обзор вперед
-            const targetPlayerY = racePlayer.speed > 170 ? Math.min(524, 470 + (racePlayer.speed - 170) * 0.28) : 470;
+            // На высокой скорости машина слегка смещается ниже центра, сохраняя полный обзор и не перекрываясь HUD
+            const targetPlayerY = racePlayer.speed > 170 ? Math.min(484, 470 + (racePlayer.speed - 170) * 0.08) : 470;
             racePlayer.y = (racePlayer.y || 470) + (targetPlayerY - (racePlayer.y || 470)) * 3.5 * dt;
 
             if (racePlayer.speed > (achievements._maxSpeedSeen || 0)) {
@@ -23275,16 +23275,19 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             } else if (raceKeys.right && effectiveSteerAuthority > 0) {
                 racePlayer.vx = Math.min(maxLateral, racePlayer.vx + steerRate * effectiveSteerAuthority * dt);
             } else {
-                // Плавное затухание инерции (при заносе/ручнике скольжение длится дольше)
-                const decayBase = (isHandbrake || isDriftMode) ? 0.10 : 0.015;
+                // Плавное затухание инерции (на шоссе машина четко стабилизируется в полосе, в дрифте скользит дольше)
+                const decayBase = (isHandbrake || isDriftMode) ? 0.10 : 0.0025;
                 racePlayer.vx *= Math.pow(decayBase, dt);
+                if (!isHandbrake && !isDriftMode && Math.abs(racePlayer.vx) < 2.5) {
+                    racePlayer.vx = 0;
+                }
                 if (effectiveSteerAuthority < 0.05) {
                     racePlayer.vx *= Math.max(0, 1 - 16 * dt);
                 }
             }
 
-            // Power Oversteer (тяга и поддержание заноса при нажатом газе)
-            if (raceKeys.gas && (isHandbrake || Math.abs(racePlayer.vx) > maxLateral * 0.36 || isDriftMode) && Math.abs(racePlayer.vx) > 18) {
+            // Power Oversteer (тяга и поддержание заноса при нажатом газе — только в режиме дрифта или с ручником)
+            if (raceKeys.gas && (isHandbrake || isDriftMode) && Math.abs(racePlayer.vx) > 18) {
                 const oversteerPush = (racePlayer.vx >= 0 ? 1 : -1) * (stats.accel * 9.5) * dt;
                 racePlayer.vx = Math.max(-maxLateral, Math.min(maxLateral, racePlayer.vx + oversteerPush));
             }
@@ -23307,98 +23310,72 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 }
             }
 
-            // ФИЗИКА СТЕНЫ / ОТБОЙНИКА (Устранение бага: нельзя ехать по стене и фармить деньги!)
+            // ФИЗИКА СТЕНЫ / ОТБОЙНИКА: прогрессивный урон от удара и скольжения вдоль барьера без мгновенного взрыва при < 100% урона
+            if ((racePlayer.wallHitCooldown || 0) > 0) {
+                racePlayer.wallHitCooldown = Math.max(0, racePlayer.wallHitCooldown - dt);
+            }
             const isTouchingLeftWall = racePlayer.x <= 57;
             const isTouchingRightWall = racePlayer.x >= 343;
             racePlayer.isOnWall = isTouchingLeftWall || isTouchingRightWall;
 
-            if (isTouchingLeftWall) {
-                // Если удар в стену на большой скорости под острым углом
-                if (racePlayer.vx < -45 && racePlayer.speed > 130) {
+            if (isTouchingLeftWall || isTouchingRightWall) {
+                const wallDir = isTouchingLeftWall ? 1 : -1;
+                racePlayer.x = isTouchingLeftWall ? 57 : 343;
+                const impactVx = isTouchingLeftWall ? -racePlayer.vx : racePlayer.vx;
+
+                if (impactVx > 45 && racePlayer.speed > 70 && (racePlayer.wallHitCooldown || 0) <= 0) {
                     if (racePlayer.shield > 0) {
                         racePlayer.shield--;
+                        racePlayer.wallHitCooldown = 0.6;
                         showRacePopup("🛡️ ЩИТ ОТРАЗИЛ УДАР О БЕТОН!", "#38bdf8");
                         playLockSound(1.8);
-                        racePlayer.vx = 85;
-                        racePlayer.x = 58;
                     } else {
-                        // Авария о бетонное ограждение на высокой скорости!
-                        triggerRaceCrash();
-                        return;
-                    }
-                } else {
-                    // Трение и упругий отскок от левой стены
-                    racePlayer.x = 57;
-                    racePlayer.vx = Math.max(35, Math.abs(racePlayer.vx) * 0.7); // отталкиваем машину от отбойника
-                    racePlayer.damageTaken += dt * 4.5;
-                    // Резкое падение скорости до 0 от трения борта
-                    racePlayer.speed = Math.max(0, racePlayer.speed - 200 * dt);
-                    racePlayer.combo = 1;
-                    racePlayer.shashkiCombo = 0;
-                    racePlayer.shashkiTimer = 0;
-                    triggerScreenShake();
-
-                    // Искры от трения металла о барьер
-                    if (racePlayer.speed > 5) {
-                        for (let s = 0; s < 3; s++) {
-                            raceSparks.push({
-                                x: 54,
-                                y: racePlayer.y + (Math.random() - 0.5) * 22,
-                                vx: 30 + Math.random() * 55,
-                                vy: -Math.random() * 45,
-                                life: 0.35,
-                                color: '#f59e0b'
-                            });
-                        }
+                        const impactDmg = Math.min(20, Math.max(4, Math.round((impactVx - 35) * 0.14 * Math.max(0.5, racePlayer.speed / 160))));
+                        racePlayer.damageTaken = Math.min(100, (racePlayer.damageTaken || 0) + impactDmg);
+                        racePlayer.wallHitCooldown = 0.6;
+                        const hullLeft = Math.max(0, 100 - Math.round(racePlayer.damageTaken));
+                        showRacePopup(`💥 УДАР О БАРЬЕР! КУЗОВ -${impactDmg}% (${hullLeft}%)`, "#ef4444");
                     }
                 }
-            } else if (isTouchingRightWall) {
-                if (racePlayer.vx > 45 && racePlayer.speed > 130) {
-                    if (racePlayer.shield > 0) {
-                        racePlayer.shield--;
-                        showRacePopup("🛡️ ЩИТ ОТРАЗИЛ УДАР О БЕТОН!", "#38bdf8");
-                        playLockSound(1.8);
-                        racePlayer.vx = -85;
-                        racePlayer.x = 342;
-                    } else {
-                        triggerRaceCrash();
-                        return;
-                    }
-                } else {
-                    // Трение и упругий отскок от правой стены
-                    racePlayer.x = 343;
-                    racePlayer.vx = -Math.max(35, Math.abs(racePlayer.vx) * 0.7);
-                    racePlayer.damageTaken += dt * 4.5;
-                    racePlayer.speed = Math.max(0, racePlayer.speed - 200 * dt);
-                    racePlayer.combo = 1;
-                    racePlayer.shashkiCombo = 0;
-                    racePlayer.shashkiTimer = 0;
-                    triggerScreenShake();
 
-                    if (racePlayer.speed > 5) {
-                        for (let s = 0; s < 3; s++) {
-                            raceSparks.push({
-                                x: 346,
-                                y: racePlayer.y + (Math.random() - 0.5) * 22,
-                                vx: -30 - Math.random() * 55,
-                                vy: -Math.random() * 45,
-                                life: 0.35,
-                                color: '#f59e0b'
-                            });
-                        }
+                // Мягкое выравнивание вдоль отбойника без пинбольного отскока через всю трассу
+                racePlayer.vx = wallDir * Math.min(24, Math.max(10, Math.abs(racePlayer.vx) * 0.22));
+                racePlayer.damageTaken = Math.min(100, (racePlayer.damageTaken || 0) + dt * 5.5);
+                racePlayer.speed = Math.max(0, racePlayer.speed - (55 + Math.max(0, impactVx) * 0.25) * dt);
+                racePlayer.combo = 1;
+                racePlayer.shashkiCombo = 0;
+                racePlayer.shashkiTimer = 0;
+                triggerScreenShake();
+
+                if (racePlayer.speed > 5) {
+                    const sparkX = isTouchingLeftWall ? 54 : 346;
+                    for (let s = 0; s < 3; s++) {
+                        raceSparks.push({
+                            x: sparkX,
+                            y: racePlayer.y + (Math.random() - 0.5) * 22,
+                            vx: wallDir * (30 + Math.random() * 55),
+                            vy: -Math.random() * 45,
+                            life: 0.35,
+                            color: '#f59e0b'
+                        });
                     }
+                }
+
+                if (racePlayer.damageTaken >= 100) {
+                    triggerRaceCrash();
+                    return;
                 }
             }
 
             // Динамический угол скольжения кузова (Yaw Angle) и крен кузова (Tilt)
             const slipRatio = Math.max(-1, Math.min(1, racePlayer.vx / maxLateral));
-            const maxYaw = (isHandbrake ? 0.60 : 0.44) * (raceCurrentMode === 'drift' ? 1.15 : 1.0);
+            const maxYaw = isHandbrake ? 0.58 : (isDriftMode ? 0.46 : 0.18);
             let targetYaw = slipRatio * maxYaw;
-            if (isCounterSteer) {
-                targetYaw *= 1.25; // Более глубокий и зрелищный угол при контр-рулении
+            if (isCounterSteer && (isHandbrake || isDriftMode)) {
+                targetYaw *= 1.22; // Более глубокий и зрелищный угол при контр-рулении в заносе
             }
             targetYaw = Math.max(-0.64, Math.min(0.64, targetYaw));
-            const yawRate = isHandbrake ? 15 : 11;
+            const yawRate = isHandbrake ? 15 : 12;
             racePlayer.yawAngle = (racePlayer.yawAngle || 0) + (targetYaw - (racePlayer.yawAngle || 0)) * yawRate * dt;
             racePlayer.tilt = racePlayer.yawAngle; // Синхронизируем tilt для обратной совместимости
 
@@ -24034,8 +24011,17 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             for (let i = raceTraffic.length - 1; i >= 0; i--) {
                 const t = raceTraffic[i];
 
-                // Вертикальное движение (относительно игрока)
-                const relativeSpeed = (racePlayer.speed - (t.speed || 0)) * 3.5;
+                // Вертикальное движение (относительно игрока, без «заднего хода» у спавнящихся сверху и уже пройденных машин)
+                const rawRelSpeed = (racePlayer.speed - (t.speed || 0)) * 3.5;
+                const relativeSpeed = t.isCone
+                    ? (racePlayer.speed * 3.5)
+                    : (racePlayer.speed <= 3
+                        ? 0
+                        : (t.y < 0
+                            ? Math.max(28, rawRelSpeed)
+                            : (t.y > (racePlayer.y || 470) + 18
+                                ? Math.max(15, rawRelSpeed)
+                                : Math.max(-45, rawRelSpeed))));
                 t.y += relativeSpeed * dt;
 
                 // Если машина сбита / закручена в аварии
@@ -24062,11 +24048,12 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     else if (t.blinker === 'left' && !t.blinkerDir) t.blinkerDir = -1;
                     else if (t.blinker === 'right' && !t.blinkerDir) t.blinkerDir = 1;
 
-                    if ((t.blinkerDir === -1 || t.blinkerDir === 1) && Math.abs(t.targetX - t.x) < 1.0) {
+                    if ((t.blinkerDir === -1 || t.blinkerDir === 1) && Math.abs(t.targetX - t.x) < 1.0 && !t._blinkerCommitted) {
                         const targetLane = Math.max(0, Math.min(3, t.laneIdx + (t.blinkerDir < 0 ? -1 : 1)));
                         if (targetLane !== t.laneIdx) {
                             t.laneIdx = targetLane;
                             t.targetX = lanes[targetLane];
+                            t._blinkerCommitted = true;
                         }
                     }
 
@@ -24080,6 +24067,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                                 const newLane = canGoRight ? t.laneIdx + 1 : Math.max(0, t.laneIdx - 1);
                                 t.laneIdx = newLane;
                                 t.targetX = lanes[newLane];
+                                t._blinkerCommitted = true;
                                 t.blinker = canGoRight ? 'right' : 'left';
                                 t.blinkerDir = canGoRight ? 1 : -1;
                                 t.blinkerTimer = 0.12; // молниеносная реакция на стробоскопы
@@ -24103,17 +24091,27 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
                     t.changeLaneCooldown = (Number.isFinite(t.changeLaneCooldown) ? t.changeLaneCooldown : 3.0) - dt;
 
-                    // Проверка более медленного автомобиля прямо впереди в своей полосе
+                    // Проверка более медленного автомобиля прямо впереди в своей полосе (только впереди по ходу движения: other.y < t.y)
                     let obstacleAhead = null;
+                    let minGapUp = Infinity;
                     for (let other of raceTraffic) {
                         if (other !== t && Math.abs(other.x - t.x) < 26) {
-                            const gapUp = t.y - other.y;   // other выше по экрану (впереди по ходу движения)
-                            const gapDown = other.y - t.y; // fallback для тестов с обратным порядком Y
-                            if ((gapUp > 14 && gapUp < 115) || (gapDown > 14 && gapDown < 95)) {
+                            const gapUp = t.y - other.y; // other выше по экрану (впереди по ходу движения)
+                            if (gapUp > 0 && gapUp < 42 && !other.isCone) {
+                                // Не даем машинам трафика проходить сквозь друг друга в одной полосе
+                                t.y = other.y + 42;
+                                t.speed = Math.min(t.speed || 60, other.speed || 60);
+                            }
+                            if (gapUp > 12 && gapUp < 120 && gapUp < minGapUp) {
+                                minGapUp = gapUp;
                                 obstacleAhead = other;
-                                break;
                             }
                         }
+                    }
+                    // Если машина трафика позади медленного игрока в той же полосе — также тормозит и объезжает игрока
+                    const gapToPlayer = t.y - (racePlayer.y || 470);
+                    if (!obstacleAhead && gapToPlayer > 14 && gapToPlayer < 125 && Math.abs(t.x - racePlayer.x) < 26 && (t.speed || 0) > racePlayer.speed) {
+                        obstacleAhead = racePlayer;
                     }
 
                     // Уступаем дорогу быстро приближающемуся сзади авто (особенно в скоростном левом ряду)
@@ -24135,6 +24133,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                                 t.yieldedFastApproach = true;
                                 t.laneIdx = yieldLane;
                                 t.targetX = candX;
+                                t._blinkerCommitted = true;
                                 t.blinker = canGoRight ? 'right' : 'left';
                                 t.blinkerDir = canGoRight ? 1 : -1;
                                 t.blinkerTimer = 0.8; // включает поворотник за ~0.8с перед маневром
@@ -24182,6 +24181,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                             if (chosenL !== null) {
                                 t.laneIdx = chosenL;
                                 t.targetX = lanes[chosenL];
+                                t._blinkerCommitted = true;
                                 t.blinker = (chosenL < curL ? 'left' : 'right');
                                 t.blinkerDir = (chosenL < curL ? -1 : 1);
                                 t.blinkerTimer = 0.8;
@@ -24194,9 +24194,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                             t.speed = Math.min(t.targetSpeed, t.speed + 25 * dt);
                         }
 
-                        // Свободное периодическое перестроение с поворотником ~0.8с (стритрейсеры и такси перестраиваются активнее)
-                        const weaveChance = (t.isStreetRacer || t.role === 'streetracer') ? 0.16 : ((t.isTaxi || t.role === 'taxi') ? 0.09 : 0.06);
-                        if (t.changeLaneCooldown <= 0 && !t.isTruck && Math.random() < weaveChance) {
+                        // Свободное периодическое перестроение с поворотником ~0.8с (масштабировано по dt, без дерганий каждый кадр)
+                        const weaveRate = (t.isStreetRacer || t.role === 'streetracer') ? 0.45 : ((t.isTaxi || t.role === 'taxi') ? 0.25 : 0.14);
+                        if (t.changeLaneCooldown <= 0 && !t.isTruck && Math.random() < weaveRate * dt) {
                             const curL = t.laneIdx;
                             let desiredL = curL;
                             if (t.isStreetRacer || t.role === 'streetracer') {
@@ -24223,10 +24223,11 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                                 if (isClear) {
                                     t.laneIdx = desiredL;
                                     t.targetX = candX;
+                                    t._blinkerCommitted = true;
                                     t.blinker = (desiredL < curL ? 'left' : 'right');
                                     t.blinkerDir = (desiredL < curL ? -1 : 1);
                                     t.blinkerTimer = 0.8; // подаем сигнал поворотником за ~0.8с перед маневром
-                                    t.changeLaneCooldown = (t.isStreetRacer || t.role === 'streetracer') ? (2.4 + Math.random() * 2.0) : (6.0 + Math.random() * 4.0);
+                                    t.changeLaneCooldown = (t.isStreetRacer || t.role === 'streetracer') ? (3.2 + Math.random() * 2.5) : (6.5 + Math.random() * 4.5);
                                 }
                             }
                         }
@@ -24247,6 +24248,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                                     t.tilt = 0;
                                     t.blinker = null;
                                     t.blinkerDir = 0;
+                                    t._blinkerCommitted = false;
                                 }
                             }
                         } else {
@@ -24259,6 +24261,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                                 t.tilt = 0;
                                 t.blinker = null;
                                 t.blinkerDir = 0;
+                                t._blinkerCommitted = false;
                             }
                         }
                     } else {
@@ -24266,6 +24269,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                         if ((t.blinkerTimer || 0) <= 0) {
                             t.blinker = null;
                             t.blinkerDir = 0;
+                            t._blinkerCommitted = false;
                         }
                     }
 
@@ -24283,26 +24287,21 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                         }
                     }
 
-                    // ДПС взаимодействует с трафиком: не проходит сквозь другие машины
+                    // ДПС взаимодействует с трафиком: аккуратно смещает попутные машины в соседний ряд без телепортации в стену
                     if (t.isPolice && !t.spinning) {
                         for (let j = 0; j < raceTraffic.length; j++) {
                             const ot = raceTraffic[j];
-                            if (ot === t || ot.spinning) continue;
+                            if (ot === t || ot.spinning || ot.isCone) continue;
                             const odx = Math.abs(ot.x - t.x);
-                            const ody = ot.y - t.y;
-                            if (Math.abs(ody) < 40 && odx < 24) {
-                                ot.x += (t.x <= ot.x ? 20 : -20);
-                                t.speed = Math.max(50, t.speed - 25);
-                                for (let s = 0; s < 6; s++) {
-                                    raceSparks.push({
-                                        x: (t.x + ot.x) / 2,
-                                        y: (t.y + ot.y) / 2,
-                                        vx: (Math.random() - 0.5) * 80,
-                                        vy: (Math.random() - 0.5) * 60,
-                                        life: 0.35,
-                                        color: '#ea580c'
-                                    });
-                                }
+                            const ody = Math.abs(ot.y - t.y);
+                            if (ody < 40 && odx < 22) {
+                                const pushSide = t.x <= ot.x ? 1 : -1;
+                                const otLane = ot.laneIdx !== undefined ? ot.laneIdx : 1;
+                                const nextLane = Math.max(0, Math.min(3, otLane + pushSide));
+                                ot.laneIdx = nextLane;
+                                ot.targetX = lanes[nextLane];
+                                ot.x = Math.max(68, Math.min(332, ot.x + pushSide * 8));
+                                t.speed = Math.max(55, (t.speed || 80) - 12 * dt);
                             }
                         }
                     }
@@ -24418,25 +24417,34 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                             });
                         }
                     } else if (dx >= 10 && !t.isTruck) {
-                        // БОКОВОЙ КОНТАКТ (SIDE SCRAPE) с легковым авто!
+                        // БОКОВОЙ КОНТАКТ (SIDE SCRAPE) с легковым авто: контролируемое расталкивание без вылета через всю трассу
                         const pushDir = racePlayer.x < t.x ? -1 : 1;
-                        racePlayer.x += pushDir * 14;
-                        racePlayer.vx = pushDir * -110;
-                        t.x += (pushDir > 0 ? 1 : -1) * -18;
-                        t.targetX = Math.max(65, Math.min(335, t.x));
-                        t.tilt = (pushDir > 0 ? 1 : -1) * -0.12;
+                        const speedDiff = Math.abs(racePlayer.speed - (t.speed || 0));
+                        racePlayer.x = Math.max(58, Math.min(342, racePlayer.x + pushDir * 6));
+                        racePlayer.vx = pushDir * 38;
 
-                        racePlayer.speed = Math.max(50, racePlayer.speed - 16);
-                        racePlayer.invulnerableTimer = 0.6;
+                        const curL = t.laneIdx !== undefined ? t.laneIdx : 1;
+                        const deflL = pushDir < 0 ? Math.min(3, curL + 1) : Math.max(0, curL - 1);
+                        t.laneIdx = deflL;
+                        t.targetX = lanes[deflL];
+                        t.blinkerTimer = 0;
+                        t.x = Math.max(66, Math.min(334, t.x - pushDir * 10));
+                        t.tilt = -pushDir * 0.10;
+
+                        const sideSpeedLoss = Math.round(Math.min(18, 6 + speedDiff * 0.10));
+                        const sideDmg = Math.round(Math.max(3, Math.min(9, 2.5 + speedDiff * 0.05)));
+                        racePlayer.speed = Math.max(40, racePlayer.speed - sideSpeedLoss);
+                        racePlayer.invulnerableTimer = 0.55;
                         racePlayer.combo = 1;
                         racePlayer.shashkiCombo = 0;
                         racePlayer.shashkiTimer = 0;
-                        racePlayer.damageTaken = (racePlayer.damageTaken || 0) + 2.5;
+                        racePlayer.damageTaken = Math.min(100, (racePlayer.damageTaken || 0) + sideDmg);
                         triggerScreenShake();
                         playTick();
-                        showRacePopup("⚡ БОКОВОЙ ТАРАН! -16 км/ч", "#f59e0b");
+                        const hullLeft = Math.max(0, 100 - Math.round(racePlayer.damageTaken));
+                        showRacePopup(`⚡ БОКОВОЙ КОНТАКТ! КУЗОВ -${sideDmg}% (${hullLeft}%)`, "#f59e0b");
 
-                        for (let s = 0; s < 18; s++) {
+                        for (let s = 0; s < 16; s++) {
                             raceSparks.push({
                                 x: (racePlayer.x + t.x) / 2,
                                 y: racePlayer.y + (Math.random() - 0.5) * 26,
@@ -24446,18 +24454,43 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                                 color: Math.random() < 0.6 ? '#fbbf24' : '#ffffff'
                             });
                         }
-                    } else if ((racePlayer.damageTaken || 0) < 70) {
-                        // ТЯЖЕЛЫЙ УДАР С ПОВРЕЖДЕНИЕМ КАРКАСА
-                        const dmg = t.isTruck ? 38 : 25;
-                        racePlayer.damageTaken = (racePlayer.damageTaken || 0) + dmg;
-                        racePlayer.speed = Math.max(40, racePlayer.speed * 0.48);
-                        racePlayer.invulnerableTimer = 1.0;
+                        if (racePlayer.damageTaken >= 100) {
+                            triggerRaceCrash();
+                            return;
+                        }
+                    } else {
+                        // ПРЯМОЙ / ПОПУТНЫЙ УДАР: пропорциональный урон по разнице скоростей и увод сбитой машины в соседний ряд
+                        const speedDiff = Math.abs(racePlayer.speed - (t.speed || 0));
+                        const rawDmg = Math.max(7, Math.min(25, 6 + speedDiff * 0.13));
+                        const dmg = Math.round(rawDmg * (t.isTruck ? 1.3 : 1.0));
+                        racePlayer.damageTaken = Math.min(100, (racePlayer.damageTaken || 0) + dmg);
+
+                        const speedRetain = Math.max(0.52, 0.82 - Math.min(0.30, speedDiff / 320));
+                        racePlayer.speed = Math.max(35, racePlayer.speed * speedRetain);
+                        racePlayer.invulnerableTimer = 0.85;
+                        racePlayer.combo = 1;
                         racePlayer.shashkiCombo = 0;
                         racePlayer.shashkiTimer = 0;
-                        t.y -= (t.isTruck ? 30 : 60);
-                        t.speed = Math.min(140, t.speed + 20);
+
+                        const pushSide = racePlayer.x <= t.x ? 1 : -1;
+                        if (t.y <= (racePlayer.y || 470)) {
+                            t.y = Math.min(t.y - (t.isTruck ? 28 : 44), (racePlayer.y || 470) - hitHeight - 10);
+                            t.speed = Math.min(165, Math.max((t.speed || 70) + 22, racePlayer.speed * 0.92));
+                        } else {
+                            t.y = Math.max(t.y + 36, (racePlayer.y || 470) + hitHeight + 10);
+                            t.speed = Math.max(30, Math.min(t.speed || 70, racePlayer.speed * 0.65));
+                        }
+                        if (!t.isTruck) {
+                            const curL = t.laneIdx !== undefined ? t.laneIdx : 1;
+                            const adjL = (curL + pushSide >= 0 && curL + pushSide <= 3) ? (curL + pushSide) : Math.max(0, Math.min(3, curL - pushSide));
+                            t.laneIdx = adjL;
+                            t.targetX = lanes[adjL];
+                            t.blinkerTimer = 0;
+                        }
+
                         triggerScreenShake();
-                        showRacePopup(`⚠️ АВАРИЯ! КАРКАС -${dmg}%! [${Math.min(100, Math.round(racePlayer.damageTaken))}%]`, "#ef4444");
+                        const hullLeft = Math.max(0, 100 - Math.round(racePlayer.damageTaken));
+                        showRacePopup(`⚠️ УДАР! КУЗОВ -${dmg}% (ЦЕЛОСТНОСТЬ ${hullLeft}%)`, "#ef4444");
                         playTick();
                         for (let s = 0; s < 24; s++) {
                             raceSparks.push({
@@ -24473,9 +24506,6 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                             triggerRaceCrash();
                             return;
                         }
-                    } else {
-                        triggerRaceCrash();
-                        return;
                     }
                 }
 
@@ -26154,11 +26184,12 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             ctx.font = "700 9px sans-serif";
             ctx.fillText(raceCurrentMode === 'drift' ? '🏁 Дрифт' : '🏁 Шоссе', W - 16, 46);
 
+            let rightHudNextY = 56;
             if (typeof raceRadioStation !== 'undefined' && raceRadioStation !== 'off') {
                 const rMeta = getRaceRadioStationMeta(raceRadioStation);
                 ctx.fillStyle = "rgba(10, 15, 29, 0.82)";
                 ctx.beginPath();
-                ctx.roundRect(W - 135, 56, 125, 18, 6);
+                ctx.roundRect(W - 135, rightHudNextY, 125, 18, 6);
                 ctx.fill();
                 ctx.strokeStyle = rMeta.color || "#38bdf8";
                 ctx.lineWidth = 1;
@@ -26166,8 +26197,27 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 ctx.fillStyle = rMeta.color || "#38bdf8";
                 ctx.font = "800 9px sans-serif";
                 ctx.textAlign = "right";
-                ctx.fillText(`📻 ${rMeta.name} [R]`, W - 16, 68);
+                ctx.fillText(`📻 ${rMeta.name} [R]`, W - 16, rightHudNextY + 12);
+                rightHudNextY += 22;
             }
+
+            // Индикатор прочности кузова в 2D HUD
+            const hullIntegrity = Math.max(0, Math.min(100, 100 - Math.round(racePlayer.damageTaken || 0)));
+            const hullCol = hullIntegrity <= 30 ? "#ef4444" : (hullIntegrity <= 65 ? "#f59e0b" : "#22c55e");
+            ctx.fillStyle = "rgba(10, 15, 29, 0.85)";
+            ctx.beginPath();
+            ctx.roundRect(W - 135, rightHudNextY, 125, 22, 6);
+            ctx.fill();
+            ctx.strokeStyle = "rgba(255, 255, 255, 0.15)";
+            ctx.lineWidth = 1;
+            ctx.stroke();
+            ctx.fillStyle = "rgba(255, 255, 255, 0.15)";
+            ctx.fillRect(W - 129, rightHudNextY + 14, 113, 4);
+            ctx.fillStyle = hullCol;
+            ctx.fillRect(W - 129, rightHudNextY + 14, Math.round(113 * (hullIntegrity / 100)), 4);
+            ctx.font = "800 9px sans-serif";
+            ctx.textAlign = "right";
+            ctx.fillText(`🛠️ КУЗОВ: ${hullIntegrity}%`, W - 16, rightHudNextY + 11);
 
 
             // В режиме Дрифта: предупреждение о крутых шпильках серпантина

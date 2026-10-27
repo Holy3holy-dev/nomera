@@ -410,3 +410,80 @@ test('2D Drift Mode: road does not wiggle back and forth on its own (getCurveX =
     assert.equal(res.drivingStraightX, res.startX, 'Driving straight without left/right steering in Drift mode must not push the car sideways');
 });
 
+test('2D Collision Damage & Traffic Flow: guardrail contact and traffic bumps deal proportional damage up to 100% without premature instakill or reverse traffic', () => {
+    const app = createApp();
+    const res = app.run(`
+        myCars = [{ name: 'BMW M5 F90', plate: { text: 'Е 777 КХ | 77 RUS' } }];
+        selectedRaceCarName = 'BMW M5 F90';
+        selectedRaceCarIndex = 0;
+        setRaceMode('highway');
+        startRaceGame();
+
+        // 1. High-speed wall contact at 0% damage must NOT instakill; deals proportional damage and gentle deflection
+        racePlayer.speed = 180;
+        racePlayer.x = 56;
+        racePlayer.vx = -95;
+        racePlayer.damageTaken = 0;
+        updateRacePhysics(0.05);
+        const aliveAfterWall = isRaceRunning;
+        const wallDmg = racePlayer.damageTaken;
+        const wallDeflectVx = racePlayer.vx;
+
+        // 2. Traffic collision at 75% damage with moderate closing speed (+20 km/h) must survive (< 100%) and push traffic to adjacent lane
+        racePlayer.x = 165;
+        racePlayer.y = 470;
+        racePlayer.vx = 0;
+        racePlayer.speed = 110;
+        racePlayer.damageTaken = 75;
+        racePlayer.invulnerableTimer = 0;
+        raceTraffic = [{
+            x: 165,
+            y: 468,
+            laneIdx: 1,
+            targetX: 165,
+            speed: 90,
+            targetSpeed: 90,
+            name: 'Hyundai Solaris',
+            role: 'sedan',
+            isTruck: false,
+            isPolice: false,
+            isCone: false
+        }];
+        updateRacePhysics(0.05);
+        const aliveAt75PlusBump = isRaceRunning;
+        const dmgAfterBump = racePlayer.damageTaken;
+        const struckTargetX = raceTraffic[0].targetX;
+
+        // 3. Spawned car at top (y = -60) and overtaken car behind player (y = 510) never move backwards into player when player slows down
+        racePlayer.speed = 65;
+        raceTraffic = [
+            { x: 95, y: -60, laneIdx: 0, targetX: 95, speed: 135, targetSpeed: 135, name: 'BMW M5 F90', role: 'sedan' },
+            { x: 235, y: 510, laneIdx: 2, targetX: 235, speed: 120, targetSpeed: 120, name: 'Toyota Camry 3.5', role: 'sedan' }
+        ];
+        updateRacePhysics(0.1);
+        const topCarY = raceTraffic[0].y;
+        const behindCarY = raceTraffic[1].y;
+
+        ({
+            aliveAfterWall,
+            wallDmg,
+            wallDeflectVx,
+            aliveAt75PlusBump,
+            dmgAfterBump,
+            struckTargetX,
+            topCarY,
+            behindCarY
+        });
+    `);
+
+    assert.equal(res.aliveAfterWall, true, 'High-speed wall contact at 0% damage must not instakill the player');
+    assert.ok(res.wallDmg > 0 && res.wallDmg < 30, `Wall impact damage should be proportional (got ${res.wallDmg})`);
+    assert.ok(res.wallDeflectVx > 0 && res.wallDeflectVx <= 25, `Wall deflection vx should be controlled (got ${res.wallDeflectVx})`);
+    assert.equal(res.aliveAt75PlusBump, true, 'Bump at 75% hull damage must not prematurely crash before reaching 100%');
+    assert.ok(res.dmgAfterBump > 75 && res.dmgAfterBump < 100, `Total damage after +20 km/h bump at 75% should stay < 100 (got ${res.dmgAfterBump})`);
+    assert.notEqual(res.struckTargetX, 165, 'Struck traffic car must swerve into an adjacent lane to avoid double-hitting the player');
+    assert.ok(res.topCarY > -60, `Top-spawned car must advance onto the screen, got y=${res.topCarY}`);
+    assert.ok(res.behindCarY > 510, `Already-overtaken car behind player must continue exiting downward, got y=${res.behindCarY}`);
+});
+
+

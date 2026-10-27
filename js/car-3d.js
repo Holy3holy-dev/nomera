@@ -15297,6 +15297,20 @@
                     this.spawnSparks(state.x,.45,state.z-.6,Math.min(10,Math.ceil(contact.closingSpeedMps)));
                     if(this.options.onSound)this.options.onSound(contact.closingSpeedMps>8?'crash':'scrape');
                 }
+                if (state.damageTaken >= 100 && !state.crashed) {
+                    state.crashed = true;
+                    state.speed = 0;
+                    this.isRunning = false;
+                    this.stop();
+                    if (this.sound) {
+                        if (typeof this.sound.stopEngine === 'function') this.sound.stopEngine();
+                        if (typeof this.sound.stopSiren === 'function') this.sound.stopSiren();
+                    }
+                    if (this.options && this.options.onPopup) this.options.onPopup('💥 АВТОМОБИЛЬ РАЗБИТ В ТОТАЛ!', '#ef4444');
+                    if (typeof this.onGameOver === 'function') this.onGameOver(true, this.getState());
+                    else if (this.options && typeof this.options.onGameOver === 'function') this.options.onGameOver(true, this.getState());
+                    return;
+                }
             } else if (state.x < -roadLimit || state.x > roadLimit) {
                 const wallSide = state.x > 0 ? 1 : -1;
                 state.x = wallSide * roadLimit;
@@ -16243,7 +16257,7 @@
                 // 4. Collision Resolution (Takedown, Rear-End Impact, or Sideswipe)
                 if (isColliding) {
                     let spatialImpact=null;const impactSpeed=state.speed;
-                    if(contact3D){u.contactBody=contactOwner;spatialImpact=this.mwLongitudinal._resolve3DContact(contactOwner,[contact3D],{restitution:.18,friction:.3});const p=this.mwLongitudinal;state.x=p.x;state.z=p.z;state.vx=p.state.vx;state.speed=Math.max(0,p.state.vz*3.6);car.position.set(contactOwner.state.x,contactOwner.suspension.y,contactOwner.state.z);u.speed=contactOwner.state.vz*3.6;}
+                    if(contact3D && ((state.invulnerableTimer || 0) <= 0 || u.type === 'police')){u.contactBody=contactOwner;spatialImpact=this.mwLongitudinal._resolve3DContact(contactOwner,[contact3D],{restitution:.18,friction:.3});const p=this.mwLongitudinal;state.x=p.x;state.z=p.z;state.vx=p.state.vx;state.speed=Math.max(0,p.state.vz*3.6);car.position.set(contactOwner.state.x,contactOwner.suspension.y,contactOwner.state.z);u.speed=contactOwner.state.vz*3.6;}
                     // 💥 TAKEDOWN MECHANIC FOR POLICE: Player CAN ram & knock out pursuit cars!
                     if (u.type === 'police' && !u.isWrecked) {
                         const isNitroActive = !!(state.isNitroActive || state.nitroActive || (this.keys && this.keys.nitro));
@@ -16298,7 +16312,31 @@
                         return;
                     }
 
-                    if(spatialImpact){state.damageTaken=Math.min(100,state.damageTaken+spatialImpact.damageAdded);state.invulnerableTimer=.2;state.shakeAmount=Math.min(.7,spatialImpact.impactSeverity);if(spatialImpact.closingSpeedMps>2){this.spawnSparks(state.x,.6,state.z,12);this.options.onSound?.('crash');}return;}
+                    if(spatialImpact){
+                        state.damageTaken=Math.min(100,state.damageTaken+spatialImpact.damageAdded);
+                        state.invulnerableTimer=spatialImpact.damageAdded>=5?0.85:0.35;
+                        state.shakeAmount=Math.min(.7,spatialImpact.impactSeverity);
+                        if(spatialImpact.closingSpeedMps>2){
+                            this.spawnSparks(state.x,.6,state.z,12);
+                            this.options.onSound?.('crash');
+                        }
+                        if(state.damageTaken>=100&&!state.crashed){
+                            state.crashed=true;
+                            state.speed=0;
+                            this.isRunning=false;
+                            this.stop();
+                            if(this.sound){
+                                if(typeof this.sound.stopEngine==='function')this.sound.stopEngine();
+                                if(typeof this.sound.stopSiren==='function')this.sound.stopSiren();
+                            }
+                            this.options.onPopup?.('💥 АВТОМОБИЛЬ РАЗБИТ В ТОТАЛ!','#ef4444');
+                            if(typeof this.onGameOver==='function')this.onGameOver(true,this.getState());
+                            else this.options.onGameOver?.(true,this.getState());
+                        } else if(spatialImpact.damageAdded>=4){
+                            this.options.onPopup?.(`💥 УДАР! ПРОЧНОСТЬ ${Math.max(0,100-Math.round(state.damageTaken))}%`,'#ef4444');
+                        }
+                        return;
+                    }
                     const playerHalfW = 0.95;
                     const playerHalfL = 2.2;
                     const isAlongsideSideswipe = dx > (playerHalfW + trafficHalfW) * 0.55 && Math.abs(dz) < (playerHalfL + trafficHalfL) * 0.80;
@@ -16337,7 +16375,8 @@
                         car.position.x += ramPushDir * 0.35;
 
                         // 3. Player progressive deceleration, pitch jolt & camera shake (Speedbreaker heavy mass reduces damage & speed loss)
-                        const baseDmg = (u.type === 'truck' || u.type === 'kamaz') ? 32 : 25;
+                        const scaledDmg = Math.round(Math.max(12, Math.min(25, 8 + speedDiff * 0.22)));
+                        const baseDmg = (u.type === 'truck' || u.type === 'kamaz') ? Math.round(scaledDmg * 1.28) : scaledDmg;
                         const dmg = state.isSpeedbreakerActive ? Math.round(baseDmg * 0.35) : baseDmg;
                         state.damageTaken = Math.min(100, (state.damageTaken || 0) + dmg);
                         state.shakeAmount = 1.0;
