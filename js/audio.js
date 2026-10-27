@@ -1332,6 +1332,35 @@
                 tone(950, 0.22, 0.10, 0.04, 'sawtooth', 220);
                 tone(220, 0.26, 0.16, 0, 'triangle', 75);
             },
+            airRide(isLowering = true) {
+                // Pneumatic Air Ride valve release hiss ("ПШШШ!") or air-bag compressor fill
+                const useSample = hasSampleSupport();
+                if (useSample && isLowering) {
+                    playSampleBuffer(getBlowOffFlutterBuffer(), { gain: 0.42 });
+                }
+                if (isLowering) {
+                    noiseBurst({ duration: 0.36, gain: 0.12, filterType: 'bandpass', filterFreq: 1950, filterEndFreq: 320, filterQ: 1.4 });
+                    tone(190, 0.30, 0.12, 0, 'triangle', 58);
+                    tone(420, 0.22, 0.06, 0.02, 'sine', 130);
+                } else {
+                    noiseBurst({ duration: 0.32, gain: 0.10, filterType: 'bandpass', filterFreq: 420, filterEndFreq: 1550, filterQ: 1.6 });
+                    tone(68, 0.30, 0.12, 0, 'triangle', 165);
+                    tone(145, 0.24, 0.07, 0.02, 'sine', 340);
+                }
+            },
+            trafficHorn() {
+                // Civilian traffic dual-note warning honk with Doppler pitch drop
+                tone(370, 0.18, 0.11, 0, 'triangle', 345);
+                tone(466, 0.18, 0.10, 0, 'sawtooth', 435);
+                tone(360, 0.22, 0.11, 0.22, 'triangle', 325);
+                tone(454, 0.22, 0.10, 0.22, 'sawtooth', 410);
+            },
+            coneHit() {
+                // Hollow plastic traffic cone / water barrier impact thud + bounce
+                noiseBurst({ duration: 0.11, gain: 0.09, filterType: 'bandpass', filterFreq: 920, filterEndFreq: 340, filterQ: 1.8 });
+                tone(240, 0.11, 0.14, 0, 'triangle', 85);
+                tone(480, 0.07, 0.09, 0.01, 'sine', 190);
+            },
             blowOff() {
                 if(mwEffect('turbo'))return;
                 // Soft, warm pneumatic air release ("ПШШШ...")

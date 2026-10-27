@@ -745,6 +745,25 @@
                 spotCol = 0xf8fafc;
             }
 
+            // Respect custom headlight color from player styling if configured
+            const hlColorKey = this.engine && this.engine.styling && this.engine.styling.headlightColor;
+            if (hlColorKey && hlColorKey !== 'xenon' && hlColorKey !== 'stock') {
+                const customHlMap = {
+                    warm: 0xfef08a,
+                    yellow: 0xfde047,
+                    ice: 0x38bdf8,
+                    ice_blue: 0x38bdf8,
+                    purple: 0xc084fc,
+                    demon_red: 0xf43f5e
+                };
+                const customHex = customHlMap[hlColorKey];
+                if (customHex) {
+                    flareCol = customHex;
+                    groundCol = customHex;
+                    spotCol = customHex;
+                }
+            }
+
             this.headlightFlares.forEach(f => {
                 if (f && f.material) {
                     f.material.color.setHex(flareCol);

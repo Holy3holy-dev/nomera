@@ -2932,12 +2932,13 @@
                             <div class="showroom-loading-text" id="styling-3d-loader-text">⏳ Загрузка 3D модели...</div>
                         </div>
                         
-                        <!-- 🚪 Интерактивный тулбар 3D осмотра (Двери, Капот, Багажник, Фары, Сигнал) -->
+                        <!-- 🚪 Интерактивный тулбар 3D осмотра (Двери, Капот, Багажник, Фары, Пневма, Сигнал) -->
                         <div class="showroom-interact-toolbar" id="showroom-toolbar" style="display: none;">
                             <button type="button" class="showroom-interact-btn" id="btn-show-doors" onclick="toggleShowroomDoors()" title="Распахнуть двери">🚪 Двери</button>
                             <button type="button" class="showroom-interact-btn" id="btn-show-hood" onclick="toggleShowroomHood()" title="Открыть капот (двигатель)">⚙️ Капот</button>
                             <button type="button" class="showroom-interact-btn" id="btn-show-trunk" onclick="toggleShowroomTrunk()" title="Открыть багажник (музыка)">🔊 Багажник</button>
                             <button type="button" class="showroom-interact-btn" id="btn-show-lights" onclick="toggleShowroomHeadlights()" title="Включить фары">💡 Фары</button>
+                            <button type="button" class="showroom-interact-btn" id="btn-show-airride" onclick="toggleShowroomAirRide()" title="Пневмоподвеска (Air Ride — спустить/поднять)">💨 Пневма</button>
                             <button type="button" class="showroom-interact-btn" id="btn-show-horn" onclick="triggerShowroomHorn()" title="Проверить сигнал / СГУ">📢 Сигнал</button>
                             <button type="button" class="showroom-interact-btn showroom-tool-btn" id="styling-view-plate" onclick="toggleShowroomPlateView()" title="Крупный план 3D-номера на бампере">🏷️ 3D Номер</button>
                         </div>
@@ -2979,11 +2980,48 @@
                     </div>
 
                     <div style="margin-bottom:14px;">
+                        <div style="font-size:12px; color:#fff; font-weight:800; margin-bottom:6px;">🎨 Покраска дисков:</div>
+                        <div class="styling-options-row" id="styling-rim-color-chips">
+                            <button type="button" class="styling-chip" data-rim-color="stock" onclick="selectStylingRimColor('stock')">Заводской сплав (0 ₽)</button>
+                            <button type="button" class="styling-chip" data-rim-color="gold" onclick="selectStylingRimColor('gold')">✨ BBS Золото (20 000 ₽)</button>
+                            <button type="button" class="styling-chip" data-rim-color="bronze" onclick="selectStylingRimColor('bronze')">🥉 Кованая бронза (20 000 ₽)</button>
+                            <button type="button" class="styling-chip" data-rim-color="black_gloss" onclick="selectStylingRimColor('black_gloss')">🖤 Чёрный глянец (15 000 ₽)</button>
+                            <button type="button" class="styling-chip" data-rim-color="graphite" onclick="selectStylingRimColor('graphite')">⚙️ Тёмный графит (15 000 ₽)</button>
+                            <button type="button" class="styling-chip" data-rim-color="white" onclick="selectStylingRimColor('white')">🤍 Белый ралли (15 000 ₽)</button>
+                            <button type="button" class="styling-chip" data-rim-color="chrome" onclick="selectStylingRimColor('chrome')">💎 Зеркальный хром (30 000 ₽)</button>
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom:14px;">
+                        <div style="font-size:12px; color:#fff; font-weight:800; margin-bottom:6px;">🛑 Тормозные суппорты:</div>
+                        <div class="styling-options-row" id="styling-caliper-color-chips">
+                            <button type="button" class="styling-chip" data-caliper-color="red" onclick="selectStylingCaliperColor('red')">🔴 Brembo Красный (0 ₽)</button>
+                            <button type="button" class="styling-chip" data-caliper-color="yellow" onclick="selectStylingCaliperColor('yellow')">🟡 Керамика Жёлтый (15 000 ₽)</button>
+                            <button type="button" class="styling-chip" data-caliper-color="acid_green" onclick="selectStylingCaliperColor('acid_green')">🟢 Кислотно-зелёный (20 000 ₽)</button>
+                            <button type="button" class="styling-chip" data-caliper-color="blue" onclick="selectStylingCaliperColor('blue')">🔵 M-Performance Синий (15 000 ₽)</button>
+                            <button type="button" class="styling-chip" data-caliper-color="gold" onclick="selectStylingCaliperColor('gold')">🟠 GT-R Золотой (20 000 ₽)</button>
+                            <button type="button" class="styling-chip" data-caliper-color="orange" onclick="selectStylingCaliperColor('orange')">🧡 McLaren Оранжевый (20 000 ₽)</button>
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom:14px;">
+                        <div style="font-size:12px; color:#fff; font-weight:800; margin-bottom:6px;">💡 Оттенок света фар:</div>
+                        <div class="styling-options-row" id="styling-headlight-color-chips">
+                            <button type="button" class="styling-chip" data-headlight-color="xenon" onclick="selectStylingHeadlightColor('xenon')">❄️ 6000K Ксенон (0 ₽)</button>
+                            <button type="button" class="styling-chip" data-headlight-color="yellow" onclick="selectStylingHeadlightColor('yellow')">🍋 JDM Жёлтый 3000K (15 000 ₽)</button>
+                            <button type="button" class="styling-chip" data-headlight-color="ice_blue" onclick="selectStylingHeadlightColor('ice_blue')">💎 Ледяной 8000K (20 000 ₽)</button>
+                            <button type="button" class="styling-chip" data-headlight-color="demon_red" onclick="selectStylingHeadlightColor('demon_red')">🔥 Демон-глаз Красный (35 000 ₽)</button>
+                            <button type="button" class="styling-chip" data-headlight-color="purple" onclick="selectStylingHeadlightColor('purple')">🔮 Ультрафиолет (30 000 ₽)</button>
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom:14px;">
                         <div style="font-size:12px; color:#fff; font-weight:800; margin-bottom:6px;">Подвеска и клиренс:</div>
                         <div class="styling-options-row" id="styling-suspension-chips">
                             <button type="button" class="styling-chip" data-suspension="stock" onclick="selectStylingSuspension('stock')">Заводской клиренс (0 ₽)</button>
                             <button type="button" class="styling-chip" data-suspension="lowered" onclick="selectStylingSuspension('lowered')">Спорт -30мм (25 000 ₽)</button>
                             <button type="button" class="styling-chip" data-suspension="bpan" onclick="selectStylingSuspension('bpan')">БПАН в пол (50 000 ₽)</button>
+                            <button type="button" class="styling-chip" data-suspension="airride" onclick="selectStylingSuspension('airride')">💨 Пневма Air Ride (85 000 ₽)</button>
                             <button type="button" class="styling-chip" data-suspension="lift" onclick="selectStylingSuspension('lift')">Лифт Offroad +50мм (35 000 ₽)</button>
                         </div>
                     </div>
@@ -3435,7 +3473,7 @@
     <script src="./js/storage.js?v=327dc7592b84"></script>
     <script src="./js/race-records.js?v=eaeaf8e59fc2"></script>
     <script src="./js/race-economy.js?v=01624c3a5b09"></script>
-    <script src="./js/audio.js?v=e46bc879fc13"></script>
+    <script src="./js/audio.js?v=09bee0e54869"></script>
     <script src="./js/vendor/three.min.js"></script>
     <script>
         if (typeof THREE === 'undefined') {
@@ -3450,12 +3488,12 @@
             document.write('<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"><\/script>');
         }
     </script>
-    <script src="./js/race-effects.js?v=1045fc4330ca"></script>
+    <script src="./js/race-effects.js?v=b0329f66cf8e"></script>
     <script src="./js/nfs-physics.js?v=51a929ab5434"></script>
     <script src="./js/nfs-circuit-race.js?v=09e24e955c32"></script>
     <script src="./js/model-assets.js?v=c65675fe24bf"></script>
-    <script src="./js/car-3d.js?v=1c651721967b"></script>
-    <script src="./js/app.js?v=aa40c2e214a4"></script>
+    <script src="./js/car-3d.js?v=ca251a5d8992"></script>
+    <script src="./js/app.js?v=749e29121956"></script>
 <footer id="model-credits" style="margin:24px auto;padding:12px 16px;max-width:1120px;font:12px/1.6 system-ui;color:#a8bbc5"><a href="./assets/models/credits/camry-xv40.html" target="_blank" rel="noopener" style="display:inline-block;min-height:44px;padding:12px 0;color:#bdd2db">3D Camry XV40: Ford mondeo · CC BY 4.0 · Авторы модели</a></footer>
 </body>
 </html>

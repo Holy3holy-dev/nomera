@@ -178,10 +178,61 @@
         return map[carId] || 0x2563eb;
     }
 
+    function resolveRimColorSpec(rimColor) {
+        if (!rimColor || rimColor === 'stock') return null;
+        const map = {
+            silver: { hex: 0xd0d5dc, color: 0xd0d5dc, roughness: 0.20, metalness: 0.86, name: 'Rim_Silver' },
+            gold: { hex: 0xd4af37, color: 0xd4af37, roughness: 0.20, metalness: 0.90, name: 'Rim_Gold' },
+            bronze: { hex: 0x9a6b3b, color: 0x9a6b3b, roughness: 0.26, metalness: 0.86, name: 'Rim_Bronze' },
+            black: { hex: 0x111318, color: 0x111318, roughness: 0.14, metalness: 0.85, name: 'Rim_BlackGloss' },
+            black_gloss: { hex: 0x111318, color: 0x111318, roughness: 0.14, metalness: 0.85, name: 'Rim_BlackGloss' },
+            graphite: { hex: 0x334155, color: 0x334155, roughness: 0.22, metalness: 0.88, name: 'Rim_Graphite' },
+            white: { hex: 0xf8fafc, color: 0xf8fafc, roughness: 0.18, metalness: 0.65, name: 'Rim_White' },
+            chrome: { hex: 0xf5f5f7, color: 0xf5f5f7, roughness: 0.08, metalness: 0.96, name: 'Rim_Chrome' }
+        };
+        if (map[rimColor]) return map[rimColor];
+        const parsed = parseColor(rimColor, 0xd0d5dc);
+        return { hex: parsed, color: parsed, roughness: 0.20, metalness: 0.86, name: 'Rim_Custom' };
+    }
+
+    function resolveCaliperColorHex(caliperColor) {
+        if (!caliperColor || caliperColor === 'red' || caliperColor === 'stock') return 0xdc2626;
+        const map = {
+            yellow: 0xfacc15,
+            acid: 0x84cc16,
+            acid_green: 0x84cc16,
+            blue: 0x2563eb,
+            gold: 0xd97706,
+            orange: 0xf97316
+        };
+        if (map[caliperColor] !== undefined) return map[caliperColor];
+        return parseColor(caliperColor, 0xdc2626);
+    }
+
+    function resolveHeadlightColorSpec(headlightColor) {
+        if (!headlightColor || headlightColor === 'xenon' || headlightColor === 'stock') {
+            return { hex: 0xf8fafc, beam: 0xf8fafc, emissive: 0xccfbf1, flareCss: '#f8fafc', name: 'Headlight_Xenon' };
+        }
+        const map = {
+            warm: { hex: 0xfef08a, beam: 0xfef08a, emissive: 0xfde047, flareCss: '#fef08a', name: 'Headlight_Warm' },
+            yellow: { hex: 0xfde047, beam: 0xfde047, emissive: 0xfacc15, flareCss: '#fde047', name: 'Headlight_Yellow' },
+            ice: { hex: 0x38bdf8, beam: 0x38bdf8, emissive: 0x0ea5e9, flareCss: '#38bdf8', name: 'Headlight_IceBlue' },
+            ice_blue: { hex: 0x38bdf8, beam: 0x38bdf8, emissive: 0x0ea5e9, flareCss: '#38bdf8', name: 'Headlight_IceBlue' },
+            demon_red: { hex: 0xf43f5e, beam: 0xf43f5e, emissive: 0xe11d48, flareCss: '#f43f5e', name: 'Headlight_DemonRed' },
+            purple: { hex: 0xc084fc, beam: 0xc084fc, emissive: 0xa855f7, flareCss: '#c084fc', name: 'Headlight_Purple' }
+        };
+        if (map[headlightColor]) return map[headlightColor];
+        const parsed = parseColor(headlightColor, 0xf8fafc);
+        return { hex: parsed, beam: parsed, emissive: parsed, flareCss: String(headlightColor), name: 'Headlight_Custom' };
+    }
+
     // Material library factory
     function createCarMaterials(THREE, styling = {}, carName = '', carId = '') {
         const defColor = getDefaultCarColor(carName, carId);
         const bodyHex = parseColor(styling.color || defColor, defColor);
+        const rimColorSpec = resolveRimColorSpec(styling.rimColor);
+        const caliperColorHex = resolveCaliperColorHex(styling.caliperColor);
+        const headlightColorSpec = resolveHeadlightColorSpec(styling.headlightColor);
 
         // Body Paint (high-gloss automotive clearcoat simulation)
         const paint = new (THREE.MeshPhysicalMaterial || THREE.MeshStandardMaterial)({
@@ -277,8 +328,11 @@
         });
 
         // Lights
+        const hasCustomHlTint = styling.headlightColor && styling.headlightColor !== 'xenon' && styling.headlightColor !== 'stock';
         const headlightGlass = new THREE.MeshStandardMaterial({
-            color: 0xffffff,
+            color: hasCustomHlTint ? headlightColorSpec.hex : 0xffffff,
+            emissive: hasCustomHlTint ? headlightColorSpec.emissive : 0x000000,
+            emissiveIntensity: hasCustomHlTint ? 0.55 : 0.0,
             roughness: 0.1,
             metalness: 0.1,
             transparent: true,
@@ -287,8 +341,8 @@
         });
 
         const headlightLED = new THREE.MeshStandardMaterial({
-            color: 0xf0fdfa,
-            emissive: 0xccfbf1,
+            color: headlightColorSpec.hex,
+            emissive: headlightColorSpec.emissive,
             emissiveIntensity: 0.95,
             roughness: 0.1,
             name: 'HeadlightLED'
@@ -335,10 +389,10 @@
         });
 
         const brakeCaliper = new THREE.MeshStandardMaterial({
-            color: 0xdc2626,
+            color: caliperColorHex,
             roughness: 0.28,
             metalness: 0.65,
-            name: 'BrakeCaliper_Red'
+            name: 'BrakeCaliper_' + (styling.caliperColor || 'Red')
         });
 
         const brakeDisc = new THREE.MeshStandardMaterial({
@@ -363,10 +417,10 @@
         });
 
         const alloyRim = new THREE.MeshStandardMaterial({
-            color: 0xd0d5dc,
-            roughness: 0.22,
-            metalness: 0.86,
-            name: 'AlloyRim'
+            color: rimColorSpec ? rimColorSpec.hex : 0xd0d5dc,
+            roughness: rimColorSpec ? rimColorSpec.roughness : 0.22,
+            metalness: rimColorSpec ? rimColorSpec.metalness : 0.86,
+            name: rimColorSpec ? rimColorSpec.name : 'AlloyRim'
         });
 
         return {
@@ -385,14 +439,20 @@
             carbon,
             tireRubber,
             brakeCaliper,
+            caliper: brakeCaliper,
             brakeDisc,
             exhaustChrome,
             grilleMesh,
-            alloyRim
+            alloyRim,
+            rim: alloyRim,
+            headlight: headlightLED,
+            rimColorSpec,
+            caliperColorHex,
+            headlightColorSpec
         };
     }
 
-    // Detailed 3D Wheel (Tire with tread, rim barrel, styled spokes, center cap, brake rotor & red caliper)
+    // Detailed 3D Wheel (Tire with tread, rim barrel, styled spokes, center cap, brake rotor & painted caliper)
     function createDetailedWheel(THREE, mats, style = 'stock', scale = 1.0, openTire = false) {
         const group = new THREE.Group();
         group.name = 'WheelAssembly';
@@ -437,7 +497,14 @@
         barrelGeo.rotateZ(Math.PI / 2);
         let rimMat = mats.chrome;
 
-        if (style === 'stamps') {
+        if (mats && mats.rimColorSpec) {
+            rimMat = new THREE.MeshStandardMaterial({
+                color: mats.rimColorSpec.hex,
+                roughness: mats.rimColorSpec.roughness,
+                metalness: mats.rimColorSpec.metalness,
+                name: mats.rimColorSpec.name
+            });
+        } else if (style === 'stamps') {
             rimMat = new THREE.MeshStandardMaterial({ color: 0x18181c, roughness: 0.65, metalness: 0.35 });
         } else if (style === 'deepdish') {
             rimMat = mats.chrome; // Mirror dish
@@ -448,6 +515,7 @@
         }
 
         const barrel = new THREE.Mesh(barrelGeo, rimMat);
+        barrel.name = 'WheelRim';
         spinner.add(barrel);
 
         // Solid dark metallic inner rim backing disc (prevents hollow see-through look)
@@ -459,14 +527,15 @@
         spinner.add(new THREE.Mesh(backingGeo, backingMat));
         if (style === 'volga_caps') {
             // Authentic GAZ-24 full-cover polished chrome domed hubcaps with concentric rings
+            const capMat = (mats && mats.rimColorSpec) ? rimMat : mats.chrome;
             const capDiscGeo = new THREE.CylinderGeometry(rimR * 0.95, rimR * 0.95, 0.025 * scale, 24);
             capDiscGeo.rotateZ(Math.PI / 2);
             capDiscGeo.translate(faceX - 0.01 * scale, 0, 0);
-            spinner.add(new THREE.Mesh(capDiscGeo, mats.chrome));
+            spinner.add(new THREE.Mesh(capDiscGeo, capMat));
 
             const domeGeo = new THREE.SphereGeometry(rimR * 0.52, 16, 16);
             domeGeo.scale(0.32, 1, 1);
-            const dome = new THREE.Mesh(domeGeo, mats.chrome);
+            const dome = new THREE.Mesh(domeGeo, capMat);
             dome.position.set(faceX + 0.02 * scale, 0, 0);
             spinner.add(dome);
 
@@ -477,7 +546,9 @@
             spinner.add(ring);
         } else if (style === 'torus') {
             // Legendary BPAN 16" Torus (Торусы) 5-spoke alloy wheels
-            const torusMat = new THREE.MeshStandardMaterial({ color: 0xd8dde6, roughness: 0.22, metalness: 0.85 });
+            const torusMat = (mats && mats.rimColorSpec)
+                ? rimMat
+                : new THREE.MeshStandardMaterial({ color: 0xd8dde6, roughness: 0.22, metalness: 0.85 });
             for (let i = 0; i < 5; i++) {
                 const ang = (i / 5) * Math.PI * 2;
                 const spokeGeo = new THREE.BoxGeometry(0.038 * scale, rimR * 0.88, 0.032 * scale);
@@ -517,7 +588,7 @@
             const starGeo = new THREE.CylinderGeometry(rimR * 0.82, rimR * 0.82, 0.02 * scale, 5);
             starGeo.rotateZ(Math.PI / 2);
             starGeo.translate(deepX, 0, 0);
-            spinner.add(new THREE.Mesh(starGeo, mats.chrome));
+            spinner.add(new THREE.Mesh(starGeo, (mats && mats.rimColorSpec) ? rimMat : mats.chrome));
 
             // Polished outer stepped lip
             const lipGeo = new THREE.TorusGeometry(rimR * 0.95, 0.02 * scale, 8, 24);
@@ -552,7 +623,7 @@
         hubGeo.translate(faceX + 0.005 * scale, 0, 0);
         spinner.add(new THREE.Mesh(hubGeo, mats.darkPlastic));
 
-        // 4. Brake Disc & Red Brembo-style Caliper (inside wheel)
+        // 4. Brake Disc & Painted Brembo-style Caliper (inside wheel)
         const discR = rimR * 0.78;
         const discGeo = new THREE.CylinderGeometry(discR, discR, 0.016 * scale, 20);
         discGeo.rotateZ(Math.PI / 2);
@@ -570,8 +641,16 @@
         spinner.add(discMesh);
 
         const caliperGeo = new THREE.BoxGeometry(0.04 * scale, 0.12 * scale, 0.08 * scale);
-        const caliperMat = new THREE.MeshStandardMaterial({ color: 0xdc2626, roughness: 0.3, metalness: 0.6 });
+        const caliperHex = (mats && mats.caliperColorHex !== undefined) ? mats.caliperColorHex : 0xdc2626;
+        const caliperMat = new THREE.MeshStandardMaterial({
+            color: caliperHex,
+            roughness: 0.28,
+            metalness: 0.65,
+            name: (mats && mats.brakeCaliper && mats.brakeCaliper.name) || 'BrakeCaliper_Red'
+        });
         const caliper = new THREE.Mesh(caliperGeo, caliperMat);
+        caliper.name = 'BrakeCaliper';
+        caliper.userData.isBrakeCaliper = true;
         caliper.position.set(-0.01 * scale, discR * 0.72, 0);
         group.add(caliper);
 
@@ -5341,6 +5420,8 @@
         let suspensionOffsetY = 0;
         if (typeof styling.rideHeight === 'number') {
             suspensionOffsetY = styling.rideHeight;
+        } else if (styling.suspension === 'airride') {
+            suspensionOffsetY = -0.105; // Air Ride slammed stance
         } else if (styling.suspension === 'bpan') {
             suspensionOffsetY = -0.095; // Slammed БПАН
         } else if (styling.suspension === 'lowered') {
@@ -5609,8 +5690,9 @@
         // Headlights & Taillights Groups for Showroom Interactive Lighting
         const headlightsGroup = new THREE.Group();
         headlightsGroup.name = 'HeadlightsGroup';
+        const hlLightColorHex = (mats && mats.headlightColorSpec) ? mats.headlightColorSpec.hex : 0xf8fafc;
         [-spec.wheelTrack * 0.74, spec.wheelTrack * 0.74].forEach(hx => {
-            const hlLight = new THREE.PointLight(0xf8fafc, 0, 16, 1.8);
+            const hlLight = new THREE.PointLight(hlLightColorHex, 0, 16, 1.8);
             hlLight.position.set(hx, 0.65, spec.bodyLength * 0.51);
             headlightsGroup.add(hlLight);
         });
@@ -7003,6 +7085,7 @@
 
         let suspensionOffsetY = 0;
         if (typeof styling.rideHeight === 'number') suspensionOffsetY = styling.rideHeight;
+        else if (styling.suspension === 'airride') suspensionOffsetY = -0.072;
         else if (styling.suspension === 'bpan' || (!styling.suspension && carId === 'priora')) suspensionOffsetY = -0.06;
         else if (styling.suspension === 'lowered') suspensionOffsetY = -0.03;
         else if (styling.suspension === 'lift') suspensionOffsetY = 0.06;
@@ -7616,6 +7699,20 @@
                     if (role === 'rim') {
                         if(window.NOMERA_AUTHORS_PREVIEW&&window.NomeraVehicleFinish?.preserveMaterial(baseCarId,origMatName)) return mat;
                         if (!styling.wheels || styling.wheels === 'stock') child.visible = true;
+                        if (mats.rimColorSpec) {
+                            if (mat.map && (!styling.wheels || styling.wheels === 'stock')) {
+                                const tintedRim = mat.clone();
+                                if (tintedRim.color && typeof tintedRim.color.setHex === 'function') {
+                                    tintedRim.color.setHex(mats.rimColorSpec.hex);
+                                }
+                                tintedRim.roughness = mats.rimColorSpec.roughness;
+                                tintedRim.metalness = mats.rimColorSpec.metalness;
+                                tintedRim.name = mats.rimColorSpec.name;
+                                tintedRim.needsUpdate = true;
+                                return tintedRim;
+                            }
+                            return mats.alloyRim;
+                        }
                         if (styling.wheels === 'stamps') {
                             return new THREE.MeshStandardMaterial({ color: 0x141416, roughness: 0.72, metalness: 0.35, name: 'Rim_Stamps' });
                         } else if (styling.wheels === 'deepdish') {
@@ -7645,11 +7742,17 @@
                         if (!isCaliperPart && child) {
                             child.userData = child.userData || {};
                             child.userData.isBrakeRotor = true;
+                        } else if (isCaliperPart && child) {
+                            child.userData = child.userData || {};
+                            child.userData.isBrakeCaliper = true;
                         }
                         if (mat && (mat.map || mat.alphaMap || mat.transparent)) {
                             const cloned = mat.clone();
                             cloned.roughness = isCaliperPart ? 0.28 : 0.35;
                             cloned.metalness = isCaliperPart ? 0.55 : 0.85;
+                            if (isCaliperPart && styling.caliperColor && styling.caliperColor !== 'stock' && cloned.color && typeof cloned.color.setHex === 'function') {
+                                cloned.color.setHex(mats.caliperColorHex);
+                            }
                             if (!isCaliperPart && THREE && THREE.Color) {
                                 cloned.emissive = new THREE.Color(0xff3300);
                                 cloned.emissiveIntensity = 0;
@@ -7678,6 +7781,20 @@
                             return mats.reverseWhite;
                         }
                         if (mat.map) {
+                            if (styling.headlightColor && styling.headlightColor !== 'xenon' && styling.headlightColor !== 'stock') {
+                                const tintedHl = mat.clone();
+                                if (tintedHl.color && typeof tintedHl.color.setHex === 'function') {
+                                    tintedHl.color.setHex(mats.headlightColorSpec.hex);
+                                }
+                                if (tintedHl.emissive && typeof tintedHl.emissive.setHex === 'function') {
+                                    tintedHl.emissive.setHex(mats.headlightColorSpec.emissive);
+                                    tintedHl.emissiveIntensity = 0.65;
+                                }
+                                tintedHl.roughness = 0.15;
+                                tintedHl.metalness = 0.10;
+                                tintedHl.needsUpdate = true;
+                                return tintedHl;
+                            }
                             mat.roughness = 0.15;
                             mat.metalness = 0.10;
                             mat.needsUpdate = true;
@@ -9433,22 +9550,35 @@
 
         updateHeadlightsState() {
             const THREE = this.THREE;
-            if (this.headlightSpotL) this.headlightSpotL.intensity = this.headlightsOn ? 3.8 : 0;
-            if (this.headlightSpotR) this.headlightSpotR.intensity = this.headlightsOn ? 3.8 : 0;
+            const hlSpec = resolveHeadlightColorSpec(this.currentStyling && this.currentStyling.headlightColor);
+            if (this.headlightSpotL) {
+                if (this.headlightSpotL.color && typeof this.headlightSpotL.color.setHex === 'function') this.headlightSpotL.color.setHex(hlSpec.hex);
+                this.headlightSpotL.intensity = this.headlightsOn ? 3.8 : 0;
+            }
+            if (this.headlightSpotR) {
+                if (this.headlightSpotR.color && typeof this.headlightSpotR.color.setHex === 'function') this.headlightSpotR.color.setHex(hlSpec.hex);
+                this.headlightSpotR.intensity = this.headlightsOn ? 3.8 : 0;
+            }
 
             // Forward Showroom PointLights for realistic bumper & ground illumination
             if (!this.frontLightL && THREE) {
-                this.frontLightL = new THREE.PointLight(0xfffae8, 0, 7, 1.6);
+                this.frontLightL = new THREE.PointLight(hlSpec.hex, 0, 7, 1.6);
                 this.frontLightL.position.set(-0.65, 0.65, 2.15);
                 this.scene.add(this.frontLightL);
             }
             if (!this.frontLightR && THREE) {
-                this.frontLightR = new THREE.PointLight(0xfffae8, 0, 7, 1.6);
+                this.frontLightR = new THREE.PointLight(hlSpec.hex, 0, 7, 1.6);
                 this.frontLightR.position.set(0.65, 0.65, 2.15);
                 this.scene.add(this.frontLightR);
             }
-            if (this.frontLightL) this.frontLightL.intensity = this.headlightsOn ? 3.5 : 0;
-            if (this.frontLightR) this.frontLightR.intensity = this.headlightsOn ? 3.5 : 0;
+            if (this.frontLightL) {
+                if (this.frontLightL.color && typeof this.frontLightL.color.setHex === 'function') this.frontLightL.color.setHex(hlSpec.hex);
+                this.frontLightL.intensity = this.headlightsOn ? 3.5 : 0;
+            }
+            if (this.frontLightR) {
+                if (this.frontLightR.color && typeof this.frontLightR.color.setHex === 'function') this.frontLightR.color.setHex(hlSpec.hex);
+                this.frontLightR.intensity = this.headlightsOn ? 3.5 : 0;
+            }
 
             // Rear Taillight Soft Red PointLights
             if (!this.rearLightL && THREE) {
@@ -9494,7 +9624,7 @@
                 const hlTex = createSoftGlowTexture('#ffffff');
                 const flareMat = new THREE.SpriteMaterial({
                     map: hlTex,
-                    color: 0xffffff,
+                    color: hlSpec.hex,
                     transparent: true,
                     opacity: 0.85,
                     blending: THREE.AdditiveBlending,
@@ -9509,6 +9639,12 @@
                 this.headlightFlares.add(this.flareMeshL);
                 this.headlightFlares.add(this.flareMeshR);
                 this.scene.add(this.headlightFlares);
+            }
+            if (this.flareMeshL && this.flareMeshL.material && this.flareMeshL.material.color && typeof this.flareMeshL.material.color.setHex === 'function') {
+                this.flareMeshL.material.color.setHex(hlSpec.hex);
+            }
+            if (this.flareMeshR && this.flareMeshR.material && this.flareMeshR.material.color && typeof this.flareMeshR.material.color.setHex === 'function') {
+                this.flareMeshR.material.color.setHex(hlSpec.hex);
             }
             if (this.headlightFlares) {
                 this.headlightFlares.visible = !!this.headlightsOn;
@@ -9548,7 +9684,10 @@
                 const hlGroup = model.getObjectByName('HeadlightsGroup');
                 if (hlGroup) {
                     hlGroup.traverse(obj => {
-                        if (obj.isPointLight) obj.intensity = this.headlightsOn ? 3.5 : 0;
+                        if (obj.isPointLight) {
+                            if (obj.color && typeof obj.color.setHex === 'function') obj.color.setHex(hlSpec.hex);
+                            obj.intensity = this.headlightsOn ? 3.5 : 0;
+                        }
                     });
                 }
                 const badWords = /interior|seat|dash|mirror|cabin|roof|wheel|tire|caliper|disc|brake_disc|bumper|grille|radiator/i;
@@ -9572,7 +9711,7 @@
                                 if (mat.emissive) {
                                     if (this.headlightsOn) {
                                         if (!mat.userData._origEmissive) mat.userData._origEmissive = mat.emissive.clone();
-                                        mat.emissive.setHex(0xffffff);
+                                        mat.emissive.setHex(hlSpec.hex);
                                         mat.emissiveIntensity = 3.2;
                                     } else {
                                         if (mat.userData._origEmissive) mat.emissive.copy(mat.userData._origEmissive);
@@ -9581,7 +9720,7 @@
                                 } else if (mat.color && typeof mat.color.setHex === 'function') {
                                     if (this.headlightsOn) {
                                         if (!mat.userData._origColor) mat.userData._origColor = mat.color.getHex();
-                                        mat.color.setHex(0xffffff);
+                                        mat.color.setHex(hlSpec.hex);
                                     } else if (mat.userData._origColor) {
                                         mat.color.setHex(mat.userData._origColor);
                                     }
@@ -9737,33 +9876,75 @@
             this.needsRender = true;
         }
 
-        setPneumoStance(mode) {
-            const normalized = ['stock', 'sport', 'bpan'].includes(mode) ? mode : 'stock';
+        setPneumoStance(mode, animate = false) {
+            const normalized = ['stock', 'sport', 'bpan', 'airride'].includes(mode) ? mode : 'stock';
             this.stanceMode = normalized;
             if (normalized === 'sport') {
                 this.targetStanceOffsetY = -0.048;
-                this.stanceCamberRad = -0.048;
+                this.targetStanceCamberRad = -0.048;
             } else if (normalized === 'bpan') {
                 this.targetStanceOffsetY = -0.096;
-                this.stanceCamberRad = -0.098;
+                this.targetStanceCamberRad = -0.098;
+            } else if (normalized === 'airride') {
+                this.targetStanceOffsetY = -0.118;
+                this.targetStanceCamberRad = -0.125;
             } else {
                 this.targetStanceOffsetY = 0;
-                this.stanceCamberRad = 0;
+                this.targetStanceCamberRad = 0;
             }
-            this.stanceOffsetY = this.targetStanceOffsetY;
-            this.applyStanceToActiveCar();
-            if (this.fsoActive) this.ensureFsoRig();
+            if (animate) {
+                if (typeof this.stanceOffsetY !== 'number') this.stanceOffsetY = 0;
+                if (typeof this.stanceCamberRad !== 'number') this.stanceCamberRad = 0;
+                this.airRideAnimating = true;
+                if (this.options && typeof this.options.onSound === 'function') {
+                    this.options.onSound(normalized === 'airride' || normalized === 'bpan' ? 'airRideDown' : 'airRideUp');
+                }
+            } else {
+                this.stanceOffsetY = this.targetStanceOffsetY;
+                this.stanceCamberRad = this.targetStanceCamberRad;
+                this.airRideAnimating = false;
+                this.applyStanceToActiveCar();
+                if (this.fsoActive) this.ensureFsoRig();
+            }
             this.needsRender = true;
             if (!this.active) this.start();
             return {
                 mode: this.stanceMode,
+                isLowered: this.stanceMode === 'airride' || this.stanceMode === 'bpan',
+                targetOffsetY: this.targetStanceOffsetY,
                 offsetY: this.stanceOffsetY,
-                camberDeg: Math.round((this.stanceCamberRad * 180) / Math.PI * 10) / 10
+                camberDeg: Math.round(((this.targetStanceCamberRad || 0) * 180) / Math.PI * 10) / 10
             };
         }
 
+        toggleAirRide(instant = false) {
+            const nextMode = (this.stanceMode === 'airride') ? 'stock' : 'airride';
+            return this.setPneumoStance(nextMode, !instant);
+        }
+
+        stepAirRideAnimation(dt = 0.016) {
+            if (typeof this.targetStanceOffsetY !== 'number') return false;
+            if (typeof this.stanceOffsetY !== 'number') this.stanceOffsetY = 0;
+            if (typeof this.stanceCamberRad !== 'number') this.stanceCamberRad = 0;
+            const diffY = this.targetStanceOffsetY - this.stanceOffsetY;
+            const diffC = (this.targetStanceCamberRad || 0) - this.stanceCamberRad;
+            if (Math.abs(diffY) <= 0.0005 && Math.abs(diffC) <= 0.0005) {
+                this.stanceOffsetY = this.targetStanceOffsetY;
+                this.stanceCamberRad = this.targetStanceCamberRad || 0;
+                this.airRideAnimating = false;
+            } else {
+                const alpha = Math.min(1, 1 - Math.exp(-Math.max(0.004, dt) * 6.5));
+                this.stanceOffsetY += diffY * alpha;
+                this.stanceCamberRad += diffC * alpha;
+            }
+            this.applyStanceToActiveCar();
+            if (this.fsoActive) this.ensureFsoRig();
+            this.needsRender = true;
+            return this.airRideAnimating;
+        }
+
         cyclePneumoStance() {
-            const order = ['stock', 'sport', 'bpan'];
+            const order = ['stock', 'sport', 'bpan', 'airride'];
             const nextIdx = (order.indexOf(this.stanceMode) + 1) % order.length;
             return this.setPneumoStance(order[nextIdx]);
         }
@@ -10304,7 +10485,10 @@
                     this.needsRender = true;
                 }
 
-                // Live FSO Strobes, Roof Beacon & Rain Animation
+                // Live Air Ride Suspension, FSO Strobes, Roof Beacon & Rain Animation
+                if (this.airRideAnimating) {
+                    this.stepAirRideAnimation(0.016);
+                }
                 if (this.fsoActive) {
                     this.updateFsoRig(time);
                 }
@@ -10516,6 +10700,9 @@
         const c = styling.color || '';
         const t = styling.tint || '';
         const w = styling.wheels || 'stock';
+        const rc = styling.rimColor || 'silver';
+        const cc = styling.caliperColor || 'red';
+        const hc = styling.headlightColor || 'xenon';
         const s = styling.suspension || 'stock';
         const n = styling.neon || 'none';
         const sp = styling.spoiler || 'none';
@@ -10525,7 +10712,7 @@
         const rs = styling.roofScoop || 'none';
         const sg = styling.sgu || 'none';
         const pl = styling.plate || '';
-        return `${carName}__${c}_${t}_${w}_${s}_${n}_${sp}_${v}_${bk}_${hd}_${rs}_${sg}_${pl}`;
+        return `${carName}__${c}_${t}_${w}_${rc}_${cc}_${hc}_${s}_${n}_${sp}_${v}_${bk}_${hd}_${rs}_${sg}_${pl}`;
     }
 
     function hasCustomStylingForThumbnail(styling, carName = '') {
@@ -10540,6 +10727,9 @@
             }
         }
         if (styling.wheels && styling.wheels !== 'stock') return true;
+        if (styling.rimColor && styling.rimColor !== 'silver' && styling.rimColor !== 'stock') return true;
+        if (styling.caliperColor && styling.caliperColor !== 'red' && styling.caliperColor !== 'stock') return true;
+        if (styling.headlightColor && styling.headlightColor !== 'xenon' && styling.headlightColor !== 'stock') return true;
         if (styling.spoiler && styling.spoiler !== 'none' && styling.spoiler !== 'stock') return true;
         if (styling.vinyl && styling.vinyl !== 'none') return true;
         if(typeof window!=='undefined'&&window.NOMERA_AUTHORS_PREVIEW&&window.NomeraLivery?.active(styling.livery))return true;
@@ -10961,6 +11151,9 @@
             this.trafficCars = [];
             this.trafficCount = 10;
             this.trafficLanes = [-6.375, -2.125, 2.125, 6.375];
+            this.roadProps = [];
+            this.weatherTransition = null;
+            this.roadWetness = 0;
             this.nfsRivals = [];
             this.nfsCheckpointGate = null;
             this.nfsNextCheckpointZ = 300;
@@ -11035,8 +11228,9 @@
             // Build endless highway road segments
             this.buildHighwayChunks();
 
-            // Spawn traffic vehicles
+            // Spawn traffic vehicles & destructible roadside props
             this.initTraffic();
+            this.initRoadProps();
 
             // Initialize 3D Visual Effects System (VFX Specialist)
             if (RaceEffectsManagerClass) {
@@ -11358,6 +11552,8 @@
         }
 
         setWeather(weatherName, isManual = false) {
+            const prevKey = this.currentActiveWeather || 'night';
+            const prevPreset = this.getWeatherPreset(prevKey);
             if (isManual) {
                 this.weatherMode = (weatherName === 'auto') ? 'auto' : 'manual';
                 this.selectedWeather = weatherName;
@@ -11370,6 +11566,20 @@
             this.weather = activeKey;
             const preset = this.getWeatherPreset(activeKey);
             this.lightningFlash = 0;
+
+            if (!isManual && prevPreset && prevKey !== activeKey) {
+                this.weatherTransition = {
+                    fromKey: prevKey,
+                    toKey: activeKey,
+                    fromPreset: prevPreset,
+                    toPreset: preset,
+                    progress: 0,
+                    duration: 3.5
+                };
+            } else {
+                this.weatherTransition = null;
+                this.roadWetness = activeKey === 'rain' ? 1.0 : (activeKey === 'snow' ? 0.55 : 0.0);
+            }
 
             if (this.scene && this.scene.background) {
                 this.scene.background.setHex(preset.bgColor);
@@ -11405,6 +11615,71 @@
                 this.vfx.setWeather(activeKey);
             }
             return activeKey;
+        }
+
+        stepWeatherTransition(dt = 0.016) {
+            const tr = this.weatherTransition;
+            if (!tr || !tr.fromPreset || !tr.toPreset) return false;
+            const THREE = this.THREE;
+            tr.progress = Math.min(1, (tr.progress || 0) + Math.max(0.001, dt) / (tr.duration || 3.5));
+            const p = tr.progress;
+            const t = p * p * (3 - 2 * p); // smoothstep
+
+            const lerpHex = (hexA, hexB, alpha) => {
+                if (!THREE || !THREE.Color) return alpha >= 0.5 ? hexB : hexA;
+                const cA = new THREE.Color(hexA);
+                const cB = new THREE.Color(hexB);
+                cA.lerp(cB, alpha);
+                return cA.getHex();
+            };
+
+            const fromP = tr.fromPreset;
+            const toP = tr.toPreset;
+
+            if (this.scene && this.scene.background && typeof this.scene.background.setHex === 'function' && !(this.lightningFlash > 0)) {
+                this.scene.background.setHex(lerpHex(fromP.bgColor, toP.bgColor, t));
+            }
+            if (this.scene && this.scene.fog && !(this.lightningFlash > 0)) {
+                if (this.scene.fog.color && typeof this.scene.fog.color.setHex === 'function') {
+                    this.scene.fog.color.setHex(lerpHex(fromP.bgColor, toP.bgColor, t));
+                }
+                this.scene.fog.density = fromP.fogDensity + (toP.fogDensity - fromP.fogDensity) * t;
+            }
+            if (this.ambientLight && !(this.lightningFlash > 0)) {
+                if (this.ambientLight.color && typeof this.ambientLight.color.setHex === 'function') {
+                    this.ambientLight.color.setHex(lerpHex(fromP.ambientColor, toP.ambientColor, t));
+                }
+                this.ambientLight.intensity = fromP.ambientIntensity + (toP.ambientIntensity - fromP.ambientIntensity) * t;
+            }
+            if (this.sunLight && !(this.lightningFlash > 0)) {
+                if (this.sunLight.color && typeof this.sunLight.color.setHex === 'function') {
+                    this.sunLight.color.setHex(lerpHex(fromP.sunColor, toP.sunColor, t));
+                }
+                this.sunLight.intensity = fromP.sunIntensity + (toP.sunIntensity - fromP.sunIntensity) * t;
+            }
+
+            const fromWet = tr.fromKey === 'rain' ? 1.0 : (tr.fromKey === 'snow' ? 0.55 : 0.0);
+            const toWet = tr.toKey === 'rain' ? 1.0 : (tr.toKey === 'snow' ? 0.55 : 0.0);
+            this.roadWetness = Number((fromWet + (toWet - fromWet) * t).toFixed(3));
+
+            if (this.asphaltMat) {
+                if (this.asphaltMat.color && typeof this.asphaltMat.color.setHex === 'function') {
+                    this.asphaltMat.color.setHex(lerpHex(fromP.asphaltColor, toP.asphaltColor, t));
+                }
+                this.asphaltMat.roughness = fromP.asphaltRoughness + (toP.asphaltRoughness - fromP.asphaltRoughness) * t;
+                this.asphaltMat.metalness = fromP.asphaltMetalness + (toP.asphaltMetalness - fromP.asphaltMetalness) * t;
+                this.asphaltMat.needsUpdate = true;
+            }
+
+            this.weatherGrip = (fromP.gripMultiplier || 1.0) + ((toP.gripMultiplier || 1.0) - (fromP.gripMultiplier || 1.0)) * t;
+            if (this.state) this.state.weatherGrip = this.weatherGrip;
+
+            if (tr.progress >= 1) {
+                this.applyWeatherMaterials(toP);
+                this.weatherTransition = null;
+                return false;
+            }
+            return true;
         }
 
         cycleWeather() {
@@ -11588,7 +11863,7 @@
                 }
             }
 
-            // 4. Dynamic Auto-Weather Progression
+            // 4. Dynamic Auto-Weather Progression & Smooth Interpolation
             if (this.weatherMode === 'auto') {
                 const targetWeather = this.getAutoWeatherKey(state.distanceKm);
                 if (targetWeather !== this.currentActiveWeather) {
@@ -11599,6 +11874,9 @@
                         popupFn(`🌦️ ПОГОДА: ${p.icon} ${p.name.toUpperCase()}`, '#38bdf8');
                     }
                 }
+            }
+            if (this.weatherTransition) {
+                this.stepWeatherTransition(dt);
             }
         }
 
@@ -13137,6 +13415,28 @@
             group.userData.brakeLightMat = brakeLightMat;
             group.userData.brakeLightIntensity = 0.55;
 
+            // Front High-Beam / DRL Headlights for Traffic AI Flashing
+            const headlightMat = new THREE.MeshStandardMaterial({
+                color: 0xf8fafc,
+                emissive: 0xe0f2fe,
+                emissiveIntensity: 0.75
+            });
+            const hlGeo = new THREE.BoxGeometry(0.22, 0.10, 0.05);
+            const headlightL = new THREE.Mesh(hlGeo, headlightMat);
+            headlightL.name = 'TrafficHeadlightL';
+            headlightL.position.set(-halfW * 0.68, 0.62, halfL + 0.025);
+            group.add(headlightL);
+
+            const headlightR = new THREE.Mesh(hlGeo, headlightMat);
+            headlightR.name = 'TrafficHeadlightR';
+            headlightR.position.set(halfW * 0.68, 0.62, halfL + 0.025);
+            group.add(headlightR);
+
+            group.userData.headlights = [headlightL, headlightR];
+            group.userData.headlightMat = headlightMat;
+            group.userData.headlightFlashTimer = 0;
+            group.userData.hornCooldown = 0;
+
             return group;
         }
 
@@ -13275,6 +13575,173 @@
                     item.position.set(this.trafficLanes[nextLane], 0.75, state.z + 210 + i * 65 + Math.random() * 45);
                     u.laneIndex = nextLane;
                     u.collected = false;
+                }
+            }
+        }
+
+        createRoadPropMesh(propType = 'cone') {
+            const THREE = this.THREE;
+            const group = new THREE.Group();
+            group.name = 'RoadProp_' + propType;
+
+            if (propType === 'barrier') {
+                // Red & white water-filled road barrier
+                const redMat = new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.45, metalness: 0.1 });
+                const whiteMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.45, metalness: 0.1 });
+                const leftSeg = new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.68, 0.46), redMat);
+                leftSeg.position.set(-0.28, 0.34, 0);
+                const rightSeg = new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.68, 0.46), whiteMat);
+                rightSeg.position.set(0.28, 0.34, 0);
+                group.add(leftSeg);
+                group.add(rightSeg);
+            } else {
+                // Reflective orange traffic cone on dark rubber base
+                const baseMat = new THREE.MeshStandardMaterial({ color: 0x18181b, roughness: 0.85, metalness: 0.1 });
+                const coneMat = new THREE.MeshStandardMaterial({
+                    color: 0xf97316,
+                    emissive: 0xea580c,
+                    emissiveIntensity: 0.25,
+                    roughness: 0.38
+                });
+                const stripeMat = new THREE.MeshStandardMaterial({
+                    color: 0xffffff,
+                    emissive: 0xe2e8f0,
+                    emissiveIntensity: 0.55,
+                    roughness: 0.25
+                });
+                const baseMesh = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.06, 0.52), baseMat);
+                baseMesh.position.y = 0.03;
+                const coneMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.22, 0.68, 12), coneMat);
+                coneMesh.position.y = 0.37;
+                const collarMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.10, 0.15, 0.16, 12), stripeMat);
+                collarMesh.position.y = 0.46;
+                group.add(baseMesh);
+                group.add(coneMesh);
+                group.add(collarMesh);
+            }
+
+            group.userData = {
+                propType: propType === 'barrier' ? 'barrier' : 'cone',
+                hit: false,
+                hitTime: 0,
+                vx: 0,
+                vy: 0,
+                vz: 0,
+                rotVx: 0,
+                rotVy: 0,
+                rotVz: 0,
+                laneX: 0
+            };
+            return group;
+        }
+
+        initRoadProps() {
+            if (!this.scene || !this.THREE) return;
+            if (this.roadProps && this.roadProps.length > 0) {
+                this.roadProps.forEach(p => {
+                    try { this.scene.remove(p); } catch (_) {}
+                });
+            }
+            this.roadProps = [];
+            const propSlots = [-7.65, -4.25, 0.0, 4.25, 7.65];
+            const totalProps = 8;
+            for (let i = 0; i < totalProps; i++) {
+                const propType = (i % 4 === 3) ? 'barrier' : 'cone';
+                const mesh = this.createRoadPropMesh(propType);
+                const slotX = propSlots[i % propSlots.length];
+                mesh.position.set(slotX, 0, 85 + i * 42);
+                mesh.userData.laneX = slotX;
+                this.scene.add(mesh);
+                this.roadProps.push(mesh);
+            }
+            if (this.state) {
+                this.state.conesSmashed = 0;
+            }
+        }
+
+        updateRoadProps(dt) {
+            if (!this.roadProps || this.roadProps.length === 0 || !this.state) return;
+            const state = this.state;
+            const propSlots = [-7.65, -4.25, 0.0, 4.25, 7.65];
+
+            for (let i = 0; i < this.roadProps.length; i++) {
+                const prop = this.roadProps[i];
+                if (!prop) continue;
+                const u = prop.userData || (prop.userData = {});
+
+                if (!u.hit) {
+                    const groundY = (this.mwLongitudinal && window.NomeraRoadSurface)
+                        ? window.NomeraRoadSurface.highway(prop.position.x, prop.position.z).height
+                        : 0;
+                    prop.position.y = groundY;
+
+                    const dz = Math.abs(prop.position.z - state.z);
+                    const dx = Math.abs(prop.position.x - state.x);
+                    const hitWidth = u.propType === 'barrier' ? 1.50 : 1.25;
+                    if (dz < 2.4 && dx < hitWidth) {
+                        u.hit = true;
+                        u.hitTime = 0;
+                        const playerSpeedMps = Math.max(12, (state.speed || 60) / 3.6);
+                        const sideSign = (prop.position.x >= state.x) ? 1 : -1;
+                        u.vx = sideSign * (5.5 + Math.random() * 6.0) + (state.vx || 0) * 0.35;
+                        u.vy = 6.5 + Math.random() * 4.5;
+                        u.vz = playerSpeedMps * 1.28 + 10.0;
+                        u.rotVx = 8.0 + Math.random() * 10.0;
+                        u.rotVy = (Math.random() - 0.5) * 14.0;
+                        u.rotVz = -sideSign * (7.0 + Math.random() * 8.0);
+
+                        state.conesSmashed = (state.conesSmashed || 0) + 1;
+                        const baseBonus = u.propType === 'barrier' ? 2500 : 1500;
+                        const bonus = Math.round(baseBonus * (state.rewardMult || 1.0));
+                        state.earnedCash = (state.earnedCash || 0) + bonus;
+                        this.earnedCash = state.earnedCash;
+
+                        if (u.propType === 'barrier') {
+                            this.spawnWaterSpray(prop.position.x, 0.5, prop.position.z);
+                            this.spawnWaterSpray(prop.position.x + 0.3, 0.6, prop.position.z);
+                        }
+                        this.spawnSparks(prop.position.x, 0.35, prop.position.z, 5);
+
+                        if (this.options && typeof this.options.onSound === 'function') {
+                            this.options.onSound('coneHit');
+                        }
+                        if (this.options && typeof this.options.onPopup === 'function') {
+                            const label = u.propType === 'barrier' ? '🎯 СБИТ БАРЬЕР!' : '🎯 СБИТ КОНУС!';
+                            this.options.onPopup(`${label} +${bonus.toLocaleString('ru-RU')} ₽`, '#fb923c');
+                        }
+                    }
+                } else {
+                    u.hitTime = (u.hitTime || 0) + dt;
+                    prop.position.x += (u.vx || 0) * dt;
+                    prop.position.y += (u.vy || 0) * dt;
+                    prop.position.z += (u.vz || 0) * dt;
+                    u.vy = (u.vy || 0) - 22.0 * dt;
+
+                    prop.rotation.x += (u.rotVx || 0) * dt;
+                    prop.rotation.y += (u.rotVy || 0) * dt;
+                    prop.rotation.z += (u.rotVz || 0) * dt;
+
+                    if (prop.position.y < 0.22 && u.vy < 0) {
+                        prop.position.y = 0.22;
+                        u.vy = -u.vy * 0.42;
+                        u.vx *= 0.78;
+                        u.vz *= 0.82;
+                    }
+                }
+
+                if (prop.position.z < state.z - 28 || (u.hit && u.hitTime > 2.6)) {
+                    const nextSlot = propSlots[(i + Math.floor(Math.random() * propSlots.length)) % propSlots.length];
+                    u.hit = false;
+                    u.hitTime = 0;
+                    u.vx = 0;
+                    u.vy = 0;
+                    u.vz = 0;
+                    u.rotVx = 0;
+                    u.rotVy = 0;
+                    u.rotVz = 0;
+                    u.laneX = nextSlot;
+                    prop.rotation.set(0, 0, 0);
+                    prop.position.set(nextSlot, 0, state.z + 175 + i * 38 + Math.random() * 25);
                 }
             }
         }
@@ -13502,9 +13969,10 @@
             this.camLook.set(this.state.x, initialMode.lookOffset.y, this.state.z + initialMode.lookOffset.z);
             this.camRoll = 0;
 
-            // Re-initialize traffic pool and highway collectibles at start
+            // Re-initialize traffic pool, highway collectibles & destructible roadside props at start
             this.initTraffic();
             this.initCollectibles();
+            this.initRoadProps();
 
             // Initialize or clean up NFS Most Wanted Blacklist Rivals, 3D Checkpoint Arch & Circuit HUD
             this.clearNfsCircuitEntities();
@@ -14070,10 +14538,11 @@
                 const activeWeatherPreset = this.getWeatherPreset(this.currentActiveWeather || 'night');
                 const hlIntensity = (activeWeatherPreset && typeof activeWeatherPreset.headlightIntensity === 'number') ? activeWeatherPreset.headlightIntensity : 2.0;
                 const hlDistance = (activeWeatherPreset && typeof activeWeatherPreset.headlightDistance === 'number') ? activeWeatherPreset.headlightDistance : 52;
+                const playerHlSpec = resolveHeadlightColorSpec(this.styling && this.styling.headlightColor);
 
                 [-1, 1].forEach(side => {
                     // Subtle, realistic Three.js SpotLight angled forward down the road
-                    const hlSpot = new THREE.SpotLight(0xf8fafc, hlIntensity, hlDistance, Math.PI / 6.5, 0.55, 1.2);
+                    const hlSpot = new THREE.SpotLight(playerHlSpec.hex, hlIntensity, hlDistance, Math.PI / 6.5, 0.55, 1.2);
                     const localP = side < 0 ? localHlL : localHlR;
                     hlSpot.position.copy(localP);
                     hlSpot.target.position.set(localP.x * 1.05, 0.15, localP.z + 32);
@@ -15900,9 +16369,10 @@
                 this.updateNfsCircuitHud();
             }
 
-            // 8. HIGHWAY ROAD CHUNKS RECYCLING & 3D COLLECTIBLES
+            // 8. HIGHWAY ROAD CHUNKS RECYCLING, 3D COLLECTIBLES & DESTRUCTIBLE PROPS
             this.updateRoadChunks();
             this.updateCollectibles(dt);
+            this.updateRoadProps(dt);
 
             // 9. SMOKE & SPARK PARTICLES & MODULAR VFX UPDATE
             if (this.vfx && typeof this.vfx.update === 'function') {
@@ -16404,6 +16874,54 @@
                     }
                 }
 
+                // 1f. Smart Civilian Traffic AI: react to high-speed player closing in or cutting closely across lane
+                u.hornCooldown = Math.max(0, (u.hornCooldown || 0) - dt);
+                if (u.type !== 'police') {
+                    const closingSpeed = (state.speed || 0) - (u.speed || 0);
+                    // Fast approach from behind in same lane -> flash high-beams, honk, and yield lane
+                    if (dz > 4.0 && dz < 36.0 && dx < 1.85 && closingSpeed > 45) {
+                        u.headlightFlashTimer = Math.max(u.headlightFlashTimer || 0, 1.1);
+                        if (u.hornCooldown <= 0) {
+                            u.hornCooldown = 3.5;
+                            if (this.options && typeof this.options.onSound === 'function') {
+                                this.options.onSound('trafficHorn');
+                            }
+                        }
+                        if (!u.changingLane && u.type !== 'truck' && u.type !== 'kamaz') {
+                            const curLane = u.laneIndex !== undefined ? u.laneIndex : 1;
+                            const yieldLane = (curLane === 0) ? 1 : (curLane === 3) ? 2 : (car.position.x >= state.x ? Math.min(3, curLane + 1) : Math.max(0, curLane - 1));
+                            u.plannedLaneIndex = null;
+                            u.laneChangeDirection = (this.trafficLanes[yieldLane] > car.position.x) ? 1 : -1;
+                            u.laneIndex = yieldLane;
+                            u.targetX = this.trafficLanes[yieldLane];
+                            u.changingLane = true;
+                            u.yieldedToFastPlayer = true;
+                            u.laneChangeTimer = 6.0;
+                        }
+                    } else if (dz < -2.0 && dz > -18.0 && dx < 1.75 && closingSpeed > 15) {
+                        // Player just cut closely in front of this traffic car -> flash high beams & honk
+                        u.headlightFlashTimer = Math.max(u.headlightFlashTimer || 0, 1.2);
+                        u.isBraking = true;
+                        if (u.hornCooldown <= 0) {
+                            u.hornCooldown = 3.5;
+                            if (this.options && typeof this.options.onSound === 'function') {
+                                this.options.onSound('trafficHorn');
+                            }
+                        }
+                    }
+                }
+
+                // Animate traffic front high-beam flash pulse
+                if ((u.headlightFlashTimer || 0) > 0) {
+                    u.headlightFlashTimer = Math.max(0, u.headlightFlashTimer - dt);
+                    const flashOn = (Math.floor(u.headlightFlashTimer * 12) % 2 === 0);
+                    if (u.headlightMat) {
+                        u.headlightMat.emissiveIntensity = flashOn ? 4.2 : 0.75;
+                    }
+                } else if (u.headlightMat && u.headlightMat.emissiveIntensity !== 0.75) {
+                    u.headlightMat.emissiveIntensity = 0.75;
+                }
+
                 // 2. Periodic lane changing behavior & pre-lane-change turn-signal blinker anticipation
                 if ((state.wantedStars === 0 || u.type !== 'police') && u.type !== 'truck' && u.type !== 'kamaz') {
                     u.laneChangeTimer -= dt;
@@ -16461,6 +16979,8 @@
 
                     if ((u.hazardTimer || 0) > 0) {
                         u.hazardTimer = Math.max(0, u.hazardTimer - dt);
+                        blinkerL.visible = true;
+                        blinkerR.visible = true;
                         if (blinkerL.material) {
                             blinkerL.material.emissiveIntensity = blinkPulse ? 3.2 : 0.05;
                             blinkerL.material.opacity = blinkPulse ? 1.0 : 0.25;
@@ -16473,6 +16993,8 @@
                         const signalDir = u.laneChangeDirection || ((u.targetX >= car.position.x) ? 1 : -1);
                         const activeBlinker = signalDir > 0 ? blinkerR : blinkerL;
                         const inactiveBlinker = signalDir > 0 ? blinkerL : blinkerR;
+                        if (activeBlinker) activeBlinker.visible = true;
+                        if (inactiveBlinker) inactiveBlinker.visible = false;
                         if (activeBlinker && activeBlinker.material) {
                             activeBlinker.material.emissiveIntensity = blinkPulse ? 3.2 : 0.05;
                             activeBlinker.material.opacity = blinkPulse ? 1.0 : 0.25;
@@ -16482,6 +17004,8 @@
                             inactiveBlinker.material.opacity = 0.25;
                         }
                     } else {
+                        blinkerL.visible = false;
+                        blinkerR.visible = false;
                         if (blinkerL.material) {
                             blinkerL.material.emissiveIntensity = 0.0;
                             blinkerL.material.opacity = 0.25;
@@ -17363,6 +17887,9 @@
         applyInteractiveAnglesToModel,
         createUnderglowGroundTexture,
         createCarMaterials,
+        resolveRimColorSpec,
+        resolveCaliperColorHex,
+        resolveHeadlightColorSpec,
         createStudioEnvironment,
         applyLicensePlateToModel,
         createLicensePlate,

@@ -10731,6 +10731,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                         vinyl: stylingTempVinyl,
                         ...(window.NOMERA_AUTHORS_PREVIEW?{livery:window.NomeraLivery.normalize(stylingTempLivery)}:{}),
                         wheels: stylingTempWheels,
+                        rimColor: stylingTempRimColor,
+                        caliperColor: stylingTempCaliperColor,
+                        headlightColor: stylingTempHeadlightColor,
                         suspension: stylingTempSuspension,
                         sgu: stylingTempSgu,
                         plate: stylingTempPlate,
@@ -10792,6 +10795,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         }
 
         // --- 2. СТАЙЛИНГ АВТОМОБИЛЕЙ (ПОКРАСКА, ТОНИРОВКА, ДИСКИ, КЛИРЕНС, СГУ, НЕОН, БОДИ-КИТЫ И PRO-ТЮНИНГ) ---
+        let stylingTempRimColor = 'stock';
+        let stylingTempCaliperColor = 'red';
+        let stylingTempHeadlightColor = 'xenon';
         let racePreviewPause = null;
         function pauseRaceForCarPreview() {
             if (!window.NomeraPreviewPause) return;
@@ -10839,7 +10845,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             if (btn3D) btn3D.classList.toggle('active', is3D);
             const car = myCars[carIndex];
             if (!car) return;
-            car.styling = car.styling || { color: '#ffffff', tint: 0, neon: 'none', spoiler: 'none', vinyl: 'none', wheels: 'stock', suspension: 'stock', sgu: 'none', camber: 0, wheelOffset: 0, neonMode: 'solid', bodykit: 'stock', roofScoop: 'none', hood: 'stock', nitroColor: 'blue', smokeColor: 'white' };
+            car.styling = car.styling || { color: '#ffffff', tint: 0, neon: 'none', spoiler: 'none', vinyl: 'none', wheels: 'stock', rimColor: 'stock', caliperColor: 'red', headlightColor: 'xenon', suspension: 'stock', sgu: 'none', camber: 0, wheelOffset: 0, neonMode: 'solid', bodykit: 'stock', roofScoop: 'none', hood: 'stock', nitroColor: 'blue', smokeColor: 'white' };
             stylingTempColor = car.styling.color || '#ffffff';
             stylingTempTint = car.styling.tint ?? 0;
             stylingTempNeon = car.styling.neon || 'none';
@@ -10847,6 +10853,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             stylingTempVinyl = car.styling.vinyl || 'none';
             if(window.NOMERA_AUTHORS_PREVIEW){stylingTempLivery=window.NomeraLivery.normalize(car.styling.livery);window.NomeraLiveryEditor?.sync(stylingTempLivery);}
             stylingTempWheels = car.styling.wheels || 'stock';
+            stylingTempRimColor = car.styling.rimColor || 'stock';
+            stylingTempCaliperColor = car.styling.caliperColor || 'red';
+            stylingTempHeadlightColor = car.styling.headlightColor || 'xenon';
             stylingTempSuspension = car.styling.suspension || 'stock';
             stylingTempSgu = car.styling.sgu || 'none';
             stylingTempPlate = (car.plate && (car.plate.text || car.plate)) || (car.attachedPlate && (car.attachedPlate.text || car.attachedPlate)) || 'none';
@@ -10898,6 +10907,15 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             });
             document.querySelectorAll('#styling-wheels-chips .styling-chip').forEach(btn => {
                 btn.classList.toggle('active', btn.dataset.wheels === stylingTempWheels);
+            });
+            document.querySelectorAll('#styling-rim-color-chips .styling-chip').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.rimColor === stylingTempRimColor);
+            });
+            document.querySelectorAll('#styling-caliper-color-chips .styling-chip').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.caliperColor === stylingTempCaliperColor);
+            });
+            document.querySelectorAll('#styling-headlight-color-chips .styling-chip').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.headlightColor === stylingTempHeadlightColor);
             });
             document.querySelectorAll('#styling-suspension-chips .styling-chip').forEach(btn => {
                 btn.classList.toggle('active', btn.dataset.suspension === stylingTempSuspension);
@@ -10953,6 +10971,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             document.getElementById('btn-show-hood')?.classList.remove('active');
             document.getElementById('btn-show-trunk')?.classList.remove('active');
             document.getElementById('btn-show-lights')?.classList.remove('active');
+            document.getElementById('btn-show-airride')?.classList.toggle('active', stylingTempSuspension === 'airride');
 
             renderStylingPlateChips();
 
@@ -11010,11 +11029,57 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             updateStylingModalPreview();
         }
 
+        function selectStylingRimColor(rimColor) {
+            stylingTempRimColor = rimColor || 'stock';
+            document.querySelectorAll('#styling-rim-color-chips .styling-chip').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.rimColor === stylingTempRimColor);
+            });
+            playTick();
+            updateStylingModalPreview();
+        }
+        window.selectStylingRimColor = selectStylingRimColor;
+
+        function selectStylingCaliperColor(caliperColor) {
+            stylingTempCaliperColor = caliperColor || 'red';
+            document.querySelectorAll('#styling-caliper-color-chips .styling-chip').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.caliperColor === stylingTempCaliperColor);
+            });
+            playTick();
+            updateStylingModalPreview();
+        }
+        window.selectStylingCaliperColor = selectStylingCaliperColor;
+
+        function selectStylingHeadlightColor(headlightColor) {
+            stylingTempHeadlightColor = headlightColor || 'xenon';
+            document.querySelectorAll('#styling-headlight-color-chips .styling-chip').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.headlightColor === stylingTempHeadlightColor);
+            });
+            if (car3DShowroom && !car3DShowroom.headlightsOn && typeof car3DShowroom.toggleHeadlights === 'function') {
+                car3DShowroom.toggleHeadlights();
+                const btnLights = document.getElementById('btn-show-lights');
+                if (btnLights) btnLights.classList.add('active');
+            }
+            playTick();
+            updateStylingModalPreview();
+        }
+        window.selectStylingHeadlightColor = selectStylingHeadlightColor;
+
         function selectStylingSuspension(suspension) {
             stylingTempSuspension = suspension;
             document.querySelectorAll('#styling-suspension-chips .styling-chip').forEach(btn => {
                 btn.classList.toggle('active', btn.dataset.suspension === stylingTempSuspension);
             });
+            if (suspension === 'airride') {
+                if (sound && typeof sound.airRide === 'function') sound.airRide(true);
+                if (car3DShowroom && typeof car3DShowroom.setPneumoStance === 'function') {
+                    car3DShowroom.setPneumoStance('airride', true);
+                }
+            } else if (car3DShowroom && typeof car3DShowroom.setPneumoStance === 'function') {
+                const stanceMap = { lowered: 'sport', bpan: 'bpan', stock: 'stock', lift: 'stock' };
+                car3DShowroom.setPneumoStance(stanceMap[suspension] || 'stock', true);
+            }
+            const btnAir = document.getElementById('btn-show-airride');
+            if (btnAir) btnAir.classList.toggle('active', suspension === 'airride');
             updateStylingModalPreview();
         }
 
@@ -11347,6 +11412,23 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             playTick();
         }
         window.toggleShowroomHeadlights = toggleShowroomHeadlights;
+
+        function toggleShowroomAirRide() {
+            if (stylingViewMode === 'svg') {
+                setStylingViewMode('3d');
+            }
+            if (!car3DShowroom || typeof car3DShowroom.toggleAirRide !== 'function') return;
+            const res = car3DShowroom.toggleAirRide(false);
+            if (sound && typeof sound.airRide === 'function') {
+                sound.airRide(Boolean(res && res.isLowered));
+            } else {
+                playTick();
+            }
+            const btn = document.getElementById('btn-show-airride');
+            if (btn) btn.classList.toggle('active', Boolean(res && res.isLowered));
+            return res;
+        }
+        window.toggleShowroomAirRide = toggleShowroomAirRide;
 
         function triggerShowroomHorn() {
             const car = myCars[currentStylingCarIndex];
@@ -12236,7 +12318,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
         }
         window.selectStylingPlate = selectStylingPlate;
 
-        function getStylingDraft() {return {color:stylingTempColor,tint:stylingTempTint,neon:stylingTempNeon,spoiler:stylingTempSpoiler,vinyl:stylingTempVinyl,wheels:stylingTempWheels,suspension:stylingTempSuspension,camber:stylingTempCamber,wheelOffset:stylingTempOffset,neonMode:stylingTempNeonMode,sgu:stylingTempSgu,bodykit:stylingTempBodykit,roofScoop:stylingTempRoofScoop,hood:stylingTempHood,nitroColor:stylingTempNitroColor,smokeColor:stylingTempSmokeColor,plate:stylingTempPlate,frameStyle:stylingTempFrameStyle,plateStyle:stylingTempPlateStyle,livery:stylingTempLivery,junkmanEngine:!!stylingTempJunkman?.engine,junkmanTurbo:!!stylingTempJunkman?.turbo,junkmanTires:!!stylingTempJunkman?.tires,junkmanNitro:!!stylingTempJunkman?.nitro,gearRatioBias:stylingTempProTuning?.gearRatioBias||0,aeroDownforce:stylingTempProTuning?.aeroDownforce||0,gripDriftBias:stylingTempProTuning?.gripDriftBias||0};}
+        function getStylingDraft() {return {color:stylingTempColor,tint:stylingTempTint,neon:stylingTempNeon,spoiler:stylingTempSpoiler,vinyl:stylingTempVinyl,wheels:stylingTempWheels,rimColor:stylingTempRimColor,caliperColor:stylingTempCaliperColor,headlightColor:stylingTempHeadlightColor,suspension:stylingTempSuspension,camber:stylingTempCamber,wheelOffset:stylingTempOffset,neonMode:stylingTempNeonMode,sgu:stylingTempSgu,bodykit:stylingTempBodykit,roofScoop:stylingTempRoofScoop,hood:stylingTempHood,nitroColor:stylingTempNitroColor,smokeColor:stylingTempSmokeColor,plate:stylingTempPlate,frameStyle:stylingTempFrameStyle,plateStyle:stylingTempPlateStyle,livery:stylingTempLivery,junkmanEngine:!!stylingTempJunkman?.engine,junkmanTurbo:!!stylingTempJunkman?.turbo,junkmanTires:!!stylingTempJunkman?.tires,junkmanNitro:!!stylingTempJunkman?.nitro,gearRatioBias:stylingTempProTuning?.gearRatioBias||0,aeroDownforce:stylingTempProTuning?.aeroDownforce||0,gripDriftBias:stylingTempProTuning?.gripDriftBias||0};}
         window.NomeraAtelierBridge={read:()=>({car:myCars[stylingActiveCarIndex],draft:getStylingDraft(),balance:(onlineProfile&&Number.isFinite(Number(onlineProfile.balance)))?Math.max(balance,Number(onlineProfile.balance)):balance,showroom:car3DShowroom})};
         // Rewards share the account snapshot with the wallet: no separate claim flag can be lost.
         window.NomeraProgressionBridge={
@@ -12308,10 +12390,26 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 else if (stylingTempWheels === 'forged') cost += 75000;
                 else if (stylingTempWheels === 'bbs_gtr' || stylingTempWheels === 'oz_racing') cost += 90000;
             }
+            if (stylingTempRimColor !== (car.styling.rimColor || 'silver')) {
+                if (stylingTempRimColor === 'black' || stylingTempRimColor === 'white') cost += 15000;
+                else if (stylingTempRimColor === 'bronze') cost += 25000;
+                else if (stylingTempRimColor === 'chrome') cost += 35000;
+                else if (stylingTempRimColor === 'gold') cost += 45000;
+            }
+            if (stylingTempCaliperColor !== (car.styling.caliperColor || 'red')) {
+                if (stylingTempCaliperColor === 'yellow' || stylingTempCaliperColor === 'blue' || stylingTempCaliperColor === 'acid') cost += 15000;
+                else if (stylingTempCaliperColor === 'gold') cost += 25000;
+            }
+            if (stylingTempHeadlightColor !== (car.styling.headlightColor || 'xenon')) {
+                if (stylingTempHeadlightColor === 'warm') cost += 10000;
+                else if (stylingTempHeadlightColor === 'yellow' || stylingTempHeadlightColor === 'ice') cost += 20000;
+                else if (stylingTempHeadlightColor === 'purple') cost += 30000;
+            }
             if (stylingTempSuspension !== (car.styling.suspension || 'stock')) {
                 if (stylingTempSuspension === 'lowered') cost += 25000;
                 else if (stylingTempSuspension === 'bpan') cost += 50000;
                 else if (stylingTempSuspension === 'lift') cost += 35000;
+                else if (stylingTempSuspension === 'airride') cost += 85000;
             }
             if (Number(stylingTempCamber) !== Number(car.styling.camber ?? 0)) {
                 if (stylingTempCamber === -3) cost += 20000;
@@ -12408,6 +12506,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 vinyl: stylingTempVinyl,
                         ...(window.NOMERA_AUTHORS_PREVIEW?{livery:window.NomeraLivery.normalize(stylingTempLivery)}:{}),
                 wheels: stylingTempWheels,
+                rimColor: stylingTempRimColor,
+                caliperColor: stylingTempCaliperColor,
+                headlightColor: stylingTempHeadlightColor,
                 suspension: stylingTempSuspension,
                 sgu: stylingTempSgu,
                 plate: finalPlateStr,
@@ -20665,6 +20766,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     vinyl: stylingTempVinyl,
                         ...(window.NOMERA_AUTHORS_PREVIEW?{livery:window.NomeraLivery.normalize(stylingTempLivery)}:{}),
                     wheels: stylingTempWheels,
+                    rimColor: stylingTempRimColor,
+                    caliperColor: stylingTempCaliperColor,
+                    headlightColor: stylingTempHeadlightColor,
                     suspension: stylingTempSuspension,
                     sgu: stylingTempSgu,
                     plate: stylingTempPlate,
@@ -20694,6 +20798,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 vinyl: stylingTempVinyl,
                         ...(window.NOMERA_AUTHORS_PREVIEW?{livery:window.NomeraLivery.normalize(stylingTempLivery)}:{}),
                 wheels: stylingTempWheels,
+                rimColor: stylingTempRimColor,
+                caliperColor: stylingTempCaliperColor,
+                headlightColor: stylingTempHeadlightColor,
                 suspension: stylingTempSuspension,
                 sgu: stylingTempSgu
             }, { view: stylingViewMode === 'plate_front' ? 'front' : (stylingViewMode === 'plate_rear' ? 'rear' : (stylingViewMode === '3d' ? 'side' : stylingViewMode)) });
@@ -22530,6 +22637,10 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                         if (name === 'brake' && typeof sound?.brake === 'function') sound.brake();
                         if (name === 'scrape' && typeof sound?.scrape === 'function') sound.scrape();
                         if (name === 'horn' && typeof sound?.horn === 'function') sound.horn();
+                        if (name === 'trafficHorn' && typeof sound?.trafficHorn === 'function') sound.trafficHorn();
+                        if (name === 'coneHit' && typeof sound?.coneHit === 'function') sound.coneHit();
+                        if (name === 'airRideDown' && typeof sound?.airRide === 'function') sound.airRide(true);
+                        if (name === 'airRideUp' && typeof sound?.airRide === 'function') sound.airRide(false);
                         if (name === 'speedbreakerOn' && typeof sound?.speedbreakerOn === 'function') sound.speedbreakerOn();
                         if (name === 'speedbreakerOff' && typeof sound?.speedbreakerOff === 'function') sound.speedbreakerOff();
                         if (name === 'countdown_beep' && typeof sound?.countdownBeep === 'function') sound.countdownBeep(1);
