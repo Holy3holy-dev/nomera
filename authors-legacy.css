@@ -5635,7 +5635,7 @@ body.race-active .race-3d-viewport-wrapper {
         width: 100% ;
         max-width: 100% ;
         margin: 0 ;
-        padding: 0 max(10px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left)) ;
+        padding: 0 max(26px, env(safe-area-inset-right)) max(38px, calc(env(safe-area-inset-bottom) + 28px)) max(26px, env(safe-area-inset-left)) ;
         pointer-events: none ;
         z-index: 25 ;
         gap: 6px ;
@@ -5985,7 +5985,7 @@ body.race-active .race-3d-viewport-wrapper {
         width: 100% ;
         max-width: 100% ;
         margin: 0 ;
-        padding: 0 max(16px, env(safe-area-inset-right)) max(6px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)) ;
+        padding: 0 max(28px, env(safe-area-inset-right)) max(24px, calc(env(safe-area-inset-bottom) + 18px)) max(28px, env(safe-area-inset-left)) ;
         z-index: 25;
         pointer-events: none;
         display: flex ;

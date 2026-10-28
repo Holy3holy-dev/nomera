@@ -1685,10 +1685,17 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 const is3D = button.id && button.id.startsWith('btn-3d-');
                 const isSteerBtn = (key === 'left' || key === 'right');
 
+                if (typeof button.querySelectorAll === 'function') {
+                    button.querySelectorAll('*').forEach(child => {
+                        if (typeof child.setAttribute === 'function') child.setAttribute('aria-hidden', 'true');
+                        if (child.style) child.style.pointerEvents = 'none';
+                    });
+                }
+
                 const onDown = (e) => {
-                    button._activePointerId = e?.pointerId;
+                    button._activePointerId = e?.pointerId ?? 'touch';
                     button._slidSteer = false;
-                    if (typeof button.setPointerCapture === 'function' && e.pointerId !== undefined) {
+                    if (typeof button.setPointerCapture === 'function' && e?.pointerId !== undefined) {
                         try { button.setPointerCapture(e.pointerId); } catch (_) {}
                     }
                     if (e && e.cancelable && typeof e.preventDefault === 'function') e.preventDefault();
@@ -1700,14 +1707,18 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 };
 
                 const onMove = (e) => {
-                    if (!isSteerBtn || button._activePointerId === undefined || e?.pointerId !== button._activePointerId) return;
+                    if (!isSteerBtn || button._activePointerId === undefined) return;
+                    if (e?.pointerId !== undefined && button._activePointerId !== 'touch' && e.pointerId !== button._activePointerId) return;
+                    const clientX = Number.isFinite(e?.clientX)
+                        ? e.clientX
+                        : (e?.targetTouches?.[0]?.clientX ?? e?.touches?.[0]?.clientX);
                     const cluster = typeof button.closest === 'function' ? button.closest('.touch-cluster-steer') : null;
-                    if (!cluster || typeof cluster.getBoundingClientRect !== 'function' || !Number.isFinite(e.clientX)) return;
+                    if (!cluster || typeof cluster.getBoundingClientRect !== 'function' || !Number.isFinite(clientX)) return;
                     const rect = cluster.getBoundingClientRect();
                     if (!rect || !(rect.width > 0)) return;
                     const compute = window.NomeraScreenControls?.computeSlideSteer;
                     if (typeof compute === 'function') {
-                        const slide = compute(e.clientX, rect);
+                        const slide = compute(clientX, rect);
                         button._slidSteer = true;
                         setRaceAnalogSteer(slide.steer);
                     }
@@ -1717,7 +1728,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     if (e && e.type === 'pointerleave' && button._activePointerId !== undefined && typeof button.setPointerCapture === 'function') {
                         return;
                     }
-                    if (button._activePointerId !== undefined && e && e.pointerId !== undefined && e.pointerId !== button._activePointerId) {
+                    if (button._activePointerId !== undefined && button._activePointerId !== 'touch' && e && e.pointerId !== undefined && e.pointerId !== button._activePointerId) {
                         return;
                     }
                     if (typeof button.releasePointerCapture === 'function' && e && e.pointerId !== undefined) {
@@ -1746,14 +1757,51 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     if (e && typeof e.preventDefault === 'function') e.preventDefault();
                 };
 
+                const onTouchStart = (e) => {
+                    if (e && e.cancelable && typeof e.preventDefault === 'function') e.preventDefault();
+                    if (button._activePointerId === undefined) {
+                        onDown(e);
+                    }
+                };
+                const onTouchMove = (e) => {
+                    if (e && e.cancelable && typeof e.preventDefault === 'function') e.preventDefault();
+                    if (isSteerBtn) onMove(e);
+                };
+                const onTouchEnd = (e) => {
+                    if (e && e.cancelable && typeof e.preventDefault === 'function') e.preventDefault();
+                    if (button._activePointerId === 'touch') {
+                        onUp(e);
+                    }
+                };
+
                 button.addEventListener('pointerdown', onDown);
                 if (isSteerBtn) button.addEventListener('pointermove', onMove);
                 button.addEventListener('pointerup', onUp);
                 button.addEventListener('pointercancel', onUp);
                 button.addEventListener('pointerleave', onUp);
                 button.addEventListener('lostpointercapture', onUp);
+                button.addEventListener('touchstart', onTouchStart, { passive: false });
+                button.addEventListener('touchmove', onTouchMove, { passive: false });
+                button.addEventListener('touchend', onTouchEnd, { passive: false });
+                button.addEventListener('touchcancel', onTouchEnd, { passive: false });
                 button.addEventListener('contextmenu', blockSystemMenu);
                 button.addEventListener('selectstart', blockSystemMenu);
+            });
+
+            ['race-3d-touch-controls', 'race-touch-controls'].forEach(containerId => {
+                const container = typeof document.getElementById === 'function' ? document.getElementById(containerId) : null;
+                if (!container || typeof container.addEventListener !== 'function' || container._multiTouchShieldBound) return;
+                container._multiTouchShieldBound = true;
+                const shieldTouch = (e) => {
+                    if (e?.target && typeof e.target.closest === 'function' && e.target.closest('.ae-drive-options, .ae-drive-menu')) {
+                        return;
+                    }
+                    if (e && e.cancelable && typeof e.preventDefault === 'function') e.preventDefault();
+                };
+                container.addEventListener('touchstart', shieldTouch, { passive: false });
+                container.addEventListener('touchmove', shieldTouch, { passive: false });
+                container.addEventListener('contextmenu', shieldTouch);
+                container.addEventListener('selectstart', shieldTouch);
             });
         }
         window.bindTouchButtons = bindTouchButtons;
@@ -22335,12 +22383,15 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
         function handleTouchControl(e, key, state) {
             if (e) {
-                if (e.target && e.pointerId !== undefined) {
-                    if (state && typeof e.target.setPointerCapture === 'function') {
-                        try { e.target.setPointerCapture(e.pointerId); } catch (_) {}
+                const captureEl = (e.currentTarget && e.currentTarget.classList?.contains?.('touch-btn'))
+                    ? e.currentTarget
+                    : ((e.target && typeof e.target.closest === 'function' && e.target.closest('.touch-btn')) || e.target);
+                if (captureEl && e.pointerId !== undefined) {
+                    if (state && typeof captureEl.setPointerCapture === 'function') {
+                        try { captureEl.setPointerCapture(e.pointerId); } catch (_) {}
                     }
-                    if (!state && typeof e.target.releasePointerCapture === 'function') {
-                        try { e.target.releasePointerCapture(e.pointerId); } catch (_) {}
+                    if (!state && typeof captureEl.releasePointerCapture === 'function') {
+                        try { captureEl.releasePointerCapture(e.pointerId); } catch (_) {}
                     }
                 }
                 if (typeof e.preventDefault === 'function') {
@@ -23567,12 +23618,15 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
 
         function handle3DTouchControl(event, action, isDown) {
             if (event) {
-                if (event.target && event.pointerId !== undefined) {
-                    if (isDown && typeof event.target.setPointerCapture === 'function') {
-                        try { event.target.setPointerCapture(event.pointerId); } catch (_) {}
+                const captureEl = (event.currentTarget && event.currentTarget.classList?.contains?.('touch-btn'))
+                    ? event.currentTarget
+                    : ((event.target && typeof event.target.closest === 'function' && event.target.closest('.touch-btn')) || event.target);
+                if (captureEl && event.pointerId !== undefined) {
+                    if (isDown && typeof captureEl.setPointerCapture === 'function') {
+                        try { captureEl.setPointerCapture(event.pointerId); } catch (_) {}
                     }
-                    if (!isDown && typeof event.target.releasePointerCapture === 'function') {
-                        try { event.target.releasePointerCapture(event.pointerId); } catch (_) {}
+                    if (!isDown && typeof captureEl.releasePointerCapture === 'function') {
+                        try { captureEl.releasePointerCapture(event.pointerId); } catch (_) {}
                     }
                 }
                 if (event.cancelable) event.preventDefault();

@@ -56,7 +56,11 @@
   const zone=root.document.createElement('div');zone.className='ae-screen-steering';zone.setAttribute('aria-hidden','true');zone.innerHTML='<span>‹<small>КАСАНИЕ СЛЕВА</small></span><span>›<small>КАСАНИЕ СПРАВА</small></span>';wrapper.append(zone);s.zone=zone;
   const bind=(node,name,handler,options)=>{node.addEventListener(name,handler,options);s.bindings.push(()=>node.removeEventListener(name,handler,options));};
   const blockMenu=ev=>{if(ev.cancelable)ev.preventDefault();};
+  const blockTouch=ev=>{if(ev.target?.closest?.('.ae-drive-options,.ae-drive-menu'))return;if(ev.cancelable)ev.preventDefault();};
   bind(wrapper,'contextmenu',blockMenu);bind(controls,'contextmenu',blockMenu);bind(wrapper,'selectstart',blockMenu);bind(controls,'selectstart',blockMenu);
+  bind(controls,'touchstart',blockTouch,{passive:false});bind(controls,'touchmove',blockTouch,{passive:false});
+  bind(wrapper,'touchstart',ev=>{if(!s.screen||ev.target?.closest?.('button,a,input,select,[role=button],.ae-drive-options,.ae-drive-menu'))return;if(ev.cancelable)ev.preventDefault();},{passive:false});
+  bind(wrapper,'touchmove',ev=>{if(!s.screen||ev.target?.closest?.('button,a,input,select,[role=button],.ae-drive-options,.ae-drive-menu'))return;if(ev.cancelable)ev.preventDefault();},{passive:false});
   const apply=()=>{
    const last=[...s.pointers.values()].at(-1)||null;
    if(!last){if(s.steerOwned){steer(s,0);s.steerOwned=false;}zone.dataset.side='';return;}

@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "profile": "mobile",
-  "release": "6719c9c55e15",
+  "release": "0beba1864898",
   "fileCount": 391,
-  "totalBytes": 374964193,
+  "totalBytes": 374968825,
   "files": {
     "assets/audio/authors/README.md": {
       "version": "028cce62fd63",
@@ -1078,28 +1078,28 @@
       "bytes": 7200
     },
     "authors-driving.css": {
-      "version": "bb0e8b41344f",
-      "bytes": 11015
+      "version": "c08f2088fea5",
+      "bytes": 11233
     },
     "authors-exchange.css": {
       "version": "a805f1f4cc8d",
       "bytes": 32366
     },
     "authors-expansion.css": {
-      "version": "7de5bce0760c",
-      "bytes": 53839
+      "version": "d95e8d84393b",
+      "bytes": 53963
     },
     "authors-garage.css": {
       "version": "5cef62b8ad75",
       "bytes": 25001
     },
     "authors-legacy.css": {
-      "version": "7ba79b583665",
-      "bytes": 414941
+      "version": "f18e92ebf598",
+      "bytes": 414969
     },
     "authors-motorsport.css": {
-      "version": "b020f3c98769",
-      "bytes": 15035
+      "version": "276e6954050a",
+      "bytes": 15118
     },
     "authors-plate-effects.css": {
       "version": "78ec13cff879",
@@ -1126,7 +1126,7 @@
       "bytes": 39587
     },
     "authors-release.html": {
-      "version": "05a23eec51dc",
+      "version": "2d0be83b970c",
       "bytes": 323103
     },
     "authors-rewards.css": {
@@ -1150,7 +1150,7 @@
       "bytes": 86562
     },
     "authors.html": {
-      "version": "01db88b58e17",
+      "version": "f5a2b56b148c",
       "bytes": 322910
     },
     "icons/car-placeholder.svg": {
@@ -1166,12 +1166,12 @@
       "bytes": 69797
     },
     "index.html": {
-      "version": "05a23eec51dc",
+      "version": "2d0be83b970c",
       "bytes": 323103
     },
     "js/app.js": {
-      "version": "a52736f6b764",
-      "bytes": 1550969
+      "version": "10c9d6ab4054",
+      "bytes": 1554470
     },
     "js/audio.js": {
       "version": "6b60b0de49f2",
@@ -1418,8 +1418,8 @@
       "bytes": 11679
     },
     "js/authors-screen-controls.js": {
-      "version": "241833384299",
-      "bytes": 8920
+      "version": "ea9c589c2ab6",
+      "bytes": 9570
     },
     "js/authors-secondary.js": {
       "version": "ece739ad1daf",
@@ -1554,7 +1554,7 @@
       "bytes": 603445
     },
     "legacy.html": {
-      "version": "adb0f0b694c7",
+      "version": "ea063523bc05",
       "bytes": 316472
     },
     "manifest.json": {
@@ -1562,11 +1562,11 @@
       "bytes": 520
     },
     "styles.css": {
-      "version": "997ed583ca31",
-      "bytes": 434511
+      "version": "c558782b56fb",
+      "bytes": 434539
     },
     "sw.js": {
-      "version": "7d8930c01dce",
+      "version": "ea71f49dfb91",
       "bytes": 6654
     }
   }

@@ -2,13 +2,16 @@ package com.h3h.nomera
 
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.app.assist.AssistContent
 import android.content.Intent
 import android.graphics.Color
 import android.graphics.Rect
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.view.ActionMode
 import android.view.View
+import android.view.ViewStructure
 import android.view.WindowInsets
 import android.view.WindowInsetsController
 import android.webkit.WebChromeClient
@@ -42,10 +45,24 @@ class MainActivity : Activity() {
             computeDeltaPlan = ComputeOtaDeltaPlanUseCase()
         )
 
-        webView = WebView(this).apply {
+        webView = object : WebView(this) {
+            override fun performLongClick(): Boolean = true
+            override fun performLongClick(x: Float, y: Float): Boolean = true
+            override fun showContextMenu(): Boolean = true
+            override fun showContextMenu(x: Float, y: Float): Boolean = true
+            override fun startActionMode(callback: ActionMode.Callback?): ActionMode? = null
+            override fun startActionMode(callback: ActionMode.Callback?, type: Int): ActionMode? = null
+            override fun onProvideStructure(structure: ViewStructure?) {}
+            override fun onProvideVirtualStructure(structure: ViewStructure?) {}
+            override fun onProvideAutofillVirtualStructure(structure: ViewStructure?, flags: Int) {}
+        }.apply {
             setBackgroundColor(Color.parseColor("#080D16"))
             isLongClickable = false
             isHapticFeedbackEnabled = false
+            importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                importantForContentCapture = View.IMPORTANT_FOR_CONTENT_CAPTURE_NO_EXCLUDE_DESCENDANTS
+            }
             setOnLongClickListener { true }
             settings.apply {
                 javaScriptEnabled = true
@@ -67,7 +84,7 @@ class MainActivity : Activity() {
                     val h = bottom - top
                     val w = v.width
                     if (w > 0 && h > 0) {
-                        val zoneHeightPx = (180f * resources.displayMetrics.density).toInt().coerceAtMost(h)
+                        val zoneHeightPx = (200f * resources.displayMetrics.density).toInt().coerceAtMost(h)
                         v.systemGestureExclusionRects = listOf(
                             Rect(0, (h - zoneHeightPx).coerceAtLeast(0), w, h)
                         )
@@ -99,6 +116,14 @@ class MainActivity : Activity() {
             }
             startActivity(intent)
         } catch (_: Exception) {}
+    }
+
+    override fun onProvideAssistData(data: Bundle?) {
+        // Block system Assistant / screen recognition inspection during gameplay
+    }
+
+    override fun onProvideAssistContent(outContent: AssistContent?) {
+        // Block system Assistant / screen recognition inspection during gameplay
     }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {

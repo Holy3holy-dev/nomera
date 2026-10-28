@@ -127,3 +127,49 @@ test('Ergonomics 5: Anti-Assistant protection & In-App APK download support exis
         'NomeraJsBridge must expose openExternalUrl for one-tap APK updates'
     );
 });
+
+test('Ergonomics 6: Multi-touch Gas+Turn and Brake+Turn consume touchstart/touchmove (passive:false), isolate text spans, and block Android two-finger Assistant hooks', () => {
+    const appJs = fs.readFileSync(path.join(__dirname, '../js/app.js'), 'utf8');
+    const screenControlsJs = fs.readFileSync(path.join(__dirname, '../js/authors-screen-controls.js'), 'utf8');
+    const drivingCss = fs.readFileSync(path.join(__dirname, '../authors-driving.css'), 'utf8');
+    const expansionCss = fs.readFileSync(path.join(__dirname, '../authors-expansion.css'), 'utf8');
+    const motorsportCss = fs.readFileSync(path.join(__dirname, '../authors-motorsport.css'), 'utf8');
+    const mainActivity = fs.readFileSync(
+        path.join(__dirname, '../android/app/src/main/java/com/h3h/nomera/MainActivity.kt'),
+        'utf8'
+    );
+
+    // 1. Both app.js and authors-screen-controls.js must consume touchstart & touchmove with { passive: false }
+    assert.ok(
+        appJs.includes("'touchstart'") && appJs.includes('passive: false'),
+        'app.js must bind touchstart with { passive: false } on touch controls so two-finger holds (Gas+Turn / Brake+Turn) are marked CONSUMED in Android WebView'
+    );
+    assert.ok(
+        screenControlsJs.includes('touchstart') && screenControlsJs.includes('passive:false'),
+        'authors-screen-controls.js must bind touchstart with { passive: false } to block OEM two-finger Assistant triggers'
+    );
+
+    // 2. Inner text spans inside .touch-btn must have pointer-events: none so touches never target text nodes or steal pointer capture
+    assert.ok(
+        drivingCss.includes('.touch-btn>*{pointer-events:none!important') || drivingCss.includes('.touch-btn *{pointer-events:none!important'),
+        'authors-driving.css must disable pointer-events on inner text spans of .touch-btn'
+    );
+
+    // 3. Landscape and screen-mode CSS must NOT reset padding back to 4px or 6px at the bottom corners
+    assert.ok(
+        !expansionCss.includes('race-3d-touch-controls){max-height:110px!important;padding:4px!important'),
+        'authors-expansion.css landscape rule must not reset touch-controls padding to 4px!important'
+    );
+    assert.ok(
+        !motorsportCss.includes('padding:6px 8px max(6px,env(safe-area-inset-bottom))!important'),
+        'authors-motorsport.css must not reset touch-controls bottom padding to 6px'
+    );
+
+    // 4. Native Android WebView must block onProvideVirtualStructure, startActionMode, and performLongClick
+    assert.ok(
+        mainActivity.includes('onProvideVirtualStructure') &&
+        mainActivity.includes('startActionMode') &&
+        mainActivity.includes('performLongClick'),
+        'MainActivity WebView must override onProvideVirtualStructure, startActionMode, and performLongClick to block OEM two-finger Assistant / Screen Recognition'
+    );
+});
