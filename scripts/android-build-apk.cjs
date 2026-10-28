@@ -37,8 +37,18 @@ function findGradleBinary() {
     return process.platform === 'win32' ? 'gradle.bat' : 'gradle';
 }
 
-function buildApk() {
-    require('./build.cjs');
+function canBuildApkLocally() {
+    const javaHome = findJavaHome();
+    const gradleBin = findGradleBinary();
+    const localSdk = process.env.ANDROID_HOME || process.env.ANDROID_SDK_ROOT || (process.env.LOCALAPPDATA ? path.join(process.env.LOCALAPPDATA, 'Android', 'Sdk') : '');
+    return Boolean(javaHome && gradleBin && localSdk && fs.existsSync(localSdk));
+}
+
+function buildApk(options = {}) {
+    if (!options.skipWebBuild) {
+        process.env.NOMERA_SKIP_ANDROID_BUILD = '1';
+        require('./build.cjs');
+    }
     const staged = stageAndroidAssets({ profile: 'mobile' });
     console.log(`Staged ${staged.fileCount} files (${(staged.totalBytes / (1024 * 1024)).toFixed(2)} MB, release ${staged.release})`);
 
@@ -49,7 +59,7 @@ function buildApk() {
         env.JAVA_HOME = javaHome;
         env.PATH = `${path.join(javaHome, 'bin')}${path.delimiter}${env.PATH || ''}`;
     }
-    const localSdk = env.ANDROID_HOME || (env.LOCALAPPDATA ? path.join(env.LOCALAPPDATA, 'Android', 'Sdk') : '');
+    const localSdk = env.ANDROID_HOME || env.ANDROID_SDK_ROOT || (env.LOCALAPPDATA ? path.join(env.LOCALAPPDATA, 'Android', 'Sdk') : '');
     if (localSdk && fs.existsSync(localSdk)) {
         env.ANDROID_HOME = localSdk;
         env.ANDROID_SDK_ROOT = localSdk;
@@ -82,4 +92,4 @@ if (require.main === module) {
     buildApk();
 }
 
-module.exports = { buildApk, findJavaHome, findGradleBinary };
+module.exports = { buildApk, canBuildApkLocally, findJavaHome, findGradleBinary };

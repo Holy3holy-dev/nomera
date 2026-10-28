@@ -229,3 +229,40 @@ test('Unit 5: MainActivity initializes DecorView via setContentView before acces
     );
 });
 
+test('Unit 6: Android custom launcher icon resources and unified Web+Android release pipeline are configured', () => {
+    const manifestXml = fs.readFileSync(
+        path.join(root, 'android/app/src/main/AndroidManifest.xml'),
+        'utf8'
+    );
+    assert.ok(
+        manifestXml.includes('android:icon="@mipmap/ic_launcher"'),
+        'AndroidManifest.xml must declare android:icon="@mipmap/ic_launcher"'
+    );
+    assert.ok(
+        manifestXml.includes('android:roundIcon="@mipmap/ic_launcher_round"'),
+        'AndroidManifest.xml must declare android:roundIcon="@mipmap/ic_launcher_round"'
+    );
+
+    const iconFiles = [
+        'android/app/src/main/res/drawable/ic_launcher_background.xml',
+        'android/app/src/main/res/drawable/ic_launcher_foreground.xml',
+        'android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml',
+        'android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml',
+        'android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png',
+        'android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png',
+        'scripts/generate-app-icons.cjs',
+        '.githooks/pre-push'
+    ];
+    for (const rel of iconFiles) {
+        const full = path.join(root, rel);
+        assert.ok(fs.existsSync(full) && fs.statSync(full).size > 50, `Expected ${rel} to exist and be non-empty`);
+    }
+
+    const buildScript = fs.readFileSync(path.join(root, 'scripts/build.cjs'), 'utf8');
+    assert.ok(
+        buildScript.includes('Unified Release Pipeline'),
+        'scripts/build.cjs must run the unified Web + Android APK release pipeline'
+    );
+});
+
+

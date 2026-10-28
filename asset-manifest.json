@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "profile": "mobile",
-  "release": "de7c4d719540",
+  "release": "bab25c5fa15a",
   "fileCount": 391,
-  "totalBytes": 374853567,
+  "totalBytes": 374942211,
   "files": {
     "assets/audio/authors/README.md": {
       "version": "028cce62fd63",
@@ -1158,12 +1158,12 @@
       "bytes": 688
     },
     "icons/icon-192.png": {
-      "version": "783eb2942aba",
-      "bytes": 1868
+      "version": "8afa8909fb58",
+      "bytes": 25960
     },
     "icons/icon-512.png": {
-      "version": "28a44f10a342",
-      "bytes": 5245
+      "version": "f627a3762895",
+      "bytes": 69797
     },
     "index.html": {
       "version": "2566163b421d",
@@ -1566,7 +1566,7 @@
       "bytes": 434511
     },
     "sw.js": {
-      "version": "f970f04ce86a",
+      "version": "26fbbd17080b",
       "bytes": 6654
     }
   }

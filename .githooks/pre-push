@@ -1,0 +1,4 @@
+#!/bin/sh
+# Unified Web + Android OTA Release Hook
+# Ensures asset-manifest.json is always in sync before pushing to remote
+node scripts/asset-manifest.cjs

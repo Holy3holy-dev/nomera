@@ -61,3 +61,12 @@ for (const folder of ['js', 'icons', 'assets']) {
 require('./asset-manifest.cjs').generateAssetManifest({ sourceDir: root, profile: 'mobile', writeFiles: true });
 
 console.log('Clean public dist ready: Author’s Edition published at index.html and dist/index.html (rollback at legacy.html, sandbox at authors.html).');
+
+const skipApk = process.argv.includes('--skip-apk') || process.env.NOMERA_SKIP_ANDROID_BUILD === '1';
+if (!skipApk) {
+  const { buildApk, canBuildApkLocally } = require('./android-build-apk.cjs');
+  if (canBuildApkLocally()) {
+    console.log('Unified Release Pipeline: syncing staged assets & rebuilding Android APK...');
+    buildApk({ skipWebBuild: true });
+  }
+}
