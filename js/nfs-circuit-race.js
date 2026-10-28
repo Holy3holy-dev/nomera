@@ -599,6 +599,7 @@
                 horn: false,
                 speedbreaker: false
             };
+            this.analogSteer = 0;
 
             this.cameraModes = root.NOMERA_AUTHORS_PREVIEW?['chase', 'far', 'hood', 'bumper','cockpit','top']:['chase', 'far', 'hood', 'bumper'];
             this.cameraModeIndex = 0;
@@ -941,7 +942,13 @@
             }
         }
 
+        setAnalogSteer(val) {
+            const num = Number(val);
+            this.analogSteer = Number.isFinite(num) ? Math.max(-1, Math.min(1, num)) : 0;
+        }
+
         resetKeys() {
+            this.analogSteer = 0;
             Object.keys(this.keys).forEach(k => { this.keys[k] = false; });
         }
 
@@ -1086,6 +1093,7 @@
             const playerInput = {
                 left: this.keys.left,
                 right: this.keys.right,
+                steer: (Number.isFinite(this.analogSteer) && Math.abs(this.analogSteer) > 0.02) ? this.analogSteer : undefined,
                 gas: hasFuel ? this.keys.gas : false,
                 brake: this.keys.brake,
                 handbrake: this.keys.drift,

@@ -1683,8 +1683,11 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 if (!key) return;
 
                 const is3D = button.id && button.id.startsWith('btn-3d-');
+                const isSteerBtn = (key === 'left' || key === 'right');
 
                 const onDown = (e) => {
+                    button._activePointerId = e?.pointerId;
+                    button._slidSteer = false;
                     if (typeof button.setPointerCapture === 'function' && e.pointerId !== undefined) {
                         try { button.setPointerCapture(e.pointerId); } catch (_) {}
                     }
@@ -1696,19 +1699,45 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     }
                 };
 
+                const onMove = (e) => {
+                    if (!isSteerBtn || button._activePointerId === undefined || e?.pointerId !== button._activePointerId) return;
+                    const cluster = typeof button.closest === 'function' ? button.closest('.touch-cluster-steer') : null;
+                    if (!cluster || typeof cluster.getBoundingClientRect !== 'function' || !Number.isFinite(e.clientX)) return;
+                    const rect = cluster.getBoundingClientRect();
+                    if (!rect || !(rect.width > 0)) return;
+                    const compute = window.NomeraScreenControls?.computeSlideSteer;
+                    if (typeof compute === 'function') {
+                        const slide = compute(e.clientX, rect);
+                        button._slidSteer = true;
+                        setRaceAnalogSteer(slide.steer);
+                    }
+                };
+
                 const onUp = (e) => {
                     if (typeof button.releasePointerCapture === 'function' && e && e.pointerId !== undefined) {
                         try { button.releasePointerCapture(e.pointerId); } catch (_) {}
                     }
                     if (e && e.cancelable && typeof e.preventDefault === 'function') e.preventDefault();
+                    const wasSlid = !!button._slidSteer;
+                    button._activePointerId = undefined;
+                    button._slidSteer = false;
                     if (is3D) {
                         handle3DTouchControl(e, key, false);
+                        if (wasSlid) {
+                            handle3DTouchControl(e, key === 'left' ? 'right' : 'left', false);
+                            setRaceAnalogSteer(0);
+                        }
                     } else {
                         handleTouchControl(e, key, false);
+                        if (wasSlid) {
+                            handleTouchControl(e, key === 'left' ? 'right' : 'left', false);
+                            setRaceAnalogSteer(0);
+                        }
                     }
                 };
 
                 button.addEventListener('pointerdown', onDown);
+                if (isSteerBtn) button.addEventListener('pointermove', onMove);
                 button.addEventListener('pointerup', onUp);
                 button.addEventListener('pointercancel', onUp);
                 button.addEventListener('pointerleave', onUp);
@@ -22235,7 +22264,9 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
             }
         }
 
+        let raceAnalogSteer = 0;
         function resetRaceKeys() {
+            raceAnalogSteer = 0;
             activeRacePointers.clear();
             Object.keys(raceKeys).forEach(key => {
                 raceKeys[key] = false;
@@ -22273,6 +22304,22 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 car3DRacingEngine.setKey(key, !!state);
             }
         }
+
+        function setRaceAnalogSteer(val) {
+            if (val && racePreviewPause?.allowsViewer()) return;
+            const num = Number(val);
+            raceAnalogSteer = Number.isFinite(num) ? Math.max(-1, Math.min(1, num)) : 0;
+            setRaceKey('left', raceAnalogSteer < -0.05);
+            setRaceKey('right', raceAnalogSteer > 0.05);
+            if (car3DRacingEngine && is3DOrNfsRaceActive()) {
+                if (typeof car3DRacingEngine.setAnalogSteer === 'function') {
+                    car3DRacingEngine.setAnalogSteer(raceAnalogSteer);
+                } else {
+                    car3DRacingEngine.analogSteer = raceAnalogSteer;
+                }
+            }
+        }
+        window.setRaceAnalogSteer = setRaceAnalogSteer;
 
         function handleTouchControl(e, key, state) {
             if (e) {
@@ -22334,6 +22381,12 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     if (!steerZone.getBoundingClientRect) return;
                     const rect = steerZone.getBoundingClientRect();
                     if (!rect || !rect.width) return;
+                    const compute = window.NomeraScreenControls?.computeSlideSteer;
+                    if (typeof compute === 'function') {
+                        const slide = compute(clientX, rect);
+                        setRaceAnalogSteer(slide.steer);
+                        return;
+                    }
                     const relX = (clientX - rect.left) / rect.width;
                     if (relX < 0.46) {
                         setRaceKey('left', true);
@@ -23547,6 +23600,12 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     if (!steerZone.getBoundingClientRect) return;
                     const rect = steerZone.getBoundingClientRect();
                     if (!rect || !rect.width) return;
+                    const compute = window.NomeraScreenControls?.computeSlideSteer;
+                    if (typeof compute === 'function') {
+                        const slide = compute(clientX, rect);
+                        setRaceAnalogSteer(slide.steer);
+                        return;
+                    }
                     const relX = (clientX - rect.left) / rect.width;
                     if (relX < 0.46) {
                         setRaceKey('left', true);
@@ -23591,8 +23650,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                             activeRacePointers.delete(e.pointerId);
                         }
                         steerPointerId = null;
-                        setRaceKey('left', false);
-                        setRaceKey('right', false);
+                        setRaceAnalogSteer(0);
                     }
                 };
                 steerZone.addEventListener('pointerup', clearSteer);

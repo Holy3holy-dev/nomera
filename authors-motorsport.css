@@ -42,8 +42,8 @@ body.authors-edition.race-active:has(#hud-3d-pursuit-box:not(.hidden)) .ae-route
 .authors-edition #gameover-car-preview{position:relative;overflow:hidden;border-radius:10px}
 
 /* Press feedback keeps the entire touch target available, including landscape. */
-body.authors-edition #race-3d-touch-controls .touch-btn{min-height:44px!important}
-body.authors-edition #race-3d-touch-controls .touch-btn:is(:active,.pressed){transform:none!important;filter:brightness(1.15);box-shadow:inset 0 0 0 1px #e3f6ad88!important}
+body.authors-edition #race-3d-touch-controls .touch-btn{min-height:52px!important}
+body.authors-edition #race-3d-touch-controls .touch-btn:is(:active,.pressed){transform:scale(0.96)!important;filter:brightness(1.22);box-shadow:inset 0 0 0 2px #d9fb79aa,0 0 14px #d9fb7944!important}
 
 .ae-hull{position:absolute;top:106px;left:14px;z-index:8;display:grid;gap:4px;width:122px;padding:7px 9px;border:1px solid #658586;background:#0b1828e8;border-radius:9px;color:#d8eadf;font:700 10px system-ui;pointer-events:none}.ae-hull progress{width:100%;height:5px;accent-color:#b8e986}.ae-hull[data-danger=true]{color:#ffad9d;border-color:#bd625c}.ae-hull[data-danger=true] progress{accent-color:#f37967}.ae-route-coach[hidden]{display:none!important}.ae-route-coach{top:160px}@media(max-width:600px){.ae-hull{top:122px}.ae-route-coach{top:170px}}@media(max-height:500px) and (orientation:landscape){.ae-hull{top:118px;left:10px;width:112px}.ae-route-coach{top:10px}}
 

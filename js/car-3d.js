@@ -15401,6 +15401,11 @@
             }
         }
 
+        setAnalogSteer(val) {
+            const num = Number(val);
+            this.analogSteer = Number.isFinite(num) ? Math.max(-1, Math.min(1, num)) : 0;
+        }
+
         toggleSpeedbreaker() {
             if (this.state) {
                 this.state.isSpeedbreakerActive = false;
@@ -15409,6 +15414,7 @@
         }
 
         resetKeys() {
+            this.analogSteer = 0;
             this.authorsSteerInput = 0;
             if(this.mwRoadSteering){
                 this.mwRoadSteering=new this.config.physicsKernel.SteeringController();this.state.steerAngle=0;
@@ -15623,7 +15629,7 @@
                 const physical = this.mwLongitudinal;
                 // MW owns its pose and velocity. No road-axis heading magnet,
                 // render-rate reintegration, or legacy lateral-speed governor.
-                const rawRoadInput=(keys.left?1:0)-(keys.right?1:0);
+                const rawRoadInput=(Number.isFinite(this.analogSteer)&&Math.abs(this.analogSteer)>0.02)?-this.analogSteer:((keys.left?1:0)-(keys.right?1:0));
                 physical.state.handbrake=isHandbrake;
                 const roadInput=window.NOMERA_AUTHORS_PREVIEW&&window.NomeraTraffic&&this.mode!=='drift'&&!this.isNfsCircuit?window.NomeraTraffic.highwaySteer(rawRoadInput,physical.state):rawRoadInput;
                 state.highwaySteerCommand=roadInput;
@@ -16005,9 +16011,11 @@
             const downforceGripMult = 1.0 + Math.min(0.22, Math.pow(state.speed / 380, 2) * 0.22);
             const lateralMax = (state.handling * 2.8 * speedStability * downforceGripMult) * (isHandbrake ? (1 + (driftMult - 1) * 0.7) : 1.0) * (state.isSpeedbreakerActive ? 1.25 : 1.0);
 
-            let steerInput = 0;
-            if (keys.left) steerInput += 1;  // In Three.js with camera facing +Z: +X moves to screen LEFT
-            if (keys.right) steerInput -= 1; // -X moves to screen RIGHT
+            let steerInput = (Number.isFinite(this.analogSteer) && Math.abs(this.analogSteer) > 0.02) ? -this.analogSteer : 0;
+            if (!(Number.isFinite(this.analogSteer) && Math.abs(this.analogSteer) > 0.02)) {
+                if (keys.left) steerInput += 1;  // In Three.js with camera facing +Z: +X moves to screen LEFT
+                if (keys.right) steerInput -= 1; // -X moves to screen RIGHT
+            }
             if (this.mwRoadSteering) {
                 this.mwRoadSteering=this.mwLongitudinal.mwSteering;
                 const turn={angleDeg:this.mwRoadSteering.angle,maxSteerDeg:this.mwRoadSteering.lastMaximum};
