@@ -1714,6 +1714,12 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                 };
 
                 const onUp = (e) => {
+                    if (e && e.type === 'pointerleave' && button._activePointerId !== undefined && typeof button.setPointerCapture === 'function') {
+                        return;
+                    }
+                    if (button._activePointerId !== undefined && e && e.pointerId !== undefined && e.pointerId !== button._activePointerId) {
+                        return;
+                    }
                     if (typeof button.releasePointerCapture === 'function' && e && e.pointerId !== undefined) {
                         try { button.releasePointerCapture(e.pointerId); } catch (_) {}
                     }
@@ -1736,12 +1742,18 @@ const DEFAULT_AVATAR = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy
                     }
                 };
 
+                const blockSystemMenu = (e) => {
+                    if (e && typeof e.preventDefault === 'function') e.preventDefault();
+                };
+
                 button.addEventListener('pointerdown', onDown);
                 if (isSteerBtn) button.addEventListener('pointermove', onMove);
                 button.addEventListener('pointerup', onUp);
                 button.addEventListener('pointercancel', onUp);
                 button.addEventListener('pointerleave', onUp);
                 button.addEventListener('lostpointercapture', onUp);
+                button.addEventListener('contextmenu', blockSystemMenu);
+                button.addEventListener('selectstart', blockSystemMenu);
             });
         }
         window.bindTouchButtons = bindTouchButtons;

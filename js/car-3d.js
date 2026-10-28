@@ -15644,9 +15644,10 @@
                 }
                 physical.collisionPreviousPose={x:physical.x,y:physical.y,z:physical.z};
                 physical.update(dt, { gas: gasActive, brake: keys.brake, steer:roadInput,handbrake: isHandbrake, nitro: keys.nitro });
-                // Highway has no reverse lane traversal; circuit retains reverse.
-                // Preserve the integrated world velocity through yaw/roll.
-                physical.state.gear = Math.max(1, physical.state.gear);
+                // Highway allows reverse recovery when stopped or spun out so the player can turn around.
+                if (physical.state.vForward > 1.5 && Math.abs(Math.atan2(Math.sin(physical.state.heading), Math.cos(physical.state.heading))) < 0.55) {
+                    physical.state.gear = Math.max(1, physical.state.gear);
+                }
                 state.speed = Math.max(0,physical.state.vz) * 3.6;state.x=physical.state.x;state.z=physical.state.z;
                 state.nitroLevel=physical.state.nitroLevel;
                 state.isNitroActive=physical.state.isNitroActive;

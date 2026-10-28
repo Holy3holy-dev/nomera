@@ -3,7 +3,7 @@
 (function(root,factory){const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;else root.NomeraTraffic=api;})(typeof globalThis!=='undefined'?globalThis:this,function(){
  'use strict';const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),wrap=a=>Math.atan2(Math.sin(a),Math.cos(a));
  function highwaySteer(input,s){
-  if(s.speedMps<4||s.handbrake||s.rollover?.inverted||s.rollover?.up<.65||s.roadContact?.airborne)return input;
+  if(s.speedMps<4||s.vForward<0||s.gear<0||Math.abs(wrap(s.heading))>.55||s.handbrake||s.rollover?.inverted||s.rollover?.up<.65||s.roadContact?.airborne)return input;
   // A straight highway uses bounded lane-change heading. Only the wheel is
   // commanded: neither world position nor body orientation is overwritten.
   const speed=Math.max(4,s.speedMps),heading=wrap(s.heading),target=input*Math.atan2(Math.min(5.3,2.4+speed*.065),speed);

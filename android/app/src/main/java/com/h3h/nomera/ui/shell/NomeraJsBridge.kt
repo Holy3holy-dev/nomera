@@ -1,5 +1,7 @@
 package com.h3h.nomera.ui.shell
 
+import android.content.Intent
+import android.net.Uri
 import android.os.Handler
 import android.os.Looper
 import android.webkit.JavascriptInterface
@@ -31,6 +33,19 @@ internal class NomeraJsBridge(
             put("bundledFiles", manifest.files.size)
             put("overlayFiles", overlayCount)
         }.toString()
+    }
+
+    @JavascriptInterface
+    fun openExternalUrl(url: String?) {
+        if (url.isNullOrBlank()) return
+        mainHandler.post {
+            try {
+                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url)).apply {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                webView.context.startActivity(intent)
+            } catch (_: Exception) {}
+        }
     }
 
     @JavascriptInterface

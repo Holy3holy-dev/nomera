@@ -1,5 +1,6 @@
 package com.h3h.nomera.ui.shell
 
+import android.content.Intent
 import android.net.Uri
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
@@ -11,6 +12,23 @@ import java.io.ByteArrayInputStream
 internal class OverlayWebViewClient(
     private val repository: AssetOverlayRepository
 ) : WebViewClient() {
+
+    override fun shouldOverrideUrlLoading(
+        view: WebView?,
+        request: WebResourceRequest?
+    ): Boolean {
+        val url = request?.url ?: return false
+        if (url.host != VIRTUAL_ASSET_HOST && (url.path?.endsWith(".apk", ignoreCase = true) == true || url.host?.contains("github.com", ignoreCase = true) == true)) {
+            try {
+                val intent = Intent(Intent.ACTION_VIEW, url).apply {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                view?.context?.startActivity(intent)
+                return true
+            } catch (_: Exception) {}
+        }
+        return super.shouldOverrideUrlLoading(view, request)
+    }
 
     override fun shouldInterceptRequest(
         view: WebView?,

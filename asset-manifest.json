@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "profile": "mobile",
-  "release": "76f334f2fc9a",
+  "release": "6719c9c55e15",
   "fileCount": 391,
-  "totalBytes": 374950434,
+  "totalBytes": 374964193,
   "files": {
     "assets/audio/authors/README.md": {
       "version": "028cce62fd63",
@@ -1078,16 +1078,16 @@
       "bytes": 7200
     },
     "authors-driving.css": {
-      "version": "90d3cd731083",
-      "bytes": 10651
+      "version": "bb0e8b41344f",
+      "bytes": 11015
     },
     "authors-exchange.css": {
       "version": "a805f1f4cc8d",
       "bytes": 32366
     },
     "authors-expansion.css": {
-      "version": "3a78cf886044",
-      "bytes": 53495
+      "version": "7de5bce0760c",
+      "bytes": 53839
     },
     "authors-garage.css": {
       "version": "5cef62b8ad75",
@@ -1126,7 +1126,7 @@
       "bytes": 39587
     },
     "authors-release.html": {
-      "version": "5c5a69712dbe",
+      "version": "05a23eec51dc",
       "bytes": 323103
     },
     "authors-rewards.css": {
@@ -1150,7 +1150,7 @@
       "bytes": 86562
     },
     "authors.html": {
-      "version": "47346be83dbc",
+      "version": "01db88b58e17",
       "bytes": 322910
     },
     "icons/car-placeholder.svg": {
@@ -1166,12 +1166,12 @@
       "bytes": 69797
     },
     "index.html": {
-      "version": "5c5a69712dbe",
+      "version": "05a23eec51dc",
       "bytes": 323103
     },
     "js/app.js": {
-      "version": "63425e1b51ca",
-      "bytes": 1550266
+      "version": "a52736f6b764",
+      "bytes": 1550969
     },
     "js/audio.js": {
       "version": "6b60b0de49f2",
@@ -1418,8 +1418,8 @@
       "bytes": 11679
     },
     "js/authors-screen-controls.js": {
-      "version": "a3c2c70be8be",
-      "bytes": 8220
+      "version": "241833384299",
+      "bytes": 8920
     },
     "js/authors-secondary.js": {
       "version": "ece739ad1daf",
@@ -1442,8 +1442,8 @@
       "bytes": 4685
     },
     "js/authors-traffic.js": {
-      "version": "e8853986e695",
-      "bytes": 12884
+      "version": "651756ab383d",
+      "bytes": 12939
     },
     "js/authors-ui.js": {
       "version": "90a948c5fad1",
@@ -1470,8 +1470,8 @@
       "bytes": 8076
     },
     "js/car-3d.js": {
-      "version": "1626ec46d5a9",
-      "bytes": 933574
+      "version": "1def57c4207d",
+      "bytes": 933696
     },
     "js/mobile-texture-assets.js": {
       "version": "d5be325f5bf0",
@@ -1490,8 +1490,8 @@
       "bytes": 144568
     },
     "js/ota-asset-sync.js": {
-      "version": "21897421d0eb",
-      "bytes": 12133
+      "version": "6577c88ae54a",
+      "bytes": 23604
     },
     "js/plate-presentation.js": {
       "version": "cc6592782275",
@@ -1554,7 +1554,7 @@
       "bytes": 603445
     },
     "legacy.html": {
-      "version": "3d61932a3c9a",
+      "version": "adb0f0b694c7",
       "bytes": 316472
     },
     "manifest.json": {
@@ -1566,7 +1566,7 @@
       "bytes": 434511
     },
     "sw.js": {
-      "version": "fd3839767982",
+      "version": "7d8930c01dce",
       "bytes": 6654
     }
   }

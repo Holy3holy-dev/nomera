@@ -10,8 +10,8 @@ android {
         applicationId = "com.h3h.nomera"
         minSdk = 24
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0.0-ota"
+        versionCode = 2
+        versionName = "1.1.0-ota"
         // Default live site URL for automatic delta OTA updates
         buildConfigField("String", "DEFAULT_OTA_BASE_URL", "\"https://holy3holy-dev.github.io/nomera/\"")
     }

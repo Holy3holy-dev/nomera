@@ -2,7 +2,10 @@ package com.h3h.nomera
 
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.content.Intent
 import android.graphics.Color
+import android.graphics.Rect
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.view.View
@@ -41,6 +44,9 @@ class MainActivity : Activity() {
 
         webView = WebView(this).apply {
             setBackgroundColor(Color.parseColor("#080D16"))
+            isLongClickable = false
+            isHapticFeedbackEnabled = false
+            setOnLongClickListener { true }
             settings.apply {
                 javaScriptEnabled = true
                 domStorageEnabled = true
@@ -53,6 +59,21 @@ class MainActivity : Activity() {
             }
             webViewClient = OverlayWebViewClient(repository)
             webChromeClient = WebChromeClient()
+            setDownloadListener { url, _, _, _, _ ->
+                openExternalUrl(url)
+            }
+            addOnLayoutChangeListener { v, _, top, _, bottom, _, _, _, _ ->
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    val h = bottom - top
+                    val w = v.width
+                    if (w > 0 && h > 0) {
+                        val zoneHeightPx = (180f * resources.displayMetrics.density).toInt().coerceAtMost(h)
+                        v.systemGestureExclusionRects = listOf(
+                            Rect(0, (h - zoneHeightPx).coerceAtLeast(0), w, h)
+                        )
+                    }
+                }
+            }
         }
 
         jsBridge = NomeraJsBridge(
@@ -68,6 +89,16 @@ class MainActivity : Activity() {
 
         // Trigger non-blocking delta OTA check against live website after launch
         jsBridge.triggerOtaSync(BuildConfig.DEFAULT_OTA_BASE_URL)
+    }
+
+    private fun openExternalUrl(url: String?) {
+        if (url.isNullOrBlank()) return
+        try {
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url)).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            startActivity(intent)
+        } catch (_: Exception) {}
     }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
